@@ -1,0 +1,2617 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FinancasPro v5 — Controle Financeiro que Converte</title>
+<style>
+/* ============================================================
+   FINANCAS PRO v5 — DESIGN SYSTEM + CONVERSION LAYER
+   Urgency · Locks · Pricing · Daily Goal · Retention
+============================================================ */
+
+/* DESIGN TOKENS */
+:root {
+  --primary: #6c63ff;
+  --primary-dark: #5a52d5;
+  --primary-light: #ede9ff;
+  --success: #10b981;
+  --success-light: #d1fae5;
+  --danger: #ef4444;
+  --danger-light: #fee2e2;
+  --warning: #f59e0b;
+  --warning-light: #fef3c7;
+  --info: #3b82f6;
+  --info-light: #dbeafe;
+  --gold: #f59e0b;
+  --gold-light: #fffbeb;
+  --urgent: #dc2626;
+  --urgent-light: #fef2f2;
+  --bg: #f0f2f5;
+  --surface: #ffffff;
+  --surface2: #f8f9fb;
+  --border: #e5e7eb;
+  --border-light: #f3f4f6;
+  --text: #1f2937;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
+  --shadow: 0 4px 16px rgba(0,0,0,.10);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,.14);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-lg: 20px;
+  --transition: 0.2s ease;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; scroll-behavior: smooth; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.5; }
+button { cursor: pointer; border: none; font-family: inherit; }
+input, select, textarea { font-family: inherit; }
+
+/* ── URGENCY TOP BAR (sticky) ── */
+#urgency-bar {
+  display: none;
+  position: sticky;
+  top: 0;
+  z-index: 300;
+  padding: 0;
+}
+#urgency-bar.show { display: block; }
+.urgency-main {
+  background: linear-gradient(90deg, #dc2626 0%, #b91c1c 100%);
+  color: #fff;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: .85rem;
+  font-weight: 700;
+}
+.urgency-ticker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+.urgency-ticker .pulse {
+  width: 8px; height: 8px;
+  background: #fca5a5;
+  border-radius: 50%;
+  animation: pulse 1.2s infinite;
+  flex-shrink: 0;
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.6); opacity: .6; }
+}
+.urgency-countdown {
+  background: rgba(255,255,255,.2);
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: .8rem;
+  font-family: monospace;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.urgency-cta {
+  background: #fff;
+  color: #dc2626;
+  border-radius: 20px;
+  padding: 5px 16px;
+  font-size: .8rem;
+  font-weight: 800;
+  white-space: nowrap;
+  transition: all var(--transition);
+}
+.urgency-cta:hover { background: #fef2f2; transform: scale(1.03); }
+
+/* ── LAYOUT ── */
+.app-container { max-width: 900px; margin: 0 auto; padding: 0 16px 40px; }
+
+/* ── HEADER ── */
+.app-header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: #fff;
+  padding: 28px 28px 24px;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+.app-header::before {
+  content: "";
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 200px; height: 200px;
+  background: rgba(255,255,255,.06);
+  border-radius: 50%;
+}
+.app-header::after {
+  content: "";
+  position: absolute;
+  bottom: -60px; left: 30%;
+  width: 280px; height: 280px;
+  background: rgba(255,255,255,.04);
+  border-radius: 50%;
+}
+.header-top { display: flex; justify-content: space-between; align-items: flex-start; position: relative; z-index: 1; }
+.header-brand { display: flex; align-items: center; gap: 10px; }
+.header-brand .logo { font-size: 1.8rem; }
+.header-brand-text h1 { font-size: 1.4rem; font-weight: 800; letter-spacing: -.5px; }
+.header-brand-text .tagline { font-size: .8rem; opacity: .8; }
+.header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; position: relative; z-index: 1; }
+
+.plan-badge {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: .75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.plan-badge.free {
+  background: rgba(255,255,255,.18);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.35);
+}
+.plan-badge.free:hover { background: rgba(255,255,255,.28); }
+.plan-badge.premium {
+  background: linear-gradient(135deg, var(--gold) 0%, #f97316 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(245,158,11,.4);
+}
+.score-pill {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,.15);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: .85rem;
+  font-weight: 700;
+}
+.streak-badge {
+  display: flex; align-items: center; gap: 4px;
+  background: rgba(255,255,255,.12);
+  border-radius: 16px;
+  padding: 4px 10px;
+  font-size: .8rem;
+}
+.header-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 20px;
+  position: relative;
+  z-index: 1;
+}
+.header-stat {
+  background: rgba(255,255,255,.12);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  text-align: center;
+  border: 1px solid rgba(255,255,255,.15);
+  transition: background var(--transition);
+}
+.header-stat:hover { background: rgba(255,255,255,.18); }
+.header-stat-label { font-size: .7rem; opacity: .75; text-transform: uppercase; letter-spacing: .5px; }
+.header-stat-value { font-size: 1.2rem; font-weight: 800; margin-top: 2px; }
+.header-stat-sub { font-size: .7rem; opacity: .7; margin-top: 1px; }
+
+/* ── NAV TABS ── */
+.nav-tabs {
+  display: flex;
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 6px;
+  margin-bottom: 20px;
+  gap: 4px;
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+}
+.nav-tab {
+  flex: 1;
+  min-width: 72px;
+  padding: 10px 6px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: .75rem;
+  font-weight: 600;
+  transition: all var(--transition);
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  position: relative;
+}
+.nav-tab .tab-icon { font-size: 1.1rem; }
+.nav-tab.active { background: var(--primary); color: #fff; box-shadow: 0 2px 8px rgba(108,99,255,.35); }
+.nav-tab:hover:not(.active) { background: var(--primary-light); color: var(--primary); }
+.nav-tab.locked { opacity: .7; }
+.nav-tab.locked::after {
+  content: "PRO";
+  position: absolute;
+  top: 4px; right: 4px;
+  background: var(--gold);
+  color: #fff;
+  font-size: .55rem;
+  font-weight: 900;
+  padding: 1px 4px;
+  border-radius: 4px;
+  letter-spacing: .3px;
+}
+
+/* ── TAB PANELS ── */
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-light);
+}
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* ── DAILY GOAL CARD ── */
+.daily-goal-card {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  color: #fff;
+  border: none;
+}
+.daily-goal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.daily-goal-title { font-size: .9rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+.daily-goal-badge {
+  background: var(--success);
+  color: #fff;
+  border-radius: 12px;
+  padding: 3px 10px;
+  font-size: .7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.daily-goal-badge.pending { background: var(--warning); color: var(--text); }
+.daily-goal-desc { font-size: .85rem; opacity: .8; margin-bottom: 14px; }
+.daily-goal-progress { display: flex; align-items: center; gap: 12px; }
+.daily-goal-bar { flex: 1; height: 8px; background: rgba(255,255,255,.2); border-radius: 4px; overflow: hidden; }
+.daily-goal-fill { height: 100%; border-radius: 4px; background: var(--success); transition: width .5s ease; }
+.daily-goal-pts { font-size: .8rem; font-weight: 700; opacity: .9; white-space: nowrap; }
+
+/* ── RETENTION NOTIFICATION ── */
+#retention-notice {
+  display: none;
+  background: linear-gradient(135deg, #7c3aed 0%, #6c63ff 100%);
+  color: #fff;
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: var(--shadow);
+}
+#retention-notice.hidden { display: none; }
+#retention-notice .notice-icon { font-size: 2rem; flex-shrink: 0; }
+#retention-notice .notice-body { flex: 1; }
+#retention-notice .notice-title { font-weight: 800; font-size: .95rem; margin-bottom: 2px; }
+#retention-notice .notice-sub { font-size: .8rem; opacity: .85; }
+#retention-notice .notice-cta {
+  background: rgba(255,255,255,.2);
+  border: 2px solid rgba(255,255,255,.4);
+  color: #fff;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: .8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ── QUICK ENTRY ── */
+.quick-entry {
+  background: linear-gradient(135deg, #f8f7ff 0%, #ede9ff 100%);
+  border: 2px solid var(--primary-light);
+}
+.entry-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.entry-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.form-group { display: flex; flex-direction: column; gap: 4px; }
+.form-label { font-size: .75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .3px; }
+.form-control {
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: .9rem;
+  color: var(--text);
+  background: var(--surface);
+  transition: border-color var(--transition), box-shadow var(--transition);
+  width: 100%;
+}
+.form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(108,99,255,.12); }
+.form-control.error { border-color: var(--danger); }
+
+/* ── BUTTONS ── */
+.btn {
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-size: .9rem;
+  font-weight: 700;
+  transition: all var(--transition);
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.btn-primary { background: var(--primary); color: #fff; box-shadow: 0 2px 8px rgba(108,99,255,.3); }
+.btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(108,99,255,.4); }
+.btn-primary:active { transform: translateY(0); }
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { background: #059669; transform: translateY(-1px); }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:hover { background: #dc2626; }
+.btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
+.btn-outline:hover { background: var(--primary-light); }
+.btn-sm { padding: 6px 12px; font-size: .8rem; border-radius: 6px; }
+.btn-gold {
+  background: linear-gradient(135deg, var(--gold) 0%, #f97316 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(245,158,11,.4);
+}
+.btn-gold:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(245,158,11,.5); }
+.btn-urgent {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(220,38,38,.4);
+  animation: urgentPulse 2s infinite;
+}
+@keyframes urgentPulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(220,38,38,.4); }
+  50% { box-shadow: 0 4px 18px rgba(220,38,38,.7); }
+}
+.btn-full { width: 100%; justify-content: center; }
+
+.tipo-toggle { display: flex; gap: 0; border-radius: var(--radius-sm); overflow: hidden; border: 1.5px solid var(--border); }
+.tipo-btn {
+  flex: 1; padding: 10px; font-size: .85rem; font-weight: 700;
+  background: var(--surface); color: var(--text-secondary); transition: all var(--transition);
+}
+.tipo-btn.active-receita { background: var(--success); color: #fff; }
+.tipo-btn.active-despesa { background: var(--danger); color: #fff; }
+.entry-actions { display: flex; gap: 10px; }
+
+/* ── LIMIT METER (transaction usage) ── */
+.limit-meter {
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  display: none;
+}
+.limit-meter.show { display: block; }
+.limit-meter-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.limit-meter-label { font-size: .8rem; font-weight: 600; color: var(--text-secondary); }
+.limit-meter-count { font-size: .85rem; font-weight: 800; }
+.limit-meter-count.warning { color: var(--warning); }
+.limit-meter-count.danger { color: var(--danger); }
+.limit-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.limit-fill { height: 100%; border-radius: 4px; background: var(--success); transition: width .5s ease; }
+.limit-fill.warning { background: var(--warning); }
+.limit-fill.danger { background: var(--danger); }
+.limit-cta { margin-top: 8px; font-size: .78rem; color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center; }
+
+/* ── SUMMARY GRID ── */
+.summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+.summary-card {
+  background: var(--surface2); border-radius: var(--radius-sm); padding: 14px;
+  border-left: 4px solid transparent; transition: transform var(--transition);
+}
+.summary-card:hover { transform: translateY(-2px); }
+.summary-card.receita { border-left-color: var(--success); }
+.summary-card.despesa { border-left-color: var(--danger); }
+.summary-card.saldo { border-left-color: var(--primary); }
+.summary-card.positivo { border-left-color: var(--success); background: var(--success-light); }
+.summary-card.negativo { border-left-color: var(--danger); background: var(--danger-light); }
+.summary-label { font-size: .7rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 4px; }
+.summary-value { font-size: 1.2rem; font-weight: 800; color: var(--text); }
+.summary-sub { font-size: .72rem; color: var(--text-muted); margin-top: 2px; }
+
+/* ── PREMIUM HARD LOCK (full tab) ── */
+.premium-lock-screen {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border-radius: var(--radius-lg);
+  padding: 48px 32px;
+  text-align: center;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.premium-lock-screen::before {
+  content: "";
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 250px; height: 250px;
+  background: rgba(108,99,255,.15);
+  border-radius: 50%;
+}
+.lock-icon-big { font-size: 3.5rem; margin-bottom: 16px; }
+.lock-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: linear-gradient(135deg, var(--gold) 0%, #f97316 100%);
+  color: #fff;
+  border-radius: 20px;
+  padding: 5px 16px;
+  font-size: .78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin-bottom: 16px;
+}
+.lock-title { font-size: 1.5rem; font-weight: 800; margin-bottom: 10px; }
+.lock-desc { font-size: .9rem; opacity: .8; margin-bottom: 24px; max-width: 360px; margin-left: auto; margin-right: auto; }
+.lock-features {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;
+  margin-bottom: 28px;
+}
+.lock-feature {
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.2);
+  color: #fff;
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: .8rem;
+  font-weight: 600;
+}
+.lock-pricing {
+  background: rgba(255,255,255,.08);
+  border-radius: var(--radius);
+  padding: 16px 24px;
+  margin-bottom: 20px;
+  display: inline-block;
+}
+.lock-pricing .launch-badge {
+  background: var(--urgent);
+  color: #fff;
+  border-radius: 20px;
+  padding: 3px 12px;
+  font-size: .72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin-bottom: 8px;
+  display: inline-block;
+}
+.lock-pricing .price-old { font-size: .85rem; opacity: .6; text-decoration: line-through; margin-bottom: 2px; }
+.lock-pricing .price-new { font-size: 2rem; font-weight: 800; color: var(--gold); }
+.lock-pricing .price-period { font-size: .8rem; opacity: .7; }
+.lock-social-proof { font-size: .78rem; opacity: .65; margin-top: 12px; }
+
+/* ── PREMIUM INLINE GATE ── */
+.premium-gate {
+  display: flex; flex-direction: column; align-items: center;
+  background: linear-gradient(135deg, var(--gold-light) 0%, #fff9e6 100%);
+  border: 2px dashed var(--gold);
+  border-radius: var(--radius);
+  padding: 28px 20px;
+  text-align: center;
+  margin: 12px 0;
+}
+.premium-gate .lock-big { font-size: 2rem; margin-bottom: 10px; }
+.premium-gate h3 { font-size: 1rem; font-weight: 800; margin-bottom: 6px; }
+.premium-gate p { font-size: .85rem; color: var(--text-secondary); margin-bottom: 16px; }
+
+/* ── TX LIST ── */
+.tx-filters { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+.filter-btn {
+  padding: 6px 14px; border-radius: 20px; font-size: .8rem; font-weight: 600;
+  background: var(--surface2); color: var(--text-secondary); border: 1.5px solid var(--border); transition: all var(--transition);
+}
+.filter-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.filter-btn:hover:not(.active) { border-color: var(--primary); color: var(--primary); }
+.search-wrap { flex: 1; min-width: 180px; }
+.tx-list { display: flex; flex-direction: column; gap: 8px; }
+.tx-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+  transition: all var(--transition);
+}
+.tx-item:hover { background: #f3f4f6; transform: translateX(2px); }
+.tx-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+.tx-icon.receita { background: var(--success-light); }
+.tx-icon.despesa { background: var(--danger-light); }
+.tx-details { flex: 1; min-width: 0; }
+.tx-desc { font-weight: 600; font-size: .9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tx-meta { font-size: .75rem; color: var(--text-muted); display: flex; gap: 8px; margin-top: 2px; }
+.tx-tag { background: var(--primary-light); color: var(--primary); padding: 2px 7px; border-radius: 10px; font-size: .7rem; font-weight: 600; }
+.tx-amount { font-weight: 800; font-size: 1rem; white-space: nowrap; }
+.tx-amount.receita { color: var(--success); }
+.tx-amount.despesa { color: var(--danger); }
+.tx-actions { display: flex; gap: 6px; opacity: 0; transition: opacity var(--transition); }
+.tx-item:hover .tx-actions { opacity: 1; }
+.tx-empty { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+.tx-empty .empty-icon { font-size: 3rem; margin-bottom: 12px; }
+
+/* ── SCORE / PROGRESS ── */
+.score-breakdown { display: flex; flex-direction: column; gap: 10px; }
+.score-row { display: flex; align-items: center; gap: 10px; }
+.score-row-label { flex: 1; font-size: .85rem; color: var(--text-secondary); }
+.score-row-bar { flex: 2; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.score-row-fill { height: 100%; border-radius: 4px; background: var(--primary); transition: width .6s ease; }
+.score-row-pts { font-size: .8rem; font-weight: 700; width: 45px; text-align: right; }
+
+/* ── INSIGHTS ── */
+.insights-list { display: flex; flex-direction: column; gap: 10px; }
+.insight-item {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 12px 14px;
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--primary);
+  transition: transform var(--transition);
+}
+.insight-item:hover { transform: translateX(2px); }
+.insight-item.success { border-left-color: var(--success); background: var(--success-light); }
+.insight-item.warning { border-left-color: var(--warning); background: var(--warning-light); }
+.insight-item.danger { border-left-color: var(--danger); background: var(--danger-light); }
+.insight-item.info { border-left-color: var(--info); background: var(--info-light); }
+.insight-icon { font-size: 1.3rem; line-height: 1; }
+.insight-text { font-size: .875rem; color: var(--text); line-height: 1.5; }
+.insight-text strong { font-weight: 700; }
+
+/* ── BUDGET ── */
+.budget-list { display: flex; flex-direction: column; gap: 10px; }
+.budget-row { display: flex; flex-direction: column; gap: 4px; }
+.budget-header { display: flex; justify-content: space-between; align-items: center; }
+.budget-label { font-size: .875rem; font-weight: 600; }
+.budget-values { font-size: .8rem; color: var(--text-secondary); }
+.budget-bar { height: 10px; background: var(--border); border-radius: 5px; overflow: hidden; }
+.budget-fill { height: 100%; border-radius: 5px; background: var(--success); transition: width .5s ease; }
+.budget-fill.warning { background: var(--warning); }
+.budget-fill.danger { background: var(--danger); }
+
+/* ── MONTH NAV ── */
+.month-nav { display: flex; align-items: center; gap: 12px; }
+.month-nav button {
+  background: var(--surface2); border: 1.5px solid var(--border); color: var(--text);
+  border-radius: var(--radius-sm); width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; transition: all var(--transition);
+}
+.month-nav button:hover { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
+.month-label { font-size: 1rem; font-weight: 700; min-width: 140px; text-align: center; }
+
+/* ── ACHIEVEMENTS ── */
+.achievements-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.achievement-card {
+  background: var(--surface2); border-radius: var(--radius-sm); padding: 16px 12px;
+  text-align: center; border: 2px solid var(--border-light);
+  transition: all var(--transition); position: relative; overflow: hidden;
+}
+.achievement-card.unlocked {
+  background: linear-gradient(135deg, var(--gold-light) 0%, #fff 100%);
+  border-color: var(--gold);
+  box-shadow: 0 2px 12px rgba(245,158,11,.2);
+}
+.achievement-card.unlocked::after { content: "✓"; position: absolute; top: 6px; right: 8px; font-size: .7rem; color: var(--gold); font-weight: 900; }
+.achievement-icon { font-size: 2rem; margin-bottom: 8px; }
+.achievement-name { font-size: .78rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.achievement-desc { font-size: .7rem; color: var(--text-muted); line-height: 1.3; }
+.achievement-card:not(.unlocked) { opacity: .55; filter: grayscale(1); }
+.achievement-card:not(.unlocked):hover { opacity: .75; filter: grayscale(.5); }
+
+/* ── TOAST ── */
+#toast-container {
+  position: fixed; bottom: 20px; right: 20px; z-index: 9999;
+  display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+}
+.toast {
+  background: var(--text); color: #fff;
+  padding: 12px 18px; border-radius: var(--radius);
+  font-size: .875rem; font-weight: 600; max-width: 320px;
+  box-shadow: var(--shadow-lg); animation: toastIn .35s cubic-bezier(.22,1,.36,1);
+  pointer-events: all; display: flex; align-items: center; gap: 10px;
+}
+.toast.success { background: var(--success); }
+.toast.warning { background: var(--warning); color: var(--text); }
+.toast.danger { background: var(--danger); }
+.toast.achievement { background: linear-gradient(135deg, var(--gold) 0%, #f97316 100%); color: #fff; }
+.toast.premium { background: linear-gradient(135deg, var(--primary) 0%, #7c3aed 100%); }
+.toast.urgent { background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); }
+.toast-icon { font-size: 1.3rem; flex-shrink: 0; }
+@keyframes toastIn { from { opacity: 0; transform: translateX(60px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes toastOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(60px); } }
+.toast.removing { animation: toastOut .3s ease forwards; }
+
+/* ── CONFETTI ── */
+.confetti-piece {
+  position: fixed; width: 10px; height: 10px; border-radius: 2px;
+  animation: confettiFall linear forwards; pointer-events: none; z-index: 9998;
+}
+@keyframes confettiFall {
+  0% { transform: translateY(-100px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+/* ── ACHIEVEMENT POPUP ── */
+#achievement-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5);
+  z-index: 9999; backdrop-filter: blur(3px);
+}
+#achievement-overlay.show { display: block; }
+#achievement-popup {
+  display: none;
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  background: var(--surface);
+  border-radius: var(--radius-lg); padding: 40px 32px; text-align: center;
+  z-index: 10000; box-shadow: var(--shadow-lg); max-width: 320px; width: 90%;
+  border: 3px solid var(--gold);
+}
+#achievement-popup.show { display: block; animation: popIn .5s cubic-bezier(.22,1,.36,1) forwards; }
+#achievement-popup .popup-icon { font-size: 4rem; margin-bottom: 12px; }
+#achievement-popup .popup-badge { display: inline-block; background: linear-gradient(135deg, var(--gold) 0%, #f97316 100%); color: #fff; padding: 4px 14px; border-radius: 20px; font-size: .75rem; font-weight: 800; text-transform: uppercase; margin-bottom: 12px; }
+#achievement-popup h2 { font-size: 1.4rem; font-weight: 800; margin-bottom: 8px; }
+#achievement-popup p { font-size: .9rem; color: var(--text-secondary); margin-bottom: 20px; }
+#achievement-popup .popup-btn { padding: 10px 28px; background: linear-gradient(135deg, var(--gold) 0%, #f97316 100%); color: #fff; border-radius: 20px; font-weight: 700; }
+@keyframes popIn { from { opacity: 0; transform: translate(-50%, -50%) scale(0.6); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+
+/* ── PRICING MODAL (PREMIUM) ── */
+#premium-modal {
+  display: none; position: fixed; inset: 0;
+  background: rgba(15,20,50,.85); z-index: 10000;
+  align-items: center; justify-content: center;
+  backdrop-filter: blur(6px);
+}
+#premium-modal.show { display: flex; }
+.premium-modal-card {
+  background: linear-gradient(160deg, #1e293b 0%, #0f172a 100%);
+  border-radius: var(--radius-lg);
+  padding: 0;
+  max-width: 480px;
+  width: 92%;
+  box-shadow: var(--shadow-lg);
+  animation: popIn .45s cubic-bezier(.22,1,.36,1);
+  overflow: hidden;
+  color: #fff;
+}
+.premium-modal-header {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  padding: 12px 24px;
+  text-align: center;
+  font-size: .82rem;
+  font-weight: 800;
+  letter-spacing: .5px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.premium-modal-body { padding: 32px 28px; }
+.modal-headline { font-size: 1.5rem; font-weight: 800; text-align: center; margin-bottom: 6px; line-height: 1.3; }
+.modal-sub { text-align: center; font-size: .875rem; opacity: .75; margin-bottom: 24px; }
+.pricing-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+.pricing-card {
+  background: rgba(255,255,255,.07);
+  border: 2px solid rgba(255,255,255,.15);
+  border-radius: var(--radius);
+  padding: 16px 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.pricing-card.selected, .pricing-card:hover {
+  border-color: var(--gold);
+  background: rgba(245,158,11,.12);
+}
+.pricing-card .plan-period { font-size: .75rem; font-weight: 700; text-transform: uppercase; opacity: .8; margin-bottom: 4px; }
+.pricing-card .plan-price { font-size: 1.5rem; font-weight: 800; color: var(--gold); }
+.pricing-card .plan-sub { font-size: .7rem; opacity: .6; margin-top: 2px; }
+.pricing-card .plan-badge-tag {
+  display: inline-block;
+  background: var(--urgent);
+  color: #fff;
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: .65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+.modal-benefits { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+.modal-benefit {
+  display: flex; align-items: center; gap: 10px;
+  font-size: .85rem; opacity: .9;
+}
+.modal-benefit::before { content: "✓"; color: var(--success); font-weight: 900; flex-shrink: 0; font-size: 1rem; }
+.modal-form { display: flex; flex-direction: column; gap: 10px; }
+.modal-input {
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid rgba(255,255,255,.2);
+  background: rgba(255,255,255,.08);
+  color: #fff;
+  font-family: inherit;
+  font-size: .9rem;
+  transition: border-color var(--transition);
+}
+.modal-input::placeholder { color: rgba(255,255,255,.4); }
+.modal-input:focus { outline: none; border-color: var(--gold); }
+.modal-input.error { border-color: var(--danger); }
+.modal-email-error { color: #fca5a5; font-size: .75rem; display: none; }
+.modal-skip {
+  background: transparent; color: rgba(255,255,255,.4);
+  font-size: .78rem; font-weight: 400;
+  text-align: center; width: 100%;
+  text-decoration: underline;
+}
+.modal-skip:hover { color: rgba(255,255,255,.7); }
+.modal-social-proof { text-align: center; font-size: .75rem; opacity: .55; margin-top: 10px; }
+
+/* ── ONBOARDING MODAL ── */
+#onboarding-modal {
+  display: none; position: fixed; inset: 0;
+  background: rgba(15,20,50,.7); z-index: 10000;
+  align-items: center; justify-content: center; backdrop-filter: blur(4px);
+}
+#onboarding-modal.show { display: flex; }
+.onboarding-card {
+  background: var(--surface); border-radius: var(--radius-lg);
+  padding: 40px 32px; max-width: 480px; width: 90%;
+  box-shadow: var(--shadow-lg); animation: popIn .45s cubic-bezier(.22,1,.36,1);
+}
+.onboarding-card h2 { font-size: 1.6rem; font-weight: 800; margin-bottom: 8px; }
+.onboarding-card .subtitle { color: var(--text-secondary); margin-bottom: 24px; font-size: .9rem; }
+.onboarding-form { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+.onboarding-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.onboarding-steps { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+.onboarding-step { display: flex; align-items: center; gap: 14px; }
+.step-num { width: 32px; height: 32px; background: var(--primary-light); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: .9rem; flex-shrink: 0; }
+.step-text strong { display: block; font-size: .9rem; }
+.step-text span { font-size: .8rem; color: var(--text-muted); }
+
+/* ── SIMULADOR ── */
+.sim-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+.sim-result { background: linear-gradient(135deg, var(--primary-light) 0%, #e0e7ff 100%); border-radius: var(--radius); padding: 20px; text-align: center; }
+.sim-result .result-value { font-size: 1.8rem; font-weight: 800; color: var(--primary); }
+.sim-result .result-label { font-size: .8rem; color: var(--text-secondary); margin-top: 4px; }
+
+/* ── RETRO ── */
+.retro-month-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.retro-month-card { background: var(--surface2); border-radius: var(--radius-sm); padding: 14px; cursor: pointer; border: 1.5px solid var(--border); transition: all var(--transition); }
+.retro-month-card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: var(--shadow); }
+.retro-month-card h4 { font-size: .85rem; font-weight: 700; margin-bottom: 6px; }
+.retro-saldo { font-size: 1rem; font-weight: 800; }
+.retro-saldo.positivo { color: var(--success); }
+.retro-saldo.negativo { color: var(--danger); }
+.retro-locked { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--warning-light); border-radius: var(--radius-sm); font-size: .85rem; color: #92400e; font-weight: 600; }
+
+/* ── CHART ── */
+.chart-bars { display: flex; align-items: flex-end; gap: 6px; height: 160px; }
+.chart-bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; height: 100%; }
+.chart-bar-pair { flex: 1; display: flex; gap: 2px; align-items: flex-end; width: 100%; }
+.chart-bar { border-radius: 4px 4px 0 0; width: 50%; transition: height .5s ease; min-height: 4px; }
+.chart-bar.receita { background: var(--success); }
+.chart-bar.despesa { background: var(--danger); }
+.chart-month-label { font-size: .65rem; color: var(--text-muted); font-weight: 600; }
+
+/* ── CONFIG ── */
+.config-section { margin-bottom: 20px; }
+.config-section-title { font-size: .85rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+.config-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; }
+.config-label { font-size: .875rem; color: var(--text); }
+.config-sub { font-size: .75rem; color: var(--text-muted); }
+.backup-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* ── UTILITIES ── */
+.text-success { color: var(--success); }
+.text-danger { color: var(--danger); }
+.text-warning { color: var(--warning); }
+.text-muted { color: var(--text-muted); }
+.hidden { display: none !important; }
+.progress-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; margin-top: 6px; }
+.progress-fill { height: 100%; border-radius: 4px; background: var(--primary); transition: width .5s ease; }
+.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 640px) {
+  .header-stats { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .header-stat-value { font-size: 1rem; }
+  .entry-grid { grid-template-columns: 1fr 1fr; }
+  .entry-row-2 { grid-template-columns: 1fr 1fr; }
+  .summary-grid { grid-template-columns: 1fr; }
+  .sim-grid { grid-template-columns: 1fr; }
+  .pricing-options { grid-template-columns: 1fr; }
+  .onboarding-row { grid-template-columns: 1fr; }
+  .nav-tab { min-width: 58px; font-size: .68rem; }
+}
+</style>
+</head>
+<body>
+<!-- ACHIEVEMENT OVERLAY + POPUP -->
+<div id="achievement-overlay" onclick="closeAchievementPopup()"></div>
+<div id="achievement-popup">
+  <div class="popup-icon" id="ach-popup-icon">🏆</div>
+  <div class="popup-badge">Conquista Desbloqueada!</div>
+  <h2 id="ach-popup-name">Nome</h2>
+  <p id="ach-popup-desc">Descricao</p>
+  <button class="popup-btn" onclick="closeAchievementPopup()">Incrivel! Continuar 🎉</button>
+</div>
+
+<!-- TOAST -->
+<div id="toast-container"></div>
+
+<!-- URGENCY BAR (topo fixo) -->
+<div id="urgency-bar">
+  <div class="urgency-main">
+    <div class="urgency-ticker">
+      <div class="pulse"></div>
+      <span id="urgency-msg">Oferta de lancamento — 60% OFF hoje</span>
+    </div>
+    <div class="urgency-countdown" id="urgency-countdown">23:59:59</div>
+    <button class="urgency-cta" onclick="openPremiumModal('urgency-bar')">Aproveitar Agora</button>
+  </div>
+</div>
+
+<!-- PREMIUM / PRICING MODAL -->
+<div id="premium-modal">
+  <div class="premium-modal-card">
+    <div class="premium-modal-header">
+      <span>🔥</span>
+      <span id="modal-header-text">OFERTA DE LANCAMENTO — APENAS HOJE</span>
+      <span>🔥</span>
+    </div>
+    <div class="premium-modal-body">
+      <div class="modal-headline" id="modal-headline">Seus dados financeiros merecem uma casa segura</div>
+      <div class="modal-sub" id="modal-sub">Salve na nuvem, acesse em qualquer dispositivo e nunca mais perca seus dados.</div>
+
+      <div class="pricing-options">
+        <div class="pricing-card" id="plan-monthly" onclick="selectPlan('mensal')">
+          <div class="plan-period">Mensal</div>
+          <div class="plan-price">R$ 9,90</div>
+          <div class="plan-sub">por mes</div>
+        </div>
+        <div class="pricing-card selected" id="plan-annual" onclick="selectPlan('anual')">
+          <div class="plan-period">Anual</div>
+          <div class="plan-price">R$ 4,90</div>
+          <div class="plan-sub">por mes (R$ 59/ano)</div>
+          <div class="plan-badge-tag">Mais popular</div>
+        </div>
+      </div>
+
+      <div class="modal-benefits">
+        <div class="modal-benefit">Transacoes e orcamentos ilimitados</div>
+        <div class="modal-benefit">Historico completo de 12 meses</div>
+        <div class="modal-benefit">Sincronizacao em nuvem (todos seus dispositivos)</div>
+        <div class="modal-benefit">Exportacao PDF e relatorios avancados</div>
+        <div class="modal-benefit">Suporte prioritario por WhatsApp</div>
+      </div>
+
+      <div class="modal-form">
+        <input type="text" id="modal-nome" class="modal-input" placeholder="Seu nome">
+        <input type="email" id="modal-email" class="modal-input" placeholder="Seu melhor e-mail">
+        <div class="modal-email-error" id="modal-email-error">Por favor, insira um e-mail valido.</div>
+        <button class="btn btn-urgent btn-full" onclick="submitPremiumLead()" style="font-size:1rem;padding:14px;">
+          🚀 Garantir acesso Premium agora
+        </button>
+        <button class="modal-skip" onclick="closePremiumModal()">Agora nao (continuar com limitacoes)</button>
+      </div>
+      <div class="modal-social-proof">847 pessoas ja usam o FinancasPro Premium este mes</div>
+    </div>
+  </div>
+</div>
+
+<!-- ONBOARDING MODAL -->
+<div id="onboarding-modal">
+  <div class="onboarding-card">
+    <div style="font-size:2.5rem;margin-bottom:12px;">💰</div>
+    <h2>Bem-vindo ao FinancasPro!</h2>
+    <p class="subtitle">Configure em 30 segundos e comece a tomar controle real das suas financas.</p>
+    <div class="onboarding-steps">
+      <div class="onboarding-step">
+        <div class="step-num">1</div>
+        <div class="step-text"><strong>Defina sua renda e metas</strong><span>Calculamos seu indice de saude financeira automaticamente</span></div>
+      </div>
+      <div class="onboarding-step">
+        <div class="step-num">2</div>
+        <div class="step-text"><strong>Registre transacoes diariamente</strong><span>Mantenha a sequencia ativa para ganhar conquistas</span></div>
+      </div>
+      <div class="onboarding-step">
+        <div class="step-num">3</div>
+        <div class="step-text"><strong>Conquiste metas e destrave o Premium</strong><span>30 dias de habito = resultado real na conta bancaria</span></div>
+      </div>
+    </div>
+    <div class="onboarding-form">
+      <div class="onboarding-row">
+        <div class="form-group">
+          <label class="form-label">Seu nome</label>
+          <input type="text" id="ob-nome" class="form-control" placeholder="Joao Silva">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Renda mensal (R$)</label>
+          <input type="number" id="ob-renda" class="form-control" placeholder="3000">
+        </div>
+      </div>
+      <div class="onboarding-row">
+        <div class="form-group">
+          <label class="form-label">Meta de poupanca (%)</label>
+          <input type="number" id="ob-meta-poupanca" class="form-control" placeholder="20" min="1" max="80">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Limite de gastos (%)</label>
+          <input type="number" id="ob-meta-gastos" class="form-control" placeholder="80" min="20" max="99">
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="finalizarOnboarding()">Comecar agora 🚀</button>
+    <p style="text-align:center;font-size:.75rem;color:var(--text-muted);margin-top:12px;">100% dos seus dados ficam no seu dispositivo. Sem rastreamento.</p>
+  </div>
+</div>
+
+<!-- APP WRAPPER -->
+<div class="app-container">
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="header-top">
+      <div class="header-brand">
+        <span class="logo">💰</span>
+        <div class="header-brand-text">
+          <h1>FinancasPro</h1>
+          <div class="tagline">Controle . Planejamento . Liberdade Financeira</div>
+        </div>
+      </div>
+      <div class="header-right">
+        <div id="plan-badge" class="plan-badge free" onclick="openPremiumModal('header-badge')">⭐ Gratuito — Upgrade</div>
+        <div class="score-pill">
+          <span>🏅</span>
+          <span id="hdr-score">0</span>
+          <span>pts</span>
+        </div>
+        <div class="streak-badge">🔥 <span id="hdr-streak">0</span> dias</div>
+      </div>
+    </div>
+    <div class="header-stats">
+      <div class="header-stat">
+        <div class="header-stat-label">Receitas</div>
+        <div class="header-stat-value" id="hdr-receitas">R$ 0</div>
+        <div class="header-stat-sub">este mes</div>
+      </div>
+      <div class="header-stat">
+        <div class="header-stat-label">Despesas</div>
+        <div class="header-stat-value" id="hdr-despesas">R$ 0</div>
+        <div class="header-stat-sub">este mes</div>
+      </div>
+      <div class="header-stat">
+        <div class="header-stat-label">Saldo</div>
+        <div class="header-stat-value" id="hdr-saldo">R$ 0</div>
+        <div class="header-stat-sub" id="hdr-saldo-sub">disponivel</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- NAV TABS -->
+  <nav class="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab(event,'dashboard')" data-tab="dashboard">
+      <span class="tab-icon">🏠</span><span>Inicio</span>
+    </button>
+    <button class="nav-tab" onclick="switchTab(event,'transacoes')" data-tab="transacoes">
+      <span class="tab-icon">💳</span><span>Extrato</span>
+    </button>
+    <button class="nav-tab" onclick="switchTab(event,'orcamento')" data-tab="orcamento">
+      <span class="tab-icon">📊</span><span>Orcamento</span>
+    </button>
+    <button class="nav-tab" onclick="switchTab(event,'retrospectiva')" data-tab="retrospectiva">
+      <span class="tab-icon">📅</span><span>Historico</span>
+    </button>
+    <button class="nav-tab locked" onclick="switchTabLocked(event,'evolucao')" data-tab="evolucao">
+      <span class="tab-icon">📈</span><span>Evolucao</span>
+    </button>
+    <button class="nav-tab" onclick="switchTab(event,'simulador')" data-tab="simulador">
+      <span class="tab-icon">🧮</span><span>Simulador</span>
+    </button>
+    <button class="nav-tab locked" onclick="switchTabLocked(event,'conquistas')" data-tab="conquistas">
+      <span class="tab-icon">🏆</span><span>Conquistas</span>
+    </button>
+    <button class="nav-tab" onclick="switchTab(event,'configuracoes')" data-tab="configuracoes">
+      <span class="tab-icon">⚙️</span><span>Config</span>
+    </button>
+  </nav>
+
+  <!-- TAB: DASHBOARD -->
+  <div id="tab-dashboard" class="tab-panel active">
+
+    <!-- Retention Notice -->
+    <div id="retention-notice" class="hidden">
+      <div class="notice-icon" id="ret-icon">⚡</div>
+      <div class="notice-body">
+        <div class="notice-title" id="ret-title">Meta diaria pendente!</div>
+        <div class="notice-sub" id="ret-sub">Registre pelo menos 1 transacao hoje para manter sua sequencia.</div>
+      </div>
+      <button class="notice-cta" onclick="document.getElementById('tx-desc').focus();showRetentionNotice(false)">Registrar agora</button>
+    </div>
+
+    <!-- Daily Goal -->
+    <div class="card daily-goal-card">
+      <div class="daily-goal-header">
+        <div class="daily-goal-title">🎯 Meta de Hoje</div>
+        <div class="daily-goal-badge pending" id="goal-badge">Pendente</div>
+      </div>
+      <div class="daily-goal-desc" id="goal-desc">Registre 1 transacao hoje para manter sua sequencia e ganhar +5 pts.</div>
+      <div class="daily-goal-progress">
+        <div class="daily-goal-bar"><div class="daily-goal-fill" id="goal-fill" style="width:0%"></div></div>
+        <div class="daily-goal-pts" id="goal-pts">0 / 1 hoje</div>
+      </div>
+    </div>
+
+    <!-- Quick Entry -->
+    <div class="card quick-entry">
+      <div class="card-header">
+        <div class="card-title">⚡ Lancamento Rapido</div>
+        <div id="limit-info-badge" style="font-size:.78rem;"></div>
+      </div>
+
+      <!-- Limit Meter -->
+      <div class="limit-meter" id="limit-meter">
+        <div class="limit-meter-header">
+          <span class="limit-meter-label">Uso do plano gratuito</span>
+          <span class="limit-meter-count" id="limit-meter-count">0/30</span>
+        </div>
+        <div class="limit-bar"><div class="limit-fill" id="limit-fill"></div></div>
+        <div class="limit-cta">
+          <span id="limit-cta-text">Faltam 30 registros para o limite</span>
+          <button class="btn btn-gold btn-sm" onclick="openPremiumModal('limit-meter')">Upgrade Premium</button>
+        </div>
+      </div>
+
+      <div class="tipo-toggle" style="margin-bottom:12px;">
+        <button class="tipo-btn active-receita" id="btn-receita" onclick="setTipo('receita')">💚 Receita</button>
+        <button class="tipo-btn" id="btn-despesa" onclick="setTipo('despesa')">💸 Despesa</button>
+      </div>
+      <div class="entry-grid">
+        <div class="form-group">
+          <label class="form-label">Descricao</label>
+          <input type="text" id="tx-desc" class="form-control" placeholder="Ex: Salario, Supermercado..." maxlength="80">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Valor (R$)</label>
+          <input type="number" id="tx-valor" class="form-control" placeholder="0,00" min="0.01" step="0.01">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Data</label>
+          <input type="date" id="tx-data" class="form-control">
+        </div>
+      </div>
+      <div class="entry-row-2">
+        <div class="form-group">
+          <label class="form-label">Categoria</label>
+          <select id="tx-categoria" class="form-control">
+            <option value="">Selecionar...</option>
+            <option value="alimentacao">🍔 Alimentacao</option>
+            <option value="moradia">🏠 Moradia</option>
+            <option value="transporte">🚗 Transporte</option>
+            <option value="saude">💊 Saude</option>
+            <option value="educacao">📚 Educacao</option>
+            <option value="lazer">🎮 Lazer</option>
+            <option value="vestuario">👕 Vestuario</option>
+            <option value="salario">💼 Salario</option>
+            <option value="freelance">💻 Freelance</option>
+            <option value="investimentos">📈 Investimentos</option>
+            <option value="outros">📦 Outros</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Recorrencia</label>
+          <select id="tx-recorrencia" class="form-control">
+            <option value="unica">Unica</option>
+            <option value="mensal">Mensal</option>
+            <option value="semanal">Semanal</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tag</label>
+          <input type="text" id="tx-tag" class="form-control" placeholder="Ex: trabalho, casa">
+        </div>
+      </div>
+      <div class="entry-actions">
+        <button class="btn btn-primary" id="btn-salvar" onclick="adicionarTransacao()" style="flex:1;">
+          <span id="btn-salvar-txt">+ Adicionar</span>
+        </button>
+        <button class="btn btn-outline btn-sm" onclick="limparForm()">Limpar</button>
+      </div>
+    </div>
+
+    <!-- Summary -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📊 Resumo do Mes</div>
+        <div class="month-nav">
+          <button onclick="mudarMes(-1)">‹</button>
+          <span class="month-label" id="mes-label">—</span>
+          <button onclick="mudarMes(1)">›</button>
+        </div>
+      </div>
+      <div class="summary-grid">
+        <div class="summary-card receita">
+          <div class="summary-label">Receitas</div>
+          <div class="summary-value" id="sum-receita">R$ 0,00</div>
+          <div class="summary-sub" id="sum-receita-qtd">0 transacoes</div>
+        </div>
+        <div class="summary-card despesa">
+          <div class="summary-label">Despesas</div>
+          <div class="summary-value" id="sum-despesa">R$ 0,00</div>
+          <div class="summary-sub" id="sum-despesa-qtd">0 categorias</div>
+        </div>
+        <div class="summary-card saldo" id="sum-saldo-card">
+          <div class="summary-label">Saldo</div>
+          <div class="summary-value" id="sum-saldo">R$ 0,00</div>
+          <div class="summary-sub" id="sum-saldo-sub">disponivel</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:center;margin-top:4px;">
+        <div style="flex:1;">
+          <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--text-muted);margin-bottom:4px;">
+            <span>Taxa de poupanca</span>
+            <span id="taxa-poupanca-val">0%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="taxa-poupanca-bar" style="width:0%"></div>
+          </div>
+        </div>
+        <div style="font-size:.75rem;color:var(--text-muted);text-align:right;">
+          Meta: <strong id="meta-poupanca-display">20%</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- Score -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">🏅 Saude Financeira</div>
+        <div id="score-total" style="font-size:1.6rem;font-weight:800;color:var(--primary);">0 pts</div>
+      </div>
+      <div id="score-grade" style="text-align:center;padding:8px;background:var(--primary-light);border-radius:var(--radius-sm);margin-bottom:14px;font-weight:700;font-size:.9rem;color:var(--primary);"></div>
+      <div class="score-breakdown" id="score-breakdown"></div>
+    </div>
+
+    <!-- Insights -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">💡 Insights Personalizados</div>
+      </div>
+      <div class="insights-list" id="insights-list">
+        <div class="insight-item info">
+          <span class="insight-icon">📊</span>
+          <span class="insight-text">Registre suas primeiras transacoes para ver insights do seu perfil financeiro.</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /tab-dashboard -->
+
+  <!-- TAB: TRANSACOES -->
+  <div id="tab-transacoes" class="tab-panel">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">💳 Extrato</div>
+        <button class="btn btn-sm btn-outline" onclick="exportarCSV()">📥 CSV</button>
+      </div>
+      <div class="tx-filters">
+        <button class="filter-btn active" onclick="setFiltro('todos')">Todos</button>
+        <button class="filter-btn" onclick="setFiltro('receita')">💚 Receitas</button>
+        <button class="filter-btn" onclick="setFiltro('despesa')">💸 Despesas</button>
+        <div class="search-wrap">
+          <input type="text" id="tx-search" class="form-control" placeholder="🔍 Buscar..." oninput="renderTransacoes()" style="padding:6px 12px;height:36px;">
+        </div>
+      </div>
+      <div class="tx-list" id="tx-list"></div>
+      <div id="tx-pagination" style="margin-top:12px;text-align:center;display:none;">
+        <button class="btn btn-sm btn-outline" id="tx-load-more" onclick="loadMoreTx()">Ver mais</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: ORCAMENTO -->
+  <div id="tab-orcamento" class="tab-panel">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📊 Orcamento por Categoria</div>
+        <div id="orcamento-mes-label" style="font-size:.85rem;color:var(--text-muted);"></div>
+      </div>
+      <div id="orcamento-list" class="budget-list"></div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">⚙️ Definir Limites</div>
+        <div id="orcamento-count-badge" style="font-size:.75rem;color:var(--text-muted);"></div>
+      </div>
+      <div id="orcamento-form-area">
+        <div class="entry-grid" style="margin-bottom:12px;">
+          <div class="form-group">
+            <label class="form-label">Categoria</label>
+            <select id="orc-categoria" class="form-control">
+              <option value="">Selecionar...</option>
+              <option value="alimentacao">🍔 Alimentacao</option>
+              <option value="moradia">🏠 Moradia</option>
+              <option value="transporte">🚗 Transporte</option>
+              <option value="saude">💊 Saude</option>
+              <option value="educacao">📚 Educacao</option>
+              <option value="lazer">🎮 Lazer</option>
+              <option value="vestuario">👕 Vestuario</option>
+              <option value="outros">📦 Outros</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Limite (R$)</label>
+            <input type="number" id="orc-limite" class="form-control" placeholder="500" min="1">
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="salvarOrcamento()">💾 Salvar Limite</button>
+      </div>
+      <div id="orcamento-gate" class="premium-gate hidden">
+        <div class="lock-big">🔒</div>
+        <h3>Limite de Categorias Atingido</h3>
+        <p>No plano gratuito voce pode criar ate <strong>3 orcamentos</strong>. Faca upgrade para ilimitados.</p>
+        <button class="btn btn-gold" onclick="openPremiumModal('orcamento')">🚀 Fazer Upgrade Agora</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: RETROSPECTIVA -->
+  <div id="tab-retrospectiva" class="tab-panel">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📅 Historico Mensal</div>
+        <div style="font-size:.78rem;color:var(--text-muted);">Clique para detalhes</div>
+      </div>
+      <div id="retro-list" class="retro-month-grid"></div>
+    </div>
+    <div id="retro-detalhe" class="card hidden">
+      <div class="card-header">
+        <div class="card-title" id="retro-detalhe-titulo">Detalhes</div>
+        <button class="btn btn-sm btn-outline" onclick="document.getElementById('retro-detalhe').classList.add('hidden')">Fechar</button>
+      </div>
+      <div id="retro-detalhe-content"></div>
+    </div>
+  </div>
+
+  <!-- TAB: EVOLUCAO (LOCKED) -->
+  <div id="tab-evolucao" class="tab-panel">
+    <div class="premium-lock-screen">
+      <div class="lock-icon-big">📈</div>
+      <div class="lock-badge">🔒 Recurso Premium</div>
+      <div class="lock-title">Veja sua evolucao financeira mes a mes</div>
+      <div class="lock-desc">Graficos comparativos, saldo acumulado e tendencias — tudo para voce tomar decisoes mais inteligentes.</div>
+      <div class="lock-features">
+        <span class="lock-feature">📊 Graficos 12 meses</span>
+        <span class="lock-feature">💹 Saldo acumulado</span>
+        <span class="lock-feature">📉 Analise de tendencias</span>
+        <span class="lock-feature">📄 Exportacao PDF</span>
+      </div>
+      <div class="lock-pricing">
+        <div class="launch-badge">Oferta de lancamento</div>
+        <div class="price-old">De R$ 19,90/mes</div>
+        <div class="price-new">R$ 4,90<span style="font-size:1rem;color:rgba(255,255,255,.6)">/mes</span></div>
+        <div class="price-period">no plano anual — Economize 75%</div>
+      </div>
+      <button class="btn btn-gold" style="font-size:1rem;padding:14px 32px;" onclick="openPremiumModal('evolucao')">
+        🚀 Desbloquear Evolucao Premium
+      </button>
+      <div class="lock-social-proof">847 usuarios ja fazem upgrade para ver a evolucao</div>
+    </div>
+  </div>
+
+  <!-- TAB: SIMULADOR -->
+  <div id="tab-simulador" class="tab-panel">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">🧮 Simulador de Juros Compostos</div>
+      </div>
+      <div class="sim-grid">
+        <div class="form-group">
+          <label class="form-label">Capital inicial (R$)</label>
+          <input type="number" id="sim-capital" class="form-control" placeholder="1000" value="1000">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Aporte mensal (R$)</label>
+          <input type="number" id="sim-aporte" class="form-control" placeholder="500" value="500">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Taxa mensal (%)</label>
+          <input type="number" id="sim-taxa" class="form-control" placeholder="0.8" value="0.8" step="0.01">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Periodo (meses)</label>
+          <input type="number" id="sim-meses" class="form-control" placeholder="12" value="12" min="1" max="360">
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="calcularSimulacao()" style="margin-bottom:16px;">🧮 Simular</button>
+      <div id="sim-result" style="display:none;">
+        <div class="sim-grid">
+          <div class="sim-result"><div class="result-value" id="sim-total">—</div><div class="result-label">Total acumulado</div></div>
+          <div class="sim-result"><div class="result-value" id="sim-rendimento">—</div><div class="result-label">Rendimento puro</div></div>
+          <div class="sim-result"><div class="result-value" id="sim-investido">—</div><div class="result-label">Total investido</div></div>
+          <div class="sim-result"><div class="result-value" id="sim-retorno">—</div><div class="result-label">Retorno (%)</div></div>
+        </div>
+        <div id="sim-premium-cta" style="display:none;margin-top:16px;">
+          <div class="premium-gate">
+            <div class="lock-big">🔒</div>
+            <h3>Tabela detalhada — Premium</h3>
+            <p>Veja a evolucao mes a mes do seu investimento. Disponivel no plano Premium.</p>
+            <button class="btn btn-gold" onclick="openPremiumModal('simulador')">🚀 Desbloquear Tabela</button>
+          </div>
+        </div>
+        <div id="sim-tabela-wrap" style="margin-top:16px;overflow-x:auto;max-height:300px;overflow-y:auto;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: CONQUISTAS (LOCKED) -->
+  <div id="tab-conquistas" class="tab-panel">
+    <div class="premium-lock-screen" style="margin-bottom:16px;">
+      <div class="lock-icon-big">🏆</div>
+      <div class="lock-badge">🔒 Recurso Premium</div>
+      <div class="lock-title">Sistema de Conquistas e Recompensas</div>
+      <div class="lock-desc">12 conquistas desbloqueaveis, sistema de pontos avancado e recompensas reais por habito financeiro consistente.</div>
+      <div class="lock-features">
+        <span class="lock-feature">🏆 12 conquistas</span>
+        <span class="lock-feature">🔥 Streak premiado</span>
+        <span class="lock-feature">🎁 Recompensas reais</span>
+        <span class="lock-feature">🌟 Ranking mensal</span>
+      </div>
+      <button class="btn btn-gold" style="font-size:1rem;padding:14px 32px;" onclick="openPremiumModal('conquistas')">
+        🏆 Desbloquear Conquistas Premium
+      </button>
+    </div>
+    <!-- Preview das conquistas bloqueadas -->
+    <div class="card">
+      <div class="card-title" style="margin-bottom:16px;">Previa das Conquistas</div>
+      <div class="achievements-grid" id="achievements-preview"></div>
+    </div>
+  </div>
+
+  <!-- TAB: CONFIG -->
+  <div id="tab-configuracoes" class="tab-panel">
+    <div class="card">
+      <div class="card-title" style="margin-bottom:16px;">👤 Perfil e Configuracoes</div>
+      <div class="config-section">
+        <div class="config-section-title">Dados pessoais</div>
+        <div class="entry-grid" style="margin-bottom:12px;">
+          <div class="form-group">
+            <label class="form-label">Nome</label>
+            <input type="text" id="cfg-nome" class="form-control" placeholder="Seu nome">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Renda mensal (R$)</label>
+            <input type="number" id="cfg-renda" class="form-control" placeholder="3000">
+          </div>
+        </div>
+        <div class="entry-grid" style="margin-bottom:12px;">
+          <div class="form-group">
+            <label class="form-label">Meta poupanca (%)</label>
+            <input type="number" id="cfg-meta-poupanca" class="form-control" placeholder="20">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Limite gastos (%)</label>
+            <input type="number" id="cfg-meta-gastos" class="form-control" placeholder="80">
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="salvarCfg()">💾 Salvar</button>
+      </div>
+      <hr class="divider">
+      <div class="config-section">
+        <div class="config-section-title">Plano Atual</div>
+        <div class="config-row">
+          <div>
+            <div class="config-label" id="cfg-plano-nome">Gratuito</div>
+            <div class="config-sub">Transacoes: <span id="cfg-tx-count">0</span> / 30 (limite free)</div>
+          </div>
+          <button class="btn btn-urgent btn-sm" onclick="openPremiumModal('config')">🚀 Upgrade</button>
+        </div>
+      </div>
+      <hr class="divider">
+      <div class="config-section">
+        <div class="config-section-title">Backup e Exportacao</div>
+        <div class="backup-actions">
+          <button class="btn btn-outline btn-sm" onclick="exportarCSV()">📥 CSV</button>
+          <button class="btn btn-outline btn-sm" onclick="exportarJSON()">💾 Backup JSON</button>
+          <label class="btn btn-outline btn-sm" style="cursor:pointer;">
+            📤 Importar <input type="file" accept=".json" onchange="importarJSON(event)" style="display:none;">
+          </label>
+        </div>
+      </div>
+      <hr class="divider">
+      <div class="config-section">
+        <div class="config-section-title">☁️ Cloud Sync</div>
+        <div class="config-row">
+          <div>
+            <div class="config-label">Sincronizar com a nuvem</div>
+            <div class="config-sub">Seus dados sempre seguros — Premium</div>
+          </div>
+          <button class="btn btn-gold btn-sm" onclick="openPremiumModal('cloud')">🔒 Ativar</button>
+        </div>
+      </div>
+      <hr class="divider">
+      <div class="config-section">
+        <div class="config-section-title" style="color:var(--danger);">Zona de Perigo</div>
+        <button class="btn btn-danger btn-sm" onclick="resetarDados()">🗑️ Resetar dados</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app-container -->
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════════
+// FINANCAS PRO v5 — CONVERSION ENGINE
+// Urgency · Freemium Locks · Daily Goal · Retention Loop
+// ═══════════════════════════════════════════════════════
+
+const APP_VERSION = '5.0.0';
+
+// ── PLANO: limites mais agressivos para conversao ──
+const PLANO = {
+  FREE_LIMIT_TRANSACOES: 30,        // Hard limit no free
+  FREE_SOFT_WARNING: 20,            // Aviso suave começa aqui
+  FREE_LIMIT_ORCAMENTOS: 3,
+  FREE_HISTORICO_MESES: 2,          // Apenas 2 meses no free (era 3)
+  PREMIUM_HISTORICO_MESES: 12,
+  FREE_EXPORTS_MES: 1,              // Apenas 1 export/mes no free
+  DAILY_GOAL_TXS: 1,                // Meta diaria: 1 transacao
+  PRICE_MONTHLY: 'R$ 9,90',
+  PRICE_ANNUAL_MES: 'R$ 4,90',
+  PRICE_ANNUAL_TOTAL: 'R$ 59,00',
+  WEBHOOK_URL: '',                  // TODO: configurar URL do webhook (Zapier/Make/backend proprio)
+  FIREBASE_CONFIG: {},              // TODO: colar configuracao do Firebase aqui
+};
+
+const CATEGORIAS_ICON = {
+  alimentacao:'🍔', moradia:'🏠', transporte:'🚗', saude:'💊', educacao:'📚',
+  lazer:'🎮', vestuario:'👕', salario:'💼', freelance:'💻', investimentos:'📈', outros:'📦', '':'📌'
+};
+const CATEGORIAS_LABEL = {
+  alimentacao:'Alimentacao', moradia:'Moradia', transporte:'Transporte', saude:'Saude',
+  educacao:'Educacao', lazer:'Lazer', vestuario:'Vestuario', salario:'Salario',
+  freelance:'Freelance', investimentos:'Investimentos', outros:'Outros'
+};
+
+// ════════════════════════════════════
+// MÓDULO 1: DADOS
+// ════════════════════════════════════
+let transacoes = [], config = {}, orcamentos = {};
+let mesAtual = '', filtroTipo = 'todos', pendingId = null;
+let txPageOffset = 0, txPageSize = 30;
+
+function salvarTransacoes() {
+  localStorage.setItem('fp_transacoes', JSON.stringify(transacoes));
+  saveToCloud();
+}
+function carregarTransacoes() {
+  try { const r = localStorage.getItem('fp_transacoes'); transacoes = r ? JSON.parse(r) : []; if (!Array.isArray(transacoes)) transacoes = []; }
+  catch(e) { transacoes = []; }
+}
+function _persistConfig() { localStorage.setItem('fp_config', JSON.stringify(config)); }
+function carregarConfig() {
+  try { const r = localStorage.getItem('fp_config'); config = r ? JSON.parse(r) : {}; }
+  catch(e) { config = {}; }
+  config.renda = config.renda || 0;
+  config.metaPoupanca = config.metaPoupanca || 20;
+  config.metaGastos = config.metaGastos || 80;
+  config.streak = config.streak || 0;
+  config.lastEntry = config.lastEntry || '';
+  config.score = config.score || 0;
+  config.achievements = config.achievements || [];
+  config.leads = config.leads || [];
+  config.exportCount = config.exportCount || 0;
+  config.exportMonth = config.exportMonth || '';
+  config.dailyTxs = config.dailyTxs || 0;
+  config.dailyDate = config.dailyDate || '';
+  config.urgencyExpiry = config.urgencyExpiry || '';
+  config.selectedPlan = config.selectedPlan || 'anual';
+  config.isPremiumUser = config.isPremiumUser || false;
+  if (config.onboarded === undefined) config.onboarded = false;
+}
+function salvarOrcamentos() { localStorage.setItem('fp_orcamentos', JSON.stringify(orcamentos)); }
+function carregarOrcamentos() {
+  try { const r = localStorage.getItem('fp_orcamentos'); orcamentos = r ? JSON.parse(r) : {}; if (typeof orcamentos !== 'object' || Array.isArray(orcamentos)) orcamentos = {}; }
+  catch(e) { orcamentos = {}; }
+}
+
+// ── FIREBASE STUBS ──
+// TODO: Substituir ao integrar Firebase SDK v9+
+// Passo 1: npm install firebase  ou  CDN <script type="module">
+// Passo 2: import { initializeApp } from 'firebase/app'
+// Passo 3: import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore'
+// Passo 4: import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth'
+// Passo 5: const app = initializeApp(PLANO.FIREBASE_CONFIG)
+function saveToCloud() {
+  if (!isPremium()) return;
+  // TODO: const db = getFirestore(); const uid = getAuth().currentUser?.uid;
+  // TODO: if (!uid) return;
+  // TODO: await setDoc(doc(db,'users',uid), { transacoes, config, orcamentos, updatedAt: new Date().toISOString() }, { merge:true });
+  console.debug('[CLOUD] saveToCloud stub');
+}
+function loadFromCloud() {
+  if (!isPremium()) return;
+  // TODO: const db = getFirestore(); const uid = getAuth().currentUser?.uid;
+  // TODO: const snap = await getDoc(doc(db,'users',uid));
+  // TODO: if (snap.exists()) { const d = snap.data(); transacoes = d.transacoes||[]; orcamentos = d.orcamentos||{}; renderTudo(); }
+  console.debug('[CLOUD] loadFromCloud stub');
+}
+function syncUserData() {
+  // TODO: getAuth().onAuthStateChanged(user => { if (user) { loadFromCloud(); } })
+  console.debug('[CLOUD] syncUserData stub');
+}
+
+// ════════════════════════════════════
+// MÓDULO 2: FREEMIUM + CONVERSÃO
+// ════════════════════════════════════
+function isPremium() { return config.isPremiumUser === true; }
+
+function checkFreemiumLimit() {
+  if (isPremium()) return true;
+  const n = transacoes.length;
+  const limit = PLANO.FREE_LIMIT_TRANSACOES;
+  if (n >= limit) {
+    openPremiumModal('hard-block', 'Voce atingiu o limite do plano gratuito', 'Continue registrando suas financas — faca upgrade para transacoes ilimitadas.');
+    return false;
+  }
+  return true;
+}
+
+function checkOrcamentoLimit() {
+  if (isPremium()) return true;
+  const n = Object.keys(orcamentos).length;
+  if (n >= PLANO.FREE_LIMIT_ORCAMENTOS) {
+    document.getElementById('orcamento-form-area').classList.add('hidden');
+    document.getElementById('orcamento-gate').classList.remove('hidden');
+    return false;
+  }
+  document.getElementById('orcamento-form-area').classList.remove('hidden');
+  document.getElementById('orcamento-gate').classList.add('hidden');
+  return true;
+}
+
+function updateLimitMeter() {
+  const n = transacoes.length;
+  const limit = PLANO.FREE_LIMIT_TRANSACOES;
+  const soft = PLANO.FREE_SOFT_WARNING;
+  const meter = document.getElementById('limit-meter');
+  if (!meter) return;
+
+  if (isPremium() || n < soft) { meter.classList.remove('show'); return; }
+  meter.classList.add('show');
+
+  const pct = Math.min(100, Math.round(n / limit * 100));
+  const fill = document.getElementById('limit-fill');
+  const count = document.getElementById('limit-meter-count');
+  const cta = document.getElementById('limit-cta-text');
+
+  if (fill) { fill.style.width = pct + '%'; fill.className = 'limit-fill ' + (pct >= 100 ? 'danger' : pct >= 75 ? 'warning' : ''); }
+  if (count) { count.textContent = n + '/' + limit; count.className = 'limit-meter-count ' + (pct >= 100 ? 'danger' : pct >= 75 ? 'warning' : ''); }
+
+  const restam = limit - n;
+  if (cta) {
+    if (restam <= 0) cta.textContent = 'Limite atingido — faca upgrade para continuar registrando';
+    else if (restam <= 5) cta.textContent = 'Atencao: apenas ' + restam + ' registro(s) restantes no plano gratuito';
+    else cta.textContent = 'Faltam ' + restam + ' registros para o limite gratuito';
+  }
+}
+
+// ── URGENCY: Countdown de oferta ──
+function initUrgencyBar() {
+  if (isPremium()) return;
+  const bar = document.getElementById('urgency-bar');
+  if (!bar) return;
+
+  // Criar/recuperar expiry de 24h
+  const now = Date.now();
+  if (!config.urgencyExpiry || now > parseInt(config.urgencyExpiry)) {
+    config.urgencyExpiry = String(now + 24 * 60 * 60 * 1000);
+    _persistConfig();
+  }
+
+  bar.classList.add('show');
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+}
+
+function updateCountdown() {
+  const el = document.getElementById('urgency-countdown');
+  if (!el) return;
+  const expiry = parseInt(config.urgencyExpiry || '0');
+  const remaining = Math.max(0, expiry - Date.now());
+  if (remaining <= 0) { el.textContent = 'Oferta encerrada'; return; }
+  const h = Math.floor(remaining / 3600000);
+  const m = Math.floor((remaining % 3600000) / 60000);
+  const s = Math.floor((remaining % 60000) / 1000);
+  el.textContent = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+}
+
+// ════════════════════════════════════
+// MÓDULO 3: MODAL PREMIUM (CONVERSAO)
+// ════════════════════════════════════
+let _modalSource = '';
+
+function openPremiumModal(source, headline, sub) {
+  _modalSource = source || 'generic';
+  const modal = document.getElementById('premium-modal');
+  if (!modal) return;
+
+  // Mensagens contextuais por fonte
+  const messages = {
+    'hard-block':    { h: 'Voce atingiu o limite de 30 transacoes', s: 'Seus dados estao seguros. Faca upgrade para continuar sem interrupcoes.', urgent: true },
+    'urgency-bar':   { h: 'Oferta de lancamento — so hoje', s: 'Garanta 75% de desconto no plano anual antes que o contador zere.', urgent: true },
+    'header-badge':  { h: 'Desbloqueie todo o potencial do FinancasPro', s: 'Mais de 847 pessoas ja fazem o controle completo das suas financas.', urgent: false },
+    'evolucao':      { h: 'Veja sua evolucao financeira dos ultimos 12 meses', s: 'Graficos, tendencias e exportacao PDF. Tudo para voce decidir melhor.', urgent: false },
+    'conquistas':    { h: 'Desbloqueie conquistas e ganhe recompensas reais', s: 'Habito financeiro premiado. Voce merece reconhecimento pelo esforco.', urgent: false },
+    'simulador':     { h: 'Tabela completa do seu investimento mes a mes', s: 'Veja exatamente como seu dinheiro vai crescer ao longo do tempo.', urgent: false },
+    'cloud':         { h: 'Nunca mais perca seus dados financeiros', s: 'Sincronize em todos seus dispositivos e tenha backup automatico na nuvem.', urgent: false },
+    'orcamento':     { h: 'Categorias de orcamento ilimitadas', s: 'Controle cada centavo sem restricoes. Plano gratuito limita em 3 categorias.', urgent: false },
+    'config':        { h: 'Voce merece um plano sem limites', s: 'Remova todas as restricoes e use o FinancasPro do jeito que ele foi feito.', urgent: false },
+  };
+
+  const m = messages[_modalSource] || { h: headline || 'Desbloqueie o FinancasPro Premium', s: sub || 'Sem limites. Sem interrupcoes. Com cloud sync.', urgent: false };
+
+  const hEl = document.getElementById('modal-headline');
+  const sEl = document.getElementById('modal-sub');
+  const hdrEl = document.getElementById('modal-header-text');
+
+  if (hEl) hEl.textContent = m.h;
+  if (sEl) sEl.textContent = m.s;
+  if (hdrEl) hdrEl.textContent = m.urgent ? 'OFERTA DE LANCAMENTO — APENAS HOJE' : 'FINANCASPRO PREMIUM — SEM LIMITES';
+
+  // Pre-preencher nome se ja temos
+  const nomeInput = document.getElementById('modal-nome');
+  if (nomeInput && config.nome) nomeInput.value = config.nome;
+
+  modal.classList.add('show');
+  document.getElementById('modal-email').focus();
+}
+
+function closePremiumModal() {
+  const modal = document.getElementById('premium-modal');
+  if (modal) modal.classList.remove('show');
+  // Mostrar toast de urgencia ao fechar sem converter
+  if (_modalSource !== 'config') {
+    setTimeout(() => {
+      const n = transacoes.length;
+      const limit = PLANO.FREE_LIMIT_TRANSACOES;
+      if (!isPremium() && n >= PLANO.FREE_SOFT_WARNING) {
+        showToast('⏰ Faltam ' + (limit - n) + ' registros no plano gratuito', 'urgent');
+      }
+    }, 500);
+  }
+}
+
+function selectPlan(plano) {
+  config.selectedPlan = plano;
+  document.getElementById('plan-monthly').classList.toggle('selected', plano === 'mensal');
+  document.getElementById('plan-annual').classList.toggle('selected', plano === 'anual');
+}
+
+const EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/;
+
+function submitPremiumLead() {
+  const nomeEl = document.getElementById('modal-nome');
+  const emailEl = document.getElementById('modal-email');
+  const errEl = document.getElementById('modal-email-error');
+  const nome = nomeEl ? nomeEl.value.trim() : '';
+  const email = emailEl ? emailEl.value.trim() : '';
+
+  if (errEl) errEl.style.display = 'none';
+  if (emailEl) emailEl.classList.remove('error');
+
+  if (!EMAIL_REGEX.test(email)) {
+    if (emailEl) emailEl.classList.add('error');
+    if (errEl) errEl.style.display = 'block';
+    return;
+  }
+
+  const lead = {
+    nome, email,
+    plano: config.selectedPlan || 'anual',
+    source: _modalSource,
+    capturedAt: new Date().toISOString(),
+    txCount: transacoes.length,
+    streak: config.streak || 0,
+    score: calcScore().total,
+    version: APP_VERSION,
+  };
+
+  config.leads.push(lead);
+  if (nome) config.nome = nome;
+  _persistConfig();
+
+  sendToWebhook(lead);
+  closePremiumModal();
+  lançarConfete(50);
+  showToast('🎉 Perfeito, ' + (nome || 'usuario') + '! Voce sera o primeiro a saber quando abrirmos.', 'achievement');
+
+  // Mostrar toast de proximo passo em 3s
+  setTimeout(() => showToast('📧 Verifique seu e-mail — enviaremos o link de acesso em breve.', 'premium'), 3500);
+}
+
+function sendToWebhook(leadData) {
+  // TODO: Configurar PLANO.WEBHOOK_URL para comecar a capturar leads em producao
+  // Opcoes de integracao:
+  //   1. Zapier: https://hooks.zapier.com/hooks/catch/XXXXXXX/XXXXXXX/
+  //   2. Make (Integromat): https://hook.eu1.make.com/XXXXXXX
+  //   3. ActiveCampaign API: https://SEUDOMINIO.api-us1.com/api/3/contacts
+  //   4. Firebase Cloud Function: https://REGION-PROJETO.cloudfunctions.net/captureLeadFunction
+  //   5. Seu backend proprio: POST /api/v1/leads
+  // Exemplo:
+  //   if (!PLANO.WEBHOOK_URL) { console.warn('[WEBHOOK] URL nao configurada — configure PLANO.WEBHOOK_URL'); return; }
+  //   fetch(PLANO.WEBHOOK_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(leadData) })
+  //     .then(r => console.log('[WEBHOOK] Lead enviado:', r.status))
+  //     .catch(e => console.warn('[WEBHOOK] Falha:', e));
+  console.log('[WEBHOOK] Lead capturado (stub):', leadData);
+}
+
+// ════════════════════════════════════
+// MÓDULO 4: RETENÇÃO — Daily Goal + Streak
+// ════════════════════════════════════
+function initDailyGoal() {
+  const hoje = new Date().toISOString().slice(0, 10);
+  if (config.dailyDate !== hoje) {
+    config.dailyTxs = 0;
+    config.dailyDate = hoje;
+    _persistConfig();
+  }
+  renderDailyGoal();
+  checkRetentionNotice();
+}
+
+function renderDailyGoal() {
+  const goal = PLANO.DAILY_GOAL_TXS;
+  const done = config.dailyTxs || 0;
+  const pct = Math.min(100, Math.round(done / goal * 100));
+  const completed = done >= goal;
+
+  const badge = document.getElementById('goal-badge');
+  const desc = document.getElementById('goal-desc');
+  const fill = document.getElementById('goal-fill');
+  const pts = document.getElementById('goal-pts');
+
+  if (badge) { badge.textContent = completed ? 'Concluido!' : 'Pendente'; badge.className = 'daily-goal-badge ' + (completed ? '' : 'pending'); }
+  if (desc) { desc.textContent = completed ? 'Meta diaria concluida! Sequencia: ' + (config.streak || 0) + ' dias 🔥 Continue amanha para manter o habito.' : 'Registre ' + goal + ' transacao hoje para manter sua sequencia ativa e ganhar +5 pts de saude.'; }
+  if (fill) fill.style.width = pct + '%';
+  if (pts) pts.textContent = done + ' / ' + goal + ' hoje';
+}
+
+function checkRetentionNotice() {
+  const notice = document.getElementById('retention-notice');
+  if (!notice) return;
+  const hoje = new Date().toISOString().slice(0, 10);
+  const ontem = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const anteontem = new Date(Date.now() - 172800000).toISOString().slice(0, 10);
+
+  // Verificar se nao registrou hoje ainda
+  const jáRegistrouHoje = config.dailyDate === hoje && (config.dailyTxs || 0) >= 1;
+  if (jáRegistrouHoje) { notice.classList.add('hidden'); return; }
+
+  const icon = document.getElementById('ret-icon');
+  const title = document.getElementById('ret-title');
+  const sub = document.getElementById('ret-sub');
+
+  if (config.lastEntry === ontem) {
+    // Estava ativo ontem, nao fez hoje — risco de perder streak
+    if (icon) icon.textContent = '🔥';
+    if (title) title.textContent = 'Sua sequencia esta em risco!';
+    if (sub) sub.textContent = 'Voce tem uma sequencia de ' + (config.streak || 0) + ' dias. Registre UMA transacao hoje para nao perder.';
+  } else if (config.lastEntry === anteontem) {
+    // Ficou 1 dia sem registrar
+    if (icon) icon.textContent = '😟';
+    if (title) title.textContent = 'Ha 1 dia sem registrar..';
+    if (sub) sub.textContent = 'Voce estava indo tao bem! Volte agora e mantenha o controle das suas financas.';
+  } else if (config.lastEntry && config.lastEntry < anteontem) {
+    // Ficou muito tempo ausente
+    if (icon) icon.textContent = '💡';
+    if (title) title.textContent = 'Sentimos sua falta, ' + (config.nome || 'usuario') + '!';
+    if (sub) sub.textContent = 'Quanto tempo sem registrar. Retome agora — cada dia de registro vale pontos de saude financeira.';
+  } else {
+    // Nunca registrou ou primeiro dia
+    if (icon) icon.textContent = '🎯';
+    if (title) title.textContent = 'Sua meta diaria esta aguardando!';
+    if (sub) sub.textContent = 'Registre sua primeira transacao hoje e comece sua jornada financeira.';
+  }
+
+  notice.classList.remove('hidden');
+}
+
+function showRetentionNotice(show) {
+  const notice = document.getElementById('retention-notice');
+  if (!notice) return;
+  if (show) notice.classList.remove('hidden');
+  else notice.classList.add('hidden');
+}
+
+function incrementDailyGoal() {
+  const hoje = new Date().toISOString().slice(0, 10);
+  if (config.dailyDate !== hoje) { config.dailyTxs = 0; config.dailyDate = hoje; }
+  config.dailyTxs = (config.dailyTxs || 0) + 1;
+  _persistConfig();
+
+  if (config.dailyTxs === PLANO.DAILY_GOAL_TXS) {
+    showToast('🎯 Meta diaria concluida! +5 pts de saude', 'success');
+    lançarConfete(20);
+  }
+  showRetentionNotice(false);
+  renderDailyGoal();
+}
+
+// ════════════════════════════════════
+// MÓDULO 5: CONQUISTAS (preview no free)
+// ════════════════════════════════════
+const ACHIEVEMENTS = [
+  { id: 'primeira_transacao', icon: '🌱', nome: 'Primeiros Passos', desc: 'Registrou a primeira transacao' },
+  { id: 'dez_transacoes', icon: '💪', nome: 'Em Ritmo', desc: '10 transacoes registradas' },
+  { id: 'streak_7', icon: '🔥', nome: 'Semana Perfeita', desc: '7 dias de sequencia' },
+  { id: 'streak_30', icon: '🏅', nome: 'Mes Impecavel', desc: '30 dias sem falhar' },
+  { id: 'poupanca_20', icon: '💰', nome: 'Poupador', desc: 'Taxa de poupanca acima de 20%' },
+  { id: 'poupanca_50', icon: '🤑', nome: 'Super Poupador', desc: 'Taxa de poupanca acima de 50%' },
+  { id: 'orcamento_configurado', icon: '📊', nome: 'Planejador', desc: 'Configurou o primeiro orcamento' },
+  { id: 'sem_estouro', icon: '🎯', nome: 'Dentro do Orcamento', desc: 'Sem estourar nenhuma categoria' },
+  { id: 'score_100', icon: '🌟', nome: 'Score Perfeito', desc: '100 pontos de saude financeira' },
+  { id: 'cinquenta_transacoes', icon: '🚀', nome: 'Mestre dos Registros', desc: '50 transacoes registradas' },
+  { id: 'saldo_positivo_3', icon: '📈', nome: 'Tendencia Positiva', desc: 'Saldo positivo por 3 meses' },
+  { id: 'cem_transacoes', icon: '💯', nome: 'Centenario', desc: '100 transacoes — habito formado' },
+];
+
+function renderConquistasPreview() {
+  const el = document.getElementById('achievements-preview');
+  if (!el) return;
+  const unlocked = config.achievements || [];
+  el.innerHTML = ACHIEVEMENTS.map(a => {
+    const u = unlocked.includes(a.id);
+    return '<div class="achievement-card ' + (u ? 'unlocked' : '') + '">' +
+      '<div class="achievement-icon">' + a.icon + '</div>' +
+      '<div class="achievement-name">' + a.nome + '</div>' +
+      '<div class="achievement-desc">' + (u ? a.desc : '???') + '</div>' +
+      '</div>';
+  }).join('');
+}
+
+function checkAchievements() {
+  const unlocked = config.achievements;
+  const n = transacoes.length;
+  const streak = config.streak || 0;
+  const m = doMes();
+  const taxa = m.receitas > 0 ? (m.saldo / m.receitas * 100) : 0;
+  let novos = 0;
+
+  const checks = [
+    { id: 'primeira_transacao', ok: n >= 1 },
+    { id: 'dez_transacoes', ok: n >= 10 },
+    { id: 'cinquenta_transacoes', ok: n >= 50 },
+    { id: 'cem_transacoes', ok: n >= 100 },
+    { id: 'streak_7', ok: streak >= 7 },
+    { id: 'streak_30', ok: streak >= 30 },
+    { id: 'poupanca_20', ok: taxa >= 20 },
+    { id: 'poupanca_50', ok: taxa >= 50 },
+    { id: 'orcamento_configurado', ok: Object.keys(orcamentos).length >= 1 },
+    { id: 'score_100', ok: calcScore().total >= 100 },
+    { id: 'sem_estouro', ok: (() => {
+        const cats = Object.keys(orcamentos);
+        if (cats.length === 0) return false;
+        return cats.every(c => (m.porCategoria[c] || 0) <= orcamentos[c]);
+      })() },
+    { id: 'saldo_positivo_3', ok: (() => {
+        const meses = getMesesDisponiveis();
+        if (meses.length < 3) return false;
+        return meses.slice(-3).every(mes => {
+          const txM = transacoes.filter(t => t.data && t.data.startsWith(mes));
+          const r = txM.filter(t => t.tipo === 'receita').reduce((s,t) => s+t.valor, 0);
+          const d = txM.filter(t => t.tipo === 'despesa').reduce((s,t) => s+t.valor, 0);
+          return (r - d) > 0;
+        });
+      })() },
+  ];
+
+  checks.forEach(c => {
+    if (c.ok && !unlocked.includes(c.id)) {
+      unlocked.push(c.id);
+      novos++;
+      const ach = ACHIEVEMENTS.find(a => a.id === c.id);
+      if (ach) setTimeout(() => showAchievementPopup(ach), novos * 700);
+    }
+  });
+
+  if (novos > 0) _persistConfig();
+}
+
+function showAchievementPopup(ach) {
+  document.getElementById('ach-popup-icon').textContent = ach.icon;
+  document.getElementById('ach-popup-name').textContent = ach.nome;
+  document.getElementById('ach-popup-desc').textContent = ach.desc;
+  document.getElementById('achievement-overlay').classList.add('show');
+  document.getElementById('achievement-popup').classList.add('show');
+  lançarConfete(35);
+  showToast(ach.icon + ' Conquista: ' + ach.nome, 'achievement');
+}
+function closeAchievementPopup() {
+  document.getElementById('achievement-overlay').classList.remove('show');
+  document.getElementById('achievement-popup').classList.remove('show');
+}
+
+// ════════════════════════════════════
+// MÓDULO 6: LÓGICA FINANCEIRA
+// ════════════════════════════════════
+let _doMesCache = null, _doMesCacheKey = '';
+
+function doMes(mes) {
+  const target = mes || mesAtual;
+  const key = target + '_' + transacoes.length;
+  if (_doMesCache && _doMesCacheKey === key && !mes) return _doMesCache;
+  const txMes = transacoes.filter(t => t.data && t.data.startsWith(target));
+  const receitas = txMes.filter(t => t.tipo === 'receita').reduce((s,t) => s+t.valor, 0);
+  const despesas = txMes.filter(t => t.tipo === 'despesa').reduce((s,t) => s+t.valor, 0);
+  const porCategoria = {};
+  txMes.filter(t => t.tipo === 'despesa').forEach(t => {
+    const c = t.categoria || 'outros';
+    porCategoria[c] = (porCategoria[c] || 0) + t.valor;
+  });
+  const result = { txMes, receitas, despesas, saldo: receitas - despesas, porCategoria };
+  if (!mes) { _doMesCache = result; _doMesCacheKey = key; }
+  return result;
+}
+
+function getMesesDisponiveis() {
+  const set = new Set(transacoes.filter(t => t.data).map(t => t.data.substring(0, 7)));
+  return Array.from(set).sort();
+}
+
+function calcScore() {
+  const m = doMes();
+  let poupancaPts = 0, orcPts = 0, engPts = 0;
+  if (m.receitas > 0) {
+    const taxa = (m.receitas - m.despesas) / m.receitas * 100;
+    const meta = config.metaPoupanca || 20;
+    poupancaPts = Math.max(0, Math.min(50, Math.round(taxa / meta * 50)));
+  }
+  const cats = Object.keys(orcamentos);
+  if (cats.length > 0) {
+    let dentro = cats.filter(c => (m.porCategoria[c] || 0) <= orcamentos[c]).length;
+    orcPts = Math.round(dentro / cats.length * 30);
+  }
+  engPts = Math.min(20, Math.round((config.streak || 0) / 30 * 20));
+  // Bonus de meta diaria
+  const hojeGoalDone = config.dailyDate === new Date().toISOString().slice(0,10) && (config.dailyTxs||0) >= PLANO.DAILY_GOAL_TXS;
+  if (hojeGoalDone) engPts = Math.min(20, engPts + 5);
+  return { total: poupancaPts + orcPts + engPts, poupancaPts, orcPts, engPts };
+}
+
+function gerarInsights() {
+  const m = doMes();
+  const { receitas, despesas, saldo } = m;
+  const insights = [];
+
+  if (receitas === 0 && despesas === 0) {
+    insights.push({ tipo: 'info', icon: '📊', texto: 'Registre suas primeiras transacoes para ver insights personalizados sobre seus habitos financeiros.' });
+    return insights;
+  }
+
+  // Poupanca
+  if (receitas > 0) {
+    const taxa = (saldo / receitas) * 100;
+    const meta = config.metaPoupanca || 20;
+    if (taxa >= meta) {
+      insights.push({ tipo: 'success', icon: '🎉', texto: '<strong>Parabens!</strong> Voce esta poupando <strong>' + taxa.toFixed(1) + '%</strong> da renda — acima da meta de ' + meta + '%. Continue!' });
+    } else if (taxa > 0) {
+      insights.push({ tipo: 'warning', icon: '📈', texto: 'Voce esta poupando <strong>' + taxa.toFixed(1) + '%</strong>. Para atingir sua meta de <strong>' + meta + '%</strong>, reduza as despesas em <strong>' + fmt(receitas * (meta - taxa) / 100) + '</strong> esse mes.' });
+    } else {
+      insights.push({ tipo: 'danger', icon: '⚠️', texto: '<strong>Saldo negativo.</strong> Suas despesas superam a renda em <strong>' + fmt(Math.abs(saldo)) + '</strong>. Veja qual categoria esta pesando mais e corte ja.' });
+    }
+  }
+
+  // Categoria mais cara
+  const cats = Object.entries(m.porCategoria).sort((a,b) => b[1]-a[1]);
+  if (cats.length > 0) {
+    const [topCat, topVal] = cats[0];
+    const pct = receitas > 0 ? (topVal / receitas * 100).toFixed(1) : '—';
+    insights.push({ tipo: 'info', icon: CATEGORIAS_ICON[topCat] || '📦', texto: 'Maior gasto: <strong>' + (CATEGORIAS_LABEL[topCat] || topCat) + '</strong> com <strong>' + fmt(topVal) + '</strong>' + (pct !== '—' ? ' (' + pct + '% da renda)' : '') + '.' });
+  }
+
+  // Orcamento estourado
+  const estouradas = Object.keys(orcamentos).filter(c => (m.porCategoria[c] || 0) > orcamentos[c]);
+  if (estouradas.length > 0) {
+    insights.push({ tipo: 'danger', icon: '🚨', texto: '<strong>' + estouradas.length + ' categoria(s) estouraram</strong> o limite: ' + estouradas.map(c => CATEGORIAS_LABEL[c] || c).join(', ') + '. Hora de revisar os habitos.' });
+  } else if (Object.keys(orcamentos).length > 0) {
+    insights.push({ tipo: 'success', icon: '🎯', texto: 'Voce esta <strong>dentro do orcamento</strong> em todas as categorias configuradas. Excelente disciplina!' });
+  }
+
+  // Streak
+  const s = config.streak || 0;
+  if (s >= 30) insights.push({ tipo: 'success', icon: '🔥', texto: '<strong>' + s + ' dias de sequencia!</strong> Habito financeiro totalmente consolidado. Voce e excepcional.' });
+  else if (s >= 7) insights.push({ tipo: 'success', icon: '🔥', texto: 'Sequencia de <strong>' + s + ' dias</strong>. Faltam <strong>' + (30 - s) + '</strong> para a conquista "Mes Impecavel"!' });
+
+  // Comparativo mes anterior
+  const meses = getMesesDisponiveis();
+  const idx = meses.indexOf(mesAtual);
+  if (idx > 0) {
+    const mAnt = doMes(meses[idx-1]);
+    if (mAnt.despesas > 0 && despesas > 0) {
+      const diff = despesas - mAnt.despesas;
+      const pct = Math.abs(diff / mAnt.despesas * 100).toFixed(1);
+      if (diff > 50) insights.push({ tipo: 'warning', icon: '📊', texto: 'Gastos subiram <strong>' + pct + '%</strong> vs mes anterior (+' + fmt(diff) + '). Identifique o que mudou.' });
+      else if (diff < -50) insights.push({ tipo: 'success', icon: '📉', texto: 'Gastos caíram <strong>' + pct + '%</strong> vs mes anterior. Voce economizou <strong>' + fmt(Math.abs(diff)) + '</strong>.' });
+    }
+  }
+
+  return insights.slice(0, 5);
+}
+
+// ════════════════════════════════════
+// MÓDULO 7: UI / RENDERIZACAO
+// ════════════════════════════════════
+function fmt(v) {
+  if (v === undefined || v === null || isNaN(v)) return 'R$ 0,00';
+  return 'R$ ' + Math.abs(v).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+function fmtDate(iso) {
+  if (!iso) return '';
+  const p = iso.split('-');
+  return p.length < 3 ? iso : p[2] + '/' + p[1] + '/' + p[0];
+}
+function getMesLabel(iso) {
+  if (!iso) return '';
+  const [ano, mes] = iso.split('-');
+  const nomes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  return (nomes[parseInt(mes,10)-1] || mes) + ' ' + ano;
+}
+function escHtml(str) {
+  const d = document.createElement('div');
+  d.appendChild(document.createTextNode(str || ''));
+  return d.innerHTML;
+}
+
+function renderTudo() {
+  _doMesCache = null;
+  const m = doMes();
+  renderHeader(m);
+  renderResumo(m);
+  renderScore(m);
+  renderInsights(m);
+  renderTransacoes();
+  renderOrcamento(m);
+  renderRetrospectiva();
+  renderConquistasPreview();
+  renderConfig();
+  updateLimitMeter();
+  checkAchievements();
+  renderDailyGoal();
+}
+
+function renderHeader(m) {
+  document.getElementById('mes-label').textContent = getMesLabel(mesAtual);
+  document.getElementById('hdr-receitas').textContent = fmt(m.receitas);
+  document.getElementById('hdr-despesas').textContent = fmt(m.despesas);
+  const sel = document.getElementById('hdr-saldo');
+  sel.textContent = fmt(m.saldo);
+  sel.style.color = m.saldo >= 0 ? 'rgba(255,255,255,1)' : '#fca5a5';
+  document.getElementById('hdr-streak').textContent = config.streak || 0;
+  document.getElementById('hdr-score').textContent = calcScore().total;
+  const badge = document.getElementById('plan-badge');
+  if (badge) {
+    badge.textContent = isPremium() ? '⭐ Premium' : '⭐ Gratuito — Upgrade';
+    badge.className = 'plan-badge ' + (isPremium() ? 'premium' : 'free');
+  }
+}
+
+function renderResumo(m) {
+  document.getElementById('sum-receita').textContent = fmt(m.receitas);
+  document.getElementById('sum-receita-qtd').textContent = m.txMes.filter(t => t.tipo==='receita').length + ' transacoes';
+  document.getElementById('sum-despesa').textContent = fmt(m.despesas);
+  document.getElementById('sum-despesa-qtd').textContent = new Set(m.txMes.filter(t => t.tipo==='despesa').map(t => t.categoria)).size + ' categoria(s)';
+  document.getElementById('sum-saldo').textContent = fmt(m.saldo);
+  document.getElementById('sum-saldo-card').className = 'summary-card saldo ' + (m.saldo >= 0 ? 'positivo' : 'negativo');
+  document.getElementById('sum-saldo-sub').textContent = m.saldo >= 0 ? 'disponivel' : 'no negativo';
+  const taxa = m.receitas > 0 ? Math.max(0, m.saldo / m.receitas * 100) : 0;
+  document.getElementById('taxa-poupanca-val').textContent = taxa.toFixed(1) + '%';
+  const bar = document.getElementById('taxa-poupanca-bar');
+  bar.style.width = Math.min(100, taxa) + '%';
+  bar.style.background = taxa >= (config.metaPoupanca||20) ? 'var(--success)' : taxa > 0 ? 'var(--warning)' : 'var(--danger)';
+  document.getElementById('meta-poupanca-display').textContent = (config.metaPoupanca||20) + '%';
+}
+
+function renderScore(m) {
+  const s = calcScore();
+  document.getElementById('score-total').textContent = s.total + ' pts';
+  let g = '';
+  if (s.total>=90) g = '🌟 Excelente — Saude Financeira Otima!';
+  else if (s.total>=70) g = '💪 Muito Bom — Continue Assim!';
+  else if (s.total>=50) g = '📈 Bom — Pode Melhorar Ainda Mais';
+  else if (s.total>=30) g = '⚠️ Regular — Revise seus Habitos';
+  else g = '🔴 Critico — Precisa de Atencao Urgente';
+  document.getElementById('score-grade').textContent = g;
+  document.getElementById('score-breakdown').innerHTML = [
+    { label: '💰 Poupanca', pts: s.poupancaPts, max: 50 },
+    { label: '📊 Orcamento', pts: s.orcPts, max: 30 },
+    { label: '🔥 Sequencia', pts: s.engPts, max: 20 },
+  ].map(r => '<div class="score-row"><span class="score-row-label">'+r.label+'</span><div class="score-row-bar"><div class="score-row-fill" style="width:'+Math.round(r.pts/r.max*100)+'%"></div></div><span class="score-row-pts">'+r.pts+'/'+r.max+'</span></div>').join('');
+}
+
+function renderInsights(m) {
+  const insights = gerarInsights();
+  const el = document.getElementById('insights-list');
+  if (!el) return;
+  el.innerHTML = insights.map(i => '<div class="insight-item ' + i.tipo + '"><span class="insight-icon">' + i.icon + '</span><span class="insight-text">' + i.texto + '</span></div>').join('') || '<div class="insight-item info"><span class="insight-icon">📊</span><span class="insight-text">Sem dados suficientes para insights.</span></div>';
+}
+
+function renderTransacoes() {
+  const search = (document.getElementById('tx-search') ? document.getElementById('tx-search').value.toLowerCase() : '');
+  let filtered = transacoes.filter(t => {
+    if (filtroTipo !== 'todos' && t.tipo !== filtroTipo) return false;
+    if (search) { const h = (t.descricao + ' ' + (t.categoria||'') + ' ' + (t.tag||'')).toLowerCase(); if (!h.includes(search)) return false; }
+    return true;
+  }).sort((a,b) => (b.data||'').localeCompare(a.data||'') || (b.id||0)-(a.id||0));
+
+  const visible = filtered.slice(0, txPageOffset + txPageSize);
+  const el = document.getElementById('tx-list');
+  if (!el) return;
+
+  if (filtered.length === 0) {
+    el.innerHTML = '<div class="tx-empty"><div class="empty-icon">📋</div><p>Nenhuma transacao encontrada.</p></div>';
+    document.getElementById('tx-pagination').style.display = 'none';
+    return;
+  }
+
+  el.innerHTML = visible.map(t => {
+    const icon = CATEGORIAS_ICON[t.categoria] || (t.tipo==='receita' ? '💰' : '💸');
+    return '<div class="tx-item" id="tx-'+t.id+'"><div class="tx-icon '+t.tipo+'">'+icon+'</div><div class="tx-details"><div class="tx-desc">'+escHtml(t.descricao||'Sem descricao')+'</div><div class="tx-meta"><span>'+fmtDate(t.data)+'</span>'+(t.categoria?'<span>'+(CATEGORIAS_LABEL[t.categoria]||t.categoria)+'</span>':'')+(t.tag?'<span class="tx-tag">'+escHtml(t.tag)+'</span>':'')+'</div></div><div class="tx-amount '+t.tipo+'">'+(t.tipo==='receita'?'+':'-')+fmt(t.valor)+'</div><div class="tx-actions"><button class="btn btn-sm btn-outline" onclick="editarTx('+t.id+')">✏️</button><button class="btn btn-sm btn-danger" onclick="removerTx('+t.id+')">🗑️</button></div></div>';
+  }).join('');
+
+  const pg = document.getElementById('tx-pagination');
+  if (filtered.length > visible.length) { pg.style.display = 'block'; document.getElementById('tx-load-more').textContent = 'Ver mais (' + (filtered.length - visible.length) + ')'; }
+  else pg.style.display = 'none';
+}
+function loadMoreTx() { txPageOffset += txPageSize; renderTransacoes(); }
+
+function renderOrcamento(m) {
+  const label = document.getElementById('orcamento-mes-label');
+  if (label) label.textContent = getMesLabel(mesAtual);
+  const list = document.getElementById('orcamento-list');
+  if (!list) return;
+  const cats = Object.keys(orcamentos);
+  const badge = document.getElementById('orcamento-count-badge');
+  if (badge) badge.textContent = !isPremium() ? cats.length + '/' + PLANO.FREE_LIMIT_ORCAMENTOS + ' (plano gratuito)' : cats.length + ' categorias';
+
+  list.innerHTML = cats.length === 0 ? '<div class="tx-empty" style="padding:20px;"><div>📊</div><p>Nenhum limite configurado ainda.</p></div>' :
+    cats.map(cat => {
+      const lim = orcamentos[cat], gasto = m.porCategoria[cat] || 0;
+      const pct = Math.min(100, Math.round(gasto/lim*100));
+      return '<div class="budget-row"><div class="budget-header"><span class="budget-label">'+(CATEGORIAS_ICON[cat]||'📦')+' '+(CATEGORIAS_LABEL[cat]||cat)+'</span><div style="display:flex;align-items:center;gap:8px;"><span class="budget-values">'+fmt(gasto)+' / '+fmt(lim)+' ('+pct+'%)</span><button class="btn btn-sm btn-danger" onclick="removerOrcamento(\''+cat+'\')" style="padding:3px 8px;">✕</button></div></div><div class="budget-bar"><div class="budget-fill '+(pct>=100?'danger':pct>=80?'warning':'')+'" style="width:'+pct+'%"></div></div></div>';
+    }).join('');
+  checkOrcamentoLimit();
+}
+
+function renderRetrospectiva() {
+  const el = document.getElementById('retro-list');
+  if (!el) return;
+  const meses = getMesesDisponiveis();
+  const limit = isPremium() ? PLANO.PREMIUM_HISTORICO_MESES : PLANO.FREE_HISTORICO_MESES;
+  const todos = meses.slice().reverse();
+  const livres = todos.slice(0, limit);
+  const bloqueados = todos.slice(limit);
+
+  let html = livres.map(mes => {
+    const m = doMes(mes);
+    const cls = m.saldo >= 0 ? 'positivo' : 'negativo';
+    return '<div class="retro-month-card" onclick="verDetalheMes(\''+mes+'\')"><h4>'+getMesLabel(mes)+'</h4><div>Receitas: <strong>'+fmt(m.receitas)+'</strong></div><div>Despesas: <strong>'+fmt(m.despesas)+'</strong></div><div class="retro-saldo '+cls+'">'+(m.saldo>=0?'+':'')+fmt(m.saldo)+'</div></div>';
+  }).join('');
+
+  if (bloqueados.length > 0) {
+    html += '<div class="retro-locked" style="grid-column:1/-1;">🔒 Mais ' + bloqueados.length + ' mes(es) no Premium <button class="btn btn-gold btn-sm" onclick="openPremiumModal(\'historico\')" style="margin-left:auto;">Desbloquear</button></div>';
+  }
+
+  el.innerHTML = html || '<p style="text-align:center;color:var(--text-muted);padding:20px;">Nenhum dado disponivel ainda.</p>';
+}
+
+function verDetalheMes(mes) {
+  const m = doMes(mes);
+  const detalhe = document.getElementById('retro-detalhe');
+  document.getElementById('retro-detalhe-titulo').textContent = '📅 ' + getMesLabel(mes);
+  const cats = Object.entries(m.porCategoria).sort((a,b) => b[1]-a[1]);
+  document.getElementById('retro-detalhe-content').innerHTML =
+    '<div class="summary-grid" style="margin-bottom:16px;"><div class="summary-card receita"><div class="summary-label">Receitas</div><div class="summary-value">'+fmt(m.receitas)+'</div></div><div class="summary-card despesa"><div class="summary-label">Despesas</div><div class="summary-value">'+fmt(m.despesas)+'</div></div><div class="summary-card '+(m.saldo>=0?'positivo':'negativo')+'"><div class="summary-label">Saldo</div><div class="summary-value">'+fmt(m.saldo)+'</div></div></div>' +
+    (cats.length > 0 ? '<div style="font-weight:700;margin-bottom:8px;font-size:.85rem;color:var(--text-secondary);">GASTOS POR CATEGORIA</div>' + cats.map(([c,v]) => '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border-light);"><span>'+(CATEGORIAS_ICON[c]||'📦')+' '+(CATEGORIAS_LABEL[c]||c)+'</span><strong>'+fmt(v)+'</strong></div>').join('') : '<p style="color:var(--text-muted);">Nenhum gasto neste mes.</p>');
+  detalhe.classList.remove('hidden');
+  detalhe.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function renderConfig() {
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+  set('cfg-nome', config.nome);
+  set('cfg-renda', config.renda);
+  set('cfg-meta-poupanca', config.metaPoupanca || 20);
+  set('cfg-meta-gastos', config.metaGastos || 80);
+  const plano = document.getElementById('cfg-plano-nome');
+  if (plano) plano.textContent = isPremium() ? 'Premium' : 'Gratuito';
+  const txc = document.getElementById('cfg-tx-count');
+  if (txc) txc.textContent = transacoes.length;
+}
+
+// ════════════════════════════════════
+// MÓDULO 8: EVENTOS
+// ════════════════════════════════════
+let _tipoAtual = 'receita';
+
+function setTipo(tipo) {
+  _tipoAtual = tipo;
+  document.getElementById('btn-receita').className = 'tipo-btn ' + (tipo==='receita'?'active-receita':'');
+  document.getElementById('btn-despesa').className = 'tipo-btn ' + (tipo==='despesa'?'active-despesa':'');
+}
+
+function adicionarTransacao() {
+  const descEl = document.getElementById('tx-desc');
+  const valorEl = document.getElementById('tx-valor');
+  const dataEl = document.getElementById('tx-data');
+
+  const desc = descEl.value.trim();
+  const valor = parseFloat(valorEl.value);
+  const data = dataEl.value;
+
+  [descEl, valorEl, dataEl].forEach(e => e.classList.remove('error'));
+  let ok = true;
+  if (!desc) { descEl.classList.add('error'); ok = false; }
+  if (!valor || valor <= 0 || isNaN(valor)) { valorEl.classList.add('error'); ok = false; }
+  if (!data) { dataEl.classList.add('error'); ok = false; }
+  if (!ok) { showToast('Preencha todos os campos obrigatorios', 'danger'); return; }
+
+  if (!checkFreemiumLimit()) return;
+
+  if (pendingId !== null) {
+    const idx = transacoes.findIndex(t => t.id === pendingId);
+    if (idx !== -1) {
+      transacoes[idx] = { ...transacoes[idx], descricao: desc, valor, data,
+        categoria: document.getElementById('tx-categoria').value,
+        recorrencia: document.getElementById('tx-recorrencia').value,
+        tag: document.getElementById('tx-tag').value.trim(),
+        tipo: _tipoAtual, updatedAt: new Date().toISOString() };
+    }
+    pendingId = null;
+    document.getElementById('btn-salvar-txt').textContent = '+ Adicionar';
+    showToast('Transacao atualizada!', 'success');
+  } else {
+    const nova = {
+      id: Date.now(), tipo: _tipoAtual, descricao: desc, valor, data,
+      categoria: document.getElementById('tx-categoria').value,
+      recorrencia: document.getElementById('tx-recorrencia').value,
+      tag: document.getElementById('tx-tag').value.trim(),
+      createdAt: new Date().toISOString()
+    };
+    transacoes.push(nova);
+    atualizarStreak();
+    incrementDailyGoal();
+    showToast((nova.tipo==='receita'?'💚 +':' 💸 -') + fmt(valor) + ' registrado!', 'success');
+
+    // Urgencia pos-limite suave
+    const n = transacoes.length;
+    const lim = PLANO.FREE_LIMIT_TRANSACOES;
+    if (!isPremium() && n === PLANO.FREE_SOFT_WARNING) {
+      setTimeout(() => showToast('Atencao: voce usou ' + n + ' de ' + lim + ' registros gratuitos. Faca upgrade!', 'urgent'), 1500);
+    }
+    if (!isPremium() && n === lim - 5) {
+      setTimeout(() => { showToast('Faltam apenas 5 registros para o limite!', 'urgent'); openPremiumModal('pre-limit'); }, 2000);
+    }
+  }
+
+  salvarTransacoes();
+  limparForm();
+  txPageOffset = 0;
+  renderTudo();
+}
+
+function editarTx(id) {
+  const tx = transacoes.find(t => t.id === id);
+  if (!tx) return;
+  pendingId = id;
+  _tipoAtual = tx.tipo;
+  setTipo(tx.tipo);
+  document.getElementById('tx-desc').value = tx.descricao || '';
+  document.getElementById('tx-valor').value = tx.valor || '';
+  document.getElementById('tx-data').value = tx.data || '';
+  document.getElementById('tx-categoria').value = tx.categoria || '';
+  document.getElementById('tx-recorrencia').value = tx.recorrencia || 'unica';
+  document.getElementById('tx-tag').value = tx.tag || '';
+  document.getElementById('btn-salvar-txt').textContent = '💾 Salvar edicao';
+  switchTab(null, 'dashboard');
+  document.getElementById('tx-desc').focus();
+  showToast('Editando transacao — salve ao terminar', 'warning');
+}
+
+function removerTx(id) {
+  if (!confirm('Remover esta transacao?')) return;
+  transacoes = transacoes.filter(t => t.id !== id);
+  salvarTransacoes();
+  txPageOffset = 0;
+  renderTudo();
+  showToast('Transacao removida', 'warning');
+}
+
+function limparForm() {
+  ['tx-desc','tx-valor','tx-tag'].forEach(id => { const el = document.getElementById(id); if (el) { el.value = ''; el.classList.remove('error'); } });
+  const c = document.getElementById('tx-categoria'); if (c) c.value = '';
+  const r = document.getElementById('tx-recorrencia'); if (r) r.value = 'unica';
+  pendingId = null;
+  document.getElementById('btn-salvar-txt').textContent = '+ Adicionar';
+}
+
+function switchTab(ev, tab) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+  const panel = document.getElementById('tab-' + tab);
+  if (panel) panel.classList.add('active');
+  const btn = document.querySelector('[data-tab="' + tab + '"]');
+  if (btn) btn.classList.add('active');
+  txPageOffset = 0;
+  if (tab === 'transacoes') renderTransacoes();
+}
+
+function switchTabLocked(ev, tab) {
+  // Tabs Premium: mostrar a tela de lock mas ir para a aba
+  switchTab(ev, tab);
+  // Opcional: abrir modal de upgrade imediatamente
+  // openPremiumModal(tab);
+}
+
+function setFiltro(tipo) {
+  filtroTipo = tipo;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  const idx = ['todos','receita','despesa'].indexOf(tipo);
+  const btns = document.querySelectorAll('.filter-btn');
+  if (btns[idx]) btns[idx].classList.add('active');
+  txPageOffset = 0;
+  renderTransacoes();
+}
+
+function mudarMes(delta) {
+  const [ano, mes] = mesAtual.split('-').map(Number);
+  const d = new Date(ano, mes - 1 + delta, 1);
+  mesAtual = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  renderTudo();
+}
+
+function atualizarStreak() {
+  const hoje = new Date().toISOString().slice(0, 10);
+  const ontem = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  if (config.lastEntry === hoje) return;
+  if (config.lastEntry === ontem) { config.streak = (config.streak || 0) + 1; }
+  else { config.streak = 1; }
+  config.lastEntry = hoje;
+  _persistConfig();
+
+  if (config.streak === 3) showToast('🔥 3 dias! Habito comeando a se formar!', 'success');
+  if (config.streak === 7) { showToast('🔥 7 dias de sequencia! Voce e dedicado!', 'achievement'); lançarConfete(30); }
+  if (config.streak === 14) showToast('🔥 2 semanas de sequencia! Impressionante!', 'achievement');
+  if (config.streak === 30) { showToast('🏅 30 dias! Habito consolidado! Parabens!', 'achievement'); lançarConfete(60); }
+}
+
+function salvarOrcamento() {
+  if (!checkOrcamentoLimit()) return;
+  const cat = document.getElementById('orc-categoria').value;
+  const lim = parseFloat(document.getElementById('orc-limite').value);
+  if (!cat) { showToast('Selecione uma categoria', 'danger'); return; }
+  if (!lim || lim <= 0) { showToast('Insira um limite valido', 'danger'); return; }
+  orcamentos[cat] = lim;
+  salvarOrcamentos();
+  document.getElementById('orc-categoria').value = '';
+  document.getElementById('orc-limite').value = '';
+  showToast('Orcamento salvo para ' + (CATEGORIAS_LABEL[cat] || cat), 'success');
+  renderTudo();
+  checkAchievements();
+}
+
+function removerOrcamento(cat) {
+  delete orcamentos[cat];
+  salvarOrcamentos();
+  renderTudo();
+  showToast('Orcamento removido', 'warning');
+}
+
+function salvarCfg() {
+  config.nome = document.getElementById('cfg-nome').value.trim() || config.nome;
+  config.renda = parseFloat(document.getElementById('cfg-renda').value) || 0;
+  config.metaPoupanca = parseFloat(document.getElementById('cfg-meta-poupanca').value) || 20;
+  config.metaGastos = parseFloat(document.getElementById('cfg-meta-gastos').value) || 80;
+  _persistConfig();
+  showToast('Configuracoes salvas!', 'success');
+  renderTudo();
+}
+
+function finalizarOnboarding() {
+  config.nome = document.getElementById('ob-nome').value.trim() || 'Usuario';
+  config.renda = parseFloat(document.getElementById('ob-renda').value) || 0;
+  config.metaPoupanca = parseFloat(document.getElementById('ob-meta-poupanca').value) || 20;
+  config.metaGastos = parseFloat(document.getElementById('ob-meta-gastos').value) || 80;
+  config.onboarded = true;
+  _persistConfig();
+  document.getElementById('onboarding-modal').classList.remove('show');
+  showToast('Bem-vindo ao FinancasPro, ' + config.nome + '!', 'success');
+  // Abrir modal premium 10s depois do onboarding (lead quente)
+  setTimeout(() => openPremiumModal('pos-onboarding'), 10000);
+  renderTudo();
+}
+
+// ── Export / Import ──
+function exportarCSV() {
+  if (!isPremium()) {
+    const mes = new Date().toISOString().slice(0, 7);
+    if (config.exportMonth !== mes) { config.exportCount = 0; config.exportMonth = mes; }
+    if (config.exportCount >= PLANO.FREE_EXPORTS_MES) {
+      openPremiumModal('export', 'Limite de exportacao atingido', 'Voce usou ' + PLANO.FREE_EXPORTS_MES + ' exportacao este mes. Upgrade para ilimitadas.');
+      return;
+    }
+    config.exportCount = (config.exportCount || 0) + 1;
+    _persistConfig();
+  }
+  const header = 'Data,Tipo,Descricao,Valor,Categoria,Tag\n';
+  const rows = transacoes.map(t => [t.data, t.tipo, '"' + (t.descricao||'').replace(/"/g,'""') + '"', t.valor.toFixed(2), t.categoria||'', t.tag||''].join(',')).join('\n');
+  const blob = new Blob(['\uFEFF' + header + rows], { type:'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'financas_pro_' + mesAtual + '.csv'; a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV exportado!', 'success');
+}
+
+function exportarJSON() {
+  const data = { versao: APP_VERSION, exportadoEm: new Date().toISOString(), transacoes, orcamentos };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'financas_backup_' + new Date().toISOString().slice(0,10) + '.json'; a.click();
+  URL.revokeObjectURL(url);
+  showToast('Backup JSON exportado!', 'success');
+}
+
+function importarJSON(ev) {
+  const file = ev.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.transacoes || !Array.isArray(data.transacoes)) { showToast('Arquivo invalido', 'danger'); return; }
+      if (!confirm('Importar ' + data.transacoes.length + ' transacoes? Duplicatas serao ignoradas.')) return;
+      const ids = new Set(transacoes.map(t => t.id));
+      const novas = data.transacoes.filter(t => !ids.has(t.id));
+      transacoes = [...transacoes, ...novas];
+      if (data.orcamentos) orcamentos = { ...orcamentos, ...data.orcamentos };
+      salvarTransacoes(); salvarOrcamentos();
+      renderTudo();
+      showToast(novas.length + ' transacoes importadas!', 'success');
+    } catch(err) { showToast('Erro ao importar arquivo', 'danger'); }
+  };
+  reader.readAsText(file);
+}
+
+function resetarDados() {
+  if (!confirm('Apagar TODOS os dados? Esta acao nao pode ser desfeita.')) return;
+  if (!confirm('Confirmar: apagar todos os dados?')) return;
+  ['fp_transacoes','fp_config','fp_orcamentos'].forEach(k => localStorage.removeItem(k));
+  location.reload();
+}
+
+// ── Simulador ──
+function calcularSimulacao() {
+  const capital = parseFloat(document.getElementById('sim-capital').value) || 0;
+  const aporte = parseFloat(document.getElementById('sim-aporte').value) || 0;
+  const taxa = parseFloat(document.getElementById('sim-taxa').value) / 100 || 0;
+  const meses = parseInt(document.getElementById('sim-meses').value) || 12;
+  if (meses < 1 || meses > 360) { showToast('Periodo entre 1 e 360 meses', 'danger'); return; }
+
+  let total = capital, investido = capital;
+  const tabela = [];
+  for (let i = 1; i <= meses; i++) {
+    total = total * (1 + taxa) + aporte;
+    investido += aporte;
+    if (i % Math.max(1, Math.floor(meses/12)) === 0 || i === meses) {
+      tabela.push({ mes: i, total, investido, rendimento: total - investido });
+    }
+  }
+
+  document.getElementById('sim-total').textContent = fmt(total);
+  document.getElementById('sim-rendimento').textContent = fmt(total - investido);
+  document.getElementById('sim-investido').textContent = fmt(investido);
+  document.getElementById('sim-retorno').textContent = investido > 0 ? ((total-investido)/investido*100).toFixed(1) + '%' : '0%';
+  document.getElementById('sim-result').style.display = 'block';
+
+  // Tabela detalhada — apenas Premium
+  const tabelaWrap = document.getElementById('sim-tabela-wrap');
+  const premiumCta = document.getElementById('sim-premium-cta');
+  if (!isPremium()) {
+    if (tabelaWrap) tabelaWrap.innerHTML = '';
+    if (premiumCta) premiumCta.style.display = 'block';
+  } else {
+    if (premiumCta) premiumCta.style.display = 'none';
+    if (tabelaWrap) {
+      tabelaWrap.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:.8rem;"><thead><tr style="background:var(--primary-light);color:var(--primary);"><th style="padding:8px;text-align:left;">Mes</th><th style="padding:8px;text-align:right;">Total</th><th style="padding:8px;text-align:right;">Investido</th><th style="padding:8px;text-align:right;">Rendimento</th></tr></thead><tbody>' +
+        tabela.map((r,i) => '<tr style="background:'+(i%2===0?'var(--surface2)':'var(--surface))+';"><td style="padding:6px 8px;">'+r.mes+'</td><td style="padding:6px 8px;text-align:right;font-weight:600;">'+fmt(r.total)+'</td><td style="padding:6px 8px;text-align:right;">'+fmt(r.investido)+'</td><td style="padding:6px 8px;text-align:right;color:var(--success);">+'+fmt(r.rendimento)+'</td></tr>').join('') + '</tbody></table>';
+    }
+  }
+}
+
+// ── Toast ──
+function showToast(msg, tipo) {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+  const icons = { success:'✅', danger:'❌', warning:'⚠️', achievement:'🏆', premium:'⭐', urgent:'🚨', info:'ℹ️' };
+  const t = document.createElement('div');
+  t.className = 'toast ' + (tipo || 'info');
+  t.innerHTML = '<span class="toast-icon">' + (icons[tipo] || 'ℹ️') + '</span><span>' + msg + '</span>';
+  container.appendChild(t);
+  setTimeout(() => { t.classList.add('removing'); setTimeout(() => t.remove(), 350); }, 3800);
+}
+
+// ── Confete ──
+function lançarConfete(qtd) {
+  const colors = ['#6c63ff','#10b981','#f59e0b','#ef4444','#3b82f6','#ec4899'];
+  for (let i = 0; i < qtd; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.cssText = 'left:'+(10+Math.random()*80)+'vw;top:-20px;background:'+colors[Math.floor(Math.random()*colors.length)]+';width:'+(6+Math.random()*8)+'px;height:'+(6+Math.random()*8)+'px;animation-duration:'+(1.5+Math.random()*2)+'s;animation-delay:'+(Math.random()*0.5)+'s;';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }
+}
+
+// ════════════════════════════════════
+// INIT
+// ════════════════════════════════════
+function init() {
+  carregarConfig();
+  carregarTransacoes();
+  carregarOrcamentos();
+
+  const hoje = new Date();
+  mesAtual = hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0');
+  const dataEl = document.getElementById('tx-data');
+  if (dataEl) dataEl.value = hoje.toISOString().slice(0, 10);
+
+  setTipo('receita');
+  initDailyGoal();
+  renderTudo();
+  initUrgencyBar();
+  syncUserData();
+
+  if (!config.onboarded) {
+    setTimeout(() => document.getElementById('onboarding-modal').classList.add('show'), 700);
+  } else {
+    // Lead modal auto: 60s se ainda nao capturou email
+    if (!config.leads || config.leads.length === 0) {
+      setTimeout(() => openPremiumModal('auto-60s'), 60000);
+    }
+    checkRetentionNotice();
+  }
+
+  console.log('[FinancasPro v' + APP_VERSION + '] Iniciado. ' + transacoes.length + ' transacoes. Free limit: ' + PLANO.FREE_LIMIT_TRANSACOES);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
