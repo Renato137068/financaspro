@@ -1569,7 +1569,26 @@ function syncUserData() {
 // ════════════════════════════════════
 // MÓDULO 2: FREEMIUM + CONVERSÃO
 // ════════════════════════════════════
-function isPremium() { return config.isPremiumUser === true; }
+// Token secreto — troque a cada 3 meses para proteger o acesso
+const PREMIUM_TOKEN = 'FP2024PREMIUM';
+
+function isPremium() {
+  // 1. Verificar token na URL (?token=FP2024PREMIUM)
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const tokenUrl = params.get('token');
+    if (tokenUrl && tokenUrl === PREMIUM_TOKEN) {
+      config.isPremiumUser = true;
+      _persistConfig();
+      // Remove token da URL para nao ficar visivel na barra
+      const url = new URL(window.location.href);
+      url.searchParams.delete('token');
+      window.history.replaceState({}, '', url.toString());
+    }
+  } catch(e) {}
+  // 2. Verificar localStorage (sessoes apos primeira ativacao)
+  return config.isPremiumUser === true;
+}
 
 function checkFreemiumLimit() {
   if (isPremium()) return true;
@@ -2550,7 +2569,7 @@ function calcularSimulacao() {
     if (premiumCta) premiumCta.style.display = 'none';
     if (tabelaWrap) {
       tabelaWrap.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:.8rem;"><thead><tr style="background:var(--primary-light);color:var(--primary);"><th style="padding:8px;text-align:left;">Mes</th><th style="padding:8px;text-align:right;">Total</th><th style="padding:8px;text-align:right;">Investido</th><th style="padding:8px;text-align:right;">Rendimento</th></tr></thead><tbody>' +
-        tabela.map((r,i) => '<tr style="background:'+(i%2===0?'var(--surface2)':'var(--surface))+';"><td style="padding:6px 8px;">'+r.mes+'</td><td style="padding:6px 8px;text-align:right;font-weight:600;">'+fmt(r.total)+'</td><td style="padding:6px 8px;text-align:right;">'+fmt(r.investido)+'</td><td style="padding:6px 8px;text-align:right;color:var(--success);">+'+fmt(r.rendimento)+'</td></tr>').join('') + '</tbody></table>';
+        tabela.map((r,i) => '<tr style="background:'+(i%2===0?'var(--surface2)':'var(--surface)')+';"><td style="padding:6px 8px;">'+r.mes+'</td><td style="padding:6px 8px;text-align:right;font-weight:600;">'+fmt(r.total)+'</td><td style="padding:6px 8px;text-align:right;">'+fmt(r.investido)+'</td><td style="padding:6px 8px;text-align:right;color:var(--success);">+'+fmt(r.rendimento)+'</td></tr>').join('') + '</tbody></table>';
     }
   }
 }
