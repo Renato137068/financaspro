@@ -1,9 +1,10 @@
 name: Auto-Sync FinançasPro
 
 on:
-  # Executar a cada 30 minutos
-  schedule:
-    - cron: '*/30 * * * *'
+  # Disparar automaticamente quando há push na branch main
+  push:
+    branches:
+      - main
 
   # Permitir trigger manual (Actions tab no GitHub)
   workflow_dispatch:
