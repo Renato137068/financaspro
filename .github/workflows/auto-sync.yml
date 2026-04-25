@@ -1,0 +1,66 @@
+name: Auto-Sync FinançasPro
+
+on:
+  # Executar a cada 30 minutos
+  schedule:
+    - cron: '*/30 * * * *'
+
+  # Permitir trigger manual (Actions tab no GitHub)
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout do código
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 2. Configurar identidade Git
+      - name: ⚙️ Configurar Git
+        run: |
+          git config --global user.email "renato.soares1370@gmail.com"
+          git config --global user.name "Auto-Sync Bot"
+
+      # 3. Verificar se há mudanças
+      - name: 🔍 Verificar mudanças
+        id: check_changes
+        run: |
+          git status
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "✅ Nenhuma mudança detectada"
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "✅ Mudanças detectadas:"
+            git status --short
+          fi
+
+      # 4. Fazer commit (só se houver mudanças)
+      - name: 💾 Fazer commit
+        if: steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          git add -A
+          git commit -m "Auto-sync: $(date '+%Y-%m-%d %H:%M:%S')"
+          echo "✅ Commit realizado"
+
+      # 5. Fazer push (só se houver commit)
+      - name: 🚀 Push para GitHub
+        if: steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          git push origin main
+          echo "✅ Push concluído com sucesso!"
+
+      # 6. Log final
+      - name: ✅ Sincronização completa
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ AUTO-SYNC FINALIZADO"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "Branch: main"
+          echo "Timestamp: $(date '+%Y-%m-%d %H:%M:%S UTC')"
+          git log -1 --oneline
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
