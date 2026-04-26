@@ -13,16 +13,19 @@
 </head>
 <body>
 
+<!-- SKIP LINK (a11y) -->
+<a href="#main-content" class="skip-link">Ir para o conteúdo principal</a>
+
 <!-- HEADER -->
 <header>
   <h1>💰 FinançasPro</h1>
-  <div class="saldo-header">
+  <div class="saldo-header" aria-live="polite">
     <span id="saldo-header-txt">Saldo: R$ 0,00</span>
   </div>
 </header>
 
 <!-- MAIN -->
-<main>
+<main id="main-content" role="main">
 
   <!-- ABA 1: RESUMO (Dashboard) -->
   <div id="aba-resumo" class="aba ativo">
@@ -157,11 +160,18 @@
     </section>
 
     <section class="config-section">
-      <h2 class="secao-titulo">📥 Exportar Dados</h2>
-      <p style="color: #666; font-size: 13px; margin-bottom: 12px;">
-        Baixe um backup de todos seus dados em JSON
+      <h2 class="secao-titulo">📥 Exportar / Importar Dados</h2>
+      <p style="color: var(--text-light); font-size: 13px; margin-bottom: 12px;">
+        Faça backup ou restaure seus dados financeiros
       </p>
-      <button class="btn-secundario" onclick="exportarDados()">📥 Exportar JSON</button>
+      <button class="btn-secundario" onclick="exportarDados()" aria-label="Exportar dados em formato JSON">📥 Exportar JSON</button>
+      <div style="margin-top: 12px;">
+        <div class="import-area" id="import-area" onclick="document.getElementById('import-file').click()" role="button" tabindex="0" aria-label="Clique ou arraste um arquivo JSON para importar dados">
+          <span style="font-size: 28px;">📂</span>
+          <p>Clique ou arraste um arquivo JSON para importar</p>
+        </div>
+        <input type="file" id="import-file" accept=".json" style="display:none" aria-hidden="true">
+      </div>
     </section>
 
     <section class="config-section">
@@ -176,44 +186,13 @@
 </main>
 
 <!-- NAV INFERIOR -->
-<nav class="nav-bottom">
-  <button class="nav-btn ativo" data-aba="resumo" onclick="mudarAba('resumo')">
-    <span class="nav-emoji">📊</span>
+<nav class="nav-bottom" aria-label="Navegação principal">
+  <button class="nav-btn ativo" data-aba="resumo" onclick="mudarAba('resumo')" aria-label="Resumo financeiro" aria-current="true">
+    <span class="nav-emoji" aria-hidden="true">📊</span>
     <span>Resumo</span>
   </button>
-  <button class="nav-btn" data-aba="novo" onclick="mudarAba('novo')">
-    <span class="nav-emoji">💸</span>
+  <button class="nav-btn" data-aba="novo" onclick="mudarAba('novo')" aria-label="Registrar nova transação">
+    <span class="nav-emoji" aria-hidden="true">💸</span>
     <span>Novo</span>
   </button>
-  <button class="nav-btn" data-aba="extrato" onclick="mudarAba('extrato')">
-    <span class="nav-emoji">📋</span>
-    <span>Extrato</span>
-  </button>
-  <button class="nav-btn" data-aba="orcamento" onclick="mudarAba('orcamento')">
-    <span class="nav-emoji">📊</span>
-    <span>Orçamento</span>
-  </button>
-  <button class="nav-btn" data-aba="config" onclick="mudarAba('config')">
-    <span class="nav-emoji">⚙️</span>
-    <span>Config</span>
-  </button>
-</nav>
-
-<!-- SCRIPTS - ORDEM IMPORTA! -->
-<script src="js/config.js"></script>
-<script src="js/dados.js"></script>
-<script src="js/utils.js"></script>
-<script src="js/transacoes.js"></script>
-<script src="js/orcamento.js"></script>
-<script src="js/render.js"></script>
-<script src="js/config-user.js"></script>
-<script src="js/init.js"></script>
-
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
-  }
-</script>
-
-</body>
-</html>
+  <button class="nav-btn" data-aba="extrato" onclick="mudarAba('extrato')" aria
