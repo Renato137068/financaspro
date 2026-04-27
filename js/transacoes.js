@@ -3,133 +3,96 @@
  * Tier 1: Depends on config.js, dados.js, utils.js
  */
 
-const TRANSACOES = {
+var TRANSACOES = {
   _cache: null,
-  
-  init() {
+
+  init: function() {
     this._cache = DADOS.getTransacoes();
   },
-  
-  // Criar nova transação
-  criar(tipo, valor, categoria, data, descricao = '') {
-    const validacao = UTILS.validarTransacao({
-      tipo,
-      valor: parseFloat(valor),
-      categoria,
-      data
+
+  criar: function(tipo, valor, categoria, data, descricao) {
+    var validacao = UTILS.validarTransacao({
+      tipo: tipo, valor: parseFloat(valor), categoria: categoria, data: data
     });
-    
-    if (!validacao.valido) {
-      throw new Error(validacao.erro);
-    }
-    
-    const transacao = {
-      id: Date.now().toString(),
-      tipo,
+    if (!validacao.valido) throw new Error(validacao.erro);
+
+    var transacao = {
+      id: UTILS.gerarId(),
+      tipo: tipo,
       valor: parseFloat(valor),
-      categoria,
-      data,
-      descricao,
+      categoria: categoria,
+      data: data,
+      descricao: descricao || '',
       dataCriacao: new Date().toISOString()
     };
-    
-    const salva = DADOS.salvarTransacao(transacao);
+    DADOS.salvarTransacao(transacao);
     this._cache = DADOS.getTransacoes();
-    return salva;
+    return transacao;
   },
-  
-  // Obter transações com filtros
-  obter(filtros = {}) {
-    let resultado = [...this._cache];
-    
+
+  obter: function(filtros) {
+    filtros = filtros || {};
+    var resultado = this._cache.slice();
+
     if (filtros.mes && filtros.ano) {
-      resultado = UTILS.filtrarPorMês(resultado, filtros.mes, filtros.ano);
+      resultado = UTILS.filtrarPorMes(resultado, filtros.mes, filtros.ano);
     }
-    
     if (filtros.tipo) {
       resultado = UTILS.filtrarPorTipo(resultado, filtros.tipo);
     }
-    
     if (filtros.categoria) {
-      resultado = resultado.filter(t => t.categoria === filtros.categoria);
+      resultado = resultado.filter(function(t) { return t.categoria === filtros.categoria; });
     }
-    
-    if (filtros.ordenarPor === 'data-desc') {
-      resultado.sort((a, b) => new Date(b.data) - new Date(a.data));
+    if (filtros.ordenarPor === 'data-asc') {
+      resultado.sort(function(a, b) { return new Date(a.data) - new Date(b.data); });
     } else {
-      resultado.sort((a, b) => new Date(b.data) - new Date(a.data));
+      resultado.sort(function(a, b) { return new Date(b.data) - new Date(a.data); });
     }
-    
     return resultado;
   },
-  
-  // Obter uma transação
-  obterPorId(id) {
-    return this._cache.find(t => t.id === id);
+
+  obterPorId: function(id) {
+    for (var i = 0; i < this._cache.length; i++) {
+      if (this._cache[i].id === id) return this._cache[i];
+    }
+    return null;
   },
-  
-  // Atualizar transação
-  atualizar(id, updates) {
-    const transacao = this.obterPorId(id);
-    if (!transacao) {
-      throw new Error('Transação não encontrada');
-    }
-    
-    const updated = { ...transacao, ...updates };
-    const validacao = UTILS.validarTransacao(updated);
-    
-    if (!validacao.valido) {
-      throw new Error(validacao.erro);
-    }
-    
+
+  atualizar: function(id, updates) {
+    var transacao = this.obterPorId(id);
+    if (!transacao) throw new Error('Transacao nao encontrada');
+    var updated = Object.assign({}, transacao, updates);
+    var validacao = UTILS.validarTransacao(updated);
+    if (!validacao.valido) throw new Error(validacao.erro);
     DADOS.salvarTransacao(updated);
     this._cache = DADOS.getTransacoes();
     return updated;
   },
-  
-  // Deletar transação
-  deletar(id) {
-    const resultado = DADOS.deletarTransacao(id);
+
+  deletar: function(id) {
+    var resultado = DADOS.deletarTransacao(id);
     this._cache = DADOS.getTransacoes();
     return resultado;
   },
-  
-  // Resumo do mês
-  obterResumoMês(mes, ano) {
-    const transacoesMês = this.obter({ mes, ano });
-    
-    const receitas = transacoesMês
-      .filter(t => t.tipo === CONFIG.TIPO_RECEITA)
-      .reduce((sum, t) => sum + t.valor, 0);
-    
-    const despesas = transacoesMês
-      .filter(t => t.tipo === CONFIG.TIPO_DESPESA)
-      .reduce((sum, t) => sum + t.valor, 0);
-    
-    return {
-      receitas,
-      despesas,
-      saldo: receitas - despesas,
-      total: transacoesMês.length
-    };
-  },
-  
-  // Resumo por categoria
-  obterResumoPorCategoria(mes, ano) {
-    const transacoesMês = this.obter({ mes, ano });
-    const resumo = {};
-    
-    transacoesMês.forEach(t => {
-      if (!resumo[t.categoria]) {
-        resumo[t.categoria] = { receita: 0, despesa: 0 };
-      }
-      if (t.tipo === CONFIG.TIPO_RECEITA) {
-        resumo[t.categoria].receita += t.valor;
-      } else {
-        resumo[t.categoria].despesa += t.valor;
-      }
+
+  obterResumoMes: function(mes, ano) {
+    var txMes = this.obter({ mes: mes, ano: ano });
+    var receitas = 0, despesas = 0;
+    txMes.forEach(function(t) {
+      if (t.tipo === CONFIG.TIPO_RECEITA) receitas += t.valor;
+      else despesas += t.valor;
     });
-    
+    return { receitas: receitas, despesas: despesas, saldo: receitas - despesas, total: txMes.length };
+  },
+
+  obterResumoPorCategoria: function(mes, ano) {
+    var txMes = this.obter({ mes: mes, ano: ano });
+    var resumo = {};
+    txMes.forEach(function(t) {
+      if (!resumo[t.categoria]) resumo[t.categoria] = { receita: 0, despesa: 0 };
+      if (t.tipo === CONFIG.TIPO_RECEITA) resumo[t.categoria].receita += t.valor;
+      else resumo[t.categoria].despesa += t.valor;
+    });
     return resumo;
   }
 };

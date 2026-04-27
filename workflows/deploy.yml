@@ -1,0 +1,72 @@
+name: Deploy MVP
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  APP_VERSION: '1.0.0'
+
+jobs:
+  build-and-deploy:
+    name: 🚀 Build & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Setup Pages
+      uses: actions/configure-pages@v3
+
+    - name: Build application
+      run: |
+        echo "✅ Building FinançasPro MVP v${{ env.APP_VERSION }}"
+        mkdir -p dist
+        cp -r index.html js/ css/ icons/ manifest.json sw.js package.json README.md dist/ 2>/dev/null || true
+        echo "✅ Build complete"
+
+    - name: Display build structure
+      run: |
+        echo "📦 Build Structure:"
+        find dist -type f | sort | sed 's|dist/||' | sed 's|^|  |'
+        echo ""
+        echo "📊 Build Size:"
+        du -sh dist
+        echo ""
+        echo "📋 Files:"
+        find dist -type f | wc -l
+        echo "files"
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: financaspro-mvp-v${{ env.APP_VERSION }}
+        path: dist/
+        retention-days: 7
+
+    - name: Deploy to GitHub Pages
+      uses: actions/deploy-pages@v2
+      with:
+        artifact_name: financaspro-mvp-v${{ env.APP_VERSION }}
+
+    - name: Deployment summary
+      run: |
+        echo "✅ Deployment Complete!"
+        echo ""
+        echo "📱 Access your app:"
+        echo "  🔗 https://renato137068.github.io/"
+        echo ""
+        echo "📊 Build Info:"
+        echo "  Version: v${{ env.APP_VERSION }}"
+        echo "  Branch: main"
+        echo "  Commit: ${{ github.sha }}"
+        echo "  Time: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+        echo ""
+        echo "✨ Features:"
+        echo "  📊 Resumo (Dashboard)"
+        echo "  ➕ Novo (Transações)"
+        echo "  📋 Extrato (Lista)"
+        echo "  💰 Orçamento (Budget)"
+        echo "  ⚙️  Config (Configurações)"
