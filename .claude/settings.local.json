@@ -20,7 +20,13 @@
       "Bash(git commit -m '🔧 Fix: Corrigir erros de sintaxe críticos *)",
       "Bash(git commit -m '🗑️ Remove: Seletor de moeda - manter apenas Real *)",
       "Bash(git commit -m '✨ Feature: Banco/Cartão - sem expandir escopo *)",
-      "Bash(git commit -m '✨ Feature: Bancos e Cartões personalizáveis *)"
+      "Bash(git commit -m '✨ Feature: Bancos e Cartões personalizáveis *)",
+      "Bash(npx -y http-server -p 8080 -c-1)",
+      "Bash(cd C:\\\\\\\\Users\\\\\\\\renat\\\\\\\\Downloads\\\\\\\\financaspro)",
+      "Bash(python -m http.server 8080)",
+      "Read(//mnt/c/Users/renat/Downloads/**)",
+      "Bash(python3 -m http.server 8080)",
+      "Bash(node -c /c/Users/renat/Downloads/financaspro/js/categorizador.js)"
     ]
   }
 }

@@ -332,14 +332,20 @@ function atualizarParcelaPreview() {
    ============================================ */
 function setupAutoCategorizacao() {
   var descInput = document.getElementById('novo-descricao');
-  if (!descInput || typeof CATEGORIAS === 'undefined') return;
+  if (!descInput) return;
 
   var timeout = null;
   descInput.addEventListener('input', function() {
     clearTimeout(timeout);
     var texto = this.value;
     timeout = setTimeout(function() {
-      var sugestao = CATEGORIAS.detectar(texto);
+      var sugestao = null;
+      if (typeof CATEGORIZADOR !== 'undefined') {
+        sugestao = CATEGORIZADOR.detectar(texto);
+      } else if (typeof CATEGORIAS !== 'undefined') {
+        sugestao = CATEGORIAS.detectar(texto);
+      }
+
       if (sugestao) {
         aplicarSugestaoCategoria(sugestao);
       } else {
@@ -2245,7 +2251,13 @@ function setupAutoCategoria() {
           return;
         }
 
-        var deteccao = CATEGORIAS.detectar(descricao);
+        var deteccao = null;
+        if (typeof CATEGORIZADOR !== 'undefined') {
+          deteccao = CATEGORIZADOR.detectar(descricao);
+        } else if (typeof CATEGORIAS !== 'undefined') {
+          deteccao = CATEGORIAS.detectar(descricao);
+        }
+
         if (deteccao && deteccao.categoria) {
           var catInput = DOMUTILS.elementos.novoCategoria;
           var tipoInput = DOMUTILS.elementos.novoTipo;
