@@ -26,7 +26,8 @@
       "Bash(python -m http.server 8080)",
       "Read(//mnt/c/Users/renat/Downloads/**)",
       "Bash(python3 -m http.server 8080)",
-      "Bash(node -c /c/Users/renat/Downloads/financaspro/js/categorizador.js)"
+      "Bash(node -c /c/Users/renat/Downloads/financaspro/js/categorizador.js)",
+      "Bash(git commit -m 'refactor: Visual redesign of Novo tab with improved UX and animations *)"
     ]
   }
 }
