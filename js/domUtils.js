@@ -9,23 +9,39 @@ var DOMUTILS = {
 
   init: function() {
     this.elementos = {
-      novoValor: document.getElementById('novo-valor'),
-      novoDescricao: document.getElementById('novo-descricao'),
-      novoCategoria: document.getElementById('novo-categoria'),
-      novoTipo: document.getElementById('novo-tipo'),
-      novoData: document.getElementById('novo-data'),
-      formTransacao: document.getElementById('form-transacao'),
-      tipoIndicator: document.getElementById('tipo-indicator-text'),
-      tipoIndicatorDot: document.querySelector('.tipo-dot'),
-      orcamentoPreview: document.getElementById('orcamento-preview'),
-      grupoRecorrencia: document.getElementById('grupo-recorrencia'),
-      grupoParcelas: document.getElementById('grupo-parcelas'),
-      extraToggle: document.getElementById('extra-toggle'),
-      extraContent: document.getElementById('extra-content'),
-      resumoList: document.getElementById('resumo-list'),
-      chartEvolucao: document.getElementById('chart-evolucao'),
-      chartCategorias: document.getElementById('chart-categorias')
+      novoValor: this._safeGet('novo-valor'),
+      novoDescricao: this._safeGet('novo-descricao'),
+      novoCategoria: this._safeGet('novo-categoria'),
+      novoTipo: this._safeGet('novo-tipo'),
+      novoData: this._safeGet('novo-data'),
+      formTransacao: this._safeGet('form-transacao'),
+      tipoIndicator: this._safeGet('tipo-indicator-text'),
+      tipoIndicatorDot: this._safeGetQuery('.tipo-dot'),
+      orcamentoPreview: this._safeGet('orcamento-preview'),
+      grupoRecorrencia: this._safeGet('grupo-recorrencia'),
+      grupoParcelas: this._safeGet('grupo-parcelas'),
+      extraToggle: this._safeGet('extra-toggle'),
+      extraContent: this._safeGet('extra-content'),
+      resumoList: this._safeGet('resumo-list'),
+      chartEvolucao: this._safeGet('chart-evolucao'),
+      chartCategorias: this._safeGet('chart-categorias')
     };
+  },
+
+  _safeGet: function(id) {
+    try {
+      return document.getElementById(id);
+    } catch (e) {
+      return null;
+    }
+  },
+
+  _safeGetQuery: function(selector) {
+    try {
+      return document.querySelector(selector);
+    } catch (e) {
+      return null;
+    }
   },
 
   get: function(key) {

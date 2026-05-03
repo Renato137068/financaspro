@@ -14,29 +14,36 @@ var AUTOMACAO = {
 
   // Auto-save em tempo real
   setupAutoSave: function() {
-    var inputs = document.querySelectorAll('[data-autosave]');
-    var self = this;
+    try {
+      var inputs = document.querySelectorAll('[data-autosave]');
+      if (inputs.length === 0) return;
 
-    inputs.forEach(function(input) {
-      input.addEventListener('input', function() {
-        clearTimeout(self._timerSave);
-        var campo = input.dataset.autosave;
-        self._rascunho[campo] = input.value;
-        self._timerSave = setTimeout(function() {
-          self.salvarRascunho();
-        }, 500);
+      var self = this;
+
+      inputs.forEach(function(input) {
+        input.addEventListener('input', function() {
+          clearTimeout(self._timerSave);
+          var campo = input.dataset.autosave;
+          self._rascunho[campo] = input.value;
+          self._timerSave = setTimeout(function() {
+            self.salvarRascunho();
+          }, 500);
+        });
+
+        // Restaurar rascunho ao focar
+        input.addEventListener('focus', function() {
+          var campo = this.dataset.autosave;
+          if (self._rascunho[campo]) {
+            input.value = self._rascunho[campo];
+          }
+        });
       });
 
-      // Restaurar rascunho ao focar
-      input.addEventListener('focus', function() {
-        if (self._rascunho[campo]) {
-          input.value = self._rascunho[campo];
-        }
-      });
-    });
-
-    // Restaurar ao carregar
-    this.restaurarRascunho();
+      // Restaurar ao carregar
+      this.restaurarRascunho();
+    } catch (e) {
+      console.warn('Auto-save setup falhou:', e);
+    }
   },
 
   salvarRascunho: function() {
@@ -73,12 +80,17 @@ var AUTOMACAO = {
 
   // Detectar gasto anômalo
   detectarAnomalia: function(valor, categoria, tipo) {
-    if (tipo !== 'despesa') return null;
+    try {
+      if (tipo !== 'despesa') return null;
+      if (typeof TRANSACOES === 'undefined') return null;
+      if (typeof DADOS === 'undefined') return null;
 
-    var agora = new Date();
-    var transacoes = DADOS.getTransacoes();
-    var mesAtual = agora.getMonth() + 1;
-    var anoAtual = agora.getFullYear();
+      var agora = new Date();
+      var transacoes = DADOS.getTransacoes();
+      if (!Array.isArray(transacoes) || transacoes.length === 0) return null;
+
+      var mesAtual = agora.getMonth() + 1;
+      var anoAtual = agora.getFullYear();
 
     // Média dos últimos 3 meses nesta categoria
     var valores = [];
@@ -100,17 +112,21 @@ var AUTOMACAO = {
     var media = valores.reduce(function(a, b) { return a + b; }, 0) / valores.length;
     var limite = media * this._limiteAnomalia;
 
-    if (valor > limite) {
-      return {
-        tipo: 'alerta',
-        mensagem: 'Gasto ' + ((valor / media).toFixed(1)) + 'x acima da média em ' + UTILS.labelCategoria(categoria),
-        valor: valor,
-        media: media,
-        limite: limite
-      };
-    }
+      if (valor > limite) {
+        return {
+          tipo: 'alerta',
+          mensagem: 'Gasto ' + ((valor / media).toFixed(1)) + 'x acima da média em ' + UTILS.labelCategoria(categoria),
+          valor: valor,
+          media: media,
+          limite: limite
+        };
+      }
 
-    return null;
+      return null;
+    } catch (e) {
+      console.warn('Erro na detecção de anomalia:', e);
+      return null;
+    }
   },
 
   // Sugerir categoria e mostrar alerta

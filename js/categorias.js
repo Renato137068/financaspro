@@ -25,19 +25,26 @@ var CATEGORIAS = (function() {
 
     // Aprende padrões do histórico
     analisarHistorico: function() {
-      if (typeof DADOS === 'undefined') return;
-      var transacoes = DADOS.getTransacoes();
-      HISTORICO = {};
-      transacoes.forEach(function(t) {
-        var desc = String(t.descricao).toLowerCase().trim();
-        var palavras = desc.split(/\s+/);
-        palavras.forEach(function(palavra) {
-          if (palavra.length > 3) {
-            HISTORICO[palavra] = HISTORICO[palavra] || {};
-            HISTORICO[palavra][t.categoria] = (HISTORICO[palavra][t.categoria] || 0) + 1;
-          }
+      try {
+        if (typeof DADOS === 'undefined') return;
+        var transacoes = DADOS.getTransacoes();
+        if (!Array.isArray(transacoes)) return;
+
+        HISTORICO = {};
+        transacoes.forEach(function(t) {
+          if (!t.descricao) return;
+          var desc = String(t.descricao).toLowerCase().trim();
+          var palavras = desc.split(/\s+/);
+          palavras.forEach(function(palavra) {
+            if (palavra.length > 3) {
+              HISTORICO[palavra] = HISTORICO[palavra] || {};
+              HISTORICO[palavra][t.categoria] = (HISTORICO[palavra][t.categoria] || 0) + 1;
+            }
+          });
         });
-      });
+      } catch (e) {
+        console.warn('Erro ao analisar histórico:', e);
+      }
     },
 
     // Detectar categoria por regra + histórico
