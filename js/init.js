@@ -22,7 +22,11 @@ document.addEventListener('DOMContentLoaded', function() {
     setupNavigation();
     setupFormNovo();
     setupImport();
-    setupAutoCategoria();
+    try {
+      setupAutoCategoria();
+    } catch (e) {
+      console.warn('Auto-categoria não disponível:', e);
+    }
 
     var dataInput = DOMUTILS.elementos.novoData;
     if (dataInput && !dataInput.value) {
@@ -96,16 +100,26 @@ function mudarAba(nomeAba) {
    FORM NOVO - SETUP MASTER
    ============================================ */
 function setupFormNovo() {
-  setupMascaraValor();
-  setupCategoriaGrid();
-  setupDateChips();
-  setupExtrasToggle();
-  setupRecorrencia();
-  setupParcelamento();
-  setupAutoCategorizacao();
-  setupAutocomplete();
-  setupFormSubmit();
-  setupParcelaPreview();
+  var fns = [
+    setupMascaraValor,
+    setupCategoriaGrid,
+    setupDateChips,
+    setupExtrasToggle,
+    setupRecorrencia,
+    setupParcelamento,
+    setupAutoCategorizacao,
+    setupAutocomplete,
+    setupFormSubmit,
+    setupParcelaPreview
+  ];
+
+  fns.forEach(function(fn) {
+    try {
+      if (typeof fn === 'function') fn();
+    } catch (e) {
+      console.warn('Setup falhou:', fn.name, e);
+    }
+  });
 }
 
 /* ============================================
