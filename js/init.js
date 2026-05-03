@@ -27,6 +27,9 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('5b. Iniciando APRENDIZADO...');
     if (typeof APRENDIZADO !== 'undefined') APRENDIZADO.init();
 
+    console.log('5c. Verificando armazenamento...');
+    verificarArmazenamento();
+
     console.log('6. Iniciando AUTOMACAO...');
     AUTOMACAO.init();
 
@@ -616,35 +619,41 @@ function setupFormSubmit() {
           var descParcela = descFinal + ' (' + (p + 1) + '/' + nParcelas + ')';
           TRANSACOES.criar(tipo, valorParcela, categoria, dataParcela.toISOString().split('T')[0], descParcela, banco, cartao);
         }
-        if (typeof APRENDIZADO !== 'undefined') APRENDIZADO.registrar(descricao, categoria, banco, cartao);
+        if (typeof APRENDIZADO !== 'undefined') {
+          APRENDIZADO.registrar(descricao, tipo, categoria, banco, cartao, valorParcela);
+        }
         mostrarSucesso(nParcelas + ' parcelas de ' + UTILS.formatarMoeda(valorParcela) + ' registradas!');
       }
       // RECORRÊNCIA
       else if (chkRecorrente && chkRecorrente.checked) {
         var freqEl = document.querySelector('.rec-chip.ativo');
         var freq = freqEl ? freqEl.dataset.freq : 'mensal';
-        // Salvar como recorrente nos dados
         var recData = {
           tipo: tipo, valor: valor, categoria: categoria,
           descricao: descFinal, frequencia: freq, dataInicio: data, ativo: true
         };
         DADOS.salvarRecorrente(recData);
-        // Criar a primeira transação
         TRANSACOES.criar(tipo, valor, categoria, data, descFinal + ' (recorrente)', banco, cartao);
-        if (typeof APRENDIZADO !== 'undefined') APRENDIZADO.registrar(descricao, categoria, banco, cartao);
+        if (typeof APRENDIZADO !== 'undefined') {
+          APRENDIZADO.registrar(descricao, tipo, categoria, banco, cartao, valor);
+        }
         mostrarSucesso('Recorrência ' + freq + ' criada!');
       }
       // NORMAL
       else {
         TRANSACOES.criar(tipo, valor, categoria, data, descFinal, banco, cartao);
-        if (typeof APRENDIZADO !== 'undefined') APRENDIZADO.registrar(descricao, categoria, banco, cartao);
+        if (typeof APRENDIZADO !== 'undefined') {
+          APRENDIZADO.registrar(descricao, tipo, categoria, banco, cartao, valor);
+        }
         mostrarSucesso('Registrado!');
       }
 
-      // Atualizar dashboard e insights
       RENDER.init();
       if (typeof INSIGHTS !== 'undefined') {
         setTimeout(function() { INSIGHTS.mostrar(); }, 100);
+      }
+      if (typeof SCORE !== 'undefined') {
+        SCORE.limparCache();
       }
 
       // Modo contínuo ou limpar
@@ -2260,53 +2269,20 @@ function setupAutoCategoria() {
           return;
         }
 
-        var deteccao = null;
-        if (typeof CATEGORIZADOR !== 'undefined') {
-          deteccao = CATEGORIZADOR.detectar(descricao);
-        } else if (typeof CATEGORIAS !== 'undefined') {
-          deteccao = CATEGORIAS.detectar(descricao);
-        }
-
-        // Fallback para APRENDIZADO
-        if ((!deteccao || deteccao.confianca === 'media') && typeof APRENDIZADO !== 'undefined') {
-          var aprendizado = APRENDIZADO.sugerir(descricao);
-          if (aprendizado) {
-            deteccao = {
-              categoria: aprendizado.categoria,
-              tipo: aprendizado.tipo || 'despesa',
-              confianca: 'media'
-            };
-            if (aprendizado.banco) DOMUTILS.set('novo-banco', aprendizado.banco);
-            if (aprendizado.cartao) DOMUTILS.set('novo-cartao', aprendizado.cartao);
-          }
-        }
-
-        if (deteccao && deteccao.categoria) {
-          var catInput = DOMUTILS.elementos.novoCategoria;
-          var tipoInput = DOMUTILS.elementos.novoTipo;
-
-          if (catInput && catInput.value !== deteccao.categoria) {
-            catInput.value = deteccao.categoria;
-            if (tipoInput) tipoInput.value = deteccao.tipo;
+        // Use PIPELINE para processar
+        if (typeof PIPELINE !== 'undefined') {
+          var resultado = PIPELINE.processar(descricao);
+          if (resultado && PIPELINE.preencherForm(resultado)) {
+            atualizarTipoIndicator(resultado.tipo);
+            atualizarOrcamentoPreview();
 
             var grid = document.getElementById('categoria-grid');
             if (grid) {
               grid.querySelectorAll('.cat-btn').forEach(function(btn) {
                 btn.classList.remove('ativo');
               });
-              var botaoSelecionado = grid.querySelector('[data-cat="' + deteccao.categoria + '"]');
+              var botaoSelecionado = grid.querySelector('[data-cat="' + resultado.categoria + '"]');
               if (botaoSelecionado) botaoSelecionado.classList.add('ativo');
-            }
-
-            atualizarTipoIndicator(deteccao.tipo);
-            atualizarOrcamentoPreview();
-
-            var badge = document.getElementById('sugestao-badge');
-            if (badge) {
-              var prefix = deteccao.confianca === 'alta' ? '✨' : '💡';
-              badge.textContent = prefix + ' ' + UTILS.labelCategoria(deteccao.categoria);
-              badge.style.display = 'block';
-              badge.dataset.confianca = deteccao.confianca || 'media';
             }
           }
         }
@@ -2314,12 +2290,16 @@ function setupAutoCategoria() {
         var valorInput = DOMUTILS.elementos.novoValor;
         if (valorInput && valorInput.value) {
           var valor = VALIDATIONS.validarValor(valorInput.value);
-          if (valor.valido && deteccao && deteccao.categoria) {
-            var alerta = AUTOMACAO.detectarAnomalia(valor.valor, deteccao.categoria, deteccao.tipo);
-            if (alerta) {
-              AUTOMACAO.mostrarAlerta(alerta);
-            } else {
-              AUTOMACAO.limparAlerta();
+          if (valor.valido) {
+            var categoria = document.getElementById('novo-categoria').value;
+            var tipo = document.getElementById('novo-tipo').value;
+            if (categoria && typeof AUTOMACAO !== 'undefined') {
+              var alerta = AUTOMACAO.detectarAnomalia(valor.valor, categoria, tipo);
+              if (alerta) {
+                AUTOMACAO.mostrarAlerta(alerta);
+              } else {
+                AUTOMACAO.limparAlerta();
+              }
             }
           }
         }
@@ -2451,32 +2431,81 @@ function abrirEntradaRapida() {
   var input = prompt('Entrada rápida (ex: mercado 150 ontem nubank)\n\nFormato: descrição [valor] [data] [banco]');
   if (!input) return;
 
-  if (typeof PARSER === 'undefined') {
-    UTILS.mostrarToast('Parser não disponível', 'error');
+  if (typeof PIPELINE === 'undefined') {
+    UTILS.mostrarToast('Pipeline não disponível', 'error');
     return;
   }
 
-  var parsed = PARSER.extrair(input);
-
-  if (parsed.valor) {
-    var valorStr = parsed.valor.toFixed(2).replace('.', ',');
-    DOMUTILS.set('novo-valor', valorStr);
-  }
-  if (parsed.data) {
-    DOMUTILS.set('novo-data', parsed.data);
-  }
-  if (parsed.banco) {
-    DOMUTILS.set('novo-banco', parsed.banco);
-  }
-  if (parsed.cartao) {
-    DOMUTILS.set('novo-cartao', parsed.cartao);
+  var resultado = PIPELINE.processar(input);
+  if (!resultado) {
+    UTILS.mostrarToast('Entrada inválida', 'error');
+    return;
   }
 
-  if (parsed.desc) {
-    DOMUTILS.elementos.novoDescricao.value = parsed.desc;
-    DOMUTILS.elementos.novoDescricao.dispatchEvent(new Event('input'));
+  if (resultado.descricao) {
+    DOMUTILS.elementos.novoDescricao.value = resultado.descricao;
   }
+  PIPELINE.preencherForm(resultado);
+  atualizarTipoIndicator(resultado.tipo);
+  atualizarOrcamentoPreview();
 
   DOMUTILS.elementos.novoDescricao.focus();
   UTILS.mostrarToast('Entrada rápida preenchida!', 'success');
 }
+
+function atualizarBadgeConfianca(confianca) {
+  var badge = document.getElementById('sugestao-badge');
+  if (!badge) return;
+
+  var prefixes = {alta: '✨', media: '💡', baixa: '❓'};
+  var categoria = document.getElementById('novo-categoria').value;
+
+  if (categoria) {
+    badge.textContent = (prefixes[confianca] || '✨') + ' ' + UTILS.labelCategoria(categoria);
+    badge.dataset.confianca = confianca;
+    badge.style.display = 'block';
+  }
+}
+
+function executarInsight(acao, parametros) {
+  if (acao === 'aumentarLimite') {
+    if (typeof ORCAMENTO === 'undefined') return;
+
+    var config = DADOS.getConfig();
+    if (!config.orcamentos) config.orcamentos = {};
+
+    config.orcamentos[parametros.categoria] = parametros.novoLimite;
+    DADOS.salvarConfig(config);
+
+    UTILS.mostrarToast('Limite de ' + UTILS.labelCategoria(parametros.categoria) + ' atualizado para R$ ' +
+      parametros.novoLimite.toFixed(2), 'success');
+
+    if (typeof INSIGHTS !== 'undefined') {
+      setTimeout(function() { INSIGHTS.mostrar(); }, 100);
+    }
+  }
+}
+
+function verificarArmazenamento() {
+  try {
+    var usado = 0;
+    for (var key in localStorage) {
+      if (localStorage.hasOwnProperty(key)) {
+        usado += localStorage[key].length + key.length;
+      }
+    }
+    var usadoMB = (usado / 1024 / 1024).toFixed(2);
+
+    if (usadoMB > 5 && typeof IndexedDB !== 'undefined') {
+      console.log('Storage > 5MB (' + usadoMB + 'MB), considere IndexedDB');
+    }
+  } catch (e) {
+    console.warn('Erro ao verificar storage:', e);
+  }
+}
+
+setInterval(function() {
+  if (typeof SCORE !== 'undefined') {
+    SCORE.limparCache();
+  }
+}, 300000);

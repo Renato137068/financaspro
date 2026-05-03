@@ -2082,6 +2082,28 @@ legend {
   color: #e65100;
 }
 
+.btn-insight {
+  padding: 6px 12px;
+  background: linear-gradient(135deg, var(--primary) 0%, rgba(0,114,63,0.8) 100%);
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 6px rgba(0,114,63,0.2);
+}
+
+.btn-insight:hover {
+  box-shadow: 0 4px 12px rgba(0,114,63,0.3);
+  transform: translateY(-1px);
+}
+
+.btn-insight:active {
+  transform: scale(0.98);
+}
+
 /* ============================================
    ABA NOVO - MODAL CONFIRMAÇÃO
    ============================================ */

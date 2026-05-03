@@ -45,11 +45,18 @@ var INSIGHTS = {
       var orcCat = config.orcamentos && config.orcamentos[cat];
       if (orcCat && resumoCat[cat].despesa > orcCat) {
         var excesso = resumoCat[cat].despesa - orcCat;
+        var pct = ((excesso / orcCat) * 100).toFixed(0);
         insights.push({
           tipo: 'orcamento',
           categoria: cat,
-          msg: UTILS.labelCategoria(cat) + ' ⚠️ excedido em R$ ' + excesso.toFixed(2),
-          gravidade: 'alta'
+          msg: UTILS.labelCategoria(cat) + ' excedido em ' + pct + '%',
+          gravidade: 'alta',
+          acao: 'aumentarLimite',
+          parametros: {
+            categoria: cat,
+            novoLimite: Math.round(resumoCat[cat].despesa * 1.2 * 100) / 100
+          },
+          botao: '⬆️ Aumentar limite'
         });
       }
     });
@@ -87,7 +94,16 @@ var INSIGHTS = {
 
     var html = insights.map(function(i) {
       var icon = i.gravidade === 'alta' ? '⚠️' : 'ℹ️';
-      return '<div class="insight insight-' + i.gravidade + '">' + i.msg + '</div>';
+      var conteudo = icon + ' ' + i.msg;
+
+      if (i.acao && i.botao) {
+        var btn = '<button class="btn-insight" onclick="executarInsight(\'' +
+          i.acao + '\', ' + JSON.stringify(i.parametros).replace(/"/g, '&quot;') +
+          ')" style="margin-left:8px;">' + i.botao + '</button>';
+        conteudo += ' ' + btn;
+      }
+
+      return '<div class="insight insight-' + i.gravidade + '">' + conteudo + '</div>';
     }).join('');
 
     container.innerHTML = html;

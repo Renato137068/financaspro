@@ -11,27 +11,35 @@ var PARSER = {
   ],
 
   extrair: function(texto) {
-    var resultado = {valor: null, data: null, banco: null, cartao: null, desc: ''};
-    var temp = texto;
+    var tokens = texto.toLowerCase().split(/[\s,]+/);
+    var resultado = {valor: null, desc: [], data: null, banco: null, cartao: null};
 
-    PARSER.padoes.forEach(function(p) {
-      var match = temp.match(p.regex);
-      if (match) {
-        if (p.tipo === 'valor') {
-          resultado.valor = parseFloat(match[1].replace(',', '.'));
-          temp = temp.replace(match[0], '').trim();
-        } else if (p.tipo === 'data') {
-          resultado.data = PARSER.parseData(match[0]);
-          temp = temp.replace(match[0], '').trim();
-        } else if (p.tipo === 'banco') {
-          resultado.banco = match[0];
-        } else if (p.tipo === 'cartao') {
-          resultado.cartao = match[0];
-        }
+    tokens.forEach(function(token) {
+      if (!token) return;
+
+      // Valor
+      if (/^\d+([.,]\d{2})?$/.test(token)) {
+        resultado.valor = parseFloat(token.replace(',', '.'));
+      }
+      // Data
+      else if (/^(hoje|ontem|amanhã|amanha|segunda|terça|terca|quarta|quinta|sexta|sábado|sabado|domingo)$/.test(token)) {
+        resultado.data = PARSER.parseData(token);
+      }
+      // Banco
+      else if (/^(nubank|itaú|itau|caixa|bradesco|santander|banco|bbva)$/.test(token)) {
+        resultado.banco = token;
+      }
+      // Cartão
+      else if (/^(crédito|débito|credito|debito)$/.test(token)) {
+        resultado.cartao = token;
+      }
+      // Descrição
+      else if (token.length > 2) {
+        resultado.desc.push(token);
       }
     });
 
-    resultado.desc = temp.trim();
+    resultado.desc = resultado.desc.join(' ');
     return resultado;
   },
 

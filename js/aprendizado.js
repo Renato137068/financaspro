@@ -1,5 +1,5 @@
 /**
- * aprendizado.js - Auto-learning from user patterns
+ * aprendizado.js - Advanced learning with rich metadata
  */
 
 var APRENDIZADO = {
@@ -9,55 +9,57 @@ var APRENDIZADO = {
     this.HISTORICO = DADOS.obterAprendizado() || {};
   },
 
-  registrar: function(descricao, categoria, banco, cartao) {
-    if (!descricao || !categoria) return;
-    var palavras = descricao.toLowerCase().split(/\s+/);
+  registrar: function(desc, categoria, tipo, banco, cartao, valor) {
+    if (!desc || !categoria) return;
+    var palavras = desc.toLowerCase().split(/\s+/);
+    var hoje = new Date().toISOString().split('T')[0];
 
     palavras.forEach(function(p) {
       if (p.length < 3) return;
-      if (!APRENDIZADO.HISTORICO[p]) APRENDIZADO.HISTORICO[p] = {};
-      APRENDIZADO.HISTORICO[p][categoria] = (APRENDIZADO.HISTORICO[p][categoria] || 0) + 1;
 
-      if (banco && !APRENDIZADO.HISTORICO[p]._banco) {
-        APRENDIZADO.HISTORICO[p]._banco = banco;
-      }
-      if (cartao && !APRENDIZADO.HISTORICO[p]._cartao) {
-        APRENDIZADO.HISTORICO[p]._cartao = cartao;
+      var hist = APRENDIZADO.HISTORICO[p];
+      if (!hist) {
+        APRENDIZADO.HISTORICO[p] = {
+          categoria: categoria,
+          tipo: tipo || 'despesa',
+          banco: banco || null,
+          cartao: cartao || null,
+          frequencia: 'mensal',
+          ultimaUsada: hoje,
+          contador: 1,
+          mediaValor: valor || 0,
+          primeiraUsada: hoje
+        };
+      } else {
+        hist.contador++;
+        hist.ultimaUsada = hoje;
+        if (valor) {
+          hist.mediaValor = (hist.mediaValor * (hist.contador - 1) + valor) / hist.contador;
+        }
       }
     });
 
     DADOS.salvarAprendizado(APRENDIZADO.HISTORICO);
   },
 
-  sugerir: function(descricao) {
-    if (!descricao) return null;
-    var palavras = descricao.toLowerCase().split(/\s+/);
-    var scores = {}, banco = null, cartao = null;
-    var maxScore = 0;
+  sugerir: function(desc) {
+    if (!desc) return null;
+    var palavras = desc.toLowerCase().split(/\s+/);
+    var sugestoes = [];
 
     palavras.forEach(function(p) {
-      var hist = APRENDIZADO.HISTORICO[p];
-      if (!hist) return;
-
-      Object.keys(hist).forEach(function(cat) {
-        if (cat.startsWith('_')) return;
-        scores[cat] = (scores[cat] || 0) + hist[cat];
-        maxScore = Math.max(maxScore, scores[cat]);
-      });
-
-      if (hist._banco) banco = hist._banco;
-      if (hist._cartao) cartao = hist._cartao;
+      if (APRENDIZADO.HISTORICO[p]) {
+        sugestoes.push(APRENDIZADO.HISTORICO[p]);
+      }
     });
 
-    var topCat = null;
-    for (var cat in scores) {
-      if (scores[cat] === maxScore && maxScore > 0) {
-        topCat = cat;
-        break;
-      }
-    }
+    if (sugestoes.length === 0) return null;
 
-    return topCat ? {categoria: topCat, banco: banco, cartao: cartao, tipo: 'aprendizado'} : null;
+    var melhor = sugestoes.reduce(function(a, b) {
+      return a.contador > b.contador ? a : b;
+    });
+
+    return melhor;
   }
 };
 
