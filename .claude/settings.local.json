@@ -14,7 +14,8 @@
       "Bash(git commit -m '🐛 Fix: Erro ao inicializar - proteção contra elementos faltantes *)",
       "Bash(git commit -m '🐛 Fix: Navegação entre abas - proteção de funções *)",
       "Bash(git commit -m '🐛 Fix: Navegação - simplificar mudarAba sem forEach *)",
-      "Bash(git commit -m '🐛 Fix: Proteger setupFormNovo contra erros em cascade *)"
+      "Bash(git commit -m '🐛 Fix: Proteger setupFormNovo contra erros em cascade *)",
+      "Bash(git commit -m '🔍 Debug: Adicionar logs de inicialização *)"
     ]
   }
 }

@@ -8,33 +8,61 @@
 
 document.addEventListener('DOMContentLoaded', function() {
   try {
+    console.log('1. Iniciando DOMUTILS...');
     DOMUTILS.init();
+
+    console.log('2. Iniciando DADOS...');
     DADOS.init();
     DADOS.setupStorageSync();
+
+    console.log('3. Iniciando TRANSACOES...');
     TRANSACOES.init();
+
+    console.log('4. Iniciando ORCAMENTO...');
     ORCAMENTO.init();
+
+    console.log('5. Iniciando CATEGORIAS...');
     CATEGORIAS.init();
+
+    console.log('6. Iniciando AUTOMACAO...');
     AUTOMACAO.init();
+
+    console.log('7. Iniciando RENDER...');
     RENDER.init();
+
+    console.log('8. Iniciando CONFIG_USER...');
     CONFIG_USER.init();
     CONFIG_USER.aplicarTema();
+
+    console.log('9. Verificando PIN...');
     verificarPinAoAbrir();
+
+    console.log('10. Setup Navigation...');
     setupNavigation();
+
+    console.log('11. Setup Form...');
     setupFormNovo();
+
+    console.log('12. Setup Import...');
     setupImport();
+
+    console.log('13. Setup Auto Categoria...');
     try {
       setupAutoCategoria();
     } catch (e) {
       console.warn('Auto-categoria não disponível:', e);
     }
 
+    console.log('14. Setting data...');
     var dataInput = DOMUTILS.elementos.novoData;
     if (dataInput && !dataInput.value) {
       dataInput.value = new Date().toISOString().split('T')[0];
     }
+
+    console.log('✅ Inicialização completa!');
   } catch (e) {
-    console.error('Erro na inicialização:', e);
-    UTILS.mostrarToast('Erro ao inicializar a aplicação', 'error');
+    console.error('❌ Erro na inicialização:', e.message, e.stack);
+    UTILS.mostrarToast('Erro ao inicializar: ' + e.message, 'error');
   }
 });
 
