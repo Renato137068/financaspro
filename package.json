@@ -3,35 +3,25 @@
   "version": "11.0.0",
   "description": "FinançasPro — SaaS de Finanças Pessoais",
   "main": "index.html",
-  "type": "module",
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:ci": "jest --coverage --ci",
+    "lint": "eslint js/ --ext .js",
     "dev": "http-server . -p 3000 -g",
     "build": "echo 'No build step needed for vanilla JS'",
     "start": "http-server . -p 8080"
   },
-  "keywords": [
-    "finanças",
-    "pessoais",
-    "saas",
-    "pwa",
-    "javascript"
-  ],
+  "keywords": ["finanças", "pessoais", "saas", "pwa", "javascript"],
   "author": "Renato José Soares",
   "license": "MIT",
   "devDependencies": {
     "jest": "^29.7.0",
-    "@babel/preset-env": "^7.23.0",
-    "babel-jest": "^29.7.0",
-    "http-server": "^14.1.1"
+    "http-server": "^14.1.1",
+    "eslint": "^8.56.0"
   },
-  "dependencies": {
-    "@sentry/browser": "^7.80.0",
-    "dropzone": "^6.0.0-beta.2"
-  },
+  "dependencies": {},
   "engines": {
     "node": ">=16.0.0",
     "npm": ">=8.0.0"

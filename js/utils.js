@@ -14,10 +14,11 @@ var UTILS = {
   },
 
   formatarData: function(data) {
-    if (typeof data === 'string') data = new Date(data);
-    return new Intl.DateTimeFormat('pt-BR', {
-      year: 'numeric', month: '2-digit', day: '2-digit'
-    }).format(data);
+    var parts = String(data).split('T')[0].split('-');
+    if (parts.length === 3) {
+      return parts[2] + '/' + parts[1] + '/' + parts[0];
+    }
+    return new Intl.DateTimeFormat('pt-BR').format(new Date(data));
   },
 
   formatarDataHora: function(data) {
@@ -81,12 +82,67 @@ var UTILS = {
     return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
   },
 
+  labelCategoria: function(key) {
+    return CONFIG.CATEGORIAS_MAP[key] || key;
+  },
+
+  formatarDataRelativa: function(data) {
+    var parts = String(data).split('T')[0].split('-');
+    if (parts.length !== 3) return this.formatarData(data);
+    var hoje = new Date();
+    var d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    var ontem = new Date(hoje); ontem.setDate(hoje.getDate() - 1);
+    if (d.toDateString() === hoje.toDateString()) return 'Hoje';
+    if (d.toDateString() === ontem.toDateString()) return 'Ontem';
+    return this.formatarData(data);
+  },
+
   _idCounter: 0,
   gerarId: function() {
     var timestamp = Date.now();
     var randomPart = Math.random().toString(36).substr(2, 9);
     var counter = (this._idCounter = (this._idCounter || 0) + 1);
     return timestamp + '-' + randomPart + '-' + counter;
+  },
+
+  // Cache de elementos DOM
+  _domCache: {},
+  obterElemento: function(id) {
+    if (!this._domCache[id]) {
+      this._domCache[id] = document.getElementById(id);
+    }
+    return this._domCache[id];
+  },
+
+  limparCacheDom: function() {
+    this._domCache = {};
+  },
+
+  // Debounce para eventos frequentes
+  debounce: function(func, delay) {
+    var timeout;
+    return function() {
+      var context = this, args = arguments;
+      clearTimeout(timeout);
+      timeout = setTimeout(function() { func.apply(context, args); }, delay);
+    };
+  },
+
+  // Validar quota localStorage
+  verificarStorageDisponivel: function(dados, chave) {
+    try {
+      var teste = '__storage_teste_' + Date.now();
+      localStorage.setItem(teste, '1');
+      localStorage.removeItem(teste);
+      var serializado = JSON.stringify(dados);
+      localStorage.setItem(chave, serializado);
+      return { disponivel: true };
+    } catch (e) {
+      if (e.name === 'QuotaExceededError') {
+        return { disponivel: false, erro: 'Espaço de armazenamento cheio' };
+      }
+      return { disponivel: false, erro: e.message };
+    }
   }
 };
 

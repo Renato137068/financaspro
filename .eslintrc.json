@@ -1,0 +1,33 @@
+{
+  "env": {
+    "browser": true,
+    "es6": false,
+    "jest": true
+  },
+  "globals": {
+    "CONFIG": "readonly",
+    "CATEGORIAS": "readonly",
+    "DADOS": "readonly",
+    "UTILS": "readonly",
+    "TRANSACOES": "readonly",
+    "ORCAMENTO": "readonly",
+    "RENDER": "readonly",
+    "CONFIG_USER": "readonly",
+    "fpConfirm": "readonly",
+    "mudarAba": "readonly",
+    "selecionarTipo": "readonly",
+    "filtrarExtrato": "readonly",
+    "exportarDados": "readonly",
+    "exportarPDF": "readonly"
+  },
+  "rules": {
+    "no-unused-vars": "warn",
+    "no-undef": "error",
+    "eqeqeq": "warn",
+    "no-var": "off",
+    "semi": ["warn", "always"]
+  },
+  "parserOptions": {
+    "ecmaVersion": 5
+  }
+}
