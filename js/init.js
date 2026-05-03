@@ -206,7 +206,9 @@ function setupCategoriaGrid() {
 
     var cat = btn.dataset.cat;
     var tipo = btn.dataset.tipo;
-    UTILS.obterElemento('novo-categoria').value = cat;
+    var catEl = UTILS.obterElemento('novo-categoria');
+    catEl.value = cat;
+    catEl._manualSet = true; // Impede override pelo PIPELINE
     UTILS.obterElemento('novo-tipo').value = tipo;
     atualizarTipoIndicator(tipo);
     atualizarOrcamentoPreview();
@@ -706,7 +708,9 @@ function limparFormularioCompleto(form) {
   // Resetar grid categorias
   var grid = document.getElementById('categoria-grid');
   if (grid) grid.querySelectorAll('.cat-btn').forEach(function(b) { b.classList.remove('ativo'); });
-  document.getElementById('novo-categoria').value = '';
+  var catElReset = document.getElementById('novo-categoria');
+  catElReset.value = '';
+  catElReset._manualSet = false; // Libera auto-preenchimento
   document.getElementById('novo-tipo').value = 'despesa';
   atualizarTipoIndicator('despesa');
   limparSugestaoCategoria();
@@ -2469,20 +2473,29 @@ function atualizarBadgeConfianca(confianca) {
 
 function executarInsight(acao, parametros) {
   if (acao === 'aumentarLimite') {
-    if (typeof ORCAMENTO === 'undefined') return;
-
     var config = DADOS.getConfig();
     if (!config.orcamentos) config.orcamentos = {};
-
     config.orcamentos[parametros.categoria] = parametros.novoLimite;
     DADOS.salvarConfig(config);
+    UTILS.mostrarToast('Limite de ' + UTILS.labelCategoria(parametros.categoria) +
+      ' → R$ ' + parametros.novoLimite.toFixed(2), 'success');
+  }
 
-    UTILS.mostrarToast('Limite de ' + UTILS.labelCategoria(parametros.categoria) + ' atualizado para R$ ' +
-      parametros.novoLimite.toFixed(2), 'success');
+  if (acao === 'marcarRecorrente') {
+    var catEl = document.getElementById('novo-categoria');
+    var cat   = catEl ? catEl.value : '';
+    var rec = {
+      tipo: 'despesa', categoria: cat || 'outro',
+      descricao: parametros.descricao,
+      frequencia: 'mensal', valor: 0,
+      dataInicio: new Date().toISOString().split('T')[0], ativo: true
+    };
+    DADOS.salvarRecorrente(rec);
+    UTILS.mostrarToast('"' + parametros.descricao + '" marcado como recorrente', 'success');
+  }
 
-    if (typeof INSIGHTS !== 'undefined') {
-      setTimeout(function() { INSIGHTS.mostrar(); }, 100);
-    }
+  if (typeof INSIGHTS !== 'undefined') {
+    setTimeout(function() { INSIGHTS.mostrar(); }, 150);
   }
 }
 

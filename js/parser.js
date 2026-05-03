@@ -12,52 +12,59 @@ var PARSER = {
 
   extrair: function(texto) {
     var tokens = texto.toLowerCase().split(/[\s,]+/);
-    var resultado = {valor: null, desc: [], data: null, banco: null, cartao: null};
+    var r = {valor: null, desc: [], data: null, banco: null, cartao: null};
+
+    // Bancos dinâmicos do config + fixos
+    var config = typeof DADOS !== 'undefined' ? DADOS.getConfig() : {};
+    var bancosUser = (config.bancos || []).map(function(b) { return b.toLowerCase(); });
+    var bancosFixos = ['nubank','itaú','itau','caixa','bradesco','santander','bbva','inter','sicredi'];
+    var todosBancos = bancosFixos.concat(bancosUser);
 
     tokens.forEach(function(token) {
-      if (!token) return;
+      if (!token || token.length < 2) return;
 
-      // Valor
-      if (/^\d+([.,]\d{2})?$/.test(token)) {
-        resultado.valor = parseFloat(token.replace(',', '.'));
-      }
-      // Data
-      else if (/^(hoje|ontem|amanhã|amanha|segunda|terça|terca|quarta|quinta|sexta|sábado|sabado|domingo)$/.test(token)) {
-        resultado.data = PARSER.parseData(token);
-      }
-      // Banco
-      else if (/^(nubank|itaú|itau|caixa|bradesco|santander|banco|bbva)$/.test(token)) {
-        resultado.banco = token;
-      }
-      // Cartão
-      else if (/^(crédito|débito|credito|debito)$/.test(token)) {
-        resultado.cartao = token;
-      }
-      // Descrição
-      else if (token.length > 2) {
-        resultado.desc.push(token);
+      if (/^\d+([.,]\d{1,2})?$/.test(token)) {
+        r.valor = parseFloat(token.replace(',', '.'));
+      } else if (/^(hoje|ontem|anteontem|amanhã?|segunda|ter[cç]a|quarta|quinta|sexta|s[aá]bado|domingo)$/.test(token)) {
+        r.data = PARSER.parseData(token);
+      } else if (todosBancos.indexOf(token) !== -1) {
+        r.banco = token;
+      } else if (/^(cr[eé]dito|d[eé]bito)$/.test(token)) {
+        r.cartao = token;
+      } else if (token.length >= 3) {
+        r.desc.push(token);
       }
     });
 
-    resultado.desc = resultado.desc.join(' ');
-    return resultado;
+    r.desc = r.desc.join(' ');
+    return r;
   },
 
   parseData: function(str) {
     var hoje = new Date();
-    var map = {
-      'hoje': 0, 'ontem': 1, 'anteontem': 2,
-      'amanhã': -1, 'amanha': -1,
-      'segunda': 1, 'terça': 2, 'terca': 2, 'quarta': 3,
-      'quinta': 4, 'sexta': 5, 'sábado': 6, 'sabado': 6, 'domingo': 0
+    var dow  = hoje.getDay();
+    var s    = str.toLowerCase();
+
+    var offsets = {'hoje': 0, 'ontem': 1, 'anteontem': 2, 'amanhã': -1, 'amanha': -1};
+    if (offsets[s] !== undefined) {
+      var d = new Date(hoje);
+      d.setDate(d.getDate() - offsets[s]);
+      return d.toISOString().split('T')[0];
+    }
+
+    var diasSemana = {
+      'domingo': 0, 'segunda': 1, 'terca': 2, 'terça': 2,
+      'quarta': 3, 'quinta': 4, 'sexta': 5, 'sabado': 6, 'sábado': 6
     };
+    if (diasSemana[s] !== undefined) {
+      var alvo = diasSemana[s];
+      var diff = (dow - alvo + 7) % 7 || 7; // Sempre para trás, mínimo 1 dia
+      var d2 = new Date(hoje);
+      d2.setDate(d2.getDate() - diff);
+      return d2.toISOString().split('T')[0];
+    }
 
-    var offset = map[str.toLowerCase()];
-    if (offset === undefined) return null;
-
-    var data = new Date(hoje);
-    data.setDate(data.getDate() - offset);
-    return data.toISOString().split('T')[0];
+    return null;
   }
 };
 

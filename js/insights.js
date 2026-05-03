@@ -79,6 +79,30 @@ var INSIGHTS = {
       });
     }
 
+    // 4. Recorrências não configuradas
+    var frequencias = {};
+    txs.forEach(function(t) {
+      if (t.tipo !== 'despesa') return;
+      var key = (t.descricao || '').toLowerCase().replace(/\s*\(\d+\/\d+\)/, '').trim().slice(0, 25);
+      if (!key || key.length < 3) return;
+      if (!frequencias[key]) frequencias[key] = {};
+      frequencias[key][t.data.slice(0, 7)] = true;
+    });
+
+    Object.keys(frequencias).forEach(function(key) {
+      var meses = Object.keys(frequencias[key]);
+      if (meses.length >= 3) {
+        insights.push({
+          tipo: 'recorrencia',
+          msg: '"' + key + '" aparece há ' + meses.length + ' meses',
+          gravidade: 'media',
+          acao: 'marcarRecorrente',
+          parametros: {descricao: key},
+          botao: '🔁 Marcar recorrente'
+        });
+      }
+    });
+
     return insights;
   },
 

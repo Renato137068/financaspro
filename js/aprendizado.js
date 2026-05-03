@@ -20,21 +20,31 @@ var APRENDIZADO = {
       var hist = APRENDIZADO.HISTORICO[p];
       if (!hist) {
         APRENDIZADO.HISTORICO[p] = {
-          categoria: categoria,
-          tipo: tipo || 'despesa',
-          banco: banco || null,
-          cartao: cartao || null,
-          frequencia: 'mensal',
-          ultimaUsada: hoje,
-          contador: 1,
-          mediaValor: valor || 0,
-          primeiraUsada: hoje
+          categoria: categoria, tipo: tipo || 'despesa',
+          banco: banco || null, cartao: cartao || null,
+          contador: 1, mediaValor: valor || 0,
+          ultimaUsada: hoje, primeiraUsada: hoje
         };
-      } else {
+      } else if (hist.categoria === categoria) {
+        // Reforça entrada existente
         hist.contador++;
         hist.ultimaUsada = hoje;
-        if (valor) {
-          hist.mediaValor = (hist.mediaValor * (hist.contador - 1) + valor) / hist.contador;
+        if (banco)  hist.banco  = banco;
+        if (cartao) hist.cartao = cartao;
+        if (valor)  hist.mediaValor = (hist.mediaValor * (hist.contador - 1) + valor) / hist.contador;
+      } else {
+        // Categoria diferente → entrada alternativa (evita sobreposição)
+        var altKey = p + '__' + categoria;
+        if (!APRENDIZADO.HISTORICO[altKey]) {
+          APRENDIZADO.HISTORICO[altKey] = {
+            categoria: categoria, tipo: tipo || 'despesa',
+            banco: banco || null, cartao: cartao || null,
+            contador: 1, mediaValor: valor || 0,
+            ultimaUsada: hoje, primeiraUsada: hoje
+          };
+        } else {
+          APRENDIZADO.HISTORICO[altKey].contador++;
+          APRENDIZADO.HISTORICO[altKey].ultimaUsada = hoje;
         }
       }
     });
@@ -44,22 +54,21 @@ var APRENDIZADO = {
 
   sugerir: function(desc) {
     if (!desc) return null;
-    var palavras = desc.toLowerCase().split(/\s+/);
-    var sugestoes = [];
+    var tokens = desc.toLowerCase().split(/\s+/);
+    var candidatos = [];
 
-    palavras.forEach(function(p) {
-      if (APRENDIZADO.HISTORICO[p]) {
-        sugestoes.push(APRENDIZADO.HISTORICO[p]);
-      }
+    tokens.forEach(function(p) {
+      Object.keys(APRENDIZADO.HISTORICO).forEach(function(key) {
+        if (key === p || key.startsWith(p + '__')) {
+          candidatos.push(APRENDIZADO.HISTORICO[key]);
+        }
+      });
     });
 
-    if (sugestoes.length === 0) return null;
-
-    var melhor = sugestoes.reduce(function(a, b) {
+    if (candidatos.length === 0) return null;
+    return candidatos.reduce(function(a, b) {
       return a.contador > b.contador ? a : b;
     });
-
-    return melhor;
   }
 };
 

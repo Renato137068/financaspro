@@ -143,35 +143,36 @@ var CATEGORIZADOR = {
     return 1 - (dist / maxLen);
   },
 
-  // Detectar categoria com fuzzy matching
+  _cache: {},
+
   detectar: function(texto) {
     if (!texto || texto.length < 2) return null;
 
-    var palavras = texto.toLowerCase().split(/\s+/);
-    var melhorScore = 0;
-    var melhorCategoria = null;
-    var melhorTipo = null;
+    var chave = texto.toLowerCase().trim();
+    if (this._cache[chave]) return this._cache[chave];
 
-    // Para cada categoria
+    var palavras = chave.split(/\s+/);
+    var melhorScore = 0, melhorCategoria = null, melhorTipo = null;
+
     Object.keys(this.DICIONARIO).forEach(function(categoria) {
       var dados = CATEGORIZADOR.DICIONARIO[categoria];
       var scoreCategoria = 0;
 
-      // Para cada palavra do texto
       palavras.forEach(function(palavra) {
-        // Buscar match exato ou próximo
-        dados.palavras.forEach(function(dicionarioPalavra) {
-          var sim = CATEGORIZADOR.similaridade(palavra, dicionarioPalavra);
-          // Match exato: 100%, match com 80%+ de similaridade: conta como match
-          if (sim > 0.8 || palavra === dicionarioPalavra.substring(0, palavra.length)) {
-            scoreCategoria += sim * 2; // Dar peso maior para matches
+        dados.palavras.forEach(function(dp) {
+          // Short-circuit: diferença de tamanho > 4 → pula
+          if (Math.abs(palavra.length - dp.length) > 4) return;
+          // Short-circuit: primeiro char diferente em palavras longas → pula
+          if (palavra.length > 3 && dp.length > 3 && palavra[0] !== dp[0]) return;
+
+          var sim = CATEGORIZADOR.similaridade(palavra, dp);
+          if (sim > 0.8 || palavra === dp.substring(0, palavra.length)) {
+            scoreCategoria += sim * 2;
           }
         });
       });
 
-      // Normalizar score pela quantidade de palavras
-      scoreCategoria = scoreCategoria / palavras.length;
-
+      scoreCategoria /= palavras.length;
       if (scoreCategoria > melhorScore) {
         melhorScore = scoreCategoria;
         melhorCategoria = categoria;
@@ -179,16 +180,15 @@ var CATEGORIZADOR = {
       }
     });
 
-    // Retornar se score > 0.3 (30% de confiança)
-    if (melhorScore > 0.3) {
-      return {
-        categoria: melhorCategoria,
-        tipo: melhorTipo,
-        confianca: melhorScore > 0.7 ? 'alta' : 'media'
-      };
-    }
+    var resultado = melhorScore > 0.3 ? {
+      categoria: melhorCategoria,
+      tipo: melhorTipo,
+      confianca: melhorScore > 0.7 ? 'alta' : 'media'
+    } : null;
 
-    return null;
+    this._cache[chave] = resultado;
+    if (Object.keys(this._cache).length > 300) this._cache = {};
+    return resultado;
   }
 };
 

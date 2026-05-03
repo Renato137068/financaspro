@@ -6,29 +6,21 @@ var SCORE = {
   _cache: {},
 
   calcular: function(fuzzy, aprendizado, contextual) {
-    var key = (fuzzy?.categoria || '') + ':' + (aprendizado?.categoria || '');
+    var fScore = fuzzy      ? (fuzzy.confianca === 'alta' ? 0.9 : 0.6) : 0;
+    var aScore = aprendizado ? Math.min(0.5 + (aprendizado.contador || 1) * 0.05, 0.95) : 0;
+    var cScore = contextual  ? 0.7 : 0;
+
+    var key = fScore + ':' + aScore + ':' + cScore;
     if (this._cache[key]) return this._cache[key];
 
-    var pesos = {fuzzy: 0.5, aprendizado: 0.35, contextual: 0.15};
-    var scoreFuzzy = fuzzy ? (fuzzy.confianca === 'alta' ? 0.9 : 0.6) : 0;
-    var scoreAprend = aprendizado ? 0.8 : 0;
-    var scoreCtx = contextual ? 0.7 : 0;
-
-    var total = (scoreFuzzy * pesos.fuzzy) +
-                (scoreAprend * pesos.aprendizado) +
-                (scoreCtx * pesos.contextual);
-
-    var confianca = total > 0.75 ? 'alta' : total > 0.5 ? 'media' : 'baixa';
-    var categoria = fuzzy?.categoria || aprendizado?.categoria;
-    var tipo = fuzzy?.tipo || aprendizado?.tipo || 'despesa';
-    var fonte = fuzzy && fuzzy.confianca === 'alta' ? 'fuzzy' : 'aprendizado';
+    var total = fScore * 0.5 + aScore * 0.35 + cScore * 0.15;
 
     var resultado = {
-      score: parseFloat(total.toFixed(2)),
-      categoria: categoria,
-      tipo: tipo,
-      confianca: confianca,
-      fonte: fonte
+      score     : parseFloat(total.toFixed(2)),
+      categoria : (fuzzy && fuzzy.categoria) || (aprendizado && aprendizado.categoria),
+      tipo      : (fuzzy && fuzzy.tipo)      || (aprendizado && aprendizado.tipo) || 'despesa',
+      confianca : total > 0.75 ? 'alta' : total > 0.5 ? 'media' : 'baixa',
+      fonte     : (fuzzy && fuzzy.confianca === 'alta') ? 'fuzzy' : 'aprendizado'
     };
 
     this._cache[key] = resultado;
