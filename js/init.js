@@ -24,6 +24,9 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('5. Iniciando CATEGORIAS...');
     CATEGORIAS.init();
 
+    console.log('5b. Iniciando APRENDIZADO...');
+    if (typeof APRENDIZADO !== 'undefined') APRENDIZADO.init();
+
     console.log('6. Iniciando AUTOMACAO...');
     AUTOMACAO.init();
 
@@ -613,6 +616,7 @@ function setupFormSubmit() {
           var descParcela = descFinal + ' (' + (p + 1) + '/' + nParcelas + ')';
           TRANSACOES.criar(tipo, valorParcela, categoria, dataParcela.toISOString().split('T')[0], descParcela, banco, cartao);
         }
+        if (typeof APRENDIZADO !== 'undefined') APRENDIZADO.registrar(descricao, categoria, banco, cartao);
         mostrarSucesso(nParcelas + ' parcelas de ' + UTILS.formatarMoeda(valorParcela) + ' registradas!');
       }
       // RECORRÊNCIA
@@ -627,16 +631,21 @@ function setupFormSubmit() {
         DADOS.salvarRecorrente(recData);
         // Criar a primeira transação
         TRANSACOES.criar(tipo, valor, categoria, data, descFinal + ' (recorrente)', banco, cartao);
+        if (typeof APRENDIZADO !== 'undefined') APRENDIZADO.registrar(descricao, categoria, banco, cartao);
         mostrarSucesso('Recorrência ' + freq + ' criada!');
       }
       // NORMAL
       else {
         TRANSACOES.criar(tipo, valor, categoria, data, descFinal, banco, cartao);
+        if (typeof APRENDIZADO !== 'undefined') APRENDIZADO.registrar(descricao, categoria, banco, cartao);
         mostrarSucesso('Registrado!');
       }
 
-      // Atualizar dashboard
+      // Atualizar dashboard e insights
       RENDER.init();
+      if (typeof INSIGHTS !== 'undefined') {
+        setTimeout(function() { INSIGHTS.mostrar(); }, 100);
+      }
 
       // Modo contínuo ou limpar
       var chkContinuo = document.getElementById('chk-continuo');
@@ -2258,6 +2267,20 @@ function setupAutoCategoria() {
           deteccao = CATEGORIAS.detectar(descricao);
         }
 
+        // Fallback para APRENDIZADO
+        if ((!deteccao || deteccao.confianca === 'media') && typeof APRENDIZADO !== 'undefined') {
+          var aprendizado = APRENDIZADO.sugerir(descricao);
+          if (aprendizado) {
+            deteccao = {
+              categoria: aprendizado.categoria,
+              tipo: aprendizado.tipo || 'despesa',
+              confianca: 'media'
+            };
+            if (aprendizado.banco) DOMUTILS.set('novo-banco', aprendizado.banco);
+            if (aprendizado.cartao) DOMUTILS.set('novo-cartao', aprendizado.cartao);
+          }
+        }
+
         if (deteccao && deteccao.categoria) {
           var catInput = DOMUTILS.elementos.novoCategoria;
           var tipoInput = DOMUTILS.elementos.novoTipo;
@@ -2280,8 +2303,10 @@ function setupAutoCategoria() {
 
             var badge = document.getElementById('sugestao-badge');
             if (badge) {
-              badge.textContent = '✨ ' + UTILS.labelCategoria(deteccao.categoria);
+              var prefix = deteccao.confianca === 'alta' ? '✨' : '💡';
+              badge.textContent = prefix + ' ' + UTILS.labelCategoria(deteccao.categoria);
               badge.style.display = 'block';
+              badge.dataset.confianca = deteccao.confianca || 'media';
             }
           }
         }
@@ -2418,3 +2443,40 @@ window.mudarAba = function(aba) {
     setTimeout(renderizarSelects, 100);
   }
 };
+
+/* ============================================
+   ENTRADA RÁPIDA - PARSER
+   ============================================ */
+function abrirEntradaRapida() {
+  var input = prompt('Entrada rápida (ex: mercado 150 ontem nubank)\n\nFormato: descrição [valor] [data] [banco]');
+  if (!input) return;
+
+  if (typeof PARSER === 'undefined') {
+    UTILS.mostrarToast('Parser não disponível', 'error');
+    return;
+  }
+
+  var parsed = PARSER.extrair(input);
+
+  if (parsed.valor) {
+    var valorStr = parsed.valor.toFixed(2).replace('.', ',');
+    DOMUTILS.set('novo-valor', valorStr);
+  }
+  if (parsed.data) {
+    DOMUTILS.set('novo-data', parsed.data);
+  }
+  if (parsed.banco) {
+    DOMUTILS.set('novo-banco', parsed.banco);
+  }
+  if (parsed.cartao) {
+    DOMUTILS.set('novo-cartao', parsed.cartao);
+  }
+
+  if (parsed.desc) {
+    DOMUTILS.elementos.novoDescricao.value = parsed.desc;
+    DOMUTILS.elementos.novoDescricao.dispatchEvent(new Event('input'));
+  }
+
+  DOMUTILS.elementos.novoDescricao.focus();
+  UTILS.mostrarToast('Entrada rápida preenchida!', 'success');
+}

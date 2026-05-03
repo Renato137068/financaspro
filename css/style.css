@@ -2034,6 +2034,54 @@ legend {
   transform: scale(0.98);
 }
 
+.btn-entrada-rapida {
+  display: block;
+  margin: 0 auto 20px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, rgba(0,114,63,0.08) 0%, rgba(51,165,50,0.06) 100%);
+  border: 1.5px solid rgba(0,114,63,0.2);
+  border-radius: 20px;
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.btn-entrada-rapida:hover {
+  background: linear-gradient(135deg, rgba(0,114,63,0.12) 0%, rgba(51,165,50,0.1) 100%);
+  border-color: var(--primary);
+  transform: translateY(-1px);
+}
+
+/* ============================================
+   INSIGHTS - ALERTAS AUTOMÁTICOS
+   ============================================ */
+#dashboard-alertas {
+  margin-bottom: 20px;
+}
+
+.insight {
+  padding: 12px 14px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  border-left: 3px solid;
+}
+
+.insight-alta {
+  background: rgba(244, 67, 54, 0.1);
+  border-left-color: #f44336;
+  color: #d32f2f;
+}
+
+.insight-media {
+  background: rgba(255, 152, 0, 0.1);
+  border-left-color: #ff9800;
+  color: #e65100;
+}
+
 /* ============================================
    ABA NOVO - MODAL CONFIRMAÇÃO
    ============================================ */

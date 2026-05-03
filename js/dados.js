@@ -128,6 +128,19 @@ var DADOS = {
         if (typeof RENDER !== 'undefined') RENDER.init();
       }
     });
+  },
+
+  salvarAprendizado: function(hist) {
+    localStorage.setItem('aprendizado_historico', JSON.stringify(hist));
+  },
+
+  obterAprendizado: function() {
+    try {
+      var data = localStorage.getItem('aprendizado_historico');
+      return data ? JSON.parse(data) : {};
+    } catch (e) {
+      return {};
+    }
   }
 };
 
