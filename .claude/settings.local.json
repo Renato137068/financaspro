@@ -15,7 +15,9 @@
       "Bash(git commit -m '🐛 Fix: Navegação entre abas - proteção de funções *)",
       "Bash(git commit -m '🐛 Fix: Navegação - simplificar mudarAba sem forEach *)",
       "Bash(git commit -m '🐛 Fix: Proteger setupFormNovo contra erros em cascade *)",
-      "Bash(git commit -m '🔍 Debug: Adicionar logs de inicialização *)"
+      "Bash(git commit -m '🔍 Debug: Adicionar logs de inicialização *)",
+      "Bash(node -c 'C:\\\\Users\\\\renat\\\\Downloads\\\\financaspro\\\\js\\\\init.js')",
+      "Bash(git commit -m '🔧 Fix: Corrigir erros de sintaxe críticos *)"
     ]
   }
 }

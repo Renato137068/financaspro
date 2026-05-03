@@ -94,8 +94,7 @@ var TRANSACOES = {
       else resumo[t.categoria].despesa += t.valor;
     });
     return resumo;
-  }
-};
+  },
 
   obterResumoCategoriaMes: function(categoria, mes, ano) {
     var transacoes = UTILS.filtrarPorMes(this._cache, mes, ano);

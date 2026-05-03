@@ -2246,6 +2246,11 @@ function gerarPDF() {
   doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
   doc.text(UTILS.formatarMoeda(saldo), 196, tableY + 4, { align: 'right' });
 
+  var nomeArquivo = 'financaspro-extrato-' + nomeMes.toLowerCase() + '-' + info.ano + '.pdf';
+  doc.save(nomeArquivo);
+  UTILS.mostrarToast('PDF exportado!', 'success');
+}
+
 /* ============================================
    AUTO-CATEGORIA + DETECÇÃO DE ANOMALIA
    ============================================ */
