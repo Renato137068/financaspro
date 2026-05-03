@@ -43,27 +43,32 @@ function setupNavigation() {
 }
 
 function mudarAba(nomeAba) {
-  var abas = document.querySelectorAll('[id^="aba-"]');
-  var navBtns = document.querySelectorAll('.nav-btn');
-  abas.forEach(function(a) { a.classList.remove('ativo'); a.setAttribute('aria-hidden','true'); });
-  navBtns.forEach(function(b) { b.classList.remove('ativo'); b.removeAttribute('aria-current'); });
-  var alvo = document.getElementById('aba-' + nomeAba);
-  if (alvo) { alvo.classList.add('ativo'); alvo.removeAttribute('aria-hidden'); }
-  var btn = document.querySelector('[data-aba="' + nomeAba + '"]');
-  if (btn) { btn.classList.add('ativo'); btn.setAttribute('aria-current','true'); }
-  if (nomeAba === 'novo') {
-    renderQuickEntries();
-    var vi = document.getElementById('novo-valor');
-    if (vi) setTimeout(function() { vi.focus(); }, 100);
-  }
-  if (nomeAba === 'extrato') {
-    filtrarExtrato();
-  }
-  if (nomeAba === 'orcamento') {
-    renderOrcamentoDashboard();
-  }
-  if (nomeAba === 'config') {
-    renderConfigTab();
+  try {
+    var abas = document.querySelectorAll('[id^="aba-"]');
+    var navBtns = document.querySelectorAll('.nav-btn');
+    abas.forEach(function(a) { a.classList.remove('ativo'); a.setAttribute('aria-hidden','true'); });
+    navBtns.forEach(function(b) { b.classList.remove('ativo'); b.removeAttribute('aria-current'); });
+    var alvo = document.getElementById('aba-' + nomeAba);
+    if (alvo) { alvo.classList.add('ativo'); alvo.removeAttribute('aria-hidden'); }
+    var btn = document.querySelector('[data-aba="' + nomeAba + '"]');
+    if (btn) { btn.classList.add('ativo'); btn.setAttribute('aria-current','true'); }
+
+    if (nomeAba === 'novo') {
+      if (typeof renderQuickEntries === 'function') renderQuickEntries();
+      var vi = document.getElementById('novo-valor');
+      if (vi) setTimeout(function() { vi.focus(); }, 100);
+    }
+    if (nomeAba === 'extrato') {
+      if (typeof filtrarExtrato === 'function') filtrarExtrato();
+    }
+    if (nomeAba === 'orcamento') {
+      if (typeof renderOrcamentoDashboard === 'function') renderOrcamentoDashboard();
+    }
+    if (nomeAba === 'config') {
+      if (typeof renderConfigTab === 'function') renderConfigTab();
+    }
+  } catch (e) {
+    console.error('Erro ao mudar aba:', e);
   }
 }
 

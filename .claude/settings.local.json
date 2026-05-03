@@ -11,7 +11,8 @@
       "Bash(rm -f 'C:\\\\Users\\\\renat\\\\Downloads\\\\financaspro\\\\.git\\\\HEAD.lock' 'C:\\\\Users\\\\renat\\\\Downloads\\\\financaspro\\\\.git\\\\index.lock')",
       "Bash(git commit -m 'Refatoração: performance, modularização, testes *)",
       "Bash(git commit -m 'UX: Auto-categoria, auto-save, detecção de anomalia *)",
-      "Bash(git commit -m '🐛 Fix: Erro ao inicializar - proteção contra elementos faltantes *)"
+      "Bash(git commit -m '🐛 Fix: Erro ao inicializar - proteção contra elementos faltantes *)",
+      "Bash(git commit -m '🐛 Fix: Navegação entre abas - proteção de funções *)"
     ]
   }
 }
