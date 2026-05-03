@@ -19,7 +19,8 @@
       "Bash(node -c 'C:\\\\Users\\\\renat\\\\Downloads\\\\financaspro\\\\js\\\\init.js')",
       "Bash(git commit -m '🔧 Fix: Corrigir erros de sintaxe críticos *)",
       "Bash(git commit -m '🗑️ Remove: Seletor de moeda - manter apenas Real *)",
-      "Bash(git commit -m '✨ Feature: Banco/Cartão - sem expandir escopo *)"
+      "Bash(git commit -m '✨ Feature: Banco/Cartão - sem expandir escopo *)",
+      "Bash(git commit -m '✨ Feature: Bancos e Cartões personalizáveis *)"
     ]
   }
 }

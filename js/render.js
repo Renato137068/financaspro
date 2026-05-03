@@ -335,6 +335,7 @@ var RENDER = {
     list.innerHTML = ultimas.map(function(t) {
       var meta = UTILS.escapeHtml(t.categoria) + ' · ' + UTILS.formatarData(t.data);
       if (t.banco) meta += ' · 🏦 ' + UTILS.escapeHtml(t.banco);
+      if (t.cartao) meta += ' · 💳 ' + UTILS.escapeHtml(t.cartao);
       return '<div class="transacao-item">' +
         '<div class="transacao-info">' +
           '<div class="transacao-descricao">' + UTILS.escapeHtml(t.descricao || t.categoria) + '</div>' +

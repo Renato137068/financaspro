@@ -571,6 +571,7 @@ function setupFormSubmit() {
       var data = document.getElementById('novo-data').value;
       var descricao = document.getElementById('novo-descricao').value;
       var banco = document.getElementById('novo-banco') ? document.getElementById('novo-banco').value : '';
+      var cartao = document.getElementById('novo-cartao') ? document.getElementById('novo-cartao').value : '';
       var nota = document.getElementById('novo-nota') ? document.getElementById('novo-nota').value : '';
 
       // Auto-categorizar se nenhuma categoria selecionada
@@ -604,7 +605,7 @@ function setupFormSubmit() {
           var dataParcela = new Date(data + 'T12:00:00');
           dataParcela.setMonth(dataParcela.getMonth() + p);
           var descParcela = descFinal + ' (' + (p + 1) + '/' + nParcelas + ')';
-          TRANSACOES.criar(tipo, valorParcela, categoria, dataParcela.toISOString().split('T')[0], descParcela, banco);
+          TRANSACOES.criar(tipo, valorParcela, categoria, dataParcela.toISOString().split('T')[0], descParcela, banco, cartao);
         }
         mostrarSucesso(nParcelas + ' parcelas de ' + UTILS.formatarMoeda(valorParcela) + ' registradas!');
       }
@@ -619,12 +620,12 @@ function setupFormSubmit() {
         };
         DADOS.salvarRecorrente(recData);
         // Criar a primeira transação
-        TRANSACOES.criar(tipo, valor, categoria, data, descFinal + ' (recorrente)', banco);
+        TRANSACOES.criar(tipo, valor, categoria, data, descFinal + ' (recorrente)', banco, cartao);
         mostrarSucesso('Recorrência ' + freq + ' criada!');
       }
       // NORMAL
       else {
-        TRANSACOES.criar(tipo, valor, categoria, data, descFinal, banco);
+        TRANSACOES.criar(tipo, valor, categoria, data, descFinal, banco, cartao);
         mostrarSucesso('Registrado!');
       }
 
@@ -2291,3 +2292,117 @@ function setupAutoCategoria() {
     console.warn('Auto-categoria setup falhou:', e);
   }
 }
+
+/* CONFIG BANCOS E CARTÕES */
+function abrirConfigBancos() {
+  var config = DADOS.getConfig();
+  var bancos = config.bancos || ['Nubank','Itaú','Caixa','Bradesco','Santander'];
+  var cartoes = config.cartoes || ['Crédito','Débito','XP','B3'];
+
+  var html = '<div style="display:flex;flex-direction:column;gap:16px">' +
+    '<div>' +
+      '<p style="font-weight:700;font-size:14px;margin-bottom:8px">🏦 Bancos</p>' +
+      '<div id="lista-bancos" style="display:flex;flex-direction:column;gap:6px">' +
+        bancos.map(function(b) {
+          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg);border-radius:8px">' +
+            '<span>' + UTILS.escapeHtml(b) + '</span>' +
+            '<button onclick="removerBanco(\'' + UTILS.escapeHtml(b) + '\')" style="background:none;border:none;color:red;cursor:pointer;font-size:16px">✕</button>' +
+          '</div>';
+        }).join('') +
+      '</div>' +
+      '<input type="text" id="novo-banco-input" placeholder="Novo banco..." style="width:100%;padding:8px;margin-top:8px;border:1px solid var(--border);border-radius:8px">' +
+      '<button onclick="adicionarBanco()" style="width:100%;padding:8px;margin-top:6px;background:var(--primary);color:white;border:none;border-radius:8px;cursor:pointer">+ Adicionar</button>' +
+    '</div>' +
+    '<div>' +
+      '<p style="font-weight:700;font-size:14px;margin-bottom:8px">💳 Cartões</p>' +
+      '<div id="lista-cartoes" style="display:flex;flex-direction:column;gap:6px">' +
+        cartoes.map(function(c) {
+          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg);border-radius:8px">' +
+            '<span>' + UTILS.escapeHtml(c) + '</span>' +
+            '<button onclick="removerCartao(\'' + UTILS.escapeHtml(c) + '\')" style="background:none;border:none;color:red;cursor:pointer;font-size:16px">✕</button>' +
+          '</div>';
+        }).join('') +
+      '</div>' +
+      '<input type="text" id="novo-cartao-input" placeholder="Novo cartão..." style="width:100%;padding:8px;margin-top:8px;border:1px solid var(--border);border-radius:8px">' +
+      '<button onclick="adicionarCartao()" style="width:100%;padding:8px;margin-top:6px;background:var(--primary);color:white;border:none;border-radius:8px;cursor:pointer">+ Adicionar</button>' +
+    '</div>' +
+  '</div>';
+
+  fpAlert(html);
+}
+
+function adicionarBanco() {
+  var input = document.getElementById('novo-banco-input');
+  var valor = input ? input.value.trim() : '';
+  if (!valor) return;
+
+  var config = DADOS.getConfig();
+  config.bancos = config.bancos || [];
+  if (config.bancos.indexOf(valor) === -1) {
+    config.bancos.push(valor);
+    DADOS.salvarConfig(config);
+    abrirConfigBancos();
+  }
+}
+
+function removerBanco(banco) {
+  var config = DADOS.getConfig();
+  config.bancos = config.bancos || [];
+  config.bancos = config.bancos.filter(function(b) { return b !== banco; });
+  DADOS.salvarConfig(config);
+  abrirConfigBancos();
+}
+
+function adicionarCartao() {
+  var input = document.getElementById('novo-cartao-input');
+  var valor = input ? input.value.trim() : '';
+  if (!valor) return;
+
+  var config = DADOS.getConfig();
+  config.cartoes = config.cartoes || [];
+  if (config.cartoes.indexOf(valor) === -1) {
+    config.cartoes.push(valor);
+    DADOS.salvarConfig(config);
+    abrirConfigBancos();
+  }
+}
+
+function removerCartao(cartao) {
+  var config = DADOS.getConfig();
+  config.cartoes = config.cartoes || [];
+  config.cartoes = config.cartoes.filter(function(c) { return c !== cartao; });
+  DADOS.salvarConfig(config);
+  abrirConfigBancos();
+}
+
+/* RENDERIZAR SELECTS COM BANCOS E CARTÕES */
+function renderizarSelects() {
+  var config = DADOS.getConfig();
+  var bancos = config.bancos || ['Nubank','Itaú','Caixa','Bradesco','Santander'];
+  var cartoes = config.cartoes || ['Crédito','Débito','XP','B3'];
+
+  var seletoRBanco = document.getElementById('novo-banco');
+  if (seletoRBanco) {
+    var valBanco = seletoRBanco.value;
+    seletoRBanco.innerHTML = '<option value="">Sem banco</option>' +
+      bancos.map(function(b) { return '<option value="' + UTILS.escapeHtml(b) + '">' + UTILS.escapeHtml(b) + '</option>'; }).join('');
+    seletoRBanco.value = valBanco;
+  }
+
+  var seletorCartao = document.getElementById('novo-cartao');
+  if (seletorCartao) {
+    var valCartao = seletorCartao.value;
+    seletorCartao.innerHTML = '<option value="">Sem cartão</option>' +
+      cartoes.map(function(c) { return '<option value="' + UTILS.escapeHtml(c) + '">' + UTILS.escapeHtml(c) + '</option>'; }).join('');
+    seletorCartao.value = valCartao;
+  }
+}
+
+/* Chamar ao entrar na aba Novo */
+var originalMudarAba = mudarAba;
+window.mudarAba = function(aba) {
+  originalMudarAba(aba);
+  if (aba === 'novo') {
+    setTimeout(renderizarSelects, 100);
+  }
+};

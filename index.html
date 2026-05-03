@@ -150,20 +150,30 @@
         </div>
       </div>
 
-      <!-- 5. BANCO/CARTÃO -->
-      <div class="form-group">
-        <label for="novo-banco">🏦 Banco/Cartão</label>
-        <select id="novo-banco" class="form-select">
-          <option value="">Sem banco</option>
-          <option value="Nubank">Nubank</option>
-          <option value="Itaú">Itaú</option>
-          <option value="Caixa">Caixa</option>
-          <option value="Bradesco">Bradesco</option>
-          <option value="Santander">Santander</option>
-          <option value="XP">XP Investimentos</option>
-          <option value="B3">B3</option>
-          <option value="Outro">Outro</option>
-        </select>
+      <!-- 5. BANCO E CARTÃO (separados) -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label for="novo-banco">🏦 Banco</label>
+          <select id="novo-banco" class="form-select">
+            <option value="">Sem banco</option>
+            <option value="Nubank">Nubank</option>
+            <option value="Itaú">Itaú</option>
+            <option value="Caixa">Caixa</option>
+            <option value="Bradesco">Bradesco</option>
+            <option value="Santander">Santander</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="novo-cartao">💳 Cartão</label>
+          <select id="novo-cartao" class="form-select">
+            <option value="">Sem cartão</option>
+            <option value="Crédito">Crédito</option>
+            <option value="Débito">Débito</option>
+            <option value="XP">XP Investimentos</option>
+            <option value="B3">B3</option>
+            <option value="Outro">Outro</option>
+          </select>
+        </div>
       </div>
 
       <!-- 6. OPÇÕES EXTRAS (recolhidas) -->
@@ -390,6 +400,16 @@
 
     <!-- PREFERÊNCIAS -->
     <div class="cfg-section-title">Preferências</div>
+
+    <!-- BANCOS E CARTÕES -->
+    <div class="cfg-card" onclick="abrirConfigBancos()">
+      <div class="cfg-card-icon">🏦</div>
+      <div class="cfg-card-body">
+        <span class="cfg-card-label">Bancos e Cartões</span>
+        <span class="cfg-card-valor cfg-card-sub" id="cfg-bancos-display">Nenhum cadastrado</span>
+      </div>
+      <span class="cfg-card-arrow">›</span>
+    </div>
 
     <div class="cfg-card cfg-card-toggle">
       <div class="cfg-card-icon">🌙</div>
