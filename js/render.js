@@ -333,10 +333,12 @@ var RENDER = {
     }
 
     list.innerHTML = ultimas.map(function(t) {
+      var meta = UTILS.escapeHtml(t.categoria) + ' · ' + UTILS.formatarData(t.data);
+      if (t.banco) meta += ' · 🏦 ' + UTILS.escapeHtml(t.banco);
       return '<div class="transacao-item">' +
         '<div class="transacao-info">' +
           '<div class="transacao-descricao">' + UTILS.escapeHtml(t.descricao || t.categoria) + '</div>' +
-          '<div class="transacao-data">' + UTILS.escapeHtml(t.categoria) + ' · ' + UTILS.formatarData(t.data) + '</div>' +
+          '<div class="transacao-data">' + meta + '</div>' +
         '</div>' +
         '<div class="transacao-valor ' + t.tipo + '">' +
           (t.tipo === CONFIG.TIPO_RECEITA ? '+' : '-') + ' ' + UTILS.formatarMoeda(t.valor) +

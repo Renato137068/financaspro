@@ -570,6 +570,7 @@ function setupFormSubmit() {
       var categoria = document.getElementById('novo-categoria').value;
       var data = document.getElementById('novo-data').value;
       var descricao = document.getElementById('novo-descricao').value;
+      var banco = document.getElementById('novo-banco') ? document.getElementById('novo-banco').value : '';
       var nota = document.getElementById('novo-nota') ? document.getElementById('novo-nota').value : '';
 
       // Auto-categorizar se nenhuma categoria selecionada
@@ -603,7 +604,7 @@ function setupFormSubmit() {
           var dataParcela = new Date(data + 'T12:00:00');
           dataParcela.setMonth(dataParcela.getMonth() + p);
           var descParcela = descFinal + ' (' + (p + 1) + '/' + nParcelas + ')';
-          TRANSACOES.criar(tipo, valorParcela, categoria, dataParcela.toISOString().split('T')[0], descParcela);
+          TRANSACOES.criar(tipo, valorParcela, categoria, dataParcela.toISOString().split('T')[0], descParcela, banco);
         }
         mostrarSucesso(nParcelas + ' parcelas de ' + UTILS.formatarMoeda(valorParcela) + ' registradas!');
       }
@@ -618,12 +619,12 @@ function setupFormSubmit() {
         };
         DADOS.salvarRecorrente(recData);
         // Criar a primeira transação
-        TRANSACOES.criar(tipo, valor, categoria, data, descFinal + ' (recorrente)');
+        TRANSACOES.criar(tipo, valor, categoria, data, descFinal + ' (recorrente)', banco);
         mostrarSucesso('Recorrência ' + freq + ' criada!');
       }
       // NORMAL
       else {
-        TRANSACOES.criar(tipo, valor, categoria, data, descFinal);
+        TRANSACOES.criar(tipo, valor, categoria, data, descFinal, banco);
         mostrarSucesso('Registrado!');
       }
 

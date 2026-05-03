@@ -14,6 +14,7 @@ var DOMUTILS = {
       novoCategoria: this._safeGet('novo-categoria'),
       novoTipo: this._safeGet('novo-tipo'),
       novoData: this._safeGet('novo-data'),
+      novoBanco: this._safeGet('novo-banco'),
       formTransacao: this._safeGet('form-transacao'),
       tipoIndicator: this._safeGet('tipo-indicator-text'),
       tipoIndicatorDot: this._safeGetQuery('.tipo-dot'),

@@ -10,7 +10,7 @@ var TRANSACOES = {
     this._cache = DADOS.getTransacoes();
   },
 
-  criar: function(tipo, valor, categoria, data, descricao) {
+  criar: function(tipo, valor, categoria, data, descricao, banco) {
     var validacao = UTILS.validarTransacao({
       tipo: tipo, valor: parseFloat(valor), categoria: categoria, data: data
     });
@@ -23,6 +23,7 @@ var TRANSACOES = {
       categoria: categoria,
       data: data,
       descricao: descricao || '',
+      banco: banco || '',
       dataCriacao: new Date().toISOString()
     };
     DADOS.salvarTransacao(transacao);
