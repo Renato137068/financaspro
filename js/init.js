@@ -43,33 +43,53 @@ function setupNavigation() {
 }
 
 function mudarAba(nomeAba) {
-  try {
-    var abas = document.querySelectorAll('[id^="aba-"]');
-    var navBtns = document.querySelectorAll('.nav-btn');
-    abas.forEach(function(a) { a.classList.remove('ativo'); a.setAttribute('aria-hidden','true'); });
-    navBtns.forEach(function(b) { b.classList.remove('ativo'); b.removeAttribute('aria-current'); });
-    var alvo = document.getElementById('aba-' + nomeAba);
-    if (alvo) { alvo.classList.add('ativo'); alvo.removeAttribute('aria-hidden'); }
-    var btn = document.querySelector('[data-aba="' + nomeAba + '"]');
-    if (btn) { btn.classList.add('ativo'); btn.setAttribute('aria-current','true'); }
-
-    if (nomeAba === 'novo') {
-      if (typeof renderQuickEntries === 'function') renderQuickEntries();
-      var vi = document.getElementById('novo-valor');
-      if (vi) setTimeout(function() { vi.focus(); }, 100);
-    }
-    if (nomeAba === 'extrato') {
-      if (typeof filtrarExtrato === 'function') filtrarExtrato();
-    }
-    if (nomeAba === 'orcamento') {
-      if (typeof renderOrcamentoDashboard === 'function') renderOrcamentoDashboard();
-    }
-    if (nomeAba === 'config') {
-      if (typeof renderConfigTab === 'function') renderConfigTab();
-    }
-  } catch (e) {
-    console.error('Erro ao mudar aba:', e);
+  // Mostrar/esconder abas
+  var abas = document.querySelectorAll('[id^="aba-"]');
+  for (var i = 0; i < abas.length; i++) {
+    abas[i].classList.remove('ativo');
+    abas[i].setAttribute('aria-hidden','true');
   }
+
+  var alvo = document.getElementById('aba-' + nomeAba);
+  if (alvo) {
+    alvo.classList.add('ativo');
+    alvo.removeAttribute('aria-hidden');
+  }
+
+  // Ativar botão de navegação
+  var navBtns = document.querySelectorAll('.nav-btn');
+  for (var j = 0; j < navBtns.length; j++) {
+    navBtns[j].classList.remove('ativo');
+    navBtns[j].removeAttribute('aria-current');
+  }
+
+  var btn = document.querySelector('[data-aba="' + nomeAba + '"]');
+  if (btn) {
+    btn.classList.add('ativo');
+    btn.setAttribute('aria-current','true');
+  }
+
+  // Renderers opcionais
+  setTimeout(function() {
+    try {
+      if (nomeAba === 'novo') {
+        if (typeof renderQuickEntries === 'function') renderQuickEntries();
+        var vi = document.getElementById('novo-valor');
+        if (vi) vi.focus();
+      }
+      if (nomeAba === 'extrato' && typeof filtrarExtrato === 'function') {
+        filtrarExtrato();
+      }
+      if (nomeAba === 'orcamento' && typeof renderOrcamentoDashboard === 'function') {
+        renderOrcamentoDashboard();
+      }
+      if (nomeAba === 'config' && typeof renderConfigTab === 'function') {
+        renderConfigTab();
+      }
+    } catch (e) {
+      console.warn('Erro ao renderizar aba:', e);
+    }
+  }, 0);
 }
 
 /* ============================================
