@@ -13,6 +13,8 @@ document.addEventListener('DOMContentLoaded', function() {
     DADOS.setupStorageSync();
     TRANSACOES.init();
     ORCAMENTO.init();
+    CATEGORIAS.init();
+    AUTOMACAO.init();
     RENDER.init();
     CONFIG_USER.init();
     CONFIG_USER.aplicarTema();
@@ -20,6 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setupNavigation();
     setupFormNovo();
     setupImport();
+    setupAutoCategoria();
 
     var dataInput = DOMUTILS.elementos.novoData;
     if (dataInput && !dataInput.value) {
@@ -2186,4 +2189,70 @@ function gerarPDF() {
   var nomeArquivo = 'financaspro-extrato-' + nomeMes.toLowerCase() + '-' + info.ano + '.pdf';
   doc.save(nomeArquivo);
   UTILS.mostrarToast('PDF exportado!', 'success');
+}
+
+/* ============================================
+   AUTO-CATEGORIA + DETECÇÃO DE ANOMALIA
+   ============================================ */
+function setupAutoCategoria() {
+  var descInput = DOMUTILS.elementos.novoDescricao;
+  if (!descInput) return;
+
+  var timerDeteccao = null;
+
+  descInput.addEventListener('input', function() {
+    clearTimeout(timerDeteccao);
+    var descricao = this.value.trim();
+
+    timerDeteccao = setTimeout(function() {
+      if (!descricao) {
+        AUTOMACAO.limparAlerta();
+        return;
+      }
+
+      // Sugerir categoria
+      var deteccao = CATEGORIAS.detectar(descricao);
+      if (deteccao && deteccao.categoria) {
+        var catInput = DOMUTILS.elementos.novoCategoria;
+        var tipoInput = DOMUTILS.elementos.novoTipo;
+
+        if (catInput && catInput.value !== deteccao.categoria) {
+          catInput.value = deteccao.categoria;
+          if (tipoInput) tipoInput.value = deteccao.tipo;
+
+          var grid = document.getElementById('categoria-grid');
+          if (grid) {
+            grid.querySelectorAll('.cat-btn').forEach(function(btn) {
+              btn.classList.remove('ativo');
+            });
+            var botaoSelecionado = grid.querySelector('[data-cat="' + deteccao.categoria + '"]');
+            if (botaoSelecionado) botaoSelecionado.classList.add('ativo');
+          }
+
+          atualizarTipoIndicator(deteccao.tipo);
+          atualizarOrcamentoPreview();
+
+          var badge = document.getElementById('sugestao-badge');
+          if (badge) {
+            badge.textContent = '✨ ' + UTILS.labelCategoria(deteccao.categoria);
+            badge.style.display = 'block';
+          }
+        }
+      }
+
+      // Detectar anomalia
+      var valorInput = DOMUTILS.elementos.novoValor;
+      if (valorInput && valorInput.value) {
+        var valor = VALIDATIONS.validarValor(valorInput.value);
+        if (valor.valido && deteccao && deteccao.categoria) {
+          var alerta = AUTOMACAO.detectarAnomalia(valor.valor, deteccao.categoria, deteccao.tipo);
+          if (alerta) {
+            AUTOMACAO.mostrarAlerta(alerta);
+          } else {
+            AUTOMACAO.limparAlerta();
+          }
+        }
+      }
+    }, 300);
+  });
 }

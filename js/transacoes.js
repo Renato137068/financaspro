@@ -97,6 +97,13 @@ var TRANSACOES = {
   }
 };
 
+  obterResumoCategoriaMes: function(categoria, mes, ano) {
+    var transacoes = UTILS.filtrarPorMes(this._cache, mes, ano);
+    return transacoes.filter(function(t) { return t.categoria === categoria && t.tipo === 'despesa'; })
+      .reduce(function(acc, t) { return acc + t.valor; }, 0);
+  }
+};
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = TRANSACOES;
 }

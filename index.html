@@ -84,7 +84,7 @@
         <div class="valor-input-wrapper">
           <span class="valor-prefix">R$</span>
           <input type="text" id="novo-valor" class="valor-input" placeholder="0,00"
-                 inputmode="decimal" autocomplete="off" required
+                 inputmode="decimal" autocomplete="off" required data-autosave="valor"
                  aria-label="Valor da transação">
         </div>
       </div>
@@ -97,7 +97,7 @@
         <label for="novo-descricao">O quê?</label>
         <div class="autocomplete-wrapper">
           <input type="text" id="novo-descricao" placeholder="Ex: Supermercado, Salário, Uber..."
-                 autocomplete="off">
+                 autocomplete="off" data-autosave="descricao">
           <div id="autocomplete-list" class="autocomplete-list"></div>
         </div>
         <div id="sugestao-badge" class="sugestao-badge" style="display:none"></div>
@@ -556,6 +556,7 @@
 <script src="js/validations.js"></script>
 <script src="js/transacoes.js"></script>
 <script src="js/orcamento.js"></script>
+<script src="js/automacao.js"></script>
 <script src="js/render.js"></script>
 <script src="js/config-user.js"></script>
 <script src="js/init.js"></script>
