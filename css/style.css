@@ -2957,15 +2957,6 @@ legend {
   width: 100%;
 }
 
-/* Moeda Option */
-.cfg-moeda-opt {
-  transition: background 0.2s, transform 0.1s;
-}
-
-.cfg-moeda-opt:active {
-  transform: scale(0.97);
-}
-
 /* ========================================
    CONFIGURAÇÕES — Dark Mode
    ======================================== */

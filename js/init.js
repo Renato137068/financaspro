@@ -1592,34 +1592,6 @@ function abrirEditarRenda() {
   });
 }
 
-function abrirSeletorMoeda() {
-  var config = DADOS.getConfig();
-  var atual = config.moeda || 'BRL';
-  var moedas = [
-    {code:'BRL',label:'Real Brasileiro',symbol:'R$'},
-    {code:'USD',label:'Dólar Americano',symbol:'$'},
-    {code:'EUR',label:'Euro',symbol:'€'}
-  ];
-  var html = '<div style="display:flex;flex-direction:column;gap:12px">' +
-    '<p style="font-weight:700;font-size:17px;text-align:center">Moeda</p>';
-  moedas.forEach(function(m) {
-    var sel = m.code === atual ? 'background:var(--primary);color:#fff;' : 'background:var(--bg);';
-    html += '<div class="cfg-moeda-opt" onclick="selecionarMoeda(\'' + m.code + '\')" style="padding:14px 16px;border-radius:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;' + sel + '">' +
-      '<span style="font-weight:600">' + m.symbol + ' ' + m.label + '</span>' +
-      (m.code === atual ? '<span>✓</span>' : '') + '</div>';
-  });
-  html += '</div>';
-  fpAlert(html);
-}
-
-function selecionarMoeda(code) {
-  DADOS.salvarConfig({ moeda: code });
-  var overlay = document.querySelector('.modal-overlay');
-  if (overlay) overlay.remove();
-  renderConfigTab();
-  UTILS.mostrarToast('Moeda alterada para ' + code, 'success');
-}
-
 function toggleAlertaOrcamento() {
   var chk = document.getElementById('chk-alerta-orc');
   DADOS.salvarConfig({ alertaOrcamento: chk ? chk.checked : false });
