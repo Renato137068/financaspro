@@ -42,7 +42,8 @@ var INSIGHTS = {
     var config = DADOS.getConfig();
 
     Object.keys(resumoCat).forEach(function(cat) {
-      var orcCat = config.orcamentos && config.orcamentos[cat];
+      // Usar ORCAMENTO.obterLimite() — retorna número, não {limite, definidoEm}
+      var orcCat = typeof ORCAMENTO !== 'undefined' ? ORCAMENTO.obterLimite(cat) : null;
       if (orcCat && resumoCat[cat].despesa > orcCat) {
         var excesso = resumoCat[cat].despesa - orcCat;
         var pct = ((excesso / orcCat) * 100).toFixed(0);

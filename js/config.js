@@ -57,6 +57,7 @@ const CONFIG = {
     transporte:   '🚗 Transporte',
     moradia:      '🏠 Moradia',
     saude:        '⚕️ Saúde',
+    educacao:     '📚 Educação',
     lazer:        '🎬 Lazer',
     outro:        '📌 Outro',
     salario:      '💼 Salário',

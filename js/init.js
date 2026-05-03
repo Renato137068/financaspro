@@ -692,11 +692,13 @@ function setupFormSubmit() {
 }
 
 function limparFormularioParcial() {
-  // Modo contínuo: limpa valor e descrição, mantém categoria e data
   var vi = document.getElementById('novo-valor');
   var di = document.getElementById('novo-descricao');
   if (vi) vi.value = '';
   if (di) di.value = '';
+  // Resetar _manualSet para permitir auto-categorização no próximo lançamento
+  var catEl = document.getElementById('novo-categoria');
+  if (catEl) catEl._manualSet = false;
   limparSugestaoCategoria();
   var orc = document.getElementById('orcamento-preview');
   if (orc) orc.innerHTML = '';
@@ -2473,12 +2475,14 @@ function atualizarBadgeConfianca(confianca) {
 
 function executarInsight(acao, parametros) {
   if (acao === 'aumentarLimite') {
-    var config = DADOS.getConfig();
-    if (!config.orcamentos) config.orcamentos = {};
-    config.orcamentos[parametros.categoria] = parametros.novoLimite;
-    DADOS.salvarConfig(config);
-    UTILS.mostrarToast('Limite de ' + UTILS.labelCategoria(parametros.categoria) +
-      ' → R$ ' + parametros.novoLimite.toFixed(2), 'success');
+    // Usar ORCAMENTO.setarLimite → salva {limite, definidoEm} corretamente
+    try {
+      ORCAMENTO.definirLimite(parametros.categoria, parametros.novoLimite);
+      UTILS.mostrarToast('Limite de ' + UTILS.labelCategoria(parametros.categoria) +
+        ' → R$ ' + parametros.novoLimite.toFixed(2), 'success');
+    } catch (e) {
+      UTILS.mostrarToast('Erro ao atualizar limite', 'error');
+    }
   }
 
   if (acao === 'marcarRecorrente') {

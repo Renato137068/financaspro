@@ -58,11 +58,22 @@ var APRENDIZADO = {
     var candidatos = [];
 
     tokens.forEach(function(p) {
-      Object.keys(APRENDIZADO.HISTORICO).forEach(function(key) {
-        if (key === p || key.startsWith(p + '__')) {
-          candidatos.push(APRENDIZADO.HISTORICO[key]);
+      if (p.length < 3) return;
+
+      // O(1) lookup direto — evita Object.keys por token
+      if (APRENDIZADO.HISTORICO[p]) {
+        candidatos.push(APRENDIZADO.HISTORICO[p]);
+      }
+      // Busca variantes alternativas só se não encontrou direto
+      if (!APRENDIZADO.HISTORICO[p]) {
+        var prefixo = p + '__';
+        var chaves = Object.keys(APRENDIZADO.HISTORICO);
+        for (var i = 0; i < chaves.length; i++) {
+          if (chaves[i].indexOf(prefixo) === 0) {
+            candidatos.push(APRENDIZADO.HISTORICO[chaves[i]]);
+          }
         }
-      });
+      }
     });
 
     if (candidatos.length === 0) return null;
