@@ -34,14 +34,16 @@ var DADOS = {
     var transacoes = this.getTransacoes();
     transacao.id = transacao.id || UTILS.gerarId();
     transacao.dataCriacao = transacao.dataCriacao || new Date().toISOString();
-    var index = -1;
-    for (var i = 0; i < transacoes.length; i++) {
-      if (transacoes[i].id === transacao.id) { index = i; break; }
-    }
+    var index = transacoes.findIndex(function(t) { return t.id === transacao.id; });
     if (index >= 0) {
       transacoes[index] = transacao;
     } else {
       transacoes.push(transacao);
+    }
+    var check = UTILS.verificarStorageDisponivel(transacoes, CONFIG.STORAGE_TRANSACOES);
+    if (!check.disponivel) {
+      console.error('Storage indisponível:', check.erro);
+      throw new Error(check.erro);
     }
     localStorage.setItem(CONFIG.STORAGE_TRANSACOES, JSON.stringify(transacoes));
     return transacao;
@@ -49,12 +51,14 @@ var DADOS = {
 
   deletarTransacao: function(id) {
     var transacoes = this.getTransacoes();
-    var index = -1;
-    for (var i = 0; i < transacoes.length; i++) {
-      if (transacoes[i].id === id) { index = i; break; }
-    }
+    var index = transacoes.findIndex(function(t) { return t.id === id; });
     if (index >= 0) {
       transacoes.splice(index, 1);
+      var check = UTILS.verificarStorageDisponivel(transacoes, CONFIG.STORAGE_TRANSACOES);
+      if (!check.disponivel) {
+        console.error('Storage indisponível:', check.erro);
+        return false;
+      }
       localStorage.setItem(CONFIG.STORAGE_TRANSACOES, JSON.stringify(transacoes));
       return true;
     }
@@ -87,15 +91,35 @@ var DADOS = {
     this.init();
   },
 
+  getRecorrentes: function() {
+    try {
+      var config = this.getConfig();
+      return Array.isArray(config.recorrentes) ? config.recorrentes : [];
+    } catch (e) {
+      return [];
+    }
+  },
+
+  salvarRecorrente: function(recData) {
+    var config = this.getConfig();
+    if (!Array.isArray(config.recorrentes)) config.recorrentes = [];
+    recData.id = recData.id || UTILS.gerarId();
+    recData.dataCriacao = new Date().toISOString();
+    config.recorrentes.push(recData);
+    this.salvarConfig(config);
+    return recData;
+  },
+
   exportarDados: function() {
     return {
       transacoes: this.getTransacoes(),
       config: this.getConfig(),
       dataExportacao: new Date().toISOString()
     };
-  }
-};
+  },
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = DADOS;
-}
+  // Sync entre abas: atualiza cache quando outra aba muda o localStorage
+  setupStorageSync: function() {
+    var self = this;
+    window.addEventListener('storage', function(e) {
+      if (e.key === CONFIG.STORAGE_TRANSACOES || e.key === CONFI

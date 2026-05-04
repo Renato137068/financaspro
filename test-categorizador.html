@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Teste - CATEGORIZADOR (Fuzzy Matching)</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 { color: #00723F; }
+    .test-group {
+      background: white;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .test-case {
+      padding: 12px;
+      margin: 10px 0;
+      background: #f9f9f9;
+      border-left: 4px solid #ccc;
+      font-family: monospace;
+    }
+    .test-case.pass {
+      border-left-color: #4CAF50;
+      background: #f1f8f4;
+    }
+    .test-case.fail {
+      border-left-color: #f44336;
+      background: #fdeaea;
+    }
+    .test-input { font-weight: bold; color: #333; }
+    .test-result { color: #666; margin-top: 4px; font-size: 0.9em; }
+    .test-result.pass { color: #4CAF50; }
+    .test-result.fail { color: #f44336; }
+    .confidence { color: #FF9800; }
+  </style>
+</head>
+<body>
+  <h1>🧪 Teste CATEGORIZADOR - Fuzzy Matching</h1>
+  <p>Testando detecção de categorias com typos e variações em português</p>
+
+  <div class="test-group" id="results"></div>
+
+  <script src="js/categorizador.js"></script>
+  <script>
+    var testCases = [
+      // Typos - Alimentação
+      { texto: 'supermercto', expect: 'alimentacao', name: 'Supermercado com typo "supermercto"' },
+      { texto: 'padria', expect: 'alimentacao', name: 'Padaria com typo "padria"' },
+      { texto: 'restaurante', expect: 'alimentacao', name: 'Restaurante correto' },
+      { texto: 'rrestaurante', expect: 'alimentacao', name: 'Restaurante com typo "rrestaurante"' },
+      { texto: 'ifood', expect: 'alimentacao', name: 'iFood delivery' },
+      { texto: 'pizza', expect: 'alimentacao', name: 'Pizza' },
+      { texto: 'açai', expect: 'alimentacao', name: 'Açaí' },
+
+      // Typos - Transporte
+      { texto: 'onibus', expect: 'transporte', name: 'Ônibus sem acento' },
+      { texto: 'ônibus', expect: 'transporte', name: 'Ônibus com acento' },
+      { texto: 'uber', expect: 'transporte', name: 'Uber' },
+      { texto: 'taix', expect: 'transporte', name: 'Táxi com typo "taix"' },
+      { texto: 'gasoina', expect: 'transporte', name: 'Gasolina com typo "gasoina"' },
+
+      // Typos - Moradia
+      { texto: 'alugel', expect: 'moradia', name: 'Aluguel com typo "alugel"' },
+      { texto: 'agua', expect: 'moradia', name: 'Água sem acento' },
+      { texto: 'condominio', expect: 'moradia', name: 'Condomínio sem acento' },
+      { texto: 'eletricista', expect: 'moradia', name: 'Eletricista' },
+
+      // Typos - Saúde
+      { texto: 'farmacia', expect: 'saude', name: 'Farmácia sem acento' },
+      { texto: 'medico', expect: 'saude', name: 'Médico sem acento' },
+      { texto: 'denstista', expect: 'saude', name: 'Dentista com typo "denstista"' },
+      { texto: 'consultorio', expect: 'saude', name: 'Consultório com typo "consultorio"' },
+
+      // Typos - Lazer
+      { texto: 'neflix', expect: 'lazer', name: 'Netflix com typo "neflix"' },
+      { texto: 'spotifi', expect: 'lazer', name: 'Spotify com typo "spotifi"' },
+      { texto: 'cinema', expect: 'lazer', name: 'Cinema' },
+      { texto: 'steam', expect: 'lazer', name: 'Steam' },
+
+      // Typos - Educação
+      { texto: 'facudade', expect: 'educacao', name: 'Faculdade com typo "facudade"' },
+      { texto: 'univercidade', expect: 'educacao', name: 'Universidade com typo "univercidade"' },
+      { texto: 'escola', expect: 'educacao', name: 'Escola' },
+      { texto: 'udemy', expect: 'educacao', name: 'Udemy' },
+
+      // Receitas
+      { texto: 'salario', expect: 'salario', name: 'Salário sem acento' },
+      { texto: 'freelance', expect: 'freelance', name: 'Freelance' },
+      { texto: 'investimento', expect: 'investimentos', name: 'Investimento' },
+      { texto: 'dividendo', expect: 'investimentos', name: 'Dividendo' },
+    ];
+
+    var resultsDiv = document.getElementById('results');
+    var passed = 0;
+    var failed = 0;
+    var html = '';
+
+    testCases.forEach(function(test, idx) {
+      var resultado = CATEGORIZADOR.detectar(test.texto);
+      var isPass = resultado && resultado.categoria === test.expect;
+
+      if (isPass) passed++;
+      else failed++;
+
+      var statusClass = isPass ? 'pass' : 'fail';
+      var statusText = isPass ? '✅ PASS' : '❌ FAIL';
+
+      html += '<div class="test-case ' + statusClass + '">' +
+        '<div class="test-input">' + statusText + ' - ' + test.name + '</div>' +
+        '<div class="test-result ' + statusClass + '">';
+
+      if (resultado) {
+        html += 'Input: "' + test.texto + '" → ' +
+          '<strong>' + resultado.categoria + '</strong> ' +
+          '(<span class="confidence">' + resultado.confianca + '</span>)';
+      } else {
+        html += 'Input: "' + test.texto + '" → <strong>nenhuma</strong> (null)';
+      }
+
+      if (!isPass) {
+        html += ' [esperava: <strong>' + test.expect + '</strong>]';
+      }
+
+      html += '</div></div>';
+    });
+
+    resultsDiv.innerHTML = html;
+
+    var summary = '<h2>Resumo: ' + passed + ' ✅ / ' + failed + ' ❌ (' +
+      Math.round((passed / testCases.length) * 100) + '%)</h2>';
+    resultsDiv.innerHTML = summary + resultsDiv.innerHTML;
+  </script>
+</body>
+</html>

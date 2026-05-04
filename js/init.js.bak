@@ -7,68 +7,20 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-  try {
-    console.log('1. Iniciando DOMUTILS...');
-    DOMUTILS.init();
+  DADOS.init();
+  TRANSACOES.init();
+  ORCAMENTO.init();
+  RENDER.init();
+  CONFIG_USER.init();
+  CONFIG_USER.aplicarTema();
+  verificarPinAoAbrir();
+  setupNavigation();
+  setupFormNovo();
+  setupImport();
 
-    console.log('2. Iniciando DADOS...');
-    DADOS.init();
-    DADOS.setupStorageSync();
-
-    console.log('3. Iniciando TRANSACOES...');
-    TRANSACOES.init();
-
-    console.log('4. Iniciando ORCAMENTO...');
-    ORCAMENTO.init();
-
-    console.log('5. Iniciando CATEGORIAS...');
-    CATEGORIAS.init();
-
-    console.log('5b. Iniciando APRENDIZADO...');
-    if (typeof APRENDIZADO !== 'undefined') APRENDIZADO.init();
-
-    console.log('5c. Verificando armazenamento...');
-    verificarArmazenamento();
-
-    console.log('6. Iniciando AUTOMACAO...');
-    AUTOMACAO.init();
-
-    console.log('7. Iniciando RENDER...');
-    RENDER.init();
-
-    console.log('8. Iniciando CONFIG_USER...');
-    CONFIG_USER.init();
-    CONFIG_USER.aplicarTema();
-
-    console.log('9. Verificando PIN...');
-    verificarPinAoAbrir();
-
-    console.log('10. Setup Navigation...');
-    setupNavigation();
-
-    console.log('11. Setup Form...');
-    setupFormNovo();
-
-    console.log('12. Setup Import...');
-    setupImport();
-
-    console.log('13. Setup Auto Categoria...');
-    try {
-      setupAutoCategoria();
-    } catch (e) {
-      console.warn('Auto-categoria não disponível:', e);
-    }
-
-    console.log('14. Setting data...');
-    var dataInput = DOMUTILS.elementos.novoData;
-    if (dataInput && !dataInput.value) {
-      dataInput.value = new Date().toISOString().split('T')[0];
-    }
-
-    console.log('✅ Inicialização completa!');
-  } catch (e) {
-    console.error('❌ Erro na inicialização:', e.message, e.stack);
-    UTILS.mostrarToast('Erro ao inicializar: ' + e.message, 'error');
+  var dataInput = document.getElementById('novo-data');
+  if (dataInput && !dataInput.value) {
+    dataInput.value = new Date().toISOString().split('T')[0];
   }
 });
 
@@ -81,92 +33,52 @@ function setupNavigation() {
 }
 
 function mudarAba(nomeAba) {
-  // Mostrar/esconder abas
   var abas = document.querySelectorAll('[id^="aba-"]');
-  for (var i = 0; i < abas.length; i++) {
-    abas[i].classList.remove('ativo');
-    abas[i].setAttribute('aria-hidden','true');
-  }
-
-  var alvo = document.getElementById('aba-' + nomeAba);
-  if (alvo) {
-    alvo.classList.add('ativo');
-    alvo.removeAttribute('aria-hidden');
-  }
-
-  // Ativar botão de navegação
   var navBtns = document.querySelectorAll('.nav-btn');
-  for (var j = 0; j < navBtns.length; j++) {
-    navBtns[j].classList.remove('ativo');
-    navBtns[j].removeAttribute('aria-current');
-  }
-
+  abas.forEach(function(a) { a.classList.remove('ativo'); a.setAttribute('aria-hidden','true'); });
+  navBtns.forEach(function(b) { b.classList.remove('ativo'); b.removeAttribute('aria-current'); });
+  var alvo = document.getElementById('aba-' + nomeAba);
+  if (alvo) { alvo.classList.add('ativo'); alvo.removeAttribute('aria-hidden'); }
   var btn = document.querySelector('[data-aba="' + nomeAba + '"]');
-  if (btn) {
-    btn.classList.add('ativo');
-    btn.setAttribute('aria-current','true');
+  if (btn) { btn.classList.add('ativo'); btn.setAttribute('aria-current','true'); }
+  if (nomeAba === 'novo') {
+    renderQuickEntries();
+    var vi = document.getElementById('novo-valor');
+    if (vi) setTimeout(function() { vi.focus(); }, 100);
   }
-
-  // Renderers opcionais
-  setTimeout(function() {
-    try {
-      if (nomeAba === 'novo') {
-        if (typeof renderQuickEntries === 'function') renderQuickEntries();
-        var vi = document.getElementById('novo-valor');
-        if (vi) vi.focus();
-      }
-      if (nomeAba === 'extrato' && typeof filtrarExtrato === 'function') {
-        filtrarExtrato();
-      }
-      if (nomeAba === 'orcamento' && typeof renderOrcamentoDashboard === 'function') {
-        renderOrcamentoDashboard();
-      }
-      if (nomeAba === 'config' && typeof renderConfigTab === 'function') {
-        renderConfigTab();
-      }
-    } catch (e) {
-      console.warn('Erro ao renderizar aba:', e);
-    }
-  }, 0);
+  if (nomeAba === 'extrato') {
+    filtrarExtrato();
+  }
+  if (nomeAba === 'orcamento') {
+    renderOrcamentoDashboard();
+  }
+  if (nomeAba === 'config') {
+    renderConfigTab();
+  }
 }
 
 /* ============================================
    FORM NOVO - SETUP MASTER
    ============================================ */
 function setupFormNovo() {
-  var fns = [
-    setupMascaraValor,
-    setupCategoriaGrid,
-    setupDateChips,
-    setupExtrasToggle,
-    setupRecorrencia,
-    setupParcelamento,
-    setupAutoCategorizacao,
-    setupAutocomplete,
-    setupFormSubmit,
-    setupParcelaPreview
-  ];
-
-  fns.forEach(function(fn) {
-    try {
-      if (typeof fn === 'function') fn();
-    } catch (e) {
-      console.warn('Setup falhou:', fn.name, e);
-    }
-  });
+  setupMascaraValor();
+  setupCategoriaGrid();
+  setupDateChips();
+  setupExtrasToggle();
+  setupRecorrencia();
+  setupParcelamento();
+  setupAutoCategorizacao();
+  setupAutocomplete();
+  setupFormSubmit();
+  setupParcelaPreview();
 }
 
 /* ============================================
    1. MÁSCARA DE VALOR (R$ brasileiro)
    ============================================ */
 function setupMascaraValor() {
-  var input = UTILS.obterElemento('novo-valor');
+  var input = document.getElementById('novo-valor');
   if (!input) return;
-
-  var atualizarValor = UTILS.debounce(function() {
-    atualizarParcelaPreview();
-    atualizarOrcamentoPreview();
-  }, 100);
 
   input.addEventListener('input', function() {
     var raw = this.value.replace(/\D/g, '');
@@ -174,11 +86,12 @@ function setupMascaraValor() {
     var num = parseInt(raw, 10);
     var formatted = (num / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     this.value = formatted;
-    atualizarValor();
+    atualizarParcelaPreview();
+    atualizarOrcamentoPreview();
   });
 
   input.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') { e.preventDefault(); UTILS.obterElemento('novo-descricao').focus(); }
+    if (e.key === 'Enter') { e.preventDefault(); document.getElementById('novo-descricao').focus(); }
   });
 }
 
@@ -194,7 +107,7 @@ function obterValorNumerico() {
    2. GRID DE CATEGORIAS
    ============================================ */
 function setupCategoriaGrid() {
-  var grid = UTILS.obterElemento('categoria-grid');
+  var grid = document.getElementById('categoria-grid');
   if (!grid) return;
 
   grid.addEventListener('click', function(e) {
@@ -206,14 +119,13 @@ function setupCategoriaGrid() {
 
     var cat = btn.dataset.cat;
     var tipo = btn.dataset.tipo;
-    var catEl = UTILS.obterElemento('novo-categoria');
-    catEl.value = cat;
-    catEl._manualSet = true; // Impede override pelo PIPELINE
-    UTILS.obterElemento('novo-tipo').value = tipo;
+    document.getElementById('novo-categoria').value = cat;
+    document.getElementById('novo-tipo').value = tipo;
     atualizarTipoIndicator(tipo);
     atualizarOrcamentoPreview();
 
-    var grupoParcelas = UTILS.obterElemento('grupo-parcelas');
+    // Mostrar/esconder parcelamento (só despesas)
+    var grupoParcelas = document.getElementById('grupo-parcelas');
     if (grupoParcelas) {
       grupoParcelas.style.display = tipo === 'receita' ? 'none' : '';
     }
@@ -236,7 +148,7 @@ function atualizarTipoIndicator(tipo) {
    ============================================ */
 function setupDateChips() {
   var chips = document.querySelectorAll('.data-chip');
-  var dateInput = DOMUTILS.elementos.novoData;
+  var dateInput = document.getElementById('novo-data');
   if (!dateInput) return;
 
   chips.forEach(function(chip) {
@@ -340,20 +252,14 @@ function atualizarParcelaPreview() {
    ============================================ */
 function setupAutoCategorizacao() {
   var descInput = document.getElementById('novo-descricao');
-  if (!descInput) return;
+  if (!descInput || typeof CATEGORIAS === 'undefined') return;
 
   var timeout = null;
   descInput.addEventListener('input', function() {
     clearTimeout(timeout);
     var texto = this.value;
     timeout = setTimeout(function() {
-      var sugestao = null;
-      if (typeof CATEGORIZADOR !== 'undefined') {
-        sugestao = CATEGORIZADOR.detectar(texto);
-      } else if (typeof CATEGORIAS !== 'undefined') {
-        sugestao = CATEGORIAS.detectar(texto);
-      }
-
+      var sugestao = CATEGORIAS.detectar(texto);
       if (sugestao) {
         aplicarSugestaoCategoria(sugestao);
       } else {
@@ -584,8 +490,6 @@ function setupFormSubmit() {
       var categoria = document.getElementById('novo-categoria').value;
       var data = document.getElementById('novo-data').value;
       var descricao = document.getElementById('novo-descricao').value;
-      var banco = document.getElementById('novo-banco') ? document.getElementById('novo-banco').value : '';
-      var cartao = document.getElementById('novo-cartao') ? document.getElementById('novo-cartao').value : '';
       var nota = document.getElementById('novo-nota') ? document.getElementById('novo-nota').value : '';
 
       // Auto-categorizar se nenhuma categoria selecionada
@@ -619,10 +523,7 @@ function setupFormSubmit() {
           var dataParcela = new Date(data + 'T12:00:00');
           dataParcela.setMonth(dataParcela.getMonth() + p);
           var descParcela = descFinal + ' (' + (p + 1) + '/' + nParcelas + ')';
-          TRANSACOES.criar(tipo, valorParcela, categoria, dataParcela.toISOString().split('T')[0], descParcela, banco, cartao);
-        }
-        if (typeof APRENDIZADO !== 'undefined') {
-          APRENDIZADO.registrar(descricao, tipo, categoria, banco, cartao, valorParcela);
+          TRANSACOES.criar(tipo, valorParcela, categoria, dataParcela.toISOString().split('T')[0], descParcela);
         }
         mostrarSucesso(nParcelas + ' parcelas de ' + UTILS.formatarMoeda(valorParcela) + ' registradas!');
       }
@@ -630,33 +531,24 @@ function setupFormSubmit() {
       else if (chkRecorrente && chkRecorrente.checked) {
         var freqEl = document.querySelector('.rec-chip.ativo');
         var freq = freqEl ? freqEl.dataset.freq : 'mensal';
+        // Salvar como recorrente nos dados
         var recData = {
           tipo: tipo, valor: valor, categoria: categoria,
           descricao: descFinal, frequencia: freq, dataInicio: data, ativo: true
         };
         DADOS.salvarRecorrente(recData);
-        TRANSACOES.criar(tipo, valor, categoria, data, descFinal + ' (recorrente)', banco, cartao);
-        if (typeof APRENDIZADO !== 'undefined') {
-          APRENDIZADO.registrar(descricao, tipo, categoria, banco, cartao, valor);
-        }
+        // Criar a primeira transação
+        TRANSACOES.criar(tipo, valor, categoria, data, descFinal + ' (recorrente)');
         mostrarSucesso('Recorrência ' + freq + ' criada!');
       }
       // NORMAL
       else {
-        TRANSACOES.criar(tipo, valor, categoria, data, descFinal, banco, cartao);
-        if (typeof APRENDIZADO !== 'undefined') {
-          APRENDIZADO.registrar(descricao, tipo, categoria, banco, cartao, valor);
-        }
+        TRANSACOES.criar(tipo, valor, categoria, data, descFinal);
         mostrarSucesso('Registrado!');
       }
 
+      // Atualizar dashboard
       RENDER.init();
-      if (typeof INSIGHTS !== 'undefined') {
-        setTimeout(function() { INSIGHTS.mostrar(); }, 100);
-      }
-      if (typeof SCORE !== 'undefined') {
-        SCORE.limparCache();
-      }
 
       // Modo contínuo ou limpar
       var chkContinuo = document.getElementById('chk-continuo');
@@ -692,13 +584,11 @@ function setupFormSubmit() {
 }
 
 function limparFormularioParcial() {
+  // Modo contínuo: limpa valor e descrição, mantém categoria e data
   var vi = document.getElementById('novo-valor');
   var di = document.getElementById('novo-descricao');
   if (vi) vi.value = '';
   if (di) di.value = '';
-  // Resetar _manualSet para permitir auto-categorização no próximo lançamento
-  var catEl = document.getElementById('novo-categoria');
-  if (catEl) catEl._manualSet = false;
   limparSugestaoCategoria();
   var orc = document.getElementById('orcamento-preview');
   if (orc) orc.innerHTML = '';
@@ -710,9 +600,7 @@ function limparFormularioCompleto(form) {
   // Resetar grid categorias
   var grid = document.getElementById('categoria-grid');
   if (grid) grid.querySelectorAll('.cat-btn').forEach(function(b) { b.classList.remove('ativo'); });
-  var catElReset = document.getElementById('novo-categoria');
-  catElReset.value = '';
-  catElReset._manualSet = false; // Libera auto-preenchimento
+  document.getElementById('novo-categoria').value = '';
   document.getElementById('novo-tipo').value = 'despesa';
   atualizarTipoIndicator('despesa');
   limparSugestaoCategoria();
@@ -1083,50 +971,32 @@ function filtrarExtrato() {
 function abrirEdicaoTransacao(id) {
   var tx = TRANSACOES.obterPorId(id);
   if (!tx) return;
-
-  function buildCatOptions(tipo, selected) {
-    var slugs = tipo === CONFIG.TIPO_RECEITA ? CONFIG.CATEGORIAS_RECEITA : CONFIG.CATEGORIAS_DESPESA;
-    return slugs.map(function(slug) {
-      var label = CONFIG.getCatLabel(slug);
-      return '<option value="' + slug + '"' + (slug === selected ? ' selected' : '') + '>' + label + '</option>';
-    }).join('');
-  }
-
   var html = '<div style="display:flex;flex-direction:column;gap:12px">' +
-    '<div class="form-group"><label>Tipo</label><select id="edit-tipo">' +
-      '<option value="despesa"' + (tx.tipo === 'despesa' ? ' selected' : '') + '>Despesa</option>' +
-      '<option value="receita"' + (tx.tipo === 'receita' ? ' selected' : '') + '>Receita</option>' +
-    '</select></div>' +
     '<div class="form-group"><label>Descrição</label><input type="text" id="edit-desc" value="' + UTILS.escapeHtml(tx.descricao || '') + '"></div>' +
     '<div class="form-group"><label>Valor</label><input type="number" id="edit-valor" value="' + tx.valor + '" step="0.01" min="0.01"></div>' +
     '<div class="form-group"><label>Data</label><input type="date" id="edit-data" value="' + tx.data + '"></div>' +
     '<div class="form-group"><label>Categoria</label><select id="edit-cat">' +
-      buildCatOptions(tx.tipo, tx.categoria) +
+      (tx.tipo === CONFIG.TIPO_RECEITA ? CONFIG.CATEGORIAS_RECEITA : CONFIG.CATEGORIAS_DESPESA).map(function(c) {
+        return '<option value="' + c + '"' + (c === tx.categoria ? ' selected' : '') + '>' + c + '</option>';
+      }).join('') +
     '</select></div>' +
   '</div>';
   fpAlert(html);
+  // Substituir o botão OK do alert por Salvar
   setTimeout(function() {
     var overlay = document.querySelector('.modal-overlay');
     if (!overlay) return;
-    var tipoSel = document.getElementById('edit-tipo');
-    if (tipoSel) {
-      tipoSel.addEventListener('change', function() {
-        var catSel = document.getElementById('edit-cat');
-        if (catSel) catSel.innerHTML = buildCatOptions(this.value, '');
-      });
-    }
     var okBtn = overlay.querySelector('.modal-btn');
     if (okBtn) {
       okBtn.textContent = 'Salvar';
       okBtn.onclick = function() {
-        var tipo = document.getElementById('edit-tipo').value;
         var desc = document.getElementById('edit-desc').value.trim();
         var valor = parseFloat(document.getElementById('edit-valor').value);
         var data = document.getElementById('edit-data').value;
         var cat = document.getElementById('edit-cat').value;
         if (!valor || valor <= 0) { UTILS.mostrarToast('Informe um valor válido', 'error'); return; }
         if (!data) { UTILS.mostrarToast('Informe a data', 'error'); return; }
-        TRANSACOES.atualizar(id, { tipo: tipo, descricao: desc, valor: valor, data: data, categoria: cat });
+        TRANSACOES.atualizar(id, { descricao: desc, valor: valor, data: data, categoria: cat });
         overlay.remove();
         filtrarExtrato();
         atualizarDashboard();
@@ -1554,74 +1424,87 @@ function renderConfigStats() {
   }
 }
 
-function _fpModal(titulo, camposHtml, onSalvar) {
-  var old = document.querySelector('.modal-overlay');
-  if (old) old.remove();
-  var ov = document.createElement('div');
-  ov.className = 'modal-overlay';
-  ov.setAttribute('role', 'dialog');
-  ov.setAttribute('aria-modal', 'true');
-  ov.innerHTML =
-    '<div class="modal-box">' +
-      '<p style="font-size:17px;font-weight:700;margin-bottom:18px;color:var(--text)">' + titulo + '</p>' +
-      camposHtml +
-      '<div class="modal-actions" style="grid-template-columns:1fr 1fr;margin-top:20px">' +
-        '<button class="btn-cancelar" type="button" id="_fpModal-cancel">Cancelar</button>' +
-        '<button class="modal-btn" type="button" id="_fpModal-ok">Salvar</button>' +
-      '</div>' +
-    '</div>';
-  document.body.appendChild(ov);
-  document.getElementById('_fpModal-cancel').onclick = function() { ov.remove(); };
-  ov.addEventListener('click', function(e) { if (e.target === ov) ov.remove(); });
-  document.addEventListener('keydown', function h(e) {
-    if (e.key === 'Escape') { ov.remove(); document.removeEventListener('keydown', h); }
-  });
-  document.getElementById('_fpModal-ok').onclick = function() { onSalvar(ov); };
-  // foco no primeiro input
-  var inp = ov.querySelector('input');
-  if (inp) { inp.focus(); inp.select(); }
-}
-
 function abrirEditarPerfil() {
   var config = DADOS.getConfig();
-  var campos =
-    '<div class="form-group">' +
-      '<label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px">Nome</label>' +
-      '<input type="text" id="edit-cfg-nome" value="' + UTILS.escapeHtml(config.nome || '') + '" ' +
-        'placeholder="Seu nome" maxlength="40" ' +
-        'style="width:100%;padding:12px;border:2px solid var(--border);border-radius:10px;font-size:15px;background:var(--bg);color:var(--text)">' +
+  var html = '<div style="display:flex;flex-direction:column;gap:16px;text-align:center">' +
+    '<p style="font-weight:700;font-size:17px">Editar Perfil</p>' +
+    '<div class="form-group" style="text-align:left"><label style="font-size:13px;font-weight:600;margin-bottom:4px;display:block">Nome</label>' +
+    '<input type="text" id="edit-cfg-nome" value="' + (config.nome||'') + '" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:10px;font-size:15px;background:var(--bg);color:var(--text-primary)"></div>' +
     '</div>';
-  _fpModal('Editar Perfil', campos, function(ov) {
-    var v = document.getElementById('edit-cfg-nome').value.trim();
-    if (!v) { UTILS.mostrarToast('Informe um nome', 'error'); return; }
-    DADOS.salvarConfig({ nome: v });
-    ov.remove();
-    renderConfigTab();
-    atualizarDashboard();
-    UTILS.mostrarToast('Perfil atualizado!', 'success');
-  });
+  fpAlert(html);
+  setTimeout(function() {
+    var overlay = document.querySelector('.modal-overlay');
+    if (!overlay) return;
+    var okBtn = overlay.querySelector('.modal-btn');
+    if (okBtn) {
+      okBtn.textContent = 'Salvar';
+      okBtn.onclick = function() {
+        var v = document.getElementById('edit-cfg-nome').value.trim();
+        if (!v) { UTILS.mostrarToast('Informe um nome', 'error'); return; }
+        DADOS.salvarConfig({ nome: v });
+        overlay.remove();
+        renderConfigTab();
+        atualizarDashboard();
+        UTILS.mostrarToast('Perfil atualizado!', 'success');
+      };
+    }
+  }, 100);
 }
 
 function abrirEditarRenda() {
   var config = DADOS.getConfig();
   var atual = config.renda || 0;
-  var campos =
-    '<div class="form-group">' +
-      '<label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px">Renda Mensal</label>' +
-      '<input type="text" id="edit-cfg-renda" value="' + (atual > 0 ? atual.toLocaleString('pt-BR', {minimumFractionDigits:2}) : '') + '" ' +
-        'placeholder="0,00" inputmode="numeric" ' +
-        'style="width:100%;padding:12px;border:2px solid var(--border);border-radius:10px;font-size:15px;background:var(--bg);color:var(--text)">' +
+  var html = '<div style="display:flex;flex-direction:column;gap:16px;text-align:center">' +
+    '<p style="font-weight:700;font-size:17px">Renda Mensal</p>' +
+    '<div class="form-group" style="text-align:left"><label style="font-size:13px;font-weight:600;margin-bottom:4px;display:block">Valor</label>' +
+    '<input type="text" id="edit-cfg-renda" value="' + (atual > 0 ? atual.toLocaleString('pt-BR',{minimumFractionDigits:2}) : '') + '" placeholder="0,00" inputmode="numeric" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:10px;font-size:15px;background:var(--bg);color:var(--text-primary)"></div>' +
     '</div>';
-  _fpModal('Renda Mensal', campos, function(ov) {
-    var raw = document.getElementById('edit-cfg-renda').value.replace(/\./g, '').replace(',', '.');
-    var val = parseFloat(raw);
-    if (!val || val <= 0) { UTILS.mostrarToast('Valor inválido', 'error'); return; }
-    DADOS.salvarConfig({ renda: val });
-    ov.remove();
-    renderConfigTab();
-    RENDER.init();
-    UTILS.mostrarToast('Renda atualizada!', 'success');
+  fpAlert(html);
+  setTimeout(function() {
+    var overlay = document.querySelector('.modal-overlay');
+    if (!overlay) return;
+    var okBtn = overlay.querySelector('.modal-btn');
+    if (okBtn) {
+      okBtn.textContent = 'Salvar';
+      okBtn.onclick = function() {
+        var v = document.getElementById('edit-cfg-renda').value.replace(/\./g,'').replace(',','.');
+        var val = parseFloat(v);
+        if (!val || val <= 0) { UTILS.mostrarToast('Valor inválido', 'error'); return; }
+        DADOS.salvarConfig({ renda: val });
+        overlay.remove();
+        renderConfigTab();
+        UTILS.mostrarToast('Renda atualizada!', 'success');
+      };
+    }
+  }, 100);
+}
+
+function abrirSeletorMoeda() {
+  var config = DADOS.getConfig();
+  var atual = config.moeda || 'BRL';
+  var moedas = [
+    {code:'BRL',label:'Real Brasileiro',symbol:'R$'},
+    {code:'USD',label:'Dólar Americano',symbol:'$'},
+    {code:'EUR',label:'Euro',symbol:'€'}
+  ];
+  var html = '<div style="display:flex;flex-direction:column;gap:12px">' +
+    '<p style="font-weight:700;font-size:17px;text-align:center">Moeda</p>';
+  moedas.forEach(function(m) {
+    var sel = m.code === atual ? 'background:var(--primary);color:#fff;' : 'background:var(--bg);';
+    html += '<div class="cfg-moeda-opt" onclick="selecionarMoeda(\'' + m.code + '\')" style="padding:14px 16px;border-radius:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;' + sel + '">' +
+      '<span style="font-weight:600">' + m.symbol + ' ' + m.label + '</span>' +
+      (m.code === atual ? '<span>✓</span>' : '') + '</div>';
   });
+  html += '</div>';
+  fpAlert(html);
+}
+
+function selecionarMoeda(code) {
+  DADOS.salvarConfig({ moeda: code });
+  var overlay = document.querySelector('.modal-overlay');
+  if (overlay) overlay.remove();
+  renderConfigTab();
+  UTILS.mostrarToast('Moeda alterada para ' + code, 'success');
 }
 
 function toggleAlertaOrcamento() {
@@ -1634,16 +1517,6 @@ function toggleLembreteDiario() {
   var chk = document.getElementById('chk-lembrete');
   DADOS.salvarConfig({ lembreteDiario: chk ? chk.checked : false });
   UTILS.mostrarToast(chk && chk.checked ? 'Lembrete ativado' : 'Lembrete desativado', 'success');
-}
-
-/* Helper: SHA-256 hash via Web Crypto API */
-function hashPin(pin) {
-  var encoder = new TextEncoder();
-  var data = encoder.encode('fp-pin-salt:' + pin);
-  return crypto.subtle.digest('SHA-256', data).then(function(buffer) {
-    var arr = Array.from(new Uint8Array(buffer));
-    return arr.map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
-  });
 }
 
 function togglePinSeguranca() {
@@ -1669,12 +1542,10 @@ function togglePinSeguranca() {
         okBtn.onclick = function() {
           var pin = ['pin-1','pin-2','pin-3','pin-4'].map(function(id){return document.getElementById(id).value}).join('');
           if (pin.length !== 4 || !/^\d{4}$/.test(pin)) { UTILS.mostrarToast('PIN deve ter 4 dígitos', 'error'); return; }
-          hashPin(pin).then(function(hash) {
-            DADOS.salvarConfig({ pinAtivo: true, pinHash: hash });
-            overlay.remove();
-            renderConfigTab();
-            UTILS.mostrarToast('PIN ativado!', 'success');
-          });
+          DADOS.salvarConfig({ pinAtivo: true, pinHash: btoa(pin) });
+          overlay.remove();
+          renderConfigTab();
+          UTILS.mostrarToast('PIN ativado!', 'success');
         };
       }
       var cancelar = overlay.querySelector('.modal-btn:last-child') || null;
@@ -1689,392 +1560,4 @@ function togglePinSeguranca() {
   }
 }
 
-function verificarPinAoAbrir() {
-  var config = DADOS.getConfig();
-  if (!config.pinAtivo || !config.pinHash) return;
-  var html = '<div style="display:flex;flex-direction:column;gap:16px;text-align:center">' +
-    '<p style="font-size:36px">🔒</p>' +
-    '<p style="font-weight:700;font-size:17px">FinançasPro</p>' +
-    '<p style="font-size:13px;color:var(--text-secondary)">Digite seu PIN</p>' +
-    '<div style="display:flex;gap:8px;justify-content:center">' +
-    '<input type="password" id="unlock-1" maxlength="1" inputmode="numeric" style="width:48px;height:56px;text-align:center;font-size:24px;font-weight:700;border:2px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text-primary)" oninput="if(this.value.length===1)document.getElementById(\'unlock-2\').focus()">' +
-    '<input type="password" id="unlock-2" maxlength="1" inputmode="numeric" style="width:48px;height:56px;text-align:center;font-size:24px;font-weight:700;border:2px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text-primary)" oninput="if(this.value.length===1)document.getElementById(\'unlock-3\').focus()">' +
-    '<input type="password" id="unlock-3" maxlength="1" inputmode="numeric" style="width:48px;height:56px;text-align:center;font-size:24px;font-weight:700;border:2px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text-primary)" oninput="if(this.value.length===1)document.getElementById(\'unlock-4\').focus()">' +
-    '<input type="password" id="unlock-4" maxlength="1" inputmode="numeric" style="width:48px;height:56px;text-align:center;font-size:24px;font-weight:700;border:2px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text-primary)">' +
-    '</div></div>';
-  var lockScreen = document.createElement('div');
-  lockScreen.className = 'pin-lock-screen';
-  lockScreen.innerHTML = '<div class="pin-lock-content">' + html +
-    '<button class="btn-primario" style="margin-top:16px" onclick="tentarDesbloquear()">Desbloquear</button></div>';
-  document.body.appendChild(lockScreen);
-  setTimeout(function(){ var el = document.getElementById('unlock-1'); if(el) el.focus(); }, 200);
-}
-
-function tentarDesbloquear() {
-  var config = DADOS.getConfig();
-  var pin = ['unlock-1','unlock-2','unlock-3','unlock-4'].map(function(id){return document.getElementById(id).value}).join('');
-  hashPin(pin).then(function(hash) {
-    if (hash === config.pinHash) {
-      var lock = document.querySelector('.pin-lock-screen');
-      if (lock) lock.remove();
-      UTILS.mostrarToast('Bem-vindo de volta!', 'success');
-    } else {
-      UTILS.mostrarToast('PIN incorreto', 'error');
-      ['unlock-1','unlock-2','unlock-3','unlock-4'].forEach(function(id){ document.getElementById(id).value = ''; });
-      document.getElementById('unlock-1').focus();
-    }
-  });
-}
-
-function abrirGerenciarCategorias(tipo) {
-  var config = DADOS.getConfig();
-  var customCats = config.categoriasCustom || {};
-  var customs = customCats[tipo] || [];
-  var defaults = tipo === 'despesa' ? CONFIG.CATEGORIAS_DESPESA : CONFIG.CATEGORIAS_RECEITA;
-  var html = '<div style="display:flex;flex-direction:column;gap:12px">' +
-    '<p style="font-weight:700;font-size:17px;text-align:center">Categorias de ' + (tipo==='despesa'?'Despesa':'Receita') + '</p>' +
-    '<div style="max-height:300px;overflow-y:auto">';
-  defaults.forEach(function(cat) {
-    var key = cat.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
-    html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg);border-radius:10px;margin-bottom:6px">' +
-      '<span style="font-size:18px">' + getCatIcon(key) + '</span>' +
-      '<span style="flex:1;font-size:14px;font-weight:500">' + cat + '</span>' +
-      '<span style="font-size:11px;color:var(--text-secondary);background:var(--card-bg);padding:2px 8px;border-radius:6px">padrão</span></div>';
-  });
-  customs.forEach(function(cat, idx) {
-    html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg);border-radius:10px;margin-bottom:6px">' +
-      '<span style="font-size:18px">🏷️</span>' +
-      '<span style="flex:1;font-size:14px;font-weight:500">' + cat + '</span>' +
-      '<button onclick="removerCategoriaCustom(\'' + tipo + '\',' + idx + ')" style="background:none;border:none;font-size:16px;cursor:pointer;color:#ef4444;padding:4px">✕</button></div>';
-  });
-  html += '</div>' +
-    '<div style="display:flex;gap:8px;margin-top:8px">' +
-    '<input type="text" id="nova-cat-input" placeholder="Nova categoria..." style="flex:1;padding:12px;border:2px solid var(--border);border-radius:10px;font-size:14px;background:var(--bg);color:var(--text-primary)">' +
-    '<button onclick="adicionarCategoriaCustom(\'' + tipo + '\')" style="padding:12px 16px;background:var(--primary);color:#fff;border:none;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer">+</button>' +
-    '</div></div>';
-  fpAlert(html);
-}
-
-function adicionarCategoriaCustom(tipo) {
-  var input = document.getElementById('nova-cat-input');
-  if (!input || !input.value.trim()) { UTILS.mostrarToast('Digite um nome', 'error'); return; }
-  var nome = input.value.trim();
-  var config = DADOS.getConfig();
-  var customCats = config.categoriasCustom || { receita: [], despesa: [] };
-  if (!customCats[tipo]) customCats[tipo] = [];
-  if (customCats[tipo].indexOf(nome) >= 0) { UTILS.mostrarToast('Categoria já existe', 'error'); return; }
-  customCats[tipo].push(nome);
-  DADOS.salvarConfig({ categoriasCustom: customCats });
-  var overlay = document.querySelector('.modal-overlay');
-  if (overlay) overlay.remove();
-  abrirGerenciarCategorias(tipo);
-  UTILS.mostrarToast('Categoria adicionada!', 'success');
-}
-
-function removerCategoriaCustom(tipo, idx) {
-  var config = DADOS.getConfig();
-  var customCats = config.categoriasCustom || { receita: [], despesa: [] };
-  if (!customCats[tipo]) return;
-  customCats[tipo].splice(idx, 1);
-  DADOS.salvarConfig({ categoriasCustom: customCats });
-  var overlay = document.querySelector('.modal-overlay');
-  if (overlay) overlay.remove();
-  abrirGerenciarCategorias(tipo);
-  UTILS.mostrarToast('Categoria removida', 'success');
-}
-
-function abrirChangelog() {
-  var html = '<div style="display:flex;flex-direction:column;gap:12px">' +
-    '<p style="font-weight:700;font-size:17px;text-align:center">Novidades</p>' +
-    '<div style="max-height:350px;overflow-y:auto">' +
-    '<div style="margin-bottom:16px"><p style="font-weight:700;font-size:14px;color:var(--primary)">v3.0</p>' +
-    '<ul style="font-size:13px;color:var(--text-secondary);padding-left:18px;line-height:1.8">' +
-    '<li>Orçamento 50/30/20 com insights</li><li>Extrato com busca e filtros</li>' +
-    '<li>Categorias personalizáveis</li><li>Proteção por PIN</li>' +
-    '<li>Configurações redesenhadas</li><li>Seletor de moeda</li></ul></div>' +
-    '<div style="margin-bottom:16px"><p style="font-weight:700;font-size:14px;color:var(--primary)">v2.0</p>' +
-    '<ul style="font-size:13px;color:var(--text-secondary);padding-left:18px;line-height:1.8">' +
-    '<li>Dashboard com gráficos</li><li>Modo escuro</li>' +
-    '<li>Exportar/importar dados</li><li>Auto-categorização</li></ul></div>' +
-    '<div><p style="font-weight:700;font-size:14px;color:var(--primary)">v1.0</p>' +
-    '<ul style="font-size:13px;color:var(--text-secondary);padding-left:18px;line-height:1.8">' +
-    '<li>Lançamento inicial</li><li>Receitas e despesas</li><li>Armazenamento local</li></ul></div>' +
-    '</div></div>';
-  fpAlert(html);
-}
-
-function abrirFeedback() {
-  var html = '<div style="display:flex;flex-direction:column;gap:16px;text-align:center">' +
-    '<p style="font-weight:700;font-size:17px">Enviar Feedback</p>' +
-    '<p style="font-size:13px;color:var(--text-secondary)">Sua opinião ajuda a melhorar o app!</p>' +
-    '<div style="display:flex;flex-direction:column;gap:8px">' +
-    '<select id="feedback-tipo" style="padding:12px;border:2px solid var(--border);border-radius:10px;font-size:14px;background:var(--bg);color:var(--text-primary)">' +
-    '<option value="sugestao">💡 Sugestão</option>' +
-    '<option value="bug">🐛 Bug / Problema</option>' +
-    '<option value="elogio">⭐ Elogio</option></select>' +
-    '<textarea id="feedback-msg" rows="4" placeholder="Descreva aqui..." style="padding:12px;border:2px solid var(--border);border-radius:10px;font-size:14px;resize:none;background:var(--bg);color:var(--text-primary)"></textarea>' +
-    '</div></div>';
-  fpAlert(html);
-  setTimeout(function() {
-    var overlay = document.querySelector('.modal-overlay');
-    if (!overlay) return;
-    var okBtn = overlay.querySelector('.modal-btn');
-    if (okBtn) {
-      okBtn.textContent = 'Enviar';
-      okBtn.onclick = function() {
-        var msg = document.getElementById('feedback-msg').value.trim();
-        if (!msg) { UTILS.mostrarToast('Escreva algo', 'error'); return; }
-        var config = DADOS.getConfig();
-        var feedbacks = config.feedbacks || [];
-        feedbacks.push({ tipo: document.getElementById('feedback-tipo').value, msg: msg, data: new Date().toISOString() });
-        DADOS.salvarConfig({ feedbacks: feedbacks });
-        overlay.remove();
-        UTILS.mostrarToast('Feedback salvo! Obrigado!', 'success');
-      };
-    }
-  }, 100);
-}
-
-
-/* ============================================
-   MODAIS
-   ============================================ */
-function fpAlert(htmlContent) {
-  var old = document.querySelector('.modal-overlay');
-  if (old) old.remove();
-  var ov = document.createElement('div');
-  ov.className = 'modal-overlay';
-  ov.setAttribute('role','dialog');
-  ov.setAttribute('aria-modal','true');
-  ov.innerHTML = '<div class="modal-box">' + htmlContent +
-    '<div class="modal-actions"><button class="modal-btn btn-principal" type="button">OK</button></div></div>';
-  document.body.appendChild(ov);
-  var btn = ov.querySelector('.modal-btn');
-  btn.focus();
-  btn.addEventListener('click', function() { ov.remove(); });
-  ov.addEventListener('click', function(e) { if (e.target === ov) ov.remove(); });
-  document.addEventListener('keydown', function h(e) {
-    if (e.key === 'Escape') { ov.remove(); document.removeEventListener('keydown', h); }
-  });
-}
-
-function fpConfirm(msg, onOk, onNo) {
-  var old = document.querySelector('.modal-overlay');
-  if (old) old.remove();
-  var ov = document.createElement('div');
-  ov.className = 'modal-overlay';
-  ov.setAttribute('role','dialog');
-  ov.setAttribute('aria-modal','true');
-  ov.innerHTML = '<div class="modal-box"><p>' + UTILS.escapeHtml(msg) + '</p>' +
-    '<div class="modal-actions">' +
-    '<button class="btn-cancelar" type="button" id="mc">Cancelar</button>' +
-    '<button class="btn-confirmar-danger" type="button" id="mo">Confirmar</button>' +
-    '</div></div>';
-  document.body.appendChild(ov);
-  var bo = ov.querySelector('#mo');
-  var bc = ov.querySelector('#mc');
-  bo.focus();
-  bo.addEventListener('click', function() { ov.remove(); if (onOk) onOk(); });
-  bc.addEventListener('click', function() { ov.remove(); if (onNo) onNo(); });
-  ov.addEventListener('click', function(e) { if (e.target === ov) { ov.remove(); if (onNo) onNo(); } });
-  document.addEventListener('keydown', function h(e) {
-    if (e.key === 'Escape') { ov.remove(); if (onNo) onNo(); document.removeEventListener('keydown', h); }
-  });
-}
-
-/* ============================================
-   IMPORTAR / EXPORTAR
-   ============================================ */
-function setupImport() {
-  var area = document.getElementById('import-area');
-  var inp = document.getElementById('import-file');
-  if (!inp) return;
-  if (area) {
-    area.addEventListener('dragover', function(e) { e.preventDefault(); area.classList.add('drag-over'); });
-    area.addEventListener('dragleave', function() { area.classList.remove('drag-over'); });
-    area.addEventListener('drop', function(e) {
-      e.preventDefault(); area.classList.remove('drag-over');
-      if (e.dataTransfer.files[0]) processarImport(e.dataTransfer.files[0]);
-    });
-    area.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inp.click(); }
-    });
-  }
-  inp.addEventListener('change', function() {
-    if (this.files[0]) processarImport(this.files[0]);
-    this.value = '';
-  });
-}
-
-function processarImport(file) {
-  if (!file.name.endsWith('.json')) { UTILS.mostrarToast('Selecione um .json valido', 'error'); return; }
-  if (file.size > 5242880) { UTILS.mostrarToast('Arquivo muito grande (max 5MB)', 'error'); return; }
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      var d = JSON.parse(e.target.result);
-      if (!d.transacoes || !Array.isArray(d.transacoes)) {
-        UTILS.mostrarToast('Formato invalido', 'error'); return;
-      }
-      var validas = d.transacoes.filter(function(t) { return t.tipo && t.valor && t.data && t.categoria; });
-      if (validas.length === 0) { UTILS.mostrarToast('Nenhuma transacao valida', 'error'); return; }
-      fpConfirm('Importar ' + validas.length + ' transacoes? Dados atuais serao mantidos.', function() {
-        var existentes = DADOS.getTransacoes();
-        var ids = {};
-        existentes.forEach(function(t) { ids[t.id] = true; });
-        var count = 0;
-        validas.forEach(function(t) {
-          if (!t.id || !ids[t.id]) { t.id = t.id || UTILS.gerarId(); DADOS.salvarTransacao(t); count++; }
-        });
-        if (d.config && d.config.orcamentos) {
-          var cfg = DADOS.getConfig();
-          if (!cfg.orcamentos) cfg.orcamentos = {};
-          Object.keys(d.config.orcamentos).forEach(function(k) { cfg.orcamentos[k] = d.config.orcamentos[k]; });
-          DADOS.salvarConfig(cfg);
-        }
-        TRANSACOES.init(); ORCAMENTO.init(); RENDER.init();
-        UTILS.mostrarToast(count + ' transacoes importadas!', 'success');
-      });
-    } catch (err) { UTILS.mostrarToast('JSON invalido', 'error'); }
-  };
-  reader.onerror = function() { UTILS.mostrarToast('Erro ao ler arquivo', 'error'); };
-  reader.readAsText(file);
-}
-
-function exportarDados() {
-  var dados = DADOS.exportarDados();
-  var json = JSON.stringify(dados, null, 2);
-  var el = document.createElement('a');
-  el.setAttribute('href', 'data:application/json;charset=utf-8,' + encodeURIComponent(json));
-  el.setAttribute('download', 'financaspro-backup-' + new Date().toISOString().split('T')[0] + '.json');
-  el.style.display = 'none';
-  document.body.appendChild(el);
-  el.click();
-  document.body.removeChild(el);
-  DADOS.salvarConfig({ ultimoExportoDados: new Date().toISOString() });
-  UTILS.mostrarToast('Dados exportados!', 'success');
-}
-
-/* ============================================
-   HELPER: carrega script com fallback de CDNs
-   ============================================ */
-function _carregarScript(urls, onSuccess, onError) {
-  var idx = 0;
-  function tentarProximo() {
-    if (idx >= urls.length) { onError(); return; }
-    var s = document.createElement('script');
-    s.src = urls[idx++];
-    s.onload = onSuccess;
-    s.onerror = tentarProximo;
-    document.head.appendChild(s);
-  }
-  tentarProximo();
-}
-
-/* ============================================
-   EXPORTAR EXCEL (.xlsx)
-   ============================================ */
-function exportarExcel() {
-  if (!window.XLSX) {
-    UTILS.mostrarToast('Carregando Excel...', 'info');
-    _carregarScript([
-      'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js',
-      'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
-      'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'
-    ], function() { exportarExcel(); },
-       function() { UTILS.mostrarToast('Erro ao carregar biblioteca Excel.', 'error'); });
-    return;
-  }
-
-  var info = getExtratoMesAno();
-  var txs = TRANSACOES.obter({ mes: info.mes, ano: info.ano });
-  if (txs.length === 0) { UTILS.mostrarToast('Nenhuma transacao para exportar', 'warning'); return; }
-
-  var nomesMes = ['Janeiro','Fevereiro','Marco','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  var nomeMes = nomesMes[info.mes - 1];
-  var config = DADOS.getConfig();
-  var nomeUsuario = (config.nome || 'Usuario').replace(/[^\w\s]/gi, '');
-
-  var receitas = 0, despesas = 0;
-  txs.forEach(function(t) { if (t.tipo === CONFIG.TIPO_RECEITA) receitas += t.valor; else despesas += t.valor; });
-  var saldo = receitas - despesas;
-
-  var wb = XLSX.utils.book_new();
-  var ws_data = [];
-
-  // Título
-  ws_data.push(['FinancasPro - Extrato Mensal', '', '', '', '']);
-  ws_data.push(['Periodo: ' + nomeMes + ' ' + info.ano, '', '', '', '']);
-  ws_data.push(['Usuario: ' + nomeUsuario, '', 'Gerado em:', new Date().toLocaleDateString('pt-BR'), '']);
-  ws_data.push(['', '', '', '', '']);
-
-  // Resumo
-  ws_data.push(['RESUMO DO MES', '', '', '', '']);
-  ws_data.push(['Receitas', '', '', '', receitas]);
-  ws_data.push(['Despesas', '', '', '', -despesas]);
-  ws_data.push(['Saldo', '', '', '', saldo]);
-  ws_data.push(['', '', '', '', '']);
-
-  // Cabeçalho da tabela
-  ws_data.push(['Data', 'Tipo', 'Categoria', 'Descricao', 'Valor (R$)']);
-
-  // Linhas de transações
-  txs.forEach(function(t) {
-    var cat = CONFIG.getCatLabel ? CONFIG.getCatLabel(t.categoria) : t.categoria;
-    var sinal = t.tipo === CONFIG.TIPO_RECEITA ? 1 : -1;
-    ws_data.push([
-      UTILS.formatarData(t.data),
-      t.tipo === CONFIG.TIPO_RECEITA ? 'Receita' : 'Despesa',
-      cat,
-      t.descricao || '',
-      sinal * t.valor
-    ]);
-  });
-
-  ws_data.push(['', '', '', '', '']);
-  ws_data.push(['', '', '', 'Total Receitas:', receitas]);
-  ws_data.push(['', '', '', 'Total Despesas:', -despesas]);
-  ws_data.push(['', '', '', 'Saldo Final:', saldo]);
-
-  var ws = XLSX.utils.aoa_to_sheet(ws_data);
-
-  // Larguras das colunas
-  ws['!cols'] = [
-    { wch: 14 }, // Data
-    { wch: 12 }, // Tipo
-    { wch: 18 }, // Categoria
-    { wch: 36 }, // Descrição
-    { wch: 16 }  // Valor
-  ];
-
-  // Mesclar células do título
-  ws['!merges'] = [
-    { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } },
-    { s: { r: 1, c: 0 }, e: { r: 1, c: 4 } },
-    { s: { r: 4, c: 0 }, e: { r: 4, c: 4 } }
-  ];
-
-  XLSX.utils.book_append_sheet(wb, ws, nomeMes + ' ' + info.ano);
-
-  var nomeArquivo = 'financaspro-extrato-' + nomeMes.toLowerCase() + '-' + info.ano + '.xlsx';
-  XLSX.writeFile(wb, nomeArquivo);
-  UTILS.mostrarToast('Excel exportado!', 'success');
-}
-
-/* ============================================
-   EXPORTAR PDF
-   ============================================ */
-function exportarExtrato() {
-  if (window.jspdf && window.jspdf.jsPDF) { gerarPDF(); return; }
-  UTILS.mostrarToast('Carregando PDF...', 'info');
-  _carregarScript([
-    'https://unpkg.com/jspdf@2.5.2/dist/jspdf.umd.min.js',
-    'https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js',
-    'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js'
-  ], function() {
-    if (window.jspdf && window.jspdf.jsPDF) gerarPDF();
-    else UTILS.mostrarToast('Erro ao inicializar PDF.', 'error');
-  }, function() {
-    UTILS.mostrarToast('Sem conexão para carregar PDF.', 'error');
-  });
-}
+function verificarPi

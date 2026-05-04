@@ -10,7 +10,7 @@ var TRANSACOES = {
     this._cache = DADOS.getTransacoes();
   },
 
-  criar: function(tipo, valor, categoria, data, descricao) {
+  criar: function(tipo, valor, categoria, data, descricao, banco, cartao) {
     var validacao = UTILS.validarTransacao({
       tipo: tipo, valor: parseFloat(valor), categoria: categoria, data: data
     });
@@ -23,6 +23,8 @@ var TRANSACOES = {
       categoria: categoria,
       data: data,
       descricao: descricao || '',
+      banco: banco || '',
+      cartao: cartao || '',
       dataCriacao: new Date().toISOString()
     };
     DADOS.salvarTransacao(transacao);
@@ -94,9 +96,6 @@ var TRANSACOES = {
       else resumo[t.categoria].despesa += t.valor;
     });
     return resumo;
-  }
-};
+  },
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = TRANSACOES;
-}
+  obterResumoCategori

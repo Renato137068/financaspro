@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git worktree *)",
+      "PowerShell(\"done\")",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(npm run *)",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(rm -f 'C:\\\\Users\\\\renat\\\\Downloads\\\\financaspro\\\\.git\\\\HEAD.lock' 'C:\\\\Users\\\\renat\\\\Downloads\\\\financaspro\\\\.git\\\\index.lock')",
+      "Bash(git commit -m 'Refatoração: performance, modularização, testes *)",
+      "Bash

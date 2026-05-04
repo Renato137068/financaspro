@@ -6,6 +6,7 @@
 var CONFIG_USER = {
   init: function() {
     this.setupFormConfig();
+    this.aplicarTema();
   },
 
   setupFormConfig: function() {
@@ -21,21 +22,13 @@ var CONFIG_USER = {
   },
 
   preencherConfig: function() {
-    var config = DADOS.getConfig();
-    var nome = document.getElementById('cfg-nome');
-    var renda = document.getElementById('cfg-renda');
-    if (nome) nome.value = config.nome || '';
-    if (renda && config.renda) renda.value = config.renda;
+    // New config tab uses renderConfigTab() in init.js
+    // Keep for backwards compatibility
+    if (typeof renderConfigTab === 'function') renderConfigTab();
   },
 
   salvarConfiguracao: function() {
-    var nome = document.getElementById('cfg-nome');
-    var renda = document.getElementById('cfg-renda');
-    var config = {};
-    if (nome) config.nome = nome.value.trim() || 'Usuario';
-    if (renda) config.renda = parseFloat(renda.value) || 0;
-    DADOS.salvarConfig(config);
-    UTILS.mostrarToast('Configuracoes salvas!', 'success');
+    // Legacy — now handled by individual modals in init.js
   },
 
   exportarDados: function() {
@@ -64,12 +57,21 @@ var CONFIG_USER = {
 
   aplicarTema: function() {
     var config = DADOS.getConfig();
-    if (config.tema === 'dark') {
+    var isDark = config.tema === 'dark';
+    if (isDark) {
       document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
     }
+    var chk = document.getElementById('chk-darkmode');
+    if (chk) chk.checked = isDark;
+  },
+
+  toggleTema: function() {
+    var config = DADOS.getConfig();
+    var novoTema = config.tema === 'dark' ? 'light' : 'dark';
+    DADOS.salvarConfig({ tema: novoTema });
+    this.aplicarTema();
+    UTILS.mostrarToast(novoTema === 'dark' ? 'Modo escuro ativado' : 'Modo claro ativado', 'success');
   }
 };
-
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = CONFIG_USER;
-}

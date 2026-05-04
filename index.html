@@ -29,14 +29,8 @@
 
   <!-- ABA 1: RESUMO (Dashboard) -->
   <div id="aba-resumo" class="aba ativo">
-
-    <!-- SAUDAÇÃO PERSONALIZADA -->
     <div id="dashboard-greeting" class="dashboard-greeting"></div>
-
-    <!-- CARD DE SALDO PRINCIPAL -->
     <div id="card-saldo-principal" class="card-saldo-principal"></div>
-
-    <!-- CARDS RECEITA/DESPESA -->
     <section class="cards-container">
       <div class="card receita">
         <div class="card-label">💚 Receitas</div>
@@ -49,223 +43,517 @@
         <div class="card-comparacao" id="comp-despesas"></div>
       </div>
     </section>
-
-    <!-- ALERTAS DE ORÇAMENTO -->
     <div id="dashboard-alertas" class="dashboard-alertas"></div>
-
-    <!-- INDICADOR RENDA / DIAS RESTANTES -->
     <div id="dashboard-indicadores" class="dashboard-indicadores"></div>
-
-    <!-- MINI-CHART EVOLUÇÃO 6 MESES -->
     <section class="dashboard-section">
       <h2 class="secao-titulo">📈 Evolução (6 meses)</h2>
       <div id="chart-evolucao" class="chart-container"></div>
     </section>
-
-    <!-- GRÁFICO PIZZA CATEGORIAS -->
     <section class="dashboard-section">
       <h2 class="secao-titulo">🍩 Despesas por Categoria</h2>
       <div id="chart-categorias" class="chart-container"></div>
     </section>
-
-    <!-- GASTOS POR CATEGORIA (BARRAS) -->
     <section class="dashboard-section">
       <h2 class="secao-titulo">📊 Limites de Orçamento</h2>
       <div id="resumo-orcamentos"></div>
     </section>
-
-    <!-- ÚLTIMAS TRANSAÇÕES -->
     <section class="dashboard-section">
       <h2 class="secao-titulo">🕐 Últimas Transações</h2>
       <div id="resumo-list"></div>
     </section>
-
-    <!-- CTA -->
     <button class="btn-primario" onclick="mudarAba('novo')" style="margin-top:16px;">
       ➕ Registrar Transação
     </button>
   </div>
 
-  <!-- ABA 2: NOVO LANÇAMENTO -->
+  <!-- ABA 2: NOVO LANÇAMENTO (Redesenhada) -->
   <div id="aba-novo" class="aba">
-    <form id="form-transacao" class="formulario">
-      <fieldset>
-        <legend>Tipo de Transação</legend>
-        <div class="tipo-selector">
-          <button type="button" class="tipo-btn receita ativo" data-tipo="receita" onclick="selecionarTipo('receita')">
-            💚 Receita
+
+    <!-- LANÇAMENTOS RÁPIDOS -->
+    <div id="quick-entries" class="quick-entries"></div>
+
+    <!-- ENTRADA RÁPIDA -->
+    <button type="button" onclick="abrirEntradaRapida()" class="btn-entrada-rapida" title="Entrada rápida com parse: Ex: 'mercado 150 ontem nubank'">
+      ⚡ Entrada rápida
+    </button>
+
+    <!-- FORMULÁRIO PRINCIPAL -->
+    <form id="form-transacao" class="formulario" autocomplete="off">
+
+      <!-- 1. VALOR (primeiro e principal) -->
+      <div class="valor-hero">
+        <div class="valor-tipo-indicator" id="tipo-indicator">
+          <span class="tipo-dot despesa"></span>
+          <span id="tipo-indicator-text">Despesa</span>
+        </div>
+        <div class="valor-input-wrapper">
+          <span class="valor-prefix">R$</span>
+          <input type="text" id="novo-valor" class="valor-input" placeholder="0,00"
+                 inputmode="decimal" autocomplete="off" required data-autosave="valor"
+                 aria-label="Valor da transação">
+        </div>
+      </div>
+
+      <!-- PREVIEW IMPACTO ORÇAMENTO -->
+      <div id="orcamento-preview" class="orcamento-preview"></div>
+
+      <!-- 2. DESCRIÇÃO + AUTOCOMPLETE -->
+      <div class="form-group">
+        <label for="novo-descricao">📝 O quê?</label>
+        <div class="autocomplete-wrapper">
+          <input type="text" id="novo-descricao" placeholder="Ex: Supermercado, Salário, Uber..."
+                 autocomplete="off" data-autosave="descricao">
+          <div id="autocomplete-list" class="autocomplete-list"></div>
+        </div>
+        <div id="sugestao-badge" class="sugestao-badge" style="display:none"></div>
+      </div>
+
+      <!-- 3. CATEGORIA (Grid de ícones) -->
+      <div class="form-group">
+        <label>🏷️ Categoria</label>
+        <div id="categoria-grid" class="categoria-grid">
+          <button type="button" class="cat-btn" data-cat="alimentacao" data-tipo="despesa">
+            <span class="cat-emoji">🍔</span><span class="cat-nome">Alimentação</span>
           </button>
-          <button type="button" class="tipo-btn despesa" data-tipo="despesa" onclick="selecionarTipo('despesa')">
-            ❤️ Despesa
+          <button type="button" class="cat-btn" data-cat="transporte" data-tipo="despesa">
+            <span class="cat-emoji">🚗</span><span class="cat-nome">Transporte</span>
+          </button>
+          <button type="button" class="cat-btn" data-cat="moradia" data-tipo="despesa">
+            <span class="cat-emoji">🏠</span><span class="cat-nome">Moradia</span>
+          </button>
+          <button type="button" class="cat-btn" data-cat="saude" data-tipo="despesa">
+            <span class="cat-emoji">⚕️</span><span class="cat-nome">Saúde</span>
+          </button>
+          <button type="button" class="cat-btn" data-cat="lazer" data-tipo="despesa">
+            <span class="cat-emoji">🎬</span><span class="cat-nome">Lazer</span>
+          </button>
+          <button type="button" class="cat-btn" data-cat="salario" data-tipo="receita">
+            <span class="cat-emoji">💰</span><span class="cat-nome">Salário</span>
+          </button>
+          <button type="button" class="cat-btn" data-cat="freelance" data-tipo="receita">
+            <span class="cat-emoji">💻</span><span class="cat-nome">Freelance</span>
+          </button>
+          <button type="button" class="cat-btn" data-cat="investimentos" data-tipo="receita">
+            <span class="cat-emoji">📈</span><span class="cat-nome">Investimentos</span>
+          </button>
+          <button type="button" class="cat-btn" data-cat="outro" data-tipo="despesa">
+            <span class="cat-emoji">📌</span><span class="cat-nome">Outro</span>
           </button>
         </div>
-      </fieldset>
-
-      <div class="form-group">
-        <label for="novo-descricao">O quê? *</label>
-        <input type="text" id="novo-descricao" placeholder="Ex: Salário, Café, Aluguel..." required>
+        <input type="hidden" id="novo-categoria" value="">
+        <input type="hidden" id="novo-tipo" value="despesa">
       </div>
 
+      <!-- 4. DATA (chips rápidos + input) -->
       <div class="form-group">
-        <label for="novo-valor">Valor *</label>
-        <input type="number" id="novo-valor" placeholder="0,00" step="0.01" min="0" required>
+        <label for="novo-data">📅 Data</label>
+        <div class="data-chips">
+          <button type="button" class="data-chip ativo" data-offset="0">Hoje</button>
+          <button type="button" class="data-chip" data-offset="1">Ontem</button>
+          <button type="button" class="data-chip" data-offset="2">Anteontem</button>
+          <input type="date" id="novo-data" class="data-input" required>
+        </div>
       </div>
 
-      <div class="form-group">
-        <label for="novo-data">Data *</label>
-        <input type="date" id="novo-data" required>
+      <!-- 5. BANCO E CARTÃO (separados) -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label for="novo-banco">🏦 Banco</label>
+          <select id="novo-banco" class="form-select">
+            <option value="">Sem banco</option>
+            <option value="Nubank">Nubank</option>
+            <option value="Itaú">Itaú</option>
+            <option value="Caixa">Caixa</option>
+            <option value="Bradesco">Bradesco</option>
+            <option value="Santander">Santander</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="novo-cartao">💳 Cartão</label>
+          <select id="novo-cartao" class="form-select">
+            <option value="">Sem cartão</option>
+            <option value="Crédito">Crédito</option>
+            <option value="Débito">Débito</option>
+            <option value="XP">XP Investimentos</option>
+            <option value="B3">B3</option>
+            <option value="Outro">Outro</option>
+          </select>
+        </div>
       </div>
 
-      <div class="form-group">
-        <label for="novo-categoria">Categoria *</label>
-        <select id="novo-categoria">
-          <option value="">Selecione (ou digite acima para auto-detectar)...</option>
-          <option value="salario">💰 Salário / Receita</option>
-          <option value="alimentacao">🍔 Alimentação</option>
-          <option value="transporte">🚗 Transporte</option>
-          <option value="moradia">🏠 Moradia</option>
-          <option value="saude">⚕️ Saúde</option>
-          <option value="lazer">🎬 Lazer</option>
-          <option value="outro">📌 Outro</option>
-        </select>
+      <!-- 6. OPÇÕES EXTRAS (recolhidas) -->
+      <div class="extras-toggle">
+        <button type="button" id="btn-extras" class="btn-extras" aria-expanded="false">
+          ⚙️ Mais opções
+          <span class="extras-arrow" id="extras-arrow">▼</span>
+        </button>
       </div>
 
-      <div class="form-group">
-        <label for="novo-nota">Observação (opcional)</label>
-        <textarea id="novo-nota" placeholder="Adicione uma nota..."></textarea>
+      <div id="extras-panel" class="extras-panel" style="display:none">
+        <!-- Observação -->
+        <div class="form-group">
+          <label for="novo-nota">Observação</label>
+          <textarea id="novo-nota" placeholder="Adicione uma nota..." rows="2"></textarea>
+        </div>
+
+        <!-- Recorrência -->
+        <div class="form-group">
+          <label class="toggle-label">
+            <input type="checkbox" id="chk-recorrente">
+            <span class="toggle-slider"></span>
+            <span>🔄 Repetir automaticamente</span>
+          </label>
+          <div id="recorrencia-opcoes" class="recorrencia-opcoes" style="display:none">
+            <button type="button" class="rec-chip" data-freq="semanal">Semanal</button>
+            <button type="button" class="rec-chip" data-freq="quinzenal">Quinzenal</button>
+            <button type="button" class="rec-chip ativo" data-freq="mensal">Mensal</button>
+            <button type="button" class="rec-chip" data-freq="anual">Anual</button>
+          </div>
+        </div>
+
+        <!-- Parcelamento -->
+        <div class="form-group" id="grupo-parcelas">
+          <label class="toggle-label">
+            <input type="checkbox" id="chk-parcelado">
+            <span class="toggle-slider"></span>
+            <span>💳 Parcelar</span>
+          </label>
+          <div id="parcelas-opcoes" class="parcelas-opcoes" style="display:none">
+            <div class="parcelas-input-row">
+              <label for="num-parcelas">Parcelas:</label>
+              <input type="number" id="num-parcelas" min="2" max="48" value="2" class="parcelas-num">
+              <span class="parcela-valor" id="parcela-valor-txt"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modo contínuo -->
+        <div class="form-group">
+          <label class="toggle-label">
+            <input type="checkbox" id="chk-continuo">
+            <span class="toggle-slider"></span>
+            <span>⚡ Modo contínuo (registrar vários)</span>
+          </label>
+        </div>
       </div>
 
-      <button type="submit" class="btn-primario">✅ Registrar</button>
+      <!-- BOTÃO REGISTRAR -->
+      <button type="submit" class="btn-primario btn-registrar">
+        ✅ Registrar
+      </button>
     </form>
+
+    <!-- ANIMAÇÃO DE SUCESSO (overlay) -->
+    <div id="success-overlay" class="success-overlay" style="display:none">
+      <div class="success-content">
+        <div class="success-check">✓</div>
+        <div class="success-msg" id="success-msg">Registrado!</div>
+        <div class="success-saldo" id="success-saldo"></div>
+      </div>
+    </div>
   </div>
 
   <!-- ABA 3: EXTRATO -->
   <div id="aba-extrato" class="aba">
-    <div class="filtros-container">
-      <button class="filtro-btn ativo" data-filtro="todos" onclick="filtrarExtrato('todos')">📋 Todas</button>
-      <button class="filtro-btn" data-filtro="receita" onclick="filtrarExtrato('receita')">💚 Receitas</button>
-      <button class="filtro-btn" data-filtro="despesa" onclick="filtrarExtrato('despesa')">❤️ Despesas</button>
+    <!-- Seletor de período -->
+    <div class="extrato-periodo">
+      <button class="periodo-nav" id="periodo-prev" onclick="navegarPeriodo(-1)" aria-label="Mês anterior">‹</button>
+      <span class="periodo-label" id="periodo-label">Abril 2026</span>
+      <button class="periodo-nav" id="periodo-next" onclick="navegarPeriodo(1)" aria-label="Próximo mês">›</button>
     </div>
+
+    <!-- Mini resumo do período -->
+    <div class="extrato-resumo" id="extrato-resumo"></div>
+
+    <!-- Busca -->
+    <div class="extrato-busca-wrapper">
+      <span class="busca-icon">🔍</span>
+      <input type="text" id="extrato-busca" class="extrato-busca" placeholder="Buscar transações..." oninput="filtrarExtrato()">
+    </div>
+
+    <!-- Filtros tipo + categoria -->
+    <div class="extrato-filtros">
+      <div class="filtros-tipo">
+        <button class="filtro-chip ativo" data-filtro="todos" onclick="setFiltroTipo('todos')">Todas</button>
+        <button class="filtro-chip" data-filtro="receita" onclick="setFiltroTipo('receita')">Receitas</button>
+        <button class="filtro-chip" data-filtro="despesa" onclick="setFiltroTipo('despesa')">Despesas</button>
+      </div>
+      <div class="filtros-categoria" id="filtros-categoria"></div>
+    </div>
+
+    <!-- Lista de transações agrupadas -->
     <div id="lista-transacoes"></div>
-    <button class="btn-pdf" onclick="exportarPDF()" style="margin-top: 20px;" aria-label="Exportar extrato em PDF">
-      📄 Exportar Extrato em PDF
-    </button>
+
+    <!-- Botões exportação -->
+    <div class="extrato-export-bar">
+      <button class="btn-export btn-export-excel" onclick="exportarExcel()" aria-label="Exportar como Excel">
+        <span class="btn-export-icon">📊</span> Excel
+      </button>
+      <button class="btn-export btn-export-pdf" onclick="exportarExtrato()" aria-label="Exportar como PDF">
+        <span class="btn-export-icon">📄</span> PDF
+      </button>
+    </div>
   </div>
 
   <!-- ABA 4: ORÇAMENTO -->
   <div id="aba-orcamento" class="aba">
-    <section class="config-section">
-      <h2 class="secao-titulo">Limites por Categoria</h2>
-      <form id="form-orcamentos">
-        <div class="form-group">
-          <label for="limit-alimentacao">Alimentação</label>
-          <input type="number" id="limit-alimentacao" placeholder="0,00" step="0.01" min="0">
+    <!-- Renda mensal (se não definida) -->
+    <div class="orc-renda-setup" id="orc-renda-setup">
+      <div class="orc-renda-icon">💰</div>
+      <p class="orc-renda-title">Qual sua renda mensal?</p>
+      <p class="orc-renda-desc">Informe para calcular seu orçamento 50/30/20</p>
+      <div class="orc-renda-input">
+        <span class="orc-renda-prefix">R$</span>
+        <input type="text" id="orc-renda-valor" placeholder="0,00" inputmode="numeric">
+      </div>
+      <button class="btn-primario" onclick="salvarRendaOrcamento()">Definir Renda</button>
+    </div>
+
+    <!-- Dashboard 50/30/20 -->
+    <div id="orc-dashboard" style="display:none">
+      <!-- Header com renda -->
+      <div class="orc-header">
+        <div class="orc-header-info">
+          <span class="orc-header-label">Renda Mensal</span>
+          <span class="orc-header-valor" id="orc-renda-display">R$ 0,00</span>
         </div>
-        <div class="form-group">
-          <label for="limit-transporte">Transporte</label>
-          <input type="number" id="limit-transporte" placeholder="0,00" step="0.01" min="0">
+        <button class="orc-edit-btn" onclick="editarRendaOrcamento()" aria-label="Editar renda">✏️</button>
+      </div>
+
+      <!-- Regra 50/30/20 -->
+      <div class="orc-regra">
+        <div class="orc-regra-item necessidades" id="orc-necessidades">
+          <div class="orc-regra-header">
+            <span class="orc-regra-icon">🏠</span>
+            <span class="orc-regra-nome">Necessidades</span>
+            <span class="orc-regra-pct">50%</span>
+          </div>
+          <div class="orc-regra-valores">
+            <span class="orc-regra-gasto" id="orc-nec-gasto">R$ 0</span>
+            <span class="orc-regra-limite">de <span id="orc-nec-limite">R$ 0</span></span>
+          </div>
+          <div class="orc-progress"><div class="orc-progress-fill" id="orc-nec-bar"></div></div>
+          <div class="orc-regra-cats">Moradia, Alimentação, Transporte, Saúde</div>
         </div>
-        <div class="form-group">
-          <label for="limit-moradia">Moradia</label>
-          <input type="number" id="limit-moradia" placeholder="0,00" step="0.01" min="0">
+
+        <div class="orc-regra-item desejos" id="orc-desejos">
+          <div class="orc-regra-header">
+            <span class="orc-regra-icon">🎮</span>
+            <span class="orc-regra-nome">Desejos</span>
+            <span class="orc-regra-pct">30%</span>
+          </div>
+          <div class="orc-regra-valores">
+            <span class="orc-regra-gasto" id="orc-des-gasto">R$ 0</span>
+            <span class="orc-regra-limite">de <span id="orc-des-limite">R$ 0</span></span>
+          </div>
+          <div class="orc-progress"><div class="orc-progress-fill" id="orc-des-bar"></div></div>
+          <div class="orc-regra-cats">Lazer, Entretenimento, Compras</div>
         </div>
-        <div class="form-group">
-          <label for="limit-saude">Saúde</label>
-          <input type="number" id="limit-saude" placeholder="0,00" step="0.01" min="0">
+
+        <div class="orc-regra-item poupanca" id="orc-poupanca">
+          <div class="orc-regra-header">
+            <span class="orc-regra-icon">🐷</span>
+            <span class="orc-regra-nome">Poupança</span>
+            <span class="orc-regra-pct">20%</span>
+          </div>
+          <div class="orc-regra-valores">
+            <span class="orc-regra-gasto" id="orc-pou-gasto">R$ 0</span>
+            <span class="orc-regra-limite">meta <span id="orc-pou-limite">R$ 0</span></span>
+          </div>
+          <div class="orc-progress poupanca-bar"><div class="orc-progress-fill" id="orc-pou-bar"></div></div>
         </div>
-        <div class="form-group">
-          <label for="limit-lazer">Lazer</label>
-          <input type="number" id="limit-lazer" placeholder="0,00" step="0.01" min="0">
-        </div>
-        <button type="submit" class="btn-primario">💾 Salvar Limites</button>
-      </form>
-    </section>
+      </div>
+
+      <!-- Insights inteligentes -->
+      <div class="orc-insights" id="orc-insights"></div>
+
+      <!-- Detalhamento por categoria -->
+      <div class="orc-secao-titulo" id="orc-cat-toggle" onclick="toggleDetalhesCategorias()">
+        <span>📊 Detalhes por Categoria</span>
+        <span class="orc-toggle-arrow" id="orc-cat-arrow">▼</span>
+      </div>
+      <div class="orc-categorias" id="orc-categorias"></div>
+
+      <!-- Histórico 3 meses -->
+      <div class="orc-secao-titulo">📈 Evolução (3 meses)</div>
+      <div class="orc-historico" id="orc-historico"></div>
+    </div>
   </div>
 
   <!-- ABA 5: CONFIGURAÇÕES -->
   <div id="aba-config" class="aba">
-    <section class="config-section">
-      <h2 class="secao-titulo">👤 Perfil</h2>
-      <form id="form-config">
-        <div class="form-group">
-          <label for="cfg-nome">Nome</label>
-          <input type="text" id="cfg-nome" placeholder="Seu nome">
-        </div>
-        <div class="form-group">
-          <label for="cfg-renda">Renda Mensal</label>
-          <input type="number" id="cfg-renda" placeholder="0,00" step="0.01" min="0">
-        </div>
-        <button type="submit" class="btn-primario">💾 Salvar</button>
-      </form>
-    </section>
 
-    <section class="config-section">
-      <h2 class="secao-titulo">📥 Exportar / Importar Dados</h2>
-      <p style="color: var(--text-light); font-size: 13px; margin-bottom: 12px;">
-        Faça backup ou restaure seus dados financeiros
-      </p>
-      <button class="btn-secundario" onclick="exportarDados()" aria-label="Exportar dados em formato JSON">📥 Exportar JSON</button>
-      <div style="margin-top: 12px;">
-        <div class="import-area" id="import-area" onclick="document.getElementById('import-file').click()" role="button" tabindex="0" aria-label="Clique ou arraste um arquivo JSON para importar dados">
-          <span style="font-size: 28px;">📂</span>
-          <p>Clique ou arraste um arquivo JSON para importar</p>
-        </div>
-        <input type="file" id="import-file" accept=".json" style="display:none" aria-hidden="true">
+    <!-- PERFIL / AVATAR -->
+    <div class="cfg-perfil-card">
+      <div class="cfg-avatar" id="cfg-avatar">U</div>
+      <div class="cfg-perfil-info">
+        <span class="cfg-perfil-nome" id="cfg-perfil-nome">Usuário</span>
+        <span class="cfg-perfil-email">Finanças pessoais</span>
       </div>
-    </section>
+      <button class="cfg-edit-btn" onclick="abrirEditarPerfil()" aria-label="Editar perfil">✏️</button>
+    </div>
 
-    <section class="config-section">
-      <h2 class="secao-titulo">⚙️ Sistema</h2>
-      <p style="color: var(--text-light); font-size: 13px;">
-        Versão: <strong>v1.1 MVP</strong><br>
-        Dados salvos: <strong>Localmente</strong>
-      </p>
-    </section>
+    <!-- RENDA MENSAL -->
+    <div class="cfg-card" onclick="abrirEditarRenda()">
+      <div class="cfg-card-icon">💰</div>
+      <div class="cfg-card-body">
+        <span class="cfg-card-label">Renda Mensal</span>
+        <span class="cfg-card-valor" id="cfg-renda-display">Não definida</span>
+      </div>
+      <span class="cfg-card-arrow">›</span>
+    </div>
+
+    <!-- PREFERÊNCIAS -->
+    <div class="cfg-section-title">Preferências</div>
+
+    <!-- BANCOS E CARTÕES -->
+    <div class="cfg-card" onclick="abrirConfigBancos()">
+      <div class="cfg-card-icon">🏦</div>
+      <div class="cfg-card-body">
+        <span class="cfg-card-label">Bancos e Cartões</span>
+        <span class="cfg-card-valor cfg-card-sub" id="cfg-bancos-display">Nenhum cadastrado</span>
+      </div>
+      <span class="cfg-card-arrow">›</span>
+    </div>
+
+    <div class="cfg-card cfg-card-toggle">
+      <div class="cfg-card-icon">🌙</div>
+      <div class="cfg-card-body">
+        <span class="cfg-card-label">Modo Escuro</span>
+      </div>
+      <label class="cfg-switch">
+        <input type="checkbox" id="chk-darkmode" onchange="CONFIG_USER.toggleTema()">
+        <span class="cfg-switch-slider"></span>
+      </label>
+    </div>
+
+    <!-- CATEGORIAS PERSONALIZADAS -->
+    <div class="cfg-section-title">Categorias</div>
+    <div class="cfg-card" onclick="abrirGerenciarCategorias('despesa')">
+      <div class="cfg-card-icon">📁</div>
+      <div class="cfg-card-body">
+        <span class="cfg-card-label">Categorias de Despesa</span>
+        <span class="cfg-card-valor cfg-card-sub" id="cfg-cats-despesa">7 categorias</span>
+      </div>
+      <span class="cfg-card-arrow">›</span>
+    </div>
+    <div class="cfg-card" onclick="abrirGerenciarCategorias('receita')">
+      <div class="cfg-card-icon">📂</div>
+      <div class="cfg-card-body">
+        <span class="cfg-card-label">Categorias de Receita</span>
+        <span class="cfg-card-valor cfg-card-sub" id="cfg-cats-receita">5 categorias</span>
+      </div>
+      <span class="cfg-card-arrow">›</span>
+    </div>
+
+    <!-- NOTIFICAÇÕES -->
+    <div class="cfg-section-title">Notificações</div>
+    <div class="cfg-card cfg-card-toggle">
+      <div class="cfg-card-icon">🔔</div>
+      <div class="cfg-card-body">
+        <span class="cfg-card-label">Alertas de Orçamento</span>
+        <span class="cfg-card-valor cfg-card-sub">Avisar ao atingir 80%</span>
+      </div>
+      <label class="cfg-switch">
+        <input type="checkbox" id="chk-alerta-orc" onchange="toggleAlertaOrcamento()">
+        <span class="cfg-switch-slider"></span>
+      </label>
+    </div>
+    <div class="cfg-card cfg-card-toggle">
+      <div class="cfg-card-icon">📝</div>
+      <div class="cfg-card-body">
+        <span class="cfg-card-label">Lembrete Diário</span>
+        <span class="cfg-card-valor cfg-card-sub">Lembrar de registrar gastos</span>
+      </div>
+      <label class="cfg-switch">
+        <input type="checkbox" id="chk-lembrete" onchange="toggleLembreteDiario()">
+        <span class="cfg-switch-slider"></span>
+      </label>
+    </div>
+
+    <!-- SEGURANÇA -->
+    <div class="cfg-section-title">Segurança</div>
+    <div class="cfg-card cfg-card-toggle">
+      <div class="cfg-card-icon">🔒</div>
+      <div class="cfg-card-body">
+        <span class="cfg-card-label">Proteção por PIN</span>
+        <span class="cfg-card-valor cfg-card-sub" id="cfg-pin-status">Desativado</span>
+      </div>
+      <label class="cfg-switch">
+        <input type="checkbox" id="chk-pin" onchange="togglePinSeguranca()">
+        <span class="cfg-switch-slider"></span>
+      </label>
+    </div>
+
+    <!-- DADOS -->
+    <div class="cfg-section-title">Dados</div>
+    <div class="cfg-card" onclick="exportarDados()">
+      <div class="cfg-card-icon">📤</div>
+      <div class="cfg-card-body">
+        <span class="cfg-card-label">Exportar Backup</span>
+        <span class="cfg-card-valor cfg-card-sub" id="cfg-ultimo-backup">Nunca exportado</span>
+      </div>
+      <span class="cfg-card-arrow">›</span>
+    </div>
+    <div class="cfg-card" onclick="document.getElementById('import-file').click()">
+      <div class="cfg-card-icon">📥</div>
+      <div class="cfg-card-body">
+        <span class="cfg-card-label">Importar Dados</span>
+        <span class="cfg-card-valor cfg-card-sub">Restaurar backup JSON</span>
+      </div>
+      <span class="cfg-card-arrow">›</span>
+    </div>
+    <input type="file" id="import-file" accept=".json" style="display:none" aria-hidden="true">
+
+    <!-- ESTATÍSTICAS -->
+    <div class="cfg-section-title">Estatísticas</div>
+    <div class="cfg-stats" id="cfg-stats">
+      <div class="cfg-stat-item">
+        <span class="cfg-stat-num" id="cfg-stat-tx">0</span>
+        <span class="cfg-stat-label">Transações</span>
+      </div>
+      <div class="cfg-stat-item">
+        <span class="cfg-stat-num" id="cfg-stat-dias">0</span>
+        <span class="cfg-stat-label">Dias usando</span>
+      </div>
+      <div class="cfg-stat-item">
+        <span class="cfg-stat-num" id="cfg-stat-cat">—</span>
+        <span class="cfg-stat-label">Top categoria</span>
+      </div>
+    </div>
+
+    <!-- SOBRE / FEEDBACK -->
+    <div class="cfg-section-title">Sobre</div>
+    <div class="cfg-card" onclick="abrirChangelog()">
+      <div class="cfg-card-icon">📋</div>
+      <div class="cfg-card-body">
+        <span class="cfg-card-label">Novidades</span>
+        <span class="cfg-card-valor cfg-card-sub">v3.0 — Config redesenhada</span>
+      </div>
+      <span class="cfg-card-arrow">›</span>
+    </div>
+    <div class="cfg-card" onclick="abrirFeedback()">
+      <div class="cfg-card-icon">💬</div>
+      <div class="cfg-card-body">
+        <span class="cfg-card-label">Enviar Feedback</span>
+        <span class="cfg-card-valor cfg-card-sub">Sugestões, bugs, elogios</span>
+      </div>
+      <span class="cfg-card-arrow">›</span>
+    </div>
+
+    <!-- SISTEMA -->
+    <div class="cfg-system-info">
+      <p>FinançasPro v3.0 · Dados salvos localmente</p>
+      <p>Feito com ❤️ para suas finanças</p>
+    </div>
+
+    <button class="cfg-btn-danger" onclick="CONFIG_USER.limparDados()">
+      🗑️ Apagar todos os dados
+    </button>
+
+    <div style="height: 24px;"></div>
   </div>
 
 </main>
 
-<!-- NAV INFERIOR -->
-<nav class="nav-bottom" aria-label="Navegação principal">
-  <button class="nav-btn ativo" data-aba="resumo" onclick="mudarAba('resumo')" aria-label="Resumo financeiro" aria-current="true">
-    <span class="nav-emoji" aria-hidden="true">📊</span>
-    <span>Resumo</span>
-  </button>
-  <button class="nav-btn" data-aba="novo" onclick="mudarAba('novo')" aria-label="Registrar nova transação">
-    <span class="nav-emoji" aria-hidden="true">💸</span>
-    <span>Novo</span>
-  </button>
-  <button class="nav-btn" data-aba="extrato" onclick="mudarAba('extrato')" aria-label="Ver extrato de transações">
-    <span class="nav-emoji" aria-hidden="true">📋</span>
-    <span>Extrato</span>
-  </button>
-  <button class="nav-btn" data-aba="orcamento" onclick="mudarAba('orcamento')" aria-label="Gerenciar orçamento">
-    <span class="nav-emoji" aria-hidden="true">📊</span>
-    <span>Orçamento</span>
-  </button>
-  <button class="nav-btn" data-aba="config" onclick="mudarAba('config')" aria-label="Configurações">
-    <span class="nav-emoji" aria-hidden="true">⚙️</span>
-    <span>Config</span>
-  </button>
-</nav>
-
-<!-- SCRIPTS - ORDEM IMPORTA! -->
-<script src="js/config.js"></script>
-<script src="js/categorias.js"></script>
-<script src="js/dados.js"></script>
-<script src="js/utils.js"></script>
-<script src="js/transacoes.js"></script>
-<script src="js/orcamento.js"></script>
-<script src="js/render.js"></script>
-<script src="js/config-user.js"></script>
-<script src="js/init.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js" defer></script>
-
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(function() {});
-  }
-</script>
-
-</body>
-</html>
+<!-- NAV INFERIOR
