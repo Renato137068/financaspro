@@ -309,10 +309,9 @@ var RENDER = {
     svg += '<div class="donut-legenda">';
     for (var k = 0; k < cats.length; k++) {
       var pctCat = Math.round((cats[k].valor / totalDesp) * 100);
-      var nomeLegenda = CONFIG.getCatLabel ? CONFIG.getCatLabel(cats[k].nome) : cats[k].nome;
       svg += '<div class="legenda-item">' +
         '<span class="legenda-cor" style="background:' + cats[k].cor + '"></span>' +
-        '<span class="legenda-nome">' + UTILS.escapeHtml(nomeLegenda) + '</span>' +
+        '<span class="legenda-nome">' + UTILS.escapeHtml(cats[k].nome) + '</span>' +
         '<span class="legenda-pct">' + pctCat + '%</span>' +
       '</div>';
     }
@@ -333,13 +332,10 @@ var RENDER = {
     }
 
     list.innerHTML = ultimas.map(function(t) {
-      var meta = UTILS.escapeHtml(t.categoria) + ' · ' + UTILS.formatarData(t.data);
-      if (t.banco) meta += ' · 🏦 ' + UTILS.escapeHtml(t.banco);
-      if (t.cartao) meta += ' · 💳 ' + UTILS.escapeHtml(t.cartao);
       return '<div class="transacao-item">' +
         '<div class="transacao-info">' +
           '<div class="transacao-descricao">' + UTILS.escapeHtml(t.descricao || t.categoria) + '</div>' +
-          '<div class="transacao-data">' + meta + '</div>' +
+          '<div class="transacao-data">' + UTILS.escapeHtml(t.categoria) + ' · ' + UTILS.formatarData(t.data) + '</div>' +
         '</div>' +
         '<div class="transacao-valor ' + t.tipo + '">' +
           (t.tipo === CONFIG.TIPO_RECEITA ? '+' : '-') + ' ' + UTILS.formatarMoeda(t.valor) +
@@ -360,16 +356,48 @@ var RENDER = {
 
   // === EXTRATO (aba separada) ===
   renderExtrato: function() {
-    // Delega para filtrarExtrato() que é a função unificada
+    var transacoes = TRANSACOES.obter({});
     var container = document.getElementById('lista-transacoes');
     if (!container) return;
-    var filtroAtual = container.dataset.filtroAtual || 'todos';
-    filtrarExtrato(filtroAtual);
+    if (transacoes.length === 0) {
+      container.innerHTML = '<p class="empty">Nenhuma transacao</p>';
+      return;
+    }
+    container.innerHTML = transacoes.map(function(t) {
+      return '<div class="transacao-item-full" data-tx-id="' + UTILS.escapeHtml(t.id) + '">' +
+        '<div class="transacao-info-full">' +
+          '<div class="transacao-categoria">' + UTILS.escapeHtml(t.categoria) + '</div>' +
+          '<div class="transacao-descricao">' + UTILS.escapeHtml(t.descricao || '-') + '</div>' +
+          '<div class="transacao-data">' + UTILS.formatarData(t.data) + '</div>' +
+        '</div><div class="transacao-actions">' +
+          '<div class="transacao-valor ' + t.tipo + '">' +
+            (t.tipo === CONFIG.TIPO_RECEITA ? '+' : '-') + ' ' + UTILS.formatarMoeda(t.valor) +
+          '</div>' +
+          '<button class="btn-delete" type="button" aria-label="Excluir transacao">&times;</button>' +
+        '</div></div>';
+    }).join('');
+
+    var self = this;
+    container.addEventListener('click', function(e) {
+      var deleteBtn = e.target.closest('.btn-delete');
+      if (!deleteBtn) return;
+      var item = deleteBtn.closest('[data-tx-id]');
+      var id = item ? item.dataset.txId : null;
+      if (!id) return;
+      var tx = TRANSACOES.obterPorId(id);
+      var desc = tx ? (tx.descricao || tx.categoria) : 'esta transacao';
+      fpConfirm('Excluir "' + desc + '"?', function() {
+        TRANSACOES.deletar(id);
+        self.renderExtrato();
+        self.renderResumo();
+        self.renderOrcamento();
+        self.atualizarHeaderSaldo();
+        UTILS.mostrarToast('Transacao excluida', 'info');
+      });
+    });
   },
 
   // === ORÇAMENTO (barras) ===
-  _orcamentoListenerAttached: false,
-
   renderOrcamento: function() {
     var agora = new Date();
     var status = ORCAMENTO.obterStatusTodos(agora.getMonth() + 1, agora.getFullYear());
@@ -390,22 +418,19 @@ var RENDER = {
         '<button class="btn-small" type="button">Remover</button></div></div>';
     }).join('');
 
-    if (!this._orcamentoListenerAttached) {
-      var self = this;
-      container.addEventListener('click', function(e) {
-        var removeBtn = e.target.closest('.btn-small');
-        if (!removeBtn) return;
-        var item = removeBtn.closest('[data-categoria]');
-        var cat = item ? item.dataset.categoria : null;
-        if (!cat) return;
-        fpConfirm('Remover limite de "' + cat + '"?', function() {
-          ORCAMENTO.deletarLimite(cat);
-          self.renderOrcamento();
-          UTILS.mostrarToast('Limite removido', 'info');
-        });
+    var self = this;
+    container.addEventListener('click', function(e) {
+      var removeBtn = e.target.closest('.btn-small');
+      if (!removeBtn) return;
+      var item = removeBtn.closest('[data-categoria]');
+      var cat = item ? item.dataset.categoria : null;
+      if (!cat) return;
+      fpConfirm('Remover limite de "' + cat + '"?', function() {
+        ORCAMENTO.deletarLimite(cat);
+        self.renderOrcamento();
+        UTILS.mostrarToast('Limite removido', 'info');
       });
-      this._orcamentoListenerAttached = true;
-    }
+    });
   },
 
   renderFormCategories: function() {
@@ -417,11 +442,11 @@ var RENDER = {
   },
 
   atualizarCategorias: function(tipo) {
-    var slugs = tipo === CONFIG.TIPO_RECEITA ? CONFIG.CATEGORIAS_RECEITA : CONFIG.CATEGORIAS_DESPESA;
+    var categorias = tipo === CONFIG.TIPO_RECEITA ? CONFIG.CATEGORIAS_RECEITA : CONFIG.CATEGORIAS_DESPESA;
     var select = document.getElementById('categoria-transacao');
     if (!select) return;
     select.innerHTML = '<option value="">Selecione a categoria</option>' +
-      slugs.map(function(slug) { return '<option value="' + slug + '">' + CONFIG.getCatLabel(slug) + '</option>'; }).join('');
+      categorias.map(function(cat) { return '<option value="' + cat + '">' + cat + '</option>'; }).join('');
   },
 
   atualizarHeaderSaldo: function() {

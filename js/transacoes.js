@@ -10,7 +10,7 @@ var TRANSACOES = {
     this._cache = DADOS.getTransacoes();
   },
 
-  criar: function(tipo, valor, categoria, data, descricao, banco, cartao) {
+  criar: function(tipo, valor, categoria, data, descricao) {
     var validacao = UTILS.validarTransacao({
       tipo: tipo, valor: parseFloat(valor), categoria: categoria, data: data
     });
@@ -23,8 +23,6 @@ var TRANSACOES = {
       categoria: categoria,
       data: data,
       descricao: descricao || '',
-      banco: banco || '',
-      cartao: cartao || '',
       dataCriacao: new Date().toISOString()
     };
     DADOS.salvarTransacao(transacao);
@@ -96,12 +94,6 @@ var TRANSACOES = {
       else resumo[t.categoria].despesa += t.valor;
     });
     return resumo;
-  },
-
-  obterResumoCategoriaMes: function(categoria, mes, ano) {
-    var transacoes = UTILS.filtrarPorMes(this._cache, mes, ano);
-    return transacoes.filter(function(t) { return t.categoria === categoria && t.tipo === 'despesa'; })
-      .reduce(function(acc, t) { return acc + t.valor; }, 0);
   }
 };
 

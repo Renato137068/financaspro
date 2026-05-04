@@ -1,88 +1,65 @@
 /**
- * categorias.js - Auto-categorization with ML learning
- * Tier 1: Depends on config.js, dados.js
+ * categorias.js - Auto-categorization by description keywords
+ * Tier 0.5: Depends on config.js only
  */
 
-var CATEGORIAS = (function() {
-  var REGRAS = [
-    { regex: /supermercado|mercado|padaria|açougue|hortifruti|ifood|rappi|delivery|restaurante|lanchonete|café|pizza|hamburguer|sushi|bar|boteco/i, cat: 'alimentacao', tipo: 'despesa' },
-    { regex: /uber|99|táxi|taxi|ônibus|metro|metrô|combustivel|combustível|gasolina|estacionamento|pedágio|pedagio|passagem|viajem|aéreo|aereo/i, cat: 'transporte', tipo: 'despesa' },
-    { regex: /aluguel|condomínio|condominio|iptu|água|agua|luz|energia|internet|telefone|gas|gás|wifi/i, cat: 'moradia', tipo: 'despesa' },
-    { regex: /farmácia|farmacia|remédio|remedio|médico|medico|consulta|exame|plano de saúde|hospital|dentista|psicólogo|psicólogo|vitamina/i, cat: 'saude', tipo: 'despesa' },
-    { regex: /escola|faculdade|curso|livro|mensalidade|material escolar|udemy|alura|formação/i, cat: 'educacao', tipo: 'despesa' },
-    { regex: /cinema|netflix|spotify|steam|jogos|jogo|teatro|show|viagem|hotel|passeio|academia|gym|lazer|recreação/i, cat: 'lazer', tipo: 'despesa' },
-    { regex: /salário|salario|pagamento|holerite|13º|13|décimo|bonus|bônus/i, cat: 'salario', tipo: 'receita' },
-    { regex: /freelance|projeto|consultoria|honorários|honorarios|freelancer|trabalho/i, cat: 'freelance', tipo: 'receita' },
-    { regex: /investimento|rendimento|dividendo|juros|cdb|fundo|renda fixa/i, cat: 'investimentos', tipo: 'receita' },
-  ];
+var CATEGORIAS = {
+  REGRAS: [
+    // === RECEITAS ===
+    { regex: /sal[aá]rio|holerite|pagamento\s*(mensal|quinzenal)|contracheque|vencimento/i, tipo: 'receita', categoria: 'salario' },
+    { regex: /freelance|freela|job\s*extra|bico|servi[cç]o\s*avulso/i, tipo: 'receita', categoria: 'salario' },
+    { regex: /rendimento|dividendo|juros|a[cç][oõ]es|fii|fundo|cdb|tesouro|poupan[cç]a|invest/i, tipo: 'receita', categoria: 'salario' },
+    { regex: /venda|vendas|mercado\s*livre|olx|shopee/i, tipo: 'receita', categoria: 'salario' },
+    { regex: /reembolso|devolu[cç][aã]o|estorno|cashback/i, tipo: 'receita', categoria: 'salario' },
 
-  var HISTORICO = {};
+    // === DESPESAS: Alimentação ===
+    { regex: /supermercado|hortifruti|a[cç]ougue|padaria|feira/i, tipo: 'despesa', categoria: 'alimentacao' },
+    { regex: /restaurante|lanche|almo[cç]o|janta|jantar|caf[eé]|pizza|hamburguer|sushi|ifood|rappi|uber\s*eats/i, tipo: 'despesa', categoria: 'alimentacao' },
+    { regex: /comida|refei[cç][aã]o|marmita|delivery|entrega\s*comida/i, tipo: 'despesa', categoria: 'alimentacao' },
 
-  return {
-    init: function() {
-      this.analisarHistorico();
-    },
+    // === DESPESAS: Transporte ===
+    { regex: /\buber\b|99|cabify|taxi|t[aá]xi|corrida/i, tipo: 'despesa', categoria: 'transporte' },
+    { regex: /gasolina|combustivel|combust[ií]vel|etanol|alcool|[aá]lcool|diesel|abastec/i, tipo: 'despesa', categoria: 'transporte' },
+    { regex: /[oô]nibus|metr[oô]|trem|barca|bals[ao]|passagem|bilhete\s*[uú]nico|\bvt\b|vale\s*transporte/i, tipo: 'despesa', categoria: 'transporte' },
+    { regex: /estacionamento|ped[aá]gio|ipva|licenciamento|seguro\s*(auto|carro|ve[ií]culo)/i, tipo: 'despesa', categoria: 'transporte' },
 
-    // Aprende padrões do histórico
-    analisarHistorico: function() {
-      try {
-        if (typeof DADOS === 'undefined') return;
-        var transacoes = DADOS.getTransacoes();
-        if (!Array.isArray(transacoes)) return;
+    // === DESPESAS: Moradia ===
+    { regex: /aluguel|condom[ií]nio|iptu|\bagua\b|\b[aá]gua\b|luz|energia|el[eé]trica|\bg[aá]s\b|internet|wifi|wi-fi/i, tipo: 'despesa', categoria: 'moradia' },
+    { regex: /reforma|manuten[cç][aã]o\s*(casa|apt)|conserto|encanador|eletricista|pintor|marceneiro/i, tipo: 'despesa', categoria: 'moradia' },
+    { regex: /m[oó]vel|m[oó]veis|eletrodom[eé]stico|decora[cç][aã]o/i, tipo: 'despesa', categoria: 'moradia' },
 
-        HISTORICO = {};
-        transacoes.forEach(function(t) {
-          if (!t.descricao) return;
-          var desc = String(t.descricao).toLowerCase().trim();
-          var palavras = desc.split(/\s+/);
-          palavras.forEach(function(palavra) {
-            if (palavra.length > 3) {
-              HISTORICO[palavra] = HISTORICO[palavra] || {};
-              HISTORICO[palavra][t.categoria] = (HISTORICO[palavra][t.categoria] || 0) + 1;
-            }
-          });
-        });
-      } catch (e) {
-        console.warn('Erro ao analisar histórico:', e);
+    // === DESPESAS: Saúde ===
+    { regex: /farm[aá]cia|rem[eé]dio|medicamento|droga\s*ria|drogasil|raia|pague\s*menos/i, tipo: 'despesa', categoria: 'saude' },
+    { regex: /m[eé]dico|consulta|exame|dentista|hospital|cl[ií]nica|psic[oó]logo|fisioterapia|terapia/i, tipo: 'despesa', categoria: 'saude' },
+    { regex: /plano\s*de\s*sa[uú]de|unimed|amil|bradesco\s*sa[uú]de|sul\s*am[eé]rica/i, tipo: 'despesa', categoria: 'saude' },
+    { regex: /academia|gym|crossfit|nutri[cç][aã]o|suplemento/i, tipo: 'despesa', categoria: 'saude' },
+
+    // === DESPESAS: Lazer ===
+    { regex: /cinema|teatro|show|concerto|ingresso|evento/i, tipo: 'despesa', categoria: 'lazer' },
+    { regex: /netflix|spotify|disney|hbo|prime\s*video|youtube\s*premium|streaming|deezer|apple\s*music/i, tipo: 'despesa', categoria: 'lazer' },
+    { regex: /viagem|hotel|pousada|airbnb|passagem\s*a[eé]rea|voo|hospedagem/i, tipo: 'despesa', categoria: 'lazer' },
+    { regex: /jogo|game|playstation|xbox|nintendo|steam|bar|balada|festa|cerveja|bebida/i, tipo: 'despesa', categoria: 'lazer' },
+    { regex: /livro|revista|kindle|assinatura/i, tipo: 'despesa', categoria: 'lazer' }
+  ],
+
+  detectar: function(descricao) {
+    if (!descricao || typeof descricao !== 'string') return null;
+    var texto = descricao.trim();
+    if (texto.length < 2) return null;
+    for (var i = 0; i < this.REGRAS.length; i++) {
+      if (this.REGRAS[i].regex.test(texto)) {
+        return { tipo: this.REGRAS[i].tipo, categoria: this.REGRAS[i].categoria };
       }
-    },
-
-    // Detectar categoria por regra + histórico
-    detectar: function(descricao) {
-      if (!descricao) return null;
-
-      var resultado = null;
-      for (var i = 0; i < REGRAS.length; i++) {
-        if (REGRAS[i].regex.test(descricao)) {
-          resultado = { categoria: REGRAS[i].cat, tipo: REGRAS[i].tipo, confianca: 'alta' };
-          break;
-        }
-      }
-
-      // Se não achou regra, busca no histórico
-      if (!resultado) {
-        var palavras = descricao.toLowerCase().split(/\s+/);
-        var votos = {};
-        palavras.forEach(function(palavra) {
-          if (HISTORICO[palavra]) {
-            Object.keys(HISTORICO[palavra]).forEach(function(cat) {
-              votos[cat] = (votos[cat] || 0) + HISTORICO[palavra][cat];
-            });
-          }
-        });
-
-        if (Object.keys(votos).length > 0) {
-          var topCat = Object.keys(votos).reduce(function(a, b) {
-            return votos[a] > votos[b] ? a : b;
-          });
-          resultado = { categoria: topCat, tipo: 'despesa', confianca: 'media' };
-        }
-      }
-
-      return resultado;
     }
-  };
-})();
+    return null;
+  },
+
+  sugerirCategoria: function(descricao, tipoAtual) {
+    var result = this.detectar(descricao);
+    if (!result) return null;
+    return { tipo: result.tipo, categoria: result.categoria };
+  }
+};
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = CATEGORIAS;
