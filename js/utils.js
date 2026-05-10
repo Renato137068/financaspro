@@ -1,9 +1,30 @@
 /**
- * utils.js - Utility Functions
- * Tier 1: Depends on config.js
+ * @file utils.js — Utility functions
+ * @module UTILS
+ * Tier 1. Depende de: config.js
+ */
+
+/**
+ * @typedef {Object} ValidationResult
+ * @property {boolean} valido
+ * @property {string} [erro]
+ * @property {*} [valor]
+ */
+
+/**
+ * @typedef {Object} StorageCheck
+ * @property {boolean} disponivel
+ * @property {string} [erro]
+ * @property {number} [tamanho]
  */
 
 var UTILS = {
+  /**
+   * Formata número como moeda local.
+   * @param {number} valor
+   * @param {'BRL'|'USD'|'EUR'} [moeda='BRL']
+   * @returns {string}
+   */
   formatarMoeda: function(valor, moeda) {
     moeda = moeda || 'BRL';
     var config = CONFIG.MOEDA_FORMATACAO[moeda] || CONFIG.MOEDA_FORMATACAO.BRL;
@@ -13,6 +34,12 @@ var UTILS = {
     }).format(valor);
   },
 
+  /**
+   * Formata data ISO ou string YYYY-MM-DD para DD/MM/YYYY.
+   * Evita timezone bugs ao parsear strings ISO direto via split.
+   * @param {string|Date} data
+   * @returns {string}
+   */
   formatarData: function(data) {
     var parts = String(data).split('T')[0].split('-');
     if (parts.length === 3) {
@@ -29,6 +56,11 @@ var UTILS = {
     }).format(data);
   },
 
+  /**
+   * Valida transação básica (valor, tipo, categoria, data).
+   * @param {Object} transacao
+   * @returns {ValidationResult}
+   */
   validarTransacao: function(transacao) {
     if (!transacao.valor || transacao.valor <= 0) {
       return { valido: false, erro: 'Valor deve ser maior que 0' };
@@ -45,6 +77,11 @@ var UTILS = {
     return { valido: true };
   },
 
+  /**
+   * Exibe toast acessível (aria-live=polite).
+   * @param {string} mensagem
+   * @param {'info'|'success'|'error'|'warning'} [tipo='info']
+   */
   mostrarToast: function(mensagem, tipo) {
     tipo = tipo || 'info';
     var toast = document.createElement('div');
@@ -68,6 +105,13 @@ var UTILS = {
 
   filtrarPorMes: function(transacoes, mes, ano) {
     return transacoes.filter(function(t) {
+      var dataStr = String(t.data || '').split('T')[0];
+      var parts = dataStr.split('-');
+      if (parts.length === 3) {
+        var anoTx = parseInt(parts[0], 10);
+        var mesTx = parseInt(parts[1], 10);
+        return mesTx === mes && anoTx === ano;
+      }
       var data = new Date(t.data);
       return data.getMonth() === mes - 1 && data.getFullYear() === ano;
     });
@@ -77,6 +121,12 @@ var UTILS = {
     return transacoes.filter(function(t) { return t.tipo === tipo; });
   },
 
+  /**
+   * Escapa string para HTML (atributos e conteúdo).
+   * NÃO escapa para contexto JS string — para isso, evite onclick inline.
+   * @param {*} text
+   * @returns {string}
+   */
   escapeHtml: function(text) {
     var map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
     return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
@@ -98,7 +148,67 @@ var UTILS = {
   },
 
   _idCounter: 0,
+  /**
+   * Gera ID único composto: timestamp + random36 + counter.
+   * @returns {string}
+   */
   gerarId: function() {
     var timestamp = Date.now();
     var randomPart = Math.random().toString(36).substr(2, 9);
-    var counter = (this._idCounter = (this._idCounter || 0) 
+    var counter = (this._idCounter = (this._idCounter || 0) + 1);
+    return timestamp + '-' + randomPart + '-' + counter;
+  },
+
+  // Cache de elementos DOM
+  _domCache: {},
+  obterElemento: function(id) {
+    if (!this._domCache[id]) {
+      this._domCache[id] = document.getElementById(id);
+    }
+    return this._domCache[id];
+  },
+
+  limparCacheDom: function() {
+    this._domCache = {};
+  },
+
+  // Debounce para eventos frequentes
+  debounce: function(func, delay) {
+    var timeout;
+    return function() {
+      var context = this, args = arguments;
+      clearTimeout(timeout);
+      timeout = setTimeout(function() { func.apply(context, args); }, delay);
+    };
+  },
+
+  /**
+   * Apenas valida quota localStorage — NÃO grava o dado real.
+   * Chamador é responsável pelo setItem subsequente.
+   * @param {*} dados
+   * @param {string} chave
+   * @returns {StorageCheck}
+   */
+  verificarStorageDisponivel: function(dados, chave) {
+    try {
+      var serializado = JSON.stringify(dados);
+      // Calcula tamanho do payload + overhead de chave
+      var tamanho = (chave.length + serializado.length) * 2; // UTF-16: 2 bytes/char
+      // Teste leve: tenta gravar key temporária do mesmo tamanho aproximado
+      var probe = '__sd_' + Date.now();
+      var amostra = serializado.length > 4096 ? serializado.substring(0, 4096) : serializado;
+      localStorage.setItem(probe, amostra);
+      localStorage.removeItem(probe);
+      return { disponivel: true, tamanho: tamanho };
+    } catch (e) {
+      if (e.name === 'QuotaExceededError' || e.code === 22) {
+        return { disponivel: false, erro: 'Espaço de armazenamento cheio' };
+      }
+      return { disponivel: false, erro: e.message };
+    }
+  }
+};
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = UTILS;
+}

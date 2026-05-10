@@ -1,0 +1,54 @@
+/**
+ * utilities/responsive.css — Media queries e ajustes mobile
+ * Depende de: design-system.css
+ */
+
+/* ── Mobile small (< 480px) ───────────────────────────────── */
+
+@media (max-width: 480px) {
+  body {
+    padding-bottom: 100px;
+  }
+
+  header h1 { font-size: var(--font-size-xl); }
+
+  .card-valor { font-size: var(--font-size-xl); }
+  .card { padding: var(--space-4); }
+  .cards-container { gap: var(--space-3); }
+  .card-saldo-principal .saldo-valor { font-size: 22px; }
+
+  .greeting-hello { font-size: var(--font-size-lg); }
+
+  .donut-container { flex-direction: column; align-items: center; }
+  .donut-legenda { width: 100%; }
+
+  .indicador-valor { font-size: var(--font-size-lg); }
+
+  .valor-input { font-size: var(--font-size-3xl); }
+
+  .categoria-grid { grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
+  .cat-btn     { padding: var(--space-3) var(--space-1); }
+  .cat-emoji   { font-size: 20px; }
+  .cat-nome    { font-size: 9px; }
+
+  .data-chips  { gap: var(--space-2); }
+  .data-chip   { padding: var(--space-1) var(--space-3); font-size: var(--font-size-xs); }
+
+  .quick-chip  { padding: var(--space-1) var(--space-3); font-size: var(--font-size-xs); }
+}
+
+/* ── Mobile micro (< 420px) — auth card ──────────────────── */
+
+@media (max-width: 420px) {
+  .auth-overlay {
+    align-items: stretch;
+    padding: var(--space-4);
+  }
+
+  .auth-card {
+    align-self: center;
+    padding: var(--space-5);
+  }
+
+  .auth-card h2 { font-size: var(--font-size-2xl); }
+}

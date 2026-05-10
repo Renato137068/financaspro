@@ -94,4 +94,11 @@ var DOMUTILS = {
   },
 
   setDisplay: function(elementId, tipo, mostra) {
- 
+    var el = this.get(elementId);
+    if (el) el.style.display = mostra ? (tipo === 'receita' ? 'none' : '') : 'none';
+  }
+};
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = DOMUTILS;
+}

@@ -143,13 +143,20 @@ var CATEGORIZADOR = {
     return 1 - (dist / maxLen);
   },
 
-  _cache: {},
+  _cache: new Map(),
+  _CACHE_MAX: 300,
 
   detectar: function(texto) {
     if (!texto || texto.length < 2) return null;
 
     var chave = texto.toLowerCase().trim();
-    if (this._cache[chave]) return this._cache[chave];
+    if (this._cache.has(chave)) {
+      // LRU: re-insert para mover para o final (mais recente)
+      var cached = this._cache.get(chave);
+      this._cache.delete(chave);
+      this._cache.set(chave, cached);
+      return cached;
+    }
 
     var palavras = chave.split(/\s+/);
     var melhorScore = 0, melhorCategoria = null, melhorTipo = null;
@@ -186,10 +193,16 @@ var CATEGORIZADOR = {
       confianca: melhorScore > 0.7 ? 'alta' : 'media'
     } : null;
 
-    this._cache[chave] = resultado;
-    if (Object.keys(this._cache).length > 300) this._cache = {};
+    this._cache.set(chave, resultado);
+    // LRU eviction: remove oldest (primeira chave inserida)
+    if (this._cache.size > this._CACHE_MAX) {
+      var oldest = this._cache.keys().next().value;
+      this._cache.delete(oldest);
+    }
     return resultado;
   }
 };
 
-if (typeof module !== 'undefined' && module.e
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = CATEGORIZADOR;
+}

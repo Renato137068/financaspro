@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FinançasPro - Demo Login UI Melhorada</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background:
+        radial-gradient(circle at 30% 20%, rgba(0, 114, 63, 0.12), transparent 40%),
+        radial-gradient(circle at 70% 80%, rgba(34, 197, 94, 0.08), transparent 35%),
+        linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .auth-card {
+      width: min(100%, 440px);
+      background: rgba(255, 255, 255, 0.95);
+      color: #1f2937;
+      border: 1px solid rgba(226, 232, 240, 0.8);
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 
+        0 20px 50px rgba(0, 114, 63, 0.08),
+        0 8px 25px rgba(0, 0, 0, 0.04),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      animation: authCardEntrance 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .auth-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 
+        0 25px 60px rgba(0, 114, 63, 0.12),
+        0 12px 35px rgba(0, 0, 0, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    }
+
+    .auth-brand {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .auth-logo {
+      display: grid;
+      place-items: center;
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+      box-shadow: 
+        0 12px 28px rgba(16, 185, 129, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      font-size: 32px;
+      margin-bottom: 16px;
+      animation: logoFloat 3s ease-in-out infinite;
+    }
+
+    @keyframes logoFloat {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-4px); }
+    }
+
+    @keyframes authCardEntrance {
+      from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .auth-kicker {
+      margin: 0 0 2px;
+      color: #10b981;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .auth-card h2 {
+      margin: 0;
+      color: #1e293b;
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 4px;
+    }
+
+    .auth-card > p {
+      margin: 0 0 24px;
+      color: #64748b;
+      font-size: 15px;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    .auth-tabs {
+      display: flex;
+      gap: 2px;
+      margin: 0 0 28px;
+      padding: 3px;
+      background: rgba(241, 245, 249, 0.8);
+      border-radius: 12px;
+      border: 1px solid rgba(226, 232, 240, 0.6);
+    }
+
+    .auth-tab {
+      flex: 1;
+      min-height: 48px;
+      border: 0;
+      background: transparent;
+      color: #64748b;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .auth-tab.ativo {
+      background: white;
+      color: #059669;
+      box-shadow: 
+        0 4px 12px rgba(16, 185, 129, 0.15),
+        0 1px 3px rgba(0, 0, 0, 0.05);
+      font-weight: 700;
+    }
+
+    .auth-tab:hover:not(.ativo) {
+      background: rgba(255, 255, 255, 0.5);
+      color: #475569;
+    }
+
+    .auth-form {
+      display: grid;
+      gap: 20px;
+    }
+
+    .auth-field {
+      display: grid;
+      gap: 8px;
+    }
+
+    .auth-field label {
+      color: #374151;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.025em;
+    }
+
+    .auth-form input {
+      width: 100%;
+      min-height: 52px;
+      padding: 14px 16px;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      background: #ffffff;
+      color: #1f2937;
+      font-size: 15px;
+      font-weight: 500;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .auth-form input::placeholder {
+      color: #9ca3af;
+      font-weight: 400;
+    }
+
+    .auth-form input:focus {
+      outline: none;
+      border-color: #10b981;
+      box-shadow: 
+        0 0 0 4px rgba(16, 185, 129, 0.1),
+        0 4px 12px rgba(16, 185, 129, 0.15);
+      transform: translateY(-1px);
+    }
+
+    .auth-form input:hover:not(:focus) {
+      border-color: #d1d5db;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .btn-primario {
+      min-height: 52px;
+      margin-top: 8px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.025em;
+      box-shadow: 
+        0 8px 24px rgba(16, 185, 129, 0.25),
+        0 4px 12px rgba(16, 185, 129, 0.15);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .btn-primario::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .btn-primario:hover {
+      transform: translateY(-2px);
+      box-shadow: 
+        0 12px 32px rgba(16, 185, 129, 0.35),
+        0 6px 16px rgba(16, 185, 129, 0.2);
+    }
+
+    .btn-primario:hover::before {
+      left: 100%;
+    }
+
+    .btn-primario:active {
+      transform: translateY(0);
+      box-shadow: 
+        0 6px 20px rgba(16, 185, 129, 0.3),
+        0 3px 8px rgba(16, 185, 129, 0.15);
+    }
+
+    .demo-info {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(16, 185, 129, 0.9);
+      color: white;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+      z-index: 1000;
+    }
+
+    /* Dark theme */
+    [data-theme="dark"] body {
+      background:
+        radial-gradient(circle at 30% 20%, rgba(16, 185, 129, 0.08), transparent 40%),
+        radial-gradient(circle at 70% 80%, rgba(34, 197, 94, 0.05), transparent 35%),
+        linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+    }
+
+    [data-theme="dark"] .auth-card {
+      background: rgba(30, 41, 59, 0.95);
+      border: 1px solid rgba(71, 85, 105, 0.4);
+      box-shadow: 
+        0 20px 50px rgba(0, 0, 0, 0.4),
+        0 8px 25px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    [data-theme="dark"] .auth-card:hover {
+      box-shadow: 
+        0 25px 60px rgba(0, 0, 0, 0.5),
+        0 12px 35px rgba(0, 0, 0, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    [data-theme="dark"] .auth-logo {
+      background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+      box-shadow: 
+        0 12px 28px rgba(16, 185, 129, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    [data-theme="dark"] .auth-card h2 {
+      color: #f1f5f9;
+    }
+
+    [data-theme="dark"] .auth-card > p {
+      color: #94a3b8;
+    }
+
+    [data-theme="dark"] .auth-tabs {
+      background: rgba(51, 65, 85, 0.4);
+      border: 1px solid rgba(71, 85, 105, 0.3);
+    }
+
+    [data-theme="dark"] .auth-tab {
+      color: #94a3b8;
+    }
+
+    [data-theme="dark"] .auth-tab.ativo {
+      background: rgba(30, 41, 59, 0.9);
+      color: #10b981;
+      box-shadow: 
+        0 4px 12px rgba(16, 185, 129, 0.2),
+        0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+
+    [data-theme="dark"] .auth-tab:hover:not(.ativo) {
+      background: rgba(51, 65, 85, 0.3);
+      color: #cbd5e1;
+    }
+
+    [data-theme="dark"] .auth-field label {
+      color: #cbd5e1;
+    }
+
+    [data-theme="dark"] .auth-form input {
+      background: rgba(30, 41, 59, 0.8);
+      border: 2px solid rgba(71, 85, 105, 0.4);
+      color: #f1f5f9;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    [data-theme="dark"] .auth-form input::placeholder {
+      color: #64748b;
+    }
+
+    [data-theme="dark"] .auth-form input:focus {
+      border-color: #10b981;
+      box-shadow: 
+        0 0 0 4px rgba(16, 185, 129, 0.15),
+        0 4px 12px rgba(16, 185, 129, 0.25);
+    }
+
+    [data-theme="dark"] .auth-form input:hover:not(:focus) {
+      border-color: rgba(100, 116, 139, 0.5);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    [data-theme="dark"] .btn-primario {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      box-shadow: 
+        0 8px 24px rgba(16, 185, 129, 0.3),
+        0 4px 12px rgba(16, 185, 129, 0.2);
+    }
+
+    [data-theme="dark"] .btn-primario:hover {
+      box-shadow: 
+        0 12px 32px rgba(16, 185, 129, 0.4),
+        0 6px 16px rgba(16, 185, 129, 0.25);
+    }
+
+    @media (max-width: 420px) {
+      body {
+        padding: 14px;
+      }
+      
+      .auth-card {
+        padding: 20px;
+      }
+      
+      .auth-card h2 {
+        font-size: 22px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="demo-info">
+    🎨 Demo UI Melhorada - Funcional
+  </div>
+
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="auth-logo">💰</div>
+      <div>
+        <p class="auth-kicker">FinançasPro</p>
+        <h2>Acesse sua conta</h2>
+      </div>
+    </div>
+    <p>Entre para continuar seu controle financeiro.</p>
+    
+    <div class="auth-tabs">
+      <button type="button" class="auth-tab ativo" onclick="switchTab(this, 'login')">Entrar</button>
+      <button type="button" class="auth-tab" onclick="switchTab(this, 'register')">Criar conta</button>
+    </div>
+    
+    <form class="auth-form" onsubmit="handleSubmit(event)">
+      <div class="auth-field">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="voce@email.com" required>
+      </div>
+      
+      <div class="auth-field">
+        <label for="password">Senha</label>
+        <input type="password" id="password" placeholder="Sua senha" required>
+      </div>
+      
+      <button type="submit" class="btn-primario">Entrar</button>
+    </form>
+  </div>
+
+  <script>
+    // API Configuration
+    const API_BASE = 'http://localhost:4000';
+    
+    function switchTab(tabElement, tabName) {
+      // Remove active class from all tabs
+      document.querySelectorAll('.auth-tab').forEach(tab => {
+        tab.classList.remove('ativo');
+      });
+      
+      // Add active class to clicked tab
+      tabElement.classList.add('ativo');
+      
+      // Update form content based on tab
+      const form = document.querySelector('.auth-form');
+      const h2 = document.querySelector('.auth-card h2');
+      const submitBtn = document.querySelector('.btn-primario');
+      
+      if (tabName === 'register') {
+        h2.textContent = 'Criar sua conta';
+        submitBtn.textContent = 'Criar conta';
+        
+        // Add name field for registration
+        const nameField = document.createElement('div');
+        nameField.className = 'auth-field';
+        nameField.innerHTML = `
+          <label for="name">Nome</label>
+          <input type="text" id="name" placeholder="Seu nome" required>
+        `;
+        form.insertBefore(nameField, form.firstChild);
+        
+        // Update password placeholder
+        document.querySelector('#password').placeholder = 'Mínimo de 6 caracteres';
+      } else {
+        h2.textContent = 'Acesse sua conta';
+        submitBtn.textContent = 'Entrar';
+        
+        // Remove name field if exists
+        const nameField = document.querySelector('#name');
+        if (nameField) {
+          nameField.closest('.auth-field').remove();
+        }
+        
+        // Reset password placeholder
+        document.querySelector('#password').placeholder = 'Sua senha';
+      }
+    }
+    
+    async function handleLogin(email, password) {
+      try {
+        const response = await fetch(`${API_BASE}/api/v1/auth/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          localStorage.setItem('fp-api-token', data.token);
+          localStorage.setItem('fp-api-user', JSON.stringify(data.user));
+          return { success: true, data };
+        } else {
+          return { success: false, error: data.error || data.message || 'Erro ao fazer login' };
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        return { success: false, error: 'Erro de conexão com o servidor' };
+      }
+    }
+    
+    async function handleRegister(name, email, password) {
+      try {
+        const response = await fetch(`${API_BASE}/api/v1/auth/register`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name, email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          return { success: true, data };
+        } else {
+          return { success: false, error: data.message || 'Erro ao criar conta' };
+        }
+      } catch (error) {
+        console.error('Register error:', error);
+        return { success: false, error: 'Erro de conexão com o servidor' };
+      }
+    }
+    
+    async function handleSubmit(event) {
+      event.preventDefault();
+      const btn = document.querySelector('.btn-primario');
+      const originalText = btn.textContent;
+      
+      // Get form data
+      const email = document.querySelector('#email').value;
+      const password = document.querySelector('#password').value;
+      const isLogin = btn.textContent.includes('Entrar');
+      
+      // Show loading state
+      btn.textContent = 'Processando...';
+      btn.style.opacity = '0.8';
+      btn.disabled = true;
+      
+      try {
+        let result;
+        
+        if (isLogin) {
+          result = await handleLogin(email, password);
+        } else {
+          const name = document.querySelector('#name')?.value;
+          result = await handleRegister(name, email, password);
+        }
+        
+        if (result.success) {
+          btn.textContent = '✅ Sucesso!';
+          btn.style.background = 'linear-gradient(135deg, #059669 0%, #047857 100%)';
+          
+          setTimeout(() => {
+            if (isLogin) {
+              // Redirect to main app
+              window.location.href = '/index.html';
+            } else {
+              // Show success and switch to login
+              alert('Conta criada com sucesso! Faça login para continuar.');
+              switchTab(document.querySelector('.auth-tab'), 'login');
+              document.querySelector('#email').value = email;
+              document.querySelector('#password').value = '';
+            }
+            
+            // Reset button
+            btn.textContent = originalText;
+            btn.style.background = '';
+            btn.style.opacity = '';
+            btn.disabled = false;
+          }, 1500);
+        } else {
+          // Show error
+          btn.textContent = '❌ Erro';
+          btn.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+          
+          setTimeout(() => {
+            alert(result.error);
+            btn.textContent = originalText;
+            btn.style.background = '';
+            btn.style.opacity = '';
+            btn.disabled = false;
+          }, 2000);
+        }
+      } catch (error) {
+        alert('Erro inesperado. Tente novamente.');
+        btn.textContent = originalText;
+        btn.style.background = '';
+        btn.style.opacity = '';
+        btn.disabled = false;
+      }
+    }
+    
+    // Toggle theme on triple click
+    let clickCount = 0;
+    document.addEventListener('click', () => {
+      clickCount++;
+      if (clickCount === 3) {
+        document.body.setAttribute('data-theme', 
+          document.body.getAttribute('data-theme') === 'dark' ? '' : 'dark'
+        );
+        clickCount = 0;
+      }
+    });
+    
+    // Check if already logged in
+    window.addEventListener('load', () => {
+      const token = localStorage.getItem('fp-api-token');
+      if (token) {
+        // User is already logged in, redirect to main app
+        window.location.href = '/index.html';
+      }
+    });
+  </script>
+</body>
+</html>

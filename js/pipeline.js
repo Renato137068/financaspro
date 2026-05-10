@@ -8,13 +8,13 @@ var PIPELINE = {
 
     var parsed = PARSER.extrair(input);
     var aprend = APRENDIZADO.sugerir(parsed.desc);
-    var fuzzy  = typeof CATEGORIZADOR !== 'undefined' ? CATEGORIZADOR.detectar(parsed.desc) : null;
-    var score  = SCORE.calcular(fuzzy, aprend);
+    var fuzzy = typeof CATEGORIZADOR !== 'undefined' ? CATEGORIZADOR.detectar(parsed.desc) : null;
+    var score = SCORE.calcular(fuzzy, aprend);
 
     return {
       categoria : score.categoria,
       tipo      : score.tipo,
-      banco     : parsed.banco  || (aprend && aprend.banco)  || null,
+      banco     : parsed.banco || (aprend && aprend.banco) || null,
       cartao    : parsed.cartao || (aprend && aprend.cartao) || null,
       valor     : parsed.valor,
       data      : parsed.data,
@@ -58,7 +58,7 @@ var PIPELINE = {
       if (typeof atualizarTipoIndicator === 'function') atualizarTipoIndicator(r.tipo);
     }
 
-    this._setSelectComOpcao('novo-banco',  r.banco);
+    this._setSelectComOpcao('novo-banco', r.banco);
     this._setSelectComOpcao('novo-cartao', r.cartao);
 
     var vEl = document.getElementById('novo-valor');

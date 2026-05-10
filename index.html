@@ -5,13 +5,247 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Controle suas finanças com simplicidade">
   <meta name="theme-color" content="#00723F">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' http://localhost:4000 https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect fill='%2300723F' width='180' height='180'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='90' fill='white'>💰</text></svg>">
   <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect fill='%2300723F' width='180' height='180'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='90' fill='white'>💰</text></svg>">
-  <link rel="stylesheet" href="css/style.css">
-  <title>FinançasPro MVP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/design-system.css">
+  <link rel="stylesheet" href="css/style.css?v=modular-v2">
+  <title>FinançasPro</title>
+  <style>
+    /* Crítico: oculta UI quando PIN está bloqueado para evitar leak visual */
+    html.pin-locked body > header,
+    html.pin-locked body > main,
+    html.pin-locked body > nav,
+    html.pin-locked body > .nav-bottom { visibility: hidden !important; }
+    html.pin-locked body { overflow: hidden; }
+
+    /* Auth UI melhorada - inline para forçar aplicação */
+    .auth-overlay {
+      background: radial-gradient(circle at 30% 20%, rgba(0, 114, 63, 0.12), transparent 40%),
+                  radial-gradient(circle at 70% 80%, rgba(34, 197, 94, 0.08), transparent 35%),
+                  linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%) !important;
+      backdrop-filter: blur(8px) !important;
+      -webkit-backdrop-filter: blur(8px) !important;
+    }
+
+    .auth-card {
+      background: rgba(255, 255, 255, 0.95) !important;
+      border: 1px solid rgba(226, 232, 240, 0.8) !important;
+      border-radius: 16px !important;
+      padding: 32px !important;
+      box-shadow: 0 20px 50px rgba(0, 114, 63, 0.08),
+                 0 8px 25px rgba(0, 0, 0, 0.04),
+                 inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+      backdrop-filter: blur(12px) !important;
+      -webkit-backdrop-filter: blur(12px) !important;
+      transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+    }
+
+    .auth-card:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 25px 60px rgba(0, 114, 63, 0.12),
+                 0 12px 35px rgba(0, 0, 0, 0.06),
+                 inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+    }
+
+    .auth-brand {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      text-align: center !important;
+      margin-bottom: 24px !important;
+    }
+
+    .auth-logo {
+      width: 64px !important;
+      height: 64px !important;
+      border-radius: 16px !important;
+      background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%) !important;
+      font-size: 32px !important;
+      margin-bottom: 16px !important;
+      animation: logoFloat 3s ease-in-out infinite !important;
+    }
+
+    @keyframes logoFloat {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-4px); }
+    }
+
+    .auth-card h2 {
+      color: #1e293b !important;
+      font-size: 28px !important;
+      font-weight: 700 !important;
+      margin-bottom: 4px !important;
+    }
+
+    .auth-card > p {
+      color: #64748b !important;
+      font-size: 15px !important;
+      text-align: center !important;
+      margin-bottom: 24px !important;
+    }
+
+    .auth-tabs {
+      background: rgba(241, 245, 249, 0.8) !important;
+      border: 1px solid rgba(226, 232, 240, 0.6) !important;
+      border-radius: 12px !important;
+      padding: 3px !important;
+      gap: 2px !important;
+    }
+
+    .auth-tab {
+      background: transparent !important;
+      color: #64748b !important;
+      border-radius: 10px !important;
+      font-weight: 600 !important;
+      font-size: 14px !important;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+    .auth-tab.ativo {
+      background: white !important;
+      color: #059669 !important;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15),
+                 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+      font-weight: 700 !important;
+    }
+
+    .auth-form input {
+      min-height: 52px !important;
+      border: 2px solid #e5e7eb !important;
+      border-radius: 12px !important;
+      background: #ffffff !important;
+      color: #1f2937 !important;
+      font-size: 15px !important;
+      font-weight: 500 !important;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    }
+
+    .auth-form input:focus {
+      border-color: #10b981 !important;
+      box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1),
+                 0 4px 12px rgba(16, 185, 129, 0.15) !important;
+      transform: translateY(-1px) !important;
+    }
+
+    .auth-form .btn-primario {
+      min-height: 52px !important;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+      border: none !important;
+      border-radius: 12px !important;
+      font-size: 16px !important;
+      font-weight: 700 !important;
+      box-shadow: 0 8px 24px rgba(16, 185, 129, 0.25),
+                 0 4px 12px rgba(16, 185, 129, 0.15) !important;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+    .auth-form .btn-primario:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 12px 32px rgba(16, 185, 129, 0.35),
+                 0 6px 16px rgba(16, 185, 129, 0.2) !important;
+    }
+
+    /* Dark theme */
+    [data-theme="dark"] .auth-overlay {
+      background: radial-gradient(circle at 30% 20%, rgba(16, 185, 129, 0.08), transparent 40%),
+                  radial-gradient(circle at 70% 80%, rgba(34, 197, 94, 0.05), transparent 35%),
+                  linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%) !important;
+    }
+
+    [data-theme="dark"] .auth-card {
+      background: rgba(30, 41, 59, 0.95) !important;
+      border: 1px solid rgba(71, 85, 105, 0.4) !important;
+    }
+
+    [data-theme="dark"] .auth-card h2 {
+      color: #f1f5f9 !important;
+    }
+
+    [data-theme="dark"] .auth-card > p {
+      color: #94a3b8 !important;
+    }
+
+    [data-theme="dark"] .auth-tabs {
+      background: rgba(51, 65, 85, 0.4) !important;
+      border: 1px solid rgba(71, 85, 105, 0.3) !important;
+    }
+
+    [data-theme="dark"] .auth-tab {
+      color: #94a3b8 !important;
+    }
+
+    [data-theme="dark"] .auth-tab.ativo {
+      background: rgba(30, 41, 59, 0.9) !important;
+      color: #10b981 !important;
+    }
+
+    [data-theme="dark"] .auth-form input {
+      background: rgba(30, 41, 59, 0.8) !important;
+      border: 2px solid rgba(71, 85, 105, 0.4) !important;
+      color: #f1f5f9 !important;
+    }
+
+    [data-theme="dark"] .auth-form input:focus {
+      border-color: #10b981 !important;
+      box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15),
+                 0 4px 12px rgba(16, 185, 129, 0.25) !important;
+    }
+  </style>
+  <script src="js/pin-guard.js"></script>
 </head>
 <body>
+
+<div id="auth-overlay" class="auth-overlay" style="display:none">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="auth-logo" aria-hidden="true">💰</div>
+      <div>
+        <p class="auth-kicker">FinançasPro</p>
+        <h2>Acesse sua conta</h2>
+      </div>
+    </div>
+    <p id="auth-message">Entre para continuar seu controle financeiro.</p>
+    <div id="auth-env-warning" class="auth-env-warning" style="display:none"></div>
+    <div class="auth-tabs">
+      <button type="button" class="auth-tab ativo" data-auth-tab="login">Entrar</button>
+      <button type="button" class="auth-tab" data-auth-tab="register">Criar conta</button>
+    </div>
+    <form id="auth-login-form" class="auth-form">
+      <div class="auth-field">
+        <label for="auth-login-email">Email</label>
+        <input type="email" id="auth-login-email" autocomplete="email" placeholder="voce@email.com" required>
+      </div>
+      <div class="auth-field">
+        <label for="auth-login-password">Senha</label>
+        <input type="password" id="auth-login-password" autocomplete="current-password" placeholder="Sua senha" required>
+      </div>
+      <button type="submit" class="btn-primario">Entrar</button>
+    </form>
+    <form id="auth-register-form" class="auth-form" style="display:none">
+      <div class="auth-field">
+        <label for="auth-register-name">Nome</label>
+        <input type="text" id="auth-register-name" autocomplete="name" placeholder="Seu nome" required>
+      </div>
+      <div class="auth-field">
+        <label for="auth-register-email">Email</label>
+        <input type="email" id="auth-register-email" autocomplete="email" placeholder="voce@email.com" required>
+      </div>
+      <div class="auth-field">
+        <label for="auth-register-password">Senha</label>
+        <input type="password" id="auth-register-password" autocomplete="new-password" minlength="6" placeholder="Minimo de 6 caracteres" required>
+      </div>
+      <button type="submit" class="btn-primario">Criar conta</button>
+    </form>
+  </div>
+</div>
 
 <!-- SKIP LINK (a11y) -->
 <a href="#main-content" class="skip-link">Ir para o conteúdo principal</a>
@@ -19,9 +253,6 @@
 <!-- HEADER -->
 <header>
   <h1>💰 FinançasPro</h1>
-  <div class="saldo-header" aria-live="polite">
-    <span id="saldo-header-txt">Saldo: R$ 0,00</span>
-  </div>
 </header>
 
 <!-- MAIN -->
@@ -30,38 +261,51 @@
   <!-- ABA 1: RESUMO (Dashboard) -->
   <div id="aba-resumo" class="aba ativo">
     <div id="dashboard-greeting" class="dashboard-greeting"></div>
-    <div id="card-saldo-principal" class="card-saldo-principal"></div>
-    <section class="cards-container">
+    <div id="card-saldo-principal" class="card-saldo-principal" role="status" aria-live="polite" aria-atomic="true"></div>
+    <div id="dashboard-alertas" class="dashboard-alertas"></div>
+    <section class="cards-container" aria-label="Resumo de receitas e despesas">
       <div class="card receita">
-        <div class="card-label">💚 Receitas</div>
-        <div class="card-valor" id="resumo-receitas">R$ 0,00</div>
+        <div class="card-label" aria-hidden="true">💚 Receitas</div>
+        <div class="card-valor" id="resumo-receitas" aria-label="Receitas do mês">R$ 0,00</div>
         <div class="card-comparacao" id="comp-receitas"></div>
       </div>
       <div class="card despesa">
-        <div class="card-label">❤️ Despesas</div>
-        <div class="card-valor" id="resumo-despesas">R$ 0,00</div>
+        <div class="card-label" aria-hidden="true">❤️ Despesas</div>
+        <div class="card-valor" id="resumo-despesas" aria-label="Despesas do mês">R$ 0,00</div>
         <div class="card-comparacao" id="comp-despesas"></div>
       </div>
     </section>
-    <div id="dashboard-alertas" class="dashboard-alertas"></div>
     <div id="dashboard-indicadores" class="dashboard-indicadores"></div>
+    <!-- GRÁFICOS (colapsável) -->
+    <button class="dashboard-section-toggle" id="btn-graficos" data-action="toggle-graficos" aria-expanded="false">
+      📊 Análise detalhada
+      <span class="toggle-arrow" id="graficos-arrow">▼</span>
+    </button>
+    <div id="graficos-panel" style="display:none">
+      <section class="dashboard-section">
+        <h2 class="secao-titulo">Evolução (6 meses)</h2>
+        <div id="chart-evolucao" class="chart-container"></div>
+      </section>
+      <section class="dashboard-section">
+        <h2 class="secao-titulo">Despesas por Categoria</h2>
+        <div id="chart-categorias" class="chart-container"></div>
+      </section>
+    </div>
     <section class="dashboard-section">
-      <h2 class="secao-titulo">📈 Evolução (6 meses)</h2>
-      <div id="chart-evolucao" class="chart-container"></div>
-    </section>
-    <section class="dashboard-section">
-      <h2 class="secao-titulo">🍩 Despesas por Categoria</h2>
-      <div id="chart-categorias" class="chart-container"></div>
-    </section>
-    <section class="dashboard-section">
-      <h2 class="secao-titulo">📊 Limites de Orçamento</h2>
+      <div class="secao-header">
+        <h2 class="secao-titulo">Limites de Orçamento</h2>
+        <button class="secao-link" type="button" data-mudar-aba="orcamento">Gerenciar →</button>
+      </div>
       <div id="resumo-orcamentos"></div>
     </section>
     <section class="dashboard-section">
-      <h2 class="secao-titulo">🕐 Últimas Transações</h2>
+      <div class="secao-header">
+        <h2 class="secao-titulo">Últimas Transações</h2>
+        <button class="secao-link" type="button" data-mudar-aba="extrato">Ver todas →</button>
+      </div>
       <div id="resumo-list"></div>
     </section>
-    <button class="btn-primario" onclick="mudarAba('novo')" style="margin-top:16px;">
+    <button class="btn-primario" data-action="mudar-aba" data-aba="novo" style="margin-top:16px;">
       ➕ Registrar Transação
     </button>
   </div>
@@ -72,20 +316,28 @@
     <!-- LANÇAMENTOS RÁPIDOS -->
     <div id="quick-entries" class="quick-entries"></div>
 
-    <!-- ENTRADA RÁPIDA -->
-    <button type="button" onclick="abrirEntradaRapida()" class="btn-entrada-rapida" title="Entrada rápida com parse: Ex: 'mercado 150 ontem nubank'">
-      ⚡ Entrada rápida
-    </button>
+    <!-- ENTRADA RÁPIDA (inline) -->
+    <div class="er-wrapper">
+      <span class="er-icon" aria-hidden="true">✏️</span>
+      <input type="text" id="entrada-rapida-input" class="er-input"
+             placeholder="Ex: mercado 150 ontem nubank…"
+             autocomplete="off" autocorrect="off" spellcheck="false">
+      <button type="button" id="btn-er-submit" class="er-btn" aria-label="Processar entrada rápida">↵</button>
+    </div>
+    <div id="er-feedback" class="er-feedback" style="display:none" aria-live="polite"></div>
 
     <!-- FORMULÁRIO PRINCIPAL -->
     <form id="form-transacao" class="formulario" autocomplete="off">
 
-      <!-- 1. VALOR (primeiro e principal) -->
-      <div class="valor-hero">
-        <div class="valor-tipo-indicator" id="tipo-indicator">
-          <span class="tipo-dot despesa"></span>
-          <span id="tipo-indicator-text">Despesa</span>
+      <!-- 1. TIPO + VALOR -->
+      <div class="valor-hero tipo-despesa" id="valor-hero">
+
+        <!-- TOGGLE RECEITA / DESPESA -->
+        <div class="tipo-toggle" role="group" aria-label="Tipo de transação">
+          <button type="button" class="tipo-btn ativo" data-tipo="despesa">❤️ Despesa</button>
+          <button type="button" class="tipo-btn" data-tipo="receita">💚 Receita</button>
         </div>
+
         <div class="valor-input-wrapper">
           <span class="valor-prefix">R$</span>
           <input type="text" id="novo-valor" class="valor-input" placeholder="0,00"
@@ -99,7 +351,7 @@
 
       <!-- 2. DESCRIÇÃO + AUTOCOMPLETE -->
       <div class="form-group">
-        <label for="novo-descricao">📝 O quê?</label>
+        <label for="novo-descricao">📝 Descrição</label>
         <div class="autocomplete-wrapper">
           <input type="text" id="novo-descricao" placeholder="Ex: Supermercado, Salário, Uber..."
                  autocomplete="off" data-autosave="descricao">
@@ -111,35 +363,7 @@
       <!-- 3. CATEGORIA (Grid de ícones) -->
       <div class="form-group">
         <label>🏷️ Categoria</label>
-        <div id="categoria-grid" class="categoria-grid">
-          <button type="button" class="cat-btn" data-cat="alimentacao" data-tipo="despesa">
-            <span class="cat-emoji">🍔</span><span class="cat-nome">Alimentação</span>
-          </button>
-          <button type="button" class="cat-btn" data-cat="transporte" data-tipo="despesa">
-            <span class="cat-emoji">🚗</span><span class="cat-nome">Transporte</span>
-          </button>
-          <button type="button" class="cat-btn" data-cat="moradia" data-tipo="despesa">
-            <span class="cat-emoji">🏠</span><span class="cat-nome">Moradia</span>
-          </button>
-          <button type="button" class="cat-btn" data-cat="saude" data-tipo="despesa">
-            <span class="cat-emoji">⚕️</span><span class="cat-nome">Saúde</span>
-          </button>
-          <button type="button" class="cat-btn" data-cat="lazer" data-tipo="despesa">
-            <span class="cat-emoji">🎬</span><span class="cat-nome">Lazer</span>
-          </button>
-          <button type="button" class="cat-btn" data-cat="salario" data-tipo="receita">
-            <span class="cat-emoji">💰</span><span class="cat-nome">Salário</span>
-          </button>
-          <button type="button" class="cat-btn" data-cat="freelance" data-tipo="receita">
-            <span class="cat-emoji">💻</span><span class="cat-nome">Freelance</span>
-          </button>
-          <button type="button" class="cat-btn" data-cat="investimentos" data-tipo="receita">
-            <span class="cat-emoji">📈</span><span class="cat-nome">Investimentos</span>
-          </button>
-          <button type="button" class="cat-btn" data-cat="outro" data-tipo="despesa">
-            <span class="cat-emoji">📌</span><span class="cat-nome">Outro</span>
-          </button>
-        </div>
+        <div id="categoria-grid" class="categoria-grid"></div>
         <input type="hidden" id="novo-categoria" value="">
         <input type="hidden" id="novo-tipo" value="despesa">
       </div>
@@ -150,38 +374,11 @@
         <div class="data-chips">
           <button type="button" class="data-chip ativo" data-offset="0">Hoje</button>
           <button type="button" class="data-chip" data-offset="1">Ontem</button>
-          <button type="button" class="data-chip" data-offset="2">Anteontem</button>
           <input type="date" id="novo-data" class="data-input" required>
         </div>
       </div>
 
-      <!-- 5. BANCO E CARTÃO (separados) -->
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-        <div class="form-group">
-          <label for="novo-banco">🏦 Banco</label>
-          <select id="novo-banco" class="form-select">
-            <option value="">Sem banco</option>
-            <option value="Nubank">Nubank</option>
-            <option value="Itaú">Itaú</option>
-            <option value="Caixa">Caixa</option>
-            <option value="Bradesco">Bradesco</option>
-            <option value="Santander">Santander</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="novo-cartao">💳 Cartão</label>
-          <select id="novo-cartao" class="form-select">
-            <option value="">Sem cartão</option>
-            <option value="Crédito">Crédito</option>
-            <option value="Débito">Débito</option>
-            <option value="XP">XP Investimentos</option>
-            <option value="B3">B3</option>
-            <option value="Outro">Outro</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- 6. OPÇÕES EXTRAS (recolhidas) -->
+      <!-- 5. OPÇÕES EXTRAS (recolhidas) -->
       <div class="extras-toggle">
         <button type="button" id="btn-extras" class="btn-extras" aria-expanded="false">
           ⚙️ Mais opções
@@ -190,6 +387,33 @@
       </div>
 
       <div id="extras-panel" class="extras-panel" style="display:none">
+
+        <!-- Banco e Cartão -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label for="novo-banco">🏦 Banco</label>
+            <select id="novo-banco" class="form-select">
+              <option value="">Sem banco</option>
+              <option value="Nubank">Nubank</option>
+              <option value="Itaú">Itaú</option>
+              <option value="Caixa">Caixa</option>
+              <option value="Bradesco">Bradesco</option>
+              <option value="Santander">Santander</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="novo-cartao">💳 Cartão</label>
+            <select id="novo-cartao" class="form-select">
+              <option value="">Sem cartão</option>
+              <option value="Crédito">Crédito</option>
+              <option value="Débito">Débito</option>
+              <option value="XP">XP Investimentos</option>
+              <option value="B3">B3</option>
+              <option value="Outro">Outro</option>
+            </select>
+          </div>
+        </div>
+
         <!-- Observação -->
         <div class="form-group">
           <label for="novo-nota">Observação</label>
@@ -257,9 +481,9 @@
   <div id="aba-extrato" class="aba">
     <!-- Seletor de período -->
     <div class="extrato-periodo">
-      <button class="periodo-nav" id="periodo-prev" onclick="navegarPeriodo(-1)" aria-label="Mês anterior">‹</button>
+      <button class="periodo-nav" id="periodo-prev" data-action="navegar-periodo" data-dir="-1" aria-label="Mês anterior">‹</button>
       <span class="periodo-label" id="periodo-label">Abril 2026</span>
-      <button class="periodo-nav" id="periodo-next" onclick="navegarPeriodo(1)" aria-label="Próximo mês">›</button>
+      <button class="periodo-nav" id="periodo-next" data-action="navegar-periodo" data-dir="1" aria-label="Próximo mês">›</button>
     </div>
 
     <!-- Mini resumo do período -->
@@ -268,15 +492,15 @@
     <!-- Busca -->
     <div class="extrato-busca-wrapper">
       <span class="busca-icon">🔍</span>
-      <input type="text" id="extrato-busca" class="extrato-busca" placeholder="Buscar transações..." oninput="filtrarExtrato()">
+      <input type="text" id="extrato-busca" class="extrato-busca" placeholder="Buscar transações...">
     </div>
 
     <!-- Filtros tipo + categoria -->
     <div class="extrato-filtros">
       <div class="filtros-tipo">
-        <button class="filtro-chip ativo" data-filtro="todos" onclick="setFiltroTipo('todos')">Todas</button>
-        <button class="filtro-chip" data-filtro="receita" onclick="setFiltroTipo('receita')">Receitas</button>
-        <button class="filtro-chip" data-filtro="despesa" onclick="setFiltroTipo('despesa')">Despesas</button>
+        <button class="filtro-chip ativo" data-filtro="todos" data-action="filtro-tipo">Todas</button>
+        <button class="filtro-chip" data-filtro="receita" data-action="filtro-tipo">Receitas</button>
+        <button class="filtro-chip" data-filtro="despesa" data-action="filtro-tipo">Despesas</button>
       </div>
       <div class="filtros-categoria" id="filtros-categoria"></div>
     </div>
@@ -286,10 +510,10 @@
 
     <!-- Botões exportação -->
     <div class="extrato-export-bar">
-      <button class="btn-export btn-export-excel" onclick="exportarExcel()" aria-label="Exportar como Excel">
+      <button class="btn-export btn-export-excel" data-action="exportar-excel" aria-label="Exportar como Excel">
         <span class="btn-export-icon">📊</span> Excel
       </button>
-      <button class="btn-export btn-export-pdf" onclick="exportarExtrato()" aria-label="Exportar como PDF">
+      <button class="btn-export btn-export-pdf" data-action="exportar-pdf" aria-label="Exportar como PDF">
         <span class="btn-export-icon">📄</span> PDF
       </button>
     </div>
@@ -306,7 +530,7 @@
         <span class="orc-renda-prefix">R$</span>
         <input type="text" id="orc-renda-valor" placeholder="0,00" inputmode="numeric">
       </div>
-      <button class="btn-primario" onclick="salvarRendaOrcamento()">Definir Renda</button>
+      <button class="btn-primario" data-action="salvar-renda-orcamento">Definir Renda</button>
     </div>
 
     <!-- Dashboard 50/30/20 -->
@@ -317,7 +541,10 @@
           <span class="orc-header-label">Renda Mensal</span>
           <span class="orc-header-valor" id="orc-renda-display">R$ 0,00</span>
         </div>
-        <button class="orc-edit-btn" onclick="editarRendaOrcamento()" aria-label="Editar renda">✏️</button>
+        <div style="display:flex;gap:6px">
+          <button class="orc-edit-btn" data-action="editar-regra-503020" aria-label="Personalizar regra" title="Personalizar percentuais">⚙️</button>
+          <button class="orc-edit-btn" data-action="editar-renda-orcamento" aria-label="Editar renda">✏️</button>
+        </div>
       </div>
 
       <!-- Regra 50/30/20 -->
@@ -326,7 +553,7 @@
           <div class="orc-regra-header">
             <span class="orc-regra-icon">🏠</span>
             <span class="orc-regra-nome">Necessidades</span>
-            <span class="orc-regra-pct">50%</span>
+            <span class="orc-regra-pct" id="orc-nec-pct">50%</span>
           </div>
           <div class="orc-regra-valores">
             <span class="orc-regra-gasto" id="orc-nec-gasto">R$ 0</span>
@@ -340,7 +567,7 @@
           <div class="orc-regra-header">
             <span class="orc-regra-icon">🎮</span>
             <span class="orc-regra-nome">Desejos</span>
-            <span class="orc-regra-pct">30%</span>
+            <span class="orc-regra-pct" id="orc-des-pct">30%</span>
           </div>
           <div class="orc-regra-valores">
             <span class="orc-regra-gasto" id="orc-des-gasto">R$ 0</span>
@@ -354,7 +581,7 @@
           <div class="orc-regra-header">
             <span class="orc-regra-icon">🐷</span>
             <span class="orc-regra-nome">Poupança</span>
-            <span class="orc-regra-pct">20%</span>
+            <span class="orc-regra-pct" id="orc-pou-pct">20%</span>
           </div>
           <div class="orc-regra-valores">
             <span class="orc-regra-gasto" id="orc-pou-gasto">R$ 0</span>
@@ -368,7 +595,7 @@
       <div class="orc-insights" id="orc-insights"></div>
 
       <!-- Detalhamento por categoria -->
-      <div class="orc-secao-titulo" id="orc-cat-toggle" onclick="toggleDetalhesCategorias()">
+      <div class="orc-secao-titulo" id="orc-cat-toggle" data-action="toggle-detalhes-categorias">
         <span>📊 Detalhes por Categoria</span>
         <span class="orc-toggle-arrow" id="orc-cat-arrow">▼</span>
       </div>
@@ -388,13 +615,14 @@
       <div class="cfg-avatar" id="cfg-avatar">U</div>
       <div class="cfg-perfil-info">
         <span class="cfg-perfil-nome" id="cfg-perfil-nome">Usuário</span>
-        <span class="cfg-perfil-email">Finanças pessoais</span>
+        <span class="cfg-perfil-email" id="user-session-label">Sessão local</span>
       </div>
-      <button class="cfg-edit-btn" onclick="abrirEditarPerfil()" aria-label="Editar perfil">✏️</button>
+      <button class="cfg-edit-btn" data-action="abrir-editar-perfil" aria-label="Editar perfil">✏️</button>
     </div>
+    <button type="button" id="btn-logout" class="cfg-btn-sair">🚪 Sair da conta</button>
 
     <!-- RENDA MENSAL -->
-    <div class="cfg-card" onclick="abrirEditarRenda()">
+    <div class="cfg-card" data-action="abrir-editar-renda">
       <div class="cfg-card-icon">💰</div>
       <div class="cfg-card-body">
         <span class="cfg-card-label">Renda Mensal</span>
@@ -407,7 +635,7 @@
     <div class="cfg-section-title">Preferências</div>
 
     <!-- BANCOS E CARTÕES -->
-    <div class="cfg-card" onclick="abrirConfigBancos()">
+    <div class="cfg-card" data-action="abrir-config-bancos">
       <div class="cfg-card-icon">🏦</div>
       <div class="cfg-card-body">
         <span class="cfg-card-label">Bancos e Cartões</span>
@@ -422,14 +650,14 @@
         <span class="cfg-card-label">Modo Escuro</span>
       </div>
       <label class="cfg-switch">
-        <input type="checkbox" id="chk-darkmode" onchange="CONFIG_USER.toggleTema()">
+        <input type="checkbox" id="chk-darkmode">
         <span class="cfg-switch-slider"></span>
       </label>
     </div>
 
     <!-- CATEGORIAS PERSONALIZADAS -->
     <div class="cfg-section-title">Categorias</div>
-    <div class="cfg-card" onclick="abrirGerenciarCategorias('despesa')">
+    <div class="cfg-card" data-action="gerenciar-categorias" data-tipo="despesa">
       <div class="cfg-card-icon">📁</div>
       <div class="cfg-card-body">
         <span class="cfg-card-label">Categorias de Despesa</span>
@@ -437,7 +665,7 @@
       </div>
       <span class="cfg-card-arrow">›</span>
     </div>
-    <div class="cfg-card" onclick="abrirGerenciarCategorias('receita')">
+    <div class="cfg-card" data-action="gerenciar-categorias" data-tipo="receita">
       <div class="cfg-card-icon">📂</div>
       <div class="cfg-card-body">
         <span class="cfg-card-label">Categorias de Receita</span>
@@ -455,7 +683,7 @@
         <span class="cfg-card-valor cfg-card-sub">Avisar ao atingir 80%</span>
       </div>
       <label class="cfg-switch">
-        <input type="checkbox" id="chk-alerta-orc" onchange="toggleAlertaOrcamento()">
+        <input type="checkbox" id="chk-alerta-orc">
         <span class="cfg-switch-slider"></span>
       </label>
     </div>
@@ -466,7 +694,7 @@
         <span class="cfg-card-valor cfg-card-sub">Lembrar de registrar gastos</span>
       </div>
       <label class="cfg-switch">
-        <input type="checkbox" id="chk-lembrete" onchange="toggleLembreteDiario()">
+        <input type="checkbox" id="chk-lembrete">
         <span class="cfg-switch-slider"></span>
       </label>
     </div>
@@ -480,14 +708,14 @@
         <span class="cfg-card-valor cfg-card-sub" id="cfg-pin-status">Desativado</span>
       </div>
       <label class="cfg-switch">
-        <input type="checkbox" id="chk-pin" onchange="togglePinSeguranca()">
+        <input type="checkbox" id="chk-pin">
         <span class="cfg-switch-slider"></span>
       </label>
     </div>
 
     <!-- DADOS -->
     <div class="cfg-section-title">Dados</div>
-    <div class="cfg-card" onclick="exportarDados()">
+    <div class="cfg-card" data-action="exportar-dados">
       <div class="cfg-card-icon">📤</div>
       <div class="cfg-card-body">
         <span class="cfg-card-label">Exportar Backup</span>
@@ -495,7 +723,7 @@
       </div>
       <span class="cfg-card-arrow">›</span>
     </div>
-    <div class="cfg-card" onclick="document.getElementById('import-file').click()">
+    <div class="cfg-card" data-action="abrir-import">
       <div class="cfg-card-icon">📥</div>
       <div class="cfg-card-body">
         <span class="cfg-card-label">Importar Dados</span>
@@ -524,7 +752,7 @@
 
     <!-- SOBRE / FEEDBACK -->
     <div class="cfg-section-title">Sobre</div>
-    <div class="cfg-card" onclick="abrirChangelog()">
+    <div class="cfg-card" data-action="abrir-changelog">
       <div class="cfg-card-icon">📋</div>
       <div class="cfg-card-body">
         <span class="cfg-card-label">Novidades</span>
@@ -532,7 +760,7 @@
       </div>
       <span class="cfg-card-arrow">›</span>
     </div>
-    <div class="cfg-card" onclick="abrirFeedback()">
+    <div class="cfg-card" data-action="abrir-feedback">
       <div class="cfg-card-icon">💬</div>
       <div class="cfg-card-body">
         <span class="cfg-card-label">Enviar Feedback</span>
@@ -547,7 +775,9 @@
       <p>Feito com ❤️ para suas finanças</p>
     </div>
 
-    <button class="cfg-btn-danger" onclick="CONFIG_USER.limparDados()">
+    <!-- ZONA DE PERIGO -->
+    <div class="cfg-section-title cfg-section-danger">⚠️ Zona de Perigo</div>
+    <button class="cfg-btn-danger" data-action="limpar-dados">
       🗑️ Apagar todos os dados
     </button>
 
@@ -556,4 +786,70 @@
 
 </main>
 
-<!-- NAV INFERIOR
+<!-- NAV INFERIOR -->
+<nav class="nav-bottom" aria-label="Navegação principal">
+  <button class="nav-btn ativo" data-aba="resumo" data-action="mudar-aba" aria-label="Resumo financeiro" aria-current="page">
+    <span class="nav-emoji" aria-hidden="true">📊</span>
+    <span>Resumo</span>
+  </button>
+  <button class="nav-btn" data-aba="novo" data-action="mudar-aba" aria-label="Registrar nova transação">
+    <span class="nav-emoji" aria-hidden="true">➕</span>
+    <span>Novo</span>
+  </button>
+  <button class="nav-btn" data-aba="extrato" data-action="mudar-aba" aria-label="Ver extrato de transações">
+    <span class="nav-emoji" aria-hidden="true">📋</span>
+    <span>Extrato</span>
+  </button>
+  <button class="nav-btn" data-aba="orcamento" data-action="mudar-aba" aria-label="Gerenciar orçamento">
+    <span class="nav-emoji" aria-hidden="true">🎯</span>
+    <span>Orçamento</span>
+  </button>
+  <button class="nav-btn" data-aba="config" data-action="mudar-aba" aria-label="Perfil e configurações">
+    <span class="nav-emoji" aria-hidden="true">👤</span>
+    <span>Perfil</span>
+  </button>
+</nav>
+
+<!-- SCRIPTS -->
+<script src="js/config.js"></script>
+<script src="js/categorizador.js"></script>
+<script src="js/auto-categorizer.js"></script>
+<script src="js/categories.js"></script>
+<script src="js/aprendizado.js"></script>
+<script src="js/parser.js"></script>
+<script src="js/score.js"></script>
+<script src="js/pipeline.js"></script>
+<script src="js/dados.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/store.js"></script>
+<script src="js/actions.js"></script>
+<script src="js/events-catalog.js"></script>
+<script src="js/event-bus.js"></script>
+<script src="js/transactionService.js"></script>
+<script src="js/budgetService.js"></script>
+<script src="js/healthService.js"></script>
+<script src="js/domUtils.js"></script>
+<script src="js/dom-safe.js"></script>
+<script src="js/validations.js"></script>
+<script src="js/transacoes.js"></script>
+<script src="js/contas.js"></script>
+<script src="js/orcamento.js"></script>
+<script src="js/automacao.js"></script>
+<!-- Renderização modularizada -->
+<script src="js/render-core.js"></script>
+<!-- Componentes UI reutilizáveis -->
+<script src="js/components/EmptyState.js"></script>
+<script src="js/components/ProgressBar.js"></script>
+<script src="js/components/ComparacaoMes.js"></script>
+<script src="js/components/CardTransacao.js"></script>
+<script src="js/components/CardOrcamento.js"></script>
+<script src="js/components/AlertaCard.js"></script>
+<script src="js/components/LegendaChart.js"></script>
+<script src="js/components/BarChart6M.js"></script>
+<script src="js/components/DonutChart.js"></script>
+<script src="js/components/Indicador.js"></script>
+<!-- Renderers -->
+<script src="js/render-dashboard.js"></script>
+<script src="js/render.js"></script>
+<script src="js/insights.js"></script>
+<script src="js/

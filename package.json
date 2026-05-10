@@ -2,6 +2,7 @@
   "name": "financaspro-v11",
   "version": "11.0.0",
   "description": "FinançasPro — SaaS de Finanças Pessoais",
+  "type": "module",
   "main": "index.html",
   "scripts": {
     "test": "jest",
@@ -9,21 +10,34 @@
     "test:coverage": "jest --coverage",
     "test:ci": "jest --coverage --ci",
     "lint": "eslint js/ --ext .js",
-    "dev": "http-server . -p 3000 -g",
-    "build": "echo 'No build step needed for vanilla JS'",
-    "start": "http-server . -p 8080"
+    "dev": "vite",
+    "dev:legacy": "http-server . -p 3000 -g",
+    "build": "vite build",
+    "build:analyze": "vite build --mode analyze",
+    "preview": "vite preview",
+    "backend": "node backend/server.js",
+    "backend:dev": "node --watch backend/server.js",
+    "start": "vite preview",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:migrate:prod": "prisma migrate deploy",
+    "db:studio": "prisma studio",
+    "db:seed": "node backend/prisma/seed.js",
+    "db:reset": "prisma migrate reset"
   },
-  "keywords": ["finanças", "pessoais", "saas", "pwa", "javascript"],
+  "keywords": [
+    "finanças",
+    "pessoais",
+    "saas",
+    "pwa",
+    "javascript"
+  ],
   "author": "Renato José Soares",
   "license": "MIT",
-  "devDependencies": {
-    "jest": "^29.7.0",
-    "http-server": "^14.1.1",
-    "eslint": "^8.56.0"
-  },
-  "dependencies": {},
-  "engines": {
-    "node": ">=16.0.0",
-    "npm": ">=8.0.0"
-  }
-}
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "pino": "^9

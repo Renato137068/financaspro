@@ -1,0 +1,408 @@
+/**
+ * components/forms.css — Inputs, selects, labels, fieldsets
+ * Depende de: design-system.css
+ */
+
+/* ── Formulário container ─────────────────────────────────── */
+
+.formulario {
+  background: var(--color-bg-card);
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── Form group ───────────────────────────────────────────── */
+
+.form-group {
+  margin-bottom: var(--space-5);
+  animation: slideUp var(--transition-normal);
+}
+
+.form-group label {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-3);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+  opacity: 0.95;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  background: var(--color-bg-card);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 3px var(--color-overlay-sm);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 70px;
+}
+
+/* ── Fieldset e legend ────────────────────────────────────── */
+
+fieldset {
+  border: none;
+  padding: 0;
+  margin-bottom: var(--space-4);
+}
+
+legend {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-3);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-normal);
+  width: 100%;
+}
+
+/* ── Autocomplete ─────────────────────────────────────────── */
+
+.autocomplete-wrapper { position: relative; }
+
+.autocomplete-list {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-top: none;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  box-shadow: var(--shadow-md);
+  z-index: var(--z-dropdown);
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.autocomplete-item {
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  transition: background var(--transition-fast);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.autocomplete-item:last-child { border-bottom: none; }
+
+.autocomplete-item:hover { background: var(--color-bg-primary); }
+
+/* ── Toggle labels (recorrência, parcelas) ───────────────── */
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.toggle-label input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}
+
+/* ── Recorrência chips ────────────────────────────────────── */
+
+.recorrencia-opcoes {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-top: var(--space-3);
+}
+
+.rec-chip {
+  padding: var(--space-1) var(--space-4);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  transition: all var(--transition-fast);
+  font-family: var(--font-family-sans);
+}
+
+.rec-chip:hover {
+  border-color: var(--color-primary-500);
+  color: var(--color-primary-500);
+}
+
+.rec-chip.ativo {
+  background: var(--color-primary-500);
+  border-color: var(--color-primary-500);
+  color: var(--color-text-inverse);
+}
+
+/* ── Parcelamento ─────────────────────────────────────────── */
+
+.parcelas-opcoes { margin-top: var(--space-3); }
+
+.parcelas-input-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--font-size-sm);
+}
+
+.parcelas-input-row label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  text-transform: none;
+  letter-spacing: 0;
+  margin-bottom: 0;
+}
+
+.parcelas-num {
+  width: 70px !important;
+  padding: var(--space-2) var(--space-3) !important;
+  text-align: center;
+  font-weight: var(--font-weight-semibold);
+}
+
+.parcela-valor {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary-500);
+}
+
+/* ── Extras toggle ────────────────────────────────────────── */
+
+.extras-toggle { margin-bottom: var(--space-3); }
+
+.btn-extras {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: transparent;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  transition: all var(--transition-fast);
+  font-family: var(--font-family-sans);
+}
+
+.btn-extras:hover {
+  border-color: var(--color-primary-500);
+  color: var(--color-primary-500);
+}
+
+.extras-arrow {
+  margin-left: auto;
+  font-size: var(--font-size-2xs);
+}
+
+.extras-panel {
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+/* ── Import área ──────────────────────────────────────────── */
+
+.import-area {
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+  margin-bottom: var(--space-3);
+}
+
+.import-area:hover,
+.import-area.drag-over {
+  border-color: var(--color-primary-500);
+  background: var(--color-bg-primary);
+}
+
+.import-area p {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  margin-top: var(--space-2);
+}
+
+/* ── Quick entries ────────────────────────────────────────── */
+
+.quick-entries { margin-bottom: var(--space-4); }
+
+.quick-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-normal);
+  margin-bottom: var(--space-2);
+}
+
+.quick-chips {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.quick-chip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-bg-card);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  font-family: var(--font-family-sans);
+}
+
+.quick-chip:hover {
+  border-color: var(--color-primary-500);
+  background: var(--color-bg-primary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-primary-sm);
+}
+
+.quick-chip strong {
+  color: var(--color-primary-500);
+  font-weight: var(--font-weight-bold);
+}
+
+/* ── Sugestão badge (auto-categorização) ─────────────────── */
+
+.auto-sugerido {
+  border-color: var(--color-primary-400) !important;
+  background: rgba(51, 165, 50, 0.06) !important;
+}
+
+.sugestao-badge {
+  margin-top: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: linear-gradient(135deg, rgba(0, 114, 63, 0.12) 0%, rgba(51, 165, 50, 0.08) 100%);
+  color: var(--color-primary-500);
+  border: 1.5px solid rgba(0, 114, 63, 0.2);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  animation: slideInDown var(--transition-bounce);
+  box-shadow: var(--shadow-primary-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.sugestao-badge::before {
+  content: '✨';
+  font-size: var(--font-size-sm);
+}
+
+/* ── Extrato busca ────────────────────────────────────────── */
+
+.extrato-busca-wrapper {
+  position: relative;
+  margin-bottom: var(--space-3);
+}
+
+.busca-icon {
+  position: absolute;
+  left: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: var(--font-size-sm);
+  pointer-events: none;
+}
+
+.extrato-busca {
+  width: 100%;
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-8);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+  transition: border-color var(--transition-fast);
+  font-family: var(--font-family-sans);
+}
+
+.extrato-busca:focus {
+  outline: none;
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 3px var(--color-overlay-sm);
+}
+
+.extrato-busca::placeholder { color: var(--color-text-muted); }
+
+/* ── Status indicators ────────────────────────────────────── */
+
+.status-ok       { color: var(--color-success); font-weight: var(--font-weight-semibold); }
+.status-alerta   { color: var(--color-warning); font-weight: var(--font-weight-semibold); }
+.status-excedido { color: var(--color-danger);  font-weight: var(--font-weight-semibold); }
+
+/* ── btn-small (delete orcamento) ────────────────────────── */
+
+.btn-small {
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--font-size-2xs);
+  background: none;
+  border: 1px solid var(--color-danger);
+  color: var(--color-danger);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: var(--font-weight-semibold);
+  transition: all var(--transition-fast);
+  font-family: var(--font-family-sans);
+}
+
+.btn-small:hover { background: var(--color-danger-bg); }
+
+/* ── btn-delete (genérico) ────────────────────────────────── */
+
+.btn-delete {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 20px;
+  cursor: pointer;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  line-height: 1;
+}
+
+.btn-delete:hover {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}

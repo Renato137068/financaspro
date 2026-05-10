@@ -39,7 +39,6 @@ var INSIGHTS = {
 
     // 2. Categorias acima do orçamento
     var resumoCat = TRANSACOES.obterResumoPorCategoria(mesAtual, anoAtual);
-    var config = DADOS.getConfig();
 
     Object.keys(resumoCat).forEach(function(cat) {
       // Usar ORCAMENTO.obterLimite() — retorna número, não {limite, definidoEm}
@@ -104,4 +103,38 @@ var INSIGHTS = {
       }
     });
 
-    retur
+    return insights;
+  },
+
+  mostrar: function() {
+    var insights = INSIGHTS.analisar();
+    var container = document.getElementById('dashboard-alertas');
+    if (!container) return;
+
+    if (insights.length === 0) {
+      container.innerHTML = '';
+      return;
+    }
+
+    var html = insights.map(function(i) {
+      var icon = i.gravidade === 'alta' ? '⚠️' : 'ℹ️';
+      var conteudo = icon + ' ' + i.msg;
+
+      if (i.acao && i.botao) {
+        var btn = '<button class="btn-insight" data-insight-action="' +
+          UTILS.escapeHtml(i.acao) + '" data-insight-params="' +
+          UTILS.escapeHtml(JSON.stringify(i.parametros || {})) +
+          '" style="margin-left:8px;">' + i.botao + '</button>';
+        conteudo += ' ' + btn;
+      }
+
+      return '<div class="insight insight-' + i.gravidade + '">' + conteudo + '</div>';
+    }).join('');
+
+    container.innerHTML = html;
+  }
+};
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = INSIGHTS;
+}

@@ -16,13 +16,17 @@ var ORCAMENTO = {
   },
 
   definirLimite: function(categoria, limite) {
-    if (limite <= 0) {
-      throw new Error('Limite deve ser maior que 0');
+    if (typeof BUDGET_SERVICE !== 'undefined') {
+      this._cache = BUDGET_SERVICE.setBudget(this._cache, categoria, limite);
+    } else {
+      if (limite <= 0) {
+        throw new Error('Limite deve ser maior que 0');
+      }
+      this._cache[categoria] = {
+        limite: parseFloat(limite),
+        definidoEm: new Date().toISOString()
+      };
     }
-    this._cache[categoria] = {
-      limite: parseFloat(limite),
-      definidoEm: new Date().toISOString()
-    };
     this._salvarOrcamentos();
     return this._cache[categoria];
   },
@@ -42,11 +46,16 @@ var ORCAMENTO = {
   },
 
   deletarLimite: function(categoria) {
-    delete this._cache[categoria];
+    this._cache = typeof BUDGET_SERVICE !== 'undefined'
+      ? BUDGET_SERVICE.removeBudget(this._cache, categoria)
+      : (delete this._cache[categoria], this._cache);
     this._salvarOrcamentos();
   },
 
   calcularGastoMes: function(categoria, mes, ano) {
+    if (typeof BUDGET_SERVICE !== 'undefined') {
+      return BUDGET_SERVICE.calculateSpent(TRANSACOES.obter({}), categoria, mes, ano);
+    }
     var transacoes = TRANSACOES.obter({ mes: mes, ano: ano, categoria: categoria });
     var total = 0;
     for (var i = 0; i < transacoes.length; i++) {
@@ -58,6 +67,9 @@ var ORCAMENTO = {
   },
 
   obterStatus: function(categoria, mes, ano) {
+    if (typeof BUDGET_SERVICE !== 'undefined') {
+      return BUDGET_SERVICE.getStatus(this._cache, TRANSACOES.obter({}), categoria, mes, ano);
+    }
     var limite = this.obterLimite(categoria);
     if (!limite) {
       return {
@@ -87,6 +99,9 @@ var ORCAMENTO = {
   },
 
   obterStatusTodos: function(mes, ano) {
+    if (typeof BUDGET_SERVICE !== 'undefined') {
+      return BUDGET_SERVICE.getAllStatus(this._cache, TRANSACOES.obter({}), mes, ano);
+    }
     var categorias = Object.keys(this._cache);
     var self = this;
     return categorias.map(function(cat) {
@@ -98,6 +113,16 @@ var ORCAMENTO = {
     var config = DADOS.getConfig();
     config.orcamentos = this._cache;
     DADOS.salvarConfig(config);
+    if (typeof APP_STATE !== 'undefined') APP_STATE.setState({ config: config });
+    if (typeof DADOS._pushOrcamentoApi === 'function') {
+      var chaves = Object.keys(this._cache);
+      for (var i = 0; i < chaves.length; i++) {
+        var entry = this._cache[chaves[i]];
+        if (entry && typeof entry.limite === 'number') {
+          DADOS._pushOrcamentoApi(chaves[i], entry.limite);
+        }
+      }
+    }
   }
 };
 

@@ -38,14 +38,17 @@ var CONTAS = {
       dados.id = UTILS.gerarId();
       lista.push(dados);
     }
-    localStorage.setItem(CONFIG.STORAGE_CONTAS, JSON.stringify(lista));
+    DADOS.salvarContas(lista);
     this._cache = lista;
+    if (typeof DADOS._pushContasApi === 'function') {
+      DADOS._pushContasApi(dados);
+    }
     return dados;
   },
 
   deletar: function(id) {
     var lista = DADOS.getContas().filter(function(c) { return c.id !== id; });
-    localStorage.setItem(CONFIG.STORAGE_CONTAS, JSON.stringify(lista));
+    DADOS.salvarContas(lista);
     this._cache = lista;
   },
 
@@ -62,6 +65,8 @@ var CONTAS = {
     if (val) sel.value = val;
   },
 
+  _listenerAttached: false,
+
   renderLista: function() {
     var el = document.getElementById('contas-lista');
     if (!el) return;
@@ -73,11 +78,12 @@ var CONTAS = {
     el.innerHTML = this._cache.map(function(c) {
       var ico = self.icone(c.tipo);
       var tag = c.tipo === 'credito' ? 'Cartão Crédito'
-              : c.tipo === 'debito'  ? 'Cartão Débito'
+              : c.tipo === 'debito' ? 'Cartão Débito'
               : c.tipo === 'poupanca' ? 'Poupança'
               : c.tipo === 'digital' ? 'Conta Digital'
               : c.tipo === 'carteira' ? 'Carteira'
               : 'Conta Corrente';
+      var idEsc = UTILS.escapeHtml(c.id);
       return '<div class="conta-item">' +
         '<div class="conta-info">' +
           '<span style="font-size:20px;margin-right:8px">' + ico + '</span>' +
@@ -87,11 +93,23 @@ var CONTAS = {
           '</div>' +
         '</div>' +
         '<div style="display:flex;gap:4px">' +
-          '<button class="btn-icon" onclick="CONTAS.abrirModal(\'' + c.id + '\')" aria-label="Editar">✏️</button>' +
-          '<button class="btn-icon" style="color:var(--danger)" onclick="CONTAS.confirmarDeletar(\'' + c.id + '\')" aria-label="Excluir">🗑️</button>' +
+          '<button class="btn-icon" data-conta-action="editar" data-id="' + idEsc + '" aria-label="Editar">✏️</button>' +
+          '<button class="btn-icon" style="color:var(--danger)" data-conta-action="deletar" data-id="' + idEsc + '" aria-label="Excluir">🗑️</button>' +
         '</div>' +
       '</div>';
     }).join('');
+
+    if (!this._listenerAttached) {
+      this._listenerAttached = true;
+      el.addEventListener('click', function(ev) {
+        var btn = ev.target.closest('[data-conta-action]');
+        if (!btn) return;
+        var id = btn.dataset.id;
+        var act = btn.dataset.contaAction;
+        if (act === 'editar') CONTAS.abrirModal(id);
+        else if (act === 'deletar') CONTAS.confirmarDeletar(id);
+      });
+    }
   },
 
   abrirModal: function(id) {
@@ -109,12 +127,12 @@ var CONTAS = {
         '<div class="form-group">' +
           '<label>Tipo</label>' +
           '<select id="mc-tipo" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm)">' +
-            '<option value="corrente"'  + (c && c.tipo==='corrente'  ? ' selected':'') + '>🏦 Conta Corrente</option>' +
-            '<option value="poupanca"'  + (c && c.tipo==='poupanca'  ? ' selected':'') + '>💰 Poupança</option>' +
-            '<option value="digital"'   + (c && c.tipo==='digital'   ? ' selected':'') + '>📱 Conta Digital</option>' +
-            '<option value="carteira"'  + (c && c.tipo==='carteira'  ? ' selected':'') + '>👛 Carteira</option>' +
-            '<option value="credito"'   + (c && c.tipo==='credito'   ? ' selected':'') + '>💳 Cartão de Crédito</option>' +
-            '<option value="debito"'    + (c && c.tipo==='debito'    ? ' selected':'') + '>💳 Cartão de Débito</option>' +
+            '<option value="corrente"' + (c && c.tipo==='corrente' ? ' selected':'') + '>🏦 Conta Corrente</option>' +
+            '<option value="poupanca"' + (c && c.tipo==='poupanca' ? ' selected':'') + '>💰 Poupança</option>' +
+            '<option value="digital"' + (c && c.tipo==='digital' ? ' selected':'') + '>📱 Conta Digital</option>' +
+            '<option value="carteira"' + (c && c.tipo==='carteira' ? ' selected':'') + '>👛 Carteira</option>' +
+            '<option value="credito"' + (c && c.tipo==='credito' ? ' selected':'') + '>💳 Cartão de Crédito</option>' +
+            '<option value="debito"' + (c && c.tipo==='debito' ? ' selected':'') + '>💳 Cartão de Débito</option>' +
           '</select>' +
         '</div>' +
         '<div class="form-group">' +
@@ -123,14 +141,21 @@ var CONTAS = {
             (c ? UTILS.escapeHtml(c.nome) : '') + '" style="width:100%">' +
         '</div>' +
         '<div class="modal-actions">' +
-          '<button class="btn-cancelar" onclick="CONTAS.fecharModal()">Cancelar</button>' +
-          '<button class="btn-confirmar" onclick="CONTAS.salvarModal(\'' + (id||'') + '\')">Salvar</button>' +
+          '<button class="btn-cancelar" data-modal-action="cancelar">Cancelar</button>' +
+          '<button class="btn-confirmar" data-modal-action="salvar" data-id="' + UTILS.escapeHtml(id||'') + '">Salvar</button>' +
         '</div>' +
       '</div>';
     document.body.appendChild(ov);
     var inp = document.getElementById('mc-nome');
     if (inp) { inp.focus(); inp.select(); }
-    ov.addEventListener('click', function(e) { if (e.target === ov) CONTAS.fecharModal(); });
+    ov.addEventListener('click', function(e) {
+      if (e.target === ov) { CONTAS.fecharModal(); return; }
+      var btn = e.target.closest('[data-modal-action]');
+      if (!btn) return;
+      var act = btn.dataset.modalAction;
+      if (act === 'cancelar') CONTAS.fecharModal();
+      else if (act === 'salvar') CONTAS.salvarModal(btn.dataset.id || '');
+    });
     document.addEventListener('keydown', function h(e) {
       if (e.key === 'Escape') { CONTAS.fecharModal(); document.removeEventListener('keydown', h); }
     });

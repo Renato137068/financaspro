@@ -1,0 +1,250 @@
+/**
+ * components/modals.css — Modal overlay, modal-box, modal-actions
+ * Cobre: modals genéricos e modal de confirmação
+ * Depende de: design-system.css
+ */
+
+/* ── Modal overlay ────────────────────────────────────────── */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+  padding: var(--space-5);
+  animation: fadeIn var(--transition-fast);
+}
+
+/* ── Modal box ────────────────────────────────────────────── */
+
+.modal-box {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  max-width: 320px;
+  width: 100%;
+  box-shadow: var(--shadow-xl);
+  animation: scaleIn var(--transition-bounce) forwards;
+}
+
+.modal-box p {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-5);
+  text-align: center;
+  line-height: var(--line-height-normal);
+}
+
+/* ── Modal actions ────────────────────────────────────────── */
+
+.modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.modal-actions:has(.modal-btn:only-child),
+.modal-actions:has(.btn-principal:only-child) {
+  grid-template-columns: 1fr;
+}
+
+/* ── Botões de modal ──────────────────────────────────────── */
+
+.btn-cancelar {
+  padding: var(--space-3) var(--space-4);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: var(--font-family-sans);
+}
+
+.btn-cancelar:hover {
+  border-color: var(--color-text-muted);
+}
+
+.btn-confirmar-danger {
+  padding: var(--space-3) var(--space-4);
+  border: none;
+  background: var(--color-danger);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-inverse);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: var(--font-family-sans);
+}
+
+.btn-confirmar-danger:hover {
+  background: var(--color-danger-dark);
+}
+
+.btn-confirmar-danger:active {
+  transform: scale(0.97);
+}
+
+.modal-btn,
+.btn-principal {
+  display: block;
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: none;
+  background: var(--gradient-primary);
+  color: var(--color-text-inverse);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-primary-sm);
+  font-family: var(--font-family-sans);
+}
+
+.modal-btn:hover,
+.btn-principal:hover {
+  box-shadow: var(--shadow-primary);
+  transform: translateY(-1px);
+}
+
+.modal-btn:active,
+.btn-principal:active {
+  transform: scale(0.97);
+  box-shadow: var(--shadow-xs);
+}
+
+/* ── Success overlay ──────────────────────────────────────── */
+
+.success-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 114, 63, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-overlay);
+  opacity: 0;
+  animation: successFadeIn var(--transition-normal) forwards;
+}
+
+.success-overlay.animando { opacity: 1; }
+
+@keyframes successFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.success-content {
+  text-align: center;
+  color: var(--color-text-inverse);
+  animation: successBounce var(--transition-bounce) forwards;
+}
+
+@keyframes successBounce {
+  from { transform: scale(0.5); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+.success-check {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto var(--space-4);
+  border: 4px solid white;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  font-weight: var(--font-weight-extrabold);
+}
+
+.success-msg {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--space-2);
+}
+
+.success-saldo {
+  font-size: var(--font-size-sm);
+  opacity: 0.85;
+  font-weight: var(--font-weight-medium);
+}
+
+/* ── Insight alerts ───────────────────────────────────────── */
+
+#dashboard-alertas { margin-bottom: var(--space-5); }
+
+.insight {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-3);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  border-left: 3px solid;
+}
+
+.insight-alta {
+  background: var(--color-danger-bg);
+  border-left-color: var(--color-danger);
+  color: var(--color-danger-dark);
+}
+
+.insight-media {
+  background: var(--color-warning-bg);
+  border-left-color: var(--color-warning);
+  color: var(--color-warning-dark);
+}
+
+.btn-insight {
+  padding: var(--space-1) var(--space-3);
+  background: var(--gradient-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--color-text-inverse);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-primary-sm);
+  font-family: var(--font-family-sans);
+}
+
+.btn-insight:hover {
+  box-shadow: var(--shadow-primary);
+  transform: translateY(-1px);
+}
+
+.btn-insight:active { transform: scale(0.98); }
+
+/* ── Auth env warning ─────────────────────────────────────── */
+
+.auth-env-warning {
+  display: none;
+  margin: 0 0 var(--space-5);
+  padding: var(--space-4) var(--space-4) var(--space-4) 40px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-lg);
+  color: #92400e;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  box-shadow: 0 4px 12px var(--color-warning-bg);
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-env-warning::before {
+  content: '⚠️';
+  position: absolute;
+  top: var(--space-4);
+  left: var(--space-4);
+  font-size: var(--font-size-base);
+}

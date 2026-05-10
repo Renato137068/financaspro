@@ -22,7 +22,7 @@ financaspro/
 ├── css/
 │   └── style.css           ← Estilos (mobile-first)
 │
-├── js/                     ← 8 módulos modulares
+├── js/                     ← módulos funcionais
 │   ├── config.js           ← Constantes
 │   ├── dados.js            ← localStorage
 │   ├── utils.js            ← Utilidades
@@ -30,6 +30,7 @@ financaspro/
 │   ├── orcamento.js        ← Budget logic
 │   ├── render.js           ← Renderização UI
 │   ├── config-user.js      ← Configurações
+│   ├── app-bootstrap.js    ← Orquestra inicialização
 │   └── init.js             ← Startup
 │
 ├── icons/                  ← PWA assets
@@ -64,7 +65,7 @@ npx http-server
 - ✅ **localStorage**: Dados salvos localmente
 - ✅ **Responsivo**: Otimizado para mobile
 - ✅ **Leve**: ~50KB total
-- ✅ **Modular**: 8 módulos independentes
+- ✅ **Modular**: separação por domínio + bootstrap dedicado
 
 ## 🛠️ Desenvolvimento
 
@@ -86,6 +87,13 @@ ORCAMENTO.definirLimite('Alimentação', 500);
 
 ### Exportar dados
 Via interface: Config → Exportar Dados (download JSON)
+
+### Backend inicial
+Para iniciar a nova base de backend local:
+```bash
+npm run backend
+```
+Isso sobe uma API inicial em `http://localhost:4000` com persistência em arquivo na pasta `.data/`.
 
 ## 📊 Stack Técnico
 

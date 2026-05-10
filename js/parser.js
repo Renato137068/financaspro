@@ -42,8 +42,8 @@ var PARSER = {
 
   parseData: function(str) {
     var hoje = new Date();
-    var dow  = hoje.getDay();
-    var s    = str.toLowerCase();
+    var dow = hoje.getDay();
+    var s = str.toLowerCase();
 
     var offsets = {'hoje': 0, 'ontem': 1, 'anteontem': 2, 'amanhã': -1, 'amanha': -1};
     if (offsets[s] !== undefined) {

@@ -1,0 +1,85 @@
+/**
+ * base.css — Estilos globais: body, layout principal, abas, animações base
+ * Depende de: design-system.css
+ */
+
+/* ── Body e estrutura ─────────────────────────────────────── */
+
+body {
+  font-family: var(--font-family-sans);
+  background: var(--color-bg-page);
+  color: var(--color-text-primary);
+  max-width: 500px;
+  margin: 0 auto;
+  padding-bottom: 90px;
+  line-height: var(--line-height-normal);
+}
+
+/* ── Header ───────────────────────────────────────────────── */
+
+header {
+  background: var(--gradient-primary);
+  color: var(--color-text-inverse);
+  padding: var(--space-5);
+  text-align: center;
+  box-shadow: var(--shadow-primary-sm);
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+}
+
+header h1 {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+}
+
+/* ── Main ─────────────────────────────────────────────────── */
+
+main {
+  padding: var(--space-5);
+  min-height: 60vh;
+}
+
+/* ── Abas (navegação de conteúdo) ─────────────────────────── */
+
+.aba {
+  display: none;
+  animation: fadeIn var(--transition-fast);
+}
+
+.aba.ativo {
+  display: block;
+}
+
+/* ── Animações globais ────────────────────────────────────── */
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes bounceIn {
+  0%   { transform: scale(0); opacity: 0; }
+  60%  { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+@keyframes authCardEntrance {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}

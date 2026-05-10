@@ -49,7 +49,7 @@ var AUTOMACAO = {
   salvarRascunho: function() {
     if (Object.keys(this._rascunho).length > 0) {
       try {
-        localStorage.setItem('_rascunho_transacao', JSON.stringify(this._rascunho));
+        localStorage.setItem(CONFIG.STORAGE_RASCUNHO, JSON.stringify(this._rascunho));
       } catch (e) {
         console.error('Erro ao salvar rascunho:', e);
       }
@@ -58,7 +58,7 @@ var AUTOMACAO = {
 
   restaurarRascunho: function() {
     try {
-      var saved = localStorage.getItem('_rascunho_transacao');
+      var saved = localStorage.getItem(CONFIG.STORAGE_RASCUNHO);
       if (saved) {
         this._rascunho = JSON.parse(saved);
         Object.keys(this._rascunho).forEach(function(campo) {
@@ -75,7 +75,7 @@ var AUTOMACAO = {
 
   limparRascunho: function() {
     this._rascunho = {};
-    localStorage.removeItem('_rascunho_transacao');
+    localStorage.removeItem(CONFIG.STORAGE_RASCUNHO);
   },
 
   // Detectar gasto anômalo

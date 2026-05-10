@@ -1,13 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git worktree *)",
-      "PowerShell(\"done\")",
-      "mcp__Claude_Preview__preview_start",
-      "Bash(npm run *)",
-      "mcp__Claude_in_Chrome__tabs_context_mcp",
-      "Bash(git add *)",
-      "Bash(git commit -m ' *)",
-      "Bash(rm -f 'C:\\\\Users\\\\renat\\\\Downloads\\\\financaspro\\\\.git\\\\HEAD.lock' 'C:\\\\Users\\\\renat\\\\Downloads\\\\financaspro\\\\.git\\\\index.lock')",
-      "Bash(git commit -m 'Refatoração: performance, modularização, testes *)",
+      "Bash(powershell -Command \"\\(Get-Content 'C:\\\\Users\\\\renat\\\\Downloads\\\\financaspro\\\\css\\\\style.css'\\).Count\")",
+      "Bash(powershell -Command \"New-Item -ItemType Directory -Force -Path 'C:\\\\Users\\\\renat\\\\Downloads\\\\financaspro\\\\css\\\\components', 'C:\\\\Users\\\\renat\\\\Downloads\\\\financaspro\\\\css\\\\layouts', 'C:\\\\Users\\\\renat\\\\Downloads\\\\financaspro\\\\css\\\\features', 'C:\\\\Users\\\\renat\\\\Downloads\\\\financaspro\\\\css\\\\themes', 'C:\\\\Users\\\\renat\\\\Downloads\\\\financaspro\\\\css\\\\utilities' | Out-Null; Write-Output 'Dirs created'\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\renat\\\\Downloads\\\\financaspro\\\\modals\\\\\" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name)",
       "Bash

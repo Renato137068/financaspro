@@ -1,0 +1,60 @@
+/**
+ * utilities/performance.css — CSS performance hints (contain, will-change)
+ * Depende de: design-system.css
+ */
+
+/* ── Content-visibility para painéis colapsados ──────────── */
+
+#graficos-panel {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 500px;
+}
+
+#graficos-panel[style*="display:none"],
+#graficos-panel[style*="display: none"] {
+  content-visibility: hidden;
+}
+
+/* ── Contain para cards estáticos ─────────────────────────── */
+
+.card,
+.card-saldo-principal {
+  contain: layout style paint;
+}
+
+/* ── Contain para listas de transações ───────────────────── */
+
+#lista-transacoes,
+#resumo-list {
+  contain: layout;
+}
+
+/* ── Contain para seções de orçamento ───────────────────────*/
+
+.orc-regra-item,
+.orc-categorias {
+  contain: layout style;
+}
+
+/* ── GPU acceleration para elementos animados ────────────── */
+
+.success-overlay,
+.auth-card,
+.btn-primario,
+.btn-registrar,
+.modal-box {
+  will-change: transform;
+}
+
+/* ── Nav fixo: reduz repaints no scroll ──────────────────── */
+
+.nav-bottom {
+  contain: layout;
+}
+
+/* ── Abas inativas: ocultas do layout ───────────────────── */
+
+.aba:not(.ativo) {
+  content-visibility: hidden;
+  contain-intrinsic-size: 0 100vh;
+}

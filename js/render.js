@@ -17,16 +17,24 @@ var RENDER = {
   NOMES_MESES: ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'],
 
   init: function() {
-    this.renderGreeting();
-    this.renderCardSaldo();
-    this.renderResumo();
-    this.renderComparacaoMesAnterior();
-    this.renderAlertas();
-    this.renderIndicadores();
-    this.renderChartEvolucao();
-    this.renderChartCategorias();
-    this.renderOrcamento();
-    this.renderUltimasTransacoes();
+    // Usar renderização modular se disponível
+    if (typeof RENDER_CORE !== 'undefined') {
+      RENDER_CORE.renderAll();
+    } else {
+      // Fallback para renderização legada
+      this.renderGreeting();
+      this.renderCardSaldo();
+      this.renderResumo();
+      this.renderComparacaoMesAnterior();
+      this.renderAlertas();
+      this.renderIndicadores();
+      this.renderChartEvolucao();
+      this.renderChartCategorias();
+      this.renderOrcamento();
+      this.renderUltimasTransacoes();
+    }
+    
+    // Sempre renderizar extrato (não modularizado ainda)
     this.renderExtrato();
     this.atualizarHeaderSaldo();
   },
@@ -74,10 +82,8 @@ var RENDER = {
     var resumo = TRANSACOES.obterResumoMes(agora.getMonth() + 1, agora.getFullYear());
     var elRec = document.getElementById('resumo-receitas');
     var elDesp = document.getElementById('resumo-despesas');
-    var elSaldo = document.getElementById('saldo-header-txt');
     if (elRec) elRec.textContent = UTILS.formatarMoeda(resumo.receitas);
     if (elDesp) elDesp.textContent = UTILS.formatarMoeda(resumo.despesas);
-    if (elSaldo) elSaldo.textContent = 'Saldo: ' + UTILS.formatarMoeda(resumo.saldo);
   },
 
   // === COMPARAÇÃO MÊS ANTERIOR ===
@@ -99,14 +105,7 @@ var RENDER = {
   },
 
   _formatarComparacao: function(atual, anterior, inverso) {
-    if (anterior === 0) return '<span class="comp-neutro">—</span>';
-    var diff = ((atual - anterior) / anterior) * 100;
-    var diffStr = (diff >= 0 ? '+' : '') + diff.toFixed(0) + '%';
-    // Para despesas, subir é ruim (inverso)
-    var bom = inverso ? diff <= 0 : diff >= 0;
-    var classe = bom ? 'comp-bom' : 'comp-ruim';
-    var seta = diff >= 0 ? '↑' : '↓';
-    return '<span class="' + classe + '">' + seta + ' ' + diffStr + ' vs mês ant.</span>';
+    return UI.ComparacaoMes.html(atual, anterior, inverso);
   },
 
   // === ALERTAS DE ORÇAMENTO ===
@@ -117,25 +116,16 @@ var RENDER = {
     var status = ORCAMENTO.obterStatusTodos(agora.getMonth() + 1, agora.getFullYear());
     var alertas = status.filter(function(s) { return s.status === 'excedido' || s.status === 'alerta'; });
 
-    if (alertas.length === 0) { el.innerHTML = ''; return; }
+    var btnOrc = document.querySelector('.nav-btn[data-aba="orcamento"]');
+    if (btnOrc) btnOrc.classList.toggle('nav-alerta', alertas.length > 0);
+
+    el.innerHTML = '';
+    if (alertas.length === 0) return;
 
     var excedidos = alertas.filter(function(s) { return s.status === 'excedido'; });
-    var avisos = alertas.filter(function(s) { return s.status === 'alerta'; });
-    var html = '<div class="alerta-card">';
-    html += '<div class="alerta-icon">⚠️</div><div class="alerta-content">';
-
-    if (excedidos.length > 0) {
-      html += '<div class="alerta-linha alerta-danger">' + excedidos.length + ' categoria(s) estourou o limite: ' +
-        excedidos.map(function(s) { return '<strong>' + UTILS.escapeHtml(s.categoria) + '</strong>'; }).join(', ') +
-      '</div>';
-    }
-    if (avisos.length > 0) {
-      html += '<div class="alerta-linha alerta-warning">' + avisos.length + ' categoria(s) acima de 80%: ' +
-        avisos.map(function(s) { return '<strong>' + UTILS.escapeHtml(s.categoria) + '</strong> (' + s.percentual + '%)'; }).join(', ') +
-      '</div>';
-    }
-    html += '</div></div>';
-    el.innerHTML = html;
+    var avisos    = alertas.filter(function(s) { return s.status === 'alerta'; });
+    var card = UI.AlertaCard.render(excedidos, avisos);
+    if (card) el.appendChild(card);
   },
 
   // === INDICADORES: RENDA + DIAS RESTANTES ===
@@ -203,45 +193,7 @@ var RENDER = {
       return;
     }
 
-    var maxVal = 0;
-    dados.forEach(function(d) { maxVal = Math.max(maxVal, d.receitas, d.despesas); });
-    if (maxVal === 0) maxVal = 100;
-
-    var w = 340, h = 180, padding = 30, barW = 18, gap = 6;
-    var chartH = h - padding - 20;
-    var svg = '<svg viewBox="0 0 ' + w + ' ' + h + '" class="chart-svg" role="img" aria-label="Gráfico de evolução financeira">';
-
-    // Linhas de grade
-    for (var g = 0; g <= 4; g++) {
-      var gy = padding + (chartH / 4) * g;
-      var gVal = maxVal - (maxVal / 4) * g;
-      svg += '<line x1="40" y1="' + gy + '" x2="' + (w - 10) + '" y2="' + gy + '" stroke="#e5e7eb" stroke-width="0.5" stroke-dasharray="3,3"/>';
-      svg += '<text x="36" y="' + (gy + 3) + '" text-anchor="end" fill="#999" font-size="8">' + (gVal >= 1000 ? (gVal/1000).toFixed(0) + 'k' : gVal.toFixed(0)) + '</text>';
-    }
-
-    // Barras
-    var groupW = barW * 2 + gap;
-    var totalGroupW = dados.length * groupW + (dados.length - 1) * 12;
-    var startX = 40 + ((w - 50 - totalGroupW) / 2);
-
-    for (var j = 0; j < dados.length; j++) {
-      var x = startX + j * (groupW + 12);
-      var hRec = (dados[j].receitas / maxVal) * chartH;
-      var hDesp = (dados[j].despesas / maxVal) * chartH;
-
-      svg += '<rect x="' + x + '" y="' + (padding + chartH - hRec) + '" width="' + barW + '" height="' + hRec + '" rx="3" fill="#10b981" opacity="0.85"><title>Receita ' + dados[j].mes + ': ' + UTILS.formatarMoeda(dados[j].receitas) + '</title></rect>';
-      svg += '<rect x="' + (x + barW + gap) + '" y="' + (padding + chartH - hDesp) + '" width="' + barW + '" height="' + hDesp + '" rx="3" fill="#ef4444" opacity="0.85"><title>Despesa ' + dados[j].mes + ': ' + UTILS.formatarMoeda(dados[j].despesas) + '</title></rect>';
-      svg += '<text x="' + (x + groupW / 2) + '" y="' + (h - 4) + '" text-anchor="middle" fill="#666" font-size="9" font-weight="600">' + dados[j].mes + '</text>';
-    }
-
-    // Legenda
-    svg += '<rect x="' + (w - 120) + '" y="4" width="8" height="8" rx="2" fill="#10b981"/>';
-    svg += '<text x="' + (w - 108) + '" y="12" fill="#666" font-size="8">Receitas</text>';
-    svg += '<rect x="' + (w - 60) + '" y="4" width="8" height="8" rx="2" fill="#ef4444"/>';
-    svg += '<text x="' + (w - 48) + '" y="12" fill="#666" font-size="8">Despesas</text>';
-
-    svg += '</svg>';
-    el.innerHTML = svg;
+    el.innerHTML = UI.BarChart6M.render(dados);
   },
 
   // === DONUT CHART CATEGORIAS (SVG) ===
@@ -268,62 +220,15 @@ var RENDER = {
       return;
     }
 
-    // Ordenar por valor desc
     cats.sort(function(a, b) { return b.valor - a.valor; });
-
-    var size = 160, cx = 80, cy = 80, r = 60, innerR = 38;
-    var svg = '<div class="donut-container">';
-    svg += '<svg viewBox="0 0 ' + size + ' ' + size + '" class="donut-svg" role="img" aria-label="Gráfico de despesas por categoria">';
-
-    var startAngle = -90;
-    for (var i = 0; i < cats.length; i++) {
-      var pct = cats[i].valor / totalDesp;
-      var angle = pct * 360;
-      var endAngle = startAngle + angle;
-      var largeArc = angle > 180 ? 1 : 0;
-
-      var x1 = cx + r * Math.cos(startAngle * Math.PI / 180);
-      var y1 = cy + r * Math.sin(startAngle * Math.PI / 180);
-      var x2 = cx + r * Math.cos(endAngle * Math.PI / 180);
-      var y2 = cy + r * Math.sin(endAngle * Math.PI / 180);
-      var ix1 = cx + innerR * Math.cos(endAngle * Math.PI / 180);
-      var iy1 = cy + innerR * Math.sin(endAngle * Math.PI / 180);
-      var ix2 = cx + innerR * Math.cos(startAngle * Math.PI / 180);
-      var iy2 = cy + innerR * Math.sin(startAngle * Math.PI / 180);
-
-      var path = 'M ' + x1 + ' ' + y1 +
-        ' A ' + r + ' ' + r + ' 0 ' + largeArc + ' 1 ' + x2 + ' ' + y2 +
-        ' L ' + ix1 + ' ' + iy1 +
-        ' A ' + innerR + ' ' + innerR + ' 0 ' + largeArc + ' 0 ' + ix2 + ' ' + iy2 + ' Z';
-
-      svg += '<path d="' + path + '" fill="' + cats[i].cor + '" opacity="0.9"><title>' + cats[i].nome + ': ' + UTILS.formatarMoeda(cats[i].valor) + ' (' + Math.round(pct * 100) + '%)</title></path>';
-      startAngle = endAngle;
-    }
-
-    // Centro
-    svg += '<text x="' + cx + '" y="' + (cy - 4) + '" text-anchor="middle" fill="#333" font-size="10" font-weight="700">Total</text>';
-    svg += '<text x="' + cx + '" y="' + (cy + 10) + '" text-anchor="middle" fill="#666" font-size="8">' + UTILS.formatarMoeda(totalDesp) + '</text>';
-    svg += '</svg>';
-
-    // Legenda lateral
-    svg += '<div class="donut-legenda">';
-    for (var k = 0; k < cats.length; k++) {
-      var pctCat = Math.round((cats[k].valor / totalDesp) * 100);
-      var nomeLegenda = CONFIG.getCatLabel ? CONFIG.getCatLabel(cats[k].nome) : cats[k].nome;
-      svg += '<div class="legenda-item">' +
-        '<span class="legenda-cor" style="background:' + cats[k].cor + '"></span>' +
-        '<span class="legenda-nome">' + UTILS.escapeHtml(nomeLegenda) + '</span>' +
-        '<span class="legenda-pct">' + pctCat + '%</span>' +
-      '</div>';
-    }
-    svg += '</div></div>';
-    el.innerHTML = svg;
+    el.innerHTML = '';
+    el.appendChild(UI.DonutChart.render(cats, totalDesp));
   },
 
   // === ÚLTIMAS 5 TRANSAÇÕES ===
   renderUltimasTransacoes: function() {
     var transacoes = TRANSACOES.obter({});
-    var ultimas = transacoes.slice(0, 5);
+    var ultimas = transacoes.slice(0, 3);
     var list = document.getElementById('resumo-list');
     if (!list) return;
 
@@ -332,30 +237,15 @@ var RENDER = {
       return;
     }
 
-    list.innerHTML = ultimas.map(function(t) {
-      var meta = UTILS.escapeHtml(t.categoria) + ' · ' + UTILS.formatarData(t.data);
-      if (t.banco) meta += ' · 🏦 ' + UTILS.escapeHtml(t.banco);
-      if (t.cartao) meta += ' · 💳 ' + UTILS.escapeHtml(t.cartao);
-      return '<div class="transacao-item">' +
-        '<div class="transacao-info">' +
-          '<div class="transacao-descricao">' + UTILS.escapeHtml(t.descricao || t.categoria) + '</div>' +
-          '<div class="transacao-data">' + meta + '</div>' +
-        '</div>' +
-        '<div class="transacao-valor ' + t.tipo + '">' +
-          (t.tipo === CONFIG.TIPO_RECEITA ? '+' : '-') + ' ' + UTILS.formatarMoeda(t.valor) +
-        '</div>' +
-      '</div>';
-    }).join('') +
-    '<button class="btn-ver-todos" type="button" onclick="mudarAba(\'extrato\')">Ver todas →</button>';
+    var frag = document.createDocumentFragment();
+    ultimas.forEach(function(t) { frag.appendChild(UI.CardTransacao.render(t)); });
+    list.innerHTML = '';
+    list.appendChild(frag);
   },
 
   // === EMPTY STATE HELPER ===
   _emptyState: function(emoji, texto, aba) {
-    return '<div class="empty-state">' +
-      '<div class="empty-emoji">' + emoji + '</div>' +
-      '<p class="empty-texto">' + texto + '</p>' +
-      (aba ? '<button class="btn-empty-cta" type="button" onclick="mudarAba(\'' + aba + '\')">➕ Começar agora</button>' : '') +
-    '</div>';
+    return UI.EmptyState.html(emoji, texto, aba);
   },
 
   // === EXTRATO (aba separada) ===
@@ -367,9 +257,7 @@ var RENDER = {
     filtrarExtrato(filtroAtual);
   },
 
-  // === ORÇAMENTO (barras) ===
-  _orcamentoListenerAttached: false,
-
+  // === ORÇAMENTO (barras — somente leitura no Resumo) ===
   renderOrcamento: function() {
     var agora = new Date();
     var status = ORCAMENTO.obterStatusTodos(agora.getMonth() + 1, agora.getFullYear());
@@ -379,33 +267,10 @@ var RENDER = {
       container.innerHTML = this._emptyState('📊', 'Defina limites mensais para acompanhar seus gastos por categoria.', 'orcamento');
       return;
     }
-    container.innerHTML = status.map(function(s) {
-      var pct = s.percentual;
-      var cor = s.status === 'excedido' ? '#ef5350' : s.status === 'alerta' ? '#ffa726' : '#66bb6a';
-      return '<div class="orcamento-item" data-categoria="' + UTILS.escapeHtml(s.categoria) + '">' +
-        '<div class="orcamento-header"><span class="orcamento-categoria">' + UTILS.escapeHtml(s.categoria) + '</span>' +
-        '<span class="orcamento-valor">' + UTILS.formatarMoeda(s.gasto) + ' / ' + UTILS.formatarMoeda(s.limite) + '</span></div>' +
-        '<div class="progress-bar"><div class="progress-fill" style="width:' + Math.min(pct, 100) + '%;background-color:' + cor + ';"></div></div>' +
-        '<div class="orcamento-footer"><span class="status-' + s.status + '">' + pct + '%</span>' +
-        '<button class="btn-small" type="button">Remover</button></div></div>';
-    }).join('');
-
-    if (!this._orcamentoListenerAttached) {
-      var self = this;
-      container.addEventListener('click', function(e) {
-        var removeBtn = e.target.closest('.btn-small');
-        if (!removeBtn) return;
-        var item = removeBtn.closest('[data-categoria]');
-        var cat = item ? item.dataset.categoria : null;
-        if (!cat) return;
-        fpConfirm('Remover limite de "' + cat + '"?', function() {
-          ORCAMENTO.deletarLimite(cat);
-          self.renderOrcamento();
-          UTILS.mostrarToast('Limite removido', 'info');
-        });
-      });
-      this._orcamentoListenerAttached = true;
-    }
+    var frag = document.createDocumentFragment();
+    status.forEach(function(s) { frag.appendChild(UI.CardOrcamento.render(s)); });
+    container.innerHTML = '';
+    container.appendChild(frag);
   },
 
   renderFormCategories: function() {
@@ -425,5 +290,11 @@ var RENDER = {
   },
 
   atualizarHeaderSaldo: function() {
-    var saldo = UTILS.calcularSaldo(TRANSACOES.obter({}));
-    var el = document.getElementById('saldo-header-txt');
+    // Saldo exibido no card-saldo-principal do Resumo; header não replica mais.
+  }
+};
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = RENDER;
+}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     

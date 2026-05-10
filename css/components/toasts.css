@@ -1,0 +1,78 @@
+/**
+ * components/toasts.css — Notificações toast e empty states
+ * Depende de: design-system.css
+ */
+
+/* ── Toast ────────────────────────────────────────────────── */
+
+.toast {
+  position: fixed;
+  bottom: 110px;
+  left: var(--space-5);
+  right: var(--space-5);
+  padding: var(--space-4);
+  background: var(--color-text-primary);
+  color: var(--color-text-inverse);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  max-width: 460px;
+  z-index: var(--z-toast);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity var(--transition-normal), transform var(--transition-normal);
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast.sucesso,
+.toast.toast-success { background: var(--color-success); }
+
+.toast.erro,
+.toast.toast-error   { background: var(--color-danger); }
+
+.toast.info,
+.toast.toast-info    { background: var(--color-primary-500); }
+
+/* ── Empty states ─────────────────────────────────────────── */
+
+.empty {
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: var(--space-10) var(--space-5);
+  font-size: var(--font-size-sm);
+}
+
+/* Extrato empty */
+.extrato-vazio {
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: var(--space-12) var(--space-5);
+  font-size: var(--font-size-sm);
+}
+
+.extrato-empty {
+  text-align: center;
+  padding: var(--space-12) var(--space-5);
+  color: var(--color-text-muted);
+}
+
+.extrato-empty-icon {
+  font-size: 48px;
+  margin-bottom: var(--space-3);
+}
+
+.extrato-empty p {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--space-1);
+}
+
+.extrato-empty-hint {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}

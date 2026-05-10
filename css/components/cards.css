@@ -1,0 +1,439 @@
+/**
+ * components/cards.css — Sistema de cards
+ * Cobre: .card, .fp-card, .card-saldo-principal, .cards-container,
+ *        .dashboard-section, .indicador-card, empty-states
+ * Depende de: design-system.css
+ */
+
+/* ── Card base (legacy) ───────────────────────────────────── */
+
+.card {
+  background: var(--color-bg-card);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border-left: 4px solid var(--color-border);
+}
+
+.card.receita {
+  border-left: none;
+  border-top: 3px solid var(--color-success);
+}
+
+.card.despesa {
+  border-left: none;
+  border-top: 3px solid var(--color-danger);
+}
+
+.card-label {
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+  margin-bottom: var(--space-1);
+}
+
+.card-valor {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+.card.receita .card-valor { color: var(--color-success); }
+.card.despesa .card-valor { color: var(--color-danger); }
+
+/* Comparação mês anterior */
+.card-comparacao {
+  margin-top: var(--space-2);
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-semibold);
+  min-height: 16px;
+}
+
+.comp-bom   { color: var(--color-success); font-weight: var(--font-weight-semibold); }
+.comp-ruim  { color: var(--color-danger);  font-weight: var(--font-weight-semibold); }
+.comp-neutro { color: var(--color-text-muted); font-weight: var(--font-weight-medium); }
+
+/* ── Cards container (grid receita/despesa) ──────────────── */
+
+.cards-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+/* ── Card saldo principal ─────────────────────────────────── */
+
+.card-saldo-principal {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-5);
+  box-shadow: var(--shadow-md);
+  transition: background var(--transition-normal);
+}
+
+.card-saldo-principal.saldo-positivo {
+  background: var(--gradient-primary);
+  border-left: none;
+  box-shadow: var(--shadow-primary);
+}
+
+.card-saldo-principal.saldo-negativo {
+  background: var(--gradient-danger);
+  border-left: none;
+  box-shadow: var(--shadow-danger);
+}
+
+.saldo-emoji {
+  font-size: 36px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.saldo-info { flex: 1; }
+
+.saldo-label {
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-semibold);
+  color: rgba(255, 255, 255, 0.75);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wider);
+  margin-bottom: 2px;
+}
+
+.card-saldo-principal .saldo-valor {
+  font-size: 26px;
+  font-weight: var(--font-weight-extrabold);
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+.saldo-positivo .saldo-valor,
+.saldo-negativo .saldo-valor { color: #ffffff; }
+
+/* ── Dashboard section card ───────────────────────────────── */
+
+.dashboard-section {
+  background: var(--color-bg-card);
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-5);
+  box-shadow: var(--shadow-sm);
+}
+
+.dashboard-section-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-1);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--transition-fast);
+  font-family: var(--font-family-sans);
+}
+
+.dashboard-section-toggle:hover {
+  background: var(--color-bg-primary);
+  color: var(--color-primary-500);
+}
+
+.toggle-arrow {
+  font-size: var(--font-size-2xs);
+  color: var(--color-text-muted);
+}
+
+/* Seção header e título */
+.secao-titulo {
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-widest);
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.secao-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.secao-header .secao-titulo {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.secao-link {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary-500);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 0;
+  flex-shrink: 0;
+  transition: opacity var(--transition-fast);
+  font-family: var(--font-family-sans);
+}
+
+.secao-link:hover { opacity: 0.75; }
+
+/* ── Indicador card (renda + dias) ───────────────────────── */
+
+.dashboard-indicadores {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+
+.indicador-card {
+  background: var(--color-bg-card);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.indicador-icone {
+  font-size: 28px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.indicador-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.indicador-valor {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-extrabold);
+  line-height: 1.2;
+}
+
+.indicador-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+}
+
+.indicador-barra {
+  width: 100%;
+  height: 6px;
+  background: var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.indicador-fill {
+  height: 100%;
+  border-radius: var(--radius-sm);
+  transition: width var(--transition-normal);
+}
+
+.indicador-extra {
+  width: 100%;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  padding-top: 2px;
+}
+
+/* ── Alerta card (dashboard) ──────────────────────────────── */
+
+.dashboard-alertas { margin-bottom: var(--space-4); }
+
+.alerta-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: #fef3c7;
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-2);
+}
+
+.alerta-card:last-child { margin-bottom: 0; }
+
+.alerta-icon {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.alerta-content {
+  flex: 1;
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+}
+
+.alerta-linha { margin-bottom: var(--space-1); }
+.alerta-linha:last-child { margin-bottom: 0; }
+.alerta-danger  { color: #b91c1c; }
+.alerta-warning { color: #92400e; }
+
+/* ── Empty state ─────────────────────────────────────────── */
+
+.empty-state {
+  text-align: center;
+  padding: var(--space-8) var(--space-4);
+}
+
+.empty-emoji {
+  font-size: 40px;
+  margin-bottom: var(--space-3);
+  line-height: 1;
+}
+
+.empty-texto {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  line-height: var(--line-height-normal);
+  margin-bottom: var(--space-4);
+  max-width: 260px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ── Donut chart ─────────────────────────────────────────── */
+
+.donut-container {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.donut-svg {
+  width: 160px;
+  height: 160px;
+  flex-shrink: 0;
+}
+
+.donut-legenda {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.legenda-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-xs);
+}
+
+.legenda-cor {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.legenda-nome {
+  flex: 1;
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+  text-transform: capitalize;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.legenda-pct {
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+/* Chart genérico */
+.chart-container { min-height: 80px; }
+.chart-svg { width: 100%; height: auto; display: block; }
+
+/* ── Transação item (dashboard) ───────────────────────────── */
+
+.transacao-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.transacao-item:last-of-type { border-bottom: none; }
+
+.transacao-item .transacao-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.transacao-item .transacao-descricao {
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+.transacao-item .transacao-data {
+  font-size: var(--font-size-2xs);
+  color: var(--color-text-muted);
+}
+
+.transacao-item .transacao-valor {
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
+  text-align: right;
+  flex-shrink: 0;
+  margin-left: var(--space-3);
+}
+
+.transacao-item .transacao-valor.receita { color: var(--color-success); }
+.transacao-item .transacao-valor.despesa { color: var(--color-danger); }
+
+/* ── Greeting ─────────────────────────────────────────────── */
+
+.dashboard-greeting { margin-bottom: var(--space-5); }
+
+.greeting-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.greeting-hello {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+}
+
+.greeting-context {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+}

@@ -1,39 +1,95 @@
 /**
- * transacoes.js - Transaction Management
- * Tier 1: Depends on config.js, dados.js, utils.js
+ * @file transacoes.js — Transaction Management
+ * @module TRANSACOES
+ * Tier 1. Depende de: config.js, dados.js, utils.js
+ */
+
+/**
+ * @typedef {Object} ResumoMes
+ * @property {number} receitas
+ * @property {number} despesas
+ * @property {number} saldo
+ * @property {number} total
+ */
+
+/**
+ * @typedef {Object} FiltroTransacao
+ * @property {number} [mes] — 1-12
+ * @property {number} [ano]
+ * @property {'receita'|'despesa'} [tipo]
+ * @property {string} [categoria]
+ * @property {'data-asc'|'data-desc'} [ordenarPor]
  */
 
 var TRANSACOES = {
   _cache: null,
 
+  /**
+   * Inicializa cache de transações a partir do localStorage.
+   */
   init: function() {
     this._cache = DADOS.getTransacoes();
+    if (typeof APP_STATE !== 'undefined') {
+      APP_STATE.setState({ transacoes: this._cache });
+    }
   },
 
+  /**
+   * Cria nova transação com validação.
+   * @param {'receita'|'despesa'} tipo
+   * @param {number|string} valor
+   * @param {string} categoria
+   * @param {string} data — YYYY-MM-DD
+   * @param {string} [descricao]
+   * @param {string} [banco]
+   * @param {string} [cartao]
+   * @returns {Transacao}
+   * @throws {Error} se inválida
+   */
   criar: function(tipo, valor, categoria, data, descricao, banco, cartao) {
-    var validacao = UTILS.validarTransacao({
-      tipo: tipo, valor: parseFloat(valor), categoria: categoria, data: data
-    });
-    if (!validacao.valido) throw new Error(validacao.erro);
-
-    var transacao = {
-      id: UTILS.gerarId(),
-      tipo: tipo,
-      valor: parseFloat(valor),
-      categoria: categoria,
-      data: data,
-      descricao: descricao || '',
-      banco: banco || '',
-      cartao: cartao || '',
-      dataCriacao: new Date().toISOString()
-    };
+    var transacao = typeof TRANSACTION_SERVICE !== 'undefined'
+      ? TRANSACTION_SERVICE.createTransaction({
+        tipo: tipo,
+        valor: valor,
+        categoria: categoria,
+        data: data,
+        descricao: descricao,
+        banco: banco,
+        cartao: cartao
+      }, { idFactory: UTILS.gerarId })
+      : (function() {
+        var validacao = UTILS.validarTransacao({
+          tipo: tipo, valor: parseFloat(valor), categoria: categoria, data: data
+        });
+        if (!validacao.valido) throw new Error(validacao.erro);
+        return {
+          id: UTILS.gerarId(),
+          tipo: tipo,
+          valor: parseFloat(valor),
+          categoria: categoria,
+          data: data,
+          descricao: descricao || '',
+          banco: banco || '',
+          cartao: cartao || '',
+          dataCriacao: new Date().toISOString()
+        };
+      })();
     DADOS.salvarTransacao(transacao);
     this._cache = DADOS.getTransacoes();
+    if (typeof APP_STATE !== 'undefined') APP_STATE.setState({ transacoes: this._cache });
     return transacao;
   },
 
+  /**
+   * Filtra cache de transações.
+   * @param {FiltroTransacao} [filtros]
+   * @returns {Transacao[]}
+   */
   obter: function(filtros) {
     filtros = filtros || {};
+    if (typeof TRANSACTION_SERVICE !== 'undefined') {
+      return TRANSACTION_SERVICE.filterTransactions(this._cache || [], filtros);
+    }
     var resultado = this._cache.slice();
 
     if (filtros.mes && filtros.ano) {
@@ -68,16 +124,27 @@ var TRANSACOES = {
     if (!validacao.valido) throw new Error(validacao.erro);
     DADOS.salvarTransacao(updated);
     this._cache = DADOS.getTransacoes();
+    if (typeof APP_STATE !== 'undefined') APP_STATE.setState({ transacoes: this._cache });
     return updated;
   },
 
   deletar: function(id) {
     var resultado = DADOS.deletarTransacao(id);
     this._cache = DADOS.getTransacoes();
+    if (typeof APP_STATE !== 'undefined') APP_STATE.setState({ transacoes: this._cache });
     return resultado;
   },
 
+  /**
+   * Resumo agregado do mês.
+   * @param {number} mes
+   * @param {number} ano
+   * @returns {ResumoMes}
+   */
   obterResumoMes: function(mes, ano) {
+    if (typeof TRANSACTION_SERVICE !== 'undefined') {
+      return TRANSACTION_SERVICE.summarizeMonth(this._cache || [], mes, ano);
+    }
     var txMes = this.obter({ mes: mes, ano: ano });
     var receitas = 0, despesas = 0;
     txMes.forEach(function(t) {
@@ -88,6 +155,9 @@ var TRANSACOES = {
   },
 
   obterResumoPorCategoria: function(mes, ano) {
+    if (typeof TRANSACTION_SERVICE !== 'undefined') {
+      return TRANSACTION_SERVICE.summarizeByCategory(this._cache || [], mes, ano);
+    }
     var txMes = this.obter({ mes: mes, ano: ano });
     var resumo = {};
     txMes.forEach(function(t) {
@@ -98,4 +168,23 @@ var TRANSACOES = {
     return resumo;
   },
 
-  obterResumoCategori
+  // Compatibilidade com suíte de testes legado
+  obterPorCategoria: function(mes, ano) {
+    var resumo = this.obterResumoPorCategoria(mes, ano);
+    var resultado = {};
+    Object.keys(resumo).forEach(function(cat) {
+      resultado[cat] = resumo[cat].despesa || 0;
+    });
+    return resultado;
+  },
+
+  obterResumoCategoriaMes: function(categoria, mes, ano) {
+    var transacoes = UTILS.filtrarPorMes(this._cache, mes, ano);
+    return transacoes.filter(function(t) { return t.categoria === categoria && t.tipo === 'despesa'; })
+      .reduce(function(acc, t) { return acc + t.valor; }, 0);
+  }
+};
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = TRANSACOES;
+}

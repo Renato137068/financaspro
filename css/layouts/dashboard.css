@@ -1,0 +1,15 @@
+/**
+ * layouts/dashboard.css — Layout da aba Dashboard
+ * Cobre: saudação, saldo, indicadores, charts, últimas transações
+ * Depende de: design-system.css, components/cards.css
+ */
+
+/* Aba dashboard padrão — ver base.css para .aba/.aba.ativo */
+
+/* Espaçamento entre seções do dashboard */
+#tab-dashboard .dashboard-section + .dashboard-section {
+  margin-top: 0;
+}
+
+/* Garantia que o container de alertas seja visível */
+.dashboard-alertas:empty { display: none; }
