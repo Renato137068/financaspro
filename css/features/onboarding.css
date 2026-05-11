@@ -1,0 +1,234 @@
+/**
+ * onboarding.css — Tour de onboarding para novos usuários
+ * Fase 7 UX Premium — Depende de: design-system.css
+ */
+
+/* ── Overlay principal ────────────────────────────────────── */
+
+.onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1800;
+  pointer-events: none;
+}
+
+.onboarding-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.75);
+  pointer-events: all;
+  animation: fadeIn 350ms ease;
+}
+
+/* ── Tooltip do passo ─────────────────────────────────────── */
+
+.onboarding-tooltip {
+  position: absolute;
+  background: var(--color-bg-card);
+  border-radius: 20px;
+  padding: 24px 20px 20px;
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.28),
+    0 6px 20px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  max-width: 300px;
+  width: calc(100vw - 40px);
+  z-index: 1900;
+  pointer-events: all;
+  animation: onbTooltipIn 320ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes onbTooltipIn {
+  from { opacity: 0; transform: scale(0.82) translateY(12px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ── Conteúdo tooltip ─────────────────────────────────────── */
+
+.onb-emoji {
+  font-size: 36px;
+  text-align: center;
+  display: block;
+  margin-bottom: 12px;
+  animation: bounceIn 400ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.onboarding-tooltip h3 {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  text-align: center;
+  margin: 0 0 8px;
+}
+
+.onboarding-tooltip p {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.55;
+  text-align: center;
+  margin: 0 0 18px;
+}
+
+/* ── Dots de progresso ────────────────────────────────────── */
+
+.onb-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.onb-dot {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-gray-200);
+  transition: all 300ms var(--transition-bounce);
+  width: 6px;
+}
+
+.onb-dot.ativo {
+  width: 20px;
+  background: var(--color-primary-500);
+}
+
+/* ── Ações ────────────────────────────────────────────────── */
+
+.onb-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.onb-btn-skip {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 12px;
+  background: transparent;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: var(--font-family-sans);
+}
+
+.onb-btn-skip:hover {
+  background: var(--color-gray-50);
+  border-color: var(--color-gray-300);
+  color: var(--color-text-secondary);
+}
+
+.onb-btn-next {
+  flex: 2;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 12px;
+  background: var(--gradient-primary);
+  color: var(--color-text-inverse);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: 0 4px 12px rgba(0, 114, 63, 0.25);
+  font-family: var(--font-family-sans);
+}
+
+.onb-btn-next:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 114, 63, 0.35);
+}
+
+.onb-btn-next:active {
+  transform: scale(0.97);
+  box-shadow: none;
+}
+
+/* ── Input de renda no passo de configuração ─────────────── */
+
+.onb-renda-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--color-gray-50);
+  border: 2px solid var(--color-border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.onb-renda-group:focus-within {
+  border-color: var(--color-primary-500);
+  background: var(--color-bg-card);
+  box-shadow: 0 0 0 3px rgba(0, 114, 63, 0.1);
+}
+
+.onb-renda-prefix {
+  font-weight: 700;
+  font-size: var(--font-size-base);
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.onb-renda-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  outline: none;
+  font-family: var(--font-family-sans);
+  min-width: 0;
+}
+
+.onb-renda-input::placeholder {
+  color: var(--color-gray-300);
+  font-weight: 400;
+}
+
+[data-theme="dark"] .onb-renda-group {
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.12);
+}
+
+[data-theme="dark"] .onb-renda-group:focus-within {
+  background: rgba(255,255,255,0.08);
+}
+
+[data-theme="dark"] .onb-renda-input {
+  color: var(--color-gray-100);
+}
+
+/* ── Badge "Novo" para destacar nav item ──────────────────── */
+
+.nav-btn.onb-highlight::after {
+  content: '•';
+  position: absolute;
+  top: 4px;
+  right: 50%;
+  transform: translateX(50%);
+  color: var(--color-primary-400);
+  font-size: 20px;
+  animation: pulse 1s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ── Dark mode ────────────────────────────────────────────── */
+
+[data-theme="dark"] .onboarding-tooltip {
+  background: var(--color-bg-dark-card);
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.5),
+    0 6px 20px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .onb-btn-skip {
+  border-color: rgba(255,255,255,0.12);
+  color: var(--color-gray-400);
+}
+
+[data-theme="dark"] .onb-btn-skip:hover {
+  background: rgba(255,255,255,0.05);
+}
