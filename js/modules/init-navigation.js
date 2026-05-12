@@ -242,5 +242,4 @@ function mudarAba(nomeAba) {
 
 // Export para compatibilidade
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { INIT_NAVIGATION, mudarAba };
-}
+  module.ex

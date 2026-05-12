@@ -1,0 +1,433 @@
+/**
+ * ia.css — Estilos para componentes de IA (Fase 8)
+ * Previsão, Alertas, OCR, Insights, Saúde Financeira
+ */
+
+/* ─────────────────────────────────────────────────────────────────
+   ALERTAS (dashboard-alertas)
+───────────────────────────────────────────────────────────────── */
+
+.dashboard-alertas {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.alerta-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border-left: 4px solid transparent;
+  background: var(--cor-surface, #fff);
+  box-shadow: 0 1px 4px rgba(0,0,0,.07);
+  animation: alerta-entrada .25s ease;
+}
+
+@keyframes alerta-entrada {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.alerta-critico { border-left-color: #e53e3e; background: #fff5f5; }
+.alerta-alto    { border-left-color: #dd6b20; background: #fffaf0; }
+.alerta-medio   { border-left-color: #d69e2e; background: #fffff0; }
+.alerta-baixo   { border-left-color: #3182ce; background: #ebf8ff; }
+
+[data-tema="dark"] .alerta-critico { background: rgba(229,62,62,.12); }
+[data-tema="dark"] .alerta-alto    { background: rgba(221,107,32,.12); }
+[data-tema="dark"] .alerta-medio   { background: rgba(214,158,46,.12); }
+[data-tema="dark"] .alerta-baixo   { background: rgba(49,130,206,.12); }
+
+.alerta-conteudo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.alerta-titulo {
+  font-size: .85rem;
+  font-weight: 700;
+  color: var(--cor-text-1, #1a202c);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.alerta-msg {
+  font-size: .8rem;
+  color: var(--cor-text-2, #4a5568);
+  line-height: 1.4;
+}
+
+.alerta-acoes {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.alerta-btn {
+  font-size: .72rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid currentColor;
+  background: transparent;
+  cursor: pointer;
+  color: var(--cor-primary, #3182ce);
+  white-space: nowrap;
+  transition: background .15s;
+}
+.alerta-btn:hover { background: var(--cor-primary, #3182ce); color: #fff; }
+
+.alerta-dispensar {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--cor-text-3, #a0aec0);
+  font-size: .85rem;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color .15s;
+}
+.alerta-dispensar:hover { color: #e53e3e; }
+
+.alertas-ver-mais {
+  font-size: .78rem;
+  color: var(--cor-primary, #3182ce);
+  background: none;
+  border: 1px dashed currentColor;
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+  margin-top: 2px;
+}
+
+.alertas-vazio {
+  font-size: .85rem;
+  color: var(--cor-success, #38a169);
+  padding: 12px;
+  text-align: center;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   PREVISÃO MINI (dashboard)
+───────────────────────────────────────────────────────────────── */
+
+.previsao-mini {
+  margin: 6px 0 4px;
+}
+
+.previsao-mini-inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: var(--cor-surface, #fff);
+  box-shadow: 0 1px 4px rgba(0,0,0,.07);
+  border-left: 3px solid var(--cor-primary, #3182ce);
+}
+
+.previsao-mini-label {
+  font-size: .78rem;
+  color: var(--cor-text-2, #4a5568);
+  white-space: nowrap;
+}
+
+.previsao-mini-saldo {
+  font-size: .95rem;
+  font-weight: 700;
+  flex: 1;
+}
+.previsao-mini-saldo.pos { color: var(--cor-success, #38a169); }
+.previsao-mini-saldo.neg { color: var(--cor-danger,  #e53e3e); }
+
+.previsao-mini-tend {
+  font-size: 1rem;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   PREVISÃO PAINEL COMPLETO
+───────────────────────────────────────────────────────────────── */
+
+.previsao-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.previsao-titulo {
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--cor-text-1, #1a202c);
+  margin: 0;
+}
+
+.previsao-tendencia {
+  font-size: .8rem;
+  font-weight: 600;
+}
+
+.previsao-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.previsao-card {
+  background: var(--cor-bg, #f7fafc);
+  border: 1px solid var(--cor-border, #e2e8f0);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.previsao-card-mes {
+  font-size: .8rem;
+  font-weight: 700;
+  color: var(--cor-text-2, #4a5568);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.previsao-conf { font-size: .75rem; cursor: help; }
+
+.previsao-card-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+}
+
+.previsao-label { font-size: .72rem; color: var(--cor-text-3, #a0aec0); }
+
+.previsao-valor {
+  font-size: .82rem;
+  font-weight: 600;
+}
+.previsao-valor.receita { color: var(--cor-success, #38a169); }
+.previsao-valor.despesa { color: var(--cor-danger,  #e53e3e); }
+
+.previsao-card-saldo {
+  font-size: .8rem;
+  font-weight: 700;
+  padding-top: 4px;
+  border-top: 1px solid var(--cor-border, #e2e8f0);
+}
+.previsao-card-saldo.positivo { color: var(--cor-success, #38a169); }
+.previsao-card-saldo.negativo { color: var(--cor-danger,  #e53e3e); }
+
+.previsao-vazia {
+  font-size: .85rem;
+  color: var(--cor-text-2, #4a5568);
+  padding: 16px;
+  text-align: center;
+}
+
+.previsao-meta {
+  font-size: .8rem;
+  color: var(--cor-text-2, #4a5568);
+  text-align: center;
+  margin-top: 8px;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   SAÚDE FINANCEIRA
+───────────────────────────────────────────────────────────────── */
+
+.previsao-saude {
+  background: var(--cor-bg, #f7fafc);
+  border: 1px solid var(--cor-border, #e2e8f0);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.saude-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.saude-titulo {
+  font-size: .85rem;
+  font-weight: 700;
+  color: var(--cor-text-1, #1a202c);
+}
+
+.saude-score {
+  font-size: 1.4rem;
+  font-weight: 800;
+  line-height: 1;
+}
+.saude-score small { font-size: .65rem; color: var(--cor-text-3, #a0aec0); }
+
+.saude-barra-bg {
+  height: 6px;
+  background: var(--cor-border, #e2e8f0);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.saude-barra-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width .5s ease;
+}
+
+.saude-detalhes {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.saude-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .78rem;
+}
+
+.saude-check { flex-shrink: 0; }
+.saude-item-nome { font-weight: 600; color: var(--cor-text-1, #1a202c); flex: 1; }
+.saude-item-desc { color: var(--cor-text-3, #a0aec0); font-size: .73rem; }
+
+/* ─────────────────────────────────────────────────────────────────
+   INSIGHTS (orçamento)
+───────────────────────────────────────────────────────────────── */
+
+.insight {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: .82rem;
+  margin-bottom: 6px;
+  border-left: 3px solid transparent;
+  background: var(--cor-surface, #fff);
+  color: var(--cor-text-1, #1a202c);
+}
+
+.insight-alta   { border-left-color: #e53e3e; background: #fff5f5; }
+.insight-media  { border-left-color: #d69e2e; background: #fffff0; }
+.insight-baixa  { border-left-color: #3182ce; background: #ebf8ff; }
+.insight-ok     { border-left-color: #38a169; background: #f0fff4; }
+
+.btn-insight {
+  font-size: .72rem;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--cor-primary, #3182ce);
+  background: transparent;
+  color: var(--cor-primary, #3182ce);
+  cursor: pointer;
+  margin-left: 6px;
+  transition: background .15s, color .15s;
+}
+.btn-insight:hover { background: var(--cor-primary, #3182ce); color: #fff; }
+
+.orc-insights-titulo {
+  font-size: .82rem;
+  font-weight: 700;
+  color: var(--cor-text-2, #4a5568);
+  margin-bottom: 8px;
+}
+
+.orc-insight-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: .78rem;
+}
+
+.orc-insight-cat {
+  width: 90px;
+  font-weight: 600;
+  color: var(--cor-text-1, #1a202c);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.orc-insight-barra-bg {
+  flex: 1;
+  height: 5px;
+  background: var(--cor-border, #e2e8f0);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.orc-insight-barra-fill {
+  height: 100%;
+  background: var(--cor-primary, #3182ce);
+  border-radius: 99px;
+  transition: width .4s ease;
+}
+
+.orc-insight-pct {
+  font-size: .72rem;
+  color: var(--cor-text-3, #a0aec0);
+  width: 30px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   OCR — BOTÃO DE SCAN
+───────────────────────────────────────────────────────────────── */
+
+.ocr-btn {
+  background: var(--cor-surface, #fff) !important;
+  color: var(--cor-primary, #3182ce) !important;
+  border: 1px solid var(--cor-primary, #3182ce) !important;
+  border-radius: 8px !important;
+  font-size: 1.1rem !important;
+  width: 36px !important;
+  transition: background .15s, transform .12s;
+}
+
+.ocr-btn:active { transform: scale(.92); }
+
+.ocr-btn:hover {
+  background: var(--cor-primary, #3182ce) !important;
+  color: #fff !important;
+}
+
+.er-feedback-sucesso { color: var(--cor-success, #38a169); }
+.er-feedback-erro    { color: var(--cor-danger,  #e53e3e); }
+.er-feedback-aviso   { color: var(--cor-warning, #d69e2e); }
+.er-feedback-info    { color: var(--cor-text-2,  #4a5568); }
+
+/* ─────────────────────────────────────────────────────────────────
+   TOGGLE PREVISÃO (mesmo padrão toggle-graficos)
+───────────────────────────────────────────────────────────────── */
+
+#secao-previsao {
+  padding: 0;
+}
+
+#secao-previsao .dashboard-section-toggle {
+  width: 100%;
+}
+
+#previsao-painel {
+  padding: 14px 4px 6px;
+}

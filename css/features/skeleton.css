@@ -1,0 +1,150 @@
+/**
+ * skeleton.css — Skeleton Loaders para carregamento premium
+ * Fase 7 UX Premium — Depende de: design-system.css
+ */
+
+/* ── Animação shimmer (compositor thread via transform) ───── */
+
+@keyframes shimmer {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(100%); }
+}
+
+/* ── Base skeleton ────────────────────────────────────────── */
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-gray-100);
+  border-radius: var(--radius-md);
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent          0%,
+    var(--color-gray-50) 50%,
+    transparent          100%
+  );
+  animation: shimmer 1.4s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* ── Dashboard Skeleton wrapper ───────────────────────────── */
+
+.dashboard-skeleton {
+  animation: fadeIn var(--transition-fast);
+}
+
+/* Saudação */
+.dashboard-skeleton .sk-greeting {
+  height: 22px;
+  width: 55%;
+  margin-bottom: 6px;
+}
+
+.dashboard-skeleton .sk-greeting-sub {
+  height: 14px;
+  width: 38%;
+  margin-bottom: 20px;
+}
+
+/* Card saldo */
+.dashboard-skeleton .sk-saldo {
+  height: 108px;
+  border-radius: 16px;
+  margin-bottom: 16px;
+}
+
+/* Cards receita/despesa */
+.dashboard-skeleton .sk-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.dashboard-skeleton .sk-card-item {
+  height: 76px;
+  border-radius: 12px;
+}
+
+/* Indicadores grid 2x2 */
+.dashboard-skeleton .sk-indicadores {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.dashboard-skeleton .sk-indicador {
+  height: 56px;
+  border-radius: 10px;
+}
+
+/* Cabeçalho seção transações */
+.dashboard-skeleton .sk-section-header {
+  height: 18px;
+  width: 50%;
+  margin-bottom: 14px;
+  border-radius: 6px;
+}
+
+/* Itens de transação */
+.dashboard-skeleton .sk-tx-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.dashboard-skeleton .sk-tx-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.dashboard-skeleton .sk-tx-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.dashboard-skeleton .sk-tx-line {
+  height: 13px;
+  margin-bottom: 6px;
+  border-radius: 4px;
+}
+
+.dashboard-skeleton .sk-tx-line-short {
+  height: 11px;
+  width: 52%;
+  border-radius: 4px;
+}
+
+.dashboard-skeleton .sk-tx-val {
+  width: 58px;
+  height: 15px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+/* ── Ocultar conteúdo real enquanto skeleton está presente ── */
+/* Selector de irmão: todos os elementos após #dashboard-skeleton ficam ocultos */
+
+#dashboard-skeleton ~ * {
+  display: none !important;
+}
+
+/* ── Dark mode ────────────────────────────────────────────── */
+
+[data-theme="dark"] .skeleton {
+  background: var(--color-bg-dark-elevated);
+}
+
+[data-theme="dark"] .skeleton::after {
+  background: linear-gradient(
+    90d

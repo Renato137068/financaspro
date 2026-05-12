@@ -1,0 +1,105 @@
+version: '3.9'
+
+services:
+  # ─── PostgreSQL ─────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: financaspro-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: financaspro
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+      POSTGRES_DB: financaspro
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U financaspro"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Redis ──────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: financaspro-redis
+    restart: unless-stopped
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --requirepass ${REDIS_PASSWORD:-redispass}
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redispass}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── App (API + Frontend) ────────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: financaspro-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgresql://financaspro:${DB_PASSWORD:-changeme}@postgres:5432/financaspro?schema=public
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redispass}@redis:6379
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?obrigatório}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?obrigatório}
+      CORS_ORIGIN: ${APP_URL:-http://localhost:4000}
+      APP_URL: ${APP_URL:-http://localhost:4000}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-FinançasPro <noreply@financaspro.com.br>}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "${PORT:-4000}:4000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ─── Worker (processo separado para filas BullMQ) ────────────────────────────
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: financaspro-worker
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["node", "backend/worker-entrypoint.js"]
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://financaspro:${DB_PASSWORD:-changeme}@postgres:5432/financaspro?schema=public
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redispass}@redis:6379
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-FinançasPro <noreply@financaspro.com.br>}
+
+volumes:
+  postgres_data:
+  redis_data:
