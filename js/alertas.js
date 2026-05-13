@@ -288,17 +288,22 @@ var ALERTAS = {
   _mostrarTodos: function() {
     var el = document.getElementById('dashboard-alertas');
     if (!el) return;
-    // Re-renderizar sem limite
     var alertas  = this._ativos;
     var self     = this;
     var classesG = { critica: 'alerta-critico', alta: 'alerta-alto', media: 'alerta-medio', baixa: 'alerta-baixo' };
+    var esc = function(s) {
+      return typeof UTILS !== 'undefined' && typeof UTILS.escapeHtml === 'function'
+        ? UTILS.escapeHtml(s) : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    };
 
     var html = alertas.map(function(a) {
       var cls   = classesG[a.gravidade] || 'alerta-baixo';
-      var botao = a.acao ? '<button class="alerta-btn" data-alerta-acao="' + a.acao + '" data-alerta-params="' + JSON.stringify(a.parametros || {}) + '">' + self._acaoLabel(a.acao) + '</button>' : '';
+      var botao = a.acao
+        ? '<button class="alerta-btn" data-alerta-acao="' + esc(a.acao) + '" data-alerta-params="' + esc(JSON.stringify(a.parametros || {})) + '">' + self._acaoLabel(a.acao) + '</button>'
+        : '';
       return '<div class="alerta-item ' + cls + '">' +
-        '<div class="alerta-conteudo"><strong class="alerta-titulo">' + a.titulo + '</strong><span class="alerta-msg">' + a.msg + '</span></div>' +
-        '<div class="alerta-acoes">' + botao + '<button class="alerta-dispensar" data-alerta-id="' + a.id + '">✕</button></div>' +
+        '<div class="alerta-conteudo"><strong class="alerta-titulo">' + a.titulo + '</strong><span class="alerta-msg">' + esc(a.msg) + '</span></div>' +
+        '<div class="alerta-acoes">' + botao + '<button class="alerta-dispensar" data-alerta-id="' + esc(a.id) + '">✕</button></div>' +
       '</div>';
     }).join('');
 

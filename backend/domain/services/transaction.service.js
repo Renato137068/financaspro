@@ -1,5 +1,6 @@
 // backend/domain/services/transaction.service.js
 import { TransactionRepository } from '../repositories/transaction.repository.js';
+import { StateService } from './state.service.js';
 import { AppError } from '../errors.js';
 
 export const TransactionService = {
@@ -15,17 +16,22 @@ export const TransactionService = {
 
   async create(userId, body) {
     const { amount, date, ...rest } = body;
-    return TransactionRepository.create({ ...rest, amount, date: new Date(date), userId });
+    const tx = await TransactionRepository.create({ ...rest, amount, date: new Date(date), userId });
+    StateService.invalidateCache(userId);
+    return tx;
   },
 
   async update(id, userId, body) {
     await this.getById(id, userId);
     const { date, ...rest } = body;
-    return TransactionRepository.update(id, { ...rest, ...(date && { date: new Date(date) }) });
+    const tx = await TransactionRepository.update(id, { ...rest, ...(date && { date: new Date(date) }) });
+    StateService.invalidateCache(userId);
+    return tx;
   },
 
   async remove(id, userId) {
     await this.getById(id, userId);
     await TransactionRepository.delete(id);
+    StateService.invalidateCache(userId);
   },
 };

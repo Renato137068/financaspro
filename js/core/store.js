@@ -517,7 +517,8 @@ const APP_STORE = {
 
 // ============================================================
 // ADAPTADOR DE COMPATIBILIDADE: APP_STATE
-// Mantém API antiga funcionando, mas delega para APP_STORE
+// @deprecated — use APP_STORE diretamente.
+// Mantido apenas para código legado em init.js e módulos antigos.
 // ============================================================
 
 var APP_STATE = {

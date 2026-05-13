@@ -181,3 +181,134 @@
   font-family: var(--font-family-sans);
   min-width: 0;
 }
+
+.onb-renda-input::placeholder {
+  color: var(--color-gray-300);
+  font-weight: 400;
+}
+
+[data-theme="dark"] .onb-renda-group {
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.12);
+}
+
+[data-theme="dark"] .onb-renda-group:focus-within {
+  background: rgba(255,255,255,0.08);
+}
+
+[data-theme="dark"] .onb-renda-input {
+  color: var(--color-gray-100);
+}
+
+/* ── Badge "Novo" para destacar nav item ──────────────────── */
+
+.nav-btn.onb-highlight::after {
+  content: '•';
+  position: absolute;
+  top: 4px;
+  right: 50%;
+  transform: translateX(50%);
+  color: var(--color-primary-400);
+  font-size: 20px;
+  animation: pulse 1s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ── Transições direcionais de passo ──────────────────────── */
+
+@keyframes onbStepRight {
+  from { opacity: 0; transform: translate(-50%, -50%) translateX(22px) scale(0.94); }
+  to   { opacity: 1; transform: translate(-50%, -50%) translateX(0)    scale(1); }
+}
+
+@keyframes onbStepLeft {
+  from { opacity: 0; transform: translate(-50%, -50%) translateX(-22px) scale(0.94); }
+  to   { opacity: 1; transform: translate(-50%, -50%) translateX(0)     scale(1); }
+}
+
+.onb-step-entering      { animation: onbStepRight 300ms cubic-bezier(0.34, 1.5, 0.64, 1) both; }
+.onb-step-entering-back { animation: onbStepLeft  300ms cubic-bezier(0.34, 1.5, 0.64, 1) both; }
+
+/* ── Barra de progresso ───────────────────────────────────── */
+
+.onb-progress-track {
+  height: 4px;
+  background: var(--color-gray-100);
+  border-radius: 2px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.onb-progress-fill {
+  height: 100%;
+  background: var(--gradient-primary);
+  border-radius: 2px;
+  transition: width 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ── Cabeçalho de passo (contador n/total) ────────────────── */
+
+.onb-passo-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 6px;
+}
+
+.onb-passo-num {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ── Dica contextual ──────────────────────────────────────── */
+
+.onb-dica {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-align: center;
+  margin: -6px 0 14px;
+  opacity: 0.75;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+/* ── Estados de erro no campo renda ──────────────────────── */
+
+.onb-erro {
+  font-size: var(--font-size-xs);
+  color: var(--color-danger);
+  text-align: center;
+  margin: -8px 0 8px;
+  font-weight: var(--font-weight-medium);
+}
+
+.onb-renda-erro-state {
+  border-color: var(--color-danger) !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+}
+
+/* ── Dot concluído ────────────────────────────────────────── */
+
+.onb-dot.concluido {
+  width: 20px;
+  background: var(--color-primary-300);
+}
+
+/* ── Dark mode ────────────────────────────────────────────── */
+
+[data-theme="dark"] .onboarding-tooltip {
+  background: var(--color-bg-dark-card);
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.5),
+    0 6px 20px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .onb-btn-skip {
+  border-color: rgba(255,255,255,0.12);
+  color: var(--color-gray-400);
+}
+
+[data-theme="dark"] .onb-btn-skip:hover {
+  background: rgba(255,255,255,0.05);
+}

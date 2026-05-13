@@ -194,3 +194,87 @@ var ONBOARDING = (function() {
 
     /* Validar renda — obrigatória no passo rendaStep */
     if (p.rendaStep) {
+      var inp  = document.getElementById('onb-renda-val');
+      var erro = document.getElementById('onb-renda-erro');
+      var grp  = document.getElementById('onb-renda-group');
+      var val  = inp ? parseFloat((inp.value || '').replace(',', '.')) : 0;
+
+      if (!val || val <= 0) {
+        if (erro) erro.style.display = 'block';
+        if (grp)  grp.classList.add('onb-renda-erro-state');
+        if (inp) {
+          inp.classList.remove('anim-shake');
+          void inp.offsetHeight;
+          inp.classList.add('anim-shake');
+          inp.addEventListener('animationend', function() {
+            inp.classList.remove('anim-shake');
+          }, { once: true });
+          inp.focus();
+        }
+        return;
+      }
+      if (erro) erro.style.display = 'none';
+      if (grp)  grp.classList.remove('onb-renda-erro-state');
+      try {
+        if (typeof DADOS !== 'undefined' && DADOS.salvarConfig) {
+          DADOS.salvarConfig({ renda: val });
+        }
+      } catch(e) {}
+    }
+
+    /* Navegar para aba indicada */
+    if (p.navBtn) {
+      var fn = (typeof INIT_NAVIGATION !== 'undefined' && INIT_NAVIGATION.mudarAba)
+        ? INIT_NAVIGATION.mudarAba.bind(INIT_NAVIGATION)
+        : (typeof mudarAba !== 'undefined' ? mudarAba : null);
+      if (fn) try { fn(p.navBtn); } catch (e) {}
+    }
+
+    _passo++;
+    if (_passo >= _passos.length) {
+      encerrar();
+    } else {
+      _renderPasso('forward');
+    }
+  }
+
+  /* ── API pública ───────────────────────────────────────── */
+
+  function iniciar() {
+    if (_ativo || _marcado()) return;
+    _ativo  = true;
+    _passo  = 0;
+    _passos = _getPassos();
+
+    setTimeout(function() {
+      _criarOverlay();
+      _renderPasso('forward');
+    }, 900);
+  }
+
+  function encerrar() {
+    _concluir();
+    document.removeEventListener('keydown', _onKeydown);
+
+    if (_overlay) {
+      _overlay.style.opacity    = '0';
+      _overlay.style.transition = 'opacity 220ms ease';
+      setTimeout(function() {
+        if (_overlay && _overlay.parentNode) _overlay.parentNode.removeChild(_overlay);
+        _overlay = null;
+        _tooltip = null;
+      }, 230);
+    }
+
+    try {
+      var fn = (typeof INIT_NAVIGATION !== 'undefined' && INIT_NAVIGATION.mudarAba)
+        ? INIT_NAVIGATION.mudarAba.bind(INIT_NAVIGATION)
+        : (typeof mudarAba !== 'undefined' ? mudarAba : null);
+      if (fn) fn('resumo');
+    } catch (e) {}
+
+    _ativo = false;
+  }
+
+  return { iniciar: iniciar, encerrar: encerrar };
+})();

@@ -5,6 +5,7 @@
 
 var SKELETON = (function() {
   var _ativo = false;
+  var _failsafeTimer = null;
 
   function _html() {
     var tx = ['', '', ''].map(function() {
@@ -59,6 +60,12 @@ var SKELETON = (function() {
     var wrap = document.createElement('div');
     wrap.innerHTML = _html();
     aba.insertBefore(wrap.firstChild, aba.firstChild);
+
+    /* Failsafe: evita travar no skeleton se algum render falhar */
+    clearTimeout(_failsafeTimer);
+    _failsafeTimer = setTimeout(function() {
+      esconder();
+    }, 1800);
   }
 
   function esconder() {
@@ -82,12 +89,19 @@ var SKELETON = (function() {
     });
 
     filhos.forEach(function(el, i) {
+      if (el.dataset && el.dataset.skHidden === '1') {
+        el.style.display = '';
+        delete el.dataset.skHidden;
+      }
       el.style.opacity    = '0';
       el.style.transform  = 'translateY(6px)';
       el.style.transition = 'opacity 240ms ease, transform 240ms ease';
       setTimeout(function() {
         el.style.opacity   = '1';
         el.style.transform = 'translateY(0)';
+        setTimeout(function() {
+          el.style.transition = '';
+        }, 260);
       }, 80 + i * 40);
     });
   }
@@ -109,3 +123,12 @@ var SKELETON = (function() {
     iniciarSeNecessario: iniciarSeNecessario
   };
 })();
+
+/* Fallback global para execução local (file://): remove skeleton após bootstrap */
+window.addEventListener('load', function() {
+  setTimeout(function() {
+    if (typeof SKELETON !== 'undefined' && SKELETON.esconder) {
+      SKELETON.esconder();
+    }
+  }, 2200);
+});

@@ -47,9 +47,36 @@
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
-  outline: none;
+  outline: 3px solid var(--color-primary-500);
+  outline-offset: 2px;
   border-color: var(--color-primary-500);
   box-shadow: 0 0 0 3px var(--color-overlay-sm);
+}
+
+.form-group input.error,
+.form-group select.error,
+.form-group textarea.error {
+  border-color: var(--color-danger);
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.form-group input.success,
+.form-group select.success,
+.form-group textarea.success {
+  border-color: var(--color-success);
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.form-error-message {
+  display: none;
+  margin-top: var(--space-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-danger);
+  font-weight: var(--font-weight-semibold);
+}
+
+.form-error-message.visible {
+  display: block;
 }
 
 .form-group textarea {

@@ -1,19 +1,11 @@
-/**
- * Indicador — KPI card (ícone + valor + label)
- * API: UI.Indicador.render({ icone, valor, label, tipo, barra? }) → Element
- */
+// FinançasPro — Indicador: KPI card (ícone + valor + label)
+// v11.0 — Depende de: ProgressBar.js (opcional, só quando barra fornecida)
 (function() {
   var UI = window.UI || {};
 
   UI.Indicador = {
-    /**
-     * @param {string} icone  - emoji
-     * @param {string} valor  - texto principal (ex: "75%", "R$ 500", "12 dias")
-     * @param {string} label  - descrição abaixo do valor
-     * @param {string} tipo   - 'positivo'|'negativo'|'alerta'|'neutro'
-     * @param {Object} [barra]- { pct: number, cor: string } — barra opcional
-     * @returns {HTMLElement}
-     */
+    // render(icone, valor, label, tipo, barra?) → HTMLElement
+    // tipo: 'positivo'|'negativo'|'alerta'|'neutro' — barra: { pct, cor }
     render: function(icone, valor, label, tipo, barra) {
       var el = document.createElement('div');
       el.className = 'indicador indicador-' + (tipo || 'neutro');

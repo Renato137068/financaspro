@@ -48,8 +48,12 @@ export const registerSchema = z.object({
   email: z.string().trim().email('Email inválido').toLowerCase(),
   password: z
     .string()
-    .min(6, 'Senha deve ter pelo menos 6 caracteres')
-    .max(128, 'Senha muito longa'),
+    .min(8, 'Senha deve ter pelo menos 8 caracteres')
+    .max(128, 'Senha muito longa')
+    .regex(
+      /[0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/,
+      'Senha deve conter pelo menos um número ou caractere especial',
+    ),
 });
 
 export const loginSchema = z.object({

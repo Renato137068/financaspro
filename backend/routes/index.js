@@ -7,6 +7,8 @@ import accountsRouter from './accounts.js';
 import budgetsRouter from './budgets.js';
 import recurringRouter from './recurring.js';
 import stateRouter from './state.js';
+import orgsRouter from './orgs.js';
+import billingRouter from './billing.js';
 
 const router = Router();
 
@@ -17,5 +19,9 @@ router.use('/accounts', accountsRouter);
 router.use('/budgets', budgetsRouter);
 router.use('/recorrentes', recurringRouter);
 router.use('/state', stateRouter);
+
+// Fase 10 — SaaS
+router.use('/orgs', orgsRouter);
+router.use('/billing', billingRouter);
 
 export default router;

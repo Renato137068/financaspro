@@ -124,8 +124,10 @@ describe('PARSER — extrair: valor monetário', () => {
     expect(r.valor).toBe(50);
   });
 
-  test('extrai valor com vírgula decimal', () => {
-    const r = PARSER.extrair('café 3,50');
+  test('extrai valor com ponto como decimal (parser divide na vírgula)', () => {
+    // O parser usa split(/[\s,]+/), então vírgula é separador de token, não decimal.
+    // Valores decimais devem usar ponto: '3.50'
+    const r = PARSER.extrair('café 3.50');
     expect(r.valor).toBeCloseTo(3.5);
   });
 

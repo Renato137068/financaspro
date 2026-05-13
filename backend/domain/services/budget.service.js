@@ -1,5 +1,6 @@
 // backend/domain/services/budget.service.js
 import { BudgetRepository } from '../repositories/budget.repository.js';
+import { StateService } from './state.service.js';
 import { AppError } from '../errors.js';
 
 export const BudgetService = {

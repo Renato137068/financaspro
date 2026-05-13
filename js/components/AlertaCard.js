@@ -1,16 +1,10 @@
-/**
- * AlertaCard — card de alertas de orçamento
- * API: UI.AlertaCard.render(excedidos, avisos) → Element|null
- */
+// FinançasPro — AlertaCard: card de alertas de orçamento
+// v11.0 — sem dependências externas
 (function() {
   var UI = window.UI || {};
 
   UI.AlertaCard = {
-    /**
-     * @param {Array} excedidos - itens com status 'excedido'
-     * @param {Array} avisos    - itens com status 'alerta'
-     * @returns {HTMLElement|null} null se não há alertas
-     */
+    // render(excedidos, avisos) → HTMLElement|null — null quando não há alertas
     render: function(excedidos, avisos) {
       if (!excedidos.length && !avisos.length) return null;
 

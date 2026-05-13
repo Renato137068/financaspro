@@ -1,6 +1,7 @@
-// backend/lib/logger.js — logging estruturado com Pino
+// backend/lib/logger.js — logging estruturado com Pino + trace context automático
 import pino from 'pino';
 import CONFIG from '../config.js';
+import { getTraceContext } from './tracer.js';
 
 const logger = pino({
   level: CONFIG.logging.level,
@@ -17,6 +18,11 @@ const logger = pino({
         },
         timestamp: pino.stdTimeFunctions.isoTime,
       }),
+  // Injeta automaticamente traceId/spanId em todo log emitido dentro de uma request
+  mixin() {
+    const ctx = getTraceContext();
+    return ctx ? { traceId: ctx.traceId, spanId: ctx.spanId } : {};
+  },
   redact: {
     paths: ['req.headers.authorization', 'body.password', 'body.passwordHash', 'body.refreshToken'],
     censor: '[REDACTED]',

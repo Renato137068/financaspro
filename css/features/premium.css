@@ -1,0 +1,633 @@
+/**
+ * features/premium.css — Fase 4: Experiência Premium
+ * Sistema de animações sofisticadas, tipografia display, profundidade visual
+ * e motion design para identidade high-end.
+ * Depende de: design-system.css
+ */
+
+/* ══════════════════════════════════════════════════════════════
+   KEYFRAMES — Biblioteca de animações premium
+   ══════════════════════════════════════════════════════════════ */
+
+/* Shimmer sweep — luz varrendo a superfície */
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+/* Gradient flow — gradiente animado em loop */
+@keyframes gradientFlow {
+  0%, 100% { background-position: 0%   50%; }
+  50%       { background-position: 100% 50%; }
+}
+
+/* Glow pulse — brilho verde respirando */
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0  0px 0px rgba(0, 114, 63, 0.00); }
+  50%       { box-shadow: 0 0 24px 4px rgba(0, 114, 63, 0.22); }
+}
+
+/* Card entrance — entrada com elevação */
+@keyframes cardEntrance {
+  0%   { opacity: 0; transform: translateY(14px) scale(0.97); }
+  60%  { opacity: 1; }
+  100% { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+/* Number reveal — slot vertical para valores */
+@keyframes numberReveal {
+  0%   { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0);   }
+}
+
+/* Text slide up — reveal de texto com blur */
+@keyframes textSlideUp {
+  0%   { opacity: 0; transform: translateY(10px); filter: blur(3px); }
+  100% { opacity: 1; transform: translateY(0);    filter: blur(0);   }
+}
+
+/* Icon spring — bounce elástico ao ativar */
+@keyframes iconSpring {
+  0%   { transform: scale(1);            }
+  30%  { transform: scale(1.28) rotate(-6deg); }
+  60%  { transform: scale(0.91) rotate(3deg);  }
+  100% { transform: scale(1)    rotate(0deg);  }
+}
+
+/* Border glow — focus ring pulsante */
+@keyframes borderGlow {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(0, 114, 63, 0.12); }
+  50%       { box-shadow: 0 0 0 4px rgba(0, 114, 63, 0.26); }
+}
+
+/* Surface light — linha de luz passando */
+@keyframes surfaceLight {
+  0%   { transform: translateX(-120%) skewX(-15deg); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translateX(320%)  skewX(-15deg); opacity: 0; }
+}
+
+/* Soft float — levitação para ícones decorativos */
+@keyframes softFloat {
+  0%, 100% { transform: translateY(0);   }
+  50%       { transform: translateY(-5px); }
+}
+
+/* Press feedback — toque premium */
+@keyframes magneticPress {
+  0%   { transform: scale(1);    }
+  40%  { transform: scale(0.96); }
+  100% { transform: scale(1);    }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   TIPOGRAFIA PREMIUM
+   ══════════════════════════════════════════════════════════════ */
+
+/* Números financeiros — tabular-nums, tracking negativo */
+.card-valor,
+.saldo-valor,
+.indicador-valor,
+.transacao-valor,
+.ext-valor,
+.num-financeiro {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -0.02em;
+}
+
+/* Hero — saldo principal */
+.card-saldo-principal .saldo-valor {
+  font-family: var(--font-family-display);
+  font-size: clamp(22px, 6vw, 28px);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* Display — indicadores (renda, dias etc.) */
+.indicador-valor {
+  font-family: var(--font-family-display);
+  font-size: clamp(18px, 5vw, 22px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+/* Valores nos cards receita/despesa */
+.card-valor {
+  font-family: var(--font-family-display);
+  font-size: clamp(20px, 5.5vw, 24px);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+}
+
+/* Header e sidebar brand */
+header h1,
+.sidebar-title {
+  font-family: var(--font-family-display);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+
+/* Saudação do dashboard */
+.greeting-hello {
+  font-family: var(--font-family-display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* Títulos de seção — mais arejados */
+.secao-titulo {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+}
+
+/* Utilitário: texto gradient verde */
+.text-gradient-green {
+  background: linear-gradient(135deg, #005c33 0%, #00a355 50%, #10b981 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CARD SALDO PRINCIPAL — Profundidade máxima
+   ══════════════════════════════════════════════════════════════ */
+
+.card-saldo-principal {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+}
+
+.card-saldo-principal.saldo-positivo {
+  background: linear-gradient(145deg, #004d2e 0%, #005c33 30%, #00723f 60%, #059669 85%, #10b981 100%);
+  box-shadow:
+    inset 0  1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.18),
+    0  4px  8px rgba(0,  80, 48, 0.28),
+    0 14px 36px rgba(0, 114, 63, 0.36),
+    0 32px 64px rgba(0, 114, 63, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.card-saldo-principal.saldo-negativo {
+  background: linear-gradient(145deg, #7f1d1d 0%, #991b1b 35%, #b91c1c 65%, #dc2626 88%, #ef4444 100%);
+  box-shadow:
+    inset 0  1px 0 rgba(255, 255, 255, 0.10),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.18),
+    0  4px  8px rgba(120, 20, 20, 0.28),
+    0 14px 36px rgba(185, 28, 28, 0.36),
+    0 32px 64px rgba(185, 28, 28, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+/* Reflexo de luz no topo */
+.card-saldo-principal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 55%);
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Linha de brilho no topo */
+.card-saldo-principal::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.32);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Conteúdo acima dos pseudo-elements */
+.card-saldo-principal > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Shimmer ao passar o mouse */
+.card-saldo-principal:hover::before {
+  animation: surfaceLight 900ms var(--ease-decelerate) both;
+  background: linear-gradient(
+    90deg,
+    transparent        0%,
+    rgba(255,255,255,0.14) 50%,
+    transparent        100%
+  );
+  width: 50%;
+  inset: auto;
+  top: 0; bottom: 0; left: 0;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CARDS RECEITA / DESPESA — Ambient shadow colorido
+   ══════════════════════════════════════════════════════════════ */
+
+.card,
+.dashboard-section,
+.indicador-card,
+.fp-card {
+  transition:
+    transform  280ms var(--ease-decelerate),
+    box-shadow 280ms var(--ease-decelerate);
+}
+
+.card.receita {
+  box-shadow:
+    0 2px 8px  rgba(16, 185, 129, 0.12),
+    0 1px 3px  rgba(0,  0,   0,   0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.80);
+}
+
+.card.despesa {
+  box-shadow:
+    0 2px 8px  rgba(239, 68, 68, 0.12),
+    0 1px 3px  rgba(0,   0,  0,  0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.80);
+}
+
+.card.receita:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0  8px 24px rgba(16, 185, 129, 0.20),
+    0  4px 10px rgba(0,  0,   0,   0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.80);
+}
+
+.card.despesa:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0  8px 24px rgba(239, 68, 68, 0.20),
+    0  4px 10px rgba(0,  0,  0,  0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.80);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DASHBOARD SECTIONS — Elevação suave
+   ══════════════════════════════════════════════════════════════ */
+
+.dashboard-section {
+  box-shadow:
+    0 1px 2px  rgba(16, 24, 40, 0.04),
+    0 4px 16px rgba(16, 24, 40, 0.055),
+    inset 0 1px 0 rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(212, 229, 220, 0.65);
+}
+
+.indicador-card {
+  box-shadow:
+    0 1px 2px  rgba(0,  0,  0,  0.03),
+    0 4px 12px rgba(16, 24, 40, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.90);
+  border: 1px solid rgba(212, 229, 220, 0.55);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   BOTÃO PRIMÁRIO — Shimmer + sombra layered
+   ══════════════════════════════════════════════════════════════ */
+
+.btn-primario,
+.fp-btn--primary {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(145deg, #007a43 0%, #00723f 50%, #005c33 100%);
+  box-shadow: var(--shadow-btn-primary);
+  transition:
+    transform     120ms var(--ease-decelerate),
+    box-shadow    180ms ease,
+    background    180ms ease;
+}
+
+/* Faixa de luz que varre ao hover */
+.btn-primario::before,
+.fp-btn--primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 55%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.20), transparent);
+  transform: translateX(-150%) skewX(-20deg);
+  pointer-events: none;
+}
+
+.btn-primario:hover::before,
+.fp-btn--primary:hover::before {
+  transform: translateX(280%) skewX(-20deg);
+  transition: transform 550ms ease;
+}
+
+.btn-primario:hover:not(:disabled),
+.fp-btn--primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-btn-hover);
+}
+
+.btn-primario:active:not(:disabled),
+.fp-btn--primary:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow:
+    inset 0 1px 0 rgba(0, 0, 0, 0.12),
+    0 2px 6px rgba(0, 114, 63, 0.22);
+  transition-duration: 60ms;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   HEADER — Gradiente rico + luz
+   ══════════════════════════════════════════════════════════════ */
+
+header {
+  background: linear-gradient(145deg, #004d2e 0%, #005c33 25%, #00723f 60%, #0a9050 85%, #10b981 100%);
+  box-shadow:
+    0  4px 20px rgba(0,  80,  48, 0.35),
+    0  1px  4px rgba(0,   0,   0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Reflexo interno no topo do header */
+header::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 52%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.09) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Linha de luz no rodapé do header */
+header::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.14);
+  pointer-events: none;
+  z-index: 1;
+}
+
+header > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SIDEBAR BRAND — Premium
+   ══════════════════════════════════════════════════════════════ */
+
+@media (min-width: 768px) {
+  .sidebar-brand {
+    background: linear-gradient(145deg, #003a20 0%, #004d2c 40%, #00723f 80%, #0d8a4a 100%);
+    box-shadow:
+      0 2px 12px rgba(0, 0, 0, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.10);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Orbe decorativo no canto */
+  .sidebar-brand::before {
+    content: '';
+    position: absolute;
+    right: -12px;
+    bottom: -18px;
+    width: 72px;
+    height: 72px;
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.28) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* Linha de luz no topo do brand */
+  .sidebar-brand::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 8%; right: 8%;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.18);
+    pointer-events: none;
+  }
+
+  /* Borda lateral como indicador de aba ativa */
+  .sidebar-btn.ativo {
+    background: linear-gradient(90deg, rgba(0, 114, 63, 0.10) 0%, rgba(0, 114, 63, 0.04) 100%);
+    box-shadow: inset 3px 0 0 var(--color-primary-500);
+    border-radius: var(--radius-lg);
+  }
+
+  /* Remove o dot — substituído pela borda lateral */
+  .sidebar-btn.ativo::after {
+    display: none;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   NAV BOTTOM — Ícone ativo com spring
+   ══════════════════════════════════════════════════════════════ */
+
+.nav-btn.ativo .nav-emoji {
+  animation: iconSpring 420ms var(--ease-expressive) both;
+  filter: drop-shadow(0 2px 6px rgba(0, 114, 63, 0.35));
+}
+
+/* ══════════════════════════════════════════════════════════════
+   INPUTS — Focus ring animado
+   ══════════════════════════════════════════════════════════════ */
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus,
+.extrato-busca:focus,
+.fp-input:focus {
+  border-color: var(--color-primary-500);
+  box-shadow:
+    0 0 0 3px rgba(0, 114, 63, 0.13),
+    0 2px 8px rgba(0, 114, 63, 0.09);
+  animation: borderGlow 2.2s ease-in-out infinite;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PROGRESS BARS — Gradiente animado
+   ══════════════════════════════════════════════════════════════ */
+
+.indicador-fill {
+  background: linear-gradient(90deg, #005c33 0%, #00723f 40%, #10b981 80%, #34d399 100%);
+  background-size: 200% 100%;
+  animation: gradientFlow 3.5s ease infinite;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MOTION UTILITIES — Classes reutilizáveis
+   ══════════════════════════════════════════════════════════════ */
+
+.premium-entrance {
+  animation: cardEntrance 420ms var(--ease-decelerate) both;
+}
+
+.stagger-1 { animation-delay:  60ms; }
+.stagger-2 { animation-delay: 120ms; }
+.stagger-3 { animation-delay: 180ms; }
+.stagger-4 { animation-delay: 240ms; }
+.stagger-5 { animation-delay: 300ms; }
+
+.text-reveal   { animation: textSlideUp  360ms var(--ease-decelerate) both; }
+.number-reveal { animation: numberReveal 280ms var(--ease-decelerate) both; }
+
+.icon-float {
+  animation: softFloat 4s ease-in-out infinite;
+}
+
+/* Hover lift premium — para cards interativos */
+.hover-lift {
+  transition:
+    transform  280ms var(--ease-decelerate),
+    box-shadow 280ms var(--ease-decelerate);
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0  2px  4px rgba(16, 24, 40, 0.04),
+    0 12px 36px rgba(16, 24, 40, 0.10),
+    0 36px 80px rgba(16, 24, 40, 0.05);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   POLISH — Detalhes de identidade visual
+   ══════════════════════════════════════════════════════════════ */
+
+/* Seleção de texto com verde */
+::selection {
+  background: rgba(0, 114, 63, 0.15);
+  color: var(--color-text-primary);
+}
+
+/* Scrollbar minimalista */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 114, 63, 0.20);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 114, 63, 0.36);
+}
+
+/* Alerta card — accent lateral */
+.alerta-card {
+  border-left-width: 4px;
+  background: linear-gradient(
+    90deg,
+    rgba(245, 158, 11, 0.06) 0%,
+    rgba(255, 255, 255, 0.00) 100%
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DARK MODE — Overrides premium
+   ══════════════════════════════════════════════════════════════ */
+
+[data-theme="dark"] .card-saldo-principal.saldo-positivo {
+  background: linear-gradient(145deg, #002d18 0%, #003d22 35%, #005030 65%, #006840 88%, #0d8a4a 100%);
+  box-shadow:
+    inset 0  1px 0 rgba(255, 255, 255, 0.07),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.22),
+    0  4px  8px rgba(0, 20, 10, 0.45),
+    0 16px 40px rgba(0, 100, 55, 0.36),
+    0 32px 80px rgba(0, 80, 40, 0.20);
+}
+
+[data-theme="dark"] .card-saldo-principal.saldo-negativo {
+  background: linear-gradient(145deg, #4a0b0b 0%, #6b1414 35%, #891818 65%, #a81e1e 88%, #b91c1c 100%);
+  box-shadow:
+    inset 0  1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.22),
+    0  4px  8px rgba(60, 8, 8, 0.45),
+    0 16px 40px rgba(140, 18, 18, 0.36),
+    0 32px 80px rgba(100, 12, 12, 0.20);
+}
+
+[data-theme="dark"] .dashboard-section {
+  box-shadow:
+    0 1px 3px  rgba(0, 0, 0, 0.28),
+    0 6px 20px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.07);
+}
+
+[data-theme="dark"] .indicador-card {
+  box-shadow:
+    0 1px 3px  rgba(0, 0, 0, 0.22),
+    0 4px 12px rgba(0, 0, 0, 0.20),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .card.receita {
+  box-shadow:
+    0 2px 8px rgba(16, 185, 129, 0.10),
+    0 1px 3px rgba(0, 0, 0, 0.18);
+}
+
+[data-theme="dark"] .card.despesa {
+  box-shadow:
+    0 2px 8px rgba(239, 68, 68, 0.10),
+    0 1px 3px rgba(0, 0, 0, 0.18);
+}
+
+[data-theme="dark"] .btn-primario,
+[data-theme="dark"] .fp-btn--primary {
+  background: linear-gradient(145deg, #005c33 0%, #00723f 50%, #008548 100%);
+  box-shadow:
+    inset 0  1px 0 rgba(255, 255, 255, 0.10),
+    inset 0 -1px 0 rgba(0,   0,   0,   0.30),
+    0 4px 12px rgba(0, 100, 55, 0.35);
+}
+
+[data-theme="dark"] .btn-primario:hover:not(:disabled),
+[data-theme="dark"] .fp-btn--primary:hover:not(:disabled) {
+  box-shadow:
+    inset 0  1px 0 rgba(255, 255, 255, 0.10),
+    inset 0 -1px 0 rgba(0,   0,   0,   0.30),
+    0 8px 24px rgba(0, 114, 63, 0.42),
+    0 4px 8px  rgba(0,  0,  0,  0.14);
+}
+
+[data-theme="dark"] header {
+  background: linear-gradient(145deg, #001f10 0%, #002d1a 28%, #003d22 60%, #005030 84%, #006840 100%);
+  box-shadow:
+    0 4px 20px rgba(0,  15,  8, 0.55),
+    0 1px  4px rgba(0,   0,  0, 0.30),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .indicador-fill {
+  background: linear-gradient(90deg, #004d2e 0%, #00723f 45%, #10b981 80%, #34d399 100%);
+  background-size: 200% 100%;
+}
+
+[data-theme="dark"] ::selection {
+  background: rgba(0, 114, 63, 0.28);
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: rgba(51, 165, 50, 0.24);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(51, 165, 50, 0.42);
+}

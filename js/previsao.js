@@ -145,7 +145,19 @@ var PREVISAO = {
 
       (prev.taxaPoupancaMedia > 0
         ? '<div class="previsao-meta">📊 Taxa de poupança média: <strong>' + prev.taxaPoupancaMedia + '%</strong></div>'
-        : '');
+        : '') +
+
+      (function() {
+        if (typeof AI_ENGINE.sugestaoCorte !== 'function') return '';
+        var corte = AI_ENGINE.sugestaoCorte(txs, 0.20);
+        if (!corte || corte.corteNecessario === 0) return '';
+        var catLabel = (typeof CONFIG !== 'undefined' && CONFIG.getCatLabel && corte.categoriaAlvo)
+          ? CONFIG.getCatLabel(corte.categoriaAlvo) : (corte.categoriaAlvo || '');
+        return '<div class="previsao-meta previsao-meta-corte">' +
+          '🎯 Para atingir 20% de poupança, reduza <strong>R$ ' + corte.corteNecessario.toFixed(2).replace('.', ',') + '</strong>' +
+          (catLabel ? ' em <strong>' + catLabel + '</strong>' : '') + '.' +
+        '</div>';
+      }());
   },
 
   /**

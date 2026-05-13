@@ -13,7 +13,7 @@ const RENDER_CORE = {
   // Cache de elementos DOM para evitar querySelector repetido
   _cache: new Map(),
   _renderers: new Map(),
-  _pendingRenders: new Set(),
+  _pendingRenders: new Map(), // keyed by name — garante deduplicação
   _rafId: null,
   
   // ============================================================
@@ -60,13 +60,12 @@ const RENDER_CORE = {
    */
   getElement: function(id, refresh) {
     if (!refresh && this._cache.has(id)) {
-      var el = this._cache.get(id);
-      // Verificar se ainda existe no DOM
-      if (el && document.contains(el)) {
-        return el;
+      var cached = this._cache.get(id);
+      if (cached && document.contains(cached)) {
+        return cached;
       }
     }
-    
+
     var el = document.getElementById(id);
     if (el) {
       this._cache.set(id, el);
@@ -124,30 +123,31 @@ const RENDER_CORE = {
   },
   
   /**
-   * Agenda renderização em batch (evita múltiplos renders)
+   * Agenda renderização em batch (evita múltiplos renders).
+   * Chamadas repetidas para o mesmo name dentro do mesmo frame são colapsadas.
    */
   scheduleRender: function(name, context) {
-    this._pendingRenders.add({ name: name, context: context });
-    
+    this._pendingRenders.set(name, context); // Map.set sobrescreve — deduplicação automática
+
     if (this._rafId) return;
-    
+
     var self = this;
     this._rafId = requestAnimationFrame(function() {
       self._flushPending();
     });
   },
-  
+
   /**
    * Executa renders pendentes em batch
    */
   _flushPending: function() {
     this._rafId = null;
-    
+
     var self = this;
-    this._pendingRenders.forEach(function(item) {
-      self.render(item.name, item.context);
+    this._pendingRenders.forEach(function(context, name) {
+      self.render(name, context);
     });
-    
+
     this._pendingRenders.clear();
   },
   
@@ -225,15 +225,14 @@ const RENDER_CORE = {
     },
   
   /**
-   * Limpa conteúdo de elemento seguro
+   * Limpa conteúdo de elemento preservando o nó no DOM e no cache.
    */
   clearElement: function(el) {
-    if (!el) return;
-    // Remover listeners primeiro (evita memory leaks)
-    var clone = el.cloneNode(false);
-    el.parentNode.replaceChild(clone, el);
-    // Clone não tem filhos, então está "limpo"
-    return clone;
+    if (!el) return el;
+    while (el.firstChild) {
+      el.removeChild(el.firstChild);
+    }
+    return el;
   },
   
   /**
@@ -246,9 +245,33 @@ const RENDER_CORE = {
   },
   
   // ============================================================
+  // INTEGRAÇÃO COM STORE
+  // ============================================================
+
+  /**
+   * Conecta o RENDER_CORE ao APP_STORE.
+   * Chamado uma única vez após todos os módulos estarem prontos.
+   * Qualquer mudança nos versioners de dados agenda o render correspondente.
+   */
+  connectToStore: function() {
+    if (typeof APP_STORE === 'undefined') return;
+    var self = this;
+
+    // Dados (transações, config, contas, orçamentos) → re-render do dashboard
+    APP_STORE.subscribe('dados', function() {
+      self.scheduleRender('dashboard');
+    });
+
+    // Filtros de UI → re-render do extrato (se registrado)
+    APP_STORE.subscribe('ui.filtros', function() {
+      self.scheduleRender('extrato');
+    });
+  },
+
+  // ============================================================
   // DEBUG
   // ============================================================
-  
+
   getStats: function() {
     var stats = {};
     this._renderers.forEach(function(renderer, name) {

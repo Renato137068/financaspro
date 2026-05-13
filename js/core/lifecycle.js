@@ -436,4 +436,12 @@ const LIFECYCLE_BOOT = {
         });
       }
 
-      console.log('[APP] FinançasPro pront
+      console.log('[APP] FinançasPro pronto');
+    }, { depends: ['app-ready'], critical: false });
+  }
+};
+
+// Export
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { LIFECYCLE: LIFECYCLE, LIFECYCLE_BOOT: LIFECYCLE_BOOT };
+}

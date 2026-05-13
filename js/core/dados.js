@@ -57,17 +57,23 @@ var DADOS = {
     return !!this._apiBaseUrl();
   },
 
-  _apiFetch: function(path, options) {
+  _apiFetch: function(path, options, _isRetry) {
+    var self = this;
     var base = this._apiBaseUrl();
     if (!base || typeof fetch !== 'function') {
       return Promise.reject(new Error('API indisponivel'));
     }
-    var token = localStorage.getItem(CONFIG.API_TOKEN_STORAGE);
+    var accessToken = localStorage.getItem(CONFIG.API_TOKEN_STORAGE);
     var headers = Object.assign({ 'Content-Type': 'application/json' }, (options && options.headers) || {});
-    if (token) headers.Authorization = 'Bearer ' + token;
-    return fetch(base + path, Object.assign({
-      headers: headers
-    }, options || {})).then(function(res) {
+    if (accessToken) headers.Authorization = 'Bearer ' + accessToken;
+
+    return fetch(base + path, Object.assign({ headers: headers }, options || {})).then(function(res) {
+      if (res.status === 401 && !_isRetry) {
+        return self._refreshAccessToken().then(function(ok) {
+          if (!ok) return Promise.reject(Object.assign(new Error('Sessao expirada'), { status: 401 }));
+          return self._apiFetch(path, options, true);
+        });
+      }
       if (!res.ok) {
         return res.json().catch(function() { return {}; }).then(function(body) {
           var err = new Error(body.error || ('HTTP ' + res.status));
@@ -79,22 +85,91 @@ var DADOS = {
     });
   },
 
+  _refreshAccessToken: function() {
+    var self = this;
+    var base = this._apiBaseUrl();
+    var refreshToken = localStorage.getItem(CONFIG.API_REFRESH_TOKEN_STORAGE);
+    if (!base || !refreshToken || typeof fetch !== 'function') return Promise.resolve(false);
+
+    return fetch(base + '/api/v1/auth/refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: refreshToken })
+    }).then(function(res) {
+      if (!res.ok) {
+        self.encerrarSessao();
+        return false;
+      }
+      return res.json().then(function(body) {
+        var data = body && body.data ? body.data : null;
+        if (!data || !data.accessToken) { self.encerrarSessao(); return false; }
+        localStorage.setItem(CONFIG.API_TOKEN_STORAGE, data.accessToken);
+        if (data.refreshToken) localStorage.setItem(CONFIG.API_REFRESH_TOKEN_STORAGE, data.refreshToken);
+        return true;
+      });
+    }).catch(function() {
+      self.encerrarSessao();
+      return false;
+    });
+  },
+
+  // Converte campo de transação do formato EN (API) para PT (localStorage)
+  _txEnToPt: function(tx) {
+    if (!tx || typeof tx !== 'object') return tx;
+    return {
+      id:          tx.id,
+      tipo:        tx.type,
+      valor:       tx.amount != null ? Number(tx.amount) : 0,
+      categoria:   tx.category || '',
+      subcategoria:tx.subcategory || '',
+      data:        tx.date ? tx.date.substring(0, 10) : '',
+      descricao:   tx.description || '',
+      banco:       tx.accountId || '',
+      cartao:      '',
+      notas:       tx.notes || '',
+      tags:        tx.tags || [],
+      recorrente:  tx.recurring || false,
+      dataCriacao: tx.createdAt || tx.date || new Date().toISOString(),
+      _apiId:      tx.id
+    };
+  },
+
+  // Converte campo de conta do formato EN (API) para PT (localStorage)
+  _contaEnToPt: function(ac) {
+    if (!ac || typeof ac !== 'object') return ac;
+    return {
+      id:          ac.id,
+      nome:        ac.name || '',
+      tipo:        ac.type || 'checking',
+      saldo:       ac.balance != null ? Number(ac.balance) : 0,
+      moeda:       ac.currency || 'BRL',
+      banco:       ac.institution || '',
+      ativo:       ac.active !== false,
+      dataCriacao: ac.createdAt || new Date().toISOString(),
+      _apiId:      ac.id
+    };
+  },
+
   _mergeSnapshotLocal: function(snapshot) {
     if (!snapshot || typeof snapshot !== 'object') return;
+
     if (Array.isArray(snapshot.transactions)) {
-      localStorage.setItem(CONFIG.STORAGE_TRANSACOES, JSON.stringify(snapshot.transactions));
+      var txsPt = snapshot.transactions.map(this._txEnToPt.bind(this));
+      localStorage.setItem(CONFIG.STORAGE_TRANSACOES, JSON.stringify(txsPt));
     }
     if (Array.isArray(snapshot.accounts)) {
-      localStorage.setItem(CONFIG.STORAGE_CONTAS, JSON.stringify(snapshot.accounts));
+      var contasPt = snapshot.accounts.map(this._contaEnToPt.bind(this));
+      localStorage.setItem(CONFIG.STORAGE_CONTAS, JSON.stringify(contasPt));
     }
+    var cfg = this.getConfig();
     if (snapshot.config && typeof snapshot.config === 'object') {
-      localStorage.setItem(CONFIG.STORAGE_CONFIG, JSON.stringify(snapshot.config));
+      cfg = Object.assign(cfg, snapshot.config);
     }
     if (Array.isArray(snapshot.recurringTransactions)) {
-      var cfg = this.getConfig();
       cfg.recorrentes = snapshot.recurringTransactions;
-      localStorage.setItem(CONFIG.STORAGE_CONFIG, JSON.stringify(cfg));
     }
+    localStorage.setItem(CONFIG.STORAGE_CONFIG, JSON.stringify(cfg));
+
     if (typeof APP_STORE !== 'undefined') APP_STORE.hydrateFromDados();
   },
 
@@ -133,13 +208,34 @@ var DADOS = {
     });
   },
 
+  // Converte transação PT (localStorage) para EN (API)
+  _txPtToEn: function(tx) {
+    if (!tx || typeof tx !== 'object') return tx;
+    var data = tx.data || '';
+    // Garante ISO 8601 com hora — backend valida datetime
+    var isoDate = data.length === 10 ? data + 'T00:00:00.000Z' : data;
+    return {
+      type:        tx.tipo,
+      amount:      typeof tx.valor === 'number' ? tx.valor : parseFloat(String(tx.valor).replace(',', '.')) || 0,
+      description: tx.descricao || 'Sem descrição',
+      category:    tx.categoria || 'outro',
+      subcategory: tx.subcategoria || undefined,
+      date:        isoDate,
+      accountId:   tx.banco && tx.banco.length === 36 ? tx.banco : undefined,
+      tags:        Array.isArray(tx.tags) ? tx.tags : [],
+      notes:       tx.notas || undefined,
+      recurring:   !!tx.recorrente
+    };
+  },
+
   _pushTransacaoApi: function(transacao, method) {
     if (!this._apiAtiva()) return Promise.resolve(transacao);
+    var payload = this._txPtToEn(transacao);
     var url = method === 'PATCH' ? '/api/v1/transactions/' + encodeURIComponent(transacao.id)
       : '/api/v1/transactions';
     return this._apiFetch(url, {
       method: method,
-      body: JSON.stringify(transacao)
+      body: JSON.stringify(payload)
     }).then(function(resp) {
       return resp && resp.data ? resp.data : transacao;
     }).catch(function() {
@@ -170,7 +266,7 @@ var DADOS = {
     if (!this._apiAtiva()) return Promise.resolve({ categoria: categoria, limite: limite });
     return this._apiFetch('/api/v1/budgets', {
       method: 'POST',
-      body: JSON.stringify({ categoria: categoria, limite: limite })
+      body: JSON.stringify({ category: categoria, limit: Number(limite), period: 'monthly' })
     }).catch(function() {
       return { categoria: categoria, limite: limite };
     });
@@ -178,9 +274,12 @@ var DADOS = {
 
   _pushConfigApi: function(config) {
     if (!this._apiAtiva()) return Promise.resolve(config);
-    return this._apiFetch('/api/v1/config', {
+    // Envia apenas campos de preferência, sem dados sensíveis de PIN
+    var payload = Object.assign({}, config);
+    delete payload.pinHash; delete payload.pinSalt; delete payload.pinAlgoritmo;
+    return this._apiFetch('/api/v1/users/me/config', {
       method: 'PUT',
-      body: JSON.stringify(config)
+      body: JSON.stringify(payload)
     }).then(function(resp) {
       return resp && resp.data ? resp.data : config;
     }).catch(function() {
@@ -190,9 +289,20 @@ var DADOS = {
 
   _pushRecorrenteApi: function(recData) {
     if (!this._apiAtiva()) return Promise.resolve(recData);
+    var isoStart = recData.inicio ? recData.inicio + 'T00:00:00.000Z' : new Date().toISOString();
+    var isoNext  = recData.proxima ? recData.proxima + 'T00:00:00.000Z' : isoStart;
+    var payload = {
+      type:        recData.tipo,
+      amount:      Number(recData.valor) || 0,
+      description: recData.descricao || 'Recorrente',
+      category:    recData.categoria || 'outro',
+      frequency:   recData.frequencia || 'monthly',
+      startDate:   isoStart,
+      nextDue:     isoNext
+    };
     return this._apiFetch('/api/v1/recorrentes', {
       method: 'POST',
-      body: JSON.stringify(recData)
+      body: JSON.stringify(payload)
     }).then(function(resp) {
       return resp && resp.data ? resp.data : recData;
     }).catch(function() {
@@ -200,17 +310,26 @@ var DADOS = {
     });
   },
 
-  registrarSessao: function(token, user) {
-    if (token) localStorage.setItem(CONFIG.API_TOKEN_STORAGE, token);
+  registrarSessao: function(accessToken, user, refreshToken) {
+    if (accessToken) localStorage.setItem(CONFIG.API_TOKEN_STORAGE, accessToken);
+    if (refreshToken) localStorage.setItem(CONFIG.API_REFRESH_TOKEN_STORAGE, refreshToken);
     if (user) localStorage.setItem(CONFIG.API_USER_STORAGE, JSON.stringify(user));
-    // Sessão ainda vive no store (é pequena e volátil — não duplica dados)
     if (typeof APP_STORE !== 'undefined') {
       APP_STORE.set('dados.sessao', this.getSessao(), { persist: false });
     }
   },
 
   encerrarSessao: function() {
+    // Tenta revogar refresh token no servidor (best-effort)
+    var refreshToken = localStorage.getItem(CONFIG.API_REFRESH_TOKEN_STORAGE);
+    if (refreshToken && this._apiAtiva()) {
+      this._apiFetch('/api/v1/auth/logout', {
+        method: 'POST',
+        body: JSON.stringify({ refreshToken: refreshToken })
+      }).catch(function() {});
+    }
     localStorage.removeItem(CONFIG.API_TOKEN_STORAGE);
+    localStorage.removeItem(CONFIG.API_REFRESH_TOKEN_STORAGE);
     localStorage.removeItem(CONFIG.API_USER_STORAGE);
     if (typeof APP_STORE !== 'undefined') {
       APP_STORE.set('dados.sessao', { token: null, user: null }, { persist: false });
@@ -237,7 +356,9 @@ var DADOS = {
       body: JSON.stringify({ email: email, password: password })
     }).then(function(resp) {
       var data = resp && resp.data ? resp.data : null;
-      if (data && data.token) self.registrarSessao(data.token, data.user);
+      if (data && data.accessToken) {
+        self.registrarSessao(data.accessToken, data.user, data.refreshToken);
+      }
       return data;
     });
   },

@@ -36,13 +36,17 @@
   contain: layout style;
 }
 
-/* ── GPU acceleration para elementos animados ────────────── */
+/* ── GPU acceleration: apenas elementos que realmente animam ─ */
 
 .success-overlay,
 .auth-card,
-.btn-primario,
-.btn-registrar,
 .modal-box {
+  will-change: transform;
+}
+
+/* Botões: will-change só durante hover/active (evita VRAM estática) */
+.btn-primario:hover,
+.btn-primario:active {
   will-change: transform;
 }
 
@@ -50,6 +54,18 @@
 
 .nav-bottom {
   contain: layout;
+}
+
+/* ── Seções do dashboard: contêm reflows locais ──────────── */
+
+.dashboard-section {
+  contain: layout style;
+}
+
+/* ── Header fixo: isola do restante do layout ────────────── */
+
+header, .app-header {
+  contain: layout style;
 }
 
 /* ── Abas inativas: ocultas do layout ───────────────────── */

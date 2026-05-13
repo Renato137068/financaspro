@@ -124,9 +124,17 @@ const INIT_NAVIGATION = {
           }
         }
       },
-      'abrir-editar-perfil': function() { safeCall('abrirEditarPerfil'); },
+      'abrir-editar-perfil': function() { 
+        if (typeof INIT_CONFIG !== 'undefined' && typeof INIT_CONFIG.abrirEditarPerfil === 'function') {
+          INIT_CONFIG.abrirEditarPerfil();
+        }
+      },
       'abrir-editar-renda': function() { safeCall('abrirEditarRenda'); },
-      'abrir-config-bancos': function() { safeCall('abrirConfigBancos'); },
+      'abrir-config-bancos': function() { 
+        if (typeof INIT_CONFIG !== 'undefined' && typeof INIT_CONFIG.abrirConfigBancos === 'function') {
+          INIT_CONFIG.abrirConfigBancos();
+        }
+      },
       'gerenciar-categorias': function() { 
         safeCall('abrirGerenciarCategorias', [target.dataset.tipo]); 
       },
@@ -242,4 +250,5 @@ function mudarAba(nomeAba) {
 
 // Export para compatibilidade
 if (typeof module !== 'undefined' && module.exports) {
-  module.ex
+  module.exports = { INIT_NAVIGATION, mudarAba };
+}

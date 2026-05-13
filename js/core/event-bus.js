@@ -227,24 +227,66 @@ const EVENT_HANDLERS = {
   extrato: {
     'navegar-periodo': function(ctx) {
       var dir = parseInt(ctx.dataset.dir || '0', 10);
-      if (typeof navegarPeriodo === 'function') {
-        navegarPeriodo(dir);
+      if (typeof INIT_EXTRATO !== 'undefined' && typeof INIT_EXTRATO.navegarPeriodo === 'function') {
+        INIT_EXTRATO.navegarPeriodo(dir);
       }
     },
     
     'filtro-tipo': function(ctx) {
       var filtro = ctx.dataset.filtro || 'todos';
-      if (typeof setFiltroTipo === 'function') {
-        setFiltroTipo(filtro);
+      if (typeof INIT_EXTRATO !== 'undefined' && typeof INIT_EXTRATO.setFiltroTipo === 'function') {
+        INIT_EXTRATO.setFiltroTipo(filtro);
+      }
+    },
+    
+    'ordenar': function(ctx) {
+      var ordenacao = ctx.dataset.ordenacao || 'data-desc';
+      if (typeof INIT_EXTRATO !== 'undefined' && typeof INIT_EXTRATO.setOrdenacao === 'function') {
+        INIT_EXTRATO.setOrdenacao(ordenacao);
+      }
+    },
+    
+    'limpar-filtros': function() {
+      if (typeof INIT_EXTRATO !== 'undefined' && typeof INIT_EXTRATO.limparFiltros === 'function') {
+        INIT_EXTRATO.limparFiltros();
+      }
+    },
+    
+    'abrir-busca-avancada': function() {
+      var container = document.getElementById('busca-avancada-container');
+      if (container) {
+        container.style.display = container.style.display === 'none' ? 'block' : 'none';
+      }
+    },
+    
+    'aplicar-busca-avancada': function() {
+      if (typeof INIT_EXTRATO !== 'undefined' && typeof INIT_EXTRATO.aplicarBuscaAvancada === 'function') {
+        INIT_EXTRATO.aplicarBuscaAvancada();
+      }
+    },
+    
+    'deletar-selecionados': function() {
+      if (typeof INIT_EXTRATO !== 'undefined' && typeof INIT_EXTRATO.deletarSelecionados === 'function') {
+        INIT_EXTRATO.deletarSelecionados();
+      }
+    },
+    
+    'cancelar-selecao': function() {
+      if (typeof INIT_EXTRATO !== 'undefined' && typeof INIT_EXTRATO.cancelarSelecao === 'function') {
+        INIT_EXTRATO.cancelarSelecao();
       }
     },
     
     'exportar-excel': function() {
-      if (typeof exportarExcel === 'function') exportarExcel();
+      if (typeof INIT_EXTRATO !== 'undefined' && typeof INIT_EXTRATO.exportarExcel === 'function') {
+        INIT_EXTRATO.exportarExcel();
+      }
     },
     
     'exportar-pdf': function() {
-      if (typeof exportarExtrato === 'function') exportarExtrato();
+      if (typeof INIT_EXTRATO !== 'undefined' && typeof INIT_EXTRATO.exportarExtrato === 'function') {
+        INIT_EXTRATO.exportarExtrato();
+      }
     }
   },
   
@@ -270,7 +312,9 @@ const EVENT_HANDLERS = {
   // --- CONFIGURAÇÕES ---
   config: {
     'abrir-editar-perfil': function() {
-      if (typeof abrirEditarPerfil === 'function') abrirEditarPerfil();
+      if (typeof INIT_CONFIG !== 'undefined' && typeof INIT_CONFIG.abrirEditarPerfil === 'function') {
+        INIT_CONFIG.abrirEditarPerfil();
+      }
     },
     
     'abrir-editar-renda': function() {
@@ -278,7 +322,9 @@ const EVENT_HANDLERS = {
     },
     
     'abrir-config-bancos': function() {
-      if (typeof abrirConfigBancos === 'function') abrirConfigBancos();
+      if (typeof INIT_CONFIG !== 'undefined' && typeof INIT_CONFIG.abrirConfigBancos === 'function') {
+        INIT_CONFIG.abrirConfigBancos();
+      }
     },
     
     'gerenciar-categorias': function(ctx) {

@@ -23,15 +23,46 @@
 
 var TRANSACOES = {
   _cache: null,
+  _cacheTimestamp: null,
+  _cacheTTL: 30000, // 30 segundos
 
   /**
    * Inicializa cache de transações a partir do localStorage.
    */
   init: function() {
     this._cache = DADOS.getTransacoes();
+    this._cacheTimestamp = Date.now();
     if (typeof APP_STATE !== 'undefined') {
       APP_STATE.setState({ transacoes: this._cache });
     }
+  },
+
+  /**
+   * Verifica se o cache expirou
+   */
+  _isCacheExpired: function() {
+    return !this._cacheTimestamp || (Date.now() - this._cacheTimestamp) > this._cacheTTL;
+  },
+
+  /**
+   * Atualiza cache se necessário
+   */
+  _refreshCache: function() {
+    if (this._isCacheExpired()) {
+      this._cache = DADOS.getTransacoes();
+      this._cacheTimestamp = Date.now();
+      if (typeof APP_STATE !== 'undefined') {
+        APP_STATE.setState({ transacoes: this._cache });
+      }
+    }
+  },
+
+  /**
+   * Invalida cache forçadamente
+   */
+  invalidateCache: function() {
+    this._cacheTimestamp = null;
+    this._refreshCache();
   },
 
   /**
@@ -47,6 +78,9 @@ var TRANSACOES = {
    * @throws {Error} se inválida
    */
   criar: function(tipo, valor, categoria, data, descricao, banco, cartao) {
+    if (typeof CONFIG !== 'undefined' && typeof CONFIG.normalizeCategoriaFinal === 'function') {
+      categoria = CONFIG.normalizeCategoriaFinal(categoria, tipo);
+    }
     var transacao = typeof TRANSACTION_SERVICE !== 'undefined'
       ? TRANSACTION_SERVICE.createTransaction({
         tipo: tipo,
@@ -86,6 +120,7 @@ var TRANSACOES = {
    * @returns {Transacao[]}
    */
   obter: function(filtros) {
+    this._refreshCache();
     filtros = filtros || {};
     if (typeof TRANSACTION_SERVICE !== 'undefined') {
       return TRANSACTION_SERVICE.filterTransactions(this._cache || [], filtros);
@@ -123,15 +158,13 @@ var TRANSACOES = {
     var validacao = UTILS.validarTransacao(updated);
     if (!validacao.valido) throw new Error(validacao.erro);
     DADOS.salvarTransacao(updated);
-    this._cache = DADOS.getTransacoes();
-    if (typeof APP_STATE !== 'undefined') APP_STATE.setState({ transacoes: this._cache });
+    this.invalidateCache();
     return updated;
   },
 
   deletar: function(id) {
     var resultado = DADOS.deletarTransacao(id);
-    this._cache = DADOS.getTransacoes();
-    if (typeof APP_STATE !== 'undefined') APP_STATE.setState({ transacoes: this._cache });
+    this.invalidateCache();
     return resultado;
   },
 

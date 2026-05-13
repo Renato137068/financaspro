@@ -4,7 +4,7 @@ import prisma from '../lib/db.js';
 
 /**
  * Extrai e verifica o Bearer token. Hidrata req.user com o usuário do banco.
- * Retorna 401 se token ausente/inválido, 403 se usuário inativo.
+ * Retorna 401 se token ausente/inválido, 403 se usuário inativo, 503 se DB indisponível.
  */
 export async function authenticate(req, res, next) {
   const header = req.headers.authorization ?? '';
@@ -19,7 +19,13 @@ export async function authenticate(req, res, next) {
     return res.status(401).json({ error: 'Token inválido ou expirado' });
   }
 
-  const user = await prisma.user.findUnique({ where: { id: payload.sub } });
+  let user;
+  try {
+    user = await prisma.user.findUnique({ where: { id: payload.sub } });
+  } catch {
+    return res.status(503).json({ error: 'Serviço temporariamente indisponível' });
+  }
+
   if (!user) return res.status(401).json({ error: 'Usuário não encontrado' });
   if (!user.active) return res.status(403).json({ error: 'Conta desativada' });
 

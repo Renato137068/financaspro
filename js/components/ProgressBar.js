@@ -1,18 +1,11 @@
-/**
- * ProgressBar — barra de progresso com cor e status
- * API: UI.ProgressBar.render({ pct, cor, status })
- * Retorna: Element
- */
+// FinançasPro — ProgressBar: barra de progresso com cor e status
+// v11.0 — sem dependências externas
 (function() {
   var UI = window.UI || {};
 
   UI.ProgressBar = {
-    /**
-     * @param {number} pct - percentual 0–100+ (truncado em 100 para a barra)
-     * @param {string} cor - cor CSS do fill (hex ou keyword)
-     * @param {string} [status] - 'excedido'|'alerta'|'ok' (só para classe semântica)
-     * @returns {HTMLElement}
-     */
+    // render(pct, cor, status?) → HTMLElement
+    // pct: 0–100+ (truncado em 100), cor: hex/keyword, status: 'excedido'|'alerta'|'ok'
     render: function(pct, cor, status) {
       var outer = document.createElement('div');
       outer.className = 'progress-bar' + (status ? ' progress-bar--' + status : '');
@@ -26,7 +19,7 @@
       return outer;
     },
 
-    /** Cor padrão pelo status do orçamento */
+    // corPorStatus(status) → string cor hex
     corPorStatus: function(status) {
       if (status === 'excedido') return '#ef5350';
       if (status === 'alerta')   return '#ffa726';

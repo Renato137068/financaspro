@@ -414,7 +414,7 @@ var AI_ENGINE = {
     // 5. Sem lançamentos hoje (incentivo)
     var hojeStr = hoje.toISOString().split('T')[0];
     var lancouHoje = transacoes.some(function(t) { return t.data === hojeStr; });
-    if (!lancouHoje && diaMes > 1) {
+    if (!lancouHoje && diaMes > 3) {
       alertas.push({
         id: 'sem-lancamento',
         tipo: 'habito',
@@ -424,6 +424,35 @@ var AI_ENGINE = {
         acao: 'abrirNovo',
         parametros: {}
       });
+    }
+
+    // 6. Sem receita registrada (alerta após dia 15)
+    if (diaMes >= 15 && mesSel && mesSel.receitas === 0) {
+      alertas.push({
+        id:       'sem-receita',
+        tipo:     'habito',
+        titulo:   '💰 Nenhuma receita registrada',
+        msg:      'Você está no dia ' + diaMes + ' do mês sem lançar nenhuma receita. Registre seu salário ou outras entradas.',
+        gravidade: 'alta',
+        acao:     'abrirNovo',
+        parametros: {}
+      });
+    }
+
+    // 7. Projeção de saldo negativo no fim do mês
+    if (diaMes >= 5 && diasRestantes >= 5 && mesSel && mesSel.receitas > 0) {
+      var taxaDiariaDesp = mesSel.despesas / diaMes;
+      var projecaoDesp   = Math.round((mesSel.despesas + taxaDiariaDesp * diasRestantes) * 100) / 100;
+      var saldoProj      = Math.round((mesSel.receitas - projecaoDesp) * 100) / 100;
+      if (saldoProj < 0) {
+        alertas.push({
+          id:       'projecao-negativa',
+          tipo:     'projecao',
+          titulo:   '📅 Projeção: saldo negativo',
+          msg:      'No ritmo atual, você vai gastar R$ ' + projecaoDesp.toFixed(2).replace('.', ',') + ' este mês — saldo estimado: –R$ ' + Math.abs(saldoProj).toFixed(2).replace('.', ',') + '.',
+          gravidade: 'alta'
+        });
+      }
     }
 
     return alertas;
@@ -497,6 +526,141 @@ var AI_ENGINE = {
 
     padroes.sort(function(a, b) { return b.meses - a.meses; });
     return padroes.slice(0, 5);
+  },
+
+  // ─────────────────────────────────────────────────────────────────
+  // PROJEÇÕES E METAS
+  // ─────────────────────────────────────────────────────────────────
+
+  /**
+   * Projeta despesas até o fim do mês com base na taxa diária atual.
+   * @param {Array} transacoes
+   * @returns {{ projecaoDespesas, projecaoReceitas, saldoProjetado, diasRestantes, diasDecorridos, dadosInsuficientes }}
+   */
+  projetarFimMes: function(transacoes) {
+    var hoje           = new Date();
+    var mesKey         = hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0');
+    var diasDecorridos = hoje.getDate();
+    var diasNoMes      = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate();
+    var diasRestantes  = diasNoMes - diasDecorridos;
+
+    if (diasDecorridos < 3) {
+      return { dadosInsuficientes: true, diasDecorridos: diasDecorridos, diasRestantes: diasRestantes };
+    }
+
+    var txMes = Array.isArray(transacoes) ? transacoes.filter(function(t) {
+      return t && t.data && String(t.data).slice(0, 7) === mesKey;
+    }) : [];
+
+    var despesas = txMes.reduce(function(a, t) { return t.tipo === 'despesa' ? a + (Number(t.valor) || 0) : a; }, 0);
+    var receitas = txMes.reduce(function(a, t) { return t.tipo === 'receita' ? a + (Number(t.valor) || 0) : a; }, 0);
+
+    var taxaDiaria       = despesas / diasDecorridos;
+    var projecaoDespesas = Math.round((despesas + taxaDiaria * diasRestantes) * 100) / 100;
+    var saldoProjetado   = Math.round((receitas - projecaoDespesas) * 100) / 100;
+
+    return {
+      projecaoDespesas:   projecaoDespesas,
+      projecaoReceitas:   receitas,
+      saldoProjetado:     saldoProjetado,
+      diasRestantes:      diasRestantes,
+      diasDecorridos:     diasDecorridos,
+      dadosInsuficientes: false
+    };
+  },
+
+  /**
+   * Compara despesas por categoria entre mês atual e anterior.
+   * @param {Array} transacoes
+   * @param {string} mesKey — 'YYYY-MM'
+   * @returns {Array} [{ categoria, atual, anterior, variacao, tendencia }] ordenado por valor atual desc
+   */
+  compararCategoriasMoM: function(transacoes, mesKey) {
+    var partes = (mesKey || '').split('-');
+    var ano    = parseInt(partes[0], 10);
+    var mes    = parseInt(partes[1], 10);
+    var mesAnt = mes === 1
+      ? (ano - 1) + '-12'
+      : ano + '-' + String(mes - 1).padStart(2, '0');
+
+    var catsAtual = this.agregarPorCategoria(transacoes, mesKey);
+    var catsAnt   = this.agregarPorCategoria(transacoes, mesAnt);
+
+    var todas = {};
+    Object.keys(catsAtual).forEach(function(c) { todas[c] = true; });
+    Object.keys(catsAnt).forEach(function(c) { todas[c] = true; });
+
+    var resultado = [];
+    Object.keys(todas).forEach(function(cat) {
+      var atual    = (catsAtual[cat] ? catsAtual[cat].despesas : 0) || 0;
+      var anterior = (catsAnt[cat]   ? catsAnt[cat].despesas   : 0) || 0;
+      if (atual === 0 && anterior === 0) return;
+      var variacao  = anterior > 0 ? Math.round(((atual - anterior) / anterior) * 100) : null;
+      resultado.push({
+        categoria: cat,
+        atual:     atual,
+        anterior:  anterior,
+        variacao:  variacao,
+        tendencia: variacao === null ? 'novo' : variacao > 15 ? 'subindo' : variacao < -15 ? 'caindo' : 'estavel'
+      });
+    });
+
+    resultado.sort(function(a, b) { return b.atual - a.atual; });
+    return resultado;
+  },
+
+  /**
+   * Calcula quanto cortar de gastos para atingir a meta de poupança.
+   * @param {Array} transacoes
+   * @param {number} metaPoupanca — ex: 0.20 para 20%
+   * @returns {{ viavel, corteNecessario, categoriaAlvo, valorAlvo, taxaAtual } | null}
+   */
+  sugestaoCorte: function(transacoes, metaPoupanca) {
+    metaPoupanca = metaPoupanca || 0.20;
+    var agregado = this.agregarPorMes(transacoes);
+    var chaves   = Object.keys(agregado).sort().slice(-3);
+    if (chaves.length === 0) return null;
+
+    var recMedia  = chaves.reduce(function(a, k) { return a + agregado[k].receitas; }, 0) / chaves.length;
+    var despMedia = chaves.reduce(function(a, k) { return a + agregado[k].despesas; }, 0) / chaves.length;
+    if (recMedia === 0) return null;
+
+    var taxaAtual = (recMedia - despMedia) / recMedia;
+    if (taxaAtual >= metaPoupanca) {
+      return { viavel: true, corteNecessario: 0, categoriaAlvo: null, taxaAtual: Math.round(taxaAtual * 100) };
+    }
+
+    var despMeta = recMedia * (1 - metaPoupanca);
+    var corte    = Math.max(0, Math.round((despMedia - despMeta) * 100) / 100);
+
+    var mesRef = chaves[chaves.length - 1];
+    var cats   = this.agregarPorCategoria(transacoes, mesRef);
+
+    var naoEssenciais = ['lazer', 'alimentacao', 'outro'];
+    var categoriaAlvo = null, valorAlvo = 0;
+    naoEssenciais.forEach(function(cat) {
+      if (cats[cat] && cats[cat].despesas > valorAlvo) {
+        valorAlvo     = cats[cat].despesas;
+        categoriaAlvo = cat;
+      }
+    });
+
+    if (!categoriaAlvo) {
+      Object.keys(cats).forEach(function(cat) {
+        if (cats[cat].despesas > valorAlvo) {
+          valorAlvo     = cats[cat].despesas;
+          categoriaAlvo = cat;
+        }
+      });
+    }
+
+    return {
+      viavel:          true,
+      corteNecessario: corte,
+      categoriaAlvo:   categoriaAlvo,
+      valorAlvo:       Math.round(valorAlvo * 100) / 100,
+      taxaAtual:       Math.round(taxaAtual * 100)
+    };
   }
 };
 

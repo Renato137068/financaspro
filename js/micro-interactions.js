@@ -148,4 +148,181 @@ var MICRO = (function() {
     });
   }
 
-  /* ── Input: feedback de foco ──────────────
+  /* ── Input: feedback de foco ────────────────────────────── */
+
+  function setupInputFeedback() {
+    var valorInput = document.getElementById('novo-valor');
+    if (valorInput) {
+      valorInput.addEventListener('focus', function() {
+        var hero = document.getElementById('valor-hero');
+        if (hero) hero.classList.add('valor-hero--focused');
+      });
+      valorInput.addEventListener('blur', function() {
+        var hero = document.getElementById('valor-hero');
+        if (hero) hero.classList.remove('valor-hero--focused');
+      });
+    }
+  }
+
+  /* ── Transições direcionais de aba ──────────────────────── */
+
+  var _ultimaAba = null;
+  var _ordemAbas = ['resumo', 'novo', 'extrato', 'graficos', 'config'];
+
+  function setupTabTransitions() {
+    document.addEventListener('click', function(e) {
+      var navBtn = e.target.closest('.nav-btn[data-aba]');
+      if (!navBtn) return;
+      var aba = navBtn.dataset.aba;
+      if (!aba || aba === _ultimaAba) return;
+
+      var idxAtual = _ordemAbas.indexOf(_ultimaAba);
+      var idxNova  = _ordemAbas.indexOf(aba);
+      var abaEl    = document.getElementById('aba-' + aba);
+
+      if (abaEl) {
+        var classe = (idxAtual === -1 || idxNova > idxAtual) ? 'aba-slide-right' : 'aba-slide-left';
+        abaEl.classList.remove('aba-slide-right', 'aba-slide-left');
+        void abaEl.offsetHeight;
+        abaEl.classList.add(classe);
+        abaEl.addEventListener('animationend', function() {
+          abaEl.classList.remove('aba-slide-right', 'aba-slide-left');
+        }, { once: true });
+      }
+
+      _ultimaAba = aba;
+    });
+  }
+
+  /* ── Botão registrar: estado de loading ─────────────────── */
+
+  function setupButtonLoading() {
+    var form = document.getElementById('form-transacao');
+    if (!form) return;
+
+    form.addEventListener('submit', function() {
+      var btn = form.querySelector('.btn-registrar');
+      if (!btn || btn.dataset.loading) return;
+      var textoOriginal = btn.innerHTML;
+      btn.dataset.loading = '1';
+      btn.innerHTML = '⏳ Salvando…';
+      btn.disabled = true;
+      setTimeout(function() {
+        btn.innerHTML = textoOriginal;
+        btn.disabled  = false;
+        delete btn.dataset.loading;
+      }, 1600);
+    });
+  }
+
+  /* ── Quick amounts (valores rápidos) ────────────────────── */
+
+  function setupQuickAmounts() {
+    document.addEventListener('click', function(e) {
+      var btn = e.target.closest('.quick-amount');
+      if (!btn) return;
+      var val = parseFloat(btn.dataset.valor || 0);
+      var inp = document.getElementById('novo-valor');
+      if (!inp || !val) return;
+
+      var current = 0;
+      if (inp.value) {
+        current = parseFloat(inp.value.replace(/\./g, '').replace(',', '.')) || 0;
+      }
+      var novo = current + val;
+      inp.value = novo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      inp.dispatchEvent(new Event('input', { bubbles: true }));
+
+      /* Mini pulse no botão clicado */
+      btn.classList.add('anim-pop-in');
+      btn.addEventListener('animationend', function() {
+        btn.classList.remove('anim-pop-in');
+      }, { once: true });
+    });
+  }
+
+  /* ── Progresso visual do formulário ─────────────────────── */
+
+  function setupFormProgress() {
+    var form        = document.getElementById('form-transacao');
+    var progressBar = document.getElementById('form-progress-bar');
+    if (!form || !progressBar) return;
+
+    function calcProgress() {
+      var valor = document.getElementById('novo-valor');
+      var cat   = document.getElementById('novo-categoria');
+      var data  = document.getElementById('novo-data');
+      var desc  = document.getElementById('novo-descricao');
+      var score = 0;
+      if (valor && valor.value) {
+        var num = parseFloat(valor.value.replace(/\./g, '').replace(',', '.'));
+        if (num > 0) score += 40;
+      }
+      if (desc && desc.value && desc.value.trim().length >= 2) score += 20;
+      if (data && data.value) score += 20;
+      var iaOk = false;
+      if (typeof INIT_FORM !== 'undefined' && INIT_FORM._iaSuggestion) {
+        iaOk = INIT_FORM._iaSuggestion.confianca === 'alta' || INIT_FORM._iaConfirmed === true;
+      }
+      if ((cat && cat.value) || iaOk) score += 20;
+      progressBar.style.width      = score + '%';
+      progressBar.style.background = score === 100
+        ? 'var(--color-success)'
+        : 'var(--color-primary-400)';
+    }
+
+    form.addEventListener('input',  calcProgress);
+    form.addEventListener('change', calcProgress);
+    document.addEventListener('click', function(e) {
+      if (e.target.closest('.cat-btn') || e.target.closest('.data-chip')) {
+        setTimeout(calcProgress, 50);
+      }
+    });
+  }
+
+  /* ── Stagger nas categorias ao re-renderizar ─────────────── */
+
+  function setupGridStagger() {
+    var grid = document.getElementById('categoria-grid');
+    if (!grid) return;
+    var obs = new MutationObserver(function(mutations) {
+      mutations.forEach(function(m) {
+        if (m.type !== 'childList' || m.addedNodes.length === 0) return;
+        grid.querySelectorAll('.cat-btn').forEach(function(btn, i) {
+          btn.style.animationDelay = (i * 28) + 'ms';
+        });
+      });
+    });
+    obs.observe(grid, { childList: true });
+  }
+
+  /* ── Init público ──────────────────────────────────────── */
+
+  function init() {
+    try { setupRipple();            } catch (e) {}
+    try { animarValoresMonetarios();} catch (e) {}
+    try { setupCatPop();            } catch (e) {}
+    try { setupInputFeedback();     } catch (e) {}
+    try { setupCategoryScroll();    } catch (e) {}
+    try { setupTabTransitions();    } catch (e) {}
+    try { setupButtonLoading();     } catch (e) {}
+    try { setupQuickAmounts();      } catch (e) {}
+    try { setupFormProgress();      } catch (e) {}
+    try { setupGridStagger();       } catch (e) {}
+  }
+
+  return {
+    init:       init,
+    shake:      shake,
+    shakeField: shakeField,
+    contarAte:  contarAte
+  };
+
+})();
+
+/* Auto-init após DOMContentLoaded */
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function() { MICRO.init(); });
+} else {
+  MICRO.init();
+}

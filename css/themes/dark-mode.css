@@ -633,3 +633,37 @@
 [data-theme="dark"] .auth-form .btn-primario:hover {
   box-shadow: 0 12px 32px rgba(16, 185, 129, 0.4), 0 6px 16px rgba(16, 185, 129, 0.25);
 }
+
+/* ═══════════════════════════════════════════════════════════
+   FASE 2 UX — Novos elementos
+   ═══════════════════════════════════════════════════════════ */
+
+[data-theme="dark"] .quick-amount {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: var(--color-gray-300);
+}
+
+[data-theme="dark"] .quick-amount:hover {
+  background: rgba(0, 114, 63, 0.18);
+  border-color: var(--color-primary-400);
+  color: var(--color-primary-300);
+}
+
+[data-theme="dark"] .form-progress-container {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .empty-titulo {
+  color: var(--color-gray-100);
+}
+
+[data-theme="dark"] .onb-progress-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .valor-hero--focused {
+  box-shadow: 0 0 0 4px rgba(0, 180, 100, 0.18),
+              0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  border-color: rgba(0, 180, 100, 0.35) !important;
+}

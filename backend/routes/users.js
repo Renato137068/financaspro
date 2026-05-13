@@ -1,10 +1,10 @@
 // backend/routes/users.js — perfil do usuário e configurações
 import { Router } from 'express';
 import { z } from 'zod';
-import prisma from '../lib/db.js';
 import { authenticate } from '../middleware/auth.js';
 import { requireRole } from '../lib/rbac.js';
 import { validateBody } from '../middleware/validate.js';
+import { UserService } from '../domain/services/user.service.js';
 
 const router = Router();
 router.use(authenticate);
@@ -23,35 +23,25 @@ router.get('/me', (req, res) => {
 
 // PATCH /api/v1/users/me
 router.patch('/me', validateBody(updateProfileSchema), async (req, res) => {
-  const user = await prisma.user.update({
-    where: { id: req.user.id },
-    data: req.body,
-  });
-  res.json({ data: { id: user.id, name: user.name, email: user.email, role: user.role } });
+  const user = await UserService.updateProfile(req.user.id, req.body);
+  res.json({ data: user });
 });
 
 // GET /api/v1/users/me/config
 router.get('/me/config', async (req, res) => {
-  const config = await prisma.userConfig.findUnique({ where: { userId: req.user.id } });
-  res.json({ data: config?.data ?? {} });
+  const data = await UserService.getConfig(req.user.id);
+  res.json({ data });
 });
 
 // PUT /api/v1/users/me/config
 router.put('/me/config', validateBody(configSchema), async (req, res) => {
-  const config = await prisma.userConfig.upsert({
-    where: { userId: req.user.id },
-    update: { data: req.body },
-    create: { userId: req.user.id, data: req.body },
-  });
-  res.json({ data: config.data });
+  const data = await UserService.updateConfig(req.user.id, req.body);
+  res.json({ data });
 });
 
 // GET /api/v1/users — listagem (apenas ADMIN)
 router.get('/', requireRole('ADMIN'), async (_req, res) => {
-  const users = await prisma.user.findMany({
-    select: { id: true, name: true, email: true, role: true, active: true, createdAt: true },
-    orderBy: { createdAt: 'desc' },
-  });
+  const users = await UserService.listAll();
   res.json({ data: users });
 });
 
@@ -61,11 +51,8 @@ router.patch('/:id', requireRole('ADMIN'), validateBody(z.object({
   role: z.enum(['ADMIN', 'USER', 'VIEWER']).optional(),
   active: z.boolean().optional(),
 })), async (req, res) => {
-  const user = await prisma.user.findUnique({ where: { id: req.params.id } });
-  if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
-
-  const updated = await prisma.user.update({ where: { id: req.params.id }, data: req.body });
-  res.json({ data: { id: updated.id, name: updated.name, email: updated.email, role: updated.role, active: updated.active } });
+  const user = await UserService.updateById(req.params.id, req.body);
+  res.json({ data: user });
 });
 
 export default router;

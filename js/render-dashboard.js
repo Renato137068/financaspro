@@ -6,17 +6,13 @@
 (function() {
   var DashboardRenderer = Object.create(RENDERER_BASE);
 
-  var CORES_CATEGORIAS = {
-    alimentacao: '#ef6c00',
-    transporte:  '#1565c0',
-    moradia:     '#2e7d32',
-    saude:       '#c62828',
-    lazer:       '#7b1fa2',
-    salario:     '#00723F',
-    outro:       '#78909c'
+  // Constantes compartilhadas — fonte única em core/config.js
+  var CORES_CATEGORIAS = (typeof CONFIG !== 'undefined' && CONFIG.CORES_CATEGORIAS) || {
+    alimentacao: '#ef6c00', transporte: '#1565c0', moradia: '#2e7d32',
+    saude: '#c62828', lazer: '#7b1fa2', salario: '#00723F', outro: '#78909c'
   };
-
-  var NOMES_MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  var NOMES_MESES = (typeof CONFIG !== 'undefined' && CONFIG.NOMES_MESES) ||
+    ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
   // ============================================================
   // HELPERS INTERNOS
@@ -34,16 +30,42 @@
       : null;
   }
 
+  function _clearEl(el) {
+    el.textContent = '';
+  }
+
   function _setChildren(el, nodes) {
-    el.innerHTML = '';
+    _clearEl(el);
     nodes.forEach(function(n) { if (n) el.appendChild(n); });
   }
+
+  // ============================================================
+  // CONTROLE DE RENDERIZAÇÃO
+  // ============================================================
+
+  DashboardRenderer.shouldRender = function() {
+    // Só renderiza quando a aba resumo/dashboard está visível
+    if (typeof APP_STORE === 'undefined') return true;
+    var aba = APP_STORE.get('ui.abaAtiva');
+    return !aba || aba === 'resumo';
+  };
 
   // ============================================================
   // MÉTODO PRINCIPAL
   // ============================================================
 
   DashboardRenderer.render = function() {
+    /* Leituras de dados em bloco — evita chamadas duplicadas nos sub-renderers */
+    var agora  = new Date();
+    var mes    = agora.getMonth() + 1;
+    var ano    = agora.getFullYear();
+    var tx     = _dadosTransacoes();
+    var orc    = _dadosOrcamento();
+    var config = (typeof DADOS !== 'undefined' && DADOS.getConfig) ? DADOS.getConfig() : {};
+    var resumo = tx ? tx.obterResumoMes(mes, ano) : { saldo: 0, receitas: 0, despesas: 0 };
+
+    this._ctx = { agora: agora, mes: mes, ano: ano, tx: tx, orc: orc, config: config, resumo: resumo };
+
     this.renderGreeting();
     this.renderCardSaldo();
     this.renderResumo();
@@ -54,6 +76,13 @@
     this.renderChartCategorias();
     this.renderOrcamento();
     this.renderUltimasTransacoes();
+
+    this._ctx = null;
+
+    /* Fase 7: Remove skeleton após primeiro render */
+    if (typeof SKELETON !== 'undefined' && SKELETON.esconder) {
+      SKELETON.esconder();
+    }
   };
 
   // ============================================================
@@ -64,12 +93,11 @@
     var el = this.getEl('dashboard-greeting');
     if (!el) return;
 
-    var config = (typeof DADOS !== 'undefined' && DADOS.getConfig) ? DADOS.getConfig() : {};
-    var nome   = config.nome || 'Usuario';
-    var agora  = new Date();
-    var hora   = agora.getHours();
+    var ctx    = this._ctx;
+    var nome   = ctx.config.nome || 'Usuario';
+    var hora   = ctx.agora.getHours();
     var saudacao = hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite';
-    var mesNome  = agora.toLocaleDateString('pt-BR', { month: 'long' });
+    var mesNome  = ctx.agora.toLocaleDateString('pt-BR', { month: 'long' });
     mesNome = mesNome.charAt(0).toUpperCase() + mesNome.slice(1);
 
     var container = this.create('div', { class: 'greeting-text' });
@@ -78,11 +106,11 @@
     hello.textContent = saudacao + ', ' + nome + '!';
     container.appendChild(hello);
 
-    var ctx = this.create('span', { class: 'greeting-context' });
-    ctx.textContent = 'Seu resumo de ' + mesNome + ' ' + agora.getFullYear();
-    container.appendChild(ctx);
+    var sub = this.create('span', { class: 'greeting-context' });
+    sub.textContent = 'Seu resumo de ' + mesNome + ' ' + ctx.ano;
+    container.appendChild(sub);
 
-    el.innerHTML = '';
+    _clearEl(el);
     el.appendChild(container);
   };
 
@@ -90,14 +118,11 @@
     var el = this.getEl('card-saldo-principal');
     if (!el) return;
 
-    var agora  = new Date();
-    var tx     = _dadosTransacoes();
-    var resumo = tx ? tx.obterResumoMes(agora.getMonth() + 1, agora.getFullYear()) : { saldo: 0 };
-    var saldo  = resumo.saldo || 0;
+    var saldo    = this._ctx.resumo.saldo || 0;
     var positivo = saldo >= 0;
 
     el.className = 'card-saldo-principal ' + (positivo ? 'saldo-positivo' : 'saldo-negativo');
-    el.innerHTML = '';
+    _clearEl(el);
 
     var emojiEl = this.create('div', { class: 'saldo-emoji' });
     emojiEl.textContent = positivo ? '📈' : '📉';
@@ -116,10 +141,7 @@
   };
 
   DashboardRenderer.renderResumo = function() {
-    var agora  = new Date();
-    var tx     = _dadosTransacoes();
-    var resumo = tx ? tx.obterResumoMes(agora.getMonth() + 1, agora.getFullYear()) : { receitas: 0, despesas: 0 };
-
+    var resumo = this._ctx.resumo;
     var elRec  = this.getEl('resumo-receitas');
     var elDesp = this.getEl('resumo-despesas');
     if (elRec)  elRec.textContent  = this.money(resumo.receitas  || 0);
@@ -127,16 +149,14 @@
   };
 
   DashboardRenderer.renderComparacaoMesAnterior = function() {
-    var tx = _dadosTransacoes();
+    var ctx = this._ctx;
+    var tx  = ctx.tx;
     if (!tx) return;
 
-    var agora   = new Date();
-    var mesAtual = agora.getMonth() + 1;
-    var anoAtual = agora.getFullYear();
-    var mesAnt  = mesAtual === 1 ? 12 : mesAtual - 1;
-    var anoAnt  = mesAtual === 1 ? anoAtual - 1 : anoAtual;
+    var mesAnt  = ctx.mes === 1 ? 12 : ctx.mes - 1;
+    var anoAnt  = ctx.mes === 1 ? ctx.ano - 1 : ctx.ano;
 
-    var atual   = tx.obterResumoMes(mesAtual, anoAtual);
+    var atual    = ctx.resumo;
     var anterior = tx.obterResumoMes(mesAnt, anoAnt);
 
     var elRec  = this.getEl('comp-receitas');
@@ -150,17 +170,17 @@
     var el = this.getEl('dashboard-alertas');
     if (!el) return;
 
-    var orc = _dadosOrcamento();
-    if (!orc) { el.innerHTML = ''; return; }
+    var ctx = this._ctx;
+    var orc = ctx.orc;
+    if (!orc) { _clearEl(el); return; }
 
-    var agora   = new Date();
-    var status  = orc.obterStatusTodos(agora.getMonth() + 1, agora.getFullYear());
+    var status  = orc.obterStatusTodos(ctx.mes, ctx.ano);
     var alertas = status.filter(function(s) { return s.status === 'excedido' || s.status === 'alerta'; });
 
     var btnOrc = document.querySelector('.nav-btn[data-aba="orcamento"]');
     if (btnOrc) btnOrc.classList.toggle('nav-alerta', alertas.length > 0);
 
-    el.innerHTML = '';
+    _clearEl(el);
     if (alertas.length === 0) return;
 
     var excedidos = alertas.filter(function(s) { return s.status === 'excedido'; });
@@ -173,14 +193,11 @@
     var el = this.getEl('dashboard-indicadores');
     if (!el) return;
 
-    var config = (typeof DADOS !== 'undefined' && DADOS.getConfig) ? DADOS.getConfig() : {};
-    var agora  = new Date();
-    var tx     = _dadosTransacoes();
-    var resumo = tx ? tx.obterResumoMes(agora.getMonth() + 1, agora.getFullYear()) : { receitas: 0, despesas: 0 };
-
-    var renda         = config.renda || 0;
-    var diasNoMes     = new Date(agora.getFullYear(), agora.getMonth() + 1, 0).getDate();
-    var diasRestantes = diasNoMes - agora.getDate();
+    var ctx    = this._ctx;
+    var resumo = ctx.resumo;
+    var renda  = ctx.config.renda || 0;
+    var diasNoMes     = new Date(ctx.ano, ctx.mes, 0).getDate();
+    var diasRestantes = diasNoMes - ctx.agora.getDate();
 
     var container = this.create('div', { class: 'indicadores-grid' });
 
@@ -213,7 +230,7 @@
       ));
     }
 
-    el.innerHTML = '';
+    _clearEl(el);
     el.appendChild(container);
   };
 
@@ -221,16 +238,16 @@
     var el = this.getEl('chart-evolucao');
     if (!el) return;
 
-    var tx = _dadosTransacoes();
+    var ctx = this._ctx;
+    var tx  = ctx.tx;
     if (!tx) {
       el.innerHTML = UI.EmptyState.html('📈', 'Registre transações para ver a evolução dos seus gastos ao longo dos meses.', 'novo');
       return;
     }
 
-    var agora = new Date();
     var dados = [];
     for (var i = 5; i >= 0; i--) {
-      var d      = new Date(agora.getFullYear(), agora.getMonth() - i, 1);
+      var d      = new Date(ctx.ano, ctx.mes - 1 - i, 1);
       var resumo = tx.obterResumoMes(d.getMonth() + 1, d.getFullYear());
       dados.push({ mes: NOMES_MESES[d.getMonth()], receitas: resumo.receitas, despesas: resumo.despesas });
     }
@@ -241,21 +258,22 @@
       return;
     }
 
-    el.innerHTML = UI.BarChart6M.render(dados);
+    _clearEl(el);
+    el.appendChild(UI.BarChart6M.render(dados));
   };
 
   DashboardRenderer.renderChartCategorias = function() {
     var el = this.getEl('chart-categorias');
     if (!el) return;
 
-    var tx = _dadosTransacoes();
+    var ctx = this._ctx;
+    var tx  = ctx.tx;
     if (!tx || !tx.obterResumoPorCategoria) {
       el.innerHTML = UI.EmptyState.html('🍩', 'Registre despesas para ver a distribuição por categoria.', 'novo');
       return;
     }
 
-    var agora     = new Date();
-    var resumoCat = tx.obterResumoPorCategoria(agora.getMonth() + 1, agora.getFullYear());
+    var resumoCat = tx.obterResumoPorCategoria(ctx.mes, ctx.ano);
     var cats      = [];
     var totalDesp = 0;
 
@@ -274,7 +292,7 @@
 
     cats.sort(function(a, b) { return b.valor - a.valor; });
 
-    el.innerHTML = '';
+    _clearEl(el);
     el.appendChild(UI.DonutChart.render(cats, totalDesp));
   };
 
@@ -282,14 +300,14 @@
     var el = this.getEl('resumo-orcamentos');
     if (!el) return;
 
-    var orc = _dadosOrcamento();
+    var ctx = this._ctx;
+    var orc = ctx.orc;
     if (!orc) {
       _setChildren(el, [UI.EmptyState.render('📊', 'Defina limites mensais para acompanhar seus gastos por categoria.', 'orcamento')]);
       return;
     }
 
-    var agora  = new Date();
-    var status = orc.obterStatusTodos(agora.getMonth() + 1, agora.getFullYear());
+    var status = orc.obterStatusTodos(ctx.mes, ctx.ano);
 
     if (status.length === 0) {
       _setChildren(el, [UI.EmptyState.render('📊', 'Defina limites mensais para acompanhar seus gastos por categoria.', 'orcamento')]);
@@ -301,7 +319,7 @@
       lista.appendChild(UI.CardOrcamento.renderResumo(s));
     });
 
-    el.innerHTML = '';
+    _clearEl(el);
     el.appendChild(lista);
   };
 
@@ -309,10 +327,9 @@
     var el = this.getEl('resumo-list');
     if (!el) return;
 
-    var tx = _dadosTransacoes();
+    var tx = this._ctx.tx;
     var transacoes = [];
 
-    // Tenta TRANSACOES.obter({}) primeiro (API canônica); fallback para getTodas()
     if (tx && typeof tx.obter === 'function') {
       transacoes = tx.obter({});
     } else if (tx && typeof tx.getTodas === 'function') {
@@ -324,14 +341,16 @@
       return;
     }
 
-    var ultimas = transacoes.slice(0, 3);
-    var lista   = this.create('div', { class: 'lista-transacoes-resumo' });
-    ultimas.forEach(function(t) {
+    /* DocumentFragment: uma única inserção no DOM em vez de N */
+    var frag  = document.createDocumentFragment();
+    var lista = this.create('div', { class: 'lista-transacoes-resumo' });
+    transacoes.slice(0, 3).forEach(function(t) {
       lista.appendChild(UI.CardTransacao.renderResumo(t));
     });
+    frag.appendChild(lista);
 
-    el.innerHTML = '';
-    el.appendChild(lista);
+    _clearEl(el);
+    el.appendChild(frag);
   };
 
   // ============================================================
@@ -344,4 +363,3 @@
 
   window.RENDER_DASHBOARD = DashboardRenderer;
 })();
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 

@@ -10,11 +10,44 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
 enum Role {
   ADMIN
   USER
   VIEWER
 }
+
+enum OrgRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum PlanTier {
+  FREE
+  PRO
+  BUSINESS
+}
+
+enum SubStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  UNPAID
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+// ─── Users & Auth ─────────────────────────────────────────────────────────────
 
 model User {
   id           String   @id @default(uuid())
@@ -27,13 +60,17 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  sessions     Session[]
-  transactions Transaction[]
-  accounts     Account[]
-  budgets      Budget[]
-  recurring    RecurringTransaction[]
-  config       UserConfig?
-  auditLogs    AuditLog[]
+  sessions       Session[]
+  transactions   Transaction[]
+  accounts       Account[]
+  budgets        Budget[]
+  recurring      RecurringTransaction[]
+  config         UserConfig?
+  auditLogs      AuditLog[]
+
+  // Fase 10 — Multi-org
+  ownedOrgs      Organization[]       @relation("OrgOwner")
+  orgMemberships OrganizationMember[]
 }
 
 model Session {
@@ -51,27 +88,34 @@ model Session {
   @@index([refreshToken])
 }
 
+// ─── Financial Models ─────────────────────────────────────────────────────────
+
 model Transaction {
-  id          String   @id @default(uuid())
+  id          String        @id @default(uuid())
   userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   type        String
-  amount      Decimal  @db.Decimal(15, 2)
+  amount      Decimal       @db.Decimal(15, 2)
   description String
   category    String?
   subcategory String?
   date        DateTime
   accountId   String?
-  account     Account? @relation(fields: [accountId], references: [id])
+  account     Account?      @relation(fields: [accountId], references: [id])
   tags        String[]
   notes       String?
-  recurring   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  recurring   Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Fase 10 — recurso pode pertencer a org (opcional; null = pessoal)
+  orgId       String?
+  org         Organization? @relation(fields: [orgId], references: [id])
 
   @@index([userId])
   @@index([userId, date])
   @@index([userId, category])
+  @@index([orgId])
 }
 
 model Account {
@@ -88,42 +132,57 @@ model Account {
   updatedAt    DateTime      @updatedAt
   transactions Transaction[]
 
+  // Fase 10
+  orgId        String?
+  org          Organization? @relation(fields: [orgId], references: [id])
+
   @@index([userId])
+  @@index([orgId])
 }
 
 model Budget {
-  id        String   @id @default(uuid())
+  id        String        @id @default(uuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   category  String
-  limit     Decimal  @db.Decimal(15, 2)
-  period    String   @default("monthly")
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  limit     Decimal       @db.Decimal(15, 2)
+  period    String        @default("monthly")
+  active    Boolean       @default(true)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  // Fase 10
+  orgId     String?
+  org       Organization? @relation(fields: [orgId], references: [id])
 
   @@unique([userId, category, period])
   @@index([userId])
+  @@index([orgId])
 }
 
 model RecurringTransaction {
-  id          String    @id @default(uuid())
+  id          String        @id @default(uuid())
   userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   type        String
-  amount      Decimal   @db.Decimal(15, 2)
+  amount      Decimal       @db.Decimal(15, 2)
   description String
   category    String?
   frequency   String
   startDate   DateTime
   endDate     DateTime?
   nextDue     DateTime
-  active      Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  active      Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Fase 10
+  orgId       String?
+  org         Organization? @relation(fields: [orgId], references: [id])
 
   @@index([userId])
   @@index([nextDue])
+  @@index([orgId])
 }
 
 model UserConfig {
@@ -148,4 +207,160 @@ model AuditLog {
   @@index([userId])
   @@index([action])
   @@index([createdAt])
+}
+
+// ─── Multi-org (Fase 10) ──────────────────────────────────────────────────────
+
+model Organization {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  ownerId     String
+  owner       User     @relation("OrgOwner", fields: [ownerId], references: [id])
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members      OrganizationMember[]
+  invitations  Invitation[]
+  subscription Subscription?
+
+  // recursos da org
+  transactions Transaction[]
+  accounts     Account[]
+  budgets      Budget[]
+  recurring    RecurringTransaction[]
+
+  @@index([ownerId])
+}
+
+model OrganizationMember {
+  id       String       @id @default(uuid())
+  orgId    String
+  org      Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role     OrgRole      @default(MEMBER)
+  joinedAt DateTime     @default(now())
+
+  @@unique([orgId, userId])
+  @@index([userId])
+  @@index([orgId])
+}
+
+model Invitation {
+  id         String       @id @default(uuid())
+  orgId      String
+  org        Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  email      String
+  role       OrgRole      @default(MEMBER)
+  token      String       @unique @default(uuid())
+  expiresAt  DateTime
+  acceptedAt DateTime?
+  createdAt  DateTime     @default(now())
+
+  @@index([token])
+  @@index([email])
+  @@index([orgId])
+}
+
+// ─── Billing / Planos (Fase 10) ───────────────────────────────────────────────
+
+model Plan {
+  id                   String        @id @default(uuid())
+  name                 String
+  tier                 PlanTier      @unique
+  priceMonthly         Decimal       @db.Decimal(10, 2)
+  priceYearly          Decimal       @db.Decimal(10, 2)
+  stripePriceIdMonthly String?
+  stripePriceIdYearly  String?
+  maxUsers             Int           @default(1)
+  maxTransPerMonth     Int           @default(100)
+  maxAccounts          Int           @default(3)
+  maxBudgets           Int           @default(5)
+  features             Json          @default("[]")
+  active               Boolean       @default(true)
+  createdAt            DateTime      @default(now())
+
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id                 String       @id @default(uuid())
+  orgId              String       @unique
+  org                Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  planId             String
+  plan               Plan         @relation(fields: [planId], references: [id])
+  status             SubStatus    @default(TRIALING)
+  billingInterval    String       @default("monthly")
+  stripeCustomerId   String?
+  stripeSubId        String?      @unique
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean      @default(false)
+  trialEndsAt        DateTime?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  usageRecords UsageRecord[]
+  invoices     Invoice[]
+
+  @@index([stripeCustomerId])
+  @@index([status])
+}
+
+model UsageRecord {
+  id             String       @id @default(uuid())
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id])
+  metric         String
+  value          Int
+  periodStart    DateTime
+  periodEnd      DateTime
+  createdAt      DateTime     @default(now())
+
+  @@index([subscriptionId, metric])
+  @@index([periodStart])
+}
+
+model Invoice {
+  id              String       @id @default(uuid())
+  subscriptionId  String
+  subscription    Subscription @relation(fields: [subscriptionId], references: [id])
+  stripeInvoiceId String?      @unique
+  amount          Decimal      @db.Decimal(10, 2)
+  currency        String       @default("BRL")
+  status          String
+  dueDate         DateTime?
+  paidAt          DateTime?
+  hostedUrl       String?
+  pdfUrl          String?
+  createdAt       DateTime     @default(now())
+
+  @@index([subscriptionId])
+  @@index([status])
+}
+
+// ─── Job Log (Fase 10) ────────────────────────────────────────────────────────
+
+model JobLog {
+  id          String    @id @default(uuid())
+  queue       String
+  jobId       String    @unique
+  name        String
+  data        Json
+  status      JobStatus @default(PENDING)
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(3)
+  scheduledAt DateTime  @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+  failedAt    DateTime?
+  error       String?
+  result      Json?
+  createdAt   DateTime  @default(now())
+
+  @@index([queue, status])
+  @@index([scheduledAt])
+  @@index([name])
 }

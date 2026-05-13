@@ -1156,10 +1156,18 @@ function salvarRendaOrcamento() {
 function editarRendaOrcamento() {
   var config = DADOS.getConfig();
   var atual = config.renda || 0;
-  var html = '<div style="display:flex;flex-direction:column;gap:12px;text-align:center">' +
-    '<p style="font-weight:600;font-size:16px">Editar Renda Mensal</p>' +
-    '<div class="orc-renda-input"><span class="orc-renda-prefix">R$</span>' +
-    '<input type="text" id="edit-renda-val" value="' + atual.toLocaleString('pt-BR', {minimumFractionDigits:2}) + '" inputmode="numeric"></div>' +
+  var html = '<div class="orc-edit-renda-modal">' +
+    '<div class="orc-edit-renda-header">' +
+      '<span class="orc-edit-renda-icon">💰</span>' +
+      '<h3 class="orc-edit-renda-title">Editar Renda Mensal</h3>' +
+      '<p class="orc-edit-renda-subtitle">Atualize sua renda para recalcular o orçamento</p>' +
+    '</div>' +
+    '<div class="orc-edit-renda-body">' +
+      '<div class="orc-renda-input-wrapper">' +
+        '<span class="orc-renda-prefix">R$</span>' +
+        '<input type="text" id="edit-renda-val" value="' + atual.toLocaleString('pt-BR', {minimumFractionDigits:2}) + '" inputmode="numeric" class="orc-renda-input-field" placeholder="0,00">' +
+      '</div>' +
+    '</div>' +
   '</div>';
   fpAlert(html);
   setTimeout(function() {
@@ -1185,15 +1193,48 @@ function editarRendaOrcamento() {
 function editarRegra503020() {
   var config = DADOS.getConfig();
   var regra = config.regra503020 || { nec: 50, des: 30, pou: 20 };
-  var html = '<div style="display:flex;flex-direction:column;gap:14px">' +
-    '<p style="font-weight:700;font-size:15px;text-align:center">Personalizar Regra</p>' +
-    '<p style="font-size:12px;color:var(--text-secondary);text-align:center">A soma deve ser 100%</p>' +
-    '<label style="font-size:13px;font-weight:600">🏠 Necessidades (%)<br>' +
-      '<input type="number" id="regra-nec" value="' + regra.nec + '" min="1" max="98" style="width:100%;margin-top:6px;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border);font-size:14px;background:var(--bg);color:var(--text-primary)"></label>' +
-    '<label style="font-size:13px;font-weight:600">🎮 Desejos (%)<br>' +
-      '<input type="number" id="regra-des" value="' + regra.des + '" min="1" max="98" style="width:100%;margin-top:6px;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border);font-size:14px;background:var(--bg);color:var(--text-primary)"></label>' +
-    '<label style="font-size:13px;font-weight:600">🐷 Poupança (%)<br>' +
-      '<input type="number" id="regra-pou" value="' + regra.pou + '" min="1" max="98" style="width:100%;margin-top:6px;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border);font-size:14px;background:var(--bg);color:var(--text-primary)"></label>' +
+  var html = '<div class="orc-edit-regra-modal">' +
+    '<div class="orc-edit-regra-header">' +
+      '<span class="orc-edit-regra-icon">⚙️</span>' +
+      '<h3 class="orc-edit-regra-title">Personalizar Regra 50/30/20</h3>' +
+      '<p class="orc-edit-regra-subtitle">Ajuste a distribuição da sua renda (soma deve ser 100%)</p>' +
+    '</div>' +
+    '<div class="orc-edit-regra-body">' +
+      '<div class="orc-regra-input-group">' +
+        '<label class="orc-regra-label">' +
+          '<span class="orc-regra-label-icon">🏠</span>' +
+          '<span class="orc-regra-label-text">Necessidades</span>' +
+        '</label>' +
+        '<div class="orc-regra-input-wrapper">' +
+          '<input type="number" id="regra-nec" value="' + regra.nec + '" min="1" max="98" class="orc-regra-input-field">' +
+          '<span class="orc-regra-suffix">%</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="orc-regra-input-group">' +
+        '<label class="orc-regra-label">' +
+          '<span class="orc-regra-label-icon">🎮</span>' +
+          '<span class="orc-regra-label-text">Desejos</span>' +
+        '</label>' +
+        '<div class="orc-regra-input-wrapper">' +
+          '<input type="number" id="regra-des" value="' + regra.des + '" min="1" max="98" class="orc-regra-input-field">' +
+          '<span class="orc-regra-suffix">%</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="orc-regra-input-group">' +
+        '<label class="orc-regra-label">' +
+          '<span class="orc-regra-label-icon">🐷</span>' +
+          '<span class="orc-regra-label-text">Poupança</span>' +
+        '</label>' +
+        '<div class="orc-regra-input-wrapper">' +
+          '<input type="number" id="regra-pou" value="' + regra.pou + '" min="1" max="98" class="orc-regra-input-field">' +
+          '<span class="orc-regra-suffix">%</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="orc-regra-total">' +
+        '<span class="orc-regra-total-label">Total:</span>' +
+        '<span class="orc-regra-total-value" id="regra-total">100%</span>' +
+      '</div>' +
+    '</div>' +
   '</div>';
   fpAlert(html);
   setTimeout(function() {
@@ -1220,6 +1261,19 @@ function editarRegra503020() {
         UTILS.mostrarToast('Regra personalizada! ' + nec + '/' + des + '/' + pou, 'success');
       };
     }
+    // Adicionar listener para atualizar total
+    var inputs = overlay.querySelectorAll('.orc-regra-input-field');
+    var totalEl = document.getElementById('regra-total');
+    inputs.forEach(function(input) {
+      input.addEventListener('input', function() {
+        var nec = parseInt(document.getElementById('regra-nec').value) || 0;
+        var des = parseInt(document.getElementById('regra-des').value) || 0;
+        var pou = parseInt(document.getElementById('regra-pou').value) || 0;
+        var total = nec + des + pou;
+        totalEl.textContent = total + '%';
+        totalEl.style.color = total === 100 ? 'var(--color-success)' : 'var(--color-danger)';
+      });
+    });
   }, 50);
 }
 
@@ -1232,38 +1286,34 @@ function toggleDetalhesCategorias() {
   if (arrow) arrow.textContent = aberto ? '▼' : '▲';
 }
 
-function renderOrcamentoDashboard() {
+// Helper function para atualizar elementos DOM de forma segura
+function updateElement(id, value) {
+  var el = document.getElementById(id);
+  if (el) el.textContent = value;
+}
+
+// Helper function para atualizar estilo de elemento
+function updateElementStyle(id, property, value) {
+  var el = document.getElementById(id);
+  if (el) el.style[property] = value;
+}
+
+// Helper function para atualizar classe de elemento
+function updateElementClass(id, className) {
+  var el = document.getElementById(id);
+  if (el) el.className = className;
+}
+
+// Função auxiliar para calcular dados do orçamento
+function calculateBudgetData() {
   var config = DADOS.getConfig();
   var renda = config.renda || 0;
-
-  var setupEl = document.getElementById('orc-renda-setup');
-  var dashEl = document.getElementById('orc-dashboard');
-
-  if (!renda || renda <= 0) {
-    if (setupEl) setupEl.style.display = 'block';
-    if (dashEl) dashEl.style.display = 'none';
-    return;
-  }
-  if (setupEl) setupEl.style.display = 'none';
-  if (dashEl) dashEl.style.display = 'block';
-
-  // Mostrar renda
-  var rendaDisplay = document.getElementById('orc-renda-display');
-  if (rendaDisplay) rendaDisplay.textContent = UTILS.formatarMoeda(renda);
 
   // Ler percentuais personalizados (padrão 50/30/20)
   var regra = config.regra503020 || { nec: 50, des: 30, pou: 20 };
   var pNec = Math.max(1, regra.nec || 50);
   var pDes = Math.max(1, regra.des || 30);
   var pPou = Math.max(1, regra.pou || 20);
-
-  // Atualizar rótulos de percentual nos cards
-  var elNecPct = document.getElementById('orc-nec-pct');
-  var elDesPct = document.getElementById('orc-des-pct');
-  var elPouPct = document.getElementById('orc-pou-pct');
-  if (elNecPct) elNecPct.textContent = pNec + '%';
-  if (elDesPct) elDesPct.textContent = pDes + '%';
-  if (elPouPct) elPouPct.textContent = pPou + '%';
 
   // Calcular gastos do mês
   var agora = new Date();
@@ -1294,52 +1344,118 @@ function renderOrcamentoDashboard() {
   var pctDes = limDes > 0 ? Math.round((gasDes / limDes) * 100) : 0;
   var pctPou = limPou > 0 ? Math.round((Math.max(0, poupancaReal) / limPou) * 100) : 0;
 
-  // Atualizar necessidades
-  var el;
-  el = document.getElementById('orc-nec-gasto');
-  if (el) el.textContent = UTILS.formatarMoeda(gastoNec);
-  el = document.getElementById('orc-nec-limite');
-  if (el) el.textContent = UTILS.formatarMoeda(limNec);
-  el = document.getElementById('orc-nec-bar');
-  if (el) {
-    el.style.width = Math.min(pctNec, 100) + '%';
-    el.className = 'orc-progress-fill ' + (pctNec >= 100 ? 'excedido' : pctNec >= 70 ? 'alerta' : 'ok');
+  return {
+    renda: renda,
+    pNec: pNec,
+    pDes: pDes,
+    pPou: pPou,
+    gastoNec: gastoNec,
+    gasDes: gasDes,
+    poupancaReal: poupancaReal,
+    limNec: limNec,
+    limDes: limDes,
+    limPou: limPou,
+    pctNec: pctNec,
+    pctDes: pctDes,
+    pctPou: pctPou,
+    catGastos: catGastos
+  };
+}
+
+// Função auxiliar para atualizar rótulos de percentual
+function updatePercentageLabels(pNec, pDes, pPou) {
+  updateElement('orc-nec-pct', pNec + '%');
+  updateElement('orc-des-pct', pDes + '%');
+  updateElement('orc-pou-pct', pPou + '%');
+}
+
+// Função auxiliar para atualizar card de necessidades
+function updateNecessidadesCard(gastoNec, limNec, pctNec) {
+  updateElement('orc-nec-gasto', UTILS.formatarMoeda(gastoNec));
+  updateElement('orc-nec-limite', UTILS.formatarMoeda(limNec));
+  updateElementStyle('orc-nec-bar', 'width', Math.min(pctNec, 100) + '%');
+  var barClass = 'orc-progress-fill-premium ' + (pctNec >= 100 ? 'exceeded' : pctNec >= 80 ? 'attention' : 'healthy');
+  updateElementClass('orc-nec-bar', barClass);
+  // Atualizar badge de status
+  var statusEl = document.getElementById('orc-nec-status');
+  if (statusEl) {
+    var badgeClass = 'status-badge ' + (pctNec >= 100 ? 'status-critical' : pctNec >= 80 ? 'status-attention' : 'status-healthy');
+    var badgeText = pctNec >= 100 ? 'Crítico' : pctNec >= 80 ? 'Atenção' : 'Saudável';
+    statusEl.innerHTML = '<span class="' + badgeClass + '">' + badgeText + '</span>';
   }
-  el = document.getElementById('orc-necessidades');
-  if (el) el.className = 'orc-regra-item necessidades' + (pctNec >= 100 ? ' status-excedido' : pctNec >= 70 ? ' status-alerta' : '');
+}
 
-  // Atualizar desejos
-  el = document.getElementById('orc-des-gasto');
-  if (el) el.textContent = UTILS.formatarMoeda(gasDes);
-  el = document.getElementById('orc-des-limite');
-  if (el) el.textContent = UTILS.formatarMoeda(limDes);
-  el = document.getElementById('orc-des-bar');
-  if (el) {
-    el.style.width = Math.min(pctDes, 100) + '%';
-    el.className = 'orc-progress-fill ' + (pctDes >= 100 ? 'excedido' : pctDes >= 70 ? 'alerta' : 'ok');
+// Função auxiliar para atualizar card de desejos
+function updateDesejosCard(gasDes, limDes, pctDes) {
+  updateElement('orc-des-gasto', UTILS.formatarMoeda(gasDes));
+  updateElement('orc-des-limite', UTILS.formatarMoeda(limDes));
+  updateElementStyle('orc-des-bar', 'width', Math.min(pctDes, 100) + '%');
+  var barClass = 'orc-progress-fill-premium ' + (pctDes >= 100 ? 'exceeded' : pctDes >= 80 ? 'attention' : 'healthy');
+  updateElementClass('orc-des-bar', barClass);
+  // Atualizar badge de status
+  var statusEl = document.getElementById('orc-des-status');
+  if (statusEl) {
+    var badgeClass = 'status-badge ' + (pctDes >= 100 ? 'status-critical' : pctDes >= 80 ? 'status-attention' : 'status-healthy');
+    var badgeText = pctDes >= 100 ? 'Crítico' : pctDes >= 80 ? 'Atenção' : 'Saudável';
+    statusEl.innerHTML = '<span class="' + badgeClass + '">' + badgeText + '</span>';
   }
-  el = document.getElementById('orc-desejos');
-  if (el) el.className = 'orc-regra-item desejos' + (pctDes >= 100 ? ' status-excedido' : pctDes >= 70 ? ' status-alerta' : '');
+}
 
-  // Atualizar poupança
-  el = document.getElementById('orc-pou-gasto');
-  if (el) el.textContent = UTILS.formatarMoeda(Math.max(0, poupancaReal));
-  el = document.getElementById('orc-pou-limite');
-  if (el) el.textContent = UTILS.formatarMoeda(limPou);
-  el = document.getElementById('orc-pou-bar');
-  if (el) {
-    el.style.width = Math.min(pctPou, 100) + '%';
-    el.className = 'orc-progress-fill ' + (pctPou >= 100 ? 'otimo' : pctPou >= 50 ? 'ok' : 'alerta');
+// Função auxiliar para atualizar card de poupança
+function updatePoupancaCard(poupancaReal, limPou, pctPou) {
+  updateElement('orc-pou-gasto', UTILS.formatarMoeda(Math.max(0, poupancaReal)));
+  updateElement('orc-pou-limite', UTILS.formatarMoeda(limPou));
+  updateElementStyle('orc-pou-bar', 'width', Math.min(pctPou, 100) + '%');
+  var barClass = 'orc-progress-fill-premium ' + (pctPou >= 100 ? 'otimo' : pctPou >= 50 ? 'healthy' : 'attention');
+  updateElementClass('orc-pou-bar', barClass);
+  // Atualizar badge de status
+  var statusEl = document.getElementById('orc-pou-status');
+  if (statusEl) {
+    var badgeClass = 'status-badge ' + (pctPou >= 100 ? 'status-healthy' : pctPou >= 50 ? 'status-attention' : 'status-critical');
+    var badgeText = pctPou >= 100 ? 'Excelente' : pctPou >= 50 ? 'Em andamento' : 'Crítico';
+    statusEl.innerHTML = '<span class="' + badgeClass + '">' + badgeText + '</span>';
   }
+}
 
-  // Insights
-  renderOrcamentoInsights(gastoNec, gasDes, poupancaReal, limNec, limDes, limPou, pctNec, pctDes, catGastos, renda);
+function renderOrcamentoDashboard() {
+  try {
+    var config = DADOS.getConfig();
+    var renda = config.renda || 0;
 
-  // Detalhes por categoria
-  renderOrcamentoCategorias(catGastos, renda);
+    var setupEl = document.getElementById('orc-renda-setup');
+    var dashEl = document.getElementById('orc-dashboard');
 
-  // Histórico 3 meses
-  renderOrcamentoHistorico(renda);
+    if (!renda || renda <= 0) {
+      if (setupEl) setupEl.style.display = 'block';
+      if (dashEl) dashEl.style.display = 'none';
+      return;
+    }
+    if (setupEl) setupEl.style.display = 'none';
+    if (dashEl) dashEl.style.display = 'block';
+
+    // Calcular dados do orçamento
+    var data = calculateBudgetData();
+
+    // Atualizar rótulos de percentual
+    updatePercentageLabels(data.pNec, data.pDes, data.pPou);
+
+    // Atualizar cards
+    updateNecessidadesCard(data.gastoNec, data.limNec, data.pctNec);
+    updateDesejosCard(data.gasDes, data.limDes, data.pctDes);
+    updatePoupancaCard(data.poupancaReal, data.limPou, data.pctPou);
+
+    // Insights
+    renderOrcamentoInsights(data.gastoNec, data.gasDes, data.poupancaReal, data.limNec, data.limDes, data.limPou, data.pctNec, data.pctDes, data.catGastos, data.renda);
+
+    // Detalhes por categoria
+    renderOrcamentoCategorias(data.catGastos, data.renda);
+
+    // Histórico 3 meses
+    renderOrcamentoHistorico(data.renda);
+  } catch (error) {
+    console.error('Erro ao renderizar orçamento:', error);
+    UTILS.mostrarToast('Erro ao carregar orçamento', 'error');
+  }
 }
 
 function renderOrcamentoInsights(gastoNec, gasDes, poupanca, limNec, limDes, limPou, pctNec, pctDes, catGastos, renda) {
@@ -1618,24 +1734,13 @@ function _fpModal(titulo, camposHtml, onSalvar) {
   if (inp) { inp.focus(); inp.select(); }
 }
 
+// Função global que delega para INIT_CONFIG.abrirEditarPerfil()
 function abrirEditarPerfil() {
-  var config = DADOS.getConfig();
-  var campos =
-    '<div class="form-group">' +
-      '<label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px">Nome</label>' +
-      '<input type="text" id="edit-cfg-nome" value="' + UTILS.escapeHtml(config.nome || '') + '" ' +
-        'placeholder="Seu nome" maxlength="40" ' +
-        'style="width:100%;padding:12px;border:2px solid var(--border);border-radius:10px;font-size:15px;background:var(--bg);color:var(--text)">' +
-    '</div>';
-  _fpModal('Editar Perfil', campos, function(ov) {
-    var v = document.getElementById('edit-cfg-nome').value.trim();
-    if (!v) { UTILS.mostrarToast('Informe um nome', 'error'); return; }
-    DADOS.salvarConfig({ nome: v });
-    ov.remove();
-    renderConfigTab();
-    atualizarDashboard();
-    UTILS.mostrarToast('Perfil atualizado!', 'success');
-  });
+  if (typeof INIT_CONFIG !== 'undefined' && typeof INIT_CONFIG.abrirEditarPerfil === 'function') {
+    INIT_CONFIG.abrirEditarPerfil();
+  } else {
+    console.error('INIT_CONFIG não disponível');
+  }
 }
 
 function abrirEditarRenda() {
@@ -2302,78 +2407,13 @@ function setupAutoCategoria() {
 }
 
 /* CONFIG BANCOS E CARTÕES */
+// Função global que delega para INIT_CONFIG.abrirConfigBancos
 function abrirConfigBancos() {
-  var config = DADOS.getConfig();
-  var bancos = config.bancos || ['Nubank','Itaú','Caixa','Bradesco','Santander'];
-  var cartoes = config.cartoes || ['Crédito','Débito','XP','B3'];
-
-  var html = '<div style="display:flex;flex-direction:column;gap:16px">' +
-    '<div>' +
-      '<p style="font-weight:700;font-size:14px;margin-bottom:8px">🏦 Bancos</p>' +
-      '<div id="lista-bancos" style="display:flex;flex-direction:column;gap:6px">' +
-        bancos.map(function(b) {
-          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg);border-radius:8px">' +
-            '<span>' + UTILS.escapeHtml(b) + '</span>' +
-            '<button data-bc-action="remover-banco" data-val="' + UTILS.escapeHtml(b) + '" style="background:none;border:none;color:red;cursor:pointer;font-size:16px">✕</button>' +
-          '</div>';
-        }).join('') +
-      '</div>' +
-      '<input type="text" id="novo-banco-input" placeholder="Novo banco..." style="width:100%;padding:8px;margin-top:8px;border:1px solid var(--border);border-radius:8px">' +
-      '<button data-bc-action="add-banco" style="width:100%;padding:8px;margin-top:6px;background:var(--primary);color:white;border:none;border-radius:8px;cursor:pointer">+ Adicionar</button>' +
-    '</div>' +
-    '<div>' +
-      '<p style="font-weight:700;font-size:14px;margin-bottom:8px">💳 Cartões</p>' +
-      '<div id="lista-cartoes" style="display:flex;flex-direction:column;gap:6px">' +
-        cartoes.map(function(c) {
-          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg);border-radius:8px">' +
-            '<span>' + UTILS.escapeHtml(c) + '</span>' +
-            '<button data-bc-action="remover-cartao" data-val="' + UTILS.escapeHtml(c) + '" style="background:none;border:none;color:red;cursor:pointer;font-size:16px">✕</button>' +
-          '</div>';
-        }).join('') +
-      '</div>' +
-      '<input type="text" id="novo-cartao-input" placeholder="Novo cartão..." style="width:100%;padding:8px;margin-top:8px;border:1px solid var(--border);border-radius:8px">' +
-      '<button data-bc-action="add-cartao" style="width:100%;padding:8px;margin-top:6px;background:var(--primary);color:white;border:none;border-radius:8px;cursor:pointer">+ Adicionar</button>' +
-    '</div>' +
-  '</div>';
-
-  fpAlert(html);
-  setTimeout(function() {
-    var ov = document.querySelector('.modal-overlay');
-    if (!ov || ov._bcListener) return;
-    ov._bcListener = true;
-    ov.addEventListener('click', function(ev) {
-      var btn = ev.target.closest('[data-bc-action]');
-      if (!btn) return;
-      var act = btn.dataset.bcAction;
-      var val = btn.dataset.val;
-      if (act === 'remover-banco') removerBanco(val);
-      else if (act === 'remover-cartao') removerCartao(val);
-      else if (act === 'add-banco') adicionarBanco();
-      else if (act === 'add-cartao') adicionarCartao();
-    });
-  }, 50);
-}
-
-function adicionarBanco() {
-  var input = document.getElementById('novo-banco-input');
-  var valor = input ? input.value.trim() : '';
-  if (!valor) return;
-
-  var config = DADOS.getConfig();
-  config.bancos = config.bancos || [];
-  if (config.bancos.indexOf(valor) === -1) {
-    config.bancos.push(valor);
-    DADOS.salvarConfig(config);
-    abrirConfigBancos();
+  if (typeof INIT_CONFIG !== 'undefined' && typeof INIT_CONFIG.abrirConfigBancos === 'function') {
+    INIT_CONFIG.abrirConfigBancos();
+  } else {
+    console.error('INIT_CONFIG não disponível');
   }
-}
-
-function removerBanco(banco) {
-  var config = DADOS.getConfig();
-  config.bancos = config.bancos || [];
-  config.bancos = config.bancos.filter(function(b) { return b !== banco; });
-  DADOS.salvarConfig(config);
-  abrirConfigBancos();
 }
 
 function adicionarCartao() {
@@ -2550,4 +2590,3 @@ setInterval(function() {
   }
 }, 300000);
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
