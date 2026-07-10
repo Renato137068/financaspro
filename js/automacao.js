@@ -154,11 +154,12 @@ var AUTOMACAO = {
     if (!container) return;
 
     var html = '<div class="alerta alerta-' + alerta.tipo + '">' +
-      '<span class="alerta-icon">⚠️</span>' +
+      '<span class="alerta-icon"><i data-lucide="alert-triangle" aria-hidden="true"></i></span>' +
       '<span class="alerta-text">' + UTILS.escapeHtml(alerta.mensagem) + '</span>' +
     '</div>';
 
     container.innerHTML = html;
+    if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(container);
   },
 
   limparAlerta: function() {

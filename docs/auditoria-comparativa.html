@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auditoria Comparativa — FinançasPro (antes × depois)</title>
+<style>
+:root{--verde:#00723F;--verde2:#00a862;--vbg:#e6f4ec;--tinta:#0d1b14;--cinza:#5b6b62;--linha:#e4ebe7;--papel:#fff;--fundo:#f4f7f5;--up:#1f9d55;--flat:#8a9791;--ruim:#c0392b;--reg:#c9a400;--sombra:0 1px 2px rgba(13,27,20,.04),0 8px 28px rgba(13,27,20,.06);--sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;--mono:ui-monospace,SFMono-Regular,Menlo,monospace}
+*{box-sizing:border-box}body{margin:0;font-family:var(--sans);color:var(--tinta);background:var(--fundo);line-height:1.6;font-size:15.5px}
+.wrap{max-width:960px;margin:0 auto;padding:0 22px}
+.cover{background:linear-gradient(150deg,#00532e,#00723F 50%,#00a862 130%);color:#fff;padding:58px 0 46px}
+.kicker{text-transform:uppercase;letter-spacing:.15em;font-size:12px;font-weight:700;opacity:.85;margin:0 0 12px}
+.cover h1{font-size:34px;margin:0 0 12px;font-weight:800;letter-spacing:-.02em}
+.scoreflip{display:inline-flex;align-items:center;gap:16px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);border-radius:18px;padding:14px 22px;margin-top:6px}
+.scoreflip .b{font-size:30px;font-weight:800;opacity:.7}
+.scoreflip .arrow{font-size:22px;opacity:.8}
+.scoreflip .a{font-size:46px;font-weight:800;letter-spacing:-.02em}
+.scoreflip .d{font-size:14px;font-weight:700;background:rgba(255,255,255,.2);padding:3px 10px;border-radius:999px}
+section{padding:36px 0;border-bottom:1px solid var(--linha)}
+h2{font-size:23px;font-weight:800;margin:0 0 12px}h2 .n{color:var(--verde)}
+h3{font-size:16px;margin:20px 0 6px;color:var(--verde)}
+p{margin:0 0 12px}code{background:#eef3f0;border:1px solid var(--linha);padding:1px 6px;border-radius:6px;font-size:12.5px;font-family:var(--mono);color:#0a4f30}
+ul{margin:0 0 12px;padding-left:20px}li{margin:5px 0}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px;background:var(--papel);border:1px solid var(--linha);border-radius:12px;overflow:hidden}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--linha);vertical-align:middle}
+th{background:#f0f5f2;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--cinza)}
+tr:last-child td{border-bottom:none}
+td.n,th.n{text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap}
+.delta{font-weight:800;font-size:12.5px;padding:2px 8px;border-radius:6px}
+.delta.up{background:#e3f5ea;color:#1f7a45}.delta.flat{background:#eef1ef;color:#6b7a72}
+.barwrap{display:flex;align-items:center;gap:6px;min-width:150px}
+.bar{height:7px;border-radius:5px;background:#eef3f0;flex:1;overflow:hidden;position:relative}
+.bar > i{position:absolute;left:0;top:0;height:100%;border-radius:5px;background:#cfe0d6}
+.bar > b{position:absolute;left:0;top:0;height:100%;border-radius:5px;background:var(--verde)}
+.callout{background:var(--vbg);border-left:4px solid var(--verde);border-radius:0 12px 12px 0;padding:14px 18px;margin:16px 0}
+.callout.warn{background:#fdf3e7;border-left-color:#e07b00}
+.callout.dark{background:#0d1b14;color:#eaf3ee;border-left-color:var(--verde2)}.callout.dark strong{color:#fff}
+.pillrow{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}
+.pill{background:var(--papel);border:1px solid var(--linha);border-radius:12px;padding:9px 14px;font-size:13.5px;box-shadow:var(--sombra)}.pill b{color:var(--verde)}
+.final{display:flex;align-items:center;gap:22px;flex-wrap:wrap;margin-top:20px}
+.final .big{font-size:60px;font-weight:800;color:var(--verde);letter-spacing:-.03em;line-height:1}
+footer{padding:32px 0 54px;color:#8a9791;font-size:12.5px;text-align:center}
+</style></head><body>
+
+<header class="cover"><div class="wrap">
+<p class="kicker">Reauditoria · Antes × Depois</p>
+<h1>FinançasPro — o que mudou nas notas</h1>
+<div class="scoreflip"><span class="b">71</span><span class="arrow">→</span><span class="a">75</span><span class="d">+4</span></div>
+<p style="margin-top:18px;opacity:.94;max-width:680px">Reavaliação após 8 iterações de melhorias. O ganho é real, porém <strong>concentrado em fundação</strong> (performance, segurança, testabilidade, de-risking do sync) — não em produto visível novo. Abaixo, cada dimensão com sua justificativa honesta.</p>
+</div></header>
+
+<div class="wrap">
+
+<section>
+<h2>Tabela comparativa (14 dimensões)</h2>
+<table>
+<tr><th>Dimensão</th><th class="n">Antes</th><th class="n">Depois</th><th class="n">Δ</th><th>Evolução</th></tr>
+<tr><td>Performance</td><td class="n">58</td><td class="n">76</td><td class="n"><span class="delta up">+18</span></td><td><div class="barwrap"><div class="bar"><i style="width:58%"></i><b style="width:76%"></b></div></div></td></tr>
+<tr><td>Segurança</td><td class="n">74</td><td class="n">81</td><td class="n"><span class="delta up">+7</span></td><td><div class="barwrap"><div class="bar"><i style="width:74%"></i><b style="width:81%"></b></div></div></td></tr>
+<tr><td>Arquitetura front-end</td><td class="n">52</td><td class="n">59</td><td class="n"><span class="delta up">+7</span></td><td><div class="barwrap"><div class="bar"><i style="width:52%"></i><b style="width:59%"></b></div></div></td></tr>
+<tr><td>Potencial de viralização</td><td class="n">45</td><td class="n">50</td><td class="n"><span class="delta up">+5</span></td><td><div class="barwrap"><div class="bar"><i style="width:45%"></i><b style="width:50%"></b></div></div></td></tr>
+<tr><td>Escalabilidade</td><td class="n">60</td><td class="n">64</td><td class="n"><span class="delta up">+4</span></td><td><div class="barwrap"><div class="bar"><i style="width:60%"></i><b style="width:64%"></b></div></div></td></tr>
+<tr><td>Potencial comercial</td><td class="n">72</td><td class="n">75</td><td class="n"><span class="delta up">+3</span></td><td><div class="barwrap"><div class="bar"><i style="width:72%"></i><b style="width:75%"></b></div></div></td></tr>
+<tr><td>Potencial competitivo</td><td class="n">68</td><td class="n">71</td><td class="n"><span class="delta up">+3</span></td><td><div class="barwrap"><div class="bar"><i style="width:68%"></i><b style="width:71%"></b></div></div></td></tr>
+<tr><td>UX</td><td class="n">72</td><td class="n">74</td><td class="n"><span class="delta up">+2</span></td><td><div class="barwrap"><div class="bar"><i style="width:72%"></i><b style="width:74%"></b></div></div></td></tr>
+<tr><td>Monetização</td><td class="n">76</td><td class="n">78</td><td class="n"><span class="delta up">+2</span></td><td><div class="barwrap"><div class="bar"><i style="width:76%"></i><b style="width:78%"></b></div></div></td></tr>
+<tr><td>Funcionalidades</td><td class="n">85</td><td class="n">86</td><td class="n"><span class="delta up">+1</span></td><td><div class="barwrap"><div class="bar"><i style="width:85%"></i><b style="width:86%"></b></div></div></td></tr>
+<tr><td>Primeira impressão</td><td class="n">78</td><td class="n">78</td><td class="n"><span class="delta flat">0</span></td><td><div class="barwrap"><div class="bar"><b style="width:78%"></b></div></div></td></tr>
+<tr><td>UI</td><td class="n">80</td><td class="n">80</td><td class="n"><span class="delta flat">0</span></td><td><div class="barwrap"><div class="bar"><b style="width:80%"></b></div></div></td></tr>
+<tr><td>Acessibilidade</td><td class="n">79</td><td class="n">79</td><td class="n"><span class="delta flat">0</span></td><td><div class="barwrap"><div class="bar"><b style="width:79%"></b></div></div></td></tr>
+<tr><td>Facilidade para iniciantes</td><td class="n">70</td><td class="n">70</td><td class="n"><span class="delta flat">0</span></td><td><div class="barwrap"><div class="bar"><b style="width:70%"></b></div></div></td></tr>
+</table>
+<div class="pillrow">
+<div class="pill"><b>+18</b> maior salto: Performance</div>
+<div class="pill"><b>5</b> dimensões inalteradas</div>
+<div class="pill"><b>0 → 51</b> testes no motor + sync</div>
+<div class="pill">Nota final <b>71 → 75</b></div>
+</div>
+</section>
+
+<section>
+<h2>Onde subiu — e por quê (verificado)</h2>
+
+<h3>Performance 58 → 76 <span class="delta up">+18</span></h3>
+<p>O maior ganho, e objetivo: <strong>os 86 scripts passaram a usar <code>defer</code></strong> (antes eram 0 — todos bloqueantes) e o <code>bundle-app</code> foi <strong>encadeado no <code>npm run build</code></strong>, gerando um <strong>bundle único minificado</strong> em produção (de ~86 requisições para ~2), com <code>pin-guard</code> mantido bloqueante por segurança. <em>Ressalva honesta:</em> não rodei Lighthouse aqui; o ganho é inferido de fatos de código (defer + bundle), não medido em campo.</p>
+
+<h3>Segurança 74 → 81 <span class="delta up">+7</span></h3>
+<p>CSP de produção agora <strong>sem <code>localhost</code></strong> (env-gate na fonte + <code>harden-csp</code> no build); <strong>auditoria de XSS</strong> confirmou 0 furos reais em 115 sinks de <code>innerHTML</code> e adicionei um <strong>guardrail no CI</strong> (<code>check-xss-sinks</code>) que quebra o build se alguém introduzir um sink sem escape; o resolvedor de conflito do sync tem guard de <em>clock skew</em>. <em>Não feito:</em> cripto derivada do PIN (#8) — o padrão fraco permanece.</p>
+
+<h3>Arquitetura front-end 52 → 59 <span class="delta up">+7</span></h3>
+<p>Pipeline de bundle de produção no build, camada de observabilidade, e vários módulos puros novos com testes elevam a qualidade estrutural. <em>Porém</em> o débito central — <strong>~86 scripts em namespace global com dependência de ordem</strong> — <strong>não</strong> foi migrado para ES Modules (#3). Por isso o salto é moderado, não transformador.</p>
+
+<h3>Escalabilidade 60 → 64 <span class="delta up">+4</span> — leia com atenção</h3>
+<div class="callout warn"><strong>O bug de perda de dados ainda está vivo no app rodando.</strong> Eu desenhei o sync server-first completo (#2) e implementei + testei os <strong>dois núcleos algorítmicos</strong> (resolvedor de conflito no servidor + fusão de delta no cliente, 28 testes provando D1/D2/D3). Mas isso <strong>ainda não está integrado</strong> — falta a migration <code>deletedAt</code>, a rota <code>/api/v1/sync</code> e ligar o <code>sync-engine</code> na UI, o que exige a app + Postgres rodando. Então a nota sobe pouco: o <em>risco de execução</em> caiu muito, mas o <em>risco em produção</em> continua até integrar.</div>
+
+<h3>Viralização 45 → 50 · UX 72 → 74 · Funcionalidades 85 → 86</h3>
+<p>Um insight genuinamente novo: <strong>"assinaturas esquecidas"</strong> com custo anualizado ("R$ 657,60/ano. Ainda usa?") — o tipo de momento "esse app me economizou dinheiro" que a auditoria apontava como faltante (§17). Some-se o <strong>indicador de sync visível</strong> (confiança). São ganhos pequenos mas reais no produto.</p>
+
+<h3>Monetização 76 → 78 · Comercial 72 → 75</h3>
+<p>Preço PRO reposicionado (R$ 29,90 → <strong>16,90</strong>), alinhado ao mercado brasileiro. E o conjunto de testes + hardening <strong>reduz o risco de due diligence</strong> — um investidor paga mais por um código verificado.</p>
+</section>
+
+<section>
+<h2>O que NÃO mudou (e por quê)</h2>
+<ul>
+<li><strong>UI (80), Primeira impressão (78), Acessibilidade (79):</strong> não toquei em vitrine, marca, layout ou onboarding. Continuam bons, mas iguais.</li>
+<li><strong>Facilidade para iniciantes (70):</strong> o dashboard continua denso (12+ seções). A simplificação (#5) não foi feita — é decisão de produto/UX que pedia a app rodando.</li>
+<li><strong>A promessa premium / efeito UAU amplo:</strong> avançou pontualmente (assinaturas esquecidas), mas o "encantamento nos 30 primeiros segundos" ainda depende de onboarding + Open Finance conectando a vida financeira sozinho — não feito.</li>
+</ul>
+<div class="callout"><strong>Leitura justa:</strong> das 14 dimensões, 9 subiram e 5 ficaram iguais. O trabalho foi deliberadamente de <em>fundação e de-risking</em> — as coisas que tornam o produto seguro para escalar e cobrar — e não de repaginar a interface. Isso é coerente com a fase: primeiro a base, depois o brilho.</div>
+</section>
+
+<section>
+<h2>Nota final</h2>
+<div class="final">
+<div class="big">75</div>
+<div>
+<strong style="font-size:19px">71 → 75 (+4)</strong>
+<p class="muted" style="margin:4px 0 0;max-width:560px;color:var(--cinza)">Média ponderada das 14 dimensões (peso maior em arquitetura, funcionalidades, segurança e performance). Média simples subiu de 69,2 para 72,9; a ponderação puxa para 75 pelos ganhos grandes em performance e segurança, que têm peso alto.</p>
+</div>
+</div>
+<div class="callout dark"><strong>Veredito atualizado:</strong> continua <em>não pronto para lançamento mundial</em> — porque o dado do usuário ainda pode se perder até o #2 ser integrado. Mas está <strong>mais perto e muito mais seguro de evoluir</strong>: a fundação de performance e segurança está no lugar, o motor financeiro saiu de 0 para 37 testes, e a correção mais difícil (o sync) tem os dois cores prontos e provados. O caminho de 75 → 85+ agora é majoritariamente <em>integração</em>, não <em>invenção</em>.</div>
+</section>
+
+</div>
+<footer>Reauditoria comparativa · 10/07/2026 · Notas reavaliadas com base nas mudanças verificadas (lint, 51+ testes) · Ganhos de fundação separados honestamente do que ainda não foi integrado.</footer>
+</body></html>

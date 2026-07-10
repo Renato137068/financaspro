@@ -20,6 +20,7 @@ const INIT_FORM = {
       this.setupEntradaRapida,
       this.setupTipoToggle,
       this.setupMascaraValor,
+      this.setupQuickAmounts,
       this.setupCategoriaGrid,
       this.setupDateChips,
       this.setupExtrasToggle,
@@ -129,7 +130,9 @@ const INIT_FORM = {
 
   atualizarTipoIndicator: function(tipo) {
     document.querySelectorAll('.tipo-btn').forEach(function(btn) {
-      btn.classList.toggle('ativo', btn.dataset.tipo === tipo);
+      var isActive = btn.dataset.tipo === tipo;
+      btn.classList.toggle('ativo', isActive);
+      btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
     });
     var hero = document.getElementById('valor-hero');
     if (hero) {
@@ -149,8 +152,12 @@ const INIT_FORM = {
 
     chips.forEach(function(chip) {
       chip.addEventListener('click', function() {
-        chips.forEach(function(c) { c.classList.remove('ativo'); });
+        chips.forEach(function(c) {
+          c.classList.remove('ativo');
+          c.setAttribute('aria-pressed', 'false');
+        });
         this.classList.add('ativo');
+        this.setAttribute('aria-pressed', 'true');
         var offset = parseInt(this.dataset.offset, 10);
         var d = new Date();
         d.setDate(d.getDate() - offset);
@@ -159,7 +166,21 @@ const INIT_FORM = {
     });
 
     dateInput.addEventListener('change', function() {
-      chips.forEach(function(c) { c.classList.remove('ativo'); });
+      chips.forEach(function(c) {
+        c.classList.remove('ativo');
+        c.setAttribute('aria-pressed', 'false');
+      });
+    });
+
+    chips.forEach(function(c, i) {
+      c.setAttribute('aria-pressed', i === 0 ? 'true' : 'false');
+    });
+  },
+
+  setupQuickAmounts: function() {
+    document.querySelectorAll('.quick-amount').forEach(function(btn) {
+      var val = btn.dataset.valor;
+      btn.setAttribute('aria-label', 'Adicionar R$ ' + val + ' ao valor');
     });
   },
 
@@ -176,7 +197,7 @@ const INIT_FORM = {
       var aberto = panel.style.display !== 'none';
       panel.style.display = aberto ? 'none' : 'block';
       btn.setAttribute('aria-expanded', !aberto);
-      if (arrow) arrow.textContent = aberto ? '▼' : '▲';
+      if (arrow) arrow.classList.toggle('expanded', !aberto);
     });
   },
 
@@ -444,7 +465,7 @@ const INIT_FORM = {
 
     var confianca = sugestao.confianca || 'baixa';
     var label = UTILS.labelCategoria(sugestao.categoria || 'outro');
-    var emoji = INIT_FORM.CAT_EMOJIS[sugestao.categoria] || 'AI';
+    var emoji = INIT_FORM.CAT_ICONS[sugestao.categoria] || 'sparkles';
     var textos = {
       alta: {
         badge: 'Alta confiança',
@@ -467,7 +488,7 @@ const INIT_FORM = {
 
     card.classList.add('ia-' + confianca);
     if (badge) { badge.className = 'ia-confidence-badge ' + confianca; badge.textContent = copy.badge; }
-    if (icon) icon.textContent = emoji;
+    if (icon) icon.innerHTML = '<i data-lucide="' + emoji + '" aria-hidden="true"></i>';
     if (title) title.textContent = copy.title;
     if (subtitle) subtitle.textContent = copy.subtitle;
     if (savePreview) {
@@ -526,6 +547,8 @@ const INIT_FORM = {
         actions.innerHTML = '';
       }
     }
+
+    if (typeof renderLucideIcons === 'function') renderLucideIcons(card);
   },
 
   mostrarFeedbackAprendizado: function(msg) {
@@ -577,7 +600,10 @@ const INIT_FORM = {
       base = CATEGORIAS.detectar(descricao);
     }
     if (base) {
-      add(base.categoria, base.tipo, base.confianca === 'alta' ? 42 : 26, 'Padrão semântico da descrição', 'regras');
+      // Um acerto forte do categorizador (ex.: "Salário", "Aluguel", "Netflix")
+      // já basta para autopreencher categoria E tipo — evita que uma receita
+      // clara fique como "despesa" (padrão do formulário) por falta de confirmação.
+      add(base.categoria, base.tipo, base.confianca === 'alta' ? 60 : 30, 'Padrão semântico da descrição', 'regras');
     }
 
     var aprendida = typeof APRENDIZADO !== 'undefined' && APRENDIZADO.sugerir
@@ -866,7 +892,111 @@ const INIT_FORM = {
    * 9. ENTRADA RÁPIDA
    */
   setupEntradaRapida: function() {
-    // Renderizado quando aba 'novo' é ativada
+    var input = document.getElementById('entrada-rapida-input');
+    var btn = document.getElementById('btn-er-submit');
+    var feedback = document.getElementById('er-feedback');
+    if (!input || input.dataset.erBound === '1') return;
+    input.dataset.erBound = '1';
+
+    function processar() {
+      var texto = input.value.trim();
+      if (!texto) return;
+
+      if (typeof PIPELINE === 'undefined') {
+        UTILS.mostrarToast('Parser não disponível', 'error');
+        return;
+      }
+
+      var resultado = PIPELINE.processar(texto);
+      if (!resultado) {
+        if (feedback) {
+          feedback.textContent = 'Não entendi. Tente: mercado 50 ontem';
+          feedback.className = 'er-feedback erro';
+          feedback.style.display = 'block';
+        }
+        return;
+      }
+
+      if (resultado.descricao && DOMUTILS.elementos.novoDescricao) {
+        DOMUTILS.elementos.novoDescricao.value = resultado.descricao;
+      }
+      PIPELINE.preencherForm(resultado);
+      INIT_FORM.atualizarTipoIndicator(resultado.tipo);
+      INIT_FORM.filtrarCategoriasPorTipo(resultado.tipo);
+      INIT_FORM.atualizarOrcamentoPreview();
+
+      var cat = resultado.categoria ? UTILS.labelCategoria(resultado.categoria) : '';
+      var descSafe = UTILS.escapeHtml(resultado.descricao || texto);
+      var catSafe = cat ? UTILS.escapeHtml(cat) : '';
+      var msg = '<i data-lucide="check" aria-hidden="true"></i> ' + descSafe + (catSafe ? ' · ' + catSafe : '');
+      if (resultado.valor) msg += ' · R$ ' + resultado.valor.toFixed(2).replace('.', ',');
+      if (feedback) {
+        feedback.innerHTML = msg;
+        feedback.className = 'er-feedback sucesso';
+        feedback.style.display = 'block';
+        if (typeof renderLucideIcons === 'function') renderLucideIcons(feedback);
+      }
+      input.value = '';
+
+      var valInput = document.getElementById('novo-valor');
+      if (valInput) setTimeout(function() { valInput.focus(); valInput.select(); }, 80);
+    }
+
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { e.preventDefault(); processar(); }
+      if (e.key === 'Escape') {
+        input.value = '';
+        if (feedback) feedback.style.display = 'none';
+      }
+    });
+
+    if (btn) btn.addEventListener('click', processar);
+  },
+
+  abrirEntradaRapida: function() {
+    var input = document.getElementById('entrada-rapida-input');
+    if (input) input.focus();
+  },
+
+  renderizarSelects: function() {
+    var config = DADOS.getConfig();
+    var bancos = config.bancos || ['Nubank', 'Itaú', 'Caixa', 'Bradesco', 'Santander'];
+    var cartoes = config.cartoes || ['Crédito', 'Débito', 'XP', 'B3'];
+
+    var seletorBanco = document.getElementById('novo-banco');
+    if (seletorBanco) {
+      var valBanco = seletorBanco.value;
+      var bancoOpts = bancos.map(function(b) {
+        var nome = typeof b === 'string' ? b : (b.nome || b);
+        return '<option value="' + UTILS.escapeHtml(nome) + '">' + UTILS.escapeHtml(nome) + '</option>';
+      }).join('');
+      seletorBanco.innerHTML = '<option value="">Sem banco</option>' + bancoOpts;
+      seletorBanco.value = valBanco;
+    }
+
+    var seletorCartao = document.getElementById('novo-cartao');
+    if (seletorCartao) {
+      var valCartao = seletorCartao.value;
+      var cartaoOpts = cartoes.map(function(c) {
+        var nome = typeof c === 'string' ? c : (c.nome || c);
+        return '<option value="' + UTILS.escapeHtml(nome) + '">' + UTILS.escapeHtml(nome) + '</option>';
+      }).join('');
+      seletorCartao.innerHTML = '<option value="">Sem cartão</option>' + cartaoOpts;
+      seletorCartao.value = valCartao;
+    }
+  },
+
+  atualizarBadgeConfianca: function(confianca) {
+    var badge = document.getElementById('sugestao-badge');
+    if (!badge) return;
+    var prefixes = { alta: 'Alta:', media: 'Média:', baixa: 'Baixa:' };
+    var catEl = document.getElementById('novo-categoria');
+    var categoria = catEl ? catEl.value : '';
+    if (categoria) {
+      badge.textContent = (prefixes[confianca] || 'Sugestão:') + ' ' + UTILS.labelCategoria(categoria);
+      badge.dataset.confianca = confianca;
+      badge.style.display = 'block';
+    }
   },
 
   renderQuickEntries: function() {
@@ -876,19 +1006,20 @@ const INIT_FORM = {
     var frequentes = INIT_FORM.obterTransacoesFrequentes();
     if (frequentes.length === 0) { container.innerHTML = ''; return; }
 
-    var html = '<div class="quick-label">⚡ Lançamento rápido</div><div class="quick-chips">';
+    var html = '<div class="quick-label"><i data-lucide="zap" aria-hidden="true"></i> Lançamento rápido</div><div class="quick-chips">';
     frequentes.forEach(function(f) {
-      var emoji = f.tipo === 'receita' ? '💚' : '';
+      var tipoIcon = f.tipo === 'receita' ? '<i data-lucide="trending-up" aria-hidden="true"></i> ' : '';
       html += '<button type="button" class="quick-chip" ' +
         'data-desc="' + UTILS.escapeHtml(f.descricao) + '" ' +
         'data-val="' + f.valor + '" ' +
         'data-cat="' + UTILS.escapeHtml(f.categoria) + '" ' +
         'data-tipo="' + f.tipo + '">' +
-        emoji + UTILS.escapeHtml(f.descricao) + ' <strong>' + UTILS.formatarMoeda(f.valor) + '</strong>' +
+        tipoIcon + UTILS.escapeHtml(f.descricao) + ' <strong>' + UTILS.formatarMoeda(f.valor) + '</strong>' +
       '</button>';
     });
     html += '</div>';
     container.innerHTML = html;
+    if (typeof renderLucideIcons === 'function') renderLucideIcons(container);
 
     container.addEventListener('click', function(e) {
       var chip = e.target.closest('.quick-chip');
@@ -1112,16 +1243,42 @@ const INIT_FORM = {
       '</div>' +
       '<div class="orc-preview-footer">' +
         '<span style="color:' + cor + ';font-weight:600">' + pctAtual + '% → ' + pctNovo + '%</span>' +
-        (pctNovo > 100 ? '<span class="orc-preview-alerta">⚠️ Estoura o limite!</span>' :
-         pctNovo > 80 ? '<span class="orc-preview-aviso">⚡ Perto do limite</span>' : '') +
+        (pctNovo > 100 ? '<span class="orc-preview-alerta"><i data-lucide="alert-triangle" aria-hidden="true"></i> Estoura o limite!</span>' :
+         pctNovo > 80 ? '<span class="orc-preview-aviso"><i data-lucide="zap" aria-hidden="true"></i> Perto do limite</span>' : '') +
       '</div>' +
     '</div>';
+    if (typeof renderLucideIcons === 'function') renderLucideIcons(el);
   },
 
   processarTransacao: function(tipo, valor, categoria, data, descricao, banco, cartao, nota) {
+    var form = document.getElementById('form-transacao');
+    var editId = form && form.dataset.editId;
     var chkParcelado = document.getElementById('chk-parcelado');
     var chkRecorrente = document.getElementById('chk-recorrente');
     var descFinal = descricao || nota;
+    var txId = null;
+
+    if (editId) {
+      TRANSACOES.atualizar(editId, {
+        tipo: tipo,
+        valor: valor,
+        categoria: categoria,
+        data: data,
+        descricao: descFinal,
+        banco: banco,
+        cartao: cartao
+      });
+      if (typeof INIT_ANEXOS !== 'undefined') INIT_ANEXOS.salvarPendentes(editId);
+      delete form.dataset.editId;
+      var btnReg = document.querySelector('.btn-registrar');
+      if (btnReg) btnReg.textContent = 'Registrar';
+      if (typeof APRENDIZADO !== 'undefined') {
+        APRENDIZADO.registrar(descricao, categoria, tipo, banco, cartao, valor);
+      }
+      INIT_FORM.mostrarSucesso('Transação atualizada!');
+      INIT_FORM._finalizarTransacao();
+      return;
+    }
 
     // PARCELAMENTO
     if (chkParcelado && chkParcelado.checked && tipo === 'despesa') {
@@ -1131,7 +1288,8 @@ const INIT_FORM = {
         var dataParcela = new Date(data + 'T12:00:00');
         dataParcela.setMonth(dataParcela.getMonth() + p);
         var descParcela = descFinal + ' (' + (p + 1) + '/' + nParcelas + ')';
-        TRANSACOES.criar(tipo, valorParcela, categoria, dataParcela.toISOString().split('T')[0], descParcela, banco, cartao);
+        var txParcela = TRANSACOES.criar(tipo, valorParcela, categoria, dataParcela.toISOString().split('T')[0], descParcela, banco, cartao);
+        if (p === 0) txId = txParcela.id;
       }
       if (typeof APRENDIZADO !== 'undefined') {
         APRENDIZADO.registrar(descricao, categoria, tipo, banco, cartao, valorParcela);
@@ -1148,7 +1306,8 @@ const INIT_FORM = {
         descricao: descFinal, frequencia: freq, dataInicio: data, ativo: true
       };
       DADOS.salvarRecorrente(recData);
-      TRANSACOES.criar(tipo, valor, categoria, data, descFinal + ' (recorrente)', banco, cartao);
+      var txRec = TRANSACOES.criar(tipo, valor, categoria, data, descFinal + ' (recorrente)', banco, cartao);
+      txId = txRec.id;
       if (typeof APRENDIZADO !== 'undefined') {
         APRENDIZADO.registrar(descricao, categoria, tipo, banco, cartao, valor);
         INIT_FORM.mostrarFeedbackAprendizado('Recorrência aprendida para próximas sugestões.');
@@ -1157,7 +1316,8 @@ const INIT_FORM = {
     }
     // NORMAL
     else {
-      TRANSACOES.criar(tipo, valor, categoria, data, descFinal, banco, cartao);
+      var tx = TRANSACOES.criar(tipo, valor, categoria, data, descFinal, banco, cartao);
+      txId = tx.id;
       if (typeof APRENDIZADO !== 'undefined') {
         APRENDIZADO.registrar(descricao, categoria, tipo, banco, cartao, valor);
         INIT_FORM.mostrarFeedbackAprendizado('Aprendizado atualizado com sucesso.');
@@ -1165,6 +1325,11 @@ const INIT_FORM = {
       INIT_FORM.mostrarSucesso('Registrado!');
     }
 
+    if (txId && typeof INIT_ANEXOS !== 'undefined') INIT_ANEXOS.salvarPendentes(txId);
+    INIT_FORM._finalizarTransacao();
+  },
+
+  _finalizarTransacao: function() {
     RENDER.init();
     if (typeof INSIGHTS !== 'undefined') {
       setTimeout(function() { INSIGHTS.mostrar(); }, 100);
@@ -1175,10 +1340,10 @@ const INIT_FORM = {
     INIT_FORM.renderSmartDescriptionSuggestions();
     INIT_FORM.renderPaymentContextChips();
 
-    // Modo contínuo ou limpar
     var chkContinuo = document.getElementById('chk-continuo');
     if (chkContinuo && chkContinuo.checked) {
       INIT_FORM.limparFormularioParcial();
+      if (typeof INIT_ANEXOS !== 'undefined') INIT_ANEXOS.limparPendentes();
     } else {
       INIT_FORM.limparFormularioCompleto(document.getElementById('form-transacao'));
     }
@@ -1197,12 +1362,23 @@ const INIT_FORM = {
       saldoEl.textContent = 'Saldo do mês: ' + UTILS.formatarMoeda(resumo.saldo);
     }
 
-    /* Reinicia confetti: remove e recria os spans para repetir animação */
+    var reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var confetti = overlay.querySelector('.success-confetti');
     if (confetti) {
-      var spans = confetti.innerHTML;
-      confetti.innerHTML = '';
-      confetti.innerHTML = spans;
+      if (reducedMotion) {
+        confetti.style.display = 'none';
+      } else {
+        confetti.style.display = '';
+        var spans = confetti.innerHTML;
+        confetti.innerHTML = '';
+        confetti.innerHTML = spans;
+      }
+    }
+
+    overlay.setAttribute('role', 'status');
+    overlay.setAttribute('aria-live', 'polite');
+    if (typeof ariaLive !== 'undefined' && typeof ariaLive.announceSuccess === 'function') {
+      ariaLive.announceSuccess(msg);
     }
 
     overlay.style.display = 'flex';
@@ -1232,6 +1408,10 @@ const INIT_FORM = {
 
   limparFormularioCompleto: function(form) {
     form.reset();
+    delete form.dataset.editId;
+    var btnReg = document.querySelector('.btn-registrar');
+    if (btnReg) btnReg.textContent = 'Registrar';
+    if (typeof INIT_ANEXOS !== 'undefined') INIT_ANEXOS.limparPendentes();
     var erFeedback = document.getElementById('er-feedback');
     if (erFeedback) erFeedback.style.display = 'none';
     // Resetar grid categorias
@@ -1251,12 +1431,18 @@ const INIT_FORM = {
     var dataInput = document.getElementById('novo-data');
     if (dataInput) dataInput.value = new Date().toISOString().split('T')[0];
     var chips = document.querySelectorAll('.data-chip');
-    chips.forEach(function(c, i) { i === 0 ? c.classList.add('ativo') : c.classList.remove('ativo'); });
+    chips.forEach(function(c, i) {
+      var isToday = i === 0;
+      c.classList.toggle('ativo', isToday);
+      c.setAttribute('aria-pressed', isToday ? 'true' : 'false');
+    });
     // Recolher extras
     var panel = document.getElementById('extras-panel');
     if (panel) panel.style.display = 'none';
     var arrow = document.getElementById('extras-arrow');
-    if (arrow) arrow.textContent = '▼';
+    if (arrow) arrow.classList.remove('expanded');
+    var btnExtras = document.getElementById('btn-extras');
+    if (btnExtras) btnExtras.setAttribute('aria-expanded', 'false');
     // Resetar checkboxes
     var chks = ['chk-recorrente','chk-parcelado','chk-continuo'];
     chks.forEach(function(id) { var c = document.getElementById(id); if (c) c.checked = false; });
@@ -1303,11 +1489,10 @@ const INIT_FORM = {
 
     var html = '';
     defaultSlugs.forEach(function(slug) {
-      var emoji = INIT_FORM.CAT_EMOJIS[slug] || '📌';
       var label = UTILS.labelCategoria(slug);
       var isAtivo = currentCat === slug ? ' ativo' : '';
       html += '<button type="button" class="cat-btn' + isAtivo + '" data-cat="' + slug + '" data-tipo="' + tipo + '">' +
-        '<span class="cat-emoji">' + emoji + '</span>' +
+        '<span class="cat-emoji">' + INIT_FORM._catIconHtml(slug) + '</span>' +
         '<span class="cat-nome">' + label + '</span>' +
         '</button>';
     });
@@ -1315,12 +1500,13 @@ const INIT_FORM = {
     customNomes.forEach(function(nome) {
       var isAtivo = currentCat === nome ? ' ativo' : '';
       html += '<button type="button" class="cat-btn' + isAtivo + '" data-cat="' + nome + '" data-tipo="' + tipo + '">' +
-        '<span class="cat-emoji">✨</span>' +
+        '<span class="cat-emoji"><i data-lucide="sparkles" aria-hidden="true"></i></span>' +
         '<span class="cat-nome">' + nome + '</span>' +
         '</button>';
     });
 
     grid.innerHTML = html;
+    if (typeof renderLucideIcons === 'function') renderLucideIcons(grid);
 
     var catEl = document.getElementById('novo-categoria');
     if (catEl && catEl.value && !grid.querySelector('.cat-btn.ativo')) {
@@ -1330,12 +1516,18 @@ const INIT_FORM = {
   }
 };
 
-// Emojis por categoria
-INIT_FORM.CAT_EMOJIS = {
+// Ícones Lucide por categoria (slug → nome do ícone)
+INIT_FORM.CAT_ICONS = {
   alimentacao: 'utensils', transporte: 'car', moradia: 'home', saude: 'pill',
   educacao: 'book-open', lazer: 'film', outro: 'pin', outros: 'pin',
   salario: 'wallet', freelance: 'laptop', investimentos: 'trending-up', vendas: 'shopping-cart',
   utilities: 'zap'
+};
+INIT_FORM.CAT_EMOJIS = INIT_FORM.CAT_ICONS;
+
+INIT_FORM._catIconHtml = function(slug) {
+  var icon = INIT_FORM.CAT_ICONS[slug] || 'pin';
+  return '<i data-lucide="' + icon + '" aria-hidden="true"></i>';
 };
 
 // Export para compatibilidade

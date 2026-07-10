@@ -13,7 +13,8 @@
 
       var iconEl = document.createElement('div');
       iconEl.className = 'alerta-icon';
-      iconEl.textContent = '⚠️';
+      iconEl.setAttribute('aria-hidden', 'true');
+      iconEl.innerHTML = '<i data-lucide="alert-triangle"></i>';
       card.appendChild(iconEl);
 
       var content = document.createElement('div');
@@ -46,6 +47,7 @@
       }
 
       card.appendChild(content);
+      if (typeof renderLucideIcons === 'function') renderLucideIcons(card);
       return card;
     }
   };

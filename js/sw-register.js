@@ -35,7 +35,7 @@
       'background:#00723F;color:white;padding:12px 16px;border-radius:12px;' +
       'box-shadow:0 8px 24px rgba(0,0,0,0.2);z-index:10000;display:flex;gap:10px;' +
       'align-items:center;font-size:14px;font-weight:500;max-width:90%;';
-    banner.textContent = '✨ Nova versão disponível ';
+    banner.innerHTML = '<span>Nova versão disponível</span>';
 
     var btn = document.createElement('button');
     btn.textContent = 'Atualizar';
@@ -47,7 +47,7 @@
     banner.appendChild(btn);
 
     var dismiss = document.createElement('button');
-    dismiss.textContent = '✕';
+    dismiss.textContent = '×';
     dismiss.setAttribute('aria-label', 'Dispensar');
     dismiss.style.cssText = 'background:transparent;color:white;border:none;cursor:pointer;' +
       'font-size:18px;padding:0 4px;opacity:0.7;';

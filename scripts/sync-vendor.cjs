@@ -1,5 +1,5 @@
 /**
- * sync-vendor.js — copia dependências browser para js/vendor/
+ * sync-vendor.cjs — copia dependências browser para js/vendor/
  */
 const fs = require('fs');
 const path = require('path');

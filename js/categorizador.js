@@ -13,7 +13,8 @@ var CATEGORIZADOR = {
         'ifood', 'rappi', 'uber eats', 'delivery', 'restaurante', 'lanchonete', 'bar', 'boteco',
         'café', 'pizza', 'hamburguer', 'sushi', 'churrascaria', 'comida', 'almoço', 'janta',
         'café da manhã', 'açai', 'sanduiche', 'pastel', 'bolo', 'doce', 'chocolate',
-        'refrigerante', 'cerveja', 'vinho', 'bebida', 'suco', 'água', 'pão de queijo',
+        'refrigerante', 'cerveja', 'vinho', 'bebida', 'suco', 'pão de queijo',
+        'feira', 'hortifruti', 'quitanda', 'ceia',
         'bife', 'frango', 'peixe', 'macarrão', 'arroz', 'feijão', 'batata',
         // Variações e typos comuns
         'supermercto', 'supermcado', 'padria', 'rrestaurante', 'retaurante', 'ifood'
@@ -35,7 +36,8 @@ var CATEGORIZADOR = {
       tipo: 'despesa',
       palavras: [
         'aluguel', 'alugel', 'condomínio', 'condominio', 'iptu', 'água', 'agua', 'luz', 'energia',
-        'internet', 'telefone', 'gás', 'gas', 'wifi', 'wi-fi', 'conta de luz', 'conta de água',
+        'internet', 'telefone', 'celular', 'conta de celular', 'conta do celular', 'tim', 'vivo', 'claro', 'oi',
+        'gás', 'gas', 'botijão', 'botijao', 'wifi', 'wi-fi', 'conta de luz', 'conta de água',
         'reforma', 'pintura', 'hidráulico', 'encanador', 'pedreiro', 'eletricista', 'manutenção',
         'seguro moradia', 'taxa condominio', 'limpeza', 'faxina', 'bota fora',
         // Typos
@@ -57,13 +59,46 @@ var CATEGORIZADOR = {
     lazer: {
       tipo: 'despesa',
       palavras: [
-        'cinema', 'filmes', 'netflix', 'spotify', 'prime video', 'disney', 'hbo', 'crunchyroll',
+        'cinema', 'filmes', 'crunchyroll',
         'steam', 'jogos', 'jogo', 'playstation', 'xbox', 'nintendo', 'game',
         'teatro', 'show', 'concerto', 'música ao vivo', 'festa', 'balada',
         'viagem', 'hotel', 'hospedagem', 'airbnb', 'resort', 'praia', 'montanha',
         'parque', 'passeio', 'entrada', 'ingresso', 'livro', 'ebook', 'audiobook',
         // Typos
         'neflix', 'spotifi', 'steam', 'jogo', 'theatro', 'show'
+      ]
+    },
+    assinaturas: {
+      tipo: 'despesa',
+      palavras: [
+        'netflix', 'spotify', 'prime video', 'amazon prime', 'disney', 'disney+', 'hbo', 'hbo max',
+        'youtube premium', 'deezer', 'globoplay', 'paramount', 'apple tv', 'icloud', 'dropbox',
+        'adobe', 'office 365', 'assinatura', 'streaming', 'mensalidade app',
+        // Typos
+        'neflix', 'spotifi'
+      ]
+    },
+    beleza: {
+      tipo: 'despesa',
+      palavras: [
+        'cabelo', 'corte de cabelo', 'salão', 'salao', 'cabeleireiro', 'barbearia', 'barbeiro',
+        'manicure', 'pedicure', 'unha', 'cosmético', 'cosmetico', 'maquiagem', 'skincare',
+        'depilação', 'depilacao', 'estética', 'estetica', 'perfume'
+      ]
+    },
+    vestuario: {
+      tipo: 'despesa',
+      palavras: [
+        'roupa', 'roupas', 'roupa nova', 'camisa', 'camiseta', 'calça', 'calca', 'vestido',
+        'sapato', 'tênis', 'tenis', 'sandália', 'sandalia', 'blusa', 'casaco', 'jaqueta',
+        'moda', 'loja de roupa'
+      ]
+    },
+    presentes: {
+      tipo: 'despesa',
+      palavras: [
+        'presente', 'presentes', 'lembrança', 'lembranca', 'aniversário', 'aniversario',
+        'presente de natal', 'presente pro', 'presente para'
       ]
     },
     educacao: {
@@ -83,6 +118,7 @@ var CATEGORIZADOR = {
       palavras: [
         'salário', 'salario', 'pagamento', 'paga', 'ordenado', 'remuneração', 'remuneracao',
         'depósito salário', 'deposito salario', 'holerite', '13º', '13 salario',
+        'décimo terceiro', 'decimo terceiro', 'décimo', 'decimo', '13o salario', 'adiantamento',
         'bônus', 'bonus', 'comissão', 'comissao', 'gorjeta', 'dinheiro',
         // Typos
         'salario', 'pagmento', 'holrite', 'remuneraçao'

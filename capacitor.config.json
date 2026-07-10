@@ -1,0 +1,33 @@
+{
+  "appId": "com.financaspro.app",
+  "appName": "FinançasPro",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https",
+    "cleartext": false
+  },
+  "ios": {
+    "backgroundColor": "#f5f8f6",
+    "contentInset": "automatic"
+  },
+  "android": {
+    "backgroundColor": "#f5f8f6",
+    "allowMixedContent": false,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "launchAutoHide": true,
+      "backgroundColor": "#00723F",
+      "androidSplashResourceName": "splash",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "LIGHT",
+      "backgroundColor": "#00723F"
+    }
+  }
+}

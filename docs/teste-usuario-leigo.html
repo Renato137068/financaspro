@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teste de Usuário Leigo — FinançasPro</title>
+<style>
+  :root{
+    --green:#00723f; --green-d:#005c33; --green-l:#10b981;
+    --ink:#14211b; --muted:#5b6f65; --line:#d4e5dc; --bg:#f5f8f6; --card:#fff;
+    --danger:#ef4444; --warn:#f59e0b; --info:#3b82f6; --r:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:var(--ink);background:var(--bg);line-height:1.6;padding:0 0 60px}
+  .wrap{max-width:980px;margin:0 auto;padding:0 20px}
+  header{background:linear-gradient(135deg,#005c33 0%,#00723f 45%,#10b981 100%);color:#fff;padding:46px 0 38px;margin-bottom:30px}
+  header .wrap{display:flex;flex-direction:column;gap:6px}
+  header h1{font-size:28px;font-weight:800;letter-spacing:-.5px}
+  header p{opacity:.92;font-size:15px}
+  .badge-date{font-size:13px;opacity:.8;margin-top:8px}
+  h2{font-size:22px;font-weight:800;margin:38px 0 14px;letter-spacing:-.3px;border-bottom:2px solid var(--line);padding-bottom:8px}
+  h3{font-size:16px;font-weight:700;margin:20px 0 8px}
+  p{margin:8px 0}
+  .lead{font-size:16px;color:var(--muted)}
+  .persona{display:flex;gap:20px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px 26px;box-shadow:0 6px 16px rgba(0,0,0,.06);flex-wrap:wrap}
+  .avatar{width:74px;height:74px;border-radius:50%;background:linear-gradient(135deg,#00723f,#10b981);color:#fff;display:grid;place-items:center;font-size:30px;font-weight:800;flex:0 0 auto}
+  .persona .t{flex:1;min-width:240px}
+  .persona h2{border:none;margin:0 0 4px;font-size:19px}
+  table{width:100%;border-collapse:collapse;background:var(--card);border-radius:var(--r);overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.05);margin:14px 0}
+  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);font-size:13.5px;vertical-align:top}
+  th{background:#eef4f1;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+  tr:last-child td{border-bottom:none}
+  .mono{font-family:'JetBrains Mono',monospace;font-size:12.5px}
+  code{background:#eef4f1;padding:1px 6px;border-radius:5px;font-size:12.5px;font-family:'JetBrains Mono',monospace;color:#0a3b24}
+  .find{border-left:4px solid var(--line);padding:14px 18px;margin:12px 0;background:var(--card);border-radius:0 var(--r) var(--r) 0;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+  .find.crit{border-left-color:var(--danger)} .find.warn{border-left-color:var(--warn)} .find.good{border-left-color:var(--green-l)} .find.low{border-left-color:var(--info)}
+  .find h4{font-size:15px;margin:0 0 4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;text-transform:uppercase;letter-spacing:.4px}
+  .tag.crit{background:#fdeaea;color:#b91c1c} .tag.warn{background:#fef3e2;color:#b45309} .tag.good{background:#e6f4ed;color:var(--green-d)} .tag.low{background:#e8f0fe;color:#1e40af}
+  .find p{font-size:14px;margin:6px 0 0;color:#33443b}
+  ul{margin:8px 0 8px 22px}
+  li{margin:6px 0;font-size:14px}
+  .diary{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:6px 22px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+  .diary .m{padding:14px 0;border-bottom:1px dashed var(--line)}
+  .diary .m:last-child{border-bottom:none}
+  .diary .mh{font-weight:700;color:var(--green-d);font-size:14px}
+  .quote{font-style:italic;color:#3a4a42}
+  .kpi{display:flex;gap:16px;flex-wrap:wrap;margin:14px 0}
+  .kpi .box{flex:1;min-width:150px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+  .kpi .box b{display:block;font-size:24px;font-weight:800;color:var(--danger)}
+  .kpi .box.g b{color:var(--green)}
+  .kpi .box span{font-size:12.5px;color:var(--muted)}
+  .muted{color:var(--muted)}
+  footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Teste de Usuário Leigo — 12 meses de uso</h1>
+    <p>Simulação de uma pessoa que nunca usou app de finanças, lançando transações reais ao longo de um ano.</p>
+    <div class="badge-date">08/07/2026 · método: lógica REAL do app (categorizador, motor de IA, previsão) executada sobre 149 lançamentos em 12 meses</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="persona">
+    <div class="avatar">C</div>
+    <div class="t">
+      <h2>Dona Cleide, 52 anos</h2>
+      <p class="muted">Dona de casa, renda familiar ~R$ 3.200/mês. Nunca usou app de finanças, digita do jeito que fala ("Água", "Décimo terceiro", "Presente pro neto"), lança de forma esporádica e <b>confia no que o app preenche automaticamente</b>. Esqueceu de lançar em 2 meses (comportamento típico).</p>
+    </div>
+  </div>
+
+  <h2>Como o teste foi feito</h2>
+  <p>Não é opinião: montei um conjunto de <b>149 lançamentos realistas</b> ao longo de 12 meses (jul/2025–jun/2026) e rodei a <b>lógica de verdade do app</b> — o categorizador que o formulário usa (<code>CATEGORIZADOR</code> → fallback <code>AUTO_CATEGORIZER</code>), o motor de IA (<code>ai-engine.js</code>: saúde, alertas, previsão, projeção, anomalias) e o orçamento. Os números abaixo são a saída literal desses módulos.</p>
+
+  <div class="find good">
+    <h4><span class="tag good">Correções aplicadas</span> O que já foi corrigido nesta rodada</h4>
+    <ul>
+      <li><b>Água → Moradia</b> (removida de "Alimentação"); <b>Conta do celular / Botijão → Moradia</b>; <b>Netflix/Spotify → Assinaturas</b> (categoria própria) — em <code>categorizador.js</code>.</li>
+      <li><b>Inversão de tipo corrigida:</b> nova categoria <b>Presentes = despesa</b> (presente que se dá vira gasto) e <b>"Décimo terceiro / décimo" = salário/receita</b> — fim do 13º virando despesa.</li>
+      <li><b>Normalização de acentos</b> no categorizador de fallback: "água", "décimo", "farmácia" agora casam (antes viravam "Outros") — em <code>auto-categorizer.js</code>. Novas palavras: feira, cabelo, celular, roupa, ceia.</li>
+      <li><b>Proteção de tipo no formulário:</b> um acerto forte do categorizador já autopreenche categoria <b>e</b> tipo, evitando que uma receita clara fique como "despesa" por falta de confirmação — em <code>init-form.js</code>.</li>
+      <li><b>Projeção do mês</b> agora retorna estado vazio quando não há lançamentos no mês (fim do "R$ 0,00 projetado") — <code>ai-engine.js</code>.</li>
+      <li><b>Orçamento:</b> trata renda = 0 (fim do "Infinity% da renda"), só projeta após alguns dias e usa linguagem calma ("estimativa") — <code>init-orcamento.js</code>.</li>
+      <li><b>Previsão mais honesta:</b> só afirma tendência de alta/baixa com sinal forte e dados suficientes — não confunde o 13º com "suas receitas estão crescendo" — <code>ai-engine.js</code>.</li>
+    </ul>
+    <p class="muted">Observação: nesta sessão o ambiente de shell serviu cópias truncadas dos arquivos editados, então não consegui reexecutar o harness contra o código já corrigido — as mudanças foram validadas por revisão de código e mapeiam 1:1 os problemas que o harness demonstrou. Rode <code>node docs/teste-leigo-harness.cjs</code> na sua máquina para confirmar os ganhos.</p>
+  </div>
+
+  <h2>Os 3 problemas que quebram a confiança logo de cara <span class="muted" style="font-size:14px;font-weight:400">(diagnóstico original)</span></h2>
+
+  <div class="find crit">
+    <h4><span class="tag crit">Crítico</span> 1. Tipo errado (receita↔despesa) corrompe o saldo</h4>
+    <p>Quando o app não reconhece bem a descrição, ele assume <b>"despesa"</b> por padrão — e às vezes inverte. Dois casos reais da Dona Cleide:</p>
+    <ul>
+      <li><b>"Décimo terceiro"</b> (R$ 3.200 de <b>renda</b>) → o app não categoriza e deixa como <b>despesa</b>. O maior ganho do ano dela vira gasto.</li>
+      <li><b>"Presente pro neto"</b> (R$ 150 de <b>gasto</b>) → o app adivinha <b>"freelance / receita"</b>. Um presente que ela deu vira renda.</li>
+    </ul>
+    <div class="kpi">
+      <div class="box g"><b>R$ 9.500</b><span>Saldo real dos 12 meses</span></div>
+      <div class="box"><b>R$ 3.400</b><span>Saldo que o app mostraria (confiando no tipo auto)</span></div>
+      <div class="box"><b>− R$ 6.100</b><span>Erro (64%) por 2 lançamentos mal-tipados</span></div>
+    </div>
+    <p>Para uma leiga que confia no preenchimento, o painel inteiro (saldo, receitas, despesas, gráficos) fica errado — e ela não tem como saber por quê. <b>Recomendação:</b> quando a confiança for baixa, não pré-selecionar o tipo; destacar visualmente "Confira: isto é receita ou despesa?"; e nunca deixar "despesa" como padrão silencioso para valores que casam com renda (13º, salário, PIX recebido).</p>
+  </div>
+
+  <div class="find crit">
+    <h4><span class="tag crit">Crítico</span> 2. Categoria errada com "alta confiança"</h4>
+    <p>O categorizador acerta muita coisa, mas erra com <b>confiança alta</b> em contas do dia a dia — e a leiga não desconfia de um "alta confiança":</p>
+    <table>
+      <thead><tr><th>Ela digitou</th><th>App classificou</th><th>Deveria ser</th><th>Confiança</th></tr></thead>
+      <tbody>
+        <tr><td>Água <span class="muted">(conta de água)</span></td><td>Alimentação 🍽️</td><td>Moradia</td><td class="mono" style="color:#b91c1c">alta</td></tr>
+        <tr><td>Conta do celular</td><td>Alimentação 🍽️</td><td>Moradia</td><td class="mono">média</td></tr>
+        <tr><td>Netflix</td><td>Lazer</td><td>Assinaturas</td><td class="mono">alta</td></tr>
+      </tbody>
+    </table>
+    <p>"Água" cai em <b>Alimentação</b> porque o dicionário lista "água" como bebida. Resultado: a conta de água some de Moradia e infla Alimentação. <b>Recomendação:</b> desambiguar por contexto ("conta de", "boleto"), e como Netflix/Spotify têm categoria própria (Assinaturas), o categorizador principal deveria concordar com ela.</p>
+  </div>
+
+  <div class="find warn">
+    <h4><span class="tag warn">Alto</span> 3. Muita coisa vira "Outros"</h4>
+    <p>Palavras comuns que não estão no dicionário caem em <b>"outro"</b>: <b>Feira, Cabelo, Roupa nova, Natal - ceia, Décimo terceiro</b>. No teste, <b>22 de 149 lançamentos (~15%)</b> viraram "Outros" — uma fatia grande e sem sentido no gráfico. Para a leiga, "Outros = 33%" (num mês) não ensina nada sobre onde o dinheiro foi. <b>Recomendação:</b> ampliar o dicionário (feira, cabelo, salão, roupa, presente, ceia, 13º) e, quando cair em "outro", perguntar gentilmente "Em qual categoria isto se encaixa?" e aprender a resposta.</p>
+  </div>
+
+  <h2>Diário da Dona Cleide (resumo de 12 meses)</h2>
+  <div class="diary">
+    <div class="m"><div class="mh">Dia 1 — Cadastro</div><p class="quote">"Ele pediu minha renda mas disse que era opcional, então pulei."</p><p>→ Como a renda é <b>opcional e pulável</b> no onboarding, o orçamento 50/30/20 e os indicadores ficam sem base o ano inteiro (ver problema 4).</p></div>
+    <div class="m"><div class="mh">Mês 1 — Primeiros lançamentos</div><p class="quote">"Botei 'Água' e ele marcou como Alimentação. Deixei, ele deve saber."</p><p>→ Erros silenciosos começam aqui e ela não percebe.</p></div>
+    <div class="m"><div class="mh">Meses 3 e 8 — Esqueceu de lançar</div><p class="quote">"Esse mês passou voando, quase não anotei nada."</p><p>→ O app mostra "Sem lançamentos hoje" com frequência; não há um empurrãozinho gentil que traga ela de volta sem soar como cobrança.</p></div>
+    <div class="m"><div class="mh">Mês 6 — Décimo terceiro</div><p class="quote">"Recebi o 13º, anotei… mas meu saldo de dezembro ficou horrível!"</p><p>→ O 13º entrou como <b>despesa</b>. Dezembro, o melhor mês dela, aparece no vermelho.</p></div>
+    <div class="m"><div class="mh">Fim do ano — Olhando o resumo</div><p class="quote">"Diz que minhas receitas estão crescendo e que vou gastar 291% da minha renda. Fiquei confusa e um pouco assustada."</p><p>→ Projeções infladas e alarmantes a partir de poucos dados (ver problemas 4 e 5).</p></div>
+  </div>
+
+  <h2>Outros achados (projeções e indicadores)</h2>
+
+  <div class="find warn">
+    <h4><span class="tag warn">Alto</span> 4. "Você gastará 291% da renda" — projeção alarmante</h4>
+    <p>O orçamento projeta o mês por regra de três: <code>gasto_até_hoje / dia_atual × dias_no_mês</code>. No começo do mês isso <b>estoura</b> (poucos dias, extrapolação linear) e, se a renda foi pulada no cadastro (renda = 0), o cálculo <code>projeção / renda</code> vira <b>divisão por zero</b> → pode exibir "Infinity% da renda" ou porcentagens absurdas. Para uma leiga, ver "você vai gastar 291% da sua renda" no dia 8 é assustador e falso. <b>Recomendação:</b> só projetar após ~5–7 dias de dados; tratar renda=0; e usar linguagem calma ("estimativa preliminar").</p>
+  </div>
+
+  <div class="find warn">
+    <h4><span class="tag warn">Médio</span> 5. "Suas receitas estão crescendo" — otimismo enganoso</h4>
+    <p>A previsão (regressão linear) captou o 13º e meses esparsos e concluiu <b>tendência "receitas-crescendo"</b>, projetando renda subindo para <b>R$ 4.766</b> — quando a renda real é estável em ~R$ 3.200. A leiga pode tomar decisões erradas achando que vai ganhar mais. <b>Recomendação:</b> não afirmar tendências com poucos meses/dados irregulares; rotular como "estimativa de baixa confiança" e separar eventos pontuais (13º) da tendência.</p>
+  </div>
+
+  <div class="find warn">
+    <h4><span class="tag warn">Médio</span> 6. Projeção do mês zerada, mas diz "dados suficientes"</h4>
+    <p>No mês atual sem lançamentos, <code>projetarFimMes</code> retorna tudo <b>zero</b> com <code>dadosInsuficientes: false</code>. O painel mostraria "Projeção fim do mês: R$ 0,00" como se fosse um valor real, em vez de "sem dados este mês". <b>Recomendação:</b> retornar <code>dadosInsuficientes: true</code> quando não há transações no mês corrente e exibir estado vazio.</p>
+  </div>
+
+  <div class="find low">
+    <h4><span class="tag low">Baixo</span> 7. Anomalia na ceia de Natal &amp; alertas repetitivos</h4>
+    <p>A "Ceia de Natal" (R$ 400) foi marcada como <b>anomalia</b> ("valor 6× acima da média"). Tecnicamente correto, mas para a leiga é um gasto sazonal esperado — soa como acusação. E o alerta "Sem lançamentos hoje" repetido pode cansar. <b>Recomendação:</b> reconhecer sazonalidade (Natal, volta às aulas) e dosar a frequência dos lembretes.</p>
+  </div>
+
+  <div class="find good">
+    <h4><span class="tag good">Positivo</span> O que funcionou bem</h4>
+    <p>O categorizador acertou a maioria com acento (Salário→receita, Farmácia→saúde, Aluguel/Luz→moradia, Gasolina→transporte, iFood/Mercado→alimentação, Consulta médica→saúde, Roupa nova→vestuário). A <b>saúde financeira</b> deu uma leitura coerente (poupança 23%, "todos os meses positivos"). Os atalhos de valor (+10/+50/+100) e o botão central "+" ajudam bastante quem é leigo. A base é boa — os problemas são de <b>arestas que aparecem no uso real</b>.</p>
+  </div>
+
+  <h2>Recomendações priorizadas</h2>
+  <div class="find">
+    <h4>Prioridade 1 — proteger o saldo (confiança do usuário)</h4>
+    <ul>
+      <li>Nunca pré-selecionar tipo/categoria com baixa confiança; pedir confirmação clara "É receita ou despesa?".</li>
+      <li>Regras de segurança de tipo: "13º", "décimo terceiro", "salário", "PIX recebido", "reembolso" nunca caem em despesa por padrão.</li>
+      <li>Corrigir "Água/Conta de água" → Moradia e alinhar Netflix/Spotify → Assinaturas.</li>
+    </ul>
+    <h4>Prioridade 2 — reduzir "Outros" e ensinar</h4>
+    <ul>
+      <li>Ampliar dicionário (feira, cabelo, salão, roupa, presente, ceia, botijão) e, ao cair em "outro", perguntar e aprender.</li>
+    </ul>
+    <h4>Prioridade 3 — projeções honestas e calmas</h4>
+    <ul>
+      <li>Projetar só após alguns dias de dados; tratar renda=0; rotular previsões de baixa confiança; separar eventos pontuais.</li>
+      <li>Tornar a captura de renda mais convidativa (explicar o valor de informar) sem obrigar.</li>
+    </ul>
+  </div>
+
+  <footer>
+    Método: execução da lógica real dos módulos <code>categorizador.js</code>, <code>auto-categorizer.js</code> e <code>ai-engine.js</code> sobre um dataset sintético de 12 meses representando uma usuária leiga. Os scripts de teste (<code>harness.cjs</code>) acompanham este relatório e podem ser reexecutados. Não substitui teste com usuários reais, mas antecipa as fricções mais prováveis. 08/07/2026.
+  </footer>
+
+</div>
+</body>
+</html>

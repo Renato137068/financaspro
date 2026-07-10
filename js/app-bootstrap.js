@@ -38,6 +38,16 @@ var APP_BOOTSTRAP = {
         if (result.failed && result.failed.length > 0) {
           console.warn('[BOOT] Módulos não inicializados:', result.failed.map(function(f) { return f.name; }));
         }
+        if (typeof renderLucideIconsNow === 'function') {
+          renderLucideIconsNow();
+        } else if (typeof renderLucideIcons === 'function') {
+          renderLucideIcons();
+        }
+        var abaParam = _bootParams.get('aba');
+        if (abaParam && typeof mudarAba === 'function') {
+          try { mudarAba(abaParam); } catch (e) {}
+        }
+        self._handleBelvoReturn();
       })
       .catch(function(e) {
         console.error('[BOOT] Falha crítica na inicialização:', e && e.message || e);
@@ -45,6 +55,28 @@ var APP_BOOTSTRAP = {
           UTILS.mostrarToast('Erro crítico ao inicializar. Recarregue a página.', 'error');
         }
       });
+  },
+
+  _handleBelvoReturn: function() {
+    if (typeof window === 'undefined' || typeof OPEN_FINANCE === 'undefined') return;
+    var params = new URLSearchParams(window.location.search);
+    if (!params.get('belvo')) return;
+
+    OPEN_FINANCE.handleBelvoCallback(params).then(function(conn) {
+      var clean = window.location.pathname + window.location.hash;
+      window.history.replaceState({}, '', clean);
+      if (conn && typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+        UTILS.mostrarToast('Conta bancária conectada via Belvo.', 'success');
+      }
+      if (typeof INIT_OPEN_FINANCE !== 'undefined' && INIT_OPEN_FINANCE.refreshCard) {
+        INIT_OPEN_FINANCE.refreshCard();
+      }
+    }).catch(function(err) {
+      window.history.replaceState({}, '', window.location.pathname + window.location.hash);
+      if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+        UTILS.mostrarToast(err.message || 'Falha ao concluir conexão Belvo.', 'error');
+      }
+    });
   }
 };
 

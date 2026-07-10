@@ -95,10 +95,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-bg-primary);
+  background: rgba(255, 255, 255, 0.18);
   border-radius: var(--radius-lg);
   font-size: 24px;
   line-height: 1;
+  color: #fff;
+}
+
+.card-saldo-principal .saldo-emoji i[data-lucide],
+.card-saldo-principal .saldo-emoji svg {
+  width: 24px;
+  height: 24px;
 }
 
 .saldo-info { flex: 1; }
@@ -112,14 +119,21 @@
   margin-bottom: 2px;
 }
 
+.card-saldo-principal .saldo-label {
+  color: rgba(255, 255, 255, 0.88);
+}
+
 .card-saldo-principal .saldo-valor {
   font-size: 26px;
   font-weight: var(--font-weight-extrabold);
   letter-spacing: var(--letter-spacing-tight);
+  color: #fff;
 }
 
-.saldo-positivo .saldo-valor,
-.saldo-negativo .saldo-valor { color: var(--color-text-primary); }
+.saldo-positivo:not(.card-saldo-principal) .saldo-valor,
+.saldo-negativo:not(.card-saldo-principal) .saldo-valor {
+  color: var(--color-text-primary);
+}
 
 /* ── Dashboard section card ───────────────────────────────── */
 
@@ -222,10 +236,28 @@
   gap: var(--space-3);
 }
 
+.indicador-icon i[data-lucide],
+.indicador-icone i[data-lucide] {
+  width: 1.25em;
+  height: 1.25em;
+}
+
+.indicador-icon,
 .indicador-icone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
   font-size: 28px;
   line-height: 1;
-  flex-shrink: 0;
+}
+
+.indicador-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
 }
 
 .indicador-info {
@@ -287,6 +319,14 @@
   font-size: 22px;
   line-height: 1;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  color: var(--color-warning, #d97706);
+}
+
+.alerta-icon i[data-lucide] {
+  width: 1.25em;
+  height: 1.25em;
 }
 
 .alerta-content {
@@ -315,7 +355,16 @@
   font-size: 44px;
   margin-bottom: var(--space-3);
   line-height: 1;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary-500);
+}
+
+.empty-emoji i[data-lucide],
+.empty-emoji svg {
+  width: 48px;
+  height: 48px;
 }
 
 .empty-emoji--float {
@@ -442,6 +491,25 @@
 /* ── Greeting ─────────────────────────────────────────────── */
 
 .dashboard-greeting { margin-bottom: var(--space-5); }
+
+.greeting-text--resumo {
+  padding: var(--space-1) 0 var(--space-2);
+}
+
+.greeting-text--resumo .greeting-hello {
+  display: block;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  line-height: var(--line-height-tight);
+  margin-bottom: var(--space-1);
+}
+
+.greeting-text--resumo .greeting-context {
+  display: block;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
 
 .greeting-text {
   display: flex;

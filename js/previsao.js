@@ -77,6 +77,17 @@ var PREVISAO = {
     var el = document.getElementById('previsao-painel');
     if (!el) return;
 
+    if (typeof BILLING !== 'undefined' && !BILLING.canUse('aiFeatures')) {
+      el.innerHTML =
+        '<div class="previsao-vazia previsao-upsell">' +
+          '<i data-lucide="sparkles" aria-hidden="true"></i>' +
+          '<p>Previsão com IA disponível no plano Pro.</p>' +
+          '<button type="button" class="btn-primario btn-sm" data-action="abrir-plano">Ver planos</button>' +
+        '</div>';
+      if (typeof renderLucideIcons === 'function') renderLucideIcons(el);
+      return;
+    }
+
     var prev = this.calcular();
 
     if (prev.tendencia === 'insuficiente' || prev.meses.length === 0) {

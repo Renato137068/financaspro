@@ -381,3 +381,31 @@
   color: var(--color-text-inverse);
   border-color: var(--color-primary-500);
 }
+
+/* ── Ghost (legacy) — botões de ação discretos (ex.: "Excluir") ── */
+.btn-ghost {
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-sans);
+  font-weight: var(--font-weight-semibold);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--color-gray-100);
+  color: var(--color-text-primary);
+}
+
+.btn-ghost:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Variante destrutiva discreta com hover suave em vermelho */
+.btn-ghost.meta-btn-danger:hover:not(:disabled) {
+  background: var(--color-danger-bg);
+  color: #dc2626;
+}

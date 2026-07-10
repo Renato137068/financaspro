@@ -46,11 +46,72 @@ var DADOS = {
     if (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:') {
       return '';
     }
+    if (typeof window !== 'undefined' && window.location && window.location.search.indexOf('offline=1') !== -1) {
+      return '';
+    }
+    // App nativo (Capacitor) SEM backend configurado => modo local (piloto).
+    // Evita cair em window.location.origin (https://localhost do webview) e
+    // quebrar login/sync. Se CONFIG.API_BASE_URL for definido, este guard é ignorado.
+    if (typeof window !== 'undefined' && window.Capacitor &&
+        (typeof window.Capacitor.isNativePlatform !== 'function' || window.Capacitor.isNativePlatform()) &&
+        !(CONFIG.API_BASE_URL || '').trim()) {
+      return '';
+    }
     var base = (CONFIG.API_BASE_URL || '').trim();
     if (!base) {
-      base = (CONFIG.API_FALLBACK_URL || '').trim();
+      if (typeof window !== 'undefined' && window.location && /^https?:$/i.test(window.location.protocol)) {
+        base = window.location.origin;
+      } else {
+        base = (CONFIG.API_FALLBACK_URL || '').trim();
+      }
     }
     return base ? base.replace(/\/$/, '') : '';
+  },
+
+  /** Cache em memória para leitura síncrona com crypto at-rest */
+  _plainCache: {},
+
+  _storageGetRaw: function(key) {
+    if (typeof LOCAL_CRYPTO !== 'undefined' && LOCAL_CRYPTO.isEnabled()) {
+      if (Object.prototype.hasOwnProperty.call(this._plainCache, key)) {
+        return this._plainCache[key];
+      }
+      var raw = localStorage.getItem(key);
+      if (!raw) return null;
+      if (raw.indexOf('enc1:') === 0) {
+        var self = this;
+        LOCAL_CRYPTO.unwrapStorageValue(key, raw).then(function(plain) {
+          self._plainCache[key] = plain;
+          if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
+            APP_STORE.dispatch(ACTIONS.SYNC_CONCLUIR);
+          }
+        });
+        return null;
+      }
+      this._plainCache[key] = raw;
+      return raw;
+    }
+    return localStorage.getItem(key);
+  },
+
+  _storageSetRaw: function(key, value) {
+    if (typeof LOCAL_CRYPTO !== 'undefined' && LOCAL_CRYPTO.isEnabled()) {
+      this._plainCache[key] = value;
+      LOCAL_CRYPTO.wrapStorageValue(key, value).then(function(stored) {
+        try {
+          localStorage.setItem(key, stored);
+        } catch (e) {
+          console.error('Erro ao persistir storage criptografado:', e);
+        }
+      });
+      return;
+    }
+    localStorage.setItem(key, value);
+  },
+
+  _storageRemoveRaw: function(key) {
+    delete this._plainCache[key];
+    localStorage.removeItem(key);
   },
 
   _apiAtiva: function() {
@@ -81,6 +142,9 @@ var DADOS = {
       }
       if (!res.ok) {
         return res.json().catch(function() { return {}; }).then(function(body) {
+          if (res.status === 402 && typeof BILLING !== 'undefined' && BILLING.onPaymentRequired) {
+            BILLING.onPaymentRequired(body);
+          }
           var err = new Error(body.error || ('HTTP ' + res.status));
           err.status = res.status;
           throw err;
@@ -160,11 +224,11 @@ var DADOS = {
 
     if (Array.isArray(snapshot.transactions)) {
       var txsPt = snapshot.transactions.map(this._txEnToPt.bind(this));
-      localStorage.setItem(CONFIG.STORAGE_TRANSACOES, JSON.stringify(txsPt));
+      this._storageSetRaw(CONFIG.STORAGE_TRANSACOES, JSON.stringify(txsPt));
     }
     if (Array.isArray(snapshot.accounts)) {
       var contasPt = snapshot.accounts.map(this._contaEnToPt.bind(this));
-      localStorage.setItem(CONFIG.STORAGE_CONTAS, JSON.stringify(contasPt));
+      this._storageSetRaw(CONFIG.STORAGE_CONTAS, JSON.stringify(contasPt));
     }
     var cfg = this.getConfig();
     if (snapshot.config && typeof snapshot.config === 'object') {
@@ -173,7 +237,7 @@ var DADOS = {
     if (Array.isArray(snapshot.recurringTransactions)) {
       cfg.recorrentes = snapshot.recurringTransactions;
     }
-    localStorage.setItem(CONFIG.STORAGE_CONFIG, JSON.stringify(cfg));
+    this._storageSetRaw(CONFIG.STORAGE_CONFIG, JSON.stringify(cfg));
 
     if (typeof APP_STORE !== 'undefined') APP_STORE.hydrateFromDados();
   },
@@ -189,6 +253,10 @@ var DADOS = {
 
     return this._apiFetch('/api/v1/state').then(function(snapshot) {
       self._mergeSnapshotLocal(snapshot);
+
+      if (typeof BILLING !== 'undefined' && BILLING.sync) {
+        BILLING.sync().catch(function() {});
+      }
 
       if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
         // Dispatch notifica subscribers via contadores de versão;
@@ -339,6 +407,7 @@ var DADOS = {
     }
     this._limparTokensLegados();
     localStorage.removeItem(CONFIG.API_USER_STORAGE);
+    if (typeof BILLING !== 'undefined' && BILLING.invalidateCache) BILLING.invalidateCache();
     if (typeof APP_STORE !== 'undefined') {
       APP_STORE.set('dados.sessao', { user: null }, { persist: false });
     }
@@ -386,11 +455,78 @@ var DADOS = {
       body: JSON.stringify({ email: email, password: password })
     }).then(function(resp) {
       var data = resp && resp.data ? resp.data : null;
+      if (data && data.user && !data.requiresTotp) {
+        self.registrarSessao(null, data.user, null);
+      }
+      return data;
+    });
+  },
+
+  verifyTotpLoginApi: function(pendingToken, code) {
+    var self = this;
+    return this._apiFetch('/api/v1/auth/totp/verify', {
+      method: 'POST',
+      body: JSON.stringify({ pendingToken: pendingToken, code: code }),
+    }).then(function(resp) {
+      var data = resp && resp.data ? resp.data : null;
       if (data && data.user) {
         self.registrarSessao(null, data.user, null);
       }
       return data;
     });
+  },
+
+  totpApi: function(path, body) {
+    return this._apiFetch('/api/v1/auth/totp/' + path, {
+      method: 'POST',
+      body: JSON.stringify(body || {}),
+    }).then(function(resp) { return resp && resp.data ? resp.data : resp; });
+  },
+
+  totpStatusApi: function() {
+    return this._apiFetch('/api/v1/auth/totp/status', { method: 'GET' })
+      .then(function(resp) { return resp && resp.data ? resp.data : null; });
+  },
+
+  openFinanceListApi: function() {
+    return this._apiFetch('/api/v1/open-finance/connections', { method: 'GET' })
+      .then(function(resp) { return resp && resp.data ? resp.data : []; });
+  },
+
+  openFinanceConnectApi: function(bankName) {
+    return this._apiFetch('/api/v1/open-finance/connections', {
+      method: 'POST',
+      body: JSON.stringify({ bankName: bankName || 'Banco Demo', provider: 'sandbox' }),
+    }).then(function(resp) { return resp && resp.data ? resp.data : null; });
+  },
+
+  openFinanceDisconnectApi: function(connectionId) {
+    return this._apiFetch('/api/v1/open-finance/connections/' + encodeURIComponent(connectionId), {
+      method: 'DELETE',
+    });
+  },
+
+  openFinanceSyncApi: function(connectionId) {
+    return this._apiFetch('/api/v1/open-finance/connections/' + encodeURIComponent(connectionId) + '/sync', {
+      method: 'POST',
+    }).then(function(resp) { return resp && resp.data ? resp.data : null; });
+  },
+
+  openFinanceProvidersApi: function() {
+    return this._apiFetch('/api/v1/open-finance/providers', { method: 'GET' })
+      .then(function(resp) { return resp && resp.data ? resp.data : { sandbox: true, belvo: false }; });
+  },
+
+  openFinanceBelvoWidgetTokenApi: function() {
+    return this._apiFetch('/api/v1/open-finance/belvo/widget-token', { method: 'POST' })
+      .then(function(resp) { return resp && resp.data ? resp.data : null; });
+  },
+
+  openFinanceBelvoCompleteApi: function(linkId, bankName) {
+    return this._apiFetch('/api/v1/open-finance/belvo/complete', {
+      method: 'POST',
+      body: JSON.stringify({ linkId: linkId, bankName: bankName || undefined }),
+    }).then(function(resp) { return resp && resp.data ? resp.data : null; });
   },
 
   registrarApi: function(nome, email, password) {
@@ -404,12 +540,12 @@ var DADOS = {
     if (this._initialized) return;
     this._initialized = true;
     this._limparTokensLegados();
-    if (!localStorage.getItem(CONFIG.STORAGE_TRANSACOES)) {
-      localStorage.setItem(CONFIG.STORAGE_TRANSACOES, JSON.stringify([]));
+    if (!this._storageGetRaw(CONFIG.STORAGE_TRANSACOES)) {
+      this._storageSetRaw(CONFIG.STORAGE_TRANSACOES, JSON.stringify([]));
     }
-    if (!localStorage.getItem(CONFIG.STORAGE_CONFIG)) {
+    if (!this._storageGetRaw(CONFIG.STORAGE_CONFIG)) {
       var defaults = Object.assign({}, CONFIG.DEFAULT_CONFIG, { _schemaVer: this.SCHEMA_VERSION });
-      localStorage.setItem(CONFIG.STORAGE_CONFIG, JSON.stringify(defaults));
+      this._storageSetRaw(CONFIG.STORAGE_CONFIG, JSON.stringify(defaults));
     } else {
       this._migrarSchema();
     }
@@ -446,7 +582,7 @@ var DADOS = {
    */
   getTransacoes: function() {
     try {
-      var data = localStorage.getItem(CONFIG.STORAGE_TRANSACOES);
+      var data = this._storageGetRaw(CONFIG.STORAGE_TRANSACOES);
       if (!data) return [];
       var parsed = JSON.parse(data);
       if (!Array.isArray(parsed)) return [];
@@ -478,7 +614,7 @@ var DADOS = {
       console.error('Storage indisponível:', check.erro);
       throw new Error(check.erro);
     }
-    localStorage.setItem(CONFIG.STORAGE_TRANSACOES, JSON.stringify(transacoes));
+    this._storageSetRaw(CONFIG.STORAGE_TRANSACOES, JSON.stringify(transacoes));
     var actionType = (typeof ACTIONS !== 'undefined')
       ? (index >= 0 ? ACTIONS.TRANSACAO_EDITAR : ACTIONS.TRANSACAO_CRIAR)
       : null;
@@ -499,7 +635,7 @@ var DADOS = {
         console.error('Storage indisponível:', check.erro);
         return false;
       }
-      localStorage.setItem(CONFIG.STORAGE_TRANSACOES, JSON.stringify(transacoes));
+      this._storageSetRaw(CONFIG.STORAGE_TRANSACOES, JSON.stringify(transacoes));
       if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
         APP_STORE.dispatch(ACTIONS.TRANSACAO_DELETAR, id);
       }
@@ -515,7 +651,7 @@ var DADOS = {
    */
   getConfig: function() {
     try {
-      var data = localStorage.getItem(CONFIG.STORAGE_CONFIG);
+      var data = this._storageGetRaw(CONFIG.STORAGE_CONFIG);
       if (!data) return Object.assign({}, CONFIG.DEFAULT_CONFIG);
       var parsed = JSON.parse(data);
       return Object.assign({}, CONFIG.DEFAULT_CONFIG, parsed);
@@ -533,7 +669,7 @@ var DADOS = {
   salvarConfig: function(config) {
     var atual = this.getConfig();
     var merged = Object.assign({}, atual, config);
-    localStorage.setItem(CONFIG.STORAGE_CONFIG, JSON.stringify(merged));
+    this._storageSetRaw(CONFIG.STORAGE_CONFIG, JSON.stringify(merged));
     if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
       APP_STORE.dispatch(ACTIONS.CONFIG_SALVAR, merged);
     }
@@ -542,8 +678,8 @@ var DADOS = {
   },
 
   limparTodos: function() {
-    localStorage.removeItem(CONFIG.STORAGE_TRANSACOES);
-    localStorage.removeItem(CONFIG.STORAGE_CONFIG);
+    this._storageRemoveRaw(CONFIG.STORAGE_TRANSACOES);
+    this._storageRemoveRaw(CONFIG.STORAGE_CONFIG);
     this._initialized = false;
     this.init();
   },
@@ -598,12 +734,12 @@ var DADOS = {
   },
 
   salvarAprendizado: function(hist) {
-    localStorage.setItem(CONFIG.STORAGE_APRENDIZADO, JSON.stringify(hist));
+    this._storageSetRaw(CONFIG.STORAGE_APRENDIZADO, JSON.stringify(hist));
   },
 
   obterAprendizado: function() {
     try {
-      var data = localStorage.getItem(CONFIG.STORAGE_APRENDIZADO);
+      var data = this._storageGetRaw(CONFIG.STORAGE_APRENDIZADO);
       return data ? JSON.parse(data) : {};
     } catch (e) {
       return {};
@@ -612,7 +748,7 @@ var DADOS = {
 
   getContas: function() {
     try {
-      var data = localStorage.getItem(CONFIG.STORAGE_CONTAS);
+      var data = this._storageGetRaw(CONFIG.STORAGE_CONTAS);
       if (!data) return [];
       var parsed = JSON.parse(data);
       return Array.isArray(parsed) ? parsed : [];
@@ -624,7 +760,7 @@ var DADOS = {
 
   salvarContas: function(contas) {
     var lista = Array.isArray(contas) ? contas : [];
-    localStorage.setItem(CONFIG.STORAGE_CONTAS, JSON.stringify(lista));
+    this._storageSetRaw(CONFIG.STORAGE_CONTAS, JSON.stringify(lista));
     if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
       APP_STORE.dispatch(ACTIONS.CONTAS_SALVAR, lista);
     }

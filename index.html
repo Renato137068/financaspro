@@ -2,46 +2,55 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5, user-scalable=yes">
   <meta name="description" content="Controle suas finanças com simplicidade">
   <meta name="theme-color" content="#00723F">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' http://localhost:4000 https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="FinançasPro">
+  <meta name="format-detection" content="telephone=no">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.belvo.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' http://localhost:4000 http://127.0.0.1:4000 https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://api.belvo.com https://sandbox.belvo.com https://widget.belvo.io; frame-src https://widget.belvo.io; object-src 'none'; base-uri 'self'; form-action 'self';">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
-  <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/logo.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="icons/logo.svg">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/android/icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/design-system.css">
   <link rel="stylesheet" href="css/critical-inline.css">
-  <link rel="stylesheet" href="css/style.css?v=modular-v2">
+  <link rel="stylesheet" href="css/style.css?v=modular-v3">
+  <link rel="stylesheet" href="css/features/brand.css">
   <title>FinançasPro</title>
-  <script src="js/utilities/focus-trap.js"></script>
-  <script src="js/utilities/aria-live.js"></script>
+  <script defer src="js/utilities/observability.js"></script>
+  <script defer src="js/utilities/local-crypto.js"></script>
+  <script defer src="js/utilities/focus-trap.js"></script>
+  <script defer src="js/utilities/aria-live.js"></script>
+  <!-- pin-guard NAO usa defer: precisa rodar antes do primeiro paint p/ evitar leak visual -->
   <script src="js/pin-guard.js"></script>
-  <script src="js/vendor/lucide.min.js"></script>
-  <script src="js/lucide-init.js"></script>
+  <script defer src="js/vendor/lucide.min.js"></script>
+  <script defer src="js/lucide-init.js"></script>
 </head>
 <body>
 
 <div id="auth-overlay" class="auth-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="auth-dialog-title" aria-describedby="auth-message">
   <div class="auth-card">
     <div class="auth-brand">
-      <div class="auth-logo" aria-hidden="true"><i data-lucide="wallet"></i></div>
+      <div class="auth-logo brand-logo-badge" aria-hidden="true"><img src="icons/logo.svg" alt="" class="brand-mark"></div>
       <div>
         <p class="auth-kicker">FinançasPro</p>
-        <h2 id="auth-dialog-title">Acesse sua conta</h2>
+        <h2 id="auth-dialog-title">Suas finanças, sob controle</h2>
       </div>
     </div>
-    <p id="auth-message">Entre para continuar seu controle financeiro.</p>
+    <p id="auth-message">Controle gastos, metas e contas em um só lugar. Grátis para começar.</p>
     <div id="auth-env-warning" class="auth-env-warning" style="display:none"></div>
-    <div class="auth-tabs">
-      <button type="button" class="auth-tab ativo" data-auth-tab="login">Entrar</button>
-      <button type="button" class="auth-tab" data-auth-tab="register">Criar conta</button>
+    <div class="auth-tabs" role="tablist" aria-label="Tipo de autenticação">
+      <button type="button" class="auth-tab ativo" role="tab" id="auth-tab-login" aria-selected="true" aria-controls="auth-login-form" data-auth-tab="login">Entrar</button>
+      <button type="button" class="auth-tab" role="tab" id="auth-tab-register" aria-selected="false" aria-controls="auth-register-form" data-auth-tab="register">Criar conta</button>
     </div>
-    <form id="auth-login-form" class="auth-form">
+    <form id="auth-login-form" class="auth-form" role="tabpanel" aria-labelledby="auth-tab-login">
       <div class="auth-field">
         <label for="auth-login-email">Email</label>
         <input type="email" id="auth-login-email" autocomplete="email" placeholder="voce@email.com" required>
@@ -52,7 +61,17 @@
       </div>
       <button type="submit" class="btn-primario">Entrar</button>
     </form>
-    <form id="auth-register-form" class="auth-form" style="display:none">
+    <form id="auth-totp-form" class="auth-form" hidden style="display:none" aria-labelledby="auth-totp-title">
+      <h3 id="auth-totp-title" class="auth-totp-title">Verificação em duas etapas</h3>
+      <p class="auth-totp-hint">Digite o código de 6 dígitos do seu app autenticador.</p>
+      <div class="auth-field">
+        <label for="auth-totp-code">Código</label>
+        <input type="text" id="auth-totp-code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="000000" required>
+      </div>
+      <button type="submit" class="btn-primario">Confirmar</button>
+      <button type="button" class="btn-ghost auth-totp-back" id="auth-totp-back">Voltar</button>
+    </form>
+    <form id="auth-register-form" class="auth-form" role="tabpanel" aria-labelledby="auth-tab-register" hidden>
       <div class="auth-field">
         <label for="auth-register-name">Nome</label>
         <input type="text" id="auth-register-name" autocomplete="name" placeholder="Seu nome" required>
@@ -67,6 +86,11 @@
       </div>
       <button type="submit" class="btn-primario">Criar conta</button>
     </form>
+    <div class="auth-trust" aria-hidden="true">
+      <span class="chip"><i data-lucide="lock"></i> Seus dados são seus</span>
+      <span class="chip"><i data-lucide="landmark"></i> Open Finance</span>
+      <span class="chip"><i data-lucide="shield-check"></i> Sem anúncios</span>
+    </div>
   </div>
 </div>
 
@@ -75,13 +99,13 @@
 
 <!-- HEADER -->
 <header>
-  <h1><i data-lucide="wallet"></i> FinançasPro</h1>
+  <h1><img src="icons/logo.svg" alt="" class="brand-mark" width="26" height="26"> FinançasPro</h1>
 </header>
 
 <!-- SIDEBAR (desktop ≥768px) -->
 <aside class="sidebar" aria-label="Menu lateral">
   <div class="sidebar-brand">
-    <span class="sidebar-logo" aria-hidden="true"><i data-lucide="wallet"></i></span>
+    <span class="sidebar-logo" aria-hidden="true"><img src="icons/logo.svg" alt="" class="brand-mark" width="28" height="28"></span>
     <span class="sidebar-title">FinançasPro</span>
   </div>
   <nav class="sidebar-nav" aria-label="Menu lateral (desktop)">
@@ -154,6 +178,25 @@
     <!-- PREVISÃO MINI (Fase 8) -->
     <div id="previsao-mini" class="previsao-mini" aria-live="polite"></div>
 
+    <!-- CONTAS A PAGAR -->
+    <section class="dashboard-section perfil-section" id="secao-contas-pagar">
+      <div class="secao-header">
+        <h2 class="secao-titulo"><i data-lucide="calendar-clock" aria-hidden="true"></i> Contas a pagar</h2>
+        <button type="button" class="btn-secundario btn-sm" data-action="conta-nova">Nova conta</button>
+      </div>
+      <div id="dashboard-contas-resumo" class="cp-resumo-compact"></div>
+      <div id="contas-pagar-panel" class="cp-panel"></div>
+    </section>
+
+    <!-- RELATÓRIO MENSAL -->
+    <section class="dashboard-section" id="secao-relatorios">
+      <button class="dashboard-section-toggle" id="btn-relatorios" data-action="toggle-relatorios" aria-expanded="false" aria-controls="relatorios-panel">
+        <span aria-hidden="true"><i data-lucide="file-bar-chart"></i></span> Relatório do mês
+        <span class="toggle-arrow" id="relatorios-arrow" aria-hidden="true"><i data-lucide="chevron-down"></i></span>
+      </button>
+      <div id="relatorios-panel" class="rel-panel" style="display:none"></div>
+    </section>
+
     <!-- GRÁFICOS (colapsável) -->
     <button class="dashboard-section-toggle" id="btn-graficos" data-action="toggle-graficos" aria-expanded="false" aria-controls="graficos-panel">
       <span aria-hidden="true"><i data-lucide="bar-chart"></i></span> Análise detalhada
@@ -169,10 +212,10 @@
         <div id="chart-categorias" class="chart-container"></div>
       </section>
     </div>
-    <section class="dashboard-section">
+    <section class="dashboard-section perfil-section">
       <div class="secao-header">
-        <h2 class="secao-titulo">Limites de Orçamento</h2>
-        <button class="secao-link" type="button" data-mudar-aba="orcamento">Gerenciar →</button>
+        <h2 class="secao-titulo">Limites de orçamento</h2>
+        <button class="secao-link" type="button" data-mudar-aba="orcamento">Gerenciar <i data-lucide="chevron-right" aria-hidden="true"></i></button>
       </div>
       <div id="resumo-orcamentos"></div>
     </section>
@@ -195,20 +238,52 @@
       <div id="alertas-painel"></div>
     </section>
 
-    <section class="dashboard-section">
+    <section class="dashboard-section perfil-section" id="secao-metas-resumo" style="display:none">
       <div class="secao-header">
-        <h2 class="secao-titulo">Últimas Transações</h2>
-        <button class="secao-link" type="button" data-mudar-aba="extrato">Ver todas →</button>
+        <h2 class="secao-titulo">Metas em andamento</h2>
+        <button class="secao-link" type="button" data-mudar-aba="orcamento">Ver todas <i data-lucide="chevron-right" aria-hidden="true"></i></button>
+      </div>
+      <div id="dashboard-metas-resumo" class="metas-resumo-grid"></div>
+    </section>
+
+    <section class="dashboard-section perfil-section" id="secao-assinaturas-resumo" style="display:none">
+      <div class="secao-header">
+        <h2 class="secao-titulo"><i data-lucide="tv" aria-hidden="true"></i> Assinaturas</h2>
+        <button class="secao-link" type="button" data-mudar-aba="orcamento">Gerenciar <i data-lucide="chevron-right" aria-hidden="true"></i></button>
+      </div>
+      <div id="dashboard-assinaturas-resumo"></div>
+    </section>
+
+    <section class="dashboard-section perfil-section" id="secao-patrimonio-resumo" style="display:none">
+      <div class="secao-header">
+        <h2 class="secao-titulo"><i data-lucide="landmark" aria-hidden="true"></i> Patrimônio</h2>
+        <button class="secao-link" type="button" data-mudar-aba="orcamento">Gerenciar <i data-lucide="chevron-right" aria-hidden="true"></i></button>
+      </div>
+      <div id="dashboard-patrimonio-resumo"></div>
+    </section>
+
+    <section class="dashboard-section perfil-section">
+      <div class="secao-header">
+        <h2 class="secao-titulo">Últimas transações</h2>
+        <button class="secao-link" type="button" data-mudar-aba="extrato">Ver todas <i data-lucide="chevron-right" aria-hidden="true"></i></button>
       </div>
       <div id="resumo-list"></div>
     </section>
     <button class="btn-primario" data-action="mudar-aba" data-aba="novo" style="margin-top:16px;">
-      ➕ Registrar Transação
+      <i data-lucide="plus" aria-hidden="true"></i> Registrar Transação
     </button>
   </div>
 
   <!-- ABA 2: NOVO LANÇAMENTO (Redesenhada) -->
   <div id="aba-novo" class="aba">
+    <h2 class="sr-only">Novo lançamento</h2>
+    <div class="perfil-header-premium perfil-header-compact">
+      <div class="perfil-card-icon-wrapper" aria-hidden="true"><i data-lucide="plus-circle"></i></div>
+      <div class="perfil-info">
+        <h2 class="perfil-nome">Novo lançamento</h2>
+        <div class="perfil-meta"><span>Registre receitas e despesas rapidamente</span></div>
+      </div>
+    </div>
 
     <!-- LANÇAMENTOS RÁPIDOS -->
     <div id="quick-entries" class="quick-entries"></div>
@@ -223,8 +298,8 @@
 
         <!-- TOGGLE RECEITA / DESPESA -->
         <div class="tipo-toggle" role="group" aria-label="Tipo de transação">
-          <button type="button" class="tipo-btn" data-tipo="receita"><i data-lucide="trending-up"></i> Receita</button>
-          <button type="button" class="tipo-btn ativo" data-tipo="despesa"><i data-lucide="trending-down"></i> Despesa</button>
+          <button type="button" class="tipo-btn" data-tipo="receita" aria-pressed="false"><i data-lucide="trending-up" aria-hidden="true"></i> Receita</button>
+          <button type="button" class="tipo-btn ativo" data-tipo="despesa" aria-pressed="true"><i data-lucide="trending-down" aria-hidden="true"></i> Despesa</button>
         </div>
 
         <div class="valor-input-wrapper">
@@ -237,12 +312,12 @@
 
         <!-- VALORES RÁPIDOS -->
         <div class="quick-amounts" aria-label="Valores rápidos">
-          <button type="button" class="quick-amount" data-valor="10">+10</button>
-          <button type="button" class="quick-amount" data-valor="20">+20</button>
-          <button type="button" class="quick-amount" data-valor="50">+50</button>
-          <button type="button" class="quick-amount" data-valor="100">+100</button>
-          <button type="button" class="quick-amount" data-valor="200">+200</button>
-          <button type="button" class="quick-amount" data-valor="500">+500</button>
+          <button type="button" class="quick-amount" data-valor="10" aria-label="Adicionar R$ 10 ao valor">+10</button>
+          <button type="button" class="quick-amount" data-valor="20" aria-label="Adicionar R$ 20 ao valor">+20</button>
+          <button type="button" class="quick-amount" data-valor="50" aria-label="Adicionar R$ 50 ao valor">+50</button>
+          <button type="button" class="quick-amount" data-valor="100" aria-label="Adicionar R$ 100 ao valor">+100</button>
+          <button type="button" class="quick-amount" data-valor="200" aria-label="Adicionar R$ 200 ao valor">+200</button>
+          <button type="button" class="quick-amount" data-valor="500" aria-label="Adicionar R$ 500 ao valor">+500</button>
         </div>
       </div>
 
@@ -297,8 +372,8 @@
       <div class="form-group">
         <label for="novo-data"><i data-lucide="calendar"></i> Data</label>
         <div class="data-chips">
-          <button type="button" class="data-chip ativo" data-offset="0">Hoje</button>
-          <button type="button" class="data-chip" data-offset="1">Ontem</button>
+          <button type="button" class="data-chip ativo" data-offset="0" aria-pressed="true">Hoje</button>
+          <button type="button" class="data-chip" data-offset="1" aria-pressed="false">Ontem</button>
           <input type="date" id="novo-data" class="data-input" required aria-describedby="data-error">
         </div>
         <div id="data-error" class="form-error-message"></div>
@@ -310,7 +385,7 @@
       <div class="extras-toggle">
         <button type="button" id="btn-extras" class="btn-extras" aria-expanded="false">
           <i data-lucide="settings" aria-hidden="true"></i> Mais opções
-          <span class="extras-arrow" id="extras-arrow"><i data-lucide="chevron-down"></i></span>
+          <span class="extras-arrow toggle-arrow" id="extras-arrow" aria-hidden="true"><i data-lucide="chevron-down"></i></span>
         </button>
       </div>
 
@@ -346,6 +421,17 @@
         <div class="form-group">
           <label for="novo-nota">Observação</label>
           <textarea id="novo-nota" placeholder="Adicione uma nota..." rows="2"></textarea>
+        </div>
+
+        <!-- Comprovante / anexo -->
+        <div class="form-group anexo-group">
+          <label><i data-lucide="paperclip" aria-hidden="true"></i> Comprovante</label>
+          <div class="anexo-actions">
+            <button type="button" class="btn-secundario btn-sm" data-action="anexo-adicionar">Anexar foto ou PDF</button>
+            <span class="anexo-hint">Até 3 arquivos · máx. 2 MB cada</span>
+          </div>
+          <input type="file" id="anexo-file-input" accept="image/jpeg,image/png,image/webp,image/gif,application/pdf" multiple hidden aria-hidden="true">
+          <div id="anexo-preview-list" class="anexo-preview-list"></div>
         </div>
 
         <!-- Recorrência -->
@@ -396,12 +482,12 @@
 
       <!-- BOTÃO REGISTRAR -->
       <button type="submit" class="btn-primario btn-registrar">
-        ✅ Registrar
+        <i data-lucide="check" aria-hidden="true"></i> Registrar
       </button>
     </form>
 
     <!-- ANIMAÇÃO DE SUCESSO (overlay) -->
-    <div id="success-overlay" class="success-overlay" style="display:none">
+    <div id="success-overlay" class="success-overlay" style="display:none" role="status" aria-live="polite" aria-atomic="true">
       <div class="success-confetti" aria-hidden="true">
         <span></span><span></span><span></span><span></span><span></span>
         <span></span><span></span><span></span><span></span><span></span>
@@ -416,21 +502,24 @@
 
   <!-- ABA 3: EXTRATO -->
   <div id="aba-extrato" class="aba" role="region" aria-label="Extrato de transações">
+    <div class="perfil-header-premium perfil-header-compact">
+      <div class="perfil-card-icon-wrapper" aria-hidden="true"><i data-lucide="clipboard-list"></i></div>
+      <div class="perfil-info">
+        <h2 class="perfil-nome">Extrato</h2>
+        <div class="perfil-meta"><span>Histórico, filtros e exportação</span></div>
+      </div>
+    </div>
     <!-- Header Premium -->
     <div class="extrato-header-premium">
       <!-- Seletor de período -->
       <div class="extrato-periodo-premium" role="group" aria-label="Navegação por período">
-        <button class="periodo-nav-premium" id="periodo-prev" data-action="navegar-periodo" data-dir="-1" aria-label="Mês anterior" tabindex="0">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M15 18l-6-6 6-6"/>
-          </svg>
+        <button class="periodo-nav-premium" id="periodo-prev" data-action="navegar-periodo" data-dir="-1" aria-label="Mês anterior">
+          <i data-lucide="chevron-left" aria-hidden="true"></i>
         </button>
-        <button class="periodo-label-premium" id="periodo-label-btn" data-action="abrir-calendario" aria-live="polite" aria-atomic="true" tabindex="0">Abril 2026</button>
+        <button class="periodo-label-premium" id="periodo-label-btn" data-action="abrir-calendario" aria-live="polite" aria-atomic="true">Abril 2026</button>
         <input type="month" id="periodo-date-picker" class="periodo-date-picker" style="display:none" aria-label="Selecionar período">
-        <button class="periodo-nav-premium" id="periodo-next" data-action="navegar-periodo" data-dir="1" aria-label="Próximo mês" tabindex="0">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
+        <button class="periodo-nav-premium" id="periodo-next" data-action="navegar-periodo" data-dir="1" aria-label="Próximo mês">
+          <i data-lucide="chevron-right" aria-hidden="true"></i>
         </button>
       </div>
 
@@ -476,15 +565,15 @@
       </div>
     </div>
 
+    <!-- Busca e filtros -->
+    <div class="perfil-section">
+      <h2 class="perfil-section-title">Filtros</h2>
     <!-- Busca Premium -->
     <div class="extrato-busca-premium">
-      <svg class="busca-icon-premium" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <circle cx="11" cy="11" r="8"/>
-        <path d="M21 21l-4.35-4.35"/>
-      </svg>
+      <i data-lucide="search" class="busca-icon-premium" aria-hidden="true"></i>
       <input type="text" id="extrato-busca" class="extrato-busca-input" placeholder="Buscar transações..." aria-label="Buscar transações por descrição ou categoria" autocomplete="off">
-      <button class="btn-busca-avancada" id="btn-busca-avancada" data-action="abrir-busca-avancada" aria-label="Abrir busca avançada" tabindex="0">
-        ⚙️
+      <button class="btn-busca-avancada" id="btn-busca-avancada" data-action="abrir-busca-avancada" aria-label="Abrir busca avançada">
+        <i data-lucide="settings" aria-hidden="true"></i>
       </button>
     </div>
 
@@ -514,68 +603,71 @@
     <!-- Filtros Premium -->
     <div class="extrato-filtros-premium" role="group" aria-label="Filtros de transações">
       <div class="filtros-tipo-premium" role="group" aria-label="Filtro por tipo">
-        <button class="filtro-chip-premium ativo" data-filtro="todos" data-action="filtro-tipo" aria-pressed="true" tabindex="0">Todas</button>
-        <button class="filtro-chip-premium" data-filtro="receita" data-action="filtro-tipo" aria-pressed="false" tabindex="0">Receitas</button>
-        <button class="filtro-chip-premium" data-filtro="despesa" data-action="filtro-tipo" aria-pressed="false" tabindex="0">Despesas</button>
+        <button class="filtro-chip-premium ativo" data-filtro="todos" data-action="filtro-tipo" aria-pressed="true">Todas</button>
+        <button class="filtro-chip-premium" data-filtro="receita" data-action="filtro-tipo" aria-pressed="false">Receitas</button>
+        <button class="filtro-chip-premium" data-filtro="despesa" data-action="filtro-tipo" aria-pressed="false">Despesas</button>
       </div>
       <div class="filtros-categoria-premium" id="filtros-categoria" role="group" aria-label="Filtro por categoria"></div>
       
       <!-- Ordenação -->
       <div class="ordenacao-container" role="group" aria-label="Ordenar por">
-        <button class="ordenacao-btn ativo" data-ordenacao="data-desc" data-action="ordenar" aria-pressed="true" tabindex="0" title="Data (mais recente)">
-          📅 Data ↓
+        <button class="ordenacao-btn ativo" data-ordenacao="data-desc" data-action="ordenar" aria-pressed="true" title="Data (mais recente)" aria-label="Ordenar por data, mais recente primeiro">
+          <i data-lucide="calendar" aria-hidden="true"></i> Data <i data-lucide="arrow-down" aria-hidden="true"></i>
         </button>
-        <button class="ordenacao-btn" data-ordenacao="data-asc" data-action="ordenar" aria-pressed="false" tabindex="0" title="Data (mais antiga)">
-          📅 Data ↑
+        <button class="ordenacao-btn" data-ordenacao="data-asc" data-action="ordenar" aria-pressed="false" title="Data (mais antiga)" aria-label="Ordenar por data, mais antiga primeiro">
+          <i data-lucide="calendar" aria-hidden="true"></i> Data <i data-lucide="arrow-up" aria-hidden="true"></i>
         </button>
-        <button class="ordenacao-btn" data-ordenacao="valor-desc" data-action="ordenar" aria-pressed="false" tabindex="0" title="Valor (maior)">
-          💰 Valor ↓
+        <button class="ordenacao-btn" data-ordenacao="valor-desc" data-action="ordenar" aria-pressed="false" title="Valor (maior)" aria-label="Ordenar por valor, maior primeiro">
+          <i data-lucide="dollar-sign" aria-hidden="true"></i> Valor <i data-lucide="arrow-down" aria-hidden="true"></i>
         </button>
-        <button class="ordenacao-btn" data-ordenacao="valor-asc" data-action="ordenar" aria-pressed="false" tabindex="0" title="Valor (menor)">
-          💰 Valor ↑
+        <button class="ordenacao-btn" data-ordenacao="valor-asc" data-action="ordenar" aria-pressed="false" title="Valor (menor)" aria-label="Ordenar por valor, menor primeiro">
+          <i data-lucide="dollar-sign" aria-hidden="true"></i> Valor <i data-lucide="arrow-up" aria-hidden="true"></i>
         </button>
       </div>
 
       <!-- Botão limpar filtros -->
-      <button class="btn-limpar-filtros" data-action="limpar-filtros" aria-label="Limpar todos os filtros" tabindex="0">
-        🔄 Limpar filtros
+      <button class="btn-limpar-filtros" data-action="limpar-filtros" aria-label="Limpar todos os filtros">
+        <i data-lucide="rotate-ccw" aria-hidden="true"></i> Limpar filtros
       </button>
     </div>
+    </div>
 
-    <!-- Lista de transações agrupadas -->
+    <!-- Lista de transações -->
+    <div class="perfil-section">
+      <h2 class="perfil-section-title">Transações</h2>
     <div id="lista-transacoes" role="list" aria-live="polite" aria-atomic="false"></div>
 
     <!-- Barra de ações em massa (oculta por padrão) -->
     <div class="acoes-massa-bar" id="acoes-massa-bar" style="display:none">
       <span class="acoes-massa-count" id="acoes-massa-count">0 selecionadas</span>
       <div class="acoes-massa-buttons">
-        <button class="btn-massa-deletar" data-action="deletar-selecionados">🗑️ Deletar</button>
+        <button class="btn-massa-deletar" data-action="deletar-selecionados"><i data-lucide="trash-2" aria-hidden="true"></i> Deletar</button>
         <button class="btn-massa-cancelar" data-action="cancelar-selecao">Cancelar</button>
       </div>
     </div>
+    </div>
 
-    <!-- Botões exportação -->
-    <div class="extrato-export-bar-premium" role="group" aria-label="Opções de exportação">
-      <button class="btn-export-premium" data-action="exportar-excel" aria-label="Exportar extrato como Excel" tabindex="0">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-          <line x1="16" y1="13" x2="8" y2="13"/>
-          <line x1="16" y1="17" x2="8" y2="17"/>
-          <polyline points="10 9 9 9 8 9"/>
-        </svg>
-        Excel
-      </button>
-      <button class="btn-export-premium" data-action="exportar-pdf" aria-label="Exportar extrato como PDF" tabindex="0">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-          <line x1="16" y1="13" x2="8" y2="13"/>
-          <line x1="16" y1="17" x2="8" y2="17"/>
-          <polyline points="10 9 9 9 8 9"/>
-        </svg>
-        PDF
-      </button>
+    <!-- Exportação -->
+    <div class="perfil-section">
+      <h2 class="perfil-section-title">Exportar</h2>
+      <div class="perfil-cards-grid">
+        <button type="button" class="perfil-card-premium" data-action="exportar-excel" aria-label="Exportar extrato como planilha CSV">
+          <div class="perfil-card-icon-wrapper"><i data-lucide="file-spreadsheet" aria-hidden="true"></i></div>
+          <div class="perfil-card-content">
+            <span class="perfil-card-title">Planilha (CSV)</span>
+            <span class="perfil-card-subtitle">Compatível com Excel e Google Sheets</span>
+          </div>
+          <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+        </button>
+        <button type="button" class="perfil-card-premium" data-action="exportar-pdf" aria-label="Exportar extrato como PDF">
+          <div class="perfil-card-icon-wrapper"><i data-lucide="file-text" aria-hidden="true"></i></div>
+          <div class="perfil-card-content">
+            <span class="perfil-card-title">PDF</span>
+            <span class="perfil-card-subtitle">Relatório para impressão</span>
+          </div>
+          <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -583,9 +675,13 @@
   <div id="aba-orcamento" class="aba">
     <!-- Renda mensal (se não definida) -->
     <div class="orc-renda-setup" id="orc-renda-setup">
-      <div class="orc-renda-icon"><i data-lucide="coins"></i></div>
-      <p class="orc-renda-title">Qual sua renda mensal?</p>
-      <p class="orc-renda-desc">Informe para calcular seu orçamento 50/30/20</p>
+      <div class="perfil-header-premium perfil-header-compact perfil-header-compact--flat">
+        <div class="perfil-card-icon-wrapper" aria-hidden="true"><i data-lucide="target"></i></div>
+        <div class="perfil-info">
+          <p class="orc-renda-title">Qual sua renda mensal?</p>
+          <p class="orc-renda-desc">Informe para calcular seu orçamento 50/30/20</p>
+        </div>
+      </div>
       <div class="orc-renda-input">
         <label class="sr-only" for="orc-renda-valor">Renda mensal em reais</label>
         <span class="orc-renda-prefix">R$</span>
@@ -597,6 +693,13 @@
     <!-- Dashboard Premium -->
     <div id="orc-dashboard" style="display:none">
       <div id="orc-live-region" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+      <div class="perfil-header-premium perfil-header-compact">
+        <div class="perfil-card-icon-wrapper" aria-hidden="true"><i data-lucide="target"></i></div>
+        <div class="perfil-info">
+          <h2 class="perfil-nome">Orçamento</h2>
+          <div class="perfil-meta"><span>Planejamento 50/30/20 do mês</span></div>
+        </div>
+      </div>
       <!-- Premium Header Estratégico -->
       <div class="orc-premium-header">
         <!-- KPI Principal -->
@@ -647,22 +750,27 @@
           </div>
         </div>
 
-        <!-- Header Actions -->
-        <div class="orc-header-actions">
-          <button class="orc-action-btn" data-action="editar-renda-orcamento" aria-label="Editar renda">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-            </svg>
-            Editar Renda
-          </button>
-          <button class="orc-action-btn" data-action="editar-regra-503020" aria-label="Personalizar regra">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-            </svg>
-            Personalizar
-          </button>
+        <!-- Ações rápidas -->
+        <div class="perfil-section">
+          <h2 class="perfil-section-title">Ações</h2>
+          <div class="perfil-cards-grid">
+            <button type="button" class="perfil-card-premium" data-action="editar-renda-orcamento" aria-label="Editar renda">
+              <div class="perfil-card-icon-wrapper"><i data-lucide="pencil" aria-hidden="true"></i></div>
+              <div class="perfil-card-content">
+                <span class="perfil-card-title">Editar renda</span>
+                <span class="perfil-card-subtitle">Atualizar valor mensal</span>
+              </div>
+              <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="perfil-card-premium" data-action="editar-regra-503020" aria-label="Personalizar regra">
+              <div class="perfil-card-icon-wrapper"><i data-lucide="settings" aria-hidden="true"></i></div>
+              <div class="perfil-card-content">
+                <span class="perfil-card-title">Personalizar</span>
+                <span class="perfil-card-subtitle">Ajustar regra 50/30/20</span>
+              </div>
+              <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -772,14 +880,12 @@
       <div class="orc-insights-premium" id="orc-insights"></div>
 
       <!-- Detalhamento por Categoria Premium -->
-      <div class="orc-categorias-section">
+      <div class="orc-categorias-section perfil-section">
         <div class="orc-secao-header-premium">
-          <h3 class="orc-secao-titulo-premium"><i data-lucide="bar-chart"></i> Detalhes por Categoria</h3>
+          <h3 class="perfil-section-title">Detalhes por categoria</h3>
           <button class="orc-toggle-btn-premium" id="orc-cat-toggle" data-action="toggle-detalhes-categorias" aria-expanded="false">
             <span class="toggle-label">Expandir</span>
-            <svg class="toggle-icon" id="orc-cat-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M6 9l6 6 6-6"/>
-            </svg>
+            <i data-lucide="chevron-down" class="toggle-icon" id="orc-cat-arrow" aria-hidden="true"></i>
           </button>
         </div>
         <div class="orc-categorias-premium" id="orc-categorias" style="display:none">
@@ -822,6 +928,36 @@
         </div>
       </div>
     </div>
+
+    <!-- Metas financeiras (visível mesmo sem renda definida) -->
+    <div class="metas-section perfil-section" id="metas-section">
+      <div class="orc-secao-header-premium">
+        <h3 class="perfil-section-title">Metas financeiras</h3>
+        <button type="button" class="btn-secundario btn-sm" data-action="meta-nova">Nova meta</button>
+      </div>
+      <div id="metas-list" class="metas-list"></div>
+    </div>
+
+    <!-- Assinaturas -->
+    <div class="assinaturas-section perfil-section" id="assinaturas-section">
+      <div class="orc-secao-header-premium">
+        <h3 class="perfil-section-title"><i data-lucide="tv" aria-hidden="true"></i> Assinaturas</h3>
+        <button type="button" class="btn-secundario btn-sm" data-action="assinatura-nova">Nova assinatura</button>
+      </div>
+      <div id="assinaturas-list" class="assinaturas-list"></div>
+    </div>
+
+    <!-- Patrimônio líquido -->
+    <div class="patrimonio-section perfil-section" id="patrimonio-section">
+      <div class="orc-secao-header-premium">
+        <h3 class="perfil-section-title"><i data-lucide="landmark" aria-hidden="true"></i> Patrimônio líquido</h3>
+        <div class="pat-header-actions">
+          <button type="button" class="btn-secundario btn-sm" data-action="patrimonio-ativo-nova">+ Ativo</button>
+          <button type="button" class="btn-secundario btn-sm" data-action="patrimonio-divida-nova">+ Dívida</button>
+        </div>
+      </div>
+      <div id="patrimonio-panel" class="patrimonio-panel"></div>
+    </div>
   </div>
 
   <!-- ABA 5: CONFIGURAÇÕES (PERFIL PREMIUM) -->
@@ -831,10 +967,10 @@
     <div class="perfil-header-premium">
       <div class="perfil-avatar-wrapper">
         <div class="perfil-avatar" id="perfil-avatar">U</div>
-        <div class="perfil-avatar-badge" id="perfil-plan-badge">Premium</div>
+        <div class="perfil-avatar-badge perfil-avatar-badge--gratis" id="perfil-plan-badge">Grátis</div>
       </div>
       <div class="perfil-info">
-        <h1 class="perfil-nome" id="perfil-nome-display">Usuário</h1>
+        <h2 class="perfil-nome" id="perfil-nome-display">Usuário</h2>
         <div class="perfil-meta">
           <span class="perfil-email" id="user-session-label">Sessão local</span>
           <span class="perfil-separator">•</span>
@@ -843,10 +979,7 @@
       </div>
       <div class="perfil-actions">
         <button class="perfil-action-btn" data-action="abrir-editar-perfil" aria-label="Editar perfil">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-          </svg>
+          <i data-lucide="pencil" aria-hidden="true"></i>
         </button>
       </div>
     </div>
@@ -854,16 +987,11 @@
     <!-- INDICADORES DE SEGURANÇA -->
     <div class="perfil-security-indicators">
       <div class="security-indicator" id="security-account-status">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-        </svg>
+        <i data-lucide="shield-check" aria-hidden="true"></i>
         <span>Conta protegida</span>
       </div>
       <div class="security-indicator" id="security-pin-status">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-        </svg>
+        <i data-lucide="lock" aria-hidden="true"></i>
         <span id="perfil-pin-status">PIN desativado</span>
       </div>
     </div>
@@ -872,36 +1000,48 @@
     <div class="perfil-section">
       <h2 class="perfil-section-title">Conta</h2>
       <div class="perfil-cards-grid">
-        <div class="perfil-card-premium" data-action="abrir-editar-perfil" role="button" tabindex="0" aria-label="Editar dados pessoais">
+        <div class="perfil-card-premium" data-action="abrir-editar-perfil" role="button" aria-label="Editar dados pessoais">
           <div class="perfil-card-icon-wrapper">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
-            </svg>
+            <i data-lucide="user" aria-hidden="true"></i>
           </div>
           <div class="perfil-card-content">
             <span class="perfil-card-title">Dados pessoais</span>
             <span class="perfil-card-subtitle">Nome, email e informações de contato</span>
           </div>
-          <svg class="perfil-card-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
+          <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
         </div>
 
-        <div class="perfil-card-premium" data-action="abrir-config-bancos" role="button" tabindex="0" aria-label="Gerenciar bancos e cartões">
+        <div class="perfil-card-premium perfil-card-premium--plano-highlight" data-action="abrir-plano" role="button" aria-label="Gerenciar plano e assinatura">
           <div class="perfil-card-icon-wrapper">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
-              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-            </svg>
+            <i data-lucide="sparkles" aria-hidden="true"></i>
+          </div>
+          <div class="perfil-card-content">
+            <span class="perfil-card-title">Plano e assinatura</span>
+            <span class="perfil-card-subtitle" id="perfil-plano-subtitle">Gratuito · uso local</span>
+          </div>
+          <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+        </div>
+
+        <div class="perfil-card-premium" data-action="abrir-config-bancos" role="button" aria-label="Gerenciar bancos e cartões">
+          <div class="perfil-card-icon-wrapper">
+            <i data-lucide="landmark" aria-hidden="true"></i>
           </div>
           <div class="perfil-card-content">
             <span class="perfil-card-title">Bancos e cartões</span>
             <span class="perfil-card-subtitle" id="perfil-bancos-display">Nenhum cadastrado</span>
           </div>
-          <svg class="perfil-card-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
+          <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+        </div>
+
+        <div class="perfil-card-premium" data-action="abrir-open-finance" role="button" aria-label="Conectar contas via Open Finance">
+          <div class="perfil-card-icon-wrapper">
+            <i data-lucide="link" aria-hidden="true"></i>
+          </div>
+          <div class="perfil-card-content">
+            <span class="perfil-card-title">Open Finance</span>
+            <span class="perfil-card-subtitle" id="perfil-open-finance-status">Nenhuma conta conectada</span>
+          </div>
+          <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
         </div>
       </div>
     </div>
@@ -912,10 +1052,7 @@
       <div class="perfil-cards-grid">
         <div class="perfil-card-premium perfil-card-toggle">
           <div class="perfil-card-icon-wrapper">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-            </svg>
+            <i data-lucide="lock" aria-hidden="true"></i>
           </div>
           <div class="perfil-card-content">
             <span class="perfil-card-title">Proteção por PIN</span>
@@ -927,18 +1064,16 @@
           </label>
         </div>
 
-        <div class="perfil-card-premium perfil-card-toggle">
+        <div class="perfil-card-premium perfil-card-toggle" id="perfil-2fa-card">
           <div class="perfil-card-icon-wrapper">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-            </svg>
+            <i data-lucide="shield-check" aria-hidden="true"></i>
           </div>
           <div class="perfil-card-content">
             <span class="perfil-card-title">Verificação em duas etapas</span>
-            <span class="perfil-card-subtitle">Proteção adicional para sua conta</span>
+            <span class="perfil-card-subtitle" id="perfil-2fa-status">Requer login na nuvem</span>
           </div>
           <label class="perfil-switch">
-            <input type="checkbox" id="chk-2fa">
+            <input type="checkbox" id="chk-2fa" aria-label="Ativar verificação em duas etapas">
             <span class="perfil-switch-slider"></span>
           </label>
         </div>
@@ -951,9 +1086,7 @@
       <div class="perfil-cards-grid">
         <div class="perfil-card-premium perfil-card-toggle">
           <div class="perfil-card-icon-wrapper">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-            </svg>
+            <i data-lucide="moon" aria-hidden="true"></i>
           </div>
           <div class="perfil-card-content">
             <span class="perfil-card-title">Modo escuro</span>
@@ -967,10 +1100,7 @@
 
         <div class="perfil-card-premium perfil-card-toggle">
           <div class="perfil-card-icon-wrapper">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-            </svg>
+            <i data-lucide="bell" aria-hidden="true"></i>
           </div>
           <div class="perfil-card-content">
             <span class="perfil-card-title">Alertas de orçamento</span>
@@ -984,22 +1114,28 @@
 
         <div class="perfil-card-premium perfil-card-toggle">
           <div class="perfil-card-icon-wrapper">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-              <line x1="16" y1="2" x2="16" y2="6"/>
-              <line x1="8" y1="2" x2="8" y2="6"/>
-              <line x1="3" y1="10" x2="21" y2="10"/>
-            </svg>
+            <i data-lucide="calendar" aria-hidden="true"></i>
           </div>
           <div class="perfil-card-content">
             <span class="perfil-card-title">Lembrete diário</span>
-            <span class="perfil-card-subtitle">Lembrar de registrar gastos</span>
+            <span class="perfil-card-subtitle" id="perfil-lembrete-status">Notificação do navegador ou app</span>
           </div>
           <label class="perfil-switch">
             <input type="checkbox" id="chk-lembrete">
             <span class="perfil-switch-slider"></span>
           </label>
         </div>
+
+        <button type="button" class="perfil-card-premium" id="btn-refazer-onboarding" aria-label="Refazer tour de boas-vindas">
+          <div class="perfil-card-icon-wrapper">
+            <i data-lucide="compass" aria-hidden="true"></i>
+          </div>
+          <div class="perfil-card-content">
+            <span class="perfil-card-title">Tour de boas-vindas</span>
+            <span class="perfil-card-subtitle">Rever dicas iniciais do app</span>
+          </div>
+          <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+        </button>
       </div>
     </div>
 
@@ -1007,34 +1143,26 @@
     <div class="perfil-section">
       <h2 class="perfil-section-title">Categorias</h2>
       <div class="perfil-cards-grid">
-        <div class="perfil-card-premium" data-action="gerenciar-categorias" data-tipo="despesa" role="button" tabindex="0" aria-label="Gerenciar categorias de despesa">
+        <div class="perfil-card-premium" data-action="gerenciar-categorias" data-tipo="despesa" role="button" aria-label="Gerenciar categorias de despesa">
           <div class="perfil-card-icon-wrapper">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-            </svg>
+            <i data-lucide="folder" aria-hidden="true"></i>
           </div>
           <div class="perfil-card-content">
             <span class="perfil-card-title">Categorias de despesa</span>
             <span class="perfil-card-subtitle" id="perfil-cats-despesa">7 categorias</span>
           </div>
-          <svg class="perfil-card-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
+          <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
         </div>
 
-        <div class="perfil-card-premium" data-action="gerenciar-categorias" data-tipo="receita" role="button" tabindex="0" aria-label="Gerenciar categorias de receita">
+        <div class="perfil-card-premium" data-action="gerenciar-categorias" data-tipo="receita" role="button" aria-label="Gerenciar categorias de receita">
           <div class="perfil-card-icon-wrapper">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-            </svg>
+            <i data-lucide="folder-open" aria-hidden="true"></i>
           </div>
           <div class="perfil-card-content">
             <span class="perfil-card-title">Categorias de receita</span>
             <span class="perfil-card-subtitle" id="perfil-cats-receita">5 categorias</span>
           </div>
-          <svg class="perfil-card-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
+          <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
         </div>
       </div>
     </div>
@@ -1043,38 +1171,26 @@
     <div class="perfil-section">
       <h2 class="perfil-section-title">Dados</h2>
       <div class="perfil-cards-grid">
-        <div class="perfil-card-premium" data-action="exportar-dados" role="button" tabindex="0" aria-label="Exportar backup de dados">
+        <div class="perfil-card-premium" data-action="exportar-dados" role="button" aria-label="Exportar backup de dados">
           <div class="perfil-card-icon-wrapper">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
+            <i data-lucide="download" aria-hidden="true"></i>
           </div>
           <div class="perfil-card-content">
             <span class="perfil-card-title">Exportar backup</span>
             <span class="perfil-card-subtitle" id="perfil-ultimo-backup">Nunca exportado</span>
           </div>
-          <svg class="perfil-card-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
+          <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
         </div>
 
-        <div class="perfil-card-premium" data-action="abrir-import" role="button" tabindex="0" aria-label="Importar dados de backup">
+        <div class="perfil-card-premium" data-action="abrir-import" role="button" aria-label="Importar dados de backup">
           <div class="perfil-card-icon-wrapper">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="17 8 12 3 7 8"/>
-              <line x1="12" y1="3" x2="12" y2="15"/>
-            </svg>
+            <i data-lucide="upload" aria-hidden="true"></i>
           </div>
           <div class="perfil-card-content">
             <span class="perfil-card-title">Importar dados</span>
             <span class="perfil-card-subtitle">Restaurar backup JSON</span>
           </div>
-          <svg class="perfil-card-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
+          <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
         </div>
       </div>
       <input type="file" id="import-file" accept=".json" style="display:none" aria-hidden="true">
@@ -1084,38 +1200,37 @@
     <div class="perfil-section">
       <h2 class="perfil-section-title">Sobre</h2>
       <div class="perfil-cards-grid">
-        <div class="perfil-card-premium" data-action="abrir-changelog" role="button" tabindex="0" aria-label="Ver novidades e changelog">
+        <a class="perfil-card-premium" href="privacidade.html" aria-label="Política de privacidade">
           <div class="perfil-card-icon-wrapper">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-              <line x1="16" y1="13" x2="8" y2="13"/>
-              <line x1="16" y1="17" x2="8" y2="17"/>
-              <polyline points="10 9 9 9 8 9"/>
-            </svg>
+            <i data-lucide="shield" aria-hidden="true"></i>
+          </div>
+          <div class="perfil-card-content">
+            <span class="perfil-card-title">Política de privacidade</span>
+            <span class="perfil-card-subtitle">Como tratamos seus dados</span>
+          </div>
+          <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+        </a>
+
+        <div class="perfil-card-premium" data-action="abrir-changelog" role="button" aria-label="Ver novidades e changelog">
+          <div class="perfil-card-icon-wrapper">
+            <i data-lucide="file-text" aria-hidden="true"></i>
           </div>
           <div class="perfil-card-content">
             <span class="perfil-card-title">Novidades</span>
-            <span class="perfil-card-subtitle">v3.0 — Config redesenhada</span>
+            <span class="perfil-card-subtitle" id="perfil-changelog-version">v11.0.0 — PWA e Android</span>
           </div>
-          <svg class="perfil-card-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
+          <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
         </div>
 
-        <div class="perfil-card-premium" data-action="abrir-feedback" role="button" tabindex="0" aria-label="Enviar feedback">
+        <div class="perfil-card-premium" data-action="abrir-feedback" role="button" aria-label="Enviar feedback">
           <div class="perfil-card-icon-wrapper">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
-            </svg>
+            <i data-lucide="message-circle" aria-hidden="true"></i>
           </div>
           <div class="perfil-card-content">
             <span class="perfil-card-title">Enviar feedback</span>
             <span class="perfil-card-subtitle">Sugestões, bugs, elogios</span>
           </div>
-          <svg class="perfil-card-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
+          <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
         </div>
       </div>
     </div>
@@ -1123,33 +1238,24 @@
     <!-- LOGOUT -->
     <div class="perfil-section">
       <button type="button" id="btn-logout" class="perfil-logout-btn">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-          <polyline points="16 17 21 12 16 7"/>
-          <line x1="21" y1="12" x2="9" y2="12"/>
-        </svg>
+        <i data-lucide="log-out" aria-hidden="true"></i>
         Sair da conta
       </button>
     </div>
 
     <!-- ZONA DE PERIGO -->
     <div class="perfil-section perfil-section-danger">
-      <h2 class="perfil-section-title perfil-section-title-danger">⚠️ Zona de perigo</h2>
+      <h2 class="perfil-section-title perfil-section-title-danger"><i data-lucide="alert-triangle" aria-hidden="true"></i> Zona de perigo</h2>
       <button class="perfil-danger-btn" data-action="limpar-dados">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="3 6 5 6 21 6"/>
-          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-          <line x1="10" y1="11" x2="10" y2="17"/>
-          <line x1="14" y1="11" x2="14" y2="17"/>
-        </svg>
+        <i data-lucide="trash-2" aria-hidden="true"></i>
         Apagar todos os dados
       </button>
     </div>
 
     <!-- SISTEMA -->
     <div class="perfil-system-info">
-      <p>FinançasPro v3.0 · Dados salvos localmente</p>
-      <p>Feito com ❤️ para suas finanças</p>
+      <p id="perfil-app-footer">FinançasPro v11.0.0 · Dados salvos localmente</p>
+      <p>Feito com <i data-lucide="heart" aria-hidden="true"></i> para suas finanças</p>
     </div>
 
     <div style="height: 24px;"></div>
@@ -1162,69 +1268,68 @@
         <div class="perfil-avatar" id="editar-perfil-avatar">U</div>
       </div>
       <div class="perfil-info">
-        <h1 class="perfil-nome">Editar Perfil</h1>
+        <h2 class="perfil-nome">Editar Perfil</h2>
         <div class="perfil-meta">
           <span>Atualize suas informações pessoais</span>
         </div>
       </div>
       <div class="perfil-actions">
         <button class="perfil-action-btn" data-action="voltar-perfil" aria-label="Voltar para perfil">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M19 12H5M12 19l-7-7 7-7"/>
-          </svg>
+          <i data-lucide="arrow-left" aria-hidden="true"></i>
         </button>
       </div>
     </div>
 
-    <form id="form-editar-perfil" class="formulario" autocomplete="off">
+    <form id="form-editar-perfil" class="formulario perfil-section" autocomplete="off">
+      <h2 class="perfil-section-title">Dados pessoais</h2>
       <div class="form-group">
-        <label for="editar-nome">👤 Nome completo</label>
+        <label for="editar-nome"><i data-lucide="user" aria-hidden="true"></i> Nome completo</label>
         <input type="text" id="editar-nome" placeholder="Seu nome completo" maxlength="100" required>
         <div class="form-hint">Usado para personalização da interface</div>
       </div>
 
       <div class="form-group">
-        <label for="editar-email">📧 Email</label>
+        <label for="editar-email"><i data-lucide="mail" aria-hidden="true"></i> Email</label>
         <input type="email" id="editar-email" placeholder="seu@email.com" maxlength="100">
         <div class="form-hint">Opcional - usado para notificações</div>
       </div>
 
       <div class="form-group">
-        <label for="editar-telefone">📱 Telefone</label>
+        <label for="editar-telefone"><i data-lucide="smartphone" aria-hidden="true"></i> Telefone</label>
         <input type="tel" id="editar-telefone" placeholder="(11) 99999-9999" maxlength="15">
         <div class="form-hint">Opcional - formato: (XX) XXXXX-XXXX</div>
       </div>
 
       <div class="form-group">
-        <label for="editar-nascimento">🎂 Data de nascimento</label>
+        <label for="editar-nascimento"><i data-lucide="cake" aria-hidden="true"></i> Data de nascimento</label>
         <input type="date" id="editar-nascimento">
         <div class="form-hint">Opcional</div>
       </div>
 
       <div class="form-group">
-        <label for="editar-endereco">📍 Endereço</label>
+        <label for="editar-endereco"><i data-lucide="map-pin" aria-hidden="true"></i> Endereço</label>
         <input type="text" id="editar-endereco" placeholder="Rua, número, bairro" maxlength="200">
         <div class="form-hint">Opcional</div>
       </div>
 
       <div class="form-group">
-        <label for="editar-cidade">🏙️ Cidade</label>
+        <label for="editar-cidade"><i data-lucide="building-2" aria-hidden="true"></i> Cidade</label>
         <input type="text" id="editar-cidade" placeholder="Sua cidade" maxlength="50">
         <div class="form-hint">Opcional</div>
       </div>
 
       <div class="form-group">
-        <label for="editar-moeda">💱 Moeda preferida</label>
+        <label for="editar-moeda"><i data-lucide="coins" aria-hidden="true"></i> Moeda preferida</label>
         <select id="editar-moeda">
-          <option value="BRL">🇧🇷 BRL - Real Brasileiro</option>
-          <option value="USD">🇺🇸 USD - Dólar Americano</option>
-          <option value="EUR">🇪🇺 EUR - Euro</option>
+          <option value="BRL">BRL - Real Brasileiro</option>
+          <option value="USD">USD - Dólar Americano</option>
+          <option value="EUR">EUR - Euro</option>
         </select>
         <div class="form-hint">Usada para formatação de valores</div>
       </div>
 
       <button type="submit" class="btn-primario">
-        ✅ Salvar alterações
+        <i data-lucide="check" aria-hidden="true"></i> Salvar alterações
       </button>
 
       <button type="button" class="btn-secundario" data-action="cancelar-editar-perfil" style="margin-top: 12px;">
@@ -1237,26 +1342,24 @@
   <div id="aba-gerenciar-bancos" class="aba">
     <div class="perfil-header-premium">
       <div class="perfil-avatar-wrapper">
-        <div class="perfil-avatar" style="background: var(--color-primary-500);">🏦</div>
+        <div class="perfil-avatar" style="background: var(--color-primary-500);" aria-hidden="true"><i data-lucide="landmark"></i></div>
       </div>
       <div class="perfil-info">
-        <h1 class="perfil-nome">Bancos e Cartões</h1>
+        <h2 class="perfil-nome">Bancos e Cartões</h2>
         <div class="perfil-meta">
           <span>Gerencie suas contas bancárias e cartões</span>
         </div>
       </div>
       <div class="perfil-actions">
         <button class="perfil-action-btn" data-action="voltar-perfil" aria-label="Voltar para perfil">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M19 12H5M12 19l-7-7 7-7"/>
-          </svg>
+          <i data-lucide="arrow-left" aria-hidden="true"></i>
         </button>
       </div>
     </div>
 
     <!-- SEÇÃO BANCOS -->
     <div class="perfil-section">
-      <h2 class="perfil-section-title">🏦 Bancos</h2>
+      <h2 class="perfil-section-title">Bancos</h2>
       
       <!-- FORMULÁRIO PARA ADICIONAR BANCO -->
       <form id="form-adicionar-banco" class="formulario" autocomplete="off" style="margin-bottom: var(--space-6);">
@@ -1277,7 +1380,7 @@
         </div>
 
         <button type="submit" class="btn-primario">
-          ➕ Adicionar banco
+          <i data-lucide="plus" aria-hidden="true"></i> Adicionar banco
         </button>
       </form>
 
@@ -1290,7 +1393,7 @@
 
     <!-- SEÇÃO CARTÕES -->
     <div class="perfil-section">
-      <h2 class="perfil-section-title">💳 Cartões</h2>
+      <h2 class="perfil-section-title">Cartões</h2>
       
       <!-- FORMULÁRIO PARA ADICIONAR CARTÃO -->
       <form id="form-adicionar-cartao" class="formulario" autocomplete="off" style="margin-bottom: var(--space-6);">
@@ -1320,7 +1423,7 @@
         </div>
 
         <button type="submit" class="btn-primario">
-          ➕ Adicionar cartão
+          <i data-lucide="plus" aria-hidden="true"></i> Adicionar cartão
         </button>
       </form>
 
@@ -1360,76 +1463,98 @@
 
 <!-- SCRIPTS -->
 <!-- Core: infraestrutura (sem dependências externas) -->
-<script src="js/core/config.js"></script>
-<script src="js/core/utils.js"></script>
-<script src="js/core/domUtils.js"></script>
-<script src="js/core/dom-safe.js"></script>
-<script src="js/core/validations.js"></script>
-<script src="js/core/events-catalog.js"></script>
-<script src="js/core/event-bus.js"></script>
-<script src="js/core/dados.js"></script>
-<script src="js/core/store.js"></script>
-<script src="js/core/lifecycle.js"></script>
+<script defer src="js/core/config.js"></script>
+<script defer src="js/core/utils.js"></script>
+<script defer src="js/core/domUtils.js"></script>
+<script defer src="js/core/dom-safe.js"></script>
+<script defer src="js/core/validations.js"></script>
+<script defer src="js/core/events-catalog.js"></script>
+<script defer src="js/core/event-bus.js"></script>
+<script defer src="js/core/dados.js"></script>
+<script defer src="js/core/store.js"></script>
+<script defer src="js/core/lifecycle.js"></script>
 <!-- Domínio: categorização e parsing -->
-<script src="js/categories.js"></script>
-<script src="js/categorizador.js"></script>
-<script src="js/auto-categorizer.js"></script>
-<script src="js/aprendizado.js"></script>
-<script src="js/parser.js"></script>
-<script src="js/score.js"></script>
-<script src="js/pipeline.js"></script>
+<script defer src="js/categories.js"></script>
+<script defer src="js/categorizador.js"></script>
+<script defer src="js/auto-categorizer.js"></script>
+<script defer src="js/aprendizado.js"></script>
+<script defer src="js/parser.js"></script>
+<script defer src="js/score.js"></script>
+<script defer src="js/pipeline.js"></script>
 <!-- Services: lógica de negócio sem UI -->
-<script src="js/services/actions.js"></script>
-<script src="js/services/transactionService.js"></script>
-<script src="js/services/budgetService.js"></script>
-<script src="js/services/healthService.js"></script>
+<script defer src="js/services/actions.js"></script>
+<script defer src="js/services/transactionService.js"></script>
+<script defer src="js/services/budgetService.js"></script>
+<script defer src="js/services/healthService.js"></script>
 <!-- Negócio: transações, orçamento, automação -->
-<script src="js/transacoes.js"></script>
-<script src="js/contas.js"></script>
-<script src="js/orcamento.js"></script>
-<script src="js/automacao.js"></script>
+<script defer src="js/transacoes.js"></script>
+<script defer src="js/utilities/daily-reminder.js"></script>
+<script defer src="js/contas.js"></script>
+<script defer src="js/orcamento.js"></script>
+<script defer src="js/metas.js"></script>
+<script defer src="js/contas-pagar.js"></script>
+<script defer src="js/assinaturas.js"></script>
+<script defer src="js/relatorios.js"></script>
+<script defer src="js/patrimonio.js"></script>
+<script defer src="js/anexos.js"></script>
+<script defer src="js/automacao.js"></script>
 <!-- Renderização modularizada -->
-<script src="js/render-core.js"></script>
+<script defer src="js/render-core.js"></script>
 <!-- Componentes UI reutilizáveis -->
-<script src="js/components/_base.js"></script>
-<script src="js/components/EmptyState.js"></script>
-<script src="js/components/ProgressBar.js"></script>
-<script src="js/components/ComparacaoMes.js"></script>
-<script src="js/components/CardTransacao.js"></script>
-<script src="js/components/CardOrcamento.js"></script>
-<script src="js/components/AlertaCard.js"></script>
-<script src="js/components/LegendaChart.js"></script>
-<script src="js/components/BarChart6M.js"></script>
-<script src="js/components/DonutChart.js"></script>
-<script src="js/components/Indicador.js"></script>
+<script defer src="js/components/_base.js"></script>
+<script defer src="js/components/EmptyState.js"></script>
+<script defer src="js/components/ProgressBar.js"></script>
+<script defer src="js/components/ComparacaoMes.js"></script>
+<script defer src="js/components/CardTransacao.js"></script>
+<script defer src="js/components/CardOrcamento.js"></script>
+<script defer src="js/components/AlertaCard.js"></script>
+<script defer src="js/components/LegendaChart.js"></script>
+<script defer src="js/components/BarChart6M.js"></script>
+<script defer src="js/components/DonutChart.js"></script>
+<script defer src="js/components/Indicador.js"></script>
 <!-- Renderers -->
-<script src="js/render-dashboard.js"></script>
-<script src="js/render.js"></script>
+<script defer src="js/render-dashboard.js"></script>
+<script defer src="js/render.js"></script>
 <!-- Fase 8: IA Nativa -->
-<script src="js/ai-engine.js"></script>
-<script src="js/previsao.js"></script>
-<script src="js/alertas.js"></script>
-<script src="js/ocr.js"></script>
-<script src="js/insights.js"></script>
+<script defer src="js/core/setup-guide.js"></script>
+<script defer src="js/ai-engine.js"></script>
+<script defer src="js/previsao.js"></script>
+<script defer src="js/alertas.js"></script>
+<script defer src="js/ocr.js"></script>
+<script defer src="js/insights.js"></script>
 <!-- Auth e configuração -->
-<script src="js/config-user.js"></script>
-<script src="js/pin.js"></script>
-<script src="js/authController.js"></script>
+<script defer src="js/config-user.js"></script>
+<script defer src="js/pin.js"></script>
+<script defer src="js/billing.js"></script>
+<script defer src="js/open-finance.js"></script>
+<script defer src="js/authController.js"></script>
 <!-- Bootstrap (orquestrador leve) -->
-<script src="js/app-bootstrap.js"></script>
+<script defer src="js/app-bootstrap.js"></script>
 <!-- Modules: UI iniciados pelo LIFECYCLE -->
-<script src="js/modules/init-navigation.js"></script>
-<script src="js/modules/init-modals.js"></script>
-<script src="js/modules/init-form.js"></script>
-<script src="js/modules/init-extrato.js"></script>
-<script src="js/modules/init-config.js"></script>
-<script src="js/init.js"></script>
-<script src="js/shortcuts.js"></script>
-<script src="js/sw-register.js"></script>
+<script defer src="js/modules/init-navigation.js"></script>
+<script defer src="js/modules/init-modals.js"></script>
+<script defer src="js/modules/init-form.js"></script>
+<script defer src="js/modules/init-extrato.js"></script>
+<script defer src="js/modules/init-config.js"></script>
+<script defer src="js/modules/init-orcamento.js"></script>
+<script defer src="js/modules/init-metas.js"></script>
+<script defer src="js/modules/init-contas-pagar.js"></script>
+<script defer src="js/modules/init-assinaturas.js"></script>
+<script defer src="js/modules/init-relatorios.js"></script>
+<script defer src="js/modules/init-patrimonio.js"></script>
+<script defer src="js/modules/init-anexos.js"></script>
+<script defer src="js/modules/init-billing.js"></script>
+<script defer src="js/modules/init-2fa.js"></script>
+<script defer src="js/modules/init-open-finance.js"></script>
+<script defer src="js/init.js"></script>
+<script defer src="js/shortcuts.js"></script>
+<script defer src="js/sw-register.js"></script>
+<script defer src="js/capacitor-init.js"></script>
 <!-- Fase 7: UX Premium -->
-<script src="js/skeleton.js"></script>
-<script src="js/onboarding.js"></script>
-<script src="js/micro-interactions.js"></script>
+<script defer src="js/skeleton.js"></script>
+<script defer src="js/onboarding.js"></script>
+<script defer src="js/micro-interactions.js"></script>
+<script defer src="js/utilities/sync-indicator.js"></script>
 <!-- jsPDF e SheetJS carregados sob demanda -->
 
 </body>

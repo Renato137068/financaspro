@@ -5,6 +5,7 @@ import { authenticate } from '../middleware/auth.js';
 import { requirePermission } from '../lib/rbac.js';
 import { validateBody, validateQuery, transactionSchema, transactionPatchSchema, paginationSchema } from '../middleware/validate.js';
 import { TransactionService } from '../domain/services/transaction.service.js';
+import { injectPlan, checkTransactionLimit } from '../middleware/plan.js';
 
 const router = Router();
 router.use(authenticate);
@@ -24,7 +25,7 @@ router.get('/', requirePermission('transactions:read'), validateQuery(listQueryS
 });
 
 // POST /api/v1/transactions
-router.post('/', requirePermission('transactions:write'), validateBody(transactionSchema), async (req, res) => {
+router.post('/', requirePermission('transactions:write'), injectPlan(), checkTransactionLimit, validateBody(transactionSchema), async (req, res) => {
   const tx = await TransactionService.create(req.user.id, req.body);
   res.status(201).json({ data: tx });
 });

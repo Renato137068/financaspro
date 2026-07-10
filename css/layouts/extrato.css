@@ -846,7 +846,7 @@
 
 /* Swipe mobile premium */
 .ext-tx.swiped::after {
-  content: '🗑️';
+  content: 'Excluir';
   position: absolute;
   right: 0;
   top: 0;
@@ -857,7 +857,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   border-radius: 0 var(--radius-xl) var(--radius-xl) 0;
   box-shadow: -4px 0 12px rgba(239, 68, 68, 0.3);
 }

@@ -24,6 +24,7 @@
 @import './components/navigation.css';
 @import './components/modals.css';
 @import './components/toasts.css';
+@import './components/page-premium.css';
 
 /* ── Layouts ──────────────────────────────────────────────── */
 @import './layouts/dashboard.css';
@@ -46,11 +47,20 @@
 @import url('./utilities/breakpoints.css');
 @import './utilities/performance.css';
 @import './utilities/ux-polish.css';
+@import './utilities/mobile-app.css';
 
 /* ── Fase 8: IA Nativa ────────────────────────────────────── */
 @import './features/ia.css';
 
 /* ── Fase 4: Experiência Premium ─────────────────────────── */
+@import './features/contas-pagar.css';
+@import './features/metas.css';
+@import './features/assinaturas.css';
+@import './features/relatorios.css';
+@import './features/patrimonio.css';
+@import './features/anexos.css';
+@import './features/billing.css';
+@import './features/open-finance.css';
 @import './features/premium.css';
 
 /* ── UI Polish — visual premium (overrides finais) ───────── */
@@ -303,6 +313,19 @@ main {
   #auth-overlay {
     left: 0 !important;
     width: 100% !important;
+  }
+}
+
+/* ── Desktop largo: app-shell centralizado ──────────────────────
+   Em telas grandes o conteúdo passa a ter uma largura máxima
+   confortável e é centralizado no espaço à direita da sidebar,
+   evitando o efeito de "mobile esticado". Sem efeito < 1280px
+   (a conta max(...) só ultrapassa a sidebar quando há espaço). */
+@media (min-width: 1280px) {
+  main {
+    max-width: 1200px;
+    margin-left: max(var(--sidebar-width), calc((100% - 1200px) / 2));
+    margin-right: auto;
   }
 }
 

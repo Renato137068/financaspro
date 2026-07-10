@@ -74,6 +74,12 @@ var OCR = {
    */
   abrirScanner: function() {
     if (this._processando) return;
+    if (typeof BILLING !== 'undefined' && !BILLING.canUse('aiFeatures')) {
+      if (typeof INIT_BILLING !== 'undefined' && INIT_BILLING.abrirPaywall) {
+        INIT_BILLING.abrirPaywall('OCR de comprovantes está disponível no plano Pro.');
+      }
+      return;
+    }
     var inp = document.getElementById('ocr-file-input');
     if (inp) inp.click();
   },
@@ -99,6 +105,9 @@ var OCR = {
       .then(function(texto) {
         var resultado = self._parseComprovante(texto);
         self._preencherFormulario(resultado, texto);
+        if (typeof INIT_ANEXOS !== 'undefined' && INIT_ANEXOS.adicionarPendente) {
+          INIT_ANEXOS.adicionarPendente(file);
+        }
       })
       .catch(function(err) {
         console.warn('[OCR] Erro:', err);

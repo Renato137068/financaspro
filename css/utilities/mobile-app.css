@@ -1,0 +1,71 @@
+/**
+ * mobile-app.css — Experiência app Android / Capacitor / PWA instalável
+ */
+
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --app-nav-offset: max(var(--safe-bottom), 8px);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  padding-top: var(--safe-top);
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
+  overscroll-behavior-y: contain;
+  touch-action: manipulation;
+}
+
+/* Capacitor / standalone PWA */
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  header {
+    padding-top: calc(var(--space-3) + var(--safe-top));
+  }
+
+  .nav-bottom {
+    bottom: calc(10px + var(--safe-bottom));
+    padding-bottom: var(--safe-bottom);
+  }
+
+  main {
+    padding-bottom: calc(96px + var(--safe-bottom));
+  }
+
+  .sidebar {
+    padding-top: var(--safe-top);
+  }
+}
+
+body.capacitor-app {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+body.capacitor-app input,
+body.capacitor-app textarea,
+body.capacitor-app [contenteditable="true"] {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Evita bounce no WebView Android */
+.capacitor-app main,
+.capacitor-app .aba {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Splash nativo some via Capacitor — evita flash branco */
+html.capacitor-ready body {
+  visibility: visible;
+}
+
+html:not(.capacitor-ready) body.capacitor-app {
+  visibility: hidden;
+}

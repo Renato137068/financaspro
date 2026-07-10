@@ -97,9 +97,9 @@
 .orc-renda-setup {
   background: var(--color-bg-card);
   border-radius: var(--radius-xl);
-  padding: var(--space-8) var(--space-6);
+  padding: var(--space-6) var(--space-5);
   text-align: center;
-  margin: var(--space-4) 0;
+  margin: var(--space-2) 0;
   box-shadow: var(--shadow-md);
 }
 
@@ -399,9 +399,19 @@
 
 .orc-regra-premium {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  /* minmax(0,1fr) permite que as colunas encolham abaixo do min-content,
+     evitando o overflow horizontal dos valores/badges no desktop. */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-5);
   margin: var(--space-5) 0;
+}
+
+/* Em containers estreitos, empilha para 1 coluna em vez de estourar. */
+@media (max-width: 720px) {
+  .orc-regra-premium {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
 }
 
 .orc-regra-card-premium {
@@ -536,6 +546,8 @@
   display: flex;
   align-items: baseline;
   gap: var(--space-2);
+  flex-wrap: wrap;   /* valor + limite quebram em vez de estourar o card */
+  min-width: 0;
 }
 
 .orc-regra-card-gasto {

@@ -5,6 +5,17 @@
  */
 
 const INIT_CONFIG = {
+  _planoBadgeInfo: function(plano) {
+    var raw = String(plano || 'free').toLowerCase().trim();
+    if (raw === 'business' || raw === 'enterprise') {
+      return { label: 'Business', className: 'perfil-avatar-badge--business' };
+    }
+    if (raw === 'premium' || raw === 'pro' || raw === 'paid' || raw === 'plus') {
+      return { label: 'Premium', className: 'perfil-avatar-badge--premium' };
+    }
+    return { label: 'Grátis', className: 'perfil-avatar-badge--gratis' };
+  },
+
   /**
    * Inicializa sistema de configurações
    */
@@ -17,6 +28,63 @@ const INIT_CONFIG = {
     this._updateDynamicValues();
     this._bindEditarPerfilEvents();
     this._bindBancosEvents();
+  },
+
+  /** Atualiza perfil + toggles (substitui renderConfigTab legado) */
+  refreshPerfil: function() {
+    this._updateDynamicValues();
+    var config = DADOS.getConfig();
+    var chk = document.getElementById('chk-darkmode');
+    if (chk) chk.checked = config.tema === 'dark';
+    var chkAlerta = document.getElementById('chk-alerta-orc');
+    if (chkAlerta) chkAlerta.checked = !!config.alertaOrcamento;
+    var chkLembrete = document.getElementById('chk-lembrete');
+    if (chkLembrete) chkLembrete.checked = !!config.lembreteDiario;
+    var chkPin = document.getElementById('chk-pin');
+    if (chkPin) chkPin.checked = !!config.pinAtivo;
+    var pinStatus = document.getElementById('perfil-pin-status');
+    if (pinStatus) pinStatus.textContent = config.pinAtivo ? 'PIN ativo' : 'PIN desativado';
+    if (this.renderConfigStats) this.renderConfigStats();
+    this._updateAppFooter();
+    this._updateLembreteStatus();
+    if (typeof INIT_BILLING !== 'undefined' && INIT_BILLING.refreshPlanoCard) {
+      INIT_BILLING.refreshPlanoCard();
+    }
+    if (typeof INIT_2FA !== 'undefined' && INIT_2FA.refreshUI) {
+      INIT_2FA.refreshUI();
+    }
+    if (typeof INIT_OPEN_FINANCE !== 'undefined' && INIT_OPEN_FINANCE.refreshCard) {
+      INIT_OPEN_FINANCE.refreshCard();
+    }
+  },
+
+  _updateAppFooter: function() {
+    var el = document.getElementById('perfil-app-footer');
+    if (!el) return;
+    var ver = (typeof CONFIG !== 'undefined' && CONFIG.VERSION) ? CONFIG.VERSION : '11.0.0';
+    var modo = 'Dados salvos localmente';
+    var sessao = typeof DADOS !== 'undefined' && DADOS.getSessao ? DADOS.getSessao() : null;
+    if (sessao && sessao.user && sessao.user.email) {
+      modo = 'Conta conectada · backup em JSON disponível';
+    }
+    el.textContent = 'FinançasPro v' + ver + ' · ' + modo;
+  },
+
+  _updateLembreteStatus: function() {
+    var el = document.getElementById('perfil-lembrete-status');
+    if (!el) return;
+    var config = DADOS.getConfig();
+    if (!config.lembreteDiario) {
+      el.textContent = 'Notificação do navegador ou app';
+      return;
+    }
+    if (typeof DAILY_REMINDER !== 'undefined' && DAILY_REMINDER.isSupported()) {
+      if (Notification.permission === 'granted') el.textContent = 'Ativo — permissão concedida';
+      else if (Notification.permission === 'denied') el.textContent = 'Bloqueado nas configurações do sistema';
+      else el.textContent = 'Aguardando permissão de notificação';
+    } else {
+      el.textContent = 'Não suportado neste navegador';
+    }
   },
 
   /**
@@ -108,14 +176,15 @@ const INIT_CONFIG = {
     
     // Atualizar nome do usuário
     var nomeDisplay = document.getElementById('perfil-nome-display');
-    if (nomeDisplay && config.nome) {
-      nomeDisplay.textContent = config.nome;
+    if (nomeDisplay) {
+      nomeDisplay.textContent = (!config.nome || config.nome === 'Usuario') ? 'Usuário' : config.nome;
     }
     
     // Atualizar avatar com inicial
     var avatar = document.getElementById('perfil-avatar');
-    if (avatar && config.nome) {
-      avatar.textContent = config.nome.charAt(0).toUpperCase();
+    var nomeAvatar = (!config.nome || config.nome === 'Usuario') ? 'Usuário' : config.nome;
+    if (avatar && nomeAvatar) {
+      avatar.textContent = nomeAvatar.charAt(0).toUpperCase();
     }
     
     // Atualizar data de último acesso
@@ -129,8 +198,9 @@ const INIT_CONFIG = {
     // Atualizar badge de plano
     var planBadge = document.getElementById('perfil-plan-badge');
     if (planBadge) {
-      var plano = config.plano || 'Free';
-      planBadge.textContent = plano;
+      var info = INIT_CONFIG._planoBadgeInfo(config.plano);
+      planBadge.textContent = info.label;
+      planBadge.className = 'perfil-avatar-badge ' + info.className;
     }
     
     // Atualizar display de bancos
@@ -156,9 +226,14 @@ const INIT_CONFIG = {
       if (el) el.addEventListener(ev, fn);
     };
     bind('chk-darkmode',  'change', function() { if (typeof CONFIG_USER !== 'undefined') CONFIG_USER.toggleTema(); });
-    bind('chk-alerta-orc','change', function() { if (typeof toggleAlertaOrcamento === 'function') toggleAlertaOrcamento(); });
-    bind('chk-lembrete',  'change', function() { if (typeof toggleLembreteDiario === 'function') toggleLembreteDiario(); });
+    bind('chk-alerta-orc','change', function() { INIT_CONFIG.toggleAlertaOrcamento(); });
+    bind('chk-lembrete',  'change', function() { INIT_CONFIG.toggleLembreteDiario(); });
     bind('chk-pin',       'change', function() { if (typeof togglePinSeguranca === 'function') togglePinSeguranca(); });
+    bind('btn-refazer-onboarding', 'click', function() {
+      if (typeof ONBOARDING !== 'undefined' && ONBOARDING.reiniciar) {
+        ONBOARDING.reiniciar();
+      }
+    });
   },
 
   /**
@@ -402,6 +477,29 @@ const INIT_CONFIG = {
     return { valid: true };
   },
 
+  /** Campos de config que nunca devem ser sobrescritos por importação */
+  _IMPORT_CONFIG_BLOCKED: [
+    'pinHash', 'pinSalt', 'pinAlgoritmo', 'pinAtivo', 'pinTentativas', 'pinBloqueadoAte'
+  ],
+
+  _mergeImportedConfig: function(imported) {
+    var current = DADOS.getConfig();
+    var merged = Object.assign({}, current, imported);
+    this._IMPORT_CONFIG_BLOCKED.forEach(function(key) {
+      merged[key] = current[key];
+    });
+    return merged;
+  },
+
+  _importTemOverridesSensiveis: function(data) {
+    if (!data.config || typeof data.config !== 'object') return false;
+    var cfg = data.config;
+    var atual = DADOS.getConfig();
+    if (cfg.plano && cfg.plano !== atual.plano) return true;
+    if (cfg.pinAtivo || cfg.pinHash || cfg.pinSalt) return true;
+    return false;
+  },
+
   /**
    * Configura sistema de importação
    */
@@ -440,23 +538,28 @@ const INIT_CONFIG = {
    * Configura ações de insights
    */
   setupInsightActions: function() {
-    var container = document.getElementById('dashboard-alertas');
-    if (!container || container.dataset.boundInsights === '1') return;
-    container.dataset.boundInsights = '1';
-    
-    container.addEventListener('click', function(e) {
+    if (this._insightBound) return;
+    this._insightBound = true;
+
+    document.addEventListener('click', function(e) {
       var btn = e.target.closest('[data-insight-action]');
       if (!btn) return;
       var acao = btn.getAttribute('data-insight-action');
-      
-      INIT_CONFIG.handleInsightAction(acao, btn);
+      var parametros = {};
+      try {
+        parametros = JSON.parse(btn.getAttribute('data-insight-params') || '{}');
+      } catch (_err) {
+        parametros = {};
+      }
+      INIT_CONFIG.handleInsightAction(acao, btn, parametros);
     });
   },
 
   /**
    * Processa ações de insights
    */
-  handleInsightAction: function(acao, btn) {
+  handleInsightAction: function(acao, btn, parametros) {
+    parametros = parametros || {};
     switch (acao) {
       case 'filtrar-categoria':
         var cat = btn.dataset.cat;
@@ -465,7 +568,7 @@ const INIT_CONFIG = {
           INIT_EXTRATO.setFiltroCat(cat);
         }, 100);
         break;
-        
+
       case 'criar-orcamento':
         mudarAba('orcamento');
         setTimeout(function() {
@@ -473,10 +576,12 @@ const INIT_CONFIG = {
           if (input) input.focus();
         }, 100);
         break;
-        
+
       case 'ver-detalhes':
-        // Implementar visualização de detalhes
         break;
+
+      default:
+        INIT_CONFIG.executarInsight(acao, parametros);
     }
   },
 
@@ -536,7 +641,15 @@ const INIT_CONFIG = {
           return;
         }
         
-        INIT_CONFIG.importarDados(data);
+        INIT_CONFIG._pendingImport = data;
+        if (INIT_CONFIG._importTemOverridesSensiveis(data)) {
+          INIT_MODALS.confirm(
+            'O backup pode alterar plano e preferências. Seu PIN local não será substituído. Continuar?',
+            function() { INIT_CONFIG.importarDados(INIT_CONFIG._pendingImport); }
+          );
+        } else {
+          INIT_CONFIG.importarDados(data);
+        }
       } catch (err) {
         console.error('Erro ao parsear JSON:', err);
         UTILS.mostrarToast('Arquivo JSON inválido ou corrompido', 'error');
@@ -566,10 +679,9 @@ const INIT_CONFIG = {
         });
       }
       
-      // Importar configurações
+      // Importar configurações (PIN local preservado)
       if (data.config && typeof data.config === 'object') {
-        var currentConfig = DADOS.getConfig();
-        var newConfig = Object.assign({}, currentConfig, data.config);
+        var newConfig = INIT_CONFIG._mergeImportedConfig(data.config);
         DADOS.salvarConfig(newConfig);
         configImportada = true;
       }
@@ -582,20 +694,29 @@ const INIT_CONFIG = {
           }
         });
       }
-      
-      // Atualizar UI
-      RENDER.init();
-      
-      // Feedback
-      var msg = [];
-      if (transacoesImportadas > 0) msg.push(transacoesImportadas + ' transações');
-      if (configImportada) msg.push('configurações');
-      
-      if (msg.length > 0) {
-        UTILS.mostrarToast('Importado: ' + msg.join(', '), 'success');
-      } else {
-        UTILS.mostrarToast('Nenhum dado válido encontrado', 'warning');
+
+      var anexosImportados = 0;
+      var importAnexos = Promise.resolve(0);
+      if (data.anexos && Array.isArray(data.anexos) && typeof ANEXOS !== 'undefined' && ANEXOS.importarTodos) {
+        importAnexos = ANEXOS.importarTodos(data.anexos).then(function(n) { return n; }).catch(function(err) {
+          console.warn('Importação de anexos:', err);
+          return 0;
+        });
       }
+
+      importAnexos.then(function(n) {
+        anexosImportados = n || 0;
+        RENDER.init();
+        var msg = [];
+        if (transacoesImportadas > 0) msg.push(transacoesImportadas + ' transações');
+        if (configImportada) msg.push('configurações');
+        if (anexosImportados > 0) msg.push(anexosImportados + ' anexos');
+        if (msg.length > 0) {
+          UTILS.mostrarToast('Importado: ' + msg.join(', '), 'success');
+        } else {
+          UTILS.mostrarToast('Nenhum dado válido encontrado', 'warning');
+        }
+      });
       
     } catch (err) {
       console.error('Erro ao importar:', err);
@@ -607,33 +728,41 @@ const INIT_CONFIG = {
    * Exporta todos os dados
    */
   exportarDados: function() {
-    try {
-      var exportData = {
-        versao: '11.0.0',
-        dataExportacao: new Date().toISOString(),
-        transacoes: TRANSACOES.obter({}),
-        config: DADOS.getConfig(),
-        orcamentos: this.getOrcamentosData(),
-        metadados: {
-          totalTransacoes: TRANSACOES.obter({}).length,
-          periodo: this.getPeriodoDados()
-        }
-      };
-      
-      var blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-      var link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = 'financaspro_backup_' + new Date().toISOString().split('T')[0] + '.json';
-      link.click();
-      
-      // Atualizar último export
-      DADOS.salvarConfig({ ultimoExportoDados: new Date().toISOString() });
-      
-      UTILS.mostrarToast('Dados exportados com sucesso!', 'success');
-      
-    } catch (err) {
-      console.error('Erro ao exportar:', err);
-      UTILS.mostrarToast('Erro ao exportar dados', 'error');
+    var self = this;
+    var finalizar = function(anexos) {
+      try {
+        var exportData = {
+          versao: (typeof CONFIG !== 'undefined' ? CONFIG.VERSION : '11.0.0'),
+          dataExportacao: new Date().toISOString(),
+          transacoes: TRANSACOES.obter({}),
+          config: DADOS.getConfig(),
+          orcamentos: self.getOrcamentosData(),
+          anexos: anexos || [],
+          metadados: {
+            totalTransacoes: TRANSACOES.obter({}).length,
+            totalAnexos: (anexos || []).length,
+            periodo: self.getPeriodoDados()
+          }
+        };
+
+        var blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        var link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'financaspro_backup_' + new Date().toISOString().split('T')[0] + '.json';
+        link.click();
+
+        DADOS.salvarConfig({ ultimoExportoDados: new Date().toISOString() });
+        UTILS.mostrarToast('Backup exportado' + ((anexos && anexos.length) ? ' (com anexos)' : ''), 'success');
+      } catch (err) {
+        console.error('Erro ao exportar:', err);
+        UTILS.mostrarToast('Erro ao exportar dados', 'error');
+      }
+    };
+
+    if (typeof ANEXOS !== 'undefined' && ANEXOS.exportarTodos) {
+      ANEXOS.exportarTodos().then(finalizar).catch(function() { finalizar([]); });
+    } else {
+      finalizar([]);
     }
   },
 
@@ -801,7 +930,7 @@ const INIT_CONFIG = {
    */
   abrirEditarRenda: function() {
     var config = DADOS.getConfig();
-    var html = '<h3>💰 Renda Mensal</h3>' +
+    var html = '<h3><i data-lucide="dollar-sign" aria-hidden="true"></i> Renda Mensal</h3>' +
       '<div style="display:flex;flex-direction:column;gap:12px;">' +
       '<div>' +
       '<label style="display:block;margin-bottom:4px;font-weight:500;">Renda mensal estimada</label>' +
@@ -810,7 +939,7 @@ const INIT_CONFIG = {
       '</div>' +
       '</div>';
     
-    INIT_MODALS.fpAlert(html, { trustedHtml: true });
+    INIT_MODALS.fpAlert(html, { trustedHtml: true, title: 'Renda mensal' });
     
     setTimeout(function() {
       var overlay = document.querySelector('.modal-overlay');
@@ -893,22 +1022,23 @@ const INIT_CONFIG = {
     
     if (bancos.length === 0) {
       listaEl.innerHTML = '<div class="bancos-empty">' +
-        '<div class="bancos-empty-icon">🏦</div>' +
+        '<div class="bancos-empty-icon" aria-hidden="true"><i data-lucide="landmark"></i></div>' +
         '<p>Nenhum banco cadastrado</p>' +
         '<p style="font-size:var(--font-size-sm);margin-top:8px;">Adicione seu primeiro banco acima</p>' +
         '</div>';
+      if (typeof renderLucideIcons === 'function') renderLucideIcons(listaEl);
       return;
     }
     
     var html = '';
     bancos.forEach(function(banco, index) {
-      var icon = '🏦';
-      if (banco.tipo === 'Conta Poupança') icon = '�';
-      if (banco.tipo === 'Dinheiro') icon = '💵';
+      var iconLucide = 'landmark';
+      if (banco.tipo === 'Conta Poupança') iconLucide = 'piggy-bank';
+      if (banco.tipo === 'Dinheiro') iconLucide = 'wallet';
       
       html += '<div class="banco-item" data-index="' + index + '" data-tipo="banco">' +
         '<div class="banco-item-info">' +
-          '<div class="banco-item-icon">' + icon + '</div>' +
+          '<div class="banco-item-icon" aria-hidden="true"><i data-lucide="' + iconLucide + '"></i></div>' +
           '<div class="banco-item-details">' +
             '<div class="banco-item-nome">' + UTILS.escapeHtml(banco.nome) + '</div>' +
             '<div class="banco-item-tipo">' + UTILS.escapeHtml(banco.tipo) + '</div>' +
@@ -916,13 +1046,14 @@ const INIT_CONFIG = {
         '</div>' +
         '<div class="banco-item-actions">' +
           '<button type="button" class="btn-remover-banco" data-index="' + index + '" data-tipo="banco" aria-label="Remover ' + UTILS.escapeHtml(banco.nome) + '">' +
-          '🗑️ Remover' +
+          '<i data-lucide="trash-2" aria-hidden="true"></i> Remover' +
           '</button>' +
         '</div>' +
         '</div>';
     });
     
     listaEl.innerHTML = html;
+    if (typeof renderLucideIcons === 'function') renderLucideIcons(listaEl);
   },
 
   /**
@@ -937,10 +1068,11 @@ const INIT_CONFIG = {
     
     if (cartoes.length === 0) {
       listaEl.innerHTML = '<div class="bancos-empty">' +
-        '<div class="bancos-empty-icon">💳</div>' +
+        '<div class="bancos-empty-icon" aria-hidden="true"><i data-lucide="credit-card"></i></div>' +
         '<p>Nenhum cartão cadastrado</p>' +
         '<p style="font-size:var(--font-size-sm);margin-top:8px;">Adicione seu primeiro cartão acima</p>' +
         '</div>';
+      if (typeof renderLucideIcons === 'function') renderLucideIcons(listaEl);
       return;
     }
     
@@ -948,7 +1080,7 @@ const INIT_CONFIG = {
     cartoes.forEach(function(cartao, index) {
       html += '<div class="banco-item" data-index="' + index + '" data-tipo="cartao">' +
         '<div class="banco-item-info">' +
-          '<div class="banco-item-icon">💳</div>' +
+          '<div class="banco-item-icon" aria-hidden="true"><i data-lucide="credit-card"></i></div>' +
           '<div class="banco-item-details">' +
             '<div class="banco-item-nome">' + UTILS.escapeHtml(cartao.nome) + '</div>' +
             '<div class="banco-item-tipo">' + UTILS.escapeHtml(cartao.bandeira) + (cartao.limite ? ' • Limite: R$ ' + parseFloat(cartao.limite).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '') + '</div>' +
@@ -956,13 +1088,14 @@ const INIT_CONFIG = {
         '</div>' +
         '<div class="banco-item-actions">' +
           '<button type="button" class="btn-remover-banco" data-index="' + index + '" data-tipo="cartao" aria-label="Remover ' + UTILS.escapeHtml(cartao.nome) + '">' +
-          '🗑️ Remover' +
+          '<i data-lucide="trash-2" aria-hidden="true"></i> Remover' +
           '</button>' +
         '</div>' +
         '</div>';
     });
     
     listaEl.innerHTML = html;
+    if (typeof renderLucideIcons === 'function') renderLucideIcons(listaEl);
   },
 
   /**
@@ -1058,16 +1191,16 @@ const INIT_CONFIG = {
     var customCats = config.categoriasCustom || {};
     var cats = customCats[tipo] || [];
     
-    var html = '<h3>🏷️ Gerenciar Categorias - ' + (tipo === 'receita' ? 'Receitas' : 'Despesas') + '</h3>' +
+    var html = '<h3><i data-lucide="tag" aria-hidden="true"></i> Gerenciar Categorias - ' + (tipo === 'receita' ? 'Receitas' : 'Despesas') + '</h3>' +
       '<div style="margin-bottom:16px;">' +
-      '<button type="button" id="add-cat-btn" style="padding:8px 16px;background:var(--primary);color:white;border:none;border-radius:var(--radius-sm);cursor:pointer;">+ Adicionar Categoria</button>' +
+      '<button type="button" id="add-cat-btn" style="padding:8px 16px;background:var(--primary);color:white;border:none;border-radius:var(--radius-sm);cursor:pointer;"><i data-lucide="plus" aria-hidden="true"></i> Adicionar Categoria</button>' +
       '</div>' +
       '<div id="cats-list" style="display:flex;flex-direction:column;gap:8px;">';
     
     cats.forEach(function(cat, index) {
       html += '<div class="cat-item" data-index="' + index + '" style="padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);display:flex;justify-content:space-between;align-items:center;">' +
         '<div style="display:flex;align-items:center;gap:8px;">' +
-          '<span style="font-size:18px;">✨</span>' +
+          '<span style="font-size:18px;" aria-hidden="true"><i data-lucide="sparkles"></i></span>' +
           '<div>' +
             '<div style="font-weight:500;">' + UTILS.escapeHtml(cat) + '</div>' +
           '</div>' +
@@ -1082,11 +1215,12 @@ const INIT_CONFIG = {
     
     html += '</div>';
     
-    INIT_MODALS.fpAlert(html, { trustedHtml: true });
+    INIT_MODALS.fpAlert(html, { trustedHtml: true, title: 'Gerenciar categorias' });
     
     setTimeout(function() {
       var overlay = document.querySelector('.modal-overlay');
       if (!overlay) return;
+      if (typeof renderLucideIcons === 'function') renderLucideIcons(overlay);
       
       // Botão adicionar
       var addBtn = document.getElementById('add-cat-btn');
@@ -1116,7 +1250,7 @@ const INIT_CONFIG = {
    * Adiciona categoria personalizada
    */
   adicionarCategoria: function(tipo) {
-    var html = '<h3>➕ Adicionar Categoria</h3>' +
+    var html = '<h3><i data-lucide="plus" aria-hidden="true"></i> Adicionar Categoria</h3>' +
       '<div style="display:flex;flex-direction:column;gap:12px;">' +
       '<div>' +
       '<label style="display:block;margin-bottom:4px;font-weight:500;">Nome da Categoria</label>' +
@@ -1124,11 +1258,12 @@ const INIT_CONFIG = {
       '</div>' +
       '</div>';
     
-    INIT_MODALS.fpAlert(html, { trustedHtml: true });
+    INIT_MODALS.fpAlert(html, { trustedHtml: true, title: 'Adicionar categoria' });
     
     setTimeout(function() {
       var overlay = document.querySelector('.modal-overlay');
       if (!overlay) return;
+      if (typeof renderLucideIcons === 'function') renderLucideIcons(overlay);
       
       var okBtn = overlay.querySelector('.modal-btn');
       if (okBtn) {
@@ -1181,6 +1316,114 @@ const INIT_CONFIG = {
       
       UTILS.mostrarToast('Categoria removida!', 'success');
     });
+  },
+
+  renderConfigStats: function() {
+    var txAll = DADOS.getTransacoes();
+    var txEl = document.getElementById('cfg-stat-tx');
+    if (txEl) txEl.textContent = txAll.length;
+
+    var diasEl = document.getElementById('cfg-stat-dias');
+    if (diasEl) {
+      if (txAll.length > 0) {
+        var datas = txAll.map(function(t) { return new Date(t.dataCriacao || t.data).getTime(); });
+        var primeira = Math.min.apply(null, datas);
+        var dias = Math.floor((Date.now() - primeira) / 86400000) + 1;
+        diasEl.textContent = dias;
+      } else {
+        diasEl.textContent = '0';
+      }
+    }
+
+    var catEl = document.getElementById('cfg-stat-cat');
+    if (catEl) {
+      if (txAll.length > 0) {
+        var contagem = {};
+        txAll.forEach(function(t) {
+          if (t.tipo === 'despesa') {
+            contagem[t.categoria] = (contagem[t.categoria] || 0) + 1;
+          }
+        });
+        var top = Object.keys(contagem).sort(function(a, b) { return contagem[b] - contagem[a]; })[0];
+        var icon = (typeof INIT_EXTRATO !== 'undefined' && INIT_EXTRATO.getCatIcon)
+          ? INIT_EXTRATO.getCatIcon(top) : '';
+        catEl.textContent = top ? (icon + ' ' + top.charAt(0).toUpperCase() + top.slice(1)) : '—';
+      } else {
+        catEl.textContent = '—';
+      }
+    }
+  },
+
+  toggleAlertaOrcamento: function() {
+    var chk = document.getElementById('chk-alerta-orc');
+    DADOS.salvarConfig({ alertaOrcamento: chk ? chk.checked : false });
+    UTILS.mostrarToast(chk && chk.checked ? 'Alertas ativados' : 'Alertas desativados', 'success');
+  },
+
+  toggleLembreteDiario: function() {
+    var chk = document.getElementById('chk-lembrete');
+    var ativo = chk ? chk.checked : false;
+
+    if (!ativo) {
+      DADOS.salvarConfig({ lembreteDiario: false });
+      this._updateLembreteStatus();
+      UTILS.mostrarToast('Lembrete desativado', 'info');
+      return;
+    }
+
+    if (typeof DAILY_REMINDER === 'undefined' || !DAILY_REMINDER.isSupported()) {
+      if (chk) chk.checked = false;
+      UTILS.mostrarToast('Notificações não suportadas neste dispositivo', 'warning');
+      return;
+    }
+
+    var self = this;
+    DAILY_REMINDER.requestPermission().then(function(perm) {
+      if (perm !== 'granted') {
+        if (chk) chk.checked = false;
+        DADOS.salvarConfig({ lembreteDiario: false });
+        self._updateLembreteStatus();
+        UTILS.mostrarToast('Permissão de notificação negada', 'warning');
+        return;
+      }
+      DADOS.salvarConfig({ lembreteDiario: true });
+      self._updateLembreteStatus();
+      UTILS.mostrarToast('Lembrete diário ativado', 'success');
+      DAILY_REMINDER.maybeRemind();
+    });
+  },
+
+  executarInsight: function(acao, parametros) {
+    parametros = parametros || {};
+    if (acao === 'aumentarLimite') {
+      try {
+        ORCAMENTO.definirLimite(parametros.categoria, parametros.novoLimite);
+        UTILS.mostrarToast('Limite de ' + UTILS.labelCategoria(parametros.categoria) +
+          ' → R$ ' + parametros.novoLimite.toFixed(2), 'success');
+      } catch (_e) {
+        UTILS.mostrarToast('Erro ao atualizar limite', 'error');
+      }
+    }
+
+    if (acao === 'marcarRecorrente') {
+      var catEl = document.getElementById('novo-categoria');
+      var cat = (parametros && parametros.categoria) || (catEl ? catEl.value : '') || 'outro';
+      var valorRec = parametros && parametros.valor ? parseFloat(parametros.valor) : 0;
+      DADOS.salvarRecorrente({
+        tipo: parametros.tipo || 'despesa',
+        categoria: cat,
+        descricao: parametros.descricao || 'Recorrente',
+        frequencia: parametros.frequencia || 'mensal',
+        valor: isNaN(valorRec) ? 0 : valorRec,
+        dataInicio: new Date().toISOString().split('T')[0],
+        ativo: true
+      });
+      UTILS.mostrarToast('"' + (parametros.descricao || 'Lançamento') + '" marcado como recorrente', 'success');
+    }
+
+    if (typeof INSIGHTS !== 'undefined') {
+      setTimeout(function() { INSIGHTS.mostrar(); }, 150);
+    }
   }
 };
 

@@ -7,12 +7,12 @@ const STATE_TTL_SECONDS = 30;
 const TX_SELECT = {
   id: true, type: true, amount: true, description: true,
   category: true, subcategory: true, date: true,
-  accountId: true, tags: true, notes: true, recurring: true, createdAt: true,
+  accountId: true, tags: true, notes: true, recurring: true, createdAt: true, updatedAt: true,
 };
 
 const ACCOUNT_SELECT = {
   id: true, name: true, type: true, balance: true,
-  currency: true, institution: true, active: true, createdAt: true,
+  currency: true, institution: true, active: true, createdAt: true, updatedAt: true,
 };
 
 const BUDGET_SELECT = {
@@ -21,7 +21,7 @@ const BUDGET_SELECT = {
 
 const RECURRING_SELECT = {
   id: true, type: true, amount: true, description: true,
-  category: true, frequency: true, startDate: true, endDate: true, nextDue: true,
+  category: true, frequency: true, startDate: true, endDate: true, nextDue: true, updatedAt: true,
 };
 
 export const StateService = {

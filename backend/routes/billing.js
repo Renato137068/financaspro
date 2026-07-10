@@ -17,6 +17,13 @@ const portalSchema = z.object({
   returnUrl: z.string().url(),
 });
 
+const checkoutSchema = z.object({
+  planTier:   z.enum(['PRO', 'BUSINESS']),
+  interval:   z.enum(['monthly', 'yearly']).default('monthly'),
+  successUrl: z.string().url(),
+  cancelUrl:  z.string().url(),
+});
+
 // ─── Planos públicos (sem auth) ───────────────────────────────────────────────
 router.get('/plans', async (_req, res, next) => {
   try {
@@ -76,6 +83,27 @@ router.post(
       const session = await BillingService.createPortalSession(
         req.params.orgId,
         req.body.returnUrl
+      );
+      res.json(session);
+    } catch (err) { next(err); }
+  }
+);
+
+// Stripe Checkout hosted (redirect)
+router.post(
+  '/:orgId/checkout',
+  resolveOrg,
+  requireOrgRole('OWNER'),
+  validateBody(checkoutSchema),
+  async (req, res, next) => {
+    try {
+      const session = await BillingService.createCheckoutSession(
+        req.params.orgId,
+        req.body.planTier,
+        req.body.interval,
+        req.user.email,
+        req.body.successUrl,
+        req.body.cancelUrl
       );
       res.json(session);
     } catch (err) { next(err); }

@@ -3,8 +3,26 @@
 (function() {
   var UI = window.UI || {};
 
+  function _renderIcon(iconSpan, icone) {
+    iconSpan.setAttribute('aria-hidden', 'true');
+    if (!icone) {
+      iconSpan.innerHTML = '<i data-lucide="circle" aria-hidden="true"></i>';
+      return;
+    }
+    if (typeof icone === 'string' && icone.indexOf('<') !== -1) {
+      iconSpan.innerHTML = icone;
+      return;
+    }
+    if (typeof icone === 'string' && /^[a-z0-9-]+$/.test(icone)) {
+      iconSpan.innerHTML = '<i data-lucide="' + icone + '" aria-hidden="true"></i>';
+      return;
+    }
+    iconSpan.textContent = icone;
+  }
+
   UI.Indicador = {
     // render(icone, valor, label, tipo, barra?) → HTMLElement
+    // icone: nome Lucide ('wallet'), HTML com <i data-lucide>, ou emoji legado
     // tipo: 'positivo'|'negativo'|'alerta'|'neutro' — barra: { pct, cor }
     render: function(icone, valor, label, tipo, barra) {
       var el = document.createElement('div');
@@ -12,7 +30,7 @@
 
       var iconSpan = document.createElement('span');
       iconSpan.className = 'indicador-icon';
-      iconSpan.textContent = icone;
+      _renderIcon(iconSpan, icone);
       el.appendChild(iconSpan);
 
       var content = document.createElement('div');
@@ -30,8 +48,12 @@
 
       el.appendChild(content);
 
-      if (barra) {
+      if (barra && UI.ProgressBar && typeof UI.ProgressBar.render === 'function') {
         el.appendChild(UI.ProgressBar.render(barra.pct, barra.cor));
+      }
+
+      if (typeof renderLucideIcons === 'function') {
+        renderLucideIcons(el);
       }
 
       return el;

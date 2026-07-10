@@ -54,14 +54,28 @@
   position: absolute;
   bottom: -4px;
   right: -4px;
-  background: var(--color-success);
-  color: var(--color-text-inverse);
   font-size: var(--font-size-2xs);
   font-weight: var(--font-weight-bold);
   padding: 2px 8px;
   border-radius: var(--radius-full);
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
   z-index: 2;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  line-height: 1.3;
+}
+
+.perfil-avatar-badge--gratis {
+  background: var(--color-bg-card);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-xs);
+}
+
+.perfil-avatar-badge--premium {
+  background: linear-gradient(135deg, #005c33 0%, #059669 55%, #10b981 100%);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 114, 63, 0.35);
 }
 
 .perfil-info {
@@ -202,6 +216,17 @@
   border: 1px solid var(--color-border-light);
   position: relative;
   overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+}
+
+.perfil-card-premium.perfil-card-disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+.perfil-card-premium.perfil-card-disabled .perfil-switch {
+  pointer-events: none;
 }
 
 .perfil-card-premium::before {

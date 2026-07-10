@@ -115,6 +115,7 @@ const INIT_NAVIGATION = {
       'toggle-detalhes-categorias': function() { safeCall('toggleDetalhesCategorias'); },
       'toggle-graficos': function() { self.toggleGraficos(); },
       'toggle-previsao': function() { self.togglePrevisao(); },
+      'toggle-relatorios': function() { self.toggleRelatorios(); },
       'ver-mais-alertas': function() {
         if (typeof ALERTAS !== 'undefined') {
           var painel = document.getElementById('secao-alertas-painel');
@@ -142,6 +143,16 @@ const INIT_NAVIGATION = {
       'abrir-import': function() { self.abrirImport(); },
       'abrir-changelog': function() { safeCall('abrirChangelog'); },
       'abrir-feedback': function() { safeCall('abrirFeedback'); },
+      'abrir-plano': function() {
+        if (typeof INIT_BILLING !== 'undefined' && INIT_BILLING.abrirPaywall) {
+          INIT_BILLING.abrirPaywall();
+        }
+      },
+      'abrir-open-finance': function() {
+        if (typeof INIT_OPEN_FINANCE !== 'undefined' && INIT_OPEN_FINANCE.abrir) {
+          INIT_OPEN_FINANCE.abrir();
+        }
+      },
       'limpar-dados': function() { 
         if (typeof CONFIG_USER !== 'undefined' && CONFIG_USER.limparDados) {
           CONFIG_USER.limparDados();
@@ -166,7 +177,7 @@ const INIT_NAVIGATION = {
     if (!gPanel) return;
     var gAberto = gPanel.style.display !== 'none';
     gPanel.style.display = gAberto ? 'none' : 'block';
-    if (gArrow) gArrow.textContent = gAberto ? '▼' : '▲';
+    if (gArrow) gArrow.classList.toggle('expanded', !gAberto);
     if (gBtn)   gBtn.setAttribute('aria-expanded', String(!gAberto));
   },
 
@@ -180,9 +191,23 @@ const INIT_NAVIGATION = {
     if (!painel) return;
     var aberto = painel.style.display !== 'none';
     painel.style.display = aberto ? 'none' : 'block';
-    if (arrow) arrow.textContent = aberto ? '▼' : '▲';
+    if (arrow) arrow.classList.toggle('expanded', !aberto);
     if (btn)   btn.setAttribute('aria-expanded', String(!aberto));
     if (!aberto && typeof PREVISAO !== 'undefined') PREVISAO.renderizar();
+  },
+
+  toggleRelatorios: function() {
+    var painel = document.getElementById('relatorios-panel');
+    var arrow  = document.getElementById('relatorios-arrow');
+    var btn    = document.getElementById('btn-relatorios');
+    if (!painel) return;
+    var aberto = painel.style.display !== 'none';
+    painel.style.display = aberto ? 'none' : 'block';
+    if (arrow) arrow.classList.toggle('expanded', !aberto);
+    if (btn)   btn.setAttribute('aria-expanded', String(!aberto));
+    if (!aberto && typeof INIT_RELATORIOS !== 'undefined' && INIT_RELATORIOS.render) {
+      INIT_RELATORIOS.render();
+    }
   },
 
   /**
@@ -225,28 +250,80 @@ function mudarAba(nomeAba) {
     btns[k].setAttribute('aria-current','page');
   }
 
+  var tabLabels = {
+    resumo: 'Resumo financeiro',
+    novo: 'Novo lançamento',
+    extrato: 'Extrato',
+    orcamento: 'Orçamento',
+    config: 'Perfil e configurações',
+  };
+  if (typeof ariaLive !== 'undefined' && ariaLive.announce) {
+    ariaLive.announce('Aba ' + (tabLabels[nomeAba] || nomeAba));
+  }
+
   // Renderers opcionais
   setTimeout(function() {
     try {
       if (nomeAba === 'novo') {
-        if (typeof renderQuickEntries === 'function') renderQuickEntries();
+        if (typeof INIT_FORM !== 'undefined') {
+          if (INIT_FORM.renderizarSelects) INIT_FORM.renderizarSelects();
+          if (INIT_FORM.renderQuickEntries) INIT_FORM.renderQuickEntries();
+          var tipoAtual = (document.getElementById('novo-tipo') || {}).value || 'despesa';
+          if (INIT_FORM.renderCategoriasBtns) INIT_FORM.renderCategoriasBtns(tipoAtual);
+        } else if (typeof renderQuickEntries === 'function') {
+          renderQuickEntries();
+        }
         var vi = document.getElementById('novo-valor');
         if (vi) vi.focus();
       }
-      if (nomeAba === 'extrato' && typeof filtrarExtrato === 'function') {
-        filtrarExtrato();
+      if (nomeAba === 'extrato') {
+        if (typeof INIT_EXTRATO !== 'undefined' && INIT_EXTRATO.filtrarExtrato) {
+          INIT_EXTRATO.filtrarExtrato();
+        } else if (typeof filtrarExtrato === 'function') {
+          filtrarExtrato();
+        }
       }
-      if (nomeAba === 'orcamento' && typeof renderOrcamentoDashboard === 'function') {
-        renderOrcamentoDashboard();
+      if (nomeAba === 'orcamento') {
+        if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.renderDashboard) {
+          INIT_ORCAMENTO.renderDashboard();
+        } else if (typeof renderOrcamentoDashboard === 'function') {
+          renderOrcamentoDashboard();
+        }
+        if (typeof INIT_METAS !== 'undefined' && INIT_METAS.renderOrcamento) {
+          INIT_METAS.renderOrcamento();
+        }
+        if (typeof INIT_ASSINATURAS !== 'undefined' && INIT_ASSINATURAS.render) {
+          INIT_ASSINATURAS.render();
+        }
+        if (typeof INIT_PATRIMONIO !== 'undefined' && INIT_PATRIMONIO.render) {
+          INIT_PATRIMONIO.render();
+        }
       }
-      if (nomeAba === 'config' && typeof renderConfigTab === 'function') {
-        renderConfigTab();
+      if (nomeAba === 'config') {
+        if (typeof INIT_CONFIG !== 'undefined' && INIT_CONFIG.refreshPerfil) {
+          INIT_CONFIG.refreshPerfil();
+        } else if (typeof renderConfigTab === 'function') {
+          renderConfigTab();
+        }
       }
     } catch (e) {
       console.warn('Erro ao renderizar aba:', e);
     }
   }, 0);
 }
+
+/** Botão voltar Android (Capacitor) — subpáginas voltam ao perfil */
+window.__fpHandleAndroidBack = function() {
+  var subpages = ['editar-perfil', 'gerenciar-bancos'];
+  for (var i = 0; i < subpages.length; i++) {
+    var page = document.getElementById('aba-' + subpages[i]);
+    if (page && page.classList.contains('ativo')) {
+      mudarAba('config');
+      return true;
+    }
+  }
+  return false;
+};
 
 // Export para compatibilidade
 if (typeof module !== 'undefined' && module.exports) {

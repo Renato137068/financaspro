@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auditoria Completa · FinançasPro v11</title>
+<style>
+  :root{
+    --verde:#00723F; --verde-claro:#00a862; --verde-bg:#e6f4ec;
+    --tinta:#0d1b14; --cinza:#5b6b62; --cinza-2:#8a9791; --linha:#e4ebe7;
+    --papel:#ffffff; --fundo:#f4f7f5;
+    --crit:#c0392b; --alto:#e07b00; --medio:#c9a400; --baixo:#3b8f5a;
+    --bom:#1f9d55; --regular:#c9a400; --ruim:#c0392b;
+    --sombra:0 1px 2px rgba(13,27,20,.04),0 8px 28px rgba(13,27,20,.06);
+    --radius:16px;
+    --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:var(--sans);color:var(--tinta);background:var(--fundo);line-height:1.62;font-size:16px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:960px;margin:0 auto;padding:0 22px}
+
+  /* Cover */
+  .cover{background:linear-gradient(150deg,#00532e 0%,#00723F 45%,#00a862 130%);color:#fff;padding:74px 0 62px;position:relative;overflow:hidden}
+  .cover::after{content:"";position:absolute;right:-120px;top:-120px;width:420px;height:420px;border-radius:50%;background:rgba(255,255,255,.06)}
+  .cover .wrap{position:relative;z-index:2}
+  .kicker{text-transform:uppercase;letter-spacing:.16em;font-size:12.5px;font-weight:700;opacity:.85;margin:0 0 14px}
+  .cover h1{font-size:42px;line-height:1.08;margin:0 0 14px;font-weight:800;letter-spacing:-.02em}
+  .cover p.lead{font-size:18px;max-width:640px;opacity:.94;margin:0 0 30px}
+  .scorebadge{display:inline-flex;align-items:center;gap:18px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(6px);padding:16px 24px;border-radius:20px}
+  .scorebadge .num{font-size:52px;font-weight:800;line-height:1;letter-spacing:-.03em}
+  .scorebadge .lab{font-size:13px;line-height:1.35;opacity:.9;text-align:left}
+  .cover .meta{margin-top:30px;font-size:13.5px;opacity:.8;display:flex;gap:22px;flex-wrap:wrap}
+
+  /* Sections */
+  section{padding:44px 0;border-bottom:1px solid var(--linha)}
+  h2{font-size:27px;font-weight:800;letter-spacing:-.02em;margin:0 0 6px;color:var(--tinta)}
+  h2 .n{color:var(--verde);font-variant-numeric:tabular-nums}
+  h3{font-size:18px;font-weight:700;margin:26px 0 8px;color:var(--tinta)}
+  h4{font-size:15px;font-weight:700;margin:18px 0 6px;color:var(--verde)}
+  p{margin:0 0 13px}
+  a{color:var(--verde);text-decoration:none}
+  strong{font-weight:700}
+  code{background:#eef3f0;border:1px solid var(--linha);padding:1.5px 6px;border-radius:6px;font-size:13px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#0a4f30}
+  ul,ol{margin:0 0 14px;padding-left:22px}
+  li{margin:5px 0}
+  .muted{color:var(--cinza);font-size:14.5px}
+  .sub{color:var(--cinza);font-size:15px;max-width:720px;margin:-2px 0 10px}
+
+  /* Score pill inline */
+  .grade{display:inline-flex;align-items:baseline;gap:8px;background:var(--verde-bg);color:var(--verde);border:1px solid #cfe7db;border-radius:999px;padding:7px 16px;font-weight:800;font-size:15px;margin:4px 0 12px}
+  .grade small{font-weight:600;color:var(--cinza);font-size:12.5px}
+
+  /* Cards */
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:18px 0}
+  .card{background:var(--papel);border:1px solid var(--linha);border-radius:var(--radius);padding:18px 18px;box-shadow:var(--sombra)}
+  .card h4{margin-top:0}
+  .pill{display:inline-block;font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.05em}
+  .pill.ok{background:#e3f5ea;color:#1f7a45}
+  .pill.bad{background:#fbe6e3;color:#b23120}
+  .pill.mid{background:#fcf3d9;color:#8a7400}
+
+  /* Tables */
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;background:var(--papel);border:1px solid var(--linha);border-radius:12px;overflow:hidden}
+  th,td{text-align:left;padding:11px 13px;border-bottom:1px solid var(--linha);vertical-align:top}
+  th{background:#f0f5f2;font-weight:700;font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--cinza)}
+  tr:last-child td{border-bottom:none}
+  td.n,th.n{text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .bar{height:8px;border-radius:6px;background:#eef3f0;overflow:hidden;min-width:90px}
+  .bar>i{display:block;height:100%;border-radius:6px}
+
+  .sev{font-weight:800;font-size:11.5px;padding:3px 9px;border-radius:6px;color:#fff;white-space:nowrap}
+  .sev.c{background:var(--crit)} .sev.a{background:var(--alto)} .sev.m{background:var(--medio);color:#3a3000} .sev.b{background:var(--baixo)}
+
+  .win{color:#1f7a45;font-weight:700} .lose{color:#b23120;font-weight:700} .tie{color:#8a7400;font-weight:700}
+
+  .callout{background:var(--verde-bg);border-left:4px solid var(--verde);border-radius:0 12px 12px 0;padding:16px 20px;margin:18px 0}
+  .callout.warn{background:#fdf3e7;border-left-color:var(--alto)}
+  .callout.dark{background:#0d1b14;color:#eaf3ee;border-left-color:var(--verde-claro)}
+  .callout.dark strong{color:#fff}
+
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  @media(max-width:720px){.two{grid-template-columns:1fr}.cover h1{font-size:32px}}
+
+  /* TOC */
+  .toc{background:var(--papel);border:1px solid var(--linha);border-radius:var(--radius);padding:22px 26px;box-shadow:var(--sombra);margin:34px 0}
+  .toc ol{columns:2;column-gap:32px;margin:8px 0 0;font-size:14.5px}
+  @media(max-width:600px){.toc ol{columns:1}}
+  .toc a{color:var(--tinta)} .toc a:hover{color:var(--verde)}
+
+  .final-num{font-size:64px;font-weight:800;color:var(--verde);letter-spacing:-.03em;line-height:1}
+  footer{padding:40px 0 60px;color:var(--cinza-2);font-size:13px;text-align:center}
+  .tag{display:inline-block;background:#eef3f0;border:1px solid var(--linha);color:var(--cinza);font-size:12px;padding:3px 9px;border-radius:6px;margin:2px 4px 2px 0}
+</style>
+</head>
+<body>
+
+<header class="cover">
+  <div class="wrap">
+    <p class="kicker">Due Diligence de Produto · Confidencial</p>
+    <h1>Auditoria Completa<br>FinançasPro v11</h1>
+    <p class="lead">Avaliação crítica de UX/UI, arquitetura, segurança, funcionalidades, escalabilidade e potencial comercial — na ótica de um investidor, um Product Manager e um usuário final.</p>
+    <div class="scorebadge">
+      <span class="num">71</span>
+      <span class="lab"><strong>Nota final: 71/100</strong><br>Produto forte, ainda não pronto para lançamento mundial</span>
+    </div>
+    <div class="meta">
+      <span>📅 09/07/2026</span>
+      <span>🔍 Base real: ~20.5k LOC JS · ~13.7k LOC CSS · backend DDD + Prisma</span>
+      <span>🎯 Benchmark: Mobills · Organizze · YNAB · Nubank</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<div class="toc">
+  <strong>Índice da auditoria</strong>
+  <ol>
+    <li><a href="#s0">Sumário executivo</a></li>
+    <li><a href="#s1">1. Primeira impressão</a></li>
+    <li><a href="#s2">2. UI — Interface</a></li>
+    <li><a href="#s3">3. UX</a></li>
+    <li><a href="#s4">4. Organização do produto</a></li>
+    <li><a href="#s5">5. Funcionalidades</a></li>
+    <li><a href="#s6">6. Arquitetura front-end</a></li>
+    <li><a href="#s7">7. Performance</a></li>
+    <li><a href="#s8">8. Segurança</a></li>
+    <li><a href="#s9">9. Acessibilidade</a></li>
+    <li><a href="#s10">10. Escalabilidade</a></li>
+    <li><a href="#s11">11. Monetização</a></li>
+    <li><a href="#s12">12. Comparação com concorrentes</a></li>
+    <li><a href="#s13">13. Problemas encontrados</a></li>
+    <li><a href="#s14">14. 50+ melhorias</a></li>
+    <li><a href="#s15">15. Roadmap (5 sprints)</a></li>
+    <li><a href="#s16">16. O que remover</a></li>
+    <li><a href="#s17">17. O efeito "UAU"</a></li>
+    <li><a href="#s18">18. Nota final</a></li>
+    <li><a href="#s19">19. Veredito</a></li>
+  </ol>
+</div>
+
+<!-- ================= SUMÁRIO ================= -->
+<section id="s0">
+  <h2>Sumário executivo</h2>
+  <p class="sub">O que você tem em mãos, sem rodeios.</p>
+  <p>O FinançasPro <strong>não é "só mais um HTML"</strong>. É um SaaS completo: frontend PWA em JavaScript vanilla, backend Express com arquitetura DDD (repositórios + serviços), <strong>Prisma/Postgres com 23 modelos</strong> (incluindo multi-tenant, organizações, planos e billing), Stripe, filas BullMQ/Redis, 2FA TOTP, JWT em cookie httpOnly, Belvo (Open Finance) e apps Android/iOS via Capacitor. Em amplitude de funcionalidades, ele <strong>bate de frente com Mobills e Organizze</strong> e supera a maioria dos apps genéricos.</p>
+  <p>A grande tensão do projeto é uma <strong>assimetria de maturidade</strong>: o backend é moderno e bem estruturado, enquanto o frontend é um SPA legado — <strong>85 tags <code>&lt;script&gt;</code> carregadas de forma síncrona e bloqueante, todas em namespace global (<code>var X = ...</code>)</strong>, com <code>localStorage</code> como fonte primária da verdade e <strong>~1.087 nós de DOM estáticos num único <code>index.html</code> de 77 KB</strong>. Isso trava performance, manutenção e escalabilidade — apesar de já existir um bundler (Vite) configurado e não usado em produção.</p>
+  <div class="callout dark">
+    <strong>Veredito em uma frase:</strong> um produto com escopo de Série A rodando sobre um front-end de MVP. Resolva a camada de entrega do frontend (bundle, estado, sync) e a percepção de qualidade, e você tem um concorrente real. Do jeito que está, é excelente para <em>soft launch</em>, arriscado para escala.
+  </div>
+  <div class="cards">
+    <div class="card"><span class="pill ok">Forte</span><h4>Funcionalidades</h4><p class="muted">85/100 — cobertura acima da média do mercado brasileiro.</p></div>
+    <div class="card"><span class="pill ok">Forte</span><h4>Backend & Segurança de servidor</h4><p class="muted">DDD, Zod, Helmet, 2FA, audit log, field-crypto.</p></div>
+    <div class="card"><span class="pill bad">Frágil</span><h4>Arquitetura front-end</h4><p class="muted">52/100 — globais, load-order, sem code-splitting.</p></div>
+    <div class="card"><span class="pill bad">Frágil</span><h4>Performance percebida</h4><p class="muted">58/100 — 85 scripts bloqueantes, DOM monolítico.</p></div>
+  </div>
+</section>
+
+<!-- ============ 1 PRIMEIRA IMPRESSÃO ============ -->
+<section id="s1">
+  <h2><span class="n">1.</span> Primeira impressão</h2>
+  <div class="grade">78 / 100 <small>· Profissional, mas não "premium de tirar o fôlego"</small></div>
+  <p>A identidade visual é <strong>coerente e claramente inspirada no Nubank</strong> (verde <code>#00723F</code> como <code>theme-color</code>, tipografia Inter + Plus Jakarta Sans, cantos arredondados, cards limpos). Isso transmite <strong>confiança e credibilidade imediatas</strong> — o usuário reconhece o "gênero fintech" em segundos. Há tela de autenticação com abas, onboarding, skeletons de carregamento e dark mode (669 linhas de CSS só para o tema escuro), o que já coloca o projeto acima de 80% dos apps financeiros amadores.</p>
+  <h4>Onde perde pontos</h4>
+  <ul>
+    <li><strong>Falta assinatura visual própria.</strong> Ser "um Nubank verde" gera familiaridade, mas não gera memória. Não há um elemento gráfico, uma ilustração ou um momento de marca que diga "isto é FinançasPro e nada mais".</li>
+    <li><strong>Densidade alta no dashboard.</strong> A home empilha ~12 <code>&lt;section&gt;</code> (cards de resumo, contas a pagar, relatórios, previsão, alertas, metas, assinaturas, patrimônio…). O primeiro olhar é "muita coisa", não "que respiro".</li>
+    <li><strong>Logo genérico.</strong> O ícone é um <code>wallet</code> da biblioteca Lucide — funcional, porém sem personalidade. Um logo próprio muda a percepção de valor drasticamente.</li>
+  </ul>
+  <p><strong>Por que 78 e não mais:</strong> transmite profissionalismo e confiança, mas a primeira tela não vende valor único nem provoca desejo. Para um app que quer cobrar assinatura, faltam 15–20 pontos de "polimento de vitrine".</p>
+</section>
+
+<!-- ============ 2 UI ============ -->
+<section id="s2">
+  <h2><span class="n">2.</span> UI — Interface</h2>
+  <div class="grade">80 / 100 <small>· Sólida e consistente; ainda a um degrau da elite</small></div>
+  <p>Existe um <strong>design system real</strong> (<code>design-system.css</code> com tokens, <code>critical-inline.css</code> para CSS crítico). Isso é raro em projetos indie e explica a consistência de cores, espaçamentos e componentes. Os botões, cards, inputs e toggles seguem um padrão claro; a hierarquia visual é compreensível; o contraste do verde sobre branco atende bem.</p>
+  <div class="two">
+    <div>
+      <h4>Acertos</h4>
+      <ul>
+        <li>Tokens de design centralizados → consistência.</li>
+        <li>Ícones vetoriais unificados (Lucide) em vez de emojis soltos.</li>
+        <li>Dark mode completo e caprichado.</li>
+        <li>Gráficos em <strong>SVG custom</strong> (Barras 6M, Donut) — leves, sem dependência de biblioteca pesada.</li>
+        <li>Skeletons e microinterações (<code>micro-interactions.js</code>) elevam a percepção.</li>
+      </ul>
+    </div>
+    <div>
+      <h4>Fraquezas</h4>
+      <ul>
+        <li><strong>~24 seções escondidas com <code>style="display:none"</code> inline</strong> — mistura estilo e marcação, prejudica manutenção.</li>
+        <li><strong>Dois menus duplicados</strong> (sidebar desktop + nav-bottom mobile) com marcação repetida — risco de divergência.</li>
+        <li>Densidade visual alta em telas-chave (extrato, orçamento com 1.935 linhas de CSS) — sinal de complexidade acumulada.</li>
+        <li>Gráficos SVG custom são bonitos, mas sem tooltip/interatividade ricos que o usuário espera de apps pagos.</li>
+      </ul>
+    </div>
+  </div>
+  <h4>Comparação direta</h4>
+  <table>
+    <tr><th>Referência</th><th>O que eles têm que aqui falta</th></tr>
+    <tr><td>Apple / Linear</td><td>Espaço em branco generoso, uma coisa importante por tela, animações de transição fluidas.</td></tr>
+    <tr><td>Stripe</td><td>Rigor tipográfico e microtipografia (tabular numbers em todos os valores, alinhamento de moeda).</td></tr>
+    <tr><td>Nubank</td><td>Emoção e ilustração — celebrações, estados vazios ilustrados, personalidade de marca.</td></tr>
+    <tr><td>Notion</td><td>Densidade que "respira": muita informação sem sensação de aperto.</td></tr>
+  </table>
+  <p><strong>Por que 80:</strong> a base é profissional e consistente (isso vale muito), mas falta o refino de microdetalhe e o "respiro" que separam "bem-feito" de "premium".</p>
+</section>
+
+<!-- ============ 3 UX ============ -->
+<section id="s3">
+  <h2><span class="n">3.</span> UX</h2>
+  <div class="grade">72 / 100 <small>· Boa fundação, carga cognitiva alta para leigos</small></div>
+  <p>Os fundamentos de UX estão presentes e bem intencionados: <strong>onboarding dedicado</strong> (308 linhas), <strong>skeletons</strong> de carregamento, <strong>empty states</strong>, <strong>região aria-live</strong> para feedback, atalhos de teclado (<code>shortcuts.js</code>), quick actions e navegação por delegação de eventos (<code>data-action</code>, zero <code>onclick</code> inline). A navegação principal está reduzida a 5 abas (Resumo, Novo, Extrato, Orçamento, Perfil) — decisão correta.</p>
+  <div class="callout warn">
+    <strong>O maior risco de UX:</strong> o dashboard tenta mostrar <em>tudo</em> ao mesmo tempo. Previsão com regressão linear, alertas, metas, patrimônio, assinaturas e relatórios competem por atenção na mesma tela. Para o público-alvo (usuário leigo que quer "saber quanto sobra no mês"), isso é <strong>sobrecarga cognitiva</strong>. YNAB e Organizze vencem justamente por dar <em>uma</em> tarefa clara de cada vez.
+  </div>
+  <div class="two">
+    <div>
+      <h4>Pontos fortes</h4>
+      <ul>
+        <li>Fluxo de nova transação acessível em 1 toque (aba "Novo" fixa).</li>
+        <li>Feedback visual via aria-live e microinterações.</li>
+        <li>Prevenção de erro razoável (validação de formulários).</li>
+        <li>Suporte offline (PWA + service worker).</li>
+      </ul>
+    </div>
+    <div>
+      <h4>Lacunas</h4>
+      <ul>
+        <li>Descoberta de funcionalidades depende do usuário "cavar" no perfil — metas, patrimônio, assinaturas ficam escondidos.</li>
+        <li>Falta confirmação clara e "desfazer" (undo) em exclusões.</li>
+        <li>Curva de aprendizado íngreme para orçamento (a tela mais complexa do app).</li>
+        <li>Onboarding existe, mas não há evidência de "aha moment" guiado (primeira transação → primeiro insight).</li>
+      </ul>
+    </div>
+  </div>
+  <p><strong>Por que 72:</strong> as peças certas existem, mas o produto ainda pensa como quem construiu (mostrar tudo que foi feito) em vez de como quem usa (esconder complexidade até ser necessária).</p>
+</section>
+
+<!-- ============ 4 ORGANIZAÇÃO ============ -->
+<section id="s4">
+  <h2><span class="n">4.</span> Organização do produto</h2>
+  <div class="grade">74 / 100 <small>· Arquitetura de informação sensata, escalabilidade de telas limitada</small></div>
+  <p>A estrutura de navegação (5 abas + perfil como hub de módulos avançados) é uma decisão de IA (arquitetura de informação) <strong>correta e escalável conceitualmente</strong>. O backend é ainda melhor organizado: <code>domain/repositories</code>, <code>domain/services</code>, <code>lib/</code>, separação limpa de responsabilidades — nota alta isolada.</p>
+  <p>No frontend, porém, a organização de <em>telas</em> não escala: <strong>todas as telas vivem num único <code>index.html</code></strong>, alternadas por <code>display:none</code>. Adicionar a 12ª ou 15ª feature significa inchar ainda mais um arquivo já de 77 KB e 1.087 nós. Há modularização de scripts (pasta <code>js/modules/init-*</code>), o que é bom, mas a camada de apresentação continua monolítica.</p>
+  <ul>
+    <li><strong>Priorização:</strong> confusa. Módulos "premium" (patrimônio, previsão, open finance) têm o mesmo peso visual que o básico.</li>
+    <li><strong>Escalabilidade estrutural:</strong> backend ✅ / frontend ⚠️.</li>
+    <li><strong>Clareza:</strong> boa nos nomes de arquivo e domínios; ruim no acoplamento por variáveis globais.</li>
+  </ul>
+</section>
+
+<!-- ============ 5 FUNCIONALIDADES ============ -->
+<section id="s5">
+  <h2><span class="n">5.</span> Funcionalidades</h2>
+  <div class="grade">85 / 100 <small>· O ponto mais forte do produto</small></div>
+  <p>A cobertura funcional é <strong>impressionante</strong> e já supera vários concorrentes pagos. Mapa do que foi encontrado no código:</p>
+  <table>
+    <tr><th>Recurso</th><th class="n">Existe?</th><th>Observação (baseada no código)</th></tr>
+    <tr><td>Dashboard mensal</td><td class="n">✅</td><td><code>render-dashboard.js</code> (496 linhas), cards de receita/despesa/saldo.</td></tr>
+    <tr><td>Extrato + filtros + exportação</td><td class="n">✅</td><td><code>init-extrato.js</code> (1.226 linhas), filtros persistidos.</td></tr>
+    <tr><td>Orçamento</td><td class="n">✅</td><td>Tela mais robusta (1.935 linhas de CSS); serviço dedicado.</td></tr>
+    <tr><td>Metas</td><td class="n">✅</td><td>Módulo + CSS próprios.</td></tr>
+    <tr><td>Patrimônio</td><td class="n">✅</td><td><code>patrimonio.js</code> (200 linhas).</td></tr>
+    <tr><td>Assinaturas</td><td class="n">✅</td><td>Controle de recorrentes tipo "subscriptions".</td></tr>
+    <tr><td>Recorrência / Parcelamento</td><td class="n">✅</td><td>Modelo <code>RecurringTransaction</code> no Prisma.</td></tr>
+    <tr><td>Categorias</td><td class="n">✅</td><td>Sistema de categorias + chips.</td></tr>
+    <tr><td>Previsão / IA</td><td class="n">✅</td><td><code>ai-engine.js</code>: regressão linear + média ponderada + R². Heurística estatística real (não ML, mas honesto).</td></tr>
+    <tr><td>OCR (scan de recibos)</td><td class="n">✅</td><td><code>ocr.js</code> (437 linhas) — diferencial forte.</td></tr>
+    <tr><td>Open Finance</td><td class="n">✅</td><td>Integração Belvo (CSP whitelista <code>widget.belvo.io</code>).</td></tr>
+    <tr><td>Relatórios / Gráficos</td><td class="n">✅</td><td>SVG custom (donut, barras 6 meses).</td></tr>
+    <tr><td>Alertas / Insights</td><td class="n">✅</td><td><code>alertas.js</code>, <code>insights.js</code>.</td></tr>
+    <tr><td>Anexos</td><td class="n">✅</td><td><code>init-anexos.js</code>.</td></tr>
+    <tr><td>Segurança: PIN + 2FA</td><td class="n">✅</td><td>PIN PBKDF2 + rate-limit; TOTP (otplib) no backend.</td></tr>
+    <tr><td>Backup / Sync</td><td class="n">⚠️</td><td>Sync via <code>/api/v1/state</code> existe, mas é opcional e a fonte primária ainda é o <code>localStorage</code>.</td></tr>
+    <tr><td>Pesquisa global</td><td class="n">⚠️</td><td>Filtros de extrato sim; busca global unificada não evidente.</td></tr>
+    <tr><td>Billing / Planos</td><td class="n">✅</td><td>Stripe + tiers FREE / PRO / BUSINESS.</td></tr>
+  </table>
+  <h4>O que falta</h4>
+  <ul>
+    <li><strong>Backup em nuvem verdadeiro e à prova de falhas</strong> (hoje o dado nasce no dispositivo).</li>
+    <li><strong>Multi-conta/multi-cartão com faturas de cartão de crédito</strong> completo (fatura, melhor dia de compra) — pilar do Mobills.</li>
+    <li><strong>Relatórios comparativos avançados</strong> (categoria vs. mês anterior, projeção de fim de mês visual).</li>
+    <li><strong>Compartilhamento familiar/casal</strong> (o backend já tem <code>Organization</code>, mas a UX não expõe isso ao consumidor).</li>
+  </ul>
+  <h4>O que está sobrando / pode ser removido do MVP</h4>
+  <ul>
+    <li>Patrimônio e Previsão com regressão linear no dashboard: valiosos, mas roubam foco do core. Mover para "avançado/PRO".</li>
+    <li>Multi-tenant / Organizações no frontend consumer: complexidade de B2B num produto B2C. Manter no backend, esconder na UX até haver plano família.</li>
+  </ul>
+  <p><strong>Por que 85:</strong> tem mais recursos do que precisa para competir. O risco não é falta de features — é <em>excesso</em> mal priorizado.</p>
+</section>
+
+<!-- ============ 6 ARQUITETURA FRONT ============ -->
+<section id="s6">
+  <h2><span class="n">6.</span> Arquitetura front-end</h2>
+  <div class="grade">52 / 100 <small>· A maior dívida técnica do projeto</small></div>
+  <p>Aqui está o calcanhar de Aquiles. Fatos extraídos do código:</p>
+  <table>
+    <tr><th>Sinal</th><th>Medição real</th><th>Impacto</th></tr>
+    <tr><td>Scripts com <code>defer</code>/<code>async</code>/<code>module</code></td><td class="n"><strong>0 de 85</strong></td><td>Todos síncronos e bloqueantes.</td></tr>
+    <tr><td>Padrão de módulo</td><td>Globais (<code>var X = {}</code>)</td><td>Poluição de namespace, colisões, load-order frágil.</td></tr>
+    <tr><td>Acoplamento</td><td>Dependência de ordem de carga (<code>~40</code> scripts no index)</td><td>Reordenar quebra o app silenciosamente.</td></tr>
+    <tr><td>Bundler em produção</td><td>Vite existe, <code>dist/</code> gerado, mas o app roda o <code>index.html</code> cru</td><td>Sem tree-shaking, sem minificação real em runtime.</td></tr>
+    <tr><td>Semântica HTML</td><td>Boa (<code>main</code>, <code>nav</code>, <code>section</code>, roles)</td><td>✅ ponto positivo.</td></tr>
+    <tr><td>Segurança de DOM</td><td><code>dom-safe.js</code> (450 linhas) que força <code>textContent</code></td><td>✅ boa intenção — mas 130 usos de <code>innerHTML</code> ainda existem.</td></tr>
+  </table>
+  <p>Há sinais de maturidade — camada <code>core/</code> com <code>store.js</code> (565 linhas), <code>event-bus.js</code> (416 linhas), <code>lifecycle.js</code>, <code>dados.js</code> — o que mostra que o autor <em>sabe</em> o caminho. Mas isso convive com o modelo global antigo, criando um híbrido inconsistente: parte reativa por store/event-bus, parte imperativa por variáveis globais.</p>
+  <div class="callout">
+    <strong>Diagnóstico:</strong> o front-end está preso entre duas eras. Existe infraestrutura moderna (store, event bus, dom-safe) subaproveitada, escondida atrás de 85 scripts globais carregados na marra. A refatoração para ES Modules + bundle é <strong>a intervenção de maior alavancagem do projeto inteiro</strong>.
+  </div>
+  <p><strong>Por que 52:</strong> a semântica e a intenção salvam a nota de cair para 40; o modelo de carregamento e o acoplamento global a impedem de passar de 55.</p>
+</section>
+
+<!-- ============ 7 PERFORMANCE ============ -->
+<section id="s7">
+  <h2><span class="n">7.</span> Performance</h2>
+  <div class="grade">58 / 100 <small>· Gargalos claros de carregamento inicial</small></div>
+  <ul>
+    <li><strong>85 requisições de script bloqueantes</strong> no carregamento — cada uma é um round-trip que atrasa o <em>Time to Interactive</em>. Em 3G/4G brasileiro médio, isso dói.</li>
+    <li><strong>~1.087 nós de DOM estáticos</strong> renderizados de uma vez, com todas as telas presentes (só ocultas). Sem <em>code-splitting</em> por rota.</li>
+    <li><strong>1.3 MB em screenshots</strong> versionados no repo (não vão para produção, mas indicam falta de disciplina de assets).</li>
+    <li>Google Fonts com 2 famílias e 8 pesos — cada peso é download extra.</li>
+  </ul>
+  <h4>O que já está certo</h4>
+  <ul>
+    <li>CSS crítico inline (<code>critical-inline.css</code>) — boa prática.</li>
+    <li>Skeletons dão <strong>performance percebida</strong> mesmo com carga real alta.</li>
+    <li>Service worker para cache offline.</li>
+    <li>Gráficos SVG próprios evitam ~200 KB de uma lib de charts.</li>
+  </ul>
+  <div class="callout warn"><strong>Ganho rápido de maior impacto:</strong> usar o <code>dist/</code> do Vite (bundle único minificado + <code>defer</code>) em vez do <code>index.html</code> cru levaria a performance de ~58 para ~78 <em>sem escrever uma linha de feature</em>.</div>
+  <p><strong>Por que 58:</strong> as boas práticas (CSS crítico, skeleton, SW) seguram a nota, mas o modelo de 85 scripts é objetivamente lento no primeiro load.</p>
+</section>
+
+<!-- ============ 8 SEGURANÇA ============ -->
+<section id="s8">
+  <h2><span class="n">8.</span> Segurança</h2>
+  <div class="grade">74 / 100 <small>· Backend forte, front-end com pontos fracos evitáveis</small></div>
+  <div class="two">
+    <div>
+      <h4>Pontos fortes (reais)</h4>
+      <ul>
+        <li><strong>CSP</strong> definida via meta (default-src 'self', object-src 'none', base-uri 'self').</li>
+        <li><code>X-Content-Type-Options: nosniff</code> + <code>Referrer-Policy</code>.</li>
+        <li><strong>Helmet</strong> no backend Express.</li>
+        <li><strong>PIN:</strong> PBKDF2 100k iterações, salt único, rate-limit com backoff exponencial, comparação tempo-constante.</li>
+        <li><strong>2FA TOTP</strong> (otplib) + QR code.</li>
+        <li>JWT em <strong>cookie httpOnly</strong> + refresh token.</li>
+        <li>Validação com <strong>Zod</strong>, <code>field-crypto.js</code>, <code>AuditLog</code> no schema.</li>
+        <li>Cripto opcional at-rest AES-GCM (Web Crypto).</li>
+      </ul>
+    </div>
+    <div>
+      <h4>Vulnerabilidades / riscos</h4>
+      <ul>
+        <li><strong>Cripto at-rest é "teatro" no padrão:</strong> a chave de device (<code>financaspro_ckey_dev</code>) fica no próprio <code>localStorage</code>, ao lado dos dados, e o fallback é a passphrase fixa <code>'financaspro-fallback'</code>. Sem passphrase do usuário, protege pouco.</li>
+        <li><strong>Cripto desligada por padrão</strong> (<code>cryptoAtRestEnabled</code> opt-in).</li>
+        <li><strong>130 usos de <code>innerHTML</code></strong> = superfície de XSS a auditar, apesar do <code>dom-safe</code>.</li>
+        <li><strong>CSP libera <code>http://localhost:4000</code></strong> em <code>connect-src</code> — resíduo de dev que não pode ir para produção.</li>
+        <li><code>style-src 'unsafe-inline'</code> enfraquece a CSP.</li>
+        <li>CSP via <code>&lt;meta&gt;</code> em vez de header HTTP (menos robusta).</li>
+      </ul>
+    </div>
+  </div>
+  <p><strong>Por que 74:</strong> a engenharia de segurança do <em>servidor</em> é de nível profissional (raro num indie). O que impede uma nota alta é a proteção de dados no cliente — o marketing "criptografia local" não se sustenta com a chave guardada ao lado do dado e desligada por padrão.</p>
+</section>
+
+<!-- ============ 9 ACESSIBILIDADE ============ -->
+<section id="s9">
+  <h2><span class="n">9.</span> Acessibilidade</h2>
+  <div class="grade">79 / 100 <small>· Acima da média do mercado; faltam ajustes finos</small></div>
+  <p>A acessibilidade foi <strong>levada a sério</strong> — algo praticamente inexistente nos concorrentes brasileiros. Evidências no código:</p>
+  <ul>
+    <li><strong>Roles ARIA</strong> corretos: <code>role="dialog"</code> + <code>aria-modal</code>, <code>role="tablist"/"tab"/"tabpanel"</code>, <code>aria-selected</code>, <code>aria-controls</code>.</li>
+    <li><strong>8 regiões <code>aria-live</code></strong> + utilitário <code>aria-live.js</code> para anúncios a leitores de tela.</li>
+    <li><strong><code>focus-trap.js</code></strong> dedicado para modais.</li>
+    <li><strong>Skip link</strong> ("pular para o conteúdo") + <code>aria-current="page"</code> na navegação.</li>
+    <li>Ícones decorativos com <code>aria-hidden</code>; labels descritivos em botões.</li>
+    <li><strong>Testes automatizados com <code>@axe-core/playwright</code></strong> — nível de disciplina profissional.</li>
+  </ul>
+  <h4>Onde ainda falha</h4>
+  <ul>
+    <li>Apenas <strong>1 skip link</strong> — insuficiente para um app com 5+ seções.</li>
+    <li>Gráficos SVG custom precisam de alternativa textual/tabela para leitores de tela.</li>
+    <li><code>maximum-scale=5</code> no viewport limita zoom (aceitável, mas revisar).</li>
+    <li>Verificar ordem de foco entre sidebar e nav-bottom duplicados.</li>
+  </ul>
+  <p><strong>Por que 79:</strong> é o tipo de trabalho que a maioria dos apps nem tenta. Faltam apenas refinamentos para chegar a WCAG AA sólido.</p>
+</section>
+
+<!-- ============ 10 ESCALABILIDADE ============ -->
+<section id="s10">
+  <h2><span class="n">10.</span> Escalabilidade</h2>
+  <div class="grade">60 / 100 <small>· Backend preparado, frontend não</small></div>
+  <table>
+    <tr><th>Escala</th><th>Backend</th><th>Frontend</th></tr>
+    <tr><td><strong>100 mil usuários</strong></td><td class="win">OK — Postgres + Redis + filas aguentam.</td><td class="tie">Aguenta, mas primeiro load lento vira problema de conversão.</td></tr>
+    <tr><td><strong>1 milhão</strong></td><td class="tie">Precisa de tuning de índices, cache, read replicas.</td><td class="lose">Modelo localStorage-first gera perda de dados, tickets de suporte, limite de 5–10 MB por usuário estourando.</td></tr>
+    <tr><td><strong>10 milhões</strong></td><td class="tie">Viável com investimento em infra (a arquitetura DDD ajuda).</td><td class="lose">Insustentável sem reescrita: sem sync robusto, sem resolução de conflito, sem offline-first real.</td></tr>
+  </table>
+  <p>O backend tem os alicerces certos: multi-tenant, filas assíncronas (BullMQ), audit log, billing por uso (<code>UsageRecord</code>). O problema de escala é <strong>do lado do cliente</strong>: quando o dado do usuário vive primariamente no <code>localStorage</code>, cada troca de dispositivo, limpeza de cache ou navegador anônimo é uma perda de dados — e isso <em>quebra a confiança</em> exatamente no produto onde confiança é tudo (dinheiro).</p>
+  <p><strong>Por que 60:</strong> metade da equação (servidor) está pronta para crescer; a outra metade (dados no cliente) é uma bomba-relógio que precisa virar <strong>server-first com cache offline</strong>.</p>
+</section>
+
+<!-- ============ 11 MONETIZAÇÃO ============ -->
+<section id="s11">
+  <h2><span class="n">11.</span> Monetização</h2>
+  <div class="grade">76 / 100 <small>· Estrutura pronta, empacotamento a refinar</small></div>
+  <p>A infraestrutura de cobrança já existe e funciona: <strong>Stripe</strong>, planos <strong>FREE / PRO (R$ 29,90/mês · R$ 299/ano) / BUSINESS (R$ 99,90/mês)</strong>, <code>Subscription</code>, <code>Invoice</code> e <code>UsageRecord</code> no schema. Isso coloca o projeto muito à frente de quem "vai pensar em monetizar depois".</p>
+  <h4>Análise de preço</h4>
+  <p>R$ 29,90/mês é <strong>caro demais para o mercado brasileiro de finanças pessoais</strong>. Referências: Mobills e Organizze ficam na faixa de <strong>R$ 12–20/mês</strong> (e ~R$ 90–140/ano). Cobrar R$ 29,90 exige justificar valor superior — hoje o app tem as features, mas não a percepção premium para sustentar o preço.</p>
+  <h4>O que deveria ser PRO (bom empacotamento)</h4>
+  <ul>
+    <li><strong>Open Finance (Belvo)</strong> — sincronização bancária automática é o clássico gancho premium.</li>
+    <li><strong>OCR de recibos</strong> — diferencial tangível, ótimo para PRO.</li>
+    <li><strong>IA / Previsão</strong> — projeções e insights avançados.</li>
+    <li><strong>Backup em nuvem + multi-dispositivo</strong> — deveria ser o principal motivo de assinar.</li>
+    <li><strong>Relatórios avançados e exportação</strong> ilimitada.</li>
+    <li><strong>Plano família/casal</strong> (aproveitando o <code>Organization</code> já existente).</li>
+  </ul>
+  <div class="callout"><strong>Recomendação de pricing:</strong> PRO a <strong>R$ 16,90/mês (R$ 119/ano)</strong> como âncora competitiva, mantendo BUSINESS/Família como upsell. Foque o funil em <em>Open Finance + backup multi-dispositivo</em> — é o que o usuário paga sem pensar.</div>
+  <p><strong>Por que 76:</strong> tem tudo montado para faturar; perde pontos por preço desalinhado com o mercado e por ainda não converter as features premium em <em>percepção</em> premium.</p>
+</section>
+
+<!-- ============ 12 CONCORRENTES ============ -->
+<section id="s12">
+  <h2><span class="n">12.</span> Comparação com concorrentes</h2>
+  <table>
+    <tr><th>Concorrente</th><th>Onde o FinançasPro…</th><th></th></tr>
+    <tr><td><strong>Mobills</strong></td><td>Perde em faturas de cartão de crédito, maturidade de app store, base de usuários e confiança de marca. <span class="tie">Empata</span> em orçamento. <span class="win">Ganha</span> em acessibilidade e em ter OCR + IA no mesmo pacote.</td><td class="lose">Perde no geral</td></tr>
+    <tr><td><strong>Organizze</strong></td><td><span class="win">Ganha</span> em amplitude de features (patrimônio, previsão, open finance nativo). <span class="lose">Perde</span> em polimento, simplicidade e reputação.</td><td class="tie">Tecnicamente à frente, comercialmente atrás</td></tr>
+    <tr><td><strong>Minhas Economias / Wallet</strong></td><td><span class="win">Ganha</span> claramente em profundidade técnica, segurança e IA.</td><td class="win">Ganha</td></tr>
+    <tr><td><strong>Money Manager</strong></td><td><span class="win">Ganha</span> em Open Finance e sincronização; <span class="tie">empata</span> em rapidez de lançamento.</td><td class="win">Ganha</td></tr>
+    <tr><td><strong>YNAB</strong></td><td><span class="lose">Perde</span> em metodologia (o "sistema de envelopes" é a alma do YNAB), didática e comunidade. <span class="win">Ganha</span> em preço e em Open Finance BR.</td><td class="lose">Perde na filosofia</td></tr>
+    <tr><td><strong>Nubank (Finanças)</strong></td><td><span class="lose">Perde</span> em distribuição, confiança e integração bancária nativa — impossível competir de frente. <span class="win">Ganha</span> em ser multi-banco e neutro.</td><td class="lose">Perde em distribuição</td></tr>
+  </table>
+  <div class="callout dark"><strong>Posicionamento vencível:</strong> o FinançasPro não vence Mobills no jogo do Mobills. Ele vence sendo o <em>"app financeiro completo, multi-banco, com Open Finance e IA, para quem quer controle de verdade sem depender do banco"</em> — território que Organizze e Money Manager ocupam mal.</div>
+</section>
+
+<!-- ============ 13 PROBLEMAS ============ -->
+<section id="s13">
+  <h2><span class="n">13.</span> Problemas encontrados</h2>
+  <p class="sub">Ordenados por gravidade. Descrição · impacto · solução · prioridade.</p>
+
+  <h3><span class="sev c">CRÍTICOS</span></h3>
+  <table>
+    <tr><th>Problema</th><th>Impacto</th><th>Como resolver</th><th class="n">Prio.</th></tr>
+    <tr><td><strong>Dados primários no <code>localStorage</code></strong></td><td>Perda de dados ao trocar de aparelho/limpar cache; limite de 5–10 MB; quebra de confiança.</td><td>Tornar o backend a fonte da verdade; localStorage vira cache offline com sync robusto e resolução de conflito.</td><td class="n">P0</td></tr>
+    <tr><td><strong>85 scripts síncronos, namespace global</strong></td><td>Load lento, fragilidade de ordem, impossível escalar manutenção.</td><td>Migrar para ES Modules + bundle Vite (<code>dist/</code>) com <code>defer</code>/code-splitting.</td><td class="n">P0</td></tr>
+    <tr><td><strong>CSP com <code>http://localhost:4000</code></strong></td><td>Vazamento de config de dev; risco em produção.</td><td>Separar CSP por ambiente; remover localhost do build de produção.</td><td class="n">P0</td></tr>
+  </table>
+
+  <h3><span class="sev a">ALTOS</span></h3>
+  <table>
+    <tr><th>Problema</th><th>Impacto</th><th>Como resolver</th><th class="n">Prio.</th></tr>
+    <tr><td>Cripto at-rest fraca por padrão (chave ao lado do dado, fallback fixo, desligada)</td><td>Falsa sensação de segurança; risco reputacional se anunciada.</td><td>Derivar chave de segredo do usuário (PIN/passphrase), ligar por padrão ou não prometer "cripto local".</td><td class="n">P1</td></tr>
+    <tr><td>130 usos de <code>innerHTML</code></td><td>Superfície de XSS.</td><td>Auditar todos; migrar para <code>dom-safe</code>/<code>textContent</code>; sanitizar entradas.</td><td class="n">P1</td></tr>
+    <tr><td>Dashboard sobrecarregado (12+ seções)</td><td>Carga cognitiva, afasta leigos, prejudica retenção.</td><td>Reduzir a 3–4 blocos essenciais; mover avançados para "Explorar/PRO".</td><td class="n">P1</td></tr>
+    <tr><td>Sem backup em nuvem confiável exposto ao usuário</td><td>Medo de perder dados = churn.</td><td>Backup automático + indicador visível de "sincronizado".</td><td class="n">P1</td></tr>
+  </table>
+
+  <h3><span class="sev m">MÉDIOS</span></h3>
+  <table>
+    <tr><th>Problema</th><th>Impacto</th><th>Como resolver</th><th class="n">Prio.</th></tr>
+    <tr><td>Preço PRO (R$ 29,90) acima do mercado</td><td>Conversão baixa.</td><td>Reposicionar para R$ 16,90–19,90.</td><td class="n">P2</td></tr>
+    <tr><td>Telas todas num único <code>index.html</code></td><td>Manutenção difícil, DOM pesado.</td><td>Templates por rota / componentização.</td><td class="n">P2</td></tr>
+    <tr><td>Navegação duplicada (sidebar + bottom)</td><td>Divergência de estado, código repetido.</td><td>Fonte única de itens de nav, renderizados nos dois lugares.</td><td class="n">P2</td></tr>
+    <tr><td>Gráficos SVG sem interatividade/alt textual</td><td>UX e acessibilidade abaixo do esperado para app pago.</td><td>Tooltips + tabela alternativa acessível.</td><td class="n">P2</td></tr>
+    <tr><td>Falta de "undo" em ações destrutivas</td><td>Erros custam dado; frustração.</td><td>Toast com "Desfazer" em exclusões.</td><td class="n">P2</td></tr>
+  </table>
+
+  <h3><span class="sev b">BAIXOS</span></h3>
+  <table>
+    <tr><th>Problema</th><th>Impacto</th><th>Como resolver</th><th class="n">Prio.</th></tr>
+    <tr><td>1.3 MB de screenshots versionados</td><td>Repo inchado.</td><td>Mover para storage externo / <code>.gitignore</code>.</td><td class="n">P3</td></tr>
+    <tr><td>Logo genérico (wallet Lucide)</td><td>Marca sem personalidade.</td><td>Criar identidade própria.</td><td class="n">P3</td></tr>
+    <tr><td>8 pesos de fonte carregados</td><td>Alguns KB extras.</td><td>Reduzir a 3–4 pesos.</td><td class="n">P3</td></tr>
+    <tr><td><code>style="display:none"</code> inline (24×)</td><td>Mistura estilo/marcação.</td><td>Mover para classes utilitárias.</td><td class="n">P3</td></tr>
+  </table>
+</section>
+
+<!-- ============ 14 MELHORIAS ============ -->
+<section id="s14">
+  <h2><span class="n">14.</span> 50+ melhorias</h2>
+  <p class="sub">Ordenadas por impacto. D = Dificuldade · I = Impacto · P = Prioridade (1 = fazer já).</p>
+  <table>
+    <tr><th class="n">#</th><th>Melhoria</th><th>Benefício</th><th class="n">D</th><th class="n">I</th><th class="n">P</th></tr>
+    <tr><td class="n">1</td><td><strong>Servir bundle Vite (<code>dist</code>) com <code>defer</code></strong></td><td>+20 pts de performance, zero features novas</td><td class="n">Baixa</td><td class="n">Altíssimo</td><td class="n">1</td></tr>
+    <tr><td class="n">2</td><td><strong>Backend como fonte da verdade + offline cache</strong></td><td>Fim da perda de dados; escala real</td><td class="n">Alta</td><td class="n">Altíssimo</td><td class="n">1</td></tr>
+    <tr><td class="n">3</td><td><strong>Migrar globais → ES Modules</strong></td><td>Manutenção, testabilidade, tree-shaking</td><td class="n">Alta</td><td class="n">Altíssimo</td><td class="n">1</td></tr>
+    <tr><td class="n">4</td><td>Indicador visível "☁ Sincronizado / Salvo"</td><td>Confiança imediata</td><td class="n">Baixa</td><td class="n">Alto</td><td class="n">1</td></tr>
+    <tr><td class="n">5</td><td>Simplificar dashboard a 3–4 blocos</td><td>Retenção de leigos</td><td class="n">Média</td><td class="n">Alto</td><td class="n">1</td></tr>
+    <tr><td class="n">6</td><td>CSP por ambiente (remover localhost)</td><td>Segurança em produção</td><td class="n">Baixa</td><td class="n">Alto</td><td class="n">1</td></tr>
+    <tr><td class="n">7</td><td>Auditar/eliminar <code>innerHTML</code></td><td>Fecha XSS</td><td class="n">Média</td><td class="n">Alto</td><td class="n">1</td></tr>
+    <tr><td class="n">8</td><td>Cripto local derivada do PIN do usuário</td><td>Segurança real e honesta</td><td class="n">Média</td><td class="n">Alto</td><td class="n">2</td></tr>
+    <tr><td class="n">9</td><td>Reposicionar preço PRO (R$ 16,90)</td><td>Conversão</td><td class="n">Baixa</td><td class="n">Alto</td><td class="n">2</td></tr>
+    <tr><td class="n">10</td><td>Faturas de cartão de crédito completas</td><td>Paridade com Mobills</td><td class="n">Alta</td><td class="n">Alto</td><td class="n">2</td></tr>
+    <tr><td class="n">11</td><td>Onboarding com "primeiro insight" guiado</td><td>Aha moment → ativação</td><td class="n">Média</td><td class="n">Alto</td><td class="n">2</td></tr>
+    <tr><td class="n">12</td><td>Toast "Desfazer" em exclusões</td><td>Prevenção de erro</td><td class="n">Baixa</td><td class="n">Médio</td><td class="n">2</td></tr>
+    <tr><td class="n">13</td><td>Identidade de marca / logo próprio</td><td>Percepção premium</td><td class="n">Média</td><td class="n">Alto</td><td class="n">2</td></tr>
+    <tr><td class="n">14</td><td>Tooltips e interatividade nos gráficos</td><td>UX premium</td><td class="n">Média</td><td class="n">Médio</td><td class="n">2</td></tr>
+    <tr><td class="n">15</td><td>Alternativa textual/tabela dos gráficos (a11y)</td><td>WCAG AA</td><td class="n">Baixa</td><td class="n">Médio</td><td class="n">2</td></tr>
+    <tr><td class="n">16</td><td>Fonte única de navegação (dedup sidebar/bottom)</td><td>Menos bugs</td><td class="n">Baixa</td><td class="n">Médio</td><td class="n">2</td></tr>
+    <tr><td class="n">17</td><td>Busca global unificada</td><td>Descoberta de dados</td><td class="n">Média</td><td class="n">Médio</td><td class="n">2</td></tr>
+    <tr><td class="n">18</td><td>Plano Família/Casal (usar <code>Organization</code>)</td><td>Novo revenue + retenção</td><td class="n">Média</td><td class="n">Alto</td><td class="n">2</td></tr>
+    <tr><td class="n">19</td><td>Code-splitting por rota</td><td>Load inicial menor</td><td class="n">Alta</td><td class="n">Alto</td><td class="n">2</td></tr>
+    <tr><td class="n">20</td><td>Projeção "quanto vai sobrar no fim do mês" visual</td><td>Valor percebido diário</td><td class="n">Média</td><td class="n">Alto</td><td class="n">2</td></tr>
+    <tr><td class="n">21</td><td>Notificações push (contas a vencer)</td><td>Reengajamento</td><td class="n">Média</td><td class="n">Alto</td><td class="n">3</td></tr>
+    <tr><td class="n">22</td><td>Widget de tela inicial (Android/iOS)</td><td>Presença diária</td><td class="n">Alta</td><td class="n">Médio</td><td class="n">3</td></tr>
+    <tr><td class="n">23</td><td>Comparativo categoria vs. mês anterior</td><td>Insight acionável</td><td class="n">Baixa</td><td class="n">Médio</td><td class="n">3</td></tr>
+    <tr><td class="n">24</td><td>Metas com celebração/animação ao atingir</td><td>Emoção → retenção</td><td class="n">Baixa</td><td class="n">Médio</td><td class="n">3</td></tr>
+    <tr><td class="n">25</td><td>Empty states ilustrados</td><td>Percepção de cuidado</td><td class="n">Baixa</td><td class="n">Médio</td><td class="n">3</td></tr>
+    <tr><td class="n">26</td><td>Reduzir pesos de fonte (8 → 4)</td><td>Performance</td><td class="n">Baixa</td><td class="n">Baixo</td><td class="n">3</td></tr>
+    <tr><td class="n">27</td><td>Categorização automática por IA (regras)</td><td>Menos fricção no lançamento</td><td class="n">Média</td><td class="n">Alto</td><td class="n">3</td></tr>
+    <tr><td class="n">28</td><td>Importação OFX/CSV de extratos</td><td>Onboarding sem digitar tudo</td><td class="n">Média</td><td class="n">Alto</td><td class="n">3</td></tr>
+    <tr><td class="n">29</td><td>Modo "envelope"/metodologia (à la YNAB)</td><td>Diferencial de método</td><td class="n">Alta</td><td class="n">Médio</td><td class="n">3</td></tr>
+    <tr><td class="n">30</td><td>Relatório mensal em PDF exportável</td><td>Valor tangível PRO</td><td class="n">Média</td><td class="n">Médio</td><td class="n">3</td></tr>
+    <tr><td class="n">31</td><td>Lançamento por voz/atalho rápido</td><td>Reduz fricção diária</td><td class="n">Média</td><td class="n">Médio</td><td class="n">3</td></tr>
+    <tr><td class="n">32</td><td>Detecção de assinaturas esquecidas</td><td>"Uau" financeiro real</td><td class="n">Média</td><td class="n">Alto</td><td class="n">3</td></tr>
+    <tr><td class="n">33</td><td>Score de saúde financeira gamificado</td><td>Engajamento</td><td class="n">Média</td><td class="n">Médio</td><td class="n">3</td></tr>
+    <tr><td class="n">34</td><td>Testes E2E ampliados (já há Playwright)</td><td>Qualidade sustentável</td><td class="n">Média</td><td class="n">Médio</td><td class="n">3</td></tr>
+    <tr><td class="n">35</td><td>Monitoramento de erros (Sentry)</td><td>Ver falhas em produção</td><td class="n">Baixa</td><td class="n">Médio</td><td class="n">3</td></tr>
+    <tr><td class="n">36</td><td>Analytics de produto (funil, ativação)</td><td>Decidir com dado</td><td class="n">Baixa</td><td class="n">Alto</td><td class="n">3</td></tr>
+    <tr><td class="n">37</td><td>Tela de "saúde do mês" única e simples</td><td>Foco para leigos</td><td class="n">Média</td><td class="n">Alto</td><td class="n">3</td></tr>
+    <tr><td class="n">38</td><td>Reconexão automática Open Finance</td><td>Menos churn de sync</td><td class="n">Média</td><td class="n">Médio</td><td class="n">4</td></tr>
+    <tr><td class="n">39</td><td>Multi-moeda</td><td>Mercado além do BR</td><td class="n">Alta</td><td class="n">Baixo</td><td class="n">4</td></tr>
+    <tr><td class="n">40</td><td>Temas/personalização de cor</td><td>Apropriação do usuário</td><td class="n">Baixa</td><td class="n">Baixo</td><td class="n">4</td></tr>
+    <tr><td class="n">41</td><td>Compartilhar transação/relatório</td><td>Loop de indicação</td><td class="n">Baixa</td><td class="n">Médio</td><td class="n">4</td></tr>
+    <tr><td class="n">42</td><td>Programa de indicação (referral)</td><td>Aquisição orgânica</td><td class="n">Média</td><td class="n">Alto</td><td class="n">4</td></tr>
+    <tr><td class="n">43</td><td>Central de ajuda / FAQ in-app</td><td>Reduz suporte</td><td class="n">Baixa</td><td class="n">Médio</td><td class="n">4</td></tr>
+    <tr><td class="n">44</td><td>Migração CSP para header HTTP</td><td>Segurança mais robusta</td><td class="n">Baixa</td><td class="n">Médio</td><td class="n">4</td></tr>
+    <tr><td class="n">45</td><td>Lazy-load de imagens/ícones</td><td>Performance</td><td class="n">Baixa</td><td class="n">Baixo</td><td class="n">4</td></tr>
+    <tr><td class="n">46</td><td>Virtualização de listas longas (extrato)</td><td>Fluidez com muitos itens</td><td class="n">Média</td><td class="n">Médio</td><td class="n">4</td></tr>
+    <tr><td class="n">47</td><td>Confirmação biométrica (WebAuthn/Capacitor)</td><td>Segurança + conveniência</td><td class="n">Média</td><td class="n">Médio</td><td class="n">4</td></tr>
+    <tr><td class="n">48</td><td>Backup exportável criptografado (arquivo)</td><td>Confiança do usuário técnico</td><td class="n">Baixa</td><td class="n">Baixo</td><td class="n">4</td></tr>
+    <tr><td class="n">49</td><td>Modo escuro automático por horário</td><td>Polimento</td><td class="n">Baixa</td><td class="n">Baixo</td><td class="n">5</td></tr>
+    <tr><td class="n">50</td><td>Animações de transição entre abas</td><td>Sensação premium</td><td class="n">Média</td><td class="n">Médio</td><td class="n">5</td></tr>
+    <tr><td class="n">51</td><td>Insights proativos por IA ("você gastou 30% mais em delivery")</td><td>Efeito UAU</td><td class="n">Média</td><td class="n">Altíssimo</td><td class="n">2</td></tr>
+    <tr><td class="n">52</td><td>Metas colaborativas em família</td><td>Retenção social</td><td class="n">Alta</td><td class="n">Médio</td><td class="n">5</td></tr>
+    <tr><td class="n">53</td><td>Assistente conversacional financeiro</td><td>Diferencial de mercado</td><td class="n">Alta</td><td class="n">Alto</td><td class="n">5</td></tr>
+  </table>
+</section>
+
+<!-- ============ 15 ROADMAP ============ -->
+<section id="s15">
+  <h2><span class="n">15.</span> Roadmap (5 sprints)</h2>
+  <p class="sub">Cada sprint agrupa apenas o que eleva qualidade real. Sprints de ~2 semanas.</p>
+  <div class="cards">
+    <div class="card">
+      <h4>Sprint 1 · Fundação técnica</h4>
+      <p class="muted">Consertar a base antes de qualquer feature nova.</p>
+      <ul><li>Servir bundle Vite + <code>defer</code> (#1)</li><li>CSP por ambiente (#6)</li><li>Auditar <code>innerHTML</code> (#7)</li><li>Sentry + analytics (#35, #36)</li></ul>
+    </div>
+    <div class="card">
+      <h4>Sprint 2 · Confiança dos dados</h4>
+      <p class="muted">Fim do medo de perder informação.</p>
+      <ul><li>Backend como fonte da verdade + sync (#2)</li><li>Indicador "Sincronizado" (#4)</li><li>Backup em nuvem confiável</li><li>Cripto derivada do PIN (#8)</li></ul>
+    </div>
+    <div class="card">
+      <h4>Sprint 3 · Clareza de UX</h4>
+      <p class="muted">Simplificar para o usuário leigo.</p>
+      <ul><li>Dashboard enxuto 3–4 blocos (#5)</li><li>Onboarding com aha moment (#11)</li><li>Toast "Desfazer" (#12)</li><li>Projeção fim de mês (#20)</li></ul>
+    </div>
+    <div class="card">
+      <h4>Sprint 4 · Diferenciais premium</h4>
+      <p class="muted">Justificar a assinatura.</p>
+      <ul><li>Insights proativos de IA (#51)</li><li>Detecção de assinaturas esquecidas (#32)</li><li>Importação OFX/CSV (#28)</li><li>Categorização automática (#27)</li><li>Reposicionar preço (#9)</li></ul>
+    </div>
+    <div class="card">
+      <h4>Sprint 5 · Crescimento & marca</h4>
+      <p class="muted">Preparar escala e aquisição.</p>
+      <ul><li>Identidade de marca própria (#13)</li><li>Plano Família (#18)</li><li>Programa de indicação (#42)</li><li>Notificações push (#21)</li><li>Faturas de cartão (#10)</li></ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 16 REMOVER ============ -->
+<section id="s16">
+  <h2><span class="n">16.</span> O que remover / simplificar</h2>
+  <ul>
+    <li><strong>Complexidade multi-tenant/Organizações exposta ao consumidor.</strong> Ótimo no backend, mas confunde num app B2C. Esconder até existir "Plano Família".</li>
+    <li><strong>Previsão com regressão linear no dashboard principal.</strong> É valioso, mas rouba foco. Mover para um módulo "Análises" (PRO).</li>
+    <li><strong>Patrimônio na home.</strong> Público avançado; deveria ser opcional, não default.</li>
+    <li><strong>Excesso de seções no dashboard.</strong> De ~12 para 3–4. Menos é mais retenção.</li>
+    <li><strong>Modelo de cripto at-rest "meia-boca".</strong> Ou faz direito (derivada do PIN, ligada por padrão) ou remove a promessa — meio-termo gera risco reputacional.</li>
+    <li><strong>Menu duplicado com marcação repetida.</strong> Unificar a fonte de dados de navegação.</li>
+    <li><strong>Screenshots no repositório.</strong> Fora do versionamento.</li>
+  </ul>
+</section>
+
+<!-- ============ 17 UAU ============ -->
+<section id="s17">
+  <h2><span class="n">17.</span> O efeito "UAU"</h2>
+  <div class="grade">Parcial <small>· Impressiona quem entende de código, não ainda o usuário comum</small></div>
+  <p><strong>Existe efeito UAU técnico:</strong> um desenvolvedor ou investidor que olha o código fica impressionado — DDD, 2FA, Open Finance, OCR, IA, PWA, testes com axe-core. É um portfólio de engenharia sério.</p>
+  <p><strong>Mas para o usuário final?</strong> Ainda parece "mais um app financeiro competente". Ele abre, vê um dashboard cheio, e não tem um <em>momento</em> que o faça dizer "isso é diferente". O UAU do usuário não vem de ter features — vem de <em>sentir</em> que o app pensa por ele.</p>
+  <h4>O que falta para o momento memorável</h4>
+  <ul>
+    <li><strong>Insight proativo no primeiro uso:</strong> "Detectei R$ 240/mês em assinaturas — 3 você não usa há 60 dias." Isso é UAU.</li>
+    <li><strong>Onboarding que entrega valor em 30 segundos:</strong> conectar o banco (Open Finance) e ver a vida financeira aparecer sozinha, sem digitar nada.</li>
+    <li><strong>Projeção emocional:</strong> "Neste ritmo, você fecha o mês com R$ 380 sobrando" — clareza que nenhum extrato dá.</li>
+    <li><strong>Celebração de metas</strong> com animação — a camada emocional que o Nubank domina.</li>
+  </ul>
+  <div class="callout dark"><strong>Resumo:</strong> você construiu o motor de um carro premium. Falta o test-drive que faz o cliente se apaixonar nos primeiros 30 segundos. O UAU está a 2–3 features de distância — todas de <em>percepção</em>, não de engenharia.</div>
+</section>
+
+<!-- ============ 18 NOTA FINAL ============ -->
+<section id="s18">
+  <h2><span class="n">18.</span> Nota final</h2>
+  <table>
+    <tr><th>Dimensão</th><th class="n">Nota</th><th>Visual</th></tr>
+    <tr><td>Primeira impressão</td><td class="n">78</td><td><div class="bar"><i style="width:78%;background:var(--regular)"></i></div></td></tr>
+    <tr><td>UI</td><td class="n">80</td><td><div class="bar"><i style="width:80%;background:var(--bom)"></i></div></td></tr>
+    <tr><td>UX</td><td class="n">72</td><td><div class="bar"><i style="width:72%;background:var(--regular)"></i></div></td></tr>
+    <tr><td>Arquitetura front-end</td><td class="n">52</td><td><div class="bar"><i style="width:52%;background:var(--ruim)"></i></div></td></tr>
+    <tr><td>Funcionalidades</td><td class="n">85</td><td><div class="bar"><i style="width:85%;background:var(--bom)"></i></div></td></tr>
+    <tr><td>Segurança</td><td class="n">74</td><td><div class="bar"><i style="width:74%;background:var(--regular)"></i></div></td></tr>
+    <tr><td>Performance</td><td class="n">58</td><td><div class="bar"><i style="width:58%;background:var(--ruim)"></i></div></td></tr>
+    <tr><td>Escalabilidade</td><td class="n">60</td><td><div class="bar"><i style="width:60%;background:var(--ruim)"></i></div></td></tr>
+    <tr><td>Monetização</td><td class="n">76</td><td><div class="bar"><i style="width:76%;background:var(--regular)"></i></div></td></tr>
+    <tr><td>Acessibilidade</td><td class="n">79</td><td><div class="bar"><i style="width:79%;background:var(--regular)"></i></div></td></tr>
+    <tr><td>Facilidade para iniciantes</td><td class="n">70</td><td><div class="bar"><i style="width:70%;background:var(--regular)"></i></div></td></tr>
+    <tr><td>Potencial comercial</td><td class="n">72</td><td><div class="bar"><i style="width:72%;background:var(--regular)"></i></div></td></tr>
+    <tr><td>Potencial de viralização</td><td class="n">45</td><td><div class="bar"><i style="width:45%;background:var(--ruim)"></i></div></td></tr>
+    <tr><td>Potencial competitivo</td><td class="n">68</td><td><div class="bar"><i style="width:68%;background:var(--regular)"></i></div></td></tr>
+  </table>
+  <div style="display:flex;align-items:center;gap:24px;margin-top:26px;flex-wrap:wrap">
+    <div class="final-num">71</div>
+    <div>
+      <strong style="font-size:19px">Nota final: 71/100</strong>
+      <p class="muted" style="margin:4px 0 0;max-width:520px">Média ponderada das 14 dimensões, com peso maior em arquitetura, funcionalidades e confiança de dados. Um produto <strong>bom e ambicioso</strong>, freado por dívida técnica de frontend e por lacunas de percepção — não de capacidade.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 19 VEREDITO ============ -->
+<section id="s19">
+  <h2><span class="n">19.</span> Veredito</h2>
+
+  <h4>Você investiria neste produto?</h4>
+  <p><strong>Como investidor-anjo, sim — com condições.</strong> O escopo entregue por (aparentemente) um autor é excepcional e prova capacidade de execução. Investiria num cheque pré-seed condicionado a: (1) resolver a camada de dados (server-first), (2) refatorar o frontend, (3) provar ativação/retenção com métricas reais. Sem isso, é um belo protótipo, não um negócio.</p>
+
+  <h4>Está pronto para lançamento (mundial)?</h4>
+  <p><strong>Não.</strong> O modelo <code>localStorage</code>-first e a performance de carga inviabilizam escala. Corre risco de perder dados de usuário — inaceitável num app de dinheiro.</p>
+
+  <h4>Está pronto para soft launch?</h4>
+  <p><strong>Sim, com ressalvas.</strong> Para um beta fechado (centenas a poucos milhares de usuários), com aviso claro de backup e sync ligado, funciona bem e vai gerar aprendizado valioso.</p>
+
+  <h4>Está pronto para cobrar assinatura?</h4>
+  <p><strong>Ainda não.</strong> A infraestrutura de billing está pronta, mas cobrar exige garantir que o dado do usuário nunca some e entregar valor premium percebido. Comece grátis, colete confiança, depois monetize.</p>
+
+  <h4>Quanto você pagaria por mês?</h4>
+  <p>Como usuário: <strong>R$ 12–17/mês</strong> se o Open Finance + backup multi-dispositivo funcionarem perfeitamente. Acima disso, só com insights de IA que economizem dinheiro de verdade.</p>
+
+  <h4>O que impede uma nota 100/100?</h4>
+  <ul>
+    <li>Frontend legado (globais, 85 scripts, sem bundle em produção).</li>
+    <li>Dados no cliente em vez de server-first → risco de perda.</li>
+    <li>Performance de carregamento.</li>
+    <li>Falta de percepção premium / efeito UAU para o usuário comum.</li>
+    <li>Cripto local frágil por padrão.</li>
+    <li>Preço desalinhado ao mercado.</li>
+  </ul>
+
+  <div class="callout">
+    <h4 style="margin-top:0">As 10 prioridades absolutas antes do lançamento mundial</h4>
+    <ol>
+      <li>Tornar o <strong>backend a fonte da verdade</strong>; localStorage vira cache offline com sync robusto.</li>
+      <li><strong>Backup em nuvem</strong> automático + indicador visível de "salvo/sincronizado".</li>
+      <li>Servir o <strong>bundle Vite</strong> (minificado, <code>defer</code>, code-splitting) em produção.</li>
+      <li>Refatorar globais para <strong>ES Modules</strong>.</li>
+      <li>Corrigir <strong>CSP de produção</strong> (remover localhost) e auditar <code>innerHTML</code>/XSS.</li>
+      <li><strong>Simplificar o dashboard</strong> a 3–4 blocos essenciais.</li>
+      <li><strong>Onboarding com aha moment</strong> (Open Finance conectando a vida financeira em 30s).</li>
+      <li>Um <strong>insight proativo de IA</strong> memorável (assinaturas esquecidas / projeção de fim de mês).</li>
+      <li><strong>Cripto local derivada do PIN</strong>, ligada por padrão — ou não prometer "cripto local".</li>
+      <li><strong>Reposicionar preço</strong> (R$ 16,90) e instrumentar <strong>analytics + Sentry</strong> para decidir com dados.</li>
+    </ol>
+  </div>
+
+  <div class="callout dark">
+    <strong>Palavra final, sem paninho quente:</strong> o FinançasPro tem <em>ossatura</em> de produto sério e escopo que envergonha muita startup financiada. Ele não é medíocre — é ambicioso demais tarde demais na camada errada. Conserte a fundação do frontend e a confiança dos dados, dê ao usuário um momento de encantamento nos primeiros 30 segundos, e essa nota 71 vira 88+ em dois meses de trabalho focado. O teto é alto. O caminho é claro. Falta disciplina de priorização, não talento.
+  </div>
+</section>
+
+</div>
+
+<footer>
+  <div class="wrap">
+    Auditoria gerada em 09/07/2026 · Baseada na análise direta do código-fonte (frontend, backend, Prisma, PWA e segurança).<br>
+    Documento crítico de due diligence — as notas refletem padrão de mercado premium (Apple / Stripe / Nubank), não uma comparação com projetos amadores.
+  </div>
+</footer>
+
+</body>
+</html>

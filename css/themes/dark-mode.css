@@ -667,3 +667,9 @@
               0 2px 8px rgba(0, 0, 0, 0.3) !important;
   border-color: rgba(0, 180, 100, 0.35) !important;
 }
+
+/* Indicador de sincronização — variante escura (auditoria #4) */
+[data-theme="dark"] .sync-indicator{
+  background:rgba(20,28,24,.95); color:#eaf3ee; border-color:#22302a;
+  box-shadow:0 4px 16px rgba(0,0,0,.4);
+}

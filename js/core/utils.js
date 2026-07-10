@@ -104,6 +104,46 @@ var UTILS = {
     }, 3000);
   },
 
+  mostrarToastAcao: function(mensagem, rotuloAcao, aoClicar, opts) {
+    opts = opts || {};
+    var tipo = opts.tipo || 'info';
+    var duracao = typeof opts.duracaoMs === 'number' ? opts.duracaoMs : 6000;
+
+    var toast = document.createElement('div');
+    toast.className = 'toast toast-' + tipo + ' toast-acao';
+    toast.setAttribute('role', 'status');
+    toast.setAttribute('aria-live', 'polite');
+
+    var texto = document.createElement('span');
+    texto.className = 'toast-acao-texto';
+    texto.textContent = mensagem;
+    toast.appendChild(texto);
+
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'toast-acao-btn';
+    btn.textContent = rotuloAcao || 'Desfazer';
+
+    var encerrado = false;
+    function fechar() {
+      if (encerrado) return;
+      encerrado = true;
+      toast.classList.remove('show');
+      setTimeout(function() { toast.remove(); }, 300);
+    }
+    btn.addEventListener('click', function() {
+      try { if (typeof aoClicar === 'function') aoClicar(); }
+      finally { fechar(); }
+    });
+    toast.appendChild(btn);
+
+    document.body.appendChild(toast);
+    if (typeof ariaLive !== 'undefined') { ariaLive.announceToast(mensagem, tipo); }
+    setTimeout(function() { toast.classList.add('show'); }, 10);
+    setTimeout(fechar, duracao);
+    return { fechar: fechar };
+  },
+
   calcularSaldo: function(transacoes) {
     return transacoes.reduce(function(acc, t) {
       return t.tipo === CONFIG.TIPO_RECEITA ? acc + t.valor : acc - t.valor;

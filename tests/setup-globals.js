@@ -26,7 +26,7 @@ global.fetch = jest.fn(() =>
 // ── CONFIG global (espelha js/config.js) ─────────────────────────────────────
 global.CONFIG = {
   APP_NAME: 'FinançasPro MVP',
-  VERSION: '3.0.0',
+  VERSION: '11.0.0',
   STORAGE_TRANSACOES: 'fp-transacoes',
   STORAGE_CONFIG: 'fp-config',
   STORAGE_CONTAS: 'fp-contas',

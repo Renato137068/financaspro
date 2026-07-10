@@ -1,11 +1,23 @@
 node_modules/
-.claude/worktrees/
+.claude/
 .data/
 .env
 *.env.local
 dist/
 coverage/
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
 *.log
 ~$*
 .DS_Store
 Thumbs.db
+*.keystore
+*.jks
+android/keystore.properties
+
+# temporários de sandbox / resultados de teste
+.fuse_hidden*
+test-results/
+_pilot_*

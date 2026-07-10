@@ -23,6 +23,11 @@
   // Cache de elementos DOM para evitar consultas repetidas
   var _cachedElements = {};
 
+  function _nomeExibicao(nome) {
+    if (!nome || nome === 'Usuario') return 'Usuário';
+    return nome;
+  }
+
   function _dadosTransacoes() {
     if (_cachedTransacoes === null) {
       _cachedTransacoes = (typeof TRANSACOES !== 'undefined' && TRANSACOES.obterResumoMes)
@@ -100,12 +105,32 @@
     this.renderChartCategorias();
     this.renderOrcamento();
     this.renderUltimasTransacoes();
+    if (typeof INIT_METAS !== 'undefined' && INIT_METAS.renderResumo) {
+      INIT_METAS.renderResumo();
+    }
+    if (typeof INIT_CONTAS_PAGAR !== 'undefined') {
+      INIT_CONTAS_PAGAR.render();
+      INIT_CONTAS_PAGAR.renderResumo();
+    }
+    if (typeof INIT_ASSINATURAS !== 'undefined') {
+      INIT_ASSINATURAS.renderResumo();
+    }
+    if (typeof INIT_PATRIMONIO !== 'undefined') {
+      INIT_PATRIMONIO.renderResumo();
+    }
+    if (typeof INIT_RELATORIOS !== 'undefined' && INIT_RELATORIOS.render) {
+      INIT_RELATORIOS.render();
+    }
 
     this._ctx = null;
 
     /* Fase 7: Remove skeleton após primeiro render */
     if (typeof SKELETON !== 'undefined' && SKELETON.esconder) {
       SKELETON.esconder();
+    }
+
+    if (typeof renderLucideIconsNow === 'function') {
+      renderLucideIconsNow();
     }
   };
 
@@ -119,20 +144,20 @@
       if (!el) return;
 
       var ctx    = this._ctx;
-      var nome   = ctx.config.nome || 'Usuario';
+      var nome   = _nomeExibicao(ctx.config.nome);
       var hora   = ctx.agora.getHours();
       var saudacao = hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite';
       var mesNome  = ctx.agora.toLocaleDateString('pt-BR', { month: 'long' });
       mesNome = mesNome.charAt(0).toUpperCase() + mesNome.slice(1);
 
-      var container = this.create('div', { class: 'greeting-text' });
+      var container = this.create('div', { class: 'greeting-text greeting-text--resumo' });
 
       var hello = this.create('span', { class: 'greeting-hello' });
       hello.textContent = saudacao + ', ' + nome + '!';
       container.appendChild(hello);
 
       var sub = this.create('span', { class: 'greeting-context' });
-      sub.textContent = 'Seu resumo de ' + mesNome + ' ' + ctx.ano;
+      sub.textContent = 'Resumo de ' + mesNome + ' ' + ctx.ano;
       container.appendChild(sub);
 
       _clearEl(el);
@@ -255,7 +280,7 @@
         var pctGasto = (resumo.despesas / renda) * 100;
         var tipo1 = pctGasto > 100 ? 'negativo' : 'positivo';
         container.appendChild(UI.Indicador.render(
-          '<i data-lucide="wallet" aria-hidden="true"></i>',
+          'wallet',
           pctGasto.toFixed(0) + '% da renda',
           pctGasto > 100 ? 'Indicador alerta' : 'Indicador ok',
           tipo1,
@@ -264,7 +289,7 @@
       }
 
       container.appendChild(UI.Indicador.render(
-        '<i data-lucide="calendar" aria-hidden="true"></i>',
+        'calendar',
         diasRestantes + ' dias restantes',
         diasRestantes < 5 ? 'Fim do mês próximo' : 'Tempo até fechamento',
         diasRestantes < 5 ? 'alerta' : 'neutro'
@@ -273,7 +298,7 @@
       if (renda > 0) {
         var economia = renda - resumo.despesas;
         container.appendChild(UI.Indicador.render(
-          economia >= 0 ? '<i data-lucide="trending-up" aria-hidden="true"></i>' : '<i data-lucide="trending-down" aria-hidden="true"></i>',
+          economia >= 0 ? 'trending-up' : 'trending-down',
           this.money(Math.abs(economia)),
           economia >= 0 ? 'Economia prevista' : 'Déficit estimado',
           economia >= 0 ? 'positivo' : 'negativo'
@@ -304,7 +329,7 @@
       var ctx = this._ctx;
       var tx  = ctx.tx;
       if (!tx) {
-        el.innerHTML = UI.EmptyState.html('<i data-lucide="trending-up" aria-hidden="true"></i>', 'Registre transações para ver a evolução dos seus gastos ao longo dos meses.', 'novo');
+        el.innerHTML = UI.EmptyState.html({ lucide: 'trending-up', titulo: 'Registre transações para ver a evolução dos seus gastos ao longo dos meses.', aba: 'novo' });
         if (typeof renderLucideIcons === 'function') {
           renderLucideIcons(el);
         }
@@ -320,7 +345,7 @@
 
       var temDados = dados.some(function(d) { return d.receitas > 0 || d.despesas > 0; });
       if (!temDados) {
-        el.innerHTML = UI.EmptyState.html('<i data-lucide="trending-up" aria-hidden="true"></i>', 'Registre transações para ver a evolução dos seus gastos ao longo dos meses.', 'novo');
+        el.innerHTML = UI.EmptyState.html({ lucide: 'trending-up', titulo: 'Registre transações para ver a evolução dos seus gastos ao longo dos meses.', aba: 'novo' });
         if (typeof renderLucideIcons === 'function') {
           renderLucideIcons(el);
         }
@@ -348,7 +373,7 @@
       var ctx = this._ctx;
       var tx  = ctx.tx;
       if (!tx || !tx.obterResumoPorCategoria) {
-        el.innerHTML = UI.EmptyState.html('<i data-lucide="pie-chart" aria-hidden="true"></i>', 'Registre despesas para ver a distribuição por categoria.', 'novo');
+        el.innerHTML = UI.EmptyState.html({ lucide: 'pie-chart', titulo: 'Registre despesas para ver a distribuição por categoria.', aba: 'novo' });
         if (typeof renderLucideIcons === 'function') {
           renderLucideIcons(el);
         }
@@ -368,7 +393,7 @@
       });
 
       if (cats.length === 0) {
-        el.innerHTML = UI.EmptyState.html('<i data-lucide="pie-chart" aria-hidden="true"></i>', 'Registre despesas para ver a distribuição por categoria.', 'novo');
+        el.innerHTML = UI.EmptyState.html({ lucide: 'pie-chart', titulo: 'Registre despesas para ver a distribuição por categoria.', aba: 'novo' });
         if (typeof renderLucideIcons === 'function') {
           renderLucideIcons(el);
         }
@@ -392,7 +417,7 @@
       var ctx = this._ctx;
       var orc = ctx.orc;
       if (!orc) {
-        _setChildren(el, [UI.EmptyState.render('<i data-lucide="bar-chart" aria-hidden="true"></i>', 'Defina limites mensais para acompanhar seus gastos por categoria.', 'orcamento')]);
+        _setChildren(el, [UI.EmptyState.render({ lucide: 'bar-chart', titulo: 'Defina limites mensais para acompanhar seus gastos por categoria.', aba: 'orcamento' })]);
         if (typeof renderLucideIcons === 'function') {
           renderLucideIcons(el);
         }
@@ -402,7 +427,7 @@
       var status = orc.obterStatusTodos(ctx.mes, ctx.ano);
 
       if (status.length === 0) {
-        _setChildren(el, [UI.EmptyState.render('<i data-lucide="bar-chart" aria-hidden="true"></i>', 'Defina limites mensais para acompanhar seus gastos por categoria.', 'orcamento')]);
+        _setChildren(el, [UI.EmptyState.render({ lucide: 'bar-chart', titulo: 'Defina limites mensais para acompanhar seus gastos por categoria.', aba: 'orcamento' })]);
         if (typeof renderLucideIcons === 'function') {
           renderLucideIcons(el);
         }
@@ -437,7 +462,7 @@
       }
 
       if (transacoes.length === 0) {
-        _setChildren(el, [UI.EmptyState.render('<i data-lucide="clock" aria-hidden="true"></i>', 'Nenhuma transação registrada ainda. Comece adicionando sua primeira!', 'novo')]);
+        _setChildren(el, [UI.EmptyState.render({ lucide: 'clock', titulo: 'Nenhuma transação registrada ainda. Comece adicionando sua primeira!', aba: 'novo' })]);
         if (typeof renderLucideIcons === 'function') {
           renderLucideIcons(el);
         }

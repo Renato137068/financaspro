@@ -159,18 +159,21 @@ var AI_ENGINE = {
     });
     var taxaMedia = taxas.reduce(function(a, b) { return a + b; }, 0) / taxas.length;
 
-    // Tendência geral: subida/queda de despesas
-    var tendencia = 'estavel';
-    if (Math.abs(regDesp.slope) > mediaDesp * 0.05) {
-      tendencia = regDesp.slope > 0 ? 'gastos-crescendo' : 'gastos-diminuindo';
-    } else if (Math.abs(regRec.slope) > mediaRec * 0.05) {
-      tendencia = regRec.slope > 0 ? 'receitas-crescendo' : 'receitas-diminuindo';
-    }
-
     // Confiança baseada em R² e quantidade de meses
     var confianca = janela.length >= 4
       ? (regDesp.r2 > 0.5 ? 'alta' : 'media')
       : 'baixa';
+
+    // Tendência geral: exige sinal mais forte (>10% da média) para não confundir
+    // ruído/eventos pontuais (ex.: 13º salário) com tendência real.
+    var tendencia = 'estavel';
+    if (Math.abs(regDesp.slope) > mediaDesp * 0.10) {
+      tendencia = regDesp.slope > 0 ? 'gastos-crescendo' : 'gastos-diminuindo';
+    } else if (Math.abs(regRec.slope) > mediaRec * 0.10) {
+      tendencia = regRec.slope > 0 ? 'receitas-crescendo' : 'receitas-diminuindo';
+    }
+    // Com poucos meses / ajuste fraco, não afirmar alta ou baixa.
+    if (confianca === 'baixa') tendencia = 'estavel';
 
     // Projetar próximos meses
     var n     = janela.length;
@@ -332,7 +335,7 @@ var AI_ENGINE = {
       alertas.push({
         id: 'saldo-negativo',
         tipo: 'saldo',
-        titulo: '🚨 Saldo negativo',
+        titulo: 'Saldo negativo',
         msg: 'Você está gastando R$ ' + Math.abs(mesSel.saldo).toFixed(2).replace('.', ',') + ' a mais do que recebe este mês.',
         gravidade: 'critica'
       });
@@ -349,7 +352,7 @@ var AI_ENGINE = {
         alertas.push({
           id: 'orc-excedido-' + cat,
           tipo: 'orcamento',
-          titulo: '⚠️ Orçamento excedido',
+          titulo: 'Orçamento excedido',
           msg: cat.charAt(0).toUpperCase() + cat.slice(1) + ': R$ ' + gasto.toFixed(2).replace('.', ',') + ' / R$ ' + limite.toFixed(2).replace('.', ','),
           gravidade: 'alta',
           acao: 'verExtrato',
@@ -359,7 +362,7 @@ var AI_ENGINE = {
         alertas.push({
           id: 'orc-alerta-' + cat,
           tipo: 'orcamento',
-          titulo: '📊 Orçamento quase no limite',
+          titulo: 'Orçamento quase no limite',
           msg: cat.charAt(0).toUpperCase() + cat.slice(1) + ': ' + Math.round(pct * 100) + '% usado.',
           gravidade: 'media',
           acao: 'verExtrato',
@@ -381,7 +384,7 @@ var AI_ENGINE = {
           alertas.push({
             id: 'spike-gastos',
             tipo: 'padrao',
-            titulo: '<i data-lucide="trending-up" aria-hidden="true"></i> Gastos acima do normal',
+            titulo: 'Gastos acima do normal',
             msg: 'Suas despesas este mês estão ' + variacao + '% acima da média recente.',
             gravidade: 'media'
           });
@@ -402,7 +405,7 @@ var AI_ENGINE = {
         alertas.push({
           id: 'recorrente-' + (r.id || r.descricao),
           tipo: 'recorrente',
-          titulo: '📅 Vencimento próximo',
+          titulo: 'Vencimento próximo',
           msg: '"' + (typeof UTILS !== 'undefined' ? UTILS.escapeHtml(r.descricao || 'Conta') : (r.descricao || 'Conta')) + '" vence em ' + (diaVenc - diaMes) + ' dia(s) — R$ ' + Number(r.valor).toFixed(2).replace('.', ','),
           gravidade: 'media',
           acao: 'lancarRecorrente',
@@ -418,7 +421,7 @@ var AI_ENGINE = {
       alertas.push({
         id: 'sem-lancamento',
         tipo: 'habito',
-        titulo: '💡 Sem lançamentos hoje',
+        titulo: 'Sem lançamentos hoje',
         msg: 'Registre suas movimentações para manter o controle em dia.',
         gravidade: 'baixa',
         acao: 'abrirNovo',
@@ -431,7 +434,7 @@ var AI_ENGINE = {
       alertas.push({
         id:       'sem-receita',
         tipo:     'habito',
-        titulo:   '💰 Nenhuma receita registrada',
+        titulo:   'Nenhuma receita registrada',
         msg:      'Você está no dia ' + diaMes + ' do mês sem lançar nenhuma receita. Registre seu salário ou outras entradas.',
         gravidade: 'alta',
         acao:     'abrirNovo',
@@ -448,7 +451,7 @@ var AI_ENGINE = {
         alertas.push({
           id:       'projecao-negativa',
           tipo:     'projecao',
-          titulo:   '📅 Projeção: saldo negativo',
+          titulo:   'Projeção: saldo negativo',
           msg:      'No ritmo atual, você vai gastar R$ ' + projecaoDesp.toFixed(2).replace('.', ',') + ' este mês — saldo estimado: –R$ ' + Math.abs(saldoProj).toFixed(2).replace('.', ',') + '.',
           gravidade: 'alta'
         });
@@ -528,6 +531,90 @@ var AI_ENGINE = {
     return padroes.slice(0, 5);
   },
 
+  /**
+   * Detecta assinaturas/cobranças recorrentes que valem revisão ("esquecidas"):
+   * valor fixo (baixa variância), cobrado há vários meses e AINDA ativo.
+   * Traz o impacto anualizado — o dado que gera o "efeito UAU".
+   * Função pura e testável.
+   *
+   * @param {Array} transacoes
+   * @param {Object} [opts] { hoje:Date, minMeses:3, janelaDias:45, maxCV:0.15, limite:5 }
+   * @returns {Array} [{ nome, valorMensal, custoAnual, mesesAtivos, gastoTotal, ultimaCobranca, diasDesdeUltima }]
+   */
+  detectarAssinaturasEsquecidas: function(transacoes, opts) {
+    opts = opts || {};
+    var hoje       = opts.hoje || new Date();
+    var minMeses   = opts.minMeses   != null ? opts.minMeses   : 3;
+    var janelaDias = opts.janelaDias != null ? opts.janelaDias : 45;
+    var maxCV      = opts.maxCV       != null ? opts.maxCV      : 0.15;
+    var limite     = opts.limite     != null ? opts.limite     : 5;
+    if (!Array.isArray(transacoes)) return [];
+
+    var grupos = {};
+    transacoes.forEach(function(t) {
+      if (!t || t.tipo !== 'despesa' || !t.descricao || !t.data) return;
+      var key = String(t.descricao).toLowerCase().replace(/\s*\(\d+\/\d+\)/, '').trim().slice(0, 30);
+      if (!key || key.length < 3) return;
+      if (!grupos[key]) grupos[key] = { nome: String(t.descricao).trim(), meses: {}, valores: [], datas: [] };
+      grupos[key].meses[String(t.data).slice(0, 7)] = true;
+      grupos[key].valores.push(Number(t.valor) || 0);
+      grupos[key].datas.push(String(t.data).slice(0, 10));
+    });
+
+    var out = [];
+    Object.keys(grupos).forEach(function(k) {
+      var g = grupos[k];
+      var mesesAtivos = Object.keys(g.meses).length;
+      if (mesesAtivos < minMeses) return;
+
+      var vals  = g.valores;
+      var media = vals.reduce(function(a, b) { return a + b; }, 0) / vals.length;
+      if (media <= 0) return;
+
+      var variancia = vals.reduce(function(a, v) { return a + Math.pow(v - media, 2); }, 0) / vals.length;
+      var cv = Math.sqrt(variancia) / media;
+      if (cv > maxCV) return; // gasto variável — não é assinatura de valor fixo
+
+      var ultima     = g.datas.slice().sort()[g.datas.length - 1];
+      var diasDesde  = Math.floor((hoje - new Date(ultima + 'T00:00:00')) / 86400000);
+      if (diasDesde > janelaDias) return; // parou de cobrar — não é "ativa esquecida"
+
+      var valorMensal = Math.round(media * 100) / 100;
+      out.push({
+        nome:            g.nome,
+        chave:           k,
+        valorMensal:     valorMensal,
+        custoAnual:      Math.round(valorMensal * 12 * 100) / 100,
+        mesesAtivos:     mesesAtivos,
+        gastoTotal:      Math.round(vals.reduce(function(a, b) { return a + b; }, 0) * 100) / 100,
+        ultimaCobranca:  ultima,
+        diasDesdeUltima: diasDesde
+      });
+    });
+
+    out.sort(function(a, b) { return b.custoAnual - a.custoAnual; });
+    return out.slice(0, limite);
+  },
+
+  /**
+   * Mensagem-resumo das assinaturas esquecidas (ou null se não houver).
+   * @param {Array} transacoes
+   * @param {Object} [opts]
+   * @returns {{ quantidade, totalAnual, itens, texto }|null}
+   */
+  mensagemAssinaturasEsquecidas: function(transacoes, opts) {
+    var lista = this.detectarAssinaturasEsquecidas(transacoes, opts);
+    if (!lista.length) return null;
+    var totalAnual = Math.round(lista.reduce(function(a, s) { return a + s.custoAnual; }, 0) * 100) / 100;
+    return {
+      quantidade: lista.length,
+      totalAnual: totalAnual,
+      itens:      lista,
+      texto:      'Você tem ' + lista.length + ' cobrança(s) recorrente(s) somando R$ ' +
+                  totalAnual.toFixed(2).replace('.', ',') + '/ano. Ainda usa todas?'
+    };
+  },
+
   // ─────────────────────────────────────────────────────────────────
   // PROJEÇÕES E METAS
   // ─────────────────────────────────────────────────────────────────
@@ -537,8 +624,8 @@ var AI_ENGINE = {
    * @param {Array} transacoes
    * @returns {{ projecaoDespesas, projecaoReceitas, saldoProjetado, diasRestantes, diasDecorridos, dadosInsuficientes }}
    */
-  projetarFimMes: function(transacoes) {
-    var hoje           = new Date();
+  projetarFimMes: function(transacoes, hoje) {
+    hoje = hoje || new Date();
     var mesKey         = hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0');
     var diasDecorridos = hoje.getDate();
     var diasNoMes      = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate();
@@ -551,6 +638,12 @@ var AI_ENGINE = {
     var txMes = Array.isArray(transacoes) ? transacoes.filter(function(t) {
       return t && t.data && String(t.data).slice(0, 7) === mesKey;
     }) : [];
+
+    // Sem lançamentos no mês corrente → não há o que projetar. Evita mostrar
+    // "R$ 0,00 projetado" como se fosse um valor real (deve exibir estado vazio).
+    if (txMes.length === 0) {
+      return { dadosInsuficientes: true, diasDecorridos: diasDecorridos, diasRestantes: diasRestantes };
+    }
 
     var despesas = txMes.reduce(function(a, t) { return t.tipo === 'despesa' ? a + (Number(t.valor) || 0) : a; }, 0);
     var receitas = txMes.reduce(function(a, t) { return t.tipo === 'receita' ? a + (Number(t.valor) || 0) : a; }, 0);
@@ -567,6 +660,32 @@ var AI_ENGINE = {
       diasDecorridos:     diasDecorridos,
       dadosInsuficientes: false
     };
+  },
+
+  /**
+   * Mensagem amigável de projeção de fim de mês (positiva ou de alerta).
+   * Pura e testável. Retorna null quando não há dados suficientes.
+   * @param {Array} transacoes
+   * @param {Date} [hoje]
+   * @returns {{ tom:'positivo'|'neutro'|'alerta', saldoProjetado:number, texto:string }|null}
+   */
+  mensagemFimMes: function(transacoes, hoje) {
+    var p = this.projetarFimMes(transacoes, hoje);
+    if (!p || p.dadosInsuficientes) return null;
+    var s = p.saldoProjetado;
+    var abs = Math.abs(s).toFixed(2).replace('.', ',');
+    var tom, texto;
+    if (s > 0) {
+      tom = 'positivo';
+      texto = 'Neste ritmo, você fecha o mês com R$ ' + abs + ' sobrando.';
+    } else if (s < 0) {
+      tom = 'alerta';
+      texto = 'Neste ritmo, o mês fecha no vermelho: R$ ' + abs + ' negativos.';
+    } else {
+      tom = 'neutro';
+      texto = 'Neste ritmo, o mês fecha zerado.';
+    }
+    return { tom: tom, saldoProjetado: s, texto: texto };
   },
 
   /**

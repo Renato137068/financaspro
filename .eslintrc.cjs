@@ -14,8 +14,7 @@ module.exports = {
     'node_modules/',
     'dist/',
     'coverage/',
-    'AUDIT_REPORT_*.md',
-    '*AUDIT_REPORT*.md',
+    'android/',
   ],
   rules: {
     // The frontend is still a classic multi-script app with globals loaded by

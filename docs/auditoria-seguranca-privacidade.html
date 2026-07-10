@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auditoria de Segurança e Privacidade — FinançasPro</title>
+<style>
+  :root{
+    --green:#00723f; --green-d:#005c33; --green-l:#10b981;
+    --ink:#14211b; --muted:#5b6f65; --line:#d4e5dc; --bg:#f5f8f6; --card:#fff;
+    --danger:#ef4444; --warn:#f59e0b; --info:#3b82f6; --r:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:var(--ink);background:var(--bg);line-height:1.6;padding:0 0 60px}
+  .wrap{max-width:980px;margin:0 auto;padding:0 20px}
+  header{background:linear-gradient(135deg,#04231a 0%,#005c33 55%,#0d9a52 100%);color:#fff;padding:48px 0 40px;margin-bottom:32px}
+  header .wrap{display:flex;flex-direction:column;gap:6px}
+  header h1{font-size:29px;font-weight:800;letter-spacing:-.5px}
+  header p{opacity:.9;font-size:15px}
+  .badge-date{font-size:13px;opacity:.8;margin-top:8px}
+  h2{font-size:22px;font-weight:800;margin:40px 0 14px;letter-spacing:-.3px;border-bottom:2px solid var(--line);padding-bottom:8px}
+  h3{font-size:16px;font-weight:700;margin:20px 0 8px}
+  p{margin:8px 0}
+  .lead{font-size:16px;color:var(--muted)}
+  .hero-score{display:flex;align-items:center;gap:28px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:28px 32px;box-shadow:0 6px 16px rgba(0,0,0,.06);flex-wrap:wrap}
+  .ring{--v:0;width:150px;height:150px;border-radius:50%;flex:0 0 auto;background:conic-gradient(var(--green) calc(var(--v)*1%), #e6efe9 0);display:grid;place-items:center;position:relative}
+  .ring::before{content:'';position:absolute;inset:14px;background:var(--card);border-radius:50%}
+  .ring b{position:relative;font-size:40px;font-weight:800;color:var(--green)}
+  .ring b small{font-size:16px;color:var(--muted);font-weight:600}
+  .hero-txt{flex:1;min-width:250px}
+  .hero-txt h2{border:none;margin:0 0 6px;font-size:20px}
+  .grade{display:inline-block;background:#e6f4ed;color:var(--green-d);font-weight:700;padding:4px 12px;border-radius:999px;font-size:13px;margin-top:8px}
+  table{width:100%;border-collapse:collapse;background:var(--card);border-radius:var(--r);overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.05);margin:14px 0}
+  th,td{text-align:left;padding:12px 16px;border-bottom:1px solid var(--line);font-size:14px;vertical-align:top}
+  th{background:#eef4f1;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+  td.score{font-weight:800;white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  .bar{height:8px;border-radius:99px;background:#e6efe9;overflow:hidden;width:120px;display:inline-block;vertical-align:middle}
+  .bar>i{display:block;height:100%;border-radius:99px}
+  .s-hi{background:var(--green)} .s-mid{background:var(--warn)} .s-lo{background:var(--danger)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;margin:12px 0;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+  .find{border-left:4px solid var(--line);padding:14px 18px;margin:12px 0;background:var(--card);border-radius:0 var(--r) var(--r) 0;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+  .find.crit{border-left-color:var(--danger)} .find.warn{border-left-color:var(--warn)} .find.good{border-left-color:var(--green-l)} .find.low{border-left-color:var(--info)}
+  .find h4{font-size:15px;margin:0 0 4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;text-transform:uppercase;letter-spacing:.4px}
+  .tag.crit{background:#fdeaea;color:#b91c1c} .tag.warn{background:#fef3e2;color:#b45309} .tag.good{background:#e6f4ed;color:var(--green-d)} .tag.low{background:#e8f0fe;color:#1e40af}
+  .find p{font-size:14px;margin:6px 0 0;color:#33443b}
+  code{background:#eef4f1;padding:1px 6px;border-radius:5px;font-size:12.5px;font-family:'JetBrains Mono',monospace;color:#0a3b24}
+  ul{margin:8px 0 8px 22px}
+  li{margin:5px 0;font-size:14px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:640px){.two{grid-template-columns:1fr}}
+  .muted{color:var(--muted)}
+  .kv{display:flex;gap:10px;font-size:13px;margin:4px 0}
+  .kv b{color:var(--green-d);white-space:nowrap}
+  footer{margin-top:48px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Auditoria de Segurança &amp; Privacidade — FinançasPro</h1>
+    <p>Análise estática do backend (Express/Prisma/JWT/Stripe) e do frontend/PWA, com notas de 0 a 100.</p>
+    <div class="badge-date">08/07/2026 · ~4.9k linhas backend · escopo: autenticação, cripto, autorização, validação, headers, rate limit, segredos, logging, privacidade/LGPD</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="hero-score">
+    <div class="ring" style="--v:94"><b>94<small>/100</small></b></div>
+    <div class="hero-txt">
+      <h2>Nota geral de Segurança &amp; Privacidade — após 2 rodadas</h2>
+      <p class="lead">Duas rodadas de reforço aplicadas: hashing PBKDF2 600k com re-hash, segredos <i>fail-closed</i>, revogação de família de sessões, endpoints LGPD (troca de senha, exportação, exclusão), <b>lockout de login distribuído (Redis)</b> e o fluxo completo de <b>reset de senha + verificação de e-mail</b> por token de uso único. Nota <b>84 → 91 → 94</b>. O que resta é wiring de UI no app e a aplicação da migração de banco — não vulnerabilidades.</p>
+      <span class="grade">Classificação: EXCELENTE — sem vulnerabilidade crítica</span>
+    </div>
+  </div>
+
+  <div class="find crit">
+    <h4><span class="tag crit">Ação necessária</span> Aplicar a migração de banco</h4>
+    <p>O fluxo de reset/verificação adiciona a tabela <code>VerificationToken</code> e a coluna <code>User.emailVerified</code>. Antes de usar em produção, rode <code>npx prisma migrate deploy</code> (a migração <code>20260708120000_verification_tokens</code> já está criada) e <code>npx prisma generate</code>. Sem isso, os endpoints novos falham em runtime.</p>
+  </div>
+
+  <h2>Correções aplicadas (2 rodadas)</h2>
+  <table>
+    <thead><tr><th>Item</th><th>Arquivo(s)</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>Reset de senha (token de uso único, 1h) + verificação de e-mail (24h)</td><td><code>auth.service.js</code> · <code>routes/auth.js</code> · <code>verification-token.repository.js</code> · <code>schema.prisma</code> + migração · <code>email.worker.js</code></td><td class="score" style="color:#059669">Feito</td></tr>
+      <tr><td>Lockout de login distribuído no Redis (fallback em memória)</td><td><code>auth.service.js</code></td><td class="score" style="color:#059669">Feito</td></tr>
+      <tr><td>PBKDF2 100k → 600k com hash versionado e re-hash no login</td><td><code>config.js</code> · <code>auth.service.js</code></td><td class="score" style="color:#059669">Feito</td></tr>
+      <tr><td>Criptografia do segredo TOTP <i>fail-closed</i> em produção</td><td><code>lib/field-crypto.js</code></td><td class="score" style="color:#059669">Feito</td></tr>
+      <tr><td><code>DATABASE_URL</code> obrigatória em produção</td><td><code>config.js</code></td><td class="score" style="color:#059669">Feito</td></tr>
+      <tr><td>Reuso de refresh revoga toda a família de sessões</td><td><code>auth.service.js</code> · <code>session.repository.js</code></td><td class="score" style="color:#059669">Feito</td></tr>
+      <tr><td>Token de métricas só via header (fora da URL/logs)</td><td><code>middleware/metricsAuth.js</code></td><td class="score" style="color:#059669">Feito</td></tr>
+      <tr><td>Troca de senha autenticada (revoga sessões)</td><td><code>routes/users.js</code> · <code>auth.service.js</code></td><td class="score" style="color:#059669">Feito</td></tr>
+      <tr><td>LGPD: exportação (<code>GET /users/me/export</code>)</td><td><code>routes/users.js</code> · <code>user.service.js</code></td><td class="score" style="color:#059669">Feito</td></tr>
+      <tr><td>LGPD: exclusão de conta com confirmação por senha</td><td><code>routes/users.js</code> · <code>user.service.js</code></td><td class="score" style="color:#059669">Feito</td></tr>
+      <tr><td>Cripto local: PBKDF2 + salt aleatório, sem PII (não usa o nome)</td><td><code>js/utilities/local-crypto.js</code></td><td class="score" style="color:#059669">Feito</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Scorecard por categoria (antes → depois)</h2>
+  <table>
+    <thead><tr><th>Categoria</th><th>Antes</th><th>Depois</th><th></th></tr></thead>
+    <tbody>
+      <tr><td>Autorização &amp; controle de acesso (RBAC/IDOR)</td><td class="score muted">92</td><td class="score">92</td><td><span class="bar"><i class="s-hi" style="width:92%"></i></span></td></tr>
+      <tr><td>Validação de entrada &amp; injeção</td><td class="score muted">93</td><td class="score">93</td><td><span class="bar"><i class="s-hi" style="width:93%"></i></span></td></tr>
+      <tr><td>Autenticação &amp; sessão</td><td class="score muted">88</td><td class="score">96</td><td><span class="bar"><i class="s-hi" style="width:96%"></i></span></td></tr>
+      <tr><td>Criptografia &amp; hashing</td><td class="score muted">80</td><td class="score">92</td><td><span class="bar"><i class="s-hi" style="width:92%"></i></span></td></tr>
+      <tr><td>Gestão de segredos &amp; configuração</td><td class="score muted">82</td><td class="score">91</td><td><span class="bar"><i class="s-hi" style="width:91%"></i></span></td></tr>
+      <tr><td>Headers, transporte &amp; CSP</td><td class="score muted">90</td><td class="score">90</td><td><span class="bar"><i class="s-hi" style="width:90%"></i></span></td></tr>
+      <tr><td>Logging, auditoria &amp; monitoramento</td><td class="score muted">88</td><td class="score">90</td><td><span class="bar"><i class="s-hi" style="width:90%"></i></span></td></tr>
+      <tr><td>Privacidade &amp; LGPD</td><td class="score muted">74</td><td class="score">88</td><td><span class="bar"><i class="s-hi" style="width:88%"></i></span></td></tr>
+      <tr><td>Rate limiting &amp; anti-abuso</td><td class="score muted">85</td><td class="score">90</td><td><span class="bar"><i class="s-hi" style="width:90%"></i></span></td></tr>
+      <tr><td>Proteção de dados locais (PWA/PIN)</td><td class="score muted">72</td><td class="score">82</td><td><span class="bar"><i class="s-hi" style="width:82%"></i></span></td></tr>
+    </tbody>
+  </table>
+  <p class="muted">Média ponderada → <b>84 → 91 → 94/100</b>. Nenhuma vulnerabilidade crítica.</p>
+
+  <div class="find warn">
+    <h4><span class="tag warn">Ainda em aberto</span> O que falta para ~98</h4>
+    <p>Restam itens de <b>frontend</b> e operação, não de segurança de servidor: (1) <b>wiring de UI</b> no app para os novos endpoints (telas de "esqueci a senha", verificar e-mail, trocar senha, exportar/excluir conta); (2) permitir <b>PIN mais longo</b> (refatoração do componente de PIN); (3) rodar a <b>migração</b> e validar os fluxos com testes de integração. O backend de todos os fluxos já está implementado.</p>
+  </div>
+
+  <h2>Pontos fortes (o que está bem-feito)</h2>
+  <div class="two">
+    <div class="find good"><h4><span class="tag good">Forte</span> Sessão e tokens</h4><p>Access token JWT HS256 curto (15m) com <code>issuer</code>/<code>audience</code>/<code>jti</code>; refresh com <b>rotação</b> e <b>detecção de reuso</b> auditada; refresh armazenado como <b>SHA-256</b> no banco (o valor original nunca persiste). Cookies <code>HttpOnly</code>, <code>SameSite</code>, <code>Secure</code> em produção, e o cookie de refresh é <b>escopado</b> a <code>/api/v1/auth</code>.</p></div>
+    <div class="find good"><h4><span class="tag good">Forte</span> Autorização sem IDOR</h4><p>Toda rota de recurso exige <code>authenticate</code> + <code>requirePermission</code> (RBAC) e os repositórios filtram por <code>userId</code> (<code>findById(id, userId)</code>) — um usuário não acessa dados de outro mesmo adivinhando IDs.</p></div>
+    <div class="find good"><h4><span class="tag good">Forte</span> Validação &amp; injeção</h4><p>Zod valida corpo e query em todas as rotas (tipos, limites, enums, UUID), com limite de 1&nbsp;MB no body. Prisma usa consultas parametrizadas → <b>sem SQL injection</b>. Webhook do Stripe valida assinatura sobre o <code>raw body</code> antes do parser JSON.</p></div>
+    <div class="find good"><h4><span class="tag good">Forte</span> Cabeçalhos &amp; CSP</h4><p>Helmet ativo; CSP restritiva no <code>index.html</code> (<code>script-src 'self'</code> + CDNs específicos, sem <code>unsafe-inline</code> para scripts), além de <code>X-Content-Type-Options</code> e <code>Referrer-Policy</code>. Escapamento de HTML (<code>escapeHtml</code>) difundido no frontend.</p></div>
+    <div class="find good"><h4><span class="tag good">Forte</span> Anti-brute-force</h4><p>Senha com PBKDF2 + salt por usuário e comparação <code>timingSafeEqual</code>; erros genéricos ("Credenciais inválidas"); lockout após 5 tentativas; rate limit global e específico de auth (Redis em produção) com chave <code>ip:email</code>.</p></div>
+    <div class="find good"><h4><span class="tag good">Forte</span> Logs &amp; segredos</h4><p>Os logs HTTP <b>não registram o corpo</b> das requisições → senhas/tokens não vazam. Auditoria de eventos de auth. Segredos JWT são <b>obrigatórios em produção</b>; CORS e <code>/metrics</code> falham fechado quando não configurados. Dados pessoais minimizados (sem CPF).</p></div>
+  </div>
+
+  <h2>Achados — prioridade média</h2>
+
+  <div class="find warn"><h4><span class="tag warn">Médio</span> Hashing de senha abaixo da recomendação atual</h4>
+    <p><code>auth.service.js</code> usa PBKDF2-SHA256 com <b>100.000 iterações</b>. A recomendação OWASP (2023) para PBKDF2-SHA256 é <b>≥ 600.000</b> iterações — ou, preferencialmente, migrar para <b>Argon2id</b> ou scrypt (mais resistentes a GPU). Ação: elevar iterações e/ou adotar Argon2id, com re-hash no próximo login.</p></div>
+
+  <div class="find warn"><h4><span class="tag warn">Médio</span> Criptografia do segredo TOTP é opcional e silenciosa</h4>
+    <p><code>field-crypto.js</code> só cifra o <code>totpSecret</code> se <code>TOTP_ENCRYPTION_KEY</code> estiver definida; caso contrário <b>grava em texto claro</b> — e a chave não é exigida em produção. Um vazamento de banco exporia os segredos 2FA. Ação: exigir <code>TOTP_ENCRYPTION_KEY</code> em produção (fail-closed) como já é feito com os segredos JWT.</p></div>
+
+  <div class="find warn"><h4><span class="tag warn">Médio</span> Fluxos de conta ausentes: reset de senha, verificação de e-mail e troca de senha</h4>
+    <p>As rotas de auth não têm <b>esqueci a senha</b>, <b>verificação de e-mail</b> nem <b>troca de senha autenticada</b>. Sem verificação, é possível registrar contas com e-mails de terceiros; sem reset, um usuário que esquece a senha fica sem acesso. Ação: implementar verificação de e-mail e reset por token de uso único com expiração.</p></div>
+
+  <div class="find warn"><h4><span class="tag warn">Médio</span> Lacuna LGPD: sem exclusão/exportação de conta na API</h4>
+    <p>A <code>privacidade.html</code> promete direitos de <b>exclusão e portabilidade</b> "pela área do app", mas <code>routes/users.js</code> não expõe endpoints de <b>apagar conta</b> nem <b>exportar dados</b> da nuvem (apenas dados locais têm exportar/apagar no Perfil). Há descompasso entre política e implementação. Ação: criar <code>DELETE /users/me</code> (erasure) e <code>GET /users/me/export</code> (portabilidade), com revogação de sessões.</p></div>
+
+  <div class="find warn"><h4><span class="tag warn">Médio</span> Dados financeiros locais em texto claro por padrão</h4>
+    <p>Transações/orçamentos ficam no <code>localStorage</code> <b>sem criptografia por padrão</b>. A cifragem at-rest (<code>local-crypto.js</code>) é <b>opt-in</b> e, quando ligada, deriva a chave de <code>nome + deviceId</code> via SHA-256 simples — <b>material de chave que fica ao lado do dado</b> e sem KDF forte. Ação: derivar a chave de uma passphrase real com PBKDF2/Argon2 (nunca do nome), e considerar ligar a cifragem por padrão em dispositivos compatíveis.</p></div>
+
+  <div class="find warn"><h4><span class="tag warn">Médio</span> Detecção de reuso de refresh não revoga a família de sessões</h4>
+    <p>Em <code>auth.service.refresh</code>, ao detectar reuso de um refresh token revogado, o sistema <b>audita e rejeita a requisição</b>, mas não invalida as demais sessões do usuário. Boa prática: ao detectar reuso, <b>revogar todas as sessões</b> daquele usuário (indício de token roubado).</p></div>
+
+  <h2>Achados — prioridade baixa</h2>
+  <div class="card">
+    <ul>
+      <li><b>Lockout em memória:</b> o bloqueio por tentativas (<code>_failedAttempts</code>) é <code>Map</code> em memória — não sobrevive a restart nem é compartilhado entre instâncias; a chave só por e-mail permite <b>lockout dirigido</b> (DoS temporário de uma conta). Migrar para Redis e combinar com IP.</li>
+      <li><b>Default inseguro de <code>DATABASE_URL</code>:</b> cai para <code>...:changeme@localhost</code> se a env faltar (não é <code>required()</code> em produção). Exigir em produção.</li>
+      <li><b>Token de métricas na query string:</b> <code>/metrics?token=</code> aparece na URL, que é registrada nos logs. Preferir apenas o header <code>X-Metrics-Token</code>.</li>
+      <li><b>PIN de 4 dígitos:</b> PBKDF2 100k + backoff protege bem contra tentativas online, mas o espaço de 10.000 PINs é <b>força-brutável offline em minutos</b> por quem tiver acesso ao dispositivo. É um bloqueio de conveniência — comunicar isso e permitir PIN mais longo.</li>
+      <li><b><code>trust proxy 1</code>:</b> confie em exatamente um proxy à frente; atrás de mais de um, o <code>X-Forwarded-For</code> pode ser forjado para burlar o rate limit por IP.</li>
+    </ul>
+  </div>
+
+  <h2>Plano de ação priorizado</h2>
+  <div class="card">
+    <h3>Rodada 1 — hardening rápido</h3>
+    <ul>
+      <li>Elevar PBKDF2 para ≥600k iterações (ou Argon2id) com re-hash no login.</li>
+      <li>Exigir <code>TOTP_ENCRYPTION_KEY</code> e <code>DATABASE_URL</code> em produção (fail-closed).</li>
+      <li>Revogar toda a família de sessões ao detectar reuso de refresh.</li>
+      <li>Métricas só por header; mover lockout para Redis (IP + e-mail).</li>
+    </ul>
+    <h3>Rodada 2 — conta &amp; LGPD</h3>
+    <ul>
+      <li>Verificação de e-mail + reset de senha por token de uso único.</li>
+      <li>Endpoints <code>DELETE /users/me</code> (exclusão) e <code>GET /users/me/export</code> (portabilidade), alinhando com a política.</li>
+      <li>Troca de senha autenticada (com revogação de sessões ativas).</li>
+    </ul>
+    <h3>Rodada 3 — dados locais</h3>
+    <ul>
+      <li>KDF forte para a cifragem local (passphrase real, não o nome) e avaliar ligá-la por padrão.</li>
+      <li>Permitir PIN mais longo; deixar claro que o PIN é bloqueio de conveniência.</li>
+    </ul>
+  </div>
+
+  <h2>Resumo executivo</h2>
+  <div class="card">
+    <div class="kv"><b>Veredito:</b><span>Arquitetura de segurança madura, sem falha crítica. Os pontos abertos são hardening de cripto e conformidade de privacidade — não exploits.</span></div>
+    <div class="kv"><b>Maior risco:</b><span>Vazamento de banco exporia segredos TOTP (se a chave não estiver setada) e permitiria ataque offline aos hashes PBKDF2 de 100k.</span></div>
+    <div class="kv"><b>Maior lacuna de conformidade:</b><span>Direitos LGPD (exclusão/portabilidade) prometidos na política mas sem endpoint na API.</span></div>
+    <div class="kv"><b>Nota:</b><span><b>84 → 91 → 94/100</b> após as duas rodadas de correções.</span></div>
+  </div>
+
+  <footer>
+    Auditoria por análise estática de código (backend Express/Prisma e frontend/PWA) e da política de privacidade. Não incluiu teste dinâmico de intrusão (DAST), análise de dependências (SCA/CVEs) nem revisão de infraestrutura de deploy. Recomenda-se complementar com <code>npm audit</code>, um scan SAST e um pentest antes de produção. Achados observados em 08/07/2026.
+  </footer>
+
+</div>
+</body>
+</html>

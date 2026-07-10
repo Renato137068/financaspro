@@ -68,6 +68,32 @@ const TEMPLATES = {
       `Acesse: ${CONFIG.appUrl}/billing`,
     ].join('\n'),
   }),
+
+  'password-reset': (data) => ({
+    subject: `Redefinição de senha — FinançasPro`,
+    text: [
+      `Olá${data.name ? ', ' + data.name : ''}!`,
+      ``,
+      `Recebemos um pedido para redefinir a senha da sua conta.`,
+      `Clique no link abaixo para criar uma nova senha:`,
+      `${data.url}`,
+      ``,
+      `O link expira em ${data.expiresMin || 60} minutos e só pode ser usado uma vez.`,
+      `Se você não solicitou, ignore este e-mail — sua senha continua a mesma.`,
+    ].join('\n'),
+  }),
+
+  'email-verify': (data) => ({
+    subject: `Confirme seu e-mail — FinançasPro`,
+    text: [
+      `Olá${data.name ? ', ' + data.name : ''}!`,
+      ``,
+      `Bem-vindo(a) ao FinançasPro. Confirme seu e-mail clicando no link:`,
+      `${data.url}`,
+      ``,
+      `O link expira em ${data.expiresHours || 24} horas.`,
+    ].join('\n'),
+  }),
 };
 
 async function sendEmail(job) {

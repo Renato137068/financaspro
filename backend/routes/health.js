@@ -4,6 +4,7 @@ import prisma from '../lib/db.js';
 import registry from '../lib/metrics.js';
 import redis from '../lib/redis.js';
 import { getWorkerStatus } from '../workers/index.js';
+import { requireMetricsAuth } from '../middleware/metricsAuth.js';
 
 const router = Router();
 
@@ -47,14 +48,14 @@ router.get('/health', async (_req, res) => {
 
 // ─── /metrics (formato Prometheus text) ──────────────────────────────────────
 
-router.get('/metrics', (_req, res) => {
+router.get('/metrics', requireMetricsAuth, (_req, res) => {
   res.setHeader('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
   res.send(registry.toPrometheus());
 });
 
 // ─── /metrics.json ────────────────────────────────────────────────────────────
 
-router.get('/metrics.json', (_req, res) => {
+router.get('/metrics.json', requireMetricsAuth, (_req, res) => {
   res.json(registry.toJSON());
 });
 

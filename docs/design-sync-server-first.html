@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design técnico — Sync Server-First · FinançasPro (#2)</title>
+<style>
+:root{--verde:#00723F;--verde2:#00a862;--vbg:#e6f4ec;--tinta:#0d1b14;--cinza:#5b6b62;--linha:#e4ebe7;--papel:#fff;--fundo:#f4f7f5;--crit:#c0392b;--alto:#e07b00;--ok:#1f9d55;--sombra:0 1px 2px rgba(13,27,20,.04),0 8px 28px rgba(13,27,20,.06);--sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;--mono:ui-monospace,SFMono-Regular,Menlo,monospace}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:var(--sans);color:var(--tinta);background:var(--fundo);line-height:1.62;font-size:15.5px}
+.wrap{max-width:960px;margin:0 auto;padding:0 22px}
+.cover{background:linear-gradient(150deg,#00532e,#00723F 50%,#00a862 130%);color:#fff;padding:60px 0 48px}
+.kicker{text-transform:uppercase;letter-spacing:.15em;font-size:12px;font-weight:700;opacity:.85;margin:0 0 12px}
+.cover h1{font-size:34px;margin:0 0 10px;font-weight:800;letter-spacing:-.02em}
+.cover p{font-size:17px;max-width:680px;opacity:.94;margin:0}
+.cover .meta{margin-top:22px;font-size:13px;opacity:.82;display:flex;gap:20px;flex-wrap:wrap}
+section{padding:38px 0;border-bottom:1px solid var(--linha)}
+h2{font-size:24px;font-weight:800;margin:0 0 12px;letter-spacing:-.01em}
+h2 .n{color:var(--verde)}
+h3{font-size:17px;margin:24px 0 6px;color:var(--verde)}
+h4{font-size:14.5px;margin:16px 0 4px;font-weight:700}
+p{margin:0 0 12px}code{background:#eef3f0;border:1px solid var(--linha);padding:1px 6px;border-radius:6px;font-size:12.5px;font-family:var(--mono);color:#0a4f30}
+ul,ol{margin:0 0 12px;padding-left:22px}li{margin:5px 0}
+pre{background:#0d1b14;color:#e7f0ea;border-radius:12px;padding:16px 18px;overflow:auto;font-family:var(--mono);font-size:12.5px;line-height:1.5;margin:12px 0}
+pre .c{color:#7fae95}pre .k{color:#8fd0ff}pre .s{color:#ffd591}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px;background:var(--papel);border:1px solid var(--linha);border-radius:12px;overflow:hidden}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--linha);vertical-align:top}
+th{background:#f0f5f2;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--cinza)}
+tr:last-child td{border-bottom:none}
+.callout{background:var(--vbg);border-left:4px solid var(--verde);border-radius:0 12px 12px 0;padding:14px 18px;margin:16px 0}
+.callout.warn{background:#fdf3e7;border-left-color:var(--alto)}
+.callout.crit{background:#fbe9e7;border-left-color:var(--crit)}
+.callout.dark{background:#0d1b14;color:#eaf3ee;border-left-color:var(--verde2)}.callout.dark strong{color:#fff}
+.toc{background:var(--papel);border:1px solid var(--linha);border-radius:16px;padding:20px 24px;box-shadow:var(--sombra);margin:30px 0}
+.toc ol{columns:2;column-gap:30px;margin:8px 0 0;font-size:14px}@media(max-width:600px){.toc ol{columns:1}}
+.toc a{color:var(--tinta)}
+.sev{font-weight:800;font-size:11px;padding:3px 8px;border-radius:6px;color:#fff}.sev.c{background:var(--crit)}.sev.a{background:var(--alto)}
+.phase{display:flex;gap:14px;align-items:flex-start;margin:12px 0;padding:14px 16px;background:var(--papel);border:1px solid var(--linha);border-radius:12px;box-shadow:var(--sombra)}
+.phase .num{flex:0 0 auto;width:34px;height:34px;border-radius:10px;background:var(--verde);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;background:var(--vbg);color:var(--verde);border:1px solid #cfe7db}
+footer{padding:34px 0 56px;color:#8a9791;font-size:12.5px;text-align:center}
+.diag{font-family:var(--mono);font-size:12px;white-space:pre;overflow:auto;background:#f7faf8;border:1px solid var(--linha);border-radius:12px;padding:14px}
+</style></head><body>
+
+<header class="cover"><div class="wrap">
+<p class="kicker">Design Técnico · Implementation-ready</p>
+<h1>Sync Server-First + Offline<br>FinançasPro (#2)</h1>
+<p>Plano para transformar o backend na fonte da verdade, com cache offline confiável, fila de escrita (outbox), sync incremental e resolução de conflito determinística — sem perder nenhuma escrita do usuário.</p>
+<div class="meta"><span>📄 Aterrissado no código atual (dados.js, state.service, Prisma)</span><span>🎯 Meta: 0 perda de dados</span></div>
+</div></header>
+
+<div class="wrap">
+
+<div class="toc"><strong>Conteúdo</strong>
+<ol>
+<li><a href="#s1">1. Diagnóstico do estado atual</a></li>
+<li><a href="#s2">2. Objetivo e princípios</a></li>
+<li><a href="#s3">3. Arquitetura alvo</a></li>
+<li><a href="#s4">4. Mudanças no modelo (Prisma)</a></li>
+<li><a href="#s5">5. Contrato de sync (API)</a></li>
+<li><a href="#s6">6. Resolução de conflito</a></li>
+<li><a href="#s7">7. Fila offline (outbox)</a></li>
+<li><a href="#s8">8. Migração faseada (feature flag)</a></li>
+<li><a href="#s9">9. Sequência de implementação</a></li>
+<li><a href="#s10">10. Plano de testes</a></li>
+<li><a href="#s11">11. Riscos e mitigações</a></li>
+<li><a href="#s12">12. Métricas de sucesso</a></li>
+</ol>
+</div>
+
+<section id="s1">
+<h2><span class="n">1.</span> Diagnóstico do estado atual</h2>
+<p>O que existe hoje (confirmado no código):</p>
+<ul>
+<li><strong>Frontend localStorage-first.</strong> Dados vivem em <code>fp-store-v2</code> / <code>STORAGE_TRANSACOES</code> etc. O sync (<code>DADOS.sincronizarComApi()</code>) faz <code>GET /api/v1/state</code> e o <code>_mergeSnapshotLocal()</code> <strong>substitui o array local inteiro</strong> via <code>_storageSetRaw(...)</code>.</li>
+<li><strong>Escrita com push individual, mas falha silenciosa.</strong> <code>_pushTransacaoApi</code>, <code>_deleteTransacaoApi</code>, <code>_pushContasApi</code>… todos terminam em <code>.catch(function(){ return transacao; })</code> — se estiver offline ou a API der 500, o push é <strong>perdido sem retry nem fila</strong>.</li>
+<li><strong>Backend já tem boa base.</strong> <code>StateService.getSnapshot()</code> monta o snapshot completo (até 1000 tx) com cache Redis de 30s. Modelos Prisma já têm <code>updatedAt @updatedAt</code>.</li>
+</ul>
+<h3>Os bugs concretos de perda de dados</h3>
+<table>
+<tr><th>#</th><th>Cenário</th><th>Resultado hoje</th><th>Gravidade</th></tr>
+<tr><td>D1</td><td>Crio transação offline → push falha (engolido) → depois roda um <code>sincronizarComApi()</code> (pull)</td><td>O pull faz full-replace e <strong>apaga</strong> a transação não sincronizada.</td><td><span class="sev c">CRÍTICO</span></td></tr>
+<tr><td>D2</td><td>Excluo item offline → DELETE falha → próximo pull</td><td>Sem tombstone, o item <strong>ressuscita</strong> vindo do servidor.</td><td><span class="sev c">CRÍTICO</span></td></tr>
+<tr><td>D3</td><td>Edito no aparelho A, depois abro o B com estado antigo e ele sincroniza</td><td>Full-replace por snapshot = last-writer-wins <strong>no nível do snapshot inteiro</strong>, pode clobber.</td><td><span class="sev a">ALTO</span></td></tr>
+<tr><td>D4</td><td>Merge não usa <code>updatedAt</code></td><td><code>TX_SELECT</code> nem retorna <code>updatedAt</code>; cliente não compara versões.</td><td><span class="sev a">ALTO</span></td></tr>
+<tr><td>D5</td><td>IDs: cliente gera <code>timestamp-random-counter</code> (<code>UTILS.gerarId</code>), servidor gera <code>uuid</code></td><td>Espaços de ID divergentes; create não é idempotente (dedupe frágil via <code>_apiId</code>).</td><td><span class="sev a">ALTO</span></td></tr>
+</table>
+<div class="callout crit"><strong>Raiz do problema:</strong> o cliente é a fonte da verdade e o servidor é um espelho best-effort. Num app de dinheiro isso é invertido. A correção é tornar o <strong>servidor autoritativo</strong> e o local um <strong>cache que nunca descarta escrita não confirmada</strong>.</div>
+</section>
+
+<section id="s2">
+<h2><span class="n">2.</span> Objetivo e princípios</h2>
+<ul>
+<li><strong>Servidor é a fonte da verdade.</strong> O local é cache offline.</li>
+<li><strong>Nenhuma escrita se perde.</strong> Toda mutação entra numa fila durável (outbox) e só sai após ACK do servidor.</li>
+<li><strong>Pull vira merge incremental por registro</strong> (delta por <code>updatedAt</code> + tombstones), nunca full-replace destrutivo.</li>
+<li><strong>Conflito é determinístico</strong> (LWW por <code>updatedAt</code>, regra única, sem merge parcial de campos de valor).</li>
+<li><strong>Idempotência ponta a ponta</strong> (mesma mutação aplicada 2× = 1 efeito).</li>
+<li><strong>Não-quebra:</strong> tudo atrás de feature flag, com o caminho antigo como fallback até a validação.</li>
+</ul>
+</section>
+
+<section id="s3">
+<h2><span class="n">3.</span> Arquitetura alvo</h2>
+<div class="diag">
+ UI (módulos)                                   Backend (autoritativo)
+    |  grava                                         |
+    v                                                v
+ DADOS.salvar*()  --enfileira-->  OUTBOX (localStorage: fp-outbox)   POST /api/v1/sync
+    |                                    |   flush (online/foreground/timer)  |
+    |  lê                                +----------------------------------> | aplica LWW + tombstone
+    v                                                                        | grava Postgres
+ CACHE local (fp-store-v2)  <--merge incremental--  GET /api/v1/sync?since=cursor
+    ^                                                (delta: upserts + deletes + novo cursor)
+    |  render
+ telas
+</div>
+<p>Três peças novas no cliente, uma no servidor:</p>
+<ul>
+<li><span class="badge">novo</span> <code>js/core/sync-engine.js</code> — outbox durável, flush com backoff, aplicação do delta no cache, cursor.</li>
+<li><span class="badge">alterado</span> <code>js/core/dados.js</code> — <code>salvar*</code>/<code>excluir*</code> enfileiram na outbox em vez de <code>.catch()</code> silencioso; pull vira merge incremental.</li>
+<li><span class="badge">novo</span> <code>backend/domain/services/sync.service.js</code> + rota <code>/api/v1/sync</code> (pull delta + push batch).</li>
+<li><span class="badge">alterado</span> Prisma: <code>deletedAt</code> (tombstone) e <code>updatedAt</code> exposto nos selects.</li>
+</ul>
+</section>
+
+<section id="s4">
+<h2><span class="n">4.</span> Mudanças no modelo (Prisma)</h2>
+<p>Adicionar <strong>soft-delete</strong> (tombstone) e garantir <code>updatedAt</code> em todas as entidades sincronizáveis: <code>Transaction</code>, <code>Account</code>, <code>Budget</code>, <code>RecurringTransaction</code>.</p>
+<pre><span class="c">// prisma/schema.prisma — por entidade sincronizável</span>
+model Transaction {
+  <span class="c">// ... campos atuais ...</span>
+  updatedAt   DateTime  @updatedAt        <span class="c">// já existe — passar a EXPOR</span>
+  <span class="k">deletedAt   DateTime?</span>                     <span class="c">// NOVO: tombstone (null = ativo)</span>
+  @@index([userId, updatedAt])            <span class="c">// NOVO: varredura de delta rápida</span>
+}</pre>
+<div class="callout"><strong>Idempotência de ID (resolve D5):</strong> passar o cliente a gerar <code>UUID v4</code> e o servidor a fazer <code>upsert</code> por <code>id</code>. Assim, reenviar uma criação não duplica. Migração: manter <code>_apiId</code> como ponte durante a transição; novos registros já nascem com UUID canônico.</div>
+<p>Migração de banco (não destrutiva; colunas nulas):</p>
+<pre><span class="c"># adiciona deletedAt e índices, sem downtime</span>
+npx prisma migrate dev --name add_sync_tombstones_and_updatedat_index</pre>
+<p>Nas queries de leitura, trocar <code>delete</code> físico por <code>update { deletedAt: now() }</code> e filtrar <code>deletedAt: null</code> no snapshot normal — mas <strong>incluir</strong> os tombstones no endpoint de delta.</p>
+</section>
+
+<section id="s5">
+<h2><span class="n">5.</span> Contrato de sync (API)</h2>
+<h3>Pull incremental — <code>GET /api/v1/sync?since=&lt;cursor&gt;</code></h3>
+<p>Retorna tudo que mudou desde o cursor (upserts + deletes), com um novo cursor. Cursor = timestamp do servidor (autoridade única de relógio) mais um desempate por id.</p>
+<pre><span class="c">// resposta</span>
+{
+  "cursor": "2026-07-09T14:03:11.482Z|9f2c...",   <span class="c">// opaco para o cliente</span>
+  "hasMore": false,
+  "changes": {
+    "transactions": [
+      { "id":"...", "type":"expense", "amount":"42.90", ..., "updatedAt":"...", "deletedAt":null },
+      { "id":"...", "deletedAt":"2026-07-09T13:59:00Z" }   <span class="c">// tombstone</span>
+    ],
+    "accounts": [ ... ], "budgets": [ ... ], "recurringTransactions": [ ... ]
+  }
+}</pre>
+<p>Implementação: <code>where: { userId, updatedAt: { gt: sinceTs } }</code> ordenado por <code>updatedAt, id</code>, paginado (<code>take: 500</code>, <code>hasMore</code>). Primeira sync = <code>since</code> vazio → snapshot completo paginado (reaproveita a lógica do <code>StateService</code>).</p>
+<h3>Push batch (flush da outbox) — <code>POST /api/v1/sync</code></h3>
+<pre><span class="c">// requisição</span>
+{
+  "mutations": [
+    { "opId":"uuid-idem", "entity":"transaction", "op":"upsert",
+      "id":"uuid", "clientUpdatedAt":"2026-07-09T13:50:00Z", "payload": { ... } },
+    { "opId":"uuid-idem", "entity":"transaction", "op":"delete",
+      "id":"uuid", "clientUpdatedAt":"2026-07-09T13:52:00Z" }
+  ]
+}
+<span class="c">// resposta</span>
+{
+  "results": [
+    { "opId":"uuid-idem", "status":"applied", "record": { ...authoritative... } },
+    { "opId":"uuid-idem", "status":"stale",   "record": { ...server-wins... } }
+  ],
+  "cursor": "..."   <span class="c">// cliente pode encadear um pull a partir daqui</span>
+}</pre>
+<ul>
+<li><code>opId</code> = chave de idempotência (dedupe de retries; guardar num set/janela ou tabela <code>SyncOp</code>).</li>
+<li>Cada mutação é validada com <strong>Zod</strong> (já usado no projeto) antes de aplicar.</li>
+<li>Status por item: <code>applied</code> · <code>stale</code> (servidor mais novo, devolve autoritativo) · <code>invalid</code>.</li>
+</ul>
+</section>
+
+<section id="s6">
+<h2><span class="n">6.</span> Resolução de conflito</h2>
+<p>Regra única, simples e à prova de dinheiro: <strong>Last-Writer-Wins por registro inteiro</strong>, comparando <code>clientUpdatedAt</code> (da mutação) com o <code>updatedAt</code> armazenado.</p>
+<table>
+<tr><th>Situação</th><th>Decisão</th></tr>
+<tr><td>Registro não existe no servidor</td><td>cria (upsert)</td></tr>
+<tr><td><code>clientUpdatedAt &gt; servidor.updatedAt</code></td><td>aplica a mutação do cliente</td></tr>
+<tr><td><code>clientUpdatedAt ≤ servidor.updatedAt</code></td><td><strong>servidor vence</strong>; devolve registro autoritativo (<code>status:"stale"</code>), cliente sobrescreve o cache</td></tr>
+<tr><td>delete vs update concorrentes</td><td>o mais recente por timestamp vence; delete cria tombstone</td></tr>
+</table>
+<div class="callout warn"><strong>Por que LWW de registro inteiro (e não merge de campos):</strong> mesclar campos de uma transação (valor, categoria, data) pode gerar um registro financeiro incoerente que nunca existiu. Substituir o registro inteiro é previsível e auditável. Para um app pessoal multi-dispositivo, LWW é o padrão correto; conflitos reais são raros (mesmo usuário).</div>
+<p>Opcional (fase posterior): registrar conflitos num <code>AuditLog</code> (já existe no schema) e, se o delta perdido for material, notificar o usuário ("esta alteração foi substituída por uma mais recente").</p>
+</section>
+
+<section id="s7">
+<h2><span class="n">7.</span> Fila offline (outbox)</h2>
+<p>Núcleo do "nunca perder escrita". Cada mutação local é enfileirada de forma durável antes/junto de gravar o cache.</p>
+<pre><span class="c">// js/core/sync-engine.js (ES5, estilo do projeto) — esqueleto</span>
+var SYNC_ENGINE = {
+  KEY: 'fp-outbox',
+  _fila: null,
+  _lerFila: function(){ try { return JSON.parse(localStorage.getItem(this.KEY)||'[]'); } catch(e){ return []; } },
+  _salvarFila: function(f){ localStorage.setItem(this.KEY, JSON.stringify(f)); },
+
+  enfileirar: function(entity, op, id, payload){
+    var f = this._lerFila();
+    f.push({ opId: UTILS.gerarUuid(), entity: entity, op: op, id: id,
+             clientUpdatedAt: new Date().toISOString(), payload: payload, tentativas: 0 });
+    this._salvarFila(f);
+    APP_STORE.sync.setPending(true);
+    this.flush();                 <span class="c">// tenta já; se offline, fica na fila</span>
+  },
+
+  flush: function(){
+    if (!navigator.onLine || !DADOS._apiAtiva()) return Promise.resolve();
+    var f = this._lerFila(); if (!f.length) return Promise.resolve();
+    return DADOS._apiFetch('/api/v1/sync', { method:'POST',
+        body: JSON.stringify({ mutations: f.slice(0, 100) }) })
+      .then(function(res){
+        SYNC_ENGINE._aplicarResultados(res.results);   <span class="c">// remove aplicados/stale da fila</span>
+        SYNC_ENGINE._puxarDelta(res.cursor);            <span class="c">// encadeia pull</span>
+      })
+      .catch(function(){ /* mantém na fila; backoff agenda novo flush */
+        SYNC_ENGINE._agendarRetry();
+      });
+  }
+  <span class="c">// + _aplicarResultados, _puxarDelta(cursor), _agendarRetry (backoff exp.), gatilhos</span>
+};</pre>
+<h4>Gatilhos de flush</h4>
+<ul>
+<li>evento <code>online</code>, foreground do app (<code>visibilitychange</code>), após login, timer periódico (ex.: 30s) e imediatamente após cada <code>enfileirar</code>.</li>
+</ul>
+<h4>Merge do pull (resolve D1/D2/D3)</h4>
+<ul>
+<li>O delta é aplicado registro a registro no cache. <strong>Antes de sobrescrever, verifica a outbox</strong>: se o id tem mutação pendente mais nova, o local é preservado (a outbox reenvia).</li>
+<li>Tombstone (<code>deletedAt</code>) remove o item do cache — sem ressurreição.</li>
+</ul>
+<h4>Ponto-chave: substituir o <code>.catch()</code> silencioso</h4>
+<p>Em <code>dados.js</code>, os <code>_push*Api(...).catch(()=&gt;x)</code> deixam de existir; os <code>salvar*</code>/<code>excluir*</code> passam a chamar <code>SYNC_ENGINE.enfileirar(...)</code>. O cache local é atualizado na hora (UX otimista); a durabilidade fica com a outbox.</p>
+</section>
+
+<section id="s8">
+<h2><span class="n">8.</span> Migração faseada (feature flag)</h2>
+<p>Tudo atrás de <code>config.syncV2Enabled</code> (sistema de config já existente via <code>DADOS.getConfig()</code>), com o caminho antigo (<code>/state</code> full-replace) intacto como fallback.</p>
+<div class="phase"><div class="num">0</div><div><strong>Schema (não-quebra).</strong> Migration adiciona <code>deletedAt</code> + índice <code>[userId, updatedAt]</code>; expõe <code>updatedAt</code> nos selects. Cliente antigo ignora os campos extras. <span class="badge">deploy isolado</span></div></div>
+<div class="phase"><div class="num">1</div><div><strong>Endpoints novos.</strong> <code>GET/POST /api/v1/sync</code> + <code>sync.service.js</code>, coexistindo com <code>/state</code>. Cobertos por testes de integração (supertest). Nada no cliente ainda.</div></div>
+<div class="phase"><div class="num">2</div><div><strong>Cliente atrás de flag.</strong> <code>sync-engine.js</code> + outbox + merge incremental, ativado só com <code>syncV2Enabled</code>. Dogfood interno; comparar com o caminho antigo.</div></div>
+<div class="phase"><div class="num">3</div><div><strong>Rollout gradual + soft-delete real.</strong> Trocar deletes físicos por tombstone. Habilitar para % de usuários; monitorar métricas (§12).</div></div>
+<div class="phase"><div class="num">4</div><div><strong>Depreciar o full-replace.</strong> Após validação, <code>/state</code> vira apenas "primeira carga" e o merge destrutivo é removido.</div></div>
+</section>
+
+<section id="s9">
+<h2><span class="n">9.</span> Sequência de implementação (arquivo a arquivo)</h2>
+<table>
+<tr><th>#</th><th>Tarefa</th><th>Arquivos</th><th>Verificação</th></tr>
+<tr><td>1</td><td>Migration: <code>deletedAt</code> + índice + expor <code>updatedAt</code></td><td><code>prisma/schema.prisma</code>, migration</td><td><code>prisma migrate</code> + smoke</td></tr>
+<tr><td>2</td><td>Repos: soft-delete + query de delta</td><td><code>backend/domain/repositories/*.repository.js</code></td><td>unit repos</td></tr>
+<tr><td>3</td><td><code>sync.service.js</code>: pull delta + push LWW + idempotência</td><td>novo em <code>backend/domain/services/</code></td><td>unit do resolver de conflito</td></tr>
+<tr><td>4</td><td>Rotas <code>/api/v1/sync</code> (GET/POST) + Zod</td><td><code>backend/routes/*</code></td><td>supertest (integração)</td></tr>
+<tr><td>5</td><td><code>UTILS.gerarUuid()</code> (UUID v4)</td><td><code>js/core/utils.js</code></td><td>unit + guardrail</td></tr>
+<tr><td>6</td><td><code>sync-engine.js</code>: outbox + flush + backoff + merge</td><td>novo em <code>js/core/</code></td><td>unit (jsdom)</td></tr>
+<tr><td>7</td><td>Ligar <code>dados.js</code> na outbox (remover <code>.catch</code> silencioso), atrás da flag</td><td><code>js/core/dados.js</code></td><td>unit + e2e</td></tr>
+<tr><td>8</td><td>Indicador de sync refletir <code>pending</code>/erro (já existe base)</td><td><code>js/utilities/sync-indicator.js</code></td><td>visual</td></tr>
+<tr><td>9</td><td>Registrar <code>sync-engine.js</code> no <code>index.html</code> (entra no bundle)</td><td><code>index.html</code></td><td>bundle-app</td></tr>
+</table>
+</section>
+
+<section id="s10">
+<h2><span class="n">10.</span> Plano de testes</h2>
+<ul>
+<li><strong>Unit (Jest, já configurado):</strong> resolver de conflito (todas as linhas da tabela §6); outbox (enfileira, dedupe por <code>opId</code>, backoff, drena só após ACK); merge do delta preserva registros pendentes.</li>
+<li><strong>Integração (supertest, já usado):</strong> <code>POST /sync</code> idempotente (mesma <code>opId</code> 2× = 1 efeito); <code>GET /sync?since</code> retorna tombstones; LWW server-wins.</li>
+<li><strong>Regressão de perda de dados (a estrela):</strong> testes que reproduzem D1 e D2 e provam que agora <strong>não</strong> há perda:
+<pre><span class="c">// e2e Playwright (2 contextos/abas)</span>
+1. offline → cria tx → assert está na outbox
+2. online  → flush → assert no servidor e outbox vazia
+3. aba B pull → assert vê a tx
+4. offline → delete na A → online → assert some na B (sem ressurreição)</pre>
+</li>
+<li><strong>a11y/e2e existentes</strong> continuam verdes (Playwright + axe-core já no projeto).</li>
+</ul>
+</section>
+
+<section id="s11">
+<h2><span class="n">11.</span> Riscos e mitigações</h2>
+<table>
+<tr><th>Risco</th><th>Mitigação</th></tr>
+<tr><td>Clock skew do cliente (LWW por timestamp)</td><td>O <strong>cursor</strong> usa sempre o relógio do servidor. <code>clientUpdatedAt</code> só desempata a mutação do próprio usuário; para segurança, o servidor pode rejeitar timestamps futuros (&gt; now + margem).</td></tr>
+<tr><td>Espaço de ID divergente (D5)</td><td>UUID v4 no cliente + <code>upsert</code> por id; ponte <code>_apiId</code> durante a transição.</td></tr>
+<tr><td>Precisão monetária (<code>Decimal(15,2)</code>)</td><td>Enviar valor como string/inteiro de centavos; nunca float no fio.</td></tr>
+<tr><td>Primeira sync grande</td><td>Pull paginado (<code>take:500</code>, <code>hasMore</code>) + skeleton; não bloquear a UI.</td></tr>
+<tr><td>PII na outbox (localStorage)</td><td>Integra com a cripto at-rest (#8): outbox cifrada quando a passphrase/PIN estiver ativa.</td></tr>
+<tr><td>Regressão durante rollout</td><td>Feature flag + caminho antigo como fallback + testes de regressão D1/D2 no CI.</td></tr>
+</table>
+</section>
+
+<section id="s12">
+<h2><span class="n">12.</span> Métricas de sucesso</h2>
+<ul>
+<li><strong>0 perda de dados</strong> nos testes de regressão D1–D3 (gate de CI).</li>
+<li><strong>Outbox drain</strong>: % de mutações confirmadas &lt; 60s após voltar a ficar online (meta &gt; 99%).</li>
+<li><strong>Taxa de conflito</strong> (<code>stale</code>/total) monitorada — deve ser baixa; picos indicam bug de merge.</li>
+<li><strong>Tamanho médio da outbox</strong> por usuário (deve tender a 0; crescimento = flush travado).</li>
+<li>Instrumentar via o <code>OBS.track()</code> já adicionado na iteração 1.</li>
+</ul>
+<div class="callout dark"><strong>Resumo executável:</strong> começar pela Fase 0+1 (schema + endpoints, invisíveis ao usuário e 100% testáveis no backend com supertest), depois a Fase 2 no cliente atrás de flag. Cada fase é um PR pequeno, verificável e reversível. O gate que importa: os testes de regressão D1/D2 rodando verdes no CI antes de habilitar para qualquer usuário real.</div>
+</section>
+
+</div>
+<footer>Design técnico · #2 Backend como fonte da verdade + sync offline · Aterrissado em dados.js, state.service.js e prisma/schema.prisma · 09/07/2026</footer>
+</body></html>

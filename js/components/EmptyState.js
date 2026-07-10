@@ -9,6 +9,34 @@
 (function() {
   var UI = window.UI || {};
 
+  function _renderIconEl(container, cfg) {
+    var lucideName = cfg.lucide || cfg.icon;
+    if (lucideName) {
+      container.innerHTML = '<i data-lucide="' + lucideName + '" aria-hidden="true"></i>';
+      return;
+    }
+    var emoji = cfg.emoji;
+    if (emoji && typeof emoji === 'string' && emoji.indexOf('<') !== -1) {
+      container.innerHTML = emoji;
+      return;
+    }
+    if (!emoji) {
+      container.innerHTML = '<i data-lucide="inbox" aria-hidden="true"></i>';
+      return;
+    }
+    container.textContent = emoji;
+  }
+
+  function _ctaHtml(cfg) {
+    var esc = UI._utils && UI._utils.esc ? UI._utils.esc : function(s) { return s; };
+    var texto = cfg.ctaTexto || 'Começar agora';
+    return '<i data-lucide="plus" aria-hidden="true"></i> ' + esc(texto);
+  }
+
+  function _refreshIcons(root) {
+    if (typeof renderLucideIcons === 'function') renderLucideIcons(root);
+  }
+
   /**
    * Empty state component with animations and configurable CTA
    * @namespace UI.EmptyState
@@ -16,18 +44,9 @@
   UI.EmptyState = {
     /**
      * Renders an empty state as a DOM element
-     * Accepts two formats:
-     *   render(emoji, texto, aba?) — legacy format
-     *   render({ emoji, titulo, subtitulo, aba, ctaTexto, animado }) — object config
      * @param {Object|string} config - Configuration object or emoji string (legacy)
      * @param {string} [texto] - Title text (legacy format)
      * @param {string} [aba] - Tab to switch to when CTA is clicked (legacy format)
-     * @param {string} [config.emoji] - Emoji icon to display
-     * @param {string} [config.titulo] - Title text
-     * @param {string} [config.subtitulo] - Subtitle text
-     * @param {string} [config.aba] - Tab to switch to when CTA is clicked
-     * @param {string} [config.ctaTexto] - CTA button text
-     * @param {boolean} [config.animado=true] - Whether to show animations
      * @returns {HTMLElement} The rendered empty state element
      */
     render: function(config, texto, aba) {
@@ -39,7 +58,7 @@
       var iconEl = document.createElement('div');
       iconEl.className = 'empty-emoji' + (cfg.animado !== false ? ' empty-emoji--float' : '');
       iconEl.setAttribute('aria-hidden', 'true');
-      iconEl.textContent = cfg.emoji || '📭';
+      _renderIconEl(iconEl, cfg);
       wrapper.appendChild(iconEl);
 
       if (cfg.titulo) {
@@ -61,27 +80,19 @@
         btn.className = 'btn-empty-cta';
         btn.type = 'button';
         btn.setAttribute('data-mudar-aba', cfg.aba);
-        btn.textContent = cfg.ctaTexto || '➕ Começar agora';
+        btn.innerHTML = _ctaHtml(cfg);
         wrapper.appendChild(btn);
       }
 
+      _refreshIcons(wrapper);
       return wrapper;
     },
 
     /**
      * Renders an empty state as an HTML string
-     * Accepts two formats:
-     *   html(emoji, texto, aba?) — legacy format
-     *   html({ emoji, titulo, subtitulo, aba, ctaTexto, animado }) — object config
      * @param {Object|string} config - Configuration object or emoji string (legacy)
      * @param {string} [texto] - Title text (legacy format)
      * @param {string} [aba] - Tab to switch to when CTA is clicked (legacy format)
-     * @param {string} [config.emoji] - Emoji icon to display
-     * @param {string} [config.titulo] - Title text
-     * @param {string} [config.subtitulo] - Subtitle text
-     * @param {string} [config.aba] - Tab to switch to when CTA is clicked
-     * @param {string} [config.ctaTexto] - CTA button text
-     * @param {boolean} [config.animado=true] - Whether to show animations
      * @returns {string} The rendered empty state HTML string
      */
     html: function(config, texto, aba) {
@@ -90,27 +101,29 @@
 
       var animClass  = cfg.animado !== false ? ' empty-state--animado' : '';
       var floatClass = cfg.animado !== false ? ' empty-emoji--float'   : '';
-      var ctaTexto   = cfg.ctaTexto || '➕ Começar agora';
+      var iconHtml;
+
+      if (cfg.lucide || cfg.icon) {
+        iconHtml = '<i data-lucide="' + esc(cfg.lucide || cfg.icon) + '" aria-hidden="true"></i>';
+      } else if (cfg.emoji && typeof cfg.emoji === 'string' && cfg.emoji.indexOf('<') !== -1) {
+        iconHtml = cfg.emoji;
+      } else if (cfg.emoji) {
+        iconHtml = esc(cfg.emoji);
+      } else {
+        iconHtml = '<i data-lucide="inbox" aria-hidden="true"></i>';
+      }
 
       return '<div class="empty-state' + animClass + '">' +
-        '<div class="empty-emoji' + floatClass + '" aria-hidden="true">' + (cfg.emoji || '📭') + '</div>' +
+        '<div class="empty-emoji' + floatClass + '" aria-hidden="true">' + iconHtml + '</div>' +
         (cfg.titulo    ? '<p class="empty-titulo">' + esc(cfg.titulo)    + '</p>' : '') +
         (cfg.subtitulo ? '<p class="empty-texto">'  + esc(cfg.subtitulo) + '</p>' : '') +
         (cfg.aba
-          ? '<button class="btn-empty-cta" type="button" data-mudar-aba="' + esc(cfg.aba) + '">' + esc(ctaTexto) + '</button>'
+          ? '<button class="btn-empty-cta" type="button" data-mudar-aba="' + esc(cfg.aba) + '">' + _ctaHtml(cfg) + '</button>'
           : '') +
       '</div>';
     }
   };
 
-  /**
-   * Normalizes configuration from both legacy and object formats
-   * @private
-   * @param {Object|string} config - Configuration object or emoji string
-   * @param {string} [texto] - Title text (legacy format)
-   * @param {string} [aba] - Tab to switch to (legacy format)
-   * @returns {Object} Normalized configuration object
-   */
   function _normalizarConfig(config, texto, aba) {
     if (config && typeof config === 'object' && !Array.isArray(config)) {
       return config;

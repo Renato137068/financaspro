@@ -1,0 +1,194 @@
+/**
+ * page-premium.css — Padrão visual unificado (Perfil → todas as abas)
+ * Seções, cards, ícones e cabeçalhos compactos
+ */
+
+/* ── Cabeçalho compacto (sem avatar) ───────────────────────── */
+
+.perfil-header-compact {
+  padding: var(--space-5);
+}
+
+.perfil-header-compact .perfil-card-icon-wrapper {
+  width: 56px;
+  height: 56px;
+}
+
+.perfil-header-compact .perfil-nome {
+  font-size: var(--font-size-xl);
+}
+
+.perfil-header-compact--flat {
+  box-shadow: none;
+  border: none;
+  padding: 0;
+  margin-bottom: var(--space-4);
+  background: transparent;
+}
+
+.perfil-header-compact--flat::before {
+  display: none;
+}
+
+.perfil-avatar i[data-lucide],
+.perfil-avatar svg {
+  width: 28px;
+  height: 28px;
+}
+
+/* ── Ícones Lucide nos wrappers ────────────────────────────── */
+
+:is(.perfil-card-icon-wrapper, .kpi-icon, .orc-kpi-card-icon, .orc-renda-icon) {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-page);
+  border-radius: var(--radius-lg);
+  color: var(--color-primary-600);
+  flex-shrink: 0;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+:is(.perfil-card-icon-wrapper, .kpi-icon, .orc-kpi-card-icon, .orc-renda-icon) i[data-lucide],
+:is(.perfil-card-icon-wrapper, .kpi-icon, .orc-kpi-card-icon, .orc-renda-icon) svg {
+  width: 24px;
+  height: 24px;
+}
+
+.perfil-card-premium:hover .perfil-card-icon-wrapper,
+.kpi-card-premium:hover .kpi-icon,
+.orc-kpi-card:hover .orc-kpi-card-icon {
+  background: var(--color-primary-50);
+  color: var(--color-primary-700);
+}
+
+.perfil-card-arrow,
+.perfil-card-arrow i[data-lucide] {
+  width: 20px;
+  height: 20px;
+}
+
+.perfil-action-btn i[data-lucide],
+.perfil-action-btn svg,
+.security-indicator i[data-lucide],
+.security-indicator svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.perfil-logout-btn i[data-lucide],
+.perfil-logout-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.conta-item-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-right: 8px;
+  color: var(--color-primary-600);
+  flex-shrink: 0;
+}
+
+.conta-item-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.pin-lock-icon {
+  display: flex;
+  justify-content: center;
+  margin: 0;
+}
+
+.pin-lock-icon svg {
+  width: 36px;
+  height: 36px;
+  color: var(--color-primary-600);
+}
+
+/* ── Títulos de seção unificados ───────────────────────────── */
+
+.secao-titulo,
+.perfil-section-title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wider);
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--space-4) 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.secao-header {
+  border-bottom: none;
+  margin-bottom: var(--space-2);
+  padding-bottom: 0;
+}
+
+.secao-header .secao-titulo {
+  margin-bottom: 0;
+}
+
+.dashboard-section {
+  margin-bottom: var(--space-8);
+}
+
+/* ── Card como botão (exportar, ações) ─────────────────────── */
+
+button.perfil-card-premium {
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  border: 1px solid var(--color-border-light);
+}
+
+/* ── Busca com ícone Lucide ────────────────────────────────── */
+
+.busca-icon-premium {
+  width: 20px;
+  height: 20px;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+/* ── Ações orçamento no padrão perfil ──────────────────────── */
+
+.orc-header-actions .orc-action-btn i[data-lucide],
+.orc-header-actions .orc-action-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.secao-link i[data-lucide] {
+  width: 14px;
+  height: 14px;
+  vertical-align: -2px;
+}
+
+.orc-toggle-btn-premium .toggle-icon,
+.orc-toggle-btn-premium .toggle-icon.expanded {
+  width: 20px;
+  height: 20px;
+}
+
+.orc-toggle-btn-premium .toggle-icon.expanded {
+  transform: rotate(180deg);
+}
+
+.perfil-danger-btn i[data-lucide] {
+  width: 20px;
+  height: 20px;
+}
+
+[data-theme="dark"] :is(.perfil-card-icon-wrapper, .kpi-icon, .orc-kpi-card-icon, .orc-renda-icon) {
+  background: var(--color-bg-elevated);
+  color: var(--color-primary-400);
+}

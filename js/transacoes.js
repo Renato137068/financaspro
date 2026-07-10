@@ -183,6 +183,7 @@ var TRANSACOES = {
   },
 
   deletar: function(id) {
+    if (typeof ANEXOS !== 'undefined') ANEXOS.excluirPorTransacao(id);
     var resultado = DADOS.deletarTransacao(id);
     this.invalidateCache();
     return resultado;

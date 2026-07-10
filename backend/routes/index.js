@@ -9,6 +9,7 @@ import recurringRouter from './recurring.js';
 import stateRouter from './state.js';
 import orgsRouter from './orgs.js';
 import billingRouter from './billing.js';
+import openFinanceRouter from './open-finance.js';
 
 const router = Router();
 
@@ -23,5 +24,6 @@ router.use('/state', stateRouter);
 // Fase 10 — SaaS
 router.use('/orgs', orgsRouter);
 router.use('/billing', billingRouter);
+router.use('/open-finance', openFinanceRouter);
 
 export default router;

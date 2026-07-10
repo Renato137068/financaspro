@@ -1,0 +1,74 @@
+/* brand.css — identidade visual consistente (auditoria: primeira impressão) */
+
+/* Marca real (icons/logo.svg) no lugar do ícone genérico */
+.brand-mark { display: inline-block; vertical-align: middle; }
+header h1 .brand-mark { margin-right: 4px; }
+.sidebar-logo .brand-mark { display: block; }
+
+/* Badge do login: deixa o próprio logo (que já é um selo arredondado) preencher */
+.auth-logo.brand-logo-badge {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+.auth-logo.brand-logo-badge .brand-mark {
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+}
+
+/* Prova social / confiança na tela de login */
+.auth-trust {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 16px;
+}
+.auth-trust .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--color-text-2, #5b6b62);
+  background: var(--color-bg-secondary, #f0f5f2);
+  border: 1px solid var(--color-border, #e4ebe7);
+  border-radius: 999px;
+  padding: 4px 11px;
+}
+.auth-trust .chip svg,
+.auth-trust .chip i { width: 13px; height: 13px; }
+
+[data-theme="dark"] .auth-trust .chip {
+  color: #a7b4ac;
+  background: rgba(51, 65, 85, 0.35);
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+/* Card "Comece aqui" — guia de configuração para iniciantes */
+.setup-card { background: var(--color-bg-secondary, #f0f5f2); border: 1px solid var(--color-border, #e4ebe7); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
+.setup-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.setup-card-head i { color: #00723F; }
+.setup-card-title { font-weight: 700; font-size: 15px; color: var(--color-text, #0d1b14); }
+.setup-card-count { margin-left: auto; font-size: 12px; color: var(--color-text-2, #5b6b62); }
+.setup-card-bar { height: 6px; border-radius: 4px; background: #e6f4ec; overflow: hidden; margin-bottom: 12px; }
+.setup-card-fill { height: 100%; background: #00a862; border-radius: 4px; transition: width .4s ease; }
+.setup-card-steps { display: flex; flex-direction: column; gap: 2px; }
+.setup-step { display: flex; align-items: center; gap: 8px; font-size: 13.5px; padding: 6px 8px; border-radius: 8px; color: var(--color-text-2, #5b6b62); }
+.setup-step i { width: 18px; height: 18px; flex: 0 0 auto; color: #8a9791; }
+.setup-step.feito span { text-decoration: line-through; }
+.setup-step.feito i { color: #1f9d55; }
+.setup-step.proximo { background: #e6f4ec; color: #00532e; font-weight: 600; }
+.setup-step.proximo i { color: #00723F; }
+.setup-badge { margin-left: auto; font-size: 11px; background: #00723F; color: #fff; border-radius: 999px; padding: 3px 9px; font-weight: 700; }
+[data-theme="dark"] .setup-card { background: rgba(51,65,85,.28); border-color: rgba(148,163,184,.16); }
+[data-theme="dark"] .setup-card-title { color: #eaf3ee; }
+[data-theme="dark"] .setup-card-bar { background: rgba(148,163,184,.2); }
+[data-theme="dark"] .setup-step.proximo { background: rgba(0,168,98,.16); color: #bbf7d0; }
+
+/* CTA acionável do card "Comece aqui" */
+.setup-cta { margin-top: 12px; width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: #00723F; color: #fff; border: none; border-radius: 8px; padding: 9px 14px; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+.setup-cta:hover { background: #00532e; }
+.setup-cta i { width: 15px; height: 15px; }

@@ -41,8 +41,8 @@ var HEALTH_SERVICE = {
       setTimeout(function() {
         if (typeof fpConfirm !== 'function') return;
         var msg = ultimo
-          ? 'Faz mais de ' + diasLimite + ' dias desde seu ultimo backup. Exportar dados agora?'
-          : 'Voce tem ' + txs.length + ' transacoes sem backup. Exportar dados?';
+          ? 'Faz mais de ' + diasLimite + ' dias desde seu último backup. Exportar dados agora?'
+          : 'Você tem ' + txs.length + ' transações sem backup. Exportar dados?';
         fpConfirm(msg, function() {
           if (typeof CONFIG_USER !== 'undefined' && CONFIG_USER.exportarDados) {
             CONFIG_USER.exportarDados();

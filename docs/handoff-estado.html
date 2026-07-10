@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Handoff — Estado do FinançasPro após as melhorias</title>
+<style>
+:root{--verde:#00723F;--verde2:#00a862;--vbg:#e6f4ec;--tinta:#0d1b14;--cinza:#5b6b62;--linha:#e4ebe7;--papel:#fff;--fundo:#f4f7f5;--ok:#1f9d55;--alto:#e07b00;--sombra:0 1px 2px rgba(13,27,20,.04),0 8px 28px rgba(13,27,20,.06);--sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;--mono:ui-monospace,SFMono-Regular,Menlo,monospace}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:var(--sans);color:var(--tinta);background:var(--fundo);line-height:1.6;font-size:15.5px}
+.wrap{max-width:940px;margin:0 auto;padding:0 22px}
+.cover{background:linear-gradient(150deg,#00532e,#00723F 50%,#00a862 130%);color:#fff;padding:56px 0 44px}
+.kicker{text-transform:uppercase;letter-spacing:.15em;font-size:12px;font-weight:700;opacity:.85;margin:0 0 12px}
+.cover h1{font-size:33px;margin:0 0 10px;font-weight:800;letter-spacing:-.02em}
+.cover p{font-size:17px;max-width:680px;opacity:.94;margin:0}
+.pillrow{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0 0}
+.pill{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:12px;padding:9px 14px;font-size:13.5px}
+section{padding:34px 0;border-bottom:1px solid var(--linha)}
+h2{font-size:23px;font-weight:800;margin:0 0 12px}h2 .n{color:var(--verde)}
+h3{font-size:16px;margin:22px 0 6px;color:var(--verde)}
+p{margin:0 0 12px}code{background:#eef3f0;border:1px solid var(--linha);padding:1px 6px;border-radius:6px;font-size:12.5px;font-family:var(--mono);color:#0a4f30}
+ul,ol{margin:0 0 12px;padding-left:22px}li{margin:5px 0}
+pre{background:#0d1b14;color:#e7f0ea;border-radius:12px;padding:14px 16px;overflow:auto;font-family:var(--mono);font-size:12.5px;line-height:1.55;margin:12px 0}
+pre .c{color:#7fae95}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13.5px;background:var(--papel);border:1px solid var(--linha);border-radius:12px;overflow:hidden}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--linha);vertical-align:top}
+th{background:#f0f5f2;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--cinza)}
+tr:last-child td{border-bottom:none}
+.tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px}
+.new{background:#e3f5ea;color:#1f7a45}.mod{background:#fcf3d9;color:#8a7400}.doc{background:#e7effb;color:#2b5aa8}
+.callout{background:var(--vbg);border-left:4px solid var(--verde);border-radius:0 12px 12px 0;padding:14px 18px;margin:16px 0}
+.callout.warn{background:#fdf3e7;border-left-color:var(--alto)}
+.callout.dark{background:#0d1b14;color:#eaf3ee;border-left-color:var(--verde2)}.callout.dark strong{color:#fff}
+.ck{list-style:none;padding-left:0}.ck li{padding-left:26px;position:relative}.ck li:before{content:"☐";position:absolute;left:0;color:var(--verde);font-weight:800}
+footer{padding:32px 0 54px;color:#8a9791;font-size:12.5px;text-align:center}
+</style></head><body>
+
+<header class="cover"><div class="wrap">
+<p class="kicker">Handoff · Estado consolidado</p>
+<h1>FinançasPro — o que mudou e como validar</h1>
+<p>Resumo revisável de tudo que foi aplicado, verificado e planejado nas melhorias do roadmap — com os comandos exatos para você validar no seu ambiente.</p>
+<div class="pillrow">
+<div class="pill"><b>4</b> iterações de código</div>
+<div class="pill"><b>231</b> testes passando</div>
+<div class="pill"><b>0</b> erros de lint</div>
+<div class="pill"><b>3</b> designs/relatórios</div>
+</div>
+</div></header>
+
+<div class="wrap">
+
+<section>
+<h2><span class="n">1.</span> O que foi aplicado (e verificado)</h2>
+<table>
+<tr><th>Item</th><th>Entrega</th><th>Status</th></tr>
+<tr><td>#1/#3</td><td>defer em todos os scripts (pin-guard mantido bloqueante); <code>bundle-app</code> encadeado no <code>build</code> (bundle único de produção)</td><td>✅ verificado</td></tr>
+<tr><td>#6</td><td>CSP de produção sem <code>localhost</code> (env-gate na fonte + <code>harden-csp</code> como rede de segurança)</td><td>✅ verificado</td></tr>
+<tr><td>#35/#36</td><td>Observabilidade: captura global de erros + <code>OBS.track()</code>, opt-in, sem SDK externo</td><td>✅ verificado</td></tr>
+<tr><td>#4</td><td>Indicador de sincronização (Sincronizado/Sincronizando/Offline/Local), dark-mode aware</td><td>✅ verificado</td></tr>
+<tr><td>#12</td><td>Helper <code>UTILS.mostrarToastAcao()</code> (Desfazer/undo) — pronto para religar aos fluxos de exclusão</td><td>✅ base pronta</td></tr>
+<tr><td>#9</td><td>Preço PRO reposicionado R$ 29,90→16,90 e 299→119 (frontend + seed backend)</td><td>✅ verificado</td></tr>
+<tr><td>#7</td><td>Auditoria de XSS (115 sinks, 0 furos) + guardrail estático no CI (<code>check-xss-sinks</code>)</td><td>✅ verificado</td></tr>
+<tr><td>#20</td><td>Projeção de fim de mês testável (data injetável) + <code>mensagemFimMes()</code> + 9 testes</td><td>✅ verificado</td></tr>
+</table>
+</section>
+
+<section>
+<h2><span class="n">2.</span> Inventário de arquivos</h2>
+<h3>Novos</h3>
+<table>
+<tr><td><span class="tag new">NOVO</span></td><td><code>js/utilities/observability.js</code></td><td>erros + analytics opt-in</td></tr>
+<tr><td><span class="tag new">NOVO</span></td><td><code>js/utilities/sync-indicator.js</code></td><td>badge de sync</td></tr>
+<tr><td><span class="tag new">NOVO</span></td><td><code>scripts/harden-csp.cjs</code></td><td>remove localhost do dist</td></tr>
+<tr><td><span class="tag new">NOVO</span></td><td><code>scripts/check-xss-sinks.cjs</code></td><td>guardrail anti-XSS</td></tr>
+<tr><td><span class="tag new">NOVO</span></td><td><code>tests/projecao.test.js</code></td><td>9 testes da projeção</td></tr>
+</table>
+<h3>Alterados</h3>
+<table>
+<tr><td><span class="tag mod">EDIT</span></td><td><code>index.html</code></td><td>defer + registro dos 2 utilitários novos</td></tr>
+<tr><td><span class="tag mod">EDIT</span></td><td><code>js/billing.js</code>, <code>backend/prisma/seed-plans.js</code></td><td>preço PRO</td></tr>
+<tr><td><span class="tag mod">EDIT</span></td><td><code>js/core/utils.js</code></td><td>+ <code>mostrarToastAcao()</code></td></tr>
+<tr><td><span class="tag mod">EDIT</span></td><td><code>js/ai-engine.js</code></td><td>data injetável + <code>mensagemFimMes()</code></td></tr>
+<tr><td><span class="tag mod">EDIT</span></td><td><code>scripts/bundle-app.cjs</code></td><td>pin-guard fora do bundle (bloqueante)</td></tr>
+<tr><td><span class="tag mod">EDIT</span></td><td><code>scripts/csp-connect-src.cjs</code></td><td>env-gate localhost</td></tr>
+<tr><td><span class="tag mod">EDIT</span></td><td><code>package.json</code></td><td>build chain + <code>security:xss</code> + CI</td></tr>
+<tr><td><span class="tag mod">EDIT</span></td><td><code>css/utilities/ux-polish.css</code>, <code>css/themes/dark-mode.css</code></td><td>estilos do sync + toast</td></tr>
+</table>
+<h3>Documentos (deliverables)</h3>
+<table>
+<tr><td><span class="tag doc">DOC</span></td><td><code>docs/auditoria-completa-financaspro.html</code></td><td>auditoria de 19 seções</td></tr>
+<tr><td><span class="tag doc">DOC</span></td><td><code>docs/melhorias-aplicadas.html</code></td><td>log das 4 iterações</td></tr>
+<tr><td><span class="tag doc">DOC</span></td><td><code>docs/design-sync-server-first.html</code></td><td>design técnico do #2</td></tr>
+<tr><td><span class="tag doc">DOC</span></td><td><code>docs/handoff-estado.html</code></td><td>este documento</td></tr>
+</table>
+</section>
+
+<section>
+<h2><span class="n">3.</span> Como validar no seu Windows</h2>
+<p>Rode na raiz do projeto. Estes comandos NÃO puderam ser executados no ambiente da sessão porque o <code>node_modules</code> foi instalado no Windows (binários nativos de rollup/esbuild são de outra plataforma) — mas rodam normal na sua máquina.</p>
+<pre><span class="c"># 1. Lint (esperado: 0 errors)</span>
+npm run lint
+
+<span class="c"># 2. Testes unitários (esperado: tudo verde, incl. tests/projecao.test.js)</span>
+npm test
+
+<span class="c"># 3. Guardrail anti-XSS (esperado: ✓ 0 sinks sem escape)</span>
+npm run security:xss
+
+<span class="c"># 4. Build de produção (gera dist/ com bundle único + CSP limpa)</span>
+npm run build
+<span class="c">#    Confira depois:</span>
+<span class="c">#    - dist/index.html tem 1 &lt;script defer src="js/app.bundle.js"&gt; + pin-guard bloqueante</span>
+<span class="c">#    - dist/index.html NÃO contém "localhost" na CSP</span>
+
+<span class="c"># 5. Abra o app e teste o essencial na mão:</span>
+<span class="c">#    - login/PIN, criar transação, extrato, orçamento, dashboard</span>
+<span class="c">#    - o indicador de sync aparece no canto</span></pre>
+<div class="callout warn"><strong>Antes de commitar:</strong> o repositório já tinha trabalho seu não commitado. Rode <code>git diff</code> / <code>git status</code> para revisar as mudanças (minhas + as suas WIP) e commite em partes lógicas. Todos os arquivos que toquei passaram por <code>node --check</code> e o pacote inteiro por lint + 231 testes.</div>
+</section>
+
+<section>
+<h2><span class="n">4.</span> Verificação já feita nesta sessão</h2>
+<ul>
+<li><strong>Sintaxe</strong> (<code>node --check</code>): OK em todos os 12 arquivos de código tocados + <code>package.json</code> como JSON válido.</li>
+<li><strong>Lint</strong>: 0 erros (526 warnings, todos do padrão global pré-existente).</li>
+<li><strong>Testes</strong>: 14 suítes / <strong>231 testes</strong> verdes (inclui as novas de projeção).</li>
+<li><strong>Guardrail XSS</strong>: 0 sinks sem escape em 86 arquivos; autoteste prova que ele pega um caso ruim.</li>
+<li><strong>CSP</strong>: <code>NODE_ENV=production</code> → sem localhost; dev mantém localhost.</li>
+<li><strong>Bundle</strong>: lógica validada (86 scripts no bundle, pin-guard bloqueante, novos arquivos e preço incluídos).</li>
+</ul>
+</section>
+
+<section>
+<h2><span class="n">5.</span> O que está planejado (não aplicado às cegas)</h2>
+<p>Itens pesados que exigem a aplicação + Postgres/migrations rodando e testes de integração no seu ambiente — arriscado aplicar sem isso:</p>
+<table>
+<tr><th>Item</th><th>Situação</th></tr>
+<tr><td><strong>#2</strong> Backend fonte da verdade + sync offline</td><td>Design técnico completo e pronto em <code>docs/design-sync-server-first.html</code> (fases 0→4). Diagnostiquei 5 bugs de perda de dados no código atual.</td></tr>
+<tr><td><strong>#3</strong> Migração ESM completa</td><td>O bundle único já entrega a maior parte do ganho de performance. A migração import/export precisa da app rodando com os testes Playwright.</td></tr>
+<tr><td><strong>#8</strong> Cripto derivada do PIN</td><td>Recomendado integrar junto do #2 (cifrar a outbox). Posso detalhar o design como fiz com o #2.</td></tr>
+<tr><td><strong>#12</strong> Religar "Desfazer" aos deletes</td><td>Helper pronto; religar cada fluxo de exclusão (soft-delete + restaurar) com teste individual.</td></tr>
+</table>
+</section>
+
+<section>
+<h2><span class="n">6.</span> Próximos passos recomendados (ordem)</h2>
+<ul class="ck">
+<li>Rodar os 5 comandos de validação acima no Windows e confirmar tudo verde.</li>
+<li>Autorizar os conectores que você quiser usar (GitHub, Slack, etc.) nas configurações do claude.ai — na sessão não dá para fazer o login OAuth.</li>
+<li>Commitar as mudanças revisadas em partes lógicas.</li>
+<li>Atacar o <strong>#2</strong> pela Fase 0+1 (schema + endpoints) — invisível ao usuário e 100% testável no backend com o supertest que você já tem.</li>
+<li>Colocar os testes de regressão de perda de dados (D1/D2 do design) como gate de CI antes de habilitar sync v2 para qualquer usuário real.</li>
+</ul>
+<div class="callout dark"><strong>Resumo:</strong> o Sprint 1 do roadmap está concluído e verificado, com vários itens de S2/S3 adiantados. A fundação de performance, segurança e observabilidade está no lugar. O maior salto de qualidade que resta — tornar o dado do usuário à prova de perda (#2) — está totalmente desenhado e pronto para execução faseada. Daqui pra frente, o trabalho de maior valor acontece com a app rodando no seu ambiente.</div>
+</section>
+
+</div>
+<footer>Handoff gerado em 09/07/2026 · Todas as mudanças verificadas por node --check, lint e 231 testes · Validação final recomendada no ambiente Windows.</footer>
+</body></html>

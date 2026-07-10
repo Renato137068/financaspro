@@ -222,13 +222,85 @@ function togglePinSeguranca() {
       if (primeiro) primeiro.focus();
     }, 100);
   } else {
+    var chkRevert = document.getElementById('chk-pin');
+    if (chkRevert) chkRevert.checked = true;
+    confirmarDesativarPin();
+  }
+}
+
+/**
+ * Exige PIN atual antes de desativar a proteção.
+ */
+function confirmarDesativarPin() {
+  var config = DADOS.getConfig();
+  if (!config.pinAtivo || !config.pinHash || !config.pinSalt) {
     DADOS.salvarConfig({
       pinAtivo: false, pinHash: null, pinSalt: null,
       pinAlgoritmo: null, pinTentativas: 0, pinBloqueadoAte: 0
     });
+    var chkOff = document.getElementById('chk-pin');
+    if (chkOff) chkOff.checked = false;
     if (typeof renderConfigTab === 'function') renderConfigTab();
     UTILS.mostrarToast('PIN desativado', 'success');
+    return;
   }
+
+  var html = '<div style="display:flex;flex-direction:column;gap:16px;text-align:center">' +
+    '<p style="font-weight:700;font-size:17px">Desativar PIN</p>' +
+    '<p style="font-size:13px;color:var(--text-secondary)">Digite seu PIN atual para confirmar</p>' +
+    '<div style="display:flex;gap:8px;justify-content:center">' +
+    '<input type="password" id="pinoff-1" maxlength="1" inputmode="numeric" style="width:48px;height:56px;text-align:center;font-size:24px;font-weight:700;border:2px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text-primary)">' +
+    '<input type="password" id="pinoff-2" maxlength="1" inputmode="numeric" style="width:48px;height:56px;text-align:center;font-size:24px;font-weight:700;border:2px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text-primary)">' +
+    '<input type="password" id="pinoff-3" maxlength="1" inputmode="numeric" style="width:48px;height:56px;text-align:center;font-size:24px;font-weight:700;border:2px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text-primary)">' +
+    '<input type="password" id="pinoff-4" maxlength="1" inputmode="numeric" style="width:48px;height:56px;text-align:center;font-size:24px;font-weight:700;border:2px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text-primary)">' +
+    '</div></div>';
+  fpAlert(html, { trustedHtml: true });
+  setTimeout(function() {
+    var overlay = document.querySelector('.modal-overlay');
+    if (!overlay) return;
+    var okBtn = overlay.querySelector('.modal-btn');
+    var cancelHandler = function() {
+      overlay.remove();
+      var chk = document.getElementById('chk-pin');
+      if (chk) chk.checked = true;
+      if (typeof renderConfigTab === 'function') renderConfigTab();
+    };
+    overlay.addEventListener('click', function onBg(e) {
+      if (e.target === overlay) {
+        overlay.removeEventListener('click', onBg);
+        cancelHandler();
+      }
+    });
+    if (okBtn) {
+      okBtn.textContent = 'Confirmar';
+      okBtn.onclick = function() {
+        var pin = ['pinoff-1','pinoff-2','pinoff-3','pinoff-4']
+          .map(function(id) { var el = document.getElementById(id); return el ? el.value : ''; }).join('');
+        if (!/^\d{4}$/.test(pin)) {
+          UTILS.mostrarToast('PIN deve ter 4 dígitos', 'error');
+          return;
+        }
+        hashPin(pin, config.pinSalt).then(function(hash) {
+          if (!PIN_SECURITY.comparar(hash, config.pinHash)) {
+            UTILS.mostrarToast('PIN incorreto', 'error');
+            return;
+          }
+          DADOS.salvarConfig({
+            pinAtivo: false, pinHash: null, pinSalt: null,
+            pinAlgoritmo: null, pinTentativas: 0, pinBloqueadoAte: 0
+          });
+          overlay.remove();
+          var chkDone = document.getElementById('chk-pin');
+          if (chkDone) chkDone.checked = false;
+          if (typeof renderConfigTab === 'function') renderConfigTab();
+          UTILS.mostrarToast('PIN desativado', 'success');
+        });
+      };
+    }
+    setupPinInputs('pinoff');
+    var primeiro = document.getElementById('pinoff-1');
+    if (primeiro) primeiro.focus();
+  }, 100);
 }
 
 /**
@@ -243,7 +315,7 @@ function verificarPinAoAbrir() {
   }
   document.documentElement.classList.add('pin-locked');
   var html = '<div style="display:flex;flex-direction:column;gap:16px;text-align:center">' +
-    '<p style="font-size:36px">🔒</p>' +
+    '<p class="pin-lock-icon" aria-hidden="true"><i data-lucide="lock" aria-hidden="true"></i></p>' +
     '<p style="font-weight:700;font-size:17px">FinançasPro</p>' +
     '<p style="font-size:13px;color:var(--text-secondary)">Digite seu PIN</p>' +
     '<div style="display:flex;gap:8px;justify-content:center">' +
@@ -260,6 +332,10 @@ function verificarPinAoAbrir() {
   lockScreen.innerHTML = '<div class="pin-lock-content">' + html +
     '<button class="btn-primario" id="unlock-submit-btn" style="margin-top:16px">Desbloquear</button></div>';
   document.body.appendChild(lockScreen);
+  if (typeof FocusTrap !== 'undefined') {
+    lockScreen._fpFocusTrap = new FocusTrap(lockScreen);
+    lockScreen._fpFocusTrap.activate();
+  }
   var unlockBtn = document.getElementById('unlock-submit-btn');
   if (unlockBtn) unlockBtn.addEventListener('click', tentarDesbloquear);
   setupPinInputs('unlock', function() { tentarDesbloquear(); });
@@ -283,7 +359,10 @@ function tentarDesbloquear() {
     UTILS.mostrarToast('Atualização de segurança: recrie seu PIN nas Configurações', 'warning');
     DADOS.salvarConfig({ pinAtivo: false, pinHash: null, pinSalt: null, pinAlgoritmo: null });
     var lockLeg = document.querySelector('.pin-lock-screen');
-    if (lockLeg) lockLeg.remove();
+    if (lockLeg) {
+      if (lockLeg._fpFocusTrap) lockLeg._fpFocusTrap.deactivate();
+      lockLeg.remove();
+    }
     document.documentElement.classList.remove('pin-locked');
     return;
   }
@@ -299,8 +378,11 @@ function tentarDesbloquear() {
   hashPin(pin, config.pinSalt).then(function(hash) {
     if (PIN_SECURITY.comparar(hash, config.pinHash)) {
       PIN_SECURITY.resetarFalhas();
-      var lock = document.querySelector('.pin-lock-screen');
-      if (lock) lock.remove();
+    var lock = document.querySelector('.pin-lock-screen');
+    if (lock) {
+      if (lock._fpFocusTrap) lock._fpFocusTrap.deactivate();
+      lock.remove();
+    }
       document.documentElement.classList.remove('pin-locked');
       UTILS.mostrarToast('Bem-vindo de volta!', 'success');
     } else {

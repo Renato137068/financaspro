@@ -25,6 +25,11 @@ export const TransactionRepository = {
     return prisma.transaction.findFirst({ where: { id, userId } });
   },
 
+  async findByOpenFinanceId(userId, openFinanceId) {
+    if (!openFinanceId) return null;
+    return prisma.transaction.findFirst({ where: { userId, openFinanceId } });
+  },
+
   async create(data) {
     return prisma.transaction.create({ data });
   },

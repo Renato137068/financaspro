@@ -109,7 +109,10 @@ var SKELETON = (function() {
   /* Uso: SKELETON.mostrar() logo após DOMContentLoaded se não há dados cacheados */
   function iniciarSeNecessario() {
     try {
-      var dados = localStorage.getItem('financaspro_transacoes');
+      var chave = (typeof CONFIG !== 'undefined' && CONFIG.STORAGE_TRANSACOES)
+        ? CONFIG.STORAGE_TRANSACOES
+        : 'fp-transacoes';
+      var dados = localStorage.getItem(chave);
       /* Mostra skeleton apenas se ainda não há dados renderizados */
       if (!dados || dados === '[]') mostrar();
     } catch (e) {

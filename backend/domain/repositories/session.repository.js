@@ -21,6 +21,14 @@ export const SessionRepository = {
     });
   },
 
+  // Revoga TODAS as sessões ativas do usuário (reuso de token, troca de senha, etc.).
+  async revokeAllForUser(userId) {
+    return prisma.session.updateMany({
+      where: { userId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+  },
+
   async rotateToken(oldSessionId, { refreshToken, ...rest }) {
     return prisma.$transaction([
       prisma.session.update({ where: { id: oldSessionId }, data: { revokedAt: new Date() } }),

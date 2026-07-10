@@ -243,7 +243,7 @@ const DOM_SAFE = {
   createTransacaoCard: function(transacao) {
     var isReceita = transacao.tipo === 'receita';
     var classe = isReceita ? 'transacao-receita' : 'transacao-despesa';
-    var icone = isReceita ? '💚' : '❤️';
+    var iconeName = isReceita ? 'trending-up' : 'trending-down';
     var prefixo = isReceita ? '+' : '-';
     
     var card = this.create('div', {
@@ -253,11 +253,14 @@ const DOM_SAFE = {
       }
     });
     
-    // Icone
     var iconEl = this.create('span', {
-      attrs: { className: 'transacao-icone' },
-      text: icone
+      attrs: { className: 'transacao-icone', 'aria-hidden': 'true' }
     });
+    if (typeof lucideIconHtml === 'function') {
+      iconEl.innerHTML = lucideIconHtml(iconeName);
+    } else {
+      iconEl.textContent = iconeName;
+    }
     card.appendChild(iconEl);
     
     // Info
@@ -300,10 +303,15 @@ const DOM_SAFE = {
         'data-categoria': options.categoria,
         'data-tipo': options.tipo || 'despesa',
         'data-action': options.action || 'selecionar-categoria'
-      },
-      text: options.emoji + ' ' + options.label
+      }
     });
-    
+    if (options.lucide && typeof lucideIconHtml === 'function') {
+      chip.innerHTML = lucideIconHtml(options.lucide) + ' ' + (options.label || '');
+    } else if (options.emoji && typeof options.emoji === 'string' && options.emoji.indexOf('<') !== -1) {
+      chip.innerHTML = options.emoji + ' ' + (options.label || '');
+    } else {
+      chip.textContent = (options.label || options.categoria || '');
+    }
     return chip;
   },
   

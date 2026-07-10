@@ -1,10 +1,10 @@
-/**
- * @file config.js � Application constants & configuration
+﻿/**
+ * @file config.js � Application constants & configuration
  */
 
 const CONFIG = {
-  APP_NAME: 'FinancasPro MVP',
-  VERSION: '3.0.0',
+  APP_NAME: 'FinançasPro',
+  VERSION: '11.0.0',
 
   STORAGE_TRANSACOES: 'fp-transacoes',
   STORAGE_CONFIG: 'fp-config',
@@ -39,31 +39,33 @@ const CONFIG = {
 
   get CATS_DESPESA_FORM() {
     return this.CATEGORIAS_DESPESA_SLUGS.map(function(v) {
-      return { v: v, l: CONFIG._EMOJIS[v] + ' ' + CONFIG.CATEGORIAS_LABELS[v] };
+      return { v: v, l: CONFIG.CATEGORIAS_LABELS[v] };
     });
   },
   get CATS_RECEITA_FORM() {
     return this.CATEGORIAS_RECEITA_SLUGS.map(function(v) {
-      return { v: v, l: CONFIG._EMOJIS[v] + ' ' + CONFIG.CATEGORIAS_LABELS[v] };
+      return { v: v, l: CONFIG.CATEGORIAS_LABELS[v] };
     });
   },
 
-  _EMOJIS: {
-    alimentacao: '??', transporte: '??', moradia: '??', saude: '??',
-    educacao: '??', lazer: '??', outro: '??', outros: '??',
-    salario: '??', freelance: '??', investimentos: '??', vendas: '??',
-    reembolsos: '??', beneficios: '??', presentes: '??', aluguel_recebido: '??', premios: '??',
-    assinaturas: '??', seguros: '???', impostos: '??', servicos_financeiros: '??',
-    compras: '??', vestuario: '??', viagem: '??', pet: '??', familia: '??',
-    doacoes: '??', beleza: '??'
+  _LUCIDE_ICONS: {
+    alimentacao: 'utensils', transporte: 'car', moradia: 'home', saude: 'pill',
+    educacao: 'book-open', lazer: 'film', outro: 'pin', outros: 'pin',
+    salario: 'wallet', freelance: 'laptop', investimentos: 'trending-up', vendas: 'shopping-cart',
+    reembolsos: 'rotate-ccw', beneficios: 'gift', presentes: 'gift', aluguel_recebido: 'home',
+    premios: 'trophy', assinaturas: 'tv', seguros: 'shield', impostos: 'receipt',
+    servicos_financeiros: 'landmark', compras: 'shopping-bag', vestuario: 'shirt',
+    viagem: 'plane', pet: 'paw', familia: 'users', doacoes: 'heart', beleza: 'sparkles'
   },
+
+  /** @deprecated Use _LUCIDE_ICONS � mantido para compatibilidade legada */
+  get _EMOJIS() { return this._LUCIDE_ICONS; },
 
   get CATEGORIAS_MAP() {
     var map = {};
     var self = this;
     Object.keys(this.CATEGORIAS_LABELS).forEach(function(slug) {
-      var emoji = self._EMOJIS[slug] || '??';
-      map[slug] = emoji + ' ' + self.CATEGORIAS_LABELS[slug];
+      map[slug] = self.CATEGORIAS_LABELS[slug];
     });
     return Object.freeze(map);
   },
@@ -96,10 +98,17 @@ const CONFIG = {
   },
 
   DEFAULT_CONFIG: {
-    nome: 'Usuario',
+    nome: 'Usuário',
     moeda: 'BRL',
     tema: 'light',
-    ultimoExportoDados: null
+    plano: 'free',
+    ultimoExportoDados: null,
+    metas: [],
+    contasPagar: [],
+    assinaturas: [],
+    patrimonio: { ativos: [], dividas: [] },
+    openFinance: { connections: [], lastSync: null },
+    cryptoAtRestEnabled: false,
   },
 
   MOEDA_FORMATACAO: {

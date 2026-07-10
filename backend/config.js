@@ -16,7 +16,10 @@ const CONFIG = {
   port: parseInt(process.env.PORT) || 4000,
 
   database: {
-    url: process.env.DATABASE_URL || 'postgresql://financaspro:changeme@localhost:5432/financaspro',
+    // Em produção a URL é obrigatória (fail-closed) — sem fallback inseguro.
+    url: isProd
+      ? required('DATABASE_URL')
+      : (process.env.DATABASE_URL || 'postgresql://financaspro:changeme@localhost:5432/financaspro'),
   },
 
   auth: {
@@ -29,7 +32,7 @@ const CONFIG = {
     accessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m',
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
     cookieSameSite: process.env.COOKIE_SAME_SITE || 'Lax',
-    pbkdf2Iterations: parseInt(process.env.PBKDF2_ITERATIONS) || 100000,
+    pbkdf2Iterations: parseInt(process.env.PBKDF2_ITERATIONS) || 600000,
     saltLength: 16,
     issuer: process.env.JWT_ISSUER || 'financaspro-api',
     audience: process.env.JWT_AUDIENCE || 'financaspro-client',
@@ -84,6 +87,27 @@ const CONFIG = {
 
   // Fase 10 — URL pública do app (usada em e-mails e portal Stripe)
   appUrl: process.env.APP_URL || 'http://localhost:4000',
+
+  // Fase 11 — Open Finance (Belvo / Pluggy / sandbox)
+  openFinance: {
+    defaultProvider: process.env.OPEN_FINANCE_PROVIDER || 'sandbox',
+    belvoEnvironment: process.env.BELVO_ENV || 'sandbox',
+    belvoSecretId: process.env.BELVO_SECRET_ID || null,
+    belvoSecretPassword: process.env.BELVO_SECRET_PASSWORD || null,
+    pluggyClientId: process.env.PLUGGY_CLIENT_ID || null,
+    pluggyClientSecret: process.env.PLUGGY_CLIENT_SECRET || null,
+  },
+
+  /** Em produção, exige REDIS_URL para rate limit distribuído */
+  requireRedis: process.env.REQUIRE_REDIS === '1' || false,
+
+  metrics: {
+    token: process.env.METRICS_TOKEN || null,
+  },
+
+  crypto: {
+    totpEncryptionKey: process.env.TOTP_ENCRYPTION_KEY || null,
+  },
 };
 
 export default CONFIG;

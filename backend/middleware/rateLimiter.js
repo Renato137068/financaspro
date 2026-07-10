@@ -1,14 +1,9 @@
-// backend/middleware/rateLimiter.js — rate limiting por IP (in-process)
-// Para produção multi-instância, substitua por redis-based rate limiter
+// backend/middleware/rateLimiter.js — rate limiting por IP (Redis em prod, memória em dev)
 import CONFIG from '../config.js';
+import redis from '../lib/redis.js';
 
 const { windowMs, max, authMax } = CONFIG.rateLimit;
 
-/**
- * Extrai o IP real do cliente.
- * req.ip já é resolvido corretamente pelo Express quando trust proxy está configurado.
- * O fallback pega apenas o primeiro IP do header para evitar spoofing com lista de IPs.
- */
 function getClientIp(req) {
   if (req.ip) return req.ip;
   const forwarded = req.headers['x-forwarded-for'];
@@ -16,12 +11,7 @@ function getClientIp(req) {
   return 'unknown';
 }
 
-/**
- * Fábrica de rate limiter in-memory.
- * Retorna headers RFC 9110 em todas as respostas (RateLimit-Limit, RateLimit-Remaining, RateLimit-Reset).
- * @param {{ windowMs: number, max: number, keyFn?: (req) => string }} opts
- */
-function createLimiter({ windowMs: wMs, max: limit, keyFn }) {
+function createMemoryLimiter({ windowMs: wMs, max: limit, keyFn }) {
   const store = new Map();
 
   setInterval(() => {
@@ -65,10 +55,52 @@ function createLimiter({ windowMs: wMs, max: limit, keyFn }) {
   };
 }
 
-/** Limiter global para todas as rotas */
+function createRedisLimiter({ windowMs: wMs, max: limit, keyFn }) {
+  const prefix = 'rl:';
+
+  return async function rateLimiter(req, res, next) {
+    const client = redis.client;
+    if (!client || !redis.isAvailable) {
+      return createMemoryLimiter({ windowMs: wMs, max: limit, keyFn })(req, res, next);
+    }
+
+    const key = prefix + (keyFn ? keyFn(req) : getClientIp(req));
+
+    try {
+      const count = await client.incr(key);
+      if (count === 1) await client.pexpire(key, wMs);
+
+      const ttl = await client.pttl(key);
+      const resetAt = Date.now() + Math.max(ttl, 0);
+
+      res.set('RateLimit-Limit', String(limit));
+      res.set('RateLimit-Remaining', String(Math.max(0, limit - count)));
+      res.set('RateLimit-Reset', String(Math.ceil(resetAt / 1000)));
+
+      if (count > limit) {
+        const retryAfter = Math.ceil(ttl / 1000);
+        res.set('Retry-After', String(Math.max(retryAfter, 1)));
+        return res.status(429).json({
+          error: 'Muitas requisições. Tente novamente em breve.',
+          retryAfter: Math.max(retryAfter, 1),
+        });
+      }
+      return next();
+    } catch (_err) {
+      return createMemoryLimiter({ windowMs: wMs, max: limit, keyFn })(req, res, next);
+    }
+  };
+}
+
+function createLimiter(opts) {
+  if (CONFIG.isProd || process.env.REDIS_URL) {
+    return createRedisLimiter(opts);
+  }
+  return createMemoryLimiter(opts);
+}
+
 export const globalLimiter = createLimiter({ windowMs, max });
 
-/** Limiter mais restritivo para rotas de autenticação — chave inclui email para limitar por conta */
 export const authLimiter = createLimiter({
   windowMs,
   max: authMax,

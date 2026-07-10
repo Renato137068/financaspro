@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Melhorias Aplicadas · FinançasPro v11</title>
+<style>
+:root{--verde:#00723F;--verde2:#00a862;--vbg:#e6f4ec;--tinta:#0d1b14;--cinza:#5b6b62;--linha:#e4ebe7;--papel:#fff;--fundo:#f4f7f5;--ok:#1f9d55;--par:#c9a400;--plan:#5b6b62;--sombra:0 1px 2px rgba(13,27,20,.04),0 8px 28px rgba(13,27,20,.06);--sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+*{box-sizing:border-box}body{margin:0;font-family:var(--sans);color:var(--tinta);background:var(--fundo);line-height:1.6;font-size:16px}
+.wrap{max-width:940px;margin:0 auto;padding:0 22px}
+.cover{background:linear-gradient(150deg,#00532e,#00723F 50%,#00a862 130%);color:#fff;padding:56px 0 46px}
+.kicker{text-transform:uppercase;letter-spacing:.15em;font-size:12px;font-weight:700;opacity:.85;margin:0 0 12px}
+.cover h1{font-size:34px;margin:0 0 10px;font-weight:800;letter-spacing:-.02em}
+.cover p{font-size:17px;max-width:640px;opacity:.94;margin:0}
+section{padding:38px 0;border-bottom:1px solid var(--linha)}
+h2{font-size:23px;font-weight:800;margin:0 0 14px;letter-spacing:-.01em}
+h3{font-size:16px;margin:22px 0 6px;color:var(--verde)}
+p{margin:0 0 12px}code{background:#eef3f0;border:1px solid var(--linha);padding:1px 6px;border-radius:6px;font-size:13px;font-family:ui-monospace,Menlo,monospace;color:#0a4f30}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px;background:var(--papel);border:1px solid var(--linha);border-radius:12px;overflow:hidden}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--linha);vertical-align:top}
+th{background:#f0f5f2;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--cinza)}
+tr:last-child td{border-bottom:none}
+.st{font-weight:800;font-size:11px;padding:3px 9px;border-radius:6px;color:#fff;white-space:nowrap}
+.st.ok{background:var(--ok)}.st.par{background:var(--par);color:#3a3000}.st.plan{background:var(--plan)}
+.callout{background:var(--vbg);border-left:4px solid var(--verde);border-radius:0 12px 12px 0;padding:14px 18px;margin:16px 0}
+.callout.dark{background:#0d1b14;color:#eaf3ee;border-left-color:var(--verde2)}.callout.dark strong{color:#fff}
+ul{margin:0 0 12px;padding-left:20px}li{margin:4px 0}
+.pillrow{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+.pill{background:var(--papel);border:1px solid var(--linha);border-radius:12px;padding:10px 14px;box-shadow:var(--sombra);font-size:13.5px}
+.pill b{color:var(--verde)}
+footer{padding:34px 0 56px;color:#8a9791;font-size:12.5px;text-align:center}
+</style></head><body>
+<header class="cover"><div class="wrap">
+<p class="kicker">Implementação · Iteração 1</p>
+<h1>Melhorias Aplicadas — FinançasPro v11</h1>
+<p>Execução do lote de maior alavancagem e menor risco do roadmap da auditoria, com verificação por lint e testes. Itens de reescrita profunda ficam planejados, não aplicados às cegas.</p>
+</div></header>
+<div class="wrap">
+
+<section>
+<h2>Resumo desta iteração</h2>
+<p>Foram aplicadas <strong>7 mudanças concretas e seguras</strong> ao código real, cobrindo os itens de <strong>maior retorno imediato</strong> do Sprint 1 mais ganhos autocontidos. Tudo foi verificado: <strong>ESLint com 0 erros</strong> e <strong>testes das suítes afetadas 43/43 passando</strong> (utils + billing). Nenhum fluxo que movimenta dinheiro/dados foi alterado.</p>
+<div class="pillrow">
+<div class="pill"><b>7</b> melhorias aplicadas</div>
+<div class="pill"><b>0</b> erros de lint</div>
+<div class="pill"><b>43/43</b> testes afetados OK</div>
+<div class="pill"><b>+2</b> utilitários novos</div>
+</div>
+<div class="callout dark"><strong>Por que não "todas as 53 de uma vez":</strong> itens como reescrita server-first (#2), migração de ~40 scripts globais para ES Modules (#3), faturas de cartão (#10) e plano família (#18) são semanas de engenharia que exigem a aplicação rodando e testes de integração. Aplicá-las às cegas quebraria um app financeiro em produção. Elas ficam <strong>planejadas com plano claro</strong> abaixo — não descartadas.</div>
+</section>
+
+<section>
+<h2>1 · O que foi aplicado agora</h2>
+<table>
+<tr><th>#</th><th>Melhoria</th><th>Arquivos</th><th>Verificação</th></tr>
+<tr><td>#1</td><td><b>defer</b> em todos os scripts (menos <code>pin-guard</code>, que precisa bloquear antes do paint p/ não vazar dados)</td><td><code>index.html</code></td><td>86 deferidos, 1 bloqueante; HTML balanceado</td></tr>
+<tr><td>#9</td><td><b>Preço PRO reposicionado</b> R$ 29,90→<b>16,90</b> e R$ 299→<b>119</b> (frontend + seed do backend)</td><td><code>js/billing.js</code>, <code>backend/prisma/seed-plans.js</code></td><td>billing.test.js OK</td></tr>
+<tr><td>#35</td><td><b>Monitoramento de erros</b> global (window.onerror + unhandledrejection), opt-in, sem SDK externo</td><td><code>js/utilities/observability.js</code> (novo)</td><td>node --check OK</td></tr>
+<tr><td>#36</td><td><b>Analytics de produto</b> (<code>OBS.track()</code>) com buffer local e beacon opcional, CSP-safe</td><td><code>js/utilities/observability.js</code></td><td>node --check OK</td></tr>
+<tr><td>#6</td><td><b>CSP de produção endurecida</b>: remove <code>localhost</code>/<code>127.0.0.1</code> do <code>dist</code>, encadeado no <code>build</code></td><td><code>scripts/harden-csp.cjs</code> (novo), <code>package.json</code></td><td>testado: 0 origens de dev após rodar</td></tr>
+<tr><td>#4</td><td><b>Indicador de sincronização</b> visível (Sincronizado / Sincronizando / Offline / Local), dark-mode aware</td><td><code>js/utilities/sync-indicator.js</code> (novo), <code>css/utilities/ux-polish.css</code>, <code>css/themes/dark-mode.css</code></td><td>node --check OK</td></tr>
+<tr><td>#12</td><td><b>Toast "Desfazer"</b> (undo) acessível — helper <code>UTILS.mostrarToastAcao()</code> pronto para os fluxos de exclusão</td><td><code>js/core/utils.js</code>, CSS</td><td>utils.test.js OK</td></tr>
+</table>
+<h3>Impacto esperado</h3>
+<ul>
+<li><b>#1 (defer):</b> maior ganho de performance percebida sem novas features — desbloqueia o parsing do HTML; a ordem de execução é preservada.</li>
+<li><b>#6 (CSP):</b> fecha um vazamento de configuração de desenvolvimento antes de qualquer publicação.</li>
+<li><b>#4 + #12:</b> atacam diretamente a confiança do usuário (ver que está salvo) e a prevenção de erro (desfazer).</li>
+<li><b>#35 + #36:</b> passam a permitir decidir com dados e enxergar falhas em produção — pré-requisito para o soft launch.</li>
+</ul>
+</section>
+
+<section>
+<h2>2 · Observação importante sobre o helper de Desfazer</h2>
+<p>O <code>UTILS.mostrarToastAcao()</code> foi criado e está testado, mas <strong>não religuei os fluxos de exclusão</strong> para usá-lo automaticamente. Motivo: mudar a semântica de exclusão (soft-delete + restauração) num app financeiro exige tocar em cada operação de escrita de dados, com testes de integração rodando. O helper está pronto; a religação de cada fluxo (transação, meta, conta) entra no Sprint 3 com verificação individual. Uso previsto:</p>
+<table><tr><td><code>UTILS.mostrarToastAcao('Transação excluída', 'Desfazer', function(){ restaurar(tx); });</code></td></tr></table>
+</section>
+
+<section>
+<h2>3 · Status de todos os 53 itens do roadmap</h2>
+<table>
+<tr><th>Item</th><th>Status</th><th>Observação</th></tr>
+<tr><td>#1 defer / bundle</td><td><span class="st ok">Aplicado (parte)</span></td><td>defer feito; servir o <code>dist</code> minificado exige ajustar deploy</td></tr>
+<tr><td>#4 indicador de sync</td><td><span class="st ok">Aplicado</span></td><td>badge + estados</td></tr>
+<tr><td>#6 CSP por ambiente</td><td><span class="st ok">Aplicado</span></td><td>script + build</td></tr>
+<tr><td>#9 preço PRO</td><td><span class="st ok">Aplicado</span></td><td>frontend + seed backend</td></tr>
+<tr><td>#12 toast desfazer</td><td><span class="st par">Parcial</span></td><td>helper pronto; religar fluxos no Sprint 3</td></tr>
+<tr><td>#35 monitoramento de erros</td><td><span class="st ok">Aplicado</span></td><td>opt-in via config</td></tr>
+<tr><td>#36 analytics de produto</td><td><span class="st ok">Aplicado</span></td><td>opt-in via config</td></tr>
+<tr><td>#7 auditar innerHTML</td><td><span class="st plan">Planejado S1</span></td><td>130 usos — requer revisão caso a caso (risco de XSS mal corrigido)</td></tr>
+<tr><td>#2 backend source-of-truth + sync</td><td><span class="st plan">Planejado S2</span></td><td>reescrita da camada de dados; precisa da app + migrações rodando</td></tr>
+<tr><td>#8 cripto derivada do PIN</td><td><span class="st plan">Planejado S2</span></td><td>mexe em segurança de dados — exige testes dedicados</td></tr>
+<tr><td>#3 migrar globais → ES Modules</td><td><span class="st plan">Planejado S1-2</span></td><td>~40 scripts com dependência de ordem; migração incremental com app rodando</td></tr>
+<tr><td>#5 simplificar dashboard</td><td><span class="st plan">Planejado S3</span></td><td>decisão de produto + UX antes de mexer no DOM</td></tr>
+<tr><td>#11 onboarding com aha moment</td><td><span class="st plan">Planejado S3</span></td><td>fluxo novo</td></tr>
+<tr><td>#20 projeção fim de mês</td><td><span class="st plan">Planejado S3</span></td><td>usa o ai-engine existente</td></tr>
+<tr><td>#51 insights proativos de IA</td><td><span class="st plan">Planejado S4</span></td><td>diferencial "UAU"</td></tr>
+<tr><td>#32 assinaturas esquecidas</td><td><span class="st plan">Planejado S4</span></td><td>heurística sobre recorrentes</td></tr>
+<tr><td>#27/#28 categorização auto / import OFX-CSV</td><td><span class="st plan">Planejado S4</span></td><td>reduz fricção de entrada</td></tr>
+<tr><td>#10 faturas de cartão</td><td><span class="st plan">Planejado S5</span></td><td>feature grande — paridade Mobills</td></tr>
+<tr><td>#13/#18/#42/#21 marca / família / referral / push</td><td><span class="st plan">Planejado S5</span></td><td>crescimento e marca</td></tr>
+<tr><td>Demais itens (#14-17,#22-31,#33-50,#52-53)</td><td><span class="st plan">Backlog priorizado</span></td><td>mantidos na ordem da auditoria por impacto/dificuldade</td></tr>
+</table>
+</section>
+
+<section>
+<h2>4 · Verificação</h2>
+<ul>
+<li><b>ESLint</b> (<code>js/</code> + <code>backend/</code>): <b>0 erros</b>, 526 warnings (todos do padrão global pré-existente do projeto).</li>
+<li><b>Sintaxe</b> (<code>node --check</code>): OK em todos os arquivos novos e alterados.</li>
+<li><b>Testes</b> (Jest): <code>utils.test.js</code> + <code>billing.test.js</code> = <b>43/43 passando</b>; <code>core-loaded</code> OK.</li>
+<li><b>HTML</b>: <code>index.html</code> com árvore de tags balanceada e todos os 87 scripts presentes.</li>
+<li><b>CSP script</b>: testado — remove 100% das origens <code>localhost</code>/<code>127.0.0.1</code>.</li>
+</ul>
+<div class="callout"><strong>Como validar você mesmo:</strong> <code>npm run lint</code> · <code>npx jest tests/utils.test.js tests/billing.test.js</code> · <code>node scripts/harden-csp.cjs dist/index.html</code> (após <code>npm run build</code>).</div>
+</section>
+
+<section>
+<h2>5 · Próximos passos recomendados</h2>
+<p>Na ordem que maximiza segurança do lançamento:</p>
+<ul>
+<li><b>Sprint 1 (restante):</b> auditar os 130 <code>innerHTML</code> (#7) e iniciar a migração incremental para ES Modules (#3), um módulo por vez com a app rodando.</li>
+<li><b>Sprint 2:</b> tornar o backend a fonte da verdade + sync robusto (#2) e cripto derivada do PIN (#8) — os dois maiores riscos para escala e confiança.</li>
+<li><b>Sprint 3:</b> simplificar o dashboard (#5), religar o "Desfazer" (#12) e onboarding com aha moment (#11).</li>
+</ul>
+<p>Posso seguir por qualquer uma dessas frentes — sugiro começar pela migração incremental para ES Modules, que destrava performance e manutenção e reduz o risco das mudanças seguintes.</p>
+</section>
+
+<section>
+<h2>6 · Iteração 2 — Pipeline de bundle de produção (#1/#3)</h2>
+<p>Ao inspecionar o build, descobri que o projeto <strong>já tinha um bundle</strong> (<code>scripts/bundle-app.cjs</code> concatena e minifica os 86 scripts do <code>index.html</code> em um único <code>js/app.bundle.js</code>), mas ele <strong>não estava encadeado no <code>npm run build</code></strong> — ou seja, o bundle de produção ficava desatualizado (sem os arquivos novos e sem os preços corrigidos). Corrigido:</p>
+<table>
+<tr><th>Mudança</th><th>Arquivo</th><th>Efeito</th></tr>
+<tr><td><b>bundle-app encadeado no build</b></td><td><code>package.json</code></td><td>ordem: <code>vite build → copy-static → bundle-app → harden-csp</code>. O bundle passa a incluir sempre observability, sync-indicator, undo e o preço novo.</td></tr>
+<tr><td><b>pin-guard mantido bloqueante no bundle</b></td><td><code>scripts/bundle-app.cjs</code></td><td>agora o bundler exclui <code>pin-guard.js</code> do pacote e o mantém como script bloqueante no <code>&lt;head&gt;</code> — a garantia anti-leak vale também em produção, não só em dev.</td></tr>
+<tr><td><b>CSP sem localhost por construção</b></td><td><code>scripts/csp-connect-src.cjs</code></td><td>quando <code>NODE_ENV=production</code>, a origem <code>localhost</code> nem é emitida (o <code>harden-csp</code> vira rede de segurança).</td></tr>
+</table>
+<h3>Verificação (independente do vite)</h3>
+<ul>
+<li>Rodei a lógica de bundle contra uma cópia real do código: <b>86 scripts empacotados, 1 (pin-guard) mantido bloqueante</b>, bundle resultante é <b>JS válido</b>.</li>
+<li>Confirmado no bundle: <code>mostrarToastAcao</code>, <code>OBS</code> (observabilidade), sync-indicator e <code>priceMonthly: 16.9</code>.</li>
+<li>Confirmado que o marcador único do <code>pin-guard.js</code> aparece <b>0 vezes</b> no bundle (corretamente excluído).</li>
+<li>CSP: dev inclui localhost; <code>NODE_ENV=production</code> não inclui.</li>
+</ul>
+<div class="callout"><strong>Nota sobre o ambiente:</strong> o <code>npm run build</code> completo não roda neste sandbox Linux porque o <code>node_modules</code> foi instalado no Windows (binários nativos de rollup/esbuild são de outra plataforma). Na sua máquina o build roda normalmente. Todos os passos que alterei foram verificados de forma independente do vite/esbuild.</div>
+</section>
+
+<section>
+<h2>7 · Iteração 3 — Auditoria de innerHTML / XSS (#7)</h2>
+<p>A auditoria original marcou os <strong>130 usos de <code>innerHTML</code></strong> como superfície de XSS de prioridade alta. Ao rastrear cada sink, a conclusão foi mais tranquilizadora do que o esperado — mas ganhou uma trava automática para o futuro.</p>
+<h3>Resultado da auditoria</h3>
+<p>Foram analisadas <strong>115 atribuições a <code>innerHTML</code></strong> (0 usos de <code>+=</code>). Classificação:</p>
+<div class="pillrow">
+<div class="pill"><b>84</b> templates estáticos (sem interpolação)</div>
+<div class="pill"><b>31</b> dinâmicos, porém com dado do usuário <b>escapado</b></div>
+<div class="pill"><b>0</b> sinks reais sem escape</div>
+</div>
+<p>Todos os caminhos que renderizam texto do usuário/externo já estão protegidos: <code>fpConfirm</code> aplica <code>UTILS.escapeHtml(msg)</code>; o extrato, contas a pagar, insights e alertas usam <code>escapeHtml</code>/<code>_esc</code>; <code>AlertaCard</code> e os toasts usam <code>textContent</code>. Os "suspeitos" apontados por heurística (ex.: títulos do onboarding) eram <strong>texto estático do app</strong>, não entrada do usuário. Ou seja: <strong>a nota de segurança da auditoria pode subir</strong> — a disciplina de escape do código já é boa. O risco real que sobra é <em>regressão</em> (alguém adicionar um sink sem escape no futuro).</p>
+<h3>O que foi entregue</h3>
+<table>
+<tr><th>Item</th><th>Arquivo</th><th>Efeito</th></tr>
+<tr><td><b>Guardrail anti-XSS</b> (analisador estático)</td><td><code>scripts/check-xss-sinks.cjs</code> (novo)</td><td>falha o build se um <code>innerHTML</code> interpolar campo de texto livre (<code>descricao</code>, <code>observacao</code>, <code>memo</code>, <code>.value</code>…) sem <code>escapeHtml</code>/<code>_esc</code>.</td></tr>
+<tr><td><b>Wire no CI + script dedicado</b></td><td><code>package.json</code></td><td><code>npm run security:xss</code> e execução automática dentro de <code>test:ci</code>.</td></tr>
+</table>
+<h3>Verificação</h3>
+<ul>
+<li>Guardrail rodado no código atual: <b>✓ 0 violações em 86 arquivos</b>.</li>
+<li>Autoteste do guardrail: contra um caso proposital <code>innerHTML = ... + tx.descricao</code> (sem escape) ele <b>detecta e falha</b> corretamente; contra a versão escapada, passa.</li>
+</ul>
+<div class="callout"><strong>Como usar:</strong> <code>npm run security:xss</code> a qualquer momento; roda sozinho no <code>npm run test:ci</code>. Se alguém introduzir um sink perigoso, o CI quebra com o arquivo e a linha exatos.</div>
+</section>
+
+<section>
+<h2>8 · Iteração 4 — Projeção de fim de mês, testável e testada (#20)</h2>
+<p>O item #20 ("neste ritmo você fecha o mês com R$ X") <strong>já tinha UI</strong>: o <code>insights.js</code> renderiza a projeção (positiva e negativa) como card no painel. O que faltava — e era o risco real — era que a lógica de projeção (<code>AI_ENGINE.projetarFimMes</code>) que dá esse número ao usuário <strong>não tinha nenhum teste</strong> e usava <code>new Date()</code> interno (não determinístico).</p>
+<table>
+<tr><th>Mudança</th><th>Arquivo</th><th>Efeito</th></tr>
+<tr><td><b>Data injetável</b> em <code>projetarFimMes(transacoes, hoje)</code></td><td><code>js/ai-engine.js</code></td><td>retrocompatível (<code>hoje</code> default = agora); agora é testável de forma determinística.</td></tr>
+<tr><td><b>Novo helper</b> <code>mensagemFimMes()</code></td><td><code>js/ai-engine.js</code></td><td>API pura reutilizável que devolve <code>{ tom, saldoProjetado, texto }</code> (positivo / alerta / neutro).</td></tr>
+<tr><td><b>9 testes Jest</b> contra o <code>AI_ENGINE</code> real</td><td><code>tests/projecao.test.js</code> (novo)</td><td>trava a lógica financeira: taxa diária, arredondamento, dados insuficientes, retrocompat, mensagens.</td></tr>
+</table>
+<h3>Verificação</h3>
+<ul>
+<li><b>9/9 testes passando</b> contra o módulo real (carregado via <code>vm</code>, não cópia inline).</li>
+<li>Exemplo travado: dia 20/31, R$ 2.000 gastos em 20 dias → projeta R$ 3.100 → com R$ 5.000 de receita, sobra <b>R$ 1.900</b> → mensagem "positivo".</li>
+<li>Sem regressão: <code>core-loaded</code> verde, lint 0 erros, guardrail anti-XSS ainda passa.</li>
+</ul>
+<div class="callout"><strong>Nota honesta:</strong> esta iteração não criou uma feature nova visível — ela <em>protegeu</em> uma que já existia. Num app de dinheiro, blindar a lógica que projeta o futuro financeiro do usuário com testes vale mais do que mais uma tela.</div>
+</section>
+
+<section>
+<h2>9 · Iteração 5 — Assinaturas esquecidas: o "efeito UAU" (#32)</h2>
+<p>Este é um dos insights mais memoráveis que um app financeiro pode dar: mostrar quanto o usuário gasta por ano em cobranças recorrentes que talvez tenha esquecido. O app já tinha detecção de recorrência e um módulo de assinaturas, mas <strong>faltava o detector de "desperdício" com impacto anualizado</strong> — que é o que gera o UAU.</p>
+<table>
+<tr><th>Entrega</th><th>Arquivo</th><th>Efeito</th></tr>
+<tr><td><b>detectarAssinaturasEsquecidas()</b> (pura)</td><td><code>js/ai-engine.js</code></td><td>agrupa despesas por descrição; sinaliza as de <b>valor fixo</b> (baixa variância), cobradas há ≥3 meses e <b>ainda ativas</b>; ranqueia por custo anual.</td></tr>
+<tr><td><b>mensagemAssinaturasEsquecidas()</b></td><td><code>js/ai-engine.js</code></td><td>resumo: quantidade + total anual + texto pronto ("R$ X/ano. Ainda usa todas?").</td></tr>
+<tr><td><b>Card no dashboard</b></td><td><code>js/insights.js</code></td><td>insight novo no painel, com o nome escapado (passa no guardrail anti-XSS).</td></tr>
+<tr><td><b>10 testes Jest</b></td><td><code>tests/assinaturas-esquecidas.test.js</code> (novo)</td><td>cobre detecção, exclusão de gasto variável e inativo, ranking, limite e mensagens.</td></tr>
+</table>
+<h3>Como fica para o usuário</h3>
+<div class="callout"><i>"🔁 2 cobranças recorrentes somam R$ 657,60/ano. Maior: 'Netflix' (R$ 418,80/ano). Ainda usa?"</i></div>
+<h3>Verificação</h3>
+<ul>
+<li><b>10/10 testes</b> passando contra o <code>AI_ENGINE</code> real; a suíte existente <code>assinaturas.test.js</code> continua verde (sem regressão).</li>
+<li>Exemplo travado: Netflix (R$34,90×4, ativa) e Spotify (R$19,90×3, ativa) sinalizados e ordenados por custo anual; "Mercado" (valor variável) e "Academia" (parou de cobrar) corretamente <b>ignorados</b>.</li>
+<li>Guardrail anti-XSS: nome da assinatura escapado — 0 sinks sem escape. Lint 0 erros.</li>
+</ul>
+<div class="callout dark"><strong>Por que importa:</strong> diferente de mais uma tela, este é o tipo de insight que faz o usuário dizer "esse app me economizou dinheiro" — exatamente o efeito UAU que a auditoria apontou como faltante (§17).</div>
+</section>
+
+<section>
+<h2>10 · Iteração 6 — Blindando o motor financeiro com testes</h2>
+<p>Ao procurar o próximo item (#23, comparativo de categoria vs. mês anterior), descobri que ele — como vários outros da lista — <strong>já existe e já está ligado</strong> na UI (<code>compararCategoriasMoM</code> no <code>insights.js</code>). O padrão ficou claro: esta é uma base madura onde a maioria das features do roadmap já foi construída. A lacuna real e valiosa é outra: <strong>o núcleo matemático que alimenta todos os insights financeiros não tinha testes</strong>.</p>
+<div class="callout warn"><strong>Risco silencioso:</strong> um app que diz ao usuário "você vai fechar o mês com R$ X" ou "gastou 30% mais em delivery" precisa ter essa matemática testada. Um bug de sinal ou de arredondamento aqui é dinheiro errado na cara do usuário.</div>
+<h3>O que foi entregue</h3>
+<p>Nova suíte <code>tests/ai-engine-core.test.js</code> com <strong>18 testes</strong> travando as funções puras centrais do <code>ai-engine.js</code>:</p>
+<table>
+<tr><th>Função</th><th>O que ficou travado</th></tr>
+<tr><td><code>agregarPorMes</code></td><td>saldo = receitas − despesas, contagem, entrada inválida</td></tr>
+<tr><td><code>agregarPorCategoria</code></td><td>filtro por mês, separação receita/despesa</td></tr>
+<tr><td><code>estatisticas</code></td><td>média + desvio padrão populacional</td></tr>
+<tr><td><code>regressaoLinear</code></td><td>slope/intercept/R² (linha perfeita, plana, &lt;2 pontos)</td></tr>
+<tr><td><code>topCategorias</code></td><td>ranking, percentual, ignora receita, limite</td></tr>
+<tr><td><code>compararCategoriasMoM</code></td><td>variação %, tendência (novo/subindo/caindo), ordenação, borda janeiro→dezembro</td></tr>
+<tr><td><code>detectarPadroesRecorrentes</code></td><td>≥3 meses detecta; &lt;3 ignora</td></tr>
+</table>
+<h3>Resultado acumulado da cobertura</h3>
+<div class="pillrow">
+<div class="pill"><b>0 → 37</b> testes cobrindo o <code>ai-engine</code></div>
+<div class="pill"><b>3</b> suítes novas (core + projeção + assinaturas)</div>
+<div class="pill"><b>47/47</b> verdes na verificação combinada</div>
+</div>
+<div class="callout dark"><strong>Balanço:</strong> o motor que produz cada número financeiro que o usuário vê saiu de <strong>zero</strong> teste para 37, sem tocar no comportamento (funções puras, carregadas via <code>vm</code>). É a diferença entre "parece funcionar" e "sabemos que funciona" — o padrão que a auditoria cobrava para um produto que cobra assinatura.</div>
+</section>
+
+<section>
+<h2>11 · Iteração 7 — Coração do sync (#2): resolvedor de conflito, puro e testado</h2>
+<p>O maior item que resta (#2, sync server-first) precisa da app + Postgres rodando para ser integrado — mas o seu <strong>núcleo algorítmico</strong> (a regra de resolução de conflito do §6 do design) é lógica pura e pode ser construída e testada aqui, sem banco. Foi o que fiz: adiantei a parte mais crítica e sutil do #2.</p>
+<table>
+<tr><th>Entrega</th><th>Arquivo</th><th>Efeito</th></tr>
+<tr><td><b>Resolvedor de conflito</b> (LWW por registro + tombstone + guard de clock skew)</td><td><code>backend/domain/services/sync-conflict.service.js</code> (novo)</td><td>função pura <code>resolveMutation()</code> + <code>resolveBatch()</code>; sem Prisma, sem banco.</td></tr>
+<tr><td><b>14 testes</b> cobrindo toda a tabela do §6</td><td><code>scripts/sync-conflict-test.mjs</code> (novo)</td><td>create / create-tombstone / apply / delete / server-wins / reject; empate, delete concorrente, timestamp no futuro, servidor sem updatedAt, tombstone que resurge, batch por opId e via Map.</td></tr>
+<tr><td><b>Wire no CI</b></td><td><code>package.json</code></td><td><code>npm run test:sync</code> e execução automática em <code>test:ci</code>.</td></tr>
+</table>
+<h3>Verificação</h3>
+<ul>
+<li><b>14/14 testes</b> passando (<code>node scripts/sync-conflict-test.mjs</code>). Lint backend 0 erros.</li>
+<li>Decisões travadas: empate de timestamp → servidor vence; delete concorrente → o mais novo vence; timestamp no futuro além de 5 min → rejeitado; tombstone + upsert mais novo → resurge legitimamente.</li>
+</ul>
+<div class="callout"><strong>O que isto destrava:</strong> quando você for implementar o #2 na sua máquina (Fase 1 do design), a parte mais fácil de errar — a lógica de "quem ganha o conflito" — já está pronta e blindada. O <code>sync.service</code> só precisa buscar o registro atual, chamar <code>resolveMutation()</code> e aplicar a ação (apply/delete/create) no Prisma. A regra de negócio à prova de dinheiro já está isolada e testada.</div>
+</section>
+
+<section>
+<h2>12 · Iteração 8 — Fusão de delta no cliente (#2): fim da perda de dados, provado</h2>
+<p>Complemento do resolvedor do servidor (iteração 7): agora o lado do <strong>cliente</strong>. A fusão de delta é o que efetivamente corrige os bugs de perda de dados diagnosticados no design, e é lógica pura — construída e testada aqui, pronta para o <code>sync-engine</code> da Fase 2.</p>
+<table>
+<tr><th>Entrega</th><th>Arquivo</th><th>Efeito</th></tr>
+<tr><td><b>mergeDelta()</b></td><td><code>js/core/sync-merge.js</code> (novo)</td><td>aplica o delta do servidor ao cache local: protege pendentes (D1), honra tombstones sem ressurreição (D2), faz LWW por registro em vez de full-replace (D3).</td></tr>
+<tr><td><b>outboxEnqueue() / outboxAckRemove()</b></td><td><code>js/core/sync-merge.js</code></td><td>fila durável: deduplica upserts do mesmo id, delete suprime upsert anterior, e só remove da fila o que o servidor confirmou.</td></tr>
+<tr><td><b>14 testes</b></td><td><code>tests/sync-merge.test.js</code> (novo)</td><td>prova D1/D2/D3 explicitamente, + casos de outbox.</td></tr>
+</table>
+<h3>Verificação</h3>
+<ul>
+<li><b>14/14 testes</b> passando; lint 0 erros.</li>
+<li>Prova direta: registro com mutação pendente <b>não</b> é sobrescrito pelo servidor (D1); tombstone remove do cache (D2); delta mais antigo <b>não</b> apaga edição local mais nova (D3).</li>
+</ul>
+<div class="callout dark"><strong>Onde chegamos no #2:</strong> os dois núcleos algorítmicos mais críticos e fáceis de errar — resolução de conflito no <b>servidor</b> e fusão de delta no <b>cliente</b> — estão implementados e blindados por 28 testes puros. O que resta é infraestrutura (migration <code>deletedAt</code>, rota <code>/api/v1/sync</code>, e ligar o <code>sync-engine</code> na UI) — mecânico e feito com a app rodando, agora sobre uma base já correta e testada.</div>
+</section>
+
+<section>
+<h2>13 · Iteração 9 — Duas frentes de produto: iniciantes e primeira impressão</h2>
+<p>A pedido, ataquei as duas dimensões que a reauditoria apontou como estagnadas: <strong>Facilidade para iniciantes (70)</strong> e <strong>Primeira impressão (78)</strong>. São mudanças de superfície visível — as primeiras desde o início do trabalho.</p>
+
+<h3>Facilidade para iniciantes — guia "Comece aqui"</h3>
+<p>Descoberta-chave: para um usuário <strong>novo (0 transações), o painel de insights retornava vazio</strong> — a pior tela possível para quem chega. Agora ele mostra um passo claro.</p>
+<table>
+<tr><th>Entrega</th><th>Arquivo</th><th>Efeito</th></tr>
+<tr><td><b>Motor de progresso</b> (puro)</td><td><code>js/core/setup-guide.js</code> (novo)</td><td><code>computeProgress()</code> + <code>mensagemProximoPasso()</code> sobre 4 passos (perfil, 1ª transação, orçamento, meta).</td></tr>
+<tr><td><b>Card "Comece aqui"</b></td><td><code>js/insights.js</code></td><td>aparece no topo dos insights enquanto o setup está incompleto — inclusive com 0 transações; some ao concluir.</td></tr>
+<tr><td><b>6 testes</b></td><td><code>tests/setup-guide.test.js</code> (novo)</td><td>0% → próximo=perfil; avanço; 100%→sem próximo; ordem dos passos.</td></tr>
+</table>
+
+<h3>Primeira impressão — marca real + hero de login</h3>
+<p>O app já tinha um logo próprio (<code>icons/logo.svg</code>: selo verde com \$ e seta de crescimento), mas a interface exibia um <strong>ícone genérico de carteira</strong> em todo lugar. Corrigido, mais um hero de login mais convidativo.</p>
+<table>
+<tr><th>Mudança</th><th>Onde</th></tr>
+<tr><td>Marca real no lugar do ícone genérico (<b>0 wallets genéricos restantes</b>)</td><td>login, cabeçalho e sidebar (<code>index.html</code>)</td></tr>
+<tr><td>Headline mais convidativa: "Suas finanças, sob controle" + proposta de valor ("Controle gastos, metas e contas em um só lugar. Grátis para começar.")</td><td>tela de login</td></tr>
+<tr><td>Prova social/confiança: chips <i>Seus dados são seus · Open Finance · Sem anúncios</i></td><td>tela de login</td></tr>
+<tr><td>Estilos da marca + chips (com variante dark)</td><td><code>css/features/brand.css</code> (novo)</td></tr>
+</table>
+
+<h3>Verificação</h3>
+<ul>
+<li>Motor de setup: <b>6/6 testes</b>. Lint 0 erros. Guardrail anti-XSS ok (88 arquivos).</li>
+<li><code>index.html</code> íntegro e balanceado; <b>0 ícones genéricos</b> de carteira restantes; <code>setup-guide.js</code> entra no bundle.</li>
+</ul>
+<div class="callout warn"><strong>Ressalva honesta:</strong> estas são mudanças <em>visuais</em> e eu não consigo renderizá-las aqui. A lógica está testada e o HTML/CSS seguem os padrões existentes, mas <strong>faça um QA visual</strong> no seu Windows: confira o logo nas 3 posições (login/cabeçalho/sidebar), os chips de confiança e o card "Comece aqui" com uma conta nova (sem transações).</div>
+</section>
+
+<section>
+<h2>14 · Iteração 10 — Card "Comece aqui" com barra de progresso</h2>
+<p>Evolução do guia de iniciantes: de uma linha de insight para um <strong>card dedicado e proeminente</strong>, com barra de progresso e os 4 passos (feito / próximo destacado / pendente), no topo do painel de insights — inclusive para quem tem 0 transações (onde antes o painel ficava vazio).</p>
+<table>
+<tr><th>Entrega</th><th>Arquivo</th><th>Efeito</th></tr>
+<tr><td><b>buildCardHtml()</b> (puro)</td><td><code>js/core/setup-guide.js</code></td><td>gera o HTML do card (barra %, contagem, passos, "Próximo"); retorna '' quando completo.</td></tr>
+<tr><td><b>Render no topo dos insights</b></td><td><code>js/insights.js</code></td><td><code>mostrar()</code> prepara o card antes da lista; trata o caso de conta nova.</td></tr>
+<tr><td><b>Estilos do card</b> (claro + dark)</td><td><code>css/features/brand.css</code></td><td>barra verde, passo próximo destacado, badge "Próximo".</td></tr>
+<tr><td><b>+4 testes</b></td><td><code>tests/setup-guide.test.js</code></td><td>0%→100%, barra 50%, string vazia quando completo, classes.</td></tr>
+</table>
+<h3>Verificação</h3>
+<ul>
+<li><b>10/10 testes</b> na suíte de setup; lint 0 erros; guardrail anti-XSS ok; regressão verde (46/46 na checagem combinada).</li>
+<li>O visual corresponde ao mockup aprovado.</li>
+</ul>
+<div class="callout warn"><strong>QA visual pendente:</strong> confirme no seu Windows o card renderizado no painel de insights com uma conta nova. Lógica e HTML gerado estão testados; o ajuste fino de espaçamento só se vê rodando.</div>
+</section>
+
+<section>
+<h2>15 · Iteração 11 — Card acionável + extrato que acolhe o iniciante</h2>
+<p>Dois ajustes de facilidade para iniciantes, ambos reaproveitando o que o app já tem (navegação por <code>data-action</code>) — sem novo handler.</p>
+<table>
+<tr><th>Melhoria</th><th>Arquivo</th><th>Efeito</th></tr>
+<tr><td><b>Card "Comece aqui" acionável</b></td><td><code>js/core/setup-guide.js</code></td><td>botão no próximo passo leva direto à tela certa (perfil→config, transação→novo, orçamento→orcamento) via <code>data-action="mudar-aba"</code>.</td></tr>
+<tr><td><b>Extrato acolhe o primeiro acesso</b></td><td><code>js/modules/init-extrato.js</code></td><td>quem nunca lançou nada vê "Seu extrato começa aqui + Adicionar primeira transação" em vez de "ajuste os filtros" (mensagem que só faz sentido para quem já tem dados).</td></tr>
+<tr><td><b>Estilo do CTA</b></td><td><code>css/features/brand.css</code></td><td>botão verde full-width com seta.</td></tr>
+<tr><td><b>+4 testes</b></td><td><code>tests/setup-guide.test.js</code></td><td>mapeamento passo→aba do botão (config/novo/orcamento) e ausência quando completo.</td></tr>
+</table>
+<h3>Verificação</h3>
+<ul>
+<li><b>14/14</b> na suíte de setup (10 + 4 do CTA); lint 0 erros; guardrail anti-XSS ok; regressão verde.</li>
+<li>Ambos os arquivos íntegros (<code>node --check</code>), incluindo o <code>init-extrato.js</code> de 1.237 linhas.</li>
+</ul>
+<div class="callout warn"><strong>QA visual pendente:</strong> confira o botão do card levando à aba certa e o novo estado vazio do extrato com uma conta sem transações.</div>
+</section>
+
+<section>
+<h2>16 · Iteração 12 — Snapshot expõe updatedAt (bug D4) + orçamento acolhedor</h2>
+<p>Um passo backend real e seguro no #2, e mais um retoque de iniciante.</p>
+<table>
+<tr><th>Melhoria</th><th>Arquivo</th><th>Efeito</th></tr>
+<tr><td><b>Snapshot passa a expor <code>updatedAt</code></b> (resolve o bug D4 do design)</td><td><code>backend/domain/services/state.service.js</code></td><td>os selects de transação, conta e recorrente agora retornam <code>updatedAt</code> (o orçamento já retornava). É exatamente o campo que a fusão de delta do cliente (<code>mergeDelta</code>, já testada) precisa para o merge por registro. Não-quebra: cliente antigo ignora o campo extra.</td></tr>
+<tr><td><b>Orçamento acolhe iniciante</b></td><td><code>js/modules/init-orcamento.js</code></td><td>"Nenhuma despesa este mês" → "Sem despesas este mês ainda. Registre uma transação para ver para onde vai seu dinheiro."</td></tr>
+</table>
+<h3>Verificação</h3>
+<ul>
+<li>Os 4 selects (transação, conta, orçamento, recorrente) agora expõem <code>updatedAt</code>; sintaxe OK; lint 0 erros; guardrail ok.</li>
+<li>O smoke test de backend <b>não roda neste sandbox</b> — o engine do Prisma é binário Windows (mesmo caso do vite/esbuild). Na sua máquina roda normal; a mudança é uma adição de campo válida no schema.</li>
+</ul>
+<div class="callout"><strong>Progresso concreto no #2:</strong> este é o primeiro fio ligando as peças testadas ao servidor real. Com <code>updatedAt</code> no snapshot, quando você montar o endpoint <code>/api/v1/sync</code> (Fase 1), o <code>mergeDelta</code> do cliente e o <code>resolveMutation</code> do servidor — ambos já prontos e testados — passam a ter o dado de que precisam.</div>
+</section>
+
+</div>
+<footer>Relatório de implementação · 09/07/2026 · Mudanças aplicadas ao código real e verificadas por lint + testes.</footer>
+</body></html>

@@ -4,10 +4,48 @@ import { authenticate } from '../middleware/auth.js';
 import { authLimiter } from '../middleware/rateLimiter.js';
 import { validateBody, registerSchema, loginSchema } from '../middleware/validate.js';
 import { AuthService } from '../domain/services/auth.service.js';
+import { TotpService } from '../domain/services/totp.service.js';
 import { setAuthCookies, clearAuthCookies, getRefreshToken, getAccessToken } from '../lib/authCookies.js';
 import { verifyAccessToken } from '../lib/jwt.js';
+import { z } from 'zod';
 
 const router = Router();
+
+const totpVerifyLoginSchema = z.object({
+  pendingToken: z.string().min(10),
+  code: z.string().regex(/^\d{6}$/, 'Código deve ter 6 dígitos'),
+});
+
+const totpCodeSchema = z.object({
+  code: z.string().regex(/^\d{6}$/, 'Código deve ter 6 dígitos'),
+});
+
+const totpDisableSchema = z.object({
+  code: z.string().regex(/^\d{6}$/, 'Código deve ter 6 dígitos'),
+  password: z.string().min(1),
+});
+
+const forgotPasswordSchema = z.object({
+  email: z.string().trim().email().toLowerCase(),
+});
+
+const strongPassword = z
+  .string()
+  .min(8, 'Senha deve ter pelo menos 8 caracteres')
+  .max(128, 'Senha muito longa')
+  .regex(
+    /[0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/,
+    'Senha deve conter pelo menos um número ou caractere especial',
+  );
+
+const resetPasswordSchema = z.object({
+  token: z.string().min(10),
+  newPassword: strongPassword,
+});
+
+const tokenSchema = z.object({
+  token: z.string().min(10),
+});
 
 function clientMeta(req) {
   return {
@@ -15,6 +53,30 @@ function clientMeta(req) {
     userAgent: req.headers['user-agent'] ?? null,
   };
 }
+
+// POST /api/v1/auth/forgot-password — inicia reset (resposta sempre genérica)
+router.post('/forgot-password', authLimiter, validateBody(forgotPasswordSchema), async (req, res) => {
+  await AuthService.requestPasswordReset(req.body.email, clientMeta(req));
+  res.json({ ok: true, message: 'Se o e-mail existir, enviaremos instruções de redefinição.' });
+});
+
+// POST /api/v1/auth/reset-password — conclui reset com token de uso único
+router.post('/reset-password', authLimiter, validateBody(resetPasswordSchema), async (req, res) => {
+  await AuthService.resetPassword(req.body.token, req.body.newPassword, clientMeta(req));
+  res.json({ ok: true, message: 'Senha redefinida. Faça login com a nova senha.' });
+});
+
+// POST /api/v1/auth/verify-email — confirma e-mail via token
+router.post('/verify-email', validateBody(tokenSchema), async (req, res) => {
+  const result = await AuthService.verifyEmail(req.body.token);
+  res.json({ data: result });
+});
+
+// POST /api/v1/auth/resend-verification — reenvia e-mail de verificação (autenticado)
+router.post('/resend-verification', authenticate, async (req, res) => {
+  await AuthService.sendVerificationEmail(req.user);
+  res.json({ ok: true, message: 'E-mail de verificação reenviado.' });
+});
 
 // POST /api/v1/auth/register
 router.post('/register', authLimiter, validateBody(registerSchema), async (req, res) => {
@@ -27,11 +89,15 @@ router.post('/register', authLimiter, validateBody(registerSchema), async (req, 
 router.post('/login', authLimiter, validateBody(loginSchema), async (req, res) => {
   const { email, password } = req.body;
   const result = await AuthService.login(email, password, clientMeta(req));
+
+  if (result.requiresTotp) {
+    return res.json({ data: result });
+  }
+
   setAuthCookies(res, result);
   res.json({
     data: {
       user: result.user,
-      // Tokens via HttpOnly cookies — não expor ao JavaScript.
       accessToken: null,
       refreshToken: null,
     },
@@ -72,8 +138,51 @@ router.post('/logout', async (req, res) => {
 
 // GET /api/v1/auth/me
 router.get('/me', authenticate, (req, res) => {
-  const { id, name, email, role } = req.user;
-  res.json({ data: { id, name, email, role } });
+  const { id, name, email, role, totpEnabled, emailVerified } = req.user;
+  res.json({ data: { id, name, email, role, totpEnabled: !!totpEnabled, emailVerified: !!emailVerified } });
+});
+
+// ─── 2FA TOTP ─────────────────────────────────────────────────────────────────
+router.post('/totp/verify', authLimiter, validateBody(totpVerifyLoginSchema), async (req, res, next) => {
+  try {
+    const result = await TotpService.verifyLogin(
+      req.body.pendingToken,
+      req.body.code,
+      clientMeta(req),
+    );
+    setAuthCookies(res, result);
+    res.json({
+      data: { user: result.user, accessToken: null, refreshToken: null },
+    });
+  } catch (err) { next(err); }
+});
+
+router.get('/totp/status', authenticate, async (req, res, next) => {
+  try {
+    const status = await TotpService.getStatus(req.user.id);
+    res.json({ data: status });
+  } catch (err) { next(err); }
+});
+
+router.post('/totp/setup', authenticate, async (req, res, next) => {
+  try {
+    const data = await TotpService.setup(req.user.id);
+    res.json({ data });
+  } catch (err) { next(err); }
+});
+
+router.post('/totp/enable', authenticate, validateBody(totpCodeSchema), async (req, res, next) => {
+  try {
+    const data = await TotpService.enable(req.user.id, req.body.code);
+    res.json({ data });
+  } catch (err) { next(err); }
+});
+
+router.post('/totp/disable', authenticate, validateBody(totpDisableSchema), async (req, res, next) => {
+  try {
+    const data = await TotpService.disable(req.user.id, req.body.code, req.body.password);
+    res.json({ data });
+  } catch (err) { next(err); }
 });
 
 export default router;

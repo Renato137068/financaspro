@@ -355,9 +355,11 @@ const INIT_EXTRATO = {
    */
   setFiltroTipo: function(tipo) {
     this.state.filtroTipo = tipo;
-    document.querySelectorAll('.filtro-chip-premium').forEach(function(b) { b.classList.remove('ativo'); });
-    var btn = document.querySelector('.filtro-chip-premium[data-filtro="' + tipo + '"]');
-    if (btn) btn.classList.add('ativo');
+    document.querySelectorAll('.filtro-chip-premium').forEach(function(b) {
+      var isActive = b.dataset.filtro === tipo;
+      b.classList.toggle('ativo', isActive);
+      b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
     this._salvarFiltros();
     this.filtrarExtrato();
   },
@@ -367,9 +369,11 @@ const INIT_EXTRATO = {
    */
   setOrdenacao: function(ordenacao) {
     this.state.ordenacao = ordenacao;
-    document.querySelectorAll('.ordenacao-btn').forEach(function(b) { b.classList.remove('ativo'); });
-    var btn = document.querySelector('.ordenacao-btn[data-ordenacao="' + ordenacao + '"]');
-    if (btn) btn.classList.add('ativo');
+    document.querySelectorAll('.ordenacao-btn').forEach(function(b) {
+      var isActive = b.dataset.ordenacao === ordenacao;
+      b.classList.toggle('ativo', isActive);
+      b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
     this._salvarFiltros();
     this.filtrarExtrato();
   },
@@ -406,7 +410,9 @@ const INIT_EXTRATO = {
       this.state.filtroCat = cat;
     }
     document.querySelectorAll('.filtro-cat-chip').forEach(function(b) {
-      b.classList.toggle('ativo', b.dataset.cat === this.state.filtroCat);
+      var isActive = b.dataset.cat === this.state.filtroCat;
+      b.classList.toggle('ativo', isActive);
+      b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
     }.bind(this));
     this.filtrarExtrato();
   },
@@ -423,10 +429,14 @@ const INIT_EXTRATO = {
     var sorted = Object.keys(cats).sort(function(a, b) { return cats[b] - cats[a]; });
     
     container.innerHTML = sorted.map(function(cat) {
-      var ativo = this.state.filtroCat === cat ? ' ativo' : '';
-      return '<button class="filtro-cat-chip' + ativo + '" data-cat="' + UTILS.escapeHtml(cat) + '">' +
+      var isActive = this.state.filtroCat === cat;
+      var ativo = isActive ? ' ativo' : '';
+      var pressed = isActive ? 'true' : 'false';
+      return '<button type="button" class="filtro-cat-chip' + ativo + '" data-cat="' + UTILS.escapeHtml(cat) + '" aria-pressed="' + pressed + '">' +
         INIT_EXTRATO.getCatIcon(cat) + ' ' + UTILS.escapeHtml(cat) + ' <span class="cat-count">' + cats[cat] + '</span></button>';
     }.bind(this)).join('');
+
+    if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(container);
 
     if (!this.filtrosCategoriasListener) {
       this.filtrosCategoriasListener = true;
@@ -477,7 +487,12 @@ const INIT_EXTRATO = {
     var trendEl = document.getElementById('trend-value');
     var trendIconEl = document.getElementById('trend-icon');
     if (trendEl) trendEl.textContent = (trendValue >= 0 ? '+' : '') + trendValue.toFixed(1) + '%';
-    if (trendIconEl) trendIconEl.textContent = trendIcon;
+    if (trendIconEl) {
+      // innerHTML (não textContent) para o markup do ícone ser interpretado,
+      // seguido de re-render do Lucide para transformar <i data-lucide> em SVG.
+      trendIconEl.innerHTML = trendIcon;
+      if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(trendIconEl);
+    }
 
     // Atualizar período
     var periodEl = document.getElementById('saldo-period');
@@ -637,14 +652,21 @@ const INIT_EXTRATO = {
 
     container.innerHTML = html;
 
+    // Renderiza os ícones Lucide recém-inseridos (categorias, anexos),
+    // senão os avatares de categoria ficam como círculos vazios.
+    if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(container);
+
     // Adicionar listeners de ações para grupos premium
     container.addEventListener('click', function(e) {
       var btnEdit = e.target.closest('.btn-editar') || e.target.closest('.btn-editar-premium');
       var btnDel = e.target.closest('.btn-deletar') || e.target.closest('.btn-deletar-premium');
+      var btnAnexo = e.target.closest('.btn-anexo');
       var btnCarregarMais = e.target.closest('.btn-carregar-mais');
       var txItem = e.target.closest('.ext-tx') || e.target.closest('.extrato-item-premium') || e.target.closest('.extrato-item');
       
-      if (btnEdit) {
+      if (btnAnexo) {
+        e.stopPropagation();
+      } else if (btnEdit) {
         e.stopPropagation();
         var editId = btnEdit.dataset.id;
         INIT_EXTRATO.editarTransacao(editId);
@@ -655,7 +677,7 @@ const INIT_EXTRATO = {
       } else if (btnCarregarMais) {
         e.stopPropagation();
         INIT_EXTRATO._carregarMais(txs);
-      } else if (txItem && !btnEdit && !btnDel) {
+      } else if (txItem && !btnEdit && !btnDel && !btnAnexo) {
         var itemId = txItem.dataset.id;
         INIT_EXTRATO.editarTransacao(itemId);
       }
@@ -665,6 +687,11 @@ const INIT_EXTRATO = {
   /**
    * Renderiza item individual de transação com design premium
    */
+  _anexoBtnHtml: function(t) {
+    if (!t.anexoCount || typeof INIT_ANEXOS === 'undefined') return '';
+    return INIT_ANEXOS.botaoVerHtml(t.id, t.anexoCount);
+  },
+
   _renderTransacaoItem: function(t, saldoAcumulado) {
     var data = new Date(t.data + 'T00:00:00');
     var dataStr = data.toLocaleDateString('pt-BR');
@@ -680,6 +707,7 @@ const INIT_EXTRATO = {
         '<div class="ext-tx-meta">' +
           '<span class="ext-tx-meta-tag">' + UTILS.escapeHtml(t.categoria) + '</span>' +
           '<span>' + dataStr + '</span>' +
+          (t.anexoCount ? '<span class="ext-tx-anexo-badge" aria-hidden="true"><i data-lucide="paperclip"></i></span>' : '') +
         '</div>' +
       '</div>' +
       '<div class="ext-tx-valor ' + UTILS.escapeHtml(t.tipo) + '">' +
@@ -692,20 +720,34 @@ const INIT_EXTRATO = {
    * Renderiza estado vazio premium
    */
   _renderEmptyState: function() {
+    var totalReal = (typeof DADOS !== 'undefined' && DADOS.getTransacoes) ? DADOS.getTransacoes().length : 0;
+    var opts = totalReal === 0
+      ? {
+          lucide: 'wallet',
+          titulo: 'Seu extrato começa aqui',
+          subtitulo: 'Adicione sua primeira transação para ver tudo organizado por dia.',
+          aba: 'novo',
+          ctaTexto: 'Adicionar primeira transação',
+          animado: true,
+        }
+      : {
+          lucide: 'search-x',
+          titulo: 'Nenhuma movimentação encontrada',
+          subtitulo: 'Tente ajustar os filtros ou selecionar outro intervalo de período.',
+          aba: 'novo',
+          ctaTexto: 'Registrar transação',
+          animado: true,
+        };
     if (typeof UI !== 'undefined' && UI.EmptyState && typeof UI.EmptyState.render === 'function') {
-      var el = UI.EmptyState.render({
-        titulo: 'Nenhuma movimentação encontrada',
-        subtitulo: 'Tente ajustar os filtros ou selecionar outro intervalo de período.',
-        animado: true,
-      });
+      var el = UI.EmptyState.render(opts);
       if (el) {
         el.setAttribute('role', 'status');
         return el.outerHTML;
       }
     }
     return '<div class="empty-state" role="status">' +
-      '<div class="empty-state-title">Nenhuma movimentação encontrada</div>' +
-      '<div class="empty-state-message">Tente ajustar os filtros ou selecionar outro intervalo de período.</div>' +
+      '<div class="empty-state-title">' + opts.titulo + '</div>' +
+      '<div class="empty-state-message">' + opts.subtitulo + '</div>' +
     '</div>';
   },
 
@@ -738,8 +780,9 @@ const INIT_EXTRATO = {
           (t.tipo === CONFIG.TIPO_RECEITA ? '+' : '-') + UTILS.formatarMoeda(t.valor) +
         '</div>' +
         '<div class="extrato-actions">' +
-          '<button class="btn-editar" data-id="' + UTILS.escapeHtml(String(t.id)) + '" title="Editar transação" aria-label="Editar transação">✏️</button>' +
-          '<button class="btn-deletar" data-id="' + UTILS.escapeHtml(String(t.id)) + '" title="Deletar transação" aria-label="Deletar transação">🗑️</button>' +
+          INIT_EXTRATO._anexoBtnHtml(t) +
+          '<button type="button" class="btn-editar" data-id="' + UTILS.escapeHtml(String(t.id)) + '" title="Editar transação" aria-label="Editar transação"><i data-lucide="pencil" aria-hidden="true"></i></button>' +
+          '<button type="button" class="btn-deletar" data-id="' + UTILS.escapeHtml(String(t.id)) + '" title="Deletar transação" aria-label="Deletar transação"><i data-lucide="trash-2" aria-hidden="true"></i></button>' +
         '</div>' +
       '</button>';
     });
@@ -750,15 +793,19 @@ const INIT_EXTRATO = {
     }
 
     container.innerHTML = html;
+    if (typeof renderLucideIcons === 'function') renderLucideIcons(container);
 
     // Adicionar listeners de ações
     container.addEventListener('click', function(e) {
       var btnEdit = e.target.closest('.btn-editar');
       var btnDel = e.target.closest('.btn-deletar');
+      var btnAnexo = e.target.closest('.btn-anexo');
       var btnCarregarMais = e.target.closest('.btn-carregar-mais');
       var txItem = e.target.closest('.ext-tx') || e.target.closest('.extrato-item');
       
-      if (btnEdit) {
+      if (btnAnexo) {
+        e.stopPropagation();
+      } else if (btnEdit) {
         e.stopPropagation();
         var editId = btnEdit.dataset.id;
         INIT_EXTRATO.editarTransacao(editId);
@@ -769,7 +816,7 @@ const INIT_EXTRATO = {
       } else if (btnCarregarMais) {
         e.stopPropagation();
         INIT_EXTRATO._carregarMais(txs);
-      } else if (txItem && !btnEdit && !btnDel) {
+      } else if (txItem && !btnEdit && !btnDel && !btnAnexo) {
         var itemId = txItem.dataset.id;
         INIT_EXTRATO.editarTransacao(itemId);
       }
@@ -811,8 +858,9 @@ const INIT_EXTRATO = {
           (t.tipo === CONFIG.TIPO_RECEITA ? '+' : '-') + UTILS.formatarMoeda(t.valor) +
         '</div>' +
         '<div class="extrato-actions">' +
-          '<button class="btn-editar" data-id="' + UTILS.escapeHtml(String(t.id)) + '" title="Editar transação" aria-label="Editar transação">✏️</button>' +
-          '<button class="btn-deletar" data-id="' + UTILS.escapeHtml(String(t.id)) + '" title="Deletar transação" aria-label="Deletar transação">🗑️</button>' +
+          INIT_EXTRATO._anexoBtnHtml(t) +
+          '<button type="button" class="btn-editar" data-id="' + UTILS.escapeHtml(String(t.id)) + '" title="Editar transação" aria-label="Editar transação"><i data-lucide="pencil" aria-hidden="true"></i></button>' +
+          '<button type="button" class="btn-deletar" data-id="' + UTILS.escapeHtml(String(t.id)) + '" title="Deletar transação" aria-label="Deletar transação"><i data-lucide="trash-2" aria-hidden="true"></i></button>' +
         '</div>' +
       '</button>';
     });
@@ -946,6 +994,11 @@ const INIT_EXTRATO = {
     var btnReg = document.querySelector('.btn-registrar');
     if (btnReg) btnReg.textContent = 'Atualizar';
 
+    if (typeof INIT_ANEXOS !== 'undefined') {
+      INIT_ANEXOS.limparPendentes();
+      INIT_ANEXOS.carregarParaTransacao(id);
+    }
+
     UTILS.mostrarToast('Edite a transação e clique em Atualizar', 'info');
   },
 
@@ -1026,7 +1079,7 @@ const INIT_EXTRATO = {
     link.download = 'extrato_' + mesNome.toLowerCase() + '_' + info.ano + '.csv';
     link.click();
     
-    UTILS.mostrarToast('Extrato exportado com sucesso!', 'success');
+    UTILS.mostrarToast('Planilha CSV exportada!', 'success');
   },
 
   /**
@@ -1083,7 +1136,7 @@ const INIT_EXTRATO = {
     
     // Header
     html += '<div class="header">';
-    html += '<h1>💰 FinançasPro</h1>';
+    html += '<h1>FinançasPro</h1>';
     html += '<p>Extrato de ' + mesNome + ' de ' + info.ano + '</p>';
     html += '<p>Gerado em ' + new Date().toLocaleDateString('pt-BR') + ' às ' + new Date().toLocaleTimeString('pt-BR') + '</p>';
     html += '</div>';
@@ -1138,8 +1191,10 @@ const INIT_EXTRATO = {
   /**
    * Obtém ícone da categoria
    */
-  getCatIcon: function(cat) { 
-    return this.CATEGORIA_ICONES[cat] || this.CATEGORIA_ICONES[cat.toLowerCase()] || 'pin'; 
+  getCatIcon: function(cat) {
+    var icon = this.CATEGORIA_ICONES[cat] || this.CATEGORIA_ICONES[cat.toLowerCase()] || 'pin';
+    if (typeof lucideIconHtml === 'function') return lucideIconHtml(icon);
+    return '<i data-lucide="' + icon + '" aria-hidden="true"></i>';
   },
 
   /**

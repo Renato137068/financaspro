@@ -47,16 +47,49 @@ function setupAuthUI() {
 
   var tabs = overlay.querySelectorAll('.auth-tab');
   var loginForm = document.getElementById('auth-login-form');
+  var totpForm = document.getElementById('auth-totp-form');
   var registerForm = document.getElementById('auth-register-form');
   var message = document.getElementById('auth-message');
   var warning = document.getElementById('auth-env-warning');
+  var _pendingTotpToken = null;
+
+  function showTotpStep(pendingToken) {
+    _pendingTotpToken = pendingToken;
+    tabs.forEach(function(tab) { tab.style.display = 'none'; });
+    if (loginForm) { loginForm.style.display = 'none'; loginForm.hidden = true; }
+    if (registerForm) { registerForm.style.display = 'none'; registerForm.hidden = true; }
+    if (totpForm) { totpForm.style.display = ''; totpForm.hidden = false; }
+    if (message) message.textContent = 'Digite o código do app autenticador.';
+    var codeInput = document.getElementById('auth-totp-code');
+    if (codeInput) codeInput.focus();
+    if (_authFocusTrap && typeof _authFocusTrap.refresh === 'function') _authFocusTrap.refresh();
+  }
+
+  function hideTotpStep() {
+    _pendingTotpToken = null;
+    tabs.forEach(function(tab) { tab.style.display = ''; });
+    if (totpForm) { totpForm.style.display = 'none'; totpForm.hidden = true; }
+    showTab('login');
+  }
 
   function showTab(name) {
     tabs.forEach(function(tab) {
-      tab.classList.toggle('ativo', tab.dataset.authTab === name);
+      var active = tab.dataset.authTab === name;
+      tab.classList.toggle('ativo', active);
+      tab.setAttribute('aria-selected', active ? 'true' : 'false');
     });
-    if (loginForm) loginForm.style.display = name === 'login' ? '' : 'none';
-    if (registerForm) registerForm.style.display = name === 'register' ? '' : 'none';
+    if (loginForm) {
+      loginForm.style.display = name === 'login' ? '' : 'none';
+      loginForm.hidden = name !== 'login';
+    }
+    if (registerForm) {
+      registerForm.style.display = name === 'register' ? '' : 'none';
+      registerForm.hidden = name !== 'register';
+    }
+    if (totpForm) {
+      totpForm.style.display = 'none';
+      totpForm.hidden = true;
+    }
     if (message) {
       message.textContent = name === 'login'
         ? 'Entre para continuar seu controle financeiro.'
@@ -92,8 +125,15 @@ function setupAuthUI() {
       var email = document.getElementById('auth-login-email').value.trim();
       var password = document.getElementById('auth-login-password').value;
       _setAuthSubmitting(loginForm, true);
-      DADOS.loginApi(email, password).then(function() {
+      DADOS.loginApi(email, password).then(function(data) {
+        if (data && data.requiresTotp && data.pendingToken) {
+          showTotpStep(data.pendingToken);
+          return;
+        }
         _fecharAuthOverlay(overlay);
+        if (typeof BILLING !== 'undefined' && BILLING.sync) {
+          BILLING.sync().catch(function() {});
+        }
         if (typeof APP_BOOTSTRAP !== 'undefined') APP_BOOTSTRAP.ativarApp();
       }).catch(function(err) {
         console.error('Login falhou:', err);
@@ -105,6 +145,30 @@ function setupAuthUI() {
         _setAuthSubmitting(loginForm, false);
       });
     });
+  }
+
+  if (totpForm) {
+    totpForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      if (!_pendingTotpToken) return;
+      var code = document.getElementById('auth-totp-code').value.trim();
+      _setAuthSubmitting(totpForm, true);
+      DADOS.verifyTotpLoginApi(_pendingTotpToken, code).then(function() {
+        _fecharAuthOverlay(overlay);
+        hideTotpStep();
+        if (typeof BILLING !== 'undefined' && BILLING.sync) BILLING.sync().catch(function() {});
+        if (typeof INIT_2FA !== 'undefined' && INIT_2FA.refreshUI) INIT_2FA.refreshUI();
+      }).catch(function(err) {
+        UTILS.mostrarToast(err.message || 'Código inválido', 'error');
+      }).finally(function() {
+        _setAuthSubmitting(totpForm, false);
+      });
+    });
+  }
+
+  var totpBack = document.getElementById('auth-totp-back');
+  if (totpBack) {
+    totpBack.addEventListener('click', function() { hideTotpStep(); });
   }
 
   if (registerForm) {
@@ -161,6 +225,16 @@ function setupAuthUI() {
     return true;
   }
 
+  // Sem backend configurado (piloto em modo local): não força o login —
+  // o app funciona offline com localStorage. Quando um backend for
+  // configurado (CONFIG.API_BASE_URL), o login volta a ser exibido.
+  if (!DADOS._apiAtiva()) {
+    _fecharAuthOverlay(overlay);
+    showTab('login');
+    atualizarBarraSessao();
+    return true;
+  }
+
   _abrirAuthOverlay(overlay);
   showTab('login');
   atualizarBarraSessao();
@@ -174,7 +248,7 @@ function atualizarBarraSessao() {
   if (sessao && sessao.user && sessao.user.name) {
     label.textContent = 'Logado como ' + sessao.user.name;
   } else {
-    label.textContent = 'Sessao local';
+    label.textContent = 'Sessão local';
   }
 }
 
@@ -189,14 +263,14 @@ function setupLogoutButton() {
         var overlay = document.getElementById('auth-overlay');
         if (overlay) _abrirAuthOverlay(overlay);
         atualizarBarraSessao();
-        UTILS.mostrarToast('Sessao encerrada', 'info');
+        UTILS.mostrarToast('Sessão encerrada', 'info');
       });
     } else {
       DADOS.encerrarSessao();
       var overlay = document.getElementById('auth-overlay');
       if (overlay) _abrirAuthOverlay(overlay);
       atualizarBarraSessao();
-      UTILS.mostrarToast('Sessao encerrada', 'info');
+      UTILS.mostrarToast('Sessão encerrada', 'info');
     }
   });
 }

@@ -14,6 +14,26 @@ var INSIGHTS = {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   },
 
+  /** Estado de configuração inicial para o guia "Comece aqui". */
+  _estadoSetup: function(txs) {
+    var cfg = (typeof DADOS !== 'undefined' && DADOS.getConfig) ? DADOS.getConfig() : {};
+    var temOrcamento = false;
+    try { temOrcamento = !!(cfg.orcamentos && Object.keys(cfg.orcamentos).length); } catch (e) {}
+    return {
+      perfil:    !!(cfg.nome && cfg.nome !== 'Usuário'),
+      transacao: Array.isArray(txs) && txs.length > 0,
+      orcamento: temOrcamento,
+      meta:      Array.isArray(cfg.metas) && cfg.metas.length > 0
+    };
+  },
+
+  /** HTML do card "Comece aqui" (ou '' se completo/indisponível). */
+  _setupCardHtml: function() {
+    if (typeof SETUP_GUIDE === 'undefined' || !SETUP_GUIDE.buildCardHtml) return '';
+    var txs = (typeof DADOS !== 'undefined' && DADOS.getTransacoes) ? DADOS.getTransacoes() : [];
+    try { return SETUP_GUIDE.buildCardHtml(this._estadoSetup(txs)); } catch (e) { return ''; }
+  },
+
   // ─────────────────────────────────────────────────────────────────
   // ANÁLISE PRINCIPAL
   // ─────────────────────────────────────────────────────────────────
@@ -72,6 +92,21 @@ var INSIGHTS = {
             gravidade: 'alta'
           });
         }
+      }
+    }
+
+    // ── 2b. Assinaturas esquecidas (impacto anualizado) ───────────
+    if (typeof AI_ENGINE.mensagemAssinaturasEsquecidas === 'function') {
+      var assin = AI_ENGINE.mensagemAssinaturasEsquecidas(txs);
+      if (assin && assin.itens && assin.itens.length) {
+        var maior = assin.itens[0];
+        insights.push({
+          tipo:      'assinaturas',
+          msg:       '<i data-lucide="repeat" aria-hidden="true"></i> ' + assin.quantidade +
+                     ' cobrança(s) recorrente(s) somam R$ ' + assin.totalAnual.toFixed(2).replace('.', ',') +
+                     '/ano. Maior: "' + esc(maior.nome) + '" (R$ ' + maior.custoAnual.toFixed(2).replace('.', ',') + '/ano). Ainda usa?',
+          gravidade: assin.totalAnual >= 600 ? 'alta' : 'media'
+        });
       }
     }
 
@@ -253,7 +288,8 @@ var INSIGHTS = {
 
     if (!container) return;
 
-    if (insights.length === 0) {
+    var setupHtml = this._setupCardHtml();
+    if (insights.length === 0 && !setupHtml) {
       container.innerHTML = '<div class="insight insight-ok"><i data-lucide="check-circle" aria-hidden="true"></i> Sem alertas. Finanças em dia!</div>';
       return;
     }
@@ -276,7 +312,7 @@ var INSIGHTS = {
       return '<div class="insight insight-' + (i.gravidade || 'baixa') + '">' + conteudo + botao + '</div>';
     }).join('');
 
-    container.innerHTML = html;
+    container.innerHTML = setupHtml + html;
     if (typeof renderLucideIcons === 'function') {
       renderLucideIcons(container);
     }

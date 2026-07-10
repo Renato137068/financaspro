@@ -1,0 +1,113 @@
+/* Relatórios mensais */
+.rel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: var(--space-4);
+}
+
+.rel-header h3 {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+
+.rel-tx-count {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.rel-kpis {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+@media (min-width: 640px) {
+  .rel-kpis {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.rel-kpi {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
+.rel-kpi span {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
+.rel-kpi strong {
+  font-size: var(--text-lg);
+}
+
+.rel-kpi small {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.rel-subtitle {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.rel-cat-list {
+  list-style: none;
+  margin: 0 0 var(--space-4);
+  padding: 0;
+}
+
+.rel-cat-item {
+  display: grid;
+  grid-template-columns: 100px 1fr auto;
+  gap: var(--space-2);
+  align-items: center;
+  margin-bottom: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.rel-cat-bar-wrap {
+  height: 8px;
+  background: var(--color-border-light);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.rel-cat-bar {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #00723F, #10b981);
+  border-radius: 999px;
+}
+
+.rel-cat-val {
+  white-space: nowrap;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.rel-insight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: var(--space-3);
+  background: rgba(99, 102, 241, 0.08);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+  margin: 0;
+}
+
+.rel-empty {
+  color: var(--color-text-muted);
+  text-align: center;
+  padding: var(--space-4);
+}

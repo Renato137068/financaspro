@@ -4,6 +4,14 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+function stripeIds(tier) {
+  if (tier === 'FREE') return {};
+  return {
+    stripePriceIdMonthly: process.env['STRIPE_PRICE_' + tier + '_MONTHLY'] || null,
+    stripePriceIdYearly:  process.env['STRIPE_PRICE_' + tier + '_YEARLY'] || null,
+  };
+}
+
 const PLANS = [
   {
     name:             'Gratuito',
@@ -19,12 +27,12 @@ const PLANS = [
   {
     name:             'Pro',
     tier:             'PRO',
-    priceMonthly:     29.90,
-    priceYearly:      299.00,
+    priceMonthly:     16.90,
+    priceYearly:      119.00,
     maxUsers:         5,
-    maxTransPerMonth: 0, // ilimitado
+    maxTransPerMonth: 0,
     maxAccounts:      20,
-    maxBudgets:       0, // ilimitado
+    maxBudgets:       0,
     features:         [
       'Tudo do Gratuito',
       'Transações ilimitadas',
@@ -34,13 +42,14 @@ const PLANS = [
       'OCR de comprovantes',
       'Alertas automáticos',
     ],
+    ...stripeIds('PRO'),
   },
   {
     name:             'Business',
     tier:             'BUSINESS',
     priceMonthly:     99.90,
     priceYearly:      999.00,
-    maxUsers:         0, // ilimitado
+    maxUsers:         0,
     maxTransPerMonth: 0,
     maxAccounts:      0,
     maxBudgets:       0,
@@ -53,6 +62,7 @@ const PLANS = [
       'Relatórios customizados',
       'Auditoria completa',
     ],
+    ...stripeIds('BUSINESS'),
   },
 ];
 
@@ -63,7 +73,10 @@ async function main() {
       update: plan,
       create: plan,
     });
-    console.log(`✓ Plano ${plan.name} (${plan.tier}) criado/atualizado`);
+    const stripe = plan.tier !== 'FREE'
+      ? ` (Stripe: ${plan.stripePriceIdMonthly || '—'})`
+      : '';
+    console.log(`✓ Plano ${plan.name} (${plan.tier}) criado/atualizado${stripe}`);
   }
   console.log('\nPlanos SaaS configurados com sucesso!');
 }

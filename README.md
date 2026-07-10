@@ -1,124 +1,109 @@
-# 💰 FinançasPro MVP
+# FinançasPro
 
-> Gestor financeiro minimalista: transações, extrato, orçamento por categoria e configurações.
+App de finanças pessoais com PWA, experiência mobile/Android e API SaaS opcional. Frontend em JavaScript vanilla; backend com Express, Prisma/Postgres, JWT, Redis/BullMQ e Stripe (opcional).
 
-## 🎯 5 Funcionalidades Core
+## Funcionalidades
 
-1. **📊 Resumo** - Dashboard com receitas, despesas e saldo mensal
-2. **➕ Novo** - Adicionar transações de receita/despesa com categoria
-3. **📋 Extrato** - Lista de transações com filtros e opção de deletar
-4. **💰 Orçamento** - Definir limites por categoria com alertas
-5. **⚙️  Config** - Perfil do usuário, seleção de moeda, exportar dados
+- Dashboard mensal de receitas, despesas e saldo
+- Cadastro de transações, contas, orçamentos e recorrências
+- Extrato com filtros, exportação e suporte offline
+- Autenticação via API com access/refresh token
+- Sincronização local/remota quando a API está configurada
+- Base SaaS com organizações, planos, billing e workers
 
-## 📁 Estrutura
+## Requisitos
 
-```
-financaspro/
-├── index.html              ← Interface (5 abas)
-├── manifest.json           ← PWA config
-├── sw.js                   ← Service Worker (offline)
-├── package.json            ← Dependências
-│
-├── css/
-│   └── style.css           ← Estilos (mobile-first)
-│
-├── js/                     ← módulos funcionais
-│   ├── config.js           ← Constantes
-│   ├── dados.js            ← localStorage
-│   ├── utils.js            ← Utilidades
-│   ├── transacoes.js       ← CRUD
-│   ├── orcamento.js        ← Budget logic
-│   ├── render.js           ← Renderização UI
-│   ├── config-user.js      ← Configurações
-│   ├── app-bootstrap.js    ← Orquestra inicialização
-│   └── init.js             ← Startup
-│
-├── icons/                  ← PWA assets
-│
-└── .github/workflows/
-    └── deploy.yml          ← CI/CD automático
-```
+- Node.js 18+
+- npm 9+
+- Postgres (backend completo)
+- Redis opcional (filas/workers)
+- Android Studio (apenas para build Play Store)
 
-## 🚀 Como Usar
+## Setup local
 
-### Online
-Abra em seu navegador (GitHub Pages):
-```
-https://seu-usuario.github.io/financaspro
-```
-
-### Local (Desenvolvimento)
 ```bash
-# Python 3
-python -m http.server 8000
-
-# Node
-npx http-server
-
-# Depois: http://localhost:8000
+npm ci
+cp .env.example .env
+npm run db:generate
+npm run db:migrate
 ```
 
-## ⚡ Características
+Configure pelo menos:
 
-- ✅ **Offline-first**: Funciona sem internet (PWA)
-- ✅ **Vanilla JS**: Sem dependências externas
-- ✅ **localStorage**: Dados salvos localmente
-- ✅ **Responsivo**: Otimizado para mobile
-- ✅ **Leve**: ~50KB total
-- ✅ **Modular**: separação por domínio + bootstrap dedicado
-
-## 🛠️ Desenvolvimento
-
-### Adicionar nova transação
-```javascript
-TRANSACOES.criar(
-  CONFIG.TIPO_DESPESA,
-  100.50,
-  'Alimentação',
-  '2026-04-25',
-  'Mercado'
-);
-```
-
-### Definir limite orçamentário
-```javascript
-ORCAMENTO.definirLimite('Alimentação', 500);
-```
-
-### Exportar dados
-Via interface: Config → Exportar Dados (download JSON)
-
-### Backend inicial
-Para iniciar a nova base de backend local:
 ```bash
-npm run backend
+DATABASE_URL="postgresql://usuario:senha@localhost:5432/financaspro"
+JWT_ACCESS_SECRET="troque-este-segredo"
+JWT_REFRESH_SECRET="troque-este-segredo-tambem"
+CORS_ORIGIN="http://localhost:3000"
+APP_URL="http://localhost:4000"
 ```
-Isso sobe uma API inicial em `http://localhost:4000` com persistência em arquivo na pasta `.data/`.
 
-## 📊 Stack Técnico
+Seeds opcionais:
 
-- **Linguagem**: JavaScript ES6+
-- **Persistência**: localStorage (2 chaves: transacoes, config)
-- **Estilos**: CSS3 com variáveis (dark mode suportado)
-- **PWA**: Service Worker para offline
-- **Deploy**: GitHub Actions (automático)
+```bash
+npm run db:seed
+npm run billing:seed
+```
 
-## 🔒 Segurança
+## Rodando
 
-- ✅ Dados salvos localmente (não enviados para servidor)
-- ✅ Sem autenticação (uso pessoal)
-- ✅ HTTPS via GitHub Pages
-- ✅ HTML escaping automático
+```bash
+npm run dev          # frontend (Vite, porta 3000)
+npm run backend:dev  # API (porta 4000)
+npm run worker:dev   # workers (opcional)
+```
 
-## 📈 Performance
+Com Docker:
 
-- **Tamanho**: ~50KB (antes: ~150KB)
-- **Carregamento**: <1s (GitHub Pages)
-- **Renderização**: <100ms
+```bash
+npm run docker:up
+```
 
----
+## Qualidade
 
-**Autor:** Renato José Soares  
-**Email:** renato.soares1370@gmail.com  
-**Versão:** MVP 1.0  
-**Última atualização:** 2026-04-25
+```bash
+npm test
+npm run lint
+npm run build
+```
+
+O CI roda lint, testes e build em Node 18 e 20.
+
+## Arquitetura
+
+| Pasta | Conteúdo |
+|-------|----------|
+| `index.html` | Shell principal do app |
+| `css/` | Design system, layouts, componentes |
+| `js/core/` | Config, persistência, store, validações |
+| `js/modules/` | Inicialização por área da interface |
+| `js/services/` | Actions e serviços reutilizáveis |
+| `backend/` | API Express (rotas, services, middlewares) |
+| `prisma/` | Schema e migrações |
+| `tests/` | Testes unitários e segurança estática |
+| `android/` | Projeto Capacitor (gerado após `cap add android`) |
+
+Documentação SaaS: [`docs/ARQUITETURA_SAAS.md`](docs/ARQUITETURA_SAAS.md)  
+Publicação Android: [`docs/PLAY_STORE.md`](docs/PLAY_STORE.md)
+
+## PWA e Android
+
+- `manifest.json` — instalável como app web
+- `sw.js` — cache offline (incremente `CACHE_NAME` ao alterar assets)
+- `capacitor.config.json` — wrapper nativo para Play Store
+
+```bash
+npm run icons:generate   # PNGs a partir de icons/logo.svg
+npm run android:sync     # build web + sync Capacitor
+npm run android:open     # abrir no Android Studio
+```
+
+## Segurança
+
+- Nunca use segredos padrão em produção
+- `.env` está no `.gitignore`
+- API com Helmet, rate limit, Zod e JWT HttpOnly para refresh token
+
+## Licença
+
+MIT — Renato José Soares

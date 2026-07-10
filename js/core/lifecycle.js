@@ -369,6 +369,20 @@ const LIFECYCLE_BOOT = {
       if (typeof INIT_EXTRATO !== 'undefined') INIT_EXTRATO.init();
       if (typeof INIT_CONFIG !== 'undefined') INIT_CONFIG.init();
       if (typeof INIT_MODALS !== 'undefined') INIT_MODALS.init();
+      if (typeof METAS !== 'undefined') METAS.init();
+      if (typeof INIT_METAS !== 'undefined') INIT_METAS.init();
+      if (typeof CONTAS_PAGAR !== 'undefined') CONTAS_PAGAR.init();
+      if (typeof INIT_CONTAS_PAGAR !== 'undefined') INIT_CONTAS_PAGAR.init();
+      if (typeof ASSINATURAS !== 'undefined') ASSINATURAS.init();
+      if (typeof INIT_ASSINATURAS !== 'undefined') INIT_ASSINATURAS.init();
+      if (typeof PATRIMONIO !== 'undefined') PATRIMONIO.init();
+      if (typeof INIT_PATRIMONIO !== 'undefined') INIT_PATRIMONIO.init();
+      if (typeof ANEXOS !== 'undefined') ANEXOS.init();
+      if (typeof INIT_ANEXOS !== 'undefined') INIT_ANEXOS.init();
+      if (typeof BILLING !== 'undefined') BILLING.init();
+      if (typeof INIT_BILLING !== 'undefined') INIT_BILLING.init();
+      if (typeof INIT_2FA !== 'undefined') INIT_2FA.init();
+      if (typeof INIT_OPEN_FINANCE !== 'undefined') INIT_OPEN_FINANCE.init();
     }, { depends: ['event-bus', 'render-core'], critical: false });
 
     // Finalização
@@ -416,8 +430,16 @@ const LIFECYCLE_BOOT = {
       if (typeof verificarBackupAutomatico === 'function') verificarBackupAutomatico();
       if (typeof atualizarBarraSessao === 'function') atualizarBarraSessao();
 
-      // Onboarding
-      if (typeof ONBOARDING !== 'undefined' && ONBOARDING.iniciar) ONBOARDING.iniciar();
+      // Onboarding (adiado para não competir com auth/PIN)
+      setTimeout(function() {
+        if (typeof ONBOARDING !== 'undefined' && ONBOARDING.iniciar) ONBOARDING.iniciar();
+      }, 400);
+
+      // Lembrete diário (se ativo e permissão concedida)
+      setTimeout(function() {
+        if (typeof DAILY_REMINDER !== 'undefined') DAILY_REMINDER.maybeRemind();
+        if (typeof CONTAS_PAGAR !== 'undefined') CONTAS_PAGAR.notificarVencimentos();
+      }, 2500);
 
       // Fase 8: IA Nativa
       if (typeof ALERTAS !== 'undefined' && ALERTAS.init) ALERTAS.init();

@@ -47,12 +47,14 @@ label i[data-lucide] {
 }
 
 /* Rotação de chevron-down em toggles expandidos */
-.toggle-arrow.expanded i[data-lucide="chevron-down"] {
+.toggle-arrow.expanded i[data-lucide="chevron-down"],
+.extras-arrow.expanded i[data-lucide="chevron-down"] {
   transform: rotate(180deg);
   transition: transform 0.3s ease;
 }
 
-.toggle-arrow i[data-lucide="chevron-down"] {
+.toggle-arrow i[data-lucide="chevron-down"],
+.extras-arrow i[data-lucide="chevron-down"] {
   transition: transform 0.3s ease;
 }
 
@@ -188,7 +190,7 @@ button i[data-lucide] {
   /* ── Texto ───────────────────────────────────────────────── */
   --color-text-primary:   #1a2e23;
   --color-text-secondary: #4a6355;
-  --color-text-muted:     #8a9e93;
+  --color-text-muted:     #5f7266;  /* AA: 5.1:1 s/ branco, 4.8:1 s/ fundo da página */
   --color-text-inverse:   #ffffff;
 
   /* ── Borda ───────────────────────────────────────────────── */
@@ -640,10 +642,10 @@ button i[data-lucide] {
   /* Texto */
   --color-text-primary:   #f1f5f9;
   --color-text-secondary: #94a3b8;
-  --color-text-muted:     #64748b;
+  --color-text-muted:     #8a9bad;  /* AA: 5.1:1 sobre card escuro */
   --text:        #f1f5f9;
   --text-light:  #94a3b8;
-  --text-muted:  #64748b;
+  --text-muted:  #8a9bad;
 
   /* Borda */
   --color-border:       #334155;

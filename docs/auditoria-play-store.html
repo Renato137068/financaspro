@@ -1,0 +1,135 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auditoria Play Store — FinançasPro (teste piloto)</title>
+<style>
+:root{--verde:#00723F;--verde2:#00a862;--vbg:#e6f4ec;--tinta:#0d1b14;--cinza:#5b6b62;--linha:#e4ebe7;--papel:#fff;--fundo:#f4f7f5;--crit:#c0392b;--alto:#e07b00;--ok:#1f9d55;--reg:#c9a400;--sombra:0 1px 2px rgba(13,27,20,.04),0 8px 28px rgba(13,27,20,.06);--sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;--mono:ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}body{margin:0;font-family:var(--sans);color:var(--tinta);background:var(--fundo);line-height:1.6;font-size:15.5px}
+.wrap{max-width:960px;margin:0 auto;padding:0 22px}
+.cover{background:linear-gradient(150deg,#00532e,#00723F 50%,#00a862 130%);color:#fff;padding:56px 0 46px}
+.kicker{text-transform:uppercase;letter-spacing:.15em;font-size:12px;font-weight:700;opacity:.85;margin:0 0 12px}
+.cover h1{font-size:33px;margin:0 0 12px;font-weight:800;letter-spacing:-.02em}
+.scorebadge{display:inline-flex;align-items:center;gap:16px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);border-radius:18px;padding:14px 22px}
+.scorebadge .num{font-size:44px;font-weight:800;line-height:1}
+.scorebadge .lab{font-size:13px;opacity:.92;text-align:left;line-height:1.4}
+section{padding:34px 0;border-bottom:1px solid var(--linha)}
+h2{font-size:22px;font-weight:800;margin:0 0 12px}h2 .n{color:var(--verde)}
+h3{font-size:16px;margin:20px 0 6px;color:var(--verde)}
+p{margin:0 0 12px}code{background:#eef3f0;border:1px solid var(--linha);padding:1px 6px;border-radius:6px;font-size:12.5px;font-family:var(--mono);color:#0a4f30}
+ul,ol{margin:0 0 12px;padding-left:22px}li{margin:6px 0}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px;background:var(--papel);border:1px solid var(--linha);border-radius:12px;overflow:hidden}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--linha);vertical-align:top}
+th{background:#f0f5f2;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--cinza)}
+tr:last-child td{border-bottom:none}
+td.n,th.n{text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bar{height:7px;border-radius:5px;background:#eef3f0;overflow:hidden;min-width:90px}.bar>i{display:block;height:100%;border-radius:5px}
+.sev{font-weight:800;font-size:11px;padding:3px 8px;border-radius:6px;color:#fff;white-space:nowrap}
+.sev.c{background:var(--crit)}.sev.a{background:var(--alto)}.sev.m{background:var(--reg);color:#3a3000}.sev.ok{background:var(--ok)}
+.callout{background:var(--vbg);border-left:4px solid var(--verde);border-radius:0 12px 12px 0;padding:14px 18px;margin:16px 0}
+.callout.crit{background:#fbe9e7;border-left-color:var(--crit)}
+.callout.warn{background:#fdf3e7;border-left-color:var(--alto)}
+.callout.dark{background:#0d1b14;color:#eaf3ee;border-left-color:var(--verde2)}.callout.dark strong{color:#fff}
+.ck{list-style:none;padding-left:0}.ck li{padding-left:26px;position:relative;margin:8px 0}.ck li:before{content:"☐";position:absolute;left:0;color:var(--verde);font-weight:800}
+footer{padding:32px 0 54px;color:#8a9791;font-size:12.5px;text-align:center}
+.final{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-top:16px}.final .big{font-size:54px;font-weight:800;color:var(--verde);line-height:1}
+</style></head><body>
+<header class="cover"><div class="wrap">
+<p class="kicker">Prontidão para Play Store · Teste fechado (piloto)</p>
+<h1>FinançasPro — pronto para subir amanhã?</h1>
+<div class="scorebadge"><span class="num">63</span><span class="lab"><strong>63/100 de prontidão</strong><br>Dá para subir o piloto amanhã — <em>se</em> você resolver 3 bloqueadores.</span></div>
+</div></header>
+<div class="wrap">
+
+<section>
+<h2>Veredito rápido</h2>
+<p>A <strong>parte técnica difícil já está pronta</strong>: <code>targetSdk 36</code> (acima do mínimo do Google), assinatura de release configurada, ícones adaptativos, ícone 512, feature graphic e 3 screenshots reais, permissão só de <code>INTERNET</code>, cleartext e debug desligados. Isso é mais do que a maioria chega na véspera.</p>
+<p>O que falta são <strong>decisões e formulários</strong>, não código difícil. Há <strong>1 bloqueador crítico</strong> (o backend do piloto) e <strong>2 obrigatórios rápidos</strong> (política hospedada + declarações do Console). Nenhum leva mais que algumas horas.</p>
+<div class="callout crit"><strong>Bloqueador nº 1 — o mais importante:</strong> no app empacotado, <code>API_BASE_URL</code> está vazio e não é injetado no build. No Capacitor isso faz o app chamar o próprio endereço interno (<code>https://localhost</code>), então <strong>login, cadastro e sincronização na nuvem vão falhar</strong> para os testers. Decida hoje: (A) hospedar o backend e setar a URL, ou (B) shipar em modo local (sem login). Detalhe na seção 3.</p></div>
+</section>
+
+<section>
+<h2>Notas por dimensão (0–100)</h2>
+<table>
+<tr><th>O que importa para publicar</th><th class="n">Nota</th><th>Visual</th></tr>
+<tr><td>Build técnico (AAB, targetSdk, versão, assinatura)</td><td class="n">85</td><td><div class="bar"><i style="width:85%;background:var(--ok)"></i></div></td></tr>
+<tr><td>Config Android e segurança do app</td><td class="n">84</td><td><div class="bar"><i style="width:84%;background:var(--ok)"></i></div></td></tr>
+<tr><td>Ficha da loja (ícone 512, feature graphic, screenshots)</td><td class="n">80</td><td><div class="bar"><i style="width:80%;background:var(--ok)"></i></div></td></tr>
+<tr><td>Estabilidade / QA em dispositivo real</td><td class="n">60</td><td><div class="bar"><i style="width:60%;background:var(--reg)"></i></div></td></tr>
+<tr><td>Configuração do teste fechado (lista de testers)</td><td class="n">60</td><td><div class="bar"><i style="width:60%;background:var(--reg)"></i></div></td></tr>
+<tr><td>Conformidade financeira (Belvo/Open Finance)</td><td class="n">58</td><td><div class="bar"><i style="width:58%;background:var(--reg)"></i></div></td></tr>
+<tr><td>Declarações "Conteúdo do app" (público, anúncios, financeiro)</td><td class="n">55</td><td><div class="bar"><i style="width:55%;background:var(--reg)"></i></div></td></tr>
+<tr><td>Política de privacidade (hospedada publicamente)</td><td class="n">55</td><td><div class="bar"><i style="width:55%;background:var(--reg)"></i></div></td></tr>
+<tr><td>Classificação etária (questionário IARC)</td><td class="n">55</td><td><div class="bar"><i style="width:55%;background:var(--reg)"></i></div></td></tr>
+<tr><td>Data safety (formulário do Console)</td><td class="n">45</td><td><div class="bar"><i style="width:45%;background:var(--alto)"></i></div></td></tr>
+<tr><td>Conectividade / backend do piloto</td><td class="n">38</td><td><div class="bar"><i style="width:38%;background:var(--crit)"></i></div></td></tr>
+</table>
+</section>
+
+<section>
+<h2><span class="n">1.</span> Bloqueadores — resolver antes de subir o AAB</h2>
+<table>
+<tr><th>#</th><th>Item</th><th>Por quê</th><th class="n">Sev.</th></tr>
+<tr><td>1</td><td><b>Decidir o backend do piloto</b> (ver seção 3)</td><td>Sem isso, login/sync falham no aparelho do tester.</td><td class="n"><span class="sev c">CRÍTICO</span></td></tr>
+<tr><td>2</td><td><b>Hospedar a política de privacidade</b> num URL público (ex.: GitHub Pages, seu domínio) e colar no Console</td><td>O Google exige URL público; o arquivo só existe no repo.</td><td class="n"><span class="sev a">ALTO</span></td></tr>
+<tr><td>3</td><td><b>Ter a keystore localmente e gerar o AAB assinado</b></td><td>A assinatura está configurada, mas a <code>keystore.properties</code>/<code>.jks</code> não está no repo (correto). Sem ela não sai AAB.</td><td class="n"><span class="sev a">ALTO</span></td></tr>
+</table>
+<div class="callout"><strong>Gerar o AAB:</strong> <code>npm run build</code> → <code>npx cap sync android</code> → <code>cd android && ./gradlew bundleRelease</code>. O <code>.aab</code> sai em <code>android/app/build/outputs/bundle/release/</code>. Guarde a keystore e a senha — perdê-las = perder a conta do app.</div>
+</section>
+
+<section>
+<h2><span class="n">2.</span> Obrigatório no Console (mesmo em teste fechado)</h2>
+<p>O Google exige a seção <strong>"Conteúdo do app" completa</strong> antes de publicar em <em>qualquer</em> trilha, inclusive teste fechado. São formulários, rápidos:</p>
+<ul>
+<li><b>Data safety:</b> declare que coleta dados <b>financeiros</b> (transações; e dados bancários se usar Open Finance de verdade), <b>criptografados em trânsito</b>, e que o usuário pode pedir exclusão. Seja preciso — o Google cruza com as permissões.</li>
+<li><b>Classificação etária (IARC):</b> questionário curto → provável "Livre/Everyone", mas precisa ser respondido.</li>
+<li><b>Público-alvo:</b> declare <b>18+</b> (evita a política de Famílias, comum em apps financeiros).</li>
+<li><b>Anúncios:</b> declare <b>"não contém anúncios"</b> (bate com sua proposta "sem anúncios").</li>
+<li><b>Recursos financeiros:</b> declare honestamente — "gerenciador de finanças pessoais". Se conectar contas via Open Finance, marque o que se aplica; empréstimo/pagamento/cripto = "não".</li>
+<li><b>Ficha:</b> título, descrição curta (≤80) e completa, categoria <b>Finanças</b>, ícone 512, feature graphic e ≥2 screenshots — você já tem os assets.</li>
+</ul>
+</section>
+
+<section>
+<h2><span class="n">3.</span> A decisão de backend (o item nº 1)</h2>
+<p>No app empacotado, <code>CONFIG.API_BASE_URL</code> é <code>''</code> e não é injetado no build → <code>_apiBaseUrl()</code> cai para <code>window.location.origin</code> = <code>https://localhost</code> (esquema interno do Capacitor). Resultado: as chamadas de API não chegam a nenhum servidor. Duas saídas:</p>
+<h3>Opção A — Hospedar o backend (login/sync funcionam)</h3>
+<ul>
+<li>Suba o backend Express+Postgres num host (Railway, Render, Fly, VPS) com HTTPS, ex.: <code>https://api.financaspro.com.br</code>.</li>
+<li>Defina <code>CONFIG.API_BASE_URL</code> para essa URL antes de buildar, e builde com <code>PUBLIC_API_URL=https://api.financaspro.com.br</code> (para a CSP liberar o domínio no <code>connect-src</code>).</li>
+<li>Rode as migrations (incl. o <code>updatedAt</code> que já exponho) e o seed de planos.</li>
+</ul>
+<h3>Opção B — Piloto em modo local (mais simples para hoje)</h3>
+<ul>
+<li>Shipar sem backend: o app já tem modo local com <code>localStorage</code>. Esconda/adie o login para o tester só usar offline.</li>
+<li>Prós: zero dependência de servidor, nada quebra. Contras: sem contas, sem sync entre aparelhos, sem billing.</li>
+<li>Cuidado que já sinalizei: em modo local o dado vive só no aparelho — avise os testers que é piloto e pode resetar.</li>
+</ul>
+<div class="callout warn"><strong>Recomendação para amanhã:</strong> se o backend não estiver deployado e testado, vá de <strong>Opção B</strong> para o piloto — é mais seguro do que subir um app cujo login falha. Migre para a Opção A quando o backend estiver de pé (e aí o #2 de sync entra).</div>
+</section>
+
+<section>
+<h2><span class="n">4.</span> Pode esperar (é piloto / teste fechado)</h2>
+<ul>
+<li><b>Os "12 testers por 14 dias":</b> isso é requisito para <em>graduar para produção</em> em conta de desenvolvedor pessoal — <b>não</b> para rodar o teste fechado. Para o piloto, basta a lista de testers.</li>
+<li>Polimento da ficha, tradução, vídeo, screenshots extras.</li>
+<li><code>android:allowBackup="false"</code> + regras de extração de dados — recomendado para app financeiro (evita dado sensível em backup na nuvem), mas não bloqueia o piloto.</li>
+<li>Integração completa do sync (#2), cripto derivada do PIN (#8) — evoluções pós-piloto.</li>
+</ul>
+</section>
+
+<section>
+<h2><span class="n">5.</span> Checklist da véspera</h2>
+<ul class="ck">
+<li>Decidir backend: Opção A (hospedar + setar <code>API_BASE_URL</code>) ou Opção B (modo local).</li>
+<li>Hospedar <code>privacidade.html</code> num URL público e anotar o link.</li>
+<li>Confirmar a keystore local + senha; gerar o <code>.aab</code> assinado.</li>
+<li>Testar o <code>.aab</code> num <b>aparelho real</b> (instalar via internal testing) — abrir, criar transação, ver o dashboard, fechar e reabrir.</li>
+<li>No Console: Data safety, classificação etária, público-alvo (18+), anúncios (não), recursos financeiros, ficha (Finanças) + política de privacidade.</li>
+<li>Criar a trilha de <b>teste fechado</b> e adicionar os e-mails dos testers.</li>
+<li>Subir o <code>.aab</code>, mandar o link de opt-in para os testers.</li>
+</ul>
+<div class="final"><div class="big">63</div><div><strong style="font-size:18px">Prontidão para o piloto: 63/100</strong><p style="margin:4px 0 0;color:var(--cinza);max-width:560px">A engenharia do pacote está boa; o que segura são a decisão de backend e três formulários. Tudo factível até amanhã. Feito o checklist acima, você sobe o piloto com tranquilidade.</p></div></div>
+</section>
+
+</div>
+<footer>Auditoria de prontidão para Play Store (teste fechado) · 10/07/2026 · Baseada no projeto Android real (capacitor.config, build.gradle, manifest, assets, config de API).</footer>
+</body></html>

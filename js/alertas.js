@@ -76,7 +76,7 @@ var ALERTAS = {
       alertas.push({
         id:        'anomalia-' + a.transacao.id,
         tipo:      'anomalia',
-        titulo:    '🔍 Gasto incomum detectado',
+        titulo:    'Gasto incomum detectado',
         msg:       '"' + (a.transacao.descricao || 'Transação') + '" — ' + a.motivo,
         gravidade: 'media',
         acao:      'editarTransacao',
@@ -90,7 +90,7 @@ var ALERTAS = {
       alertas.push({
         id:        'padrao-' + p.descricao.replace(/\s+/g, '-'),
         tipo:      'padrao',
-        titulo:    '🔁 Gasto recorrente detectado',
+        titulo:    'Gasto recorrente detectado',
         msg:       '"' + p.descricao + '" aparece há ' + p.meses + ' meses (média R$ ' + p.valorMedio.toFixed(2).replace('.', ',') + ')',
         gravidade: 'baixa',
         acao:      'marcarRecorrente',
@@ -175,7 +175,7 @@ var ALERTAS = {
         '<div class="alerta-acoes">' +
           botao +
           '<button class="alerta-dispensar" data-alerta-id="' + (typeof UTILS !== 'undefined' ? UTILS.escapeHtml(a.id) : a.id) + '" ' +
-            'aria-label="Dispensar alerta" title="Dispensar">✕</button>' +
+            'aria-label="Dispensar alerta" title="Dispensar"><i data-lucide="x" aria-hidden="true"></i></button>' +
         '</div>' +
       '</div>';
     }).join('');
@@ -187,6 +187,7 @@ var ALERTAS = {
     }
 
     el.innerHTML = html;
+    if (typeof renderLucideIcons === 'function') renderLucideIcons(el);
 
     // Event delegation para dispensar e ações
     var existingListener = el._alertaListener;
@@ -225,7 +226,8 @@ var ALERTAS = {
     var alertas = this.verificar(true); // forçar re-verificação
 
     if (alertas.length === 0) {
-      el.innerHTML = '<div class="alertas-vazio">✅ Nenhum alerta ativo. Finanças em ordem!</div>';
+      el.innerHTML = '<div class="alertas-vazio" role="status"><i data-lucide="check-circle" aria-hidden="true"></i> Nenhum alerta ativo. Finanças em ordem!</div>';
+      if (typeof renderLucideIcons === 'function') renderLucideIcons(el);
       return;
     }
 
@@ -254,10 +256,13 @@ var ALERTAS = {
         '</div>' +
         '<div class="alerta-acoes">' +
           botao +
-          '<button class="alerta-dispensar" data-alerta-id="' + (typeof UTILS !== 'undefined' ? UTILS.escapeHtml(a.id) : a.id) + '">✕</button>' +
+          '<button class="alerta-dispensar" data-alerta-id="' + (typeof UTILS !== 'undefined' ? UTILS.escapeHtml(a.id) : a.id) + '" ' +
+            'aria-label="Dispensar alerta" title="Dispensar"><i data-lucide="x" aria-hidden="true"></i></button>' +
         '</div>' +
       '</div>';
     }).join('');
+
+    if (typeof renderLucideIcons === 'function') renderLucideIcons(el);
 
     // Delegação de eventos
     var el2 = el;
@@ -283,14 +288,14 @@ var ALERTAS = {
 
   _acaoLabel: function(acao) {
     var labels = {
-      verExtrato:      '📋 Ver Extrato',
-      abrirNovo:       '➕ Registrar',
-      lancarRecorrente:'💸 Lançar',
-      marcarRecorrente:'🔁 Marcar recorrente',
-      editarTransacao: '✏️ Ver transação',
-      aumentarLimite:  '⬆️ Ajustar limite'
+      verExtrato:       '<i data-lucide="clipboard-list" aria-hidden="true"></i> Ver extrato',
+      abrirNovo:        '<i data-lucide="plus" aria-hidden="true"></i> Registrar',
+      lancarRecorrente: '<i data-lucide="banknote" aria-hidden="true"></i> Lançar',
+      marcarRecorrente: '<i data-lucide="repeat" aria-hidden="true"></i> Marcar recorrente',
+      editarTransacao:  '<i data-lucide="pencil" aria-hidden="true"></i> Ver transação',
+      aumentarLimite:   '<i data-lucide="arrow-up" aria-hidden="true"></i> Ajustar limite'
     };
-    return labels[acao] || '→ ' + acao;
+    return labels[acao] || '<i data-lucide="arrow-right" aria-hidden="true"></i> ' + acao;
   },
 
   _mostrarTodos: function() {
@@ -306,11 +311,12 @@ var ALERTAS = {
         : '';
       return '<div class="alerta-item ' + cls + '">' +
         '<div class="alerta-conteudo"><strong class="alerta-titulo">' + self._esc(a.titulo) + '</strong><span class="alerta-msg">' + self._esc(a.msg) + '</span></div>' +
-        '<div class="alerta-acoes">' + botao + '<button class="alerta-dispensar" data-alerta-id="' + self._esc(a.id) + '">✕</button></div>' +
+        '<div class="alerta-acoes">' + botao + '<button class="alerta-dispensar" data-alerta-id="' + self._esc(a.id) + '" aria-label="Dispensar alerta" title="Dispensar"><i data-lucide="x" aria-hidden="true"></i></button></div>' +
       '</div>';
     }).join('');
 
     el.innerHTML = html;
+    if (typeof renderLucideIcons === 'function') renderLucideIcons(el);
   },
 
   _executarAcao: function(acao, params) {
@@ -325,7 +331,12 @@ var ALERTAS = {
         break;
       case 'lancarRecorrente':
       case 'marcarRecorrente':
+        if (typeof executarInsight === 'function' && params && params.descricao) {
+          executarInsight('marcarRecorrente', params);
+          break;
+        }
         if (typeof APP_STORE !== 'undefined') APP_STORE.ui.setAba('novo');
+        else if (typeof mudarAba === 'function') mudarAba('novo');
         if (params && params.descricao) {
           var inp = document.getElementById('entrada-rapida-input');
           if (inp) { inp.value = params.descricao + (params.valor ? ' ' + params.valor : ''); inp.focus(); }

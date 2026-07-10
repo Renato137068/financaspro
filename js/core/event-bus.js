@@ -198,7 +198,7 @@ const EVENT_HANDLERS = {
       
       var isOpen = panel.style.display !== 'none';
       panel.style.display = isOpen ? 'none' : 'block';
-      if (arrow) arrow.textContent = isOpen ? '▼' : '▲';
+      if (arrow) arrow.classList.toggle('expanded', !isOpen);
       btn.setAttribute('aria-expanded', String(!isOpen));
     },
     
@@ -368,7 +368,7 @@ const EVENT_HANDLERS = {
       
       var isOpen = panel.style.display !== 'none';
       panel.style.display = isOpen ? 'none' : 'block';
-      if (arrow) arrow.textContent = isOpen ? '▼' : '▲';
+      if (arrow) arrow.classList.toggle('expanded', !isOpen);
       if (btn) btn.setAttribute('aria-expanded', String(!isOpen));
     },
     

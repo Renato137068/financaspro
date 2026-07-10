@@ -1,0 +1,210 @@
+/* Contas a pagar */
+#secao-contas-pagar .secao-header {
+  align-items: center;
+}
+
+.cp-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.cp-kpi {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  text-align: center;
+}
+
+.cp-kpi--warn .cp-kpi-val {
+  color: #dc2626;
+}
+
+.cp-kpi-label {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.cp-kpi-val {
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.cp-cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+
+.cp-cal-title {
+  font-weight: 700;
+  font-size: var(--text-sm);
+}
+
+.cp-cal-nav {
+  background: none;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--color-text-primary);
+}
+
+.cp-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.cp-cal-dow {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  padding: 4px 0;
+}
+
+.cp-cal-cell {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  position: relative;
+}
+
+.cp-cal-today {
+  background: rgba(0, 114, 63, 0.12);
+  font-weight: 700;
+}
+
+.cp-cal-has-bill {
+  background: rgba(245, 158, 11, 0.15);
+}
+
+.cp-cal-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #f59e0b;
+  margin-top: 2px;
+}
+
+.cp-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.cp-item {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-card-premium);
+}
+
+.cp-item--vencida {
+  border-color: rgba(220, 38, 38, 0.35);
+}
+
+.cp-item--hoje {
+  border-color: rgba(245, 158, 11, 0.45);
+}
+
+.cp-item-main {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.cp-item-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+  background: rgba(0, 114, 63, 0.1);
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.cp-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cp-item-title {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: 700;
+}
+
+.cp-item-meta {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.cp-item-valor {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.cp-item-actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.cp-btn-danger {
+  color: #dc2626 !important;
+}
+
+.cp-empty {
+  text-align: center;
+  padding: var(--space-4);
+  color: var(--color-text-muted);
+}
+
+.cp-resumo-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-light);
+  margin-bottom: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.cp-resumo-item.cp-item--vencida {
+  border-color: rgba(220, 38, 38, 0.35);
+}
+
+.cp-resumo-empty {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.form-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: var(--space-3);
+  font-size: var(--text-sm);
+}
