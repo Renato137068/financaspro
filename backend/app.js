@@ -102,6 +102,13 @@ export function createApp() {
     res.sendFile(path.join(STATIC_ROOT, 'index.html'));
   });
 
+  // Rota de API inexistente: sem isto a requisição cai no finalhandler do
+  // Express, que responde HTML — e um cliente fazendo res.json() quebra com
+  // erro de parse em vez de simplesmente ver o 404.
+  app.use('/api', (req, res) => {
+    res.status(404).json({ error: 'Recurso não encontrado' });
+  });
+
   app.use((err, req, res, _next) => {
     const status = err.status ?? err.statusCode ?? 500;
     const message = (err.isOperational || status < 500)

@@ -8,6 +8,7 @@ import { TotpService } from '../domain/services/totp.service.js';
 import { setAuthCookies, clearAuthCookies, getRefreshToken, getAccessToken } from '../lib/authCookies.js';
 import { verifyAccessToken } from '../lib/jwt.js';
 import { z } from 'zod';
+import { asyncHandler } from '../lib/async-handler.js';
 
 const router = Router();
 
@@ -55,38 +56,38 @@ function clientMeta(req) {
 }
 
 // POST /api/v1/auth/forgot-password — inicia reset (resposta sempre genérica)
-router.post('/forgot-password', authLimiter, validateBody(forgotPasswordSchema), async (req, res) => {
+router.post('/forgot-password', authLimiter, validateBody(forgotPasswordSchema), asyncHandler(async (req, res) => {
   await AuthService.requestPasswordReset(req.body.email, clientMeta(req));
   res.json({ ok: true, message: 'Se o e-mail existir, enviaremos instruções de redefinição.' });
-});
+}));
 
 // POST /api/v1/auth/reset-password — conclui reset com token de uso único
-router.post('/reset-password', authLimiter, validateBody(resetPasswordSchema), async (req, res) => {
+router.post('/reset-password', authLimiter, validateBody(resetPasswordSchema), asyncHandler(async (req, res) => {
   await AuthService.resetPassword(req.body.token, req.body.newPassword, clientMeta(req));
   res.json({ ok: true, message: 'Senha redefinida. Faça login com a nova senha.' });
-});
+}));
 
 // POST /api/v1/auth/verify-email — confirma e-mail via token
-router.post('/verify-email', validateBody(tokenSchema), async (req, res) => {
+router.post('/verify-email', validateBody(tokenSchema), asyncHandler(async (req, res) => {
   const result = await AuthService.verifyEmail(req.body.token);
   res.json({ data: result });
-});
+}));
 
 // POST /api/v1/auth/resend-verification — reenvia e-mail de verificação (autenticado)
-router.post('/resend-verification', authenticate, async (req, res) => {
+router.post('/resend-verification', authenticate, asyncHandler(async (req, res) => {
   await AuthService.sendVerificationEmail(req.user);
   res.json({ ok: true, message: 'E-mail de verificação reenviado.' });
-});
+}));
 
 // POST /api/v1/auth/register
-router.post('/register', authLimiter, validateBody(registerSchema), async (req, res) => {
+router.post('/register', authLimiter, validateBody(registerSchema), asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
   const user = await AuthService.register(name, email, password, clientMeta(req));
   res.status(201).json({ data: user });
-});
+}));
 
 // POST /api/v1/auth/login
-router.post('/login', authLimiter, validateBody(loginSchema), async (req, res) => {
+router.post('/login', authLimiter, validateBody(loginSchema), asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   const result = await AuthService.login(email, password, clientMeta(req));
 
@@ -102,10 +103,10 @@ router.post('/login', authLimiter, validateBody(loginSchema), async (req, res) =
       refreshToken: null,
     },
   });
-});
+}));
 
 // POST /api/v1/auth/refresh
-router.post('/refresh', authLimiter, async (req, res) => {
+router.post('/refresh', authLimiter, asyncHandler(async (req, res) => {
   const refreshToken = getRefreshToken(req);
   if (!refreshToken) {
     return res.status(401).json({ error: 'Refresh token ausente' });
@@ -118,10 +119,10 @@ router.post('/refresh', authLimiter, async (req, res) => {
       refreshToken: null,
     },
   });
-});
+}));
 
 // POST /api/v1/auth/logout — limpa cookies mesmo sem sessão válida
-router.post('/logout', async (req, res) => {
+router.post('/logout', asyncHandler(async (req, res) => {
   const refreshToken = getRefreshToken(req);
   try {
     const accessToken = getAccessToken(req);
@@ -134,7 +135,7 @@ router.post('/logout', async (req, res) => {
   }
   clearAuthCookies(res);
   res.json({ ok: true });
-});
+}));
 
 // GET /api/v1/auth/me
 router.get('/me', authenticate, (req, res) => {

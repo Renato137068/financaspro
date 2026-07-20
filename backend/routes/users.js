@@ -7,6 +7,7 @@ import { validateBody } from '../middleware/validate.js';
 import { UserService } from '../domain/services/user.service.js';
 import { AuthService } from '../domain/services/auth.service.js';
 import { clearAuthCookies } from '../lib/authCookies.js';
+import { asyncHandler } from '../lib/async-handler.js';
 
 const router = Router();
 router.use(authenticate);
@@ -47,25 +48,25 @@ router.get('/me', (req, res) => {
 });
 
 // PATCH /api/v1/users/me
-router.patch('/me', validateBody(updateProfileSchema), async (req, res) => {
+router.patch('/me', validateBody(updateProfileSchema), asyncHandler(async (req, res) => {
   const user = await UserService.updateProfile(req.user.id, req.body);
   res.json({ data: user });
-});
+}));
 
 // GET /api/v1/users/me/config
-router.get('/me/config', async (req, res) => {
+router.get('/me/config', asyncHandler(async (req, res) => {
   const data = await UserService.getConfig(req.user.id);
   res.json({ data });
-});
+}));
 
 // PUT /api/v1/users/me/config
-router.put('/me/config', validateBody(configSchema), async (req, res) => {
+router.put('/me/config', validateBody(configSchema), asyncHandler(async (req, res) => {
   const data = await UserService.updateConfig(req.user.id, req.body);
   res.json({ data });
-});
+}));
 
 // POST /api/v1/users/me/password — troca de senha autenticada
-router.post('/me/password', validateBody(changePasswordSchema), async (req, res) => {
+router.post('/me/password', validateBody(changePasswordSchema), asyncHandler(async (req, res) => {
   await AuthService.changePassword(
     req.user.id,
     req.body.currentPassword,
@@ -74,23 +75,23 @@ router.post('/me/password', validateBody(changePasswordSchema), async (req, res)
   );
   clearAuthCookies(res); // sessões revogadas → força novo login
   res.json({ ok: true, message: 'Senha alterada. Faça login novamente.' });
-});
+}));
 
 // GET /api/v1/users/me/export — LGPD: portabilidade dos dados
-router.get('/me/export', async (req, res) => {
+router.get('/me/export', asyncHandler(async (req, res) => {
   const data = await UserService.exportData(req.user.id);
   res.setHeader('Content-Disposition', 'attachment; filename="financaspro-meus-dados.json"');
   res.json(data);
-});
+}));
 
 // DELETE /api/v1/users/me — LGPD: exclusão de conta (confirma com senha)
-router.delete('/me', validateBody(deleteAccountSchema), async (req, res) => {
+router.delete('/me', validateBody(deleteAccountSchema), asyncHandler(async (req, res) => {
   const ok = await AuthService.checkPassword(req.user.id, req.body.password);
   if (!ok) return res.status(401).json({ error: 'Senha incorreta' });
   await UserService.deleteAccount(req.user.id);
   clearAuthCookies(res);
   res.json({ ok: true, message: 'Conta e dados excluídos.' });
-});
+}));
 
 // GET /api/v1/users — listagem (apenas ADMIN)
 router.get('/', requireRole('ADMIN'), async (_req, res) => {
@@ -103,9 +104,9 @@ router.patch('/:id', requireRole('ADMIN'), validateBody(z.object({
   name: z.string().trim().min(1).max(80).optional(),
   role: z.enum(['ADMIN', 'USER', 'VIEWER']).optional(),
   active: z.boolean().optional(),
-})), async (req, res) => {
+})), asyncHandler(async (req, res) => {
   const user = await UserService.updateById(req.params.id, req.body);
   res.json({ data: user });
-});
+}));
 
 export default router;

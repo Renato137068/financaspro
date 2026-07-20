@@ -6,6 +6,7 @@ import { requirePermission } from '../lib/rbac.js';
 import { validateBody, validateQuery, transactionSchema, transactionPatchSchema, paginationSchema } from '../middleware/validate.js';
 import { TransactionService } from '../domain/services/transaction.service.js';
 import { injectPlan, checkTransactionLimit } from '../middleware/plan.js';
+import { asyncHandler } from '../lib/async-handler.js';
 
 const router = Router();
 router.use(authenticate);
@@ -19,33 +20,33 @@ const listQuerySchema = paginationSchema.extend({
 });
 
 // GET /api/v1/transactions
-router.get('/', requirePermission('transactions:read'), validateQuery(listQuerySchema), async (req, res) => {
+router.get('/', requirePermission('transactions:read'), validateQuery(listQuerySchema), asyncHandler(async (req, res) => {
   const result = await TransactionService.list(req.user.id, req.query);
   res.json(result);
-});
+}));
 
 // POST /api/v1/transactions
-router.post('/', requirePermission('transactions:write'), injectPlan(), checkTransactionLimit, validateBody(transactionSchema), async (req, res) => {
+router.post('/', requirePermission('transactions:write'), injectPlan(), checkTransactionLimit, validateBody(transactionSchema), asyncHandler(async (req, res) => {
   const tx = await TransactionService.create(req.user.id, req.body);
   res.status(201).json({ data: tx });
-});
+}));
 
 // GET /api/v1/transactions/:id
-router.get('/:id', requirePermission('transactions:read'), async (req, res) => {
+router.get('/:id', requirePermission('transactions:read'), asyncHandler(async (req, res) => {
   const tx = await TransactionService.getById(req.params.id, req.user.id);
   res.json({ data: tx });
-});
+}));
 
 // PATCH /api/v1/transactions/:id
-router.patch('/:id', requirePermission('transactions:write'), validateBody(transactionPatchSchema), async (req, res) => {
+router.patch('/:id', requirePermission('transactions:write'), validateBody(transactionPatchSchema), asyncHandler(async (req, res) => {
   const tx = await TransactionService.update(req.params.id, req.user.id, req.body);
   res.json({ data: tx });
-});
+}));
 
 // DELETE /api/v1/transactions/:id
-router.delete('/:id', requirePermission('transactions:delete'), async (req, res) => {
+router.delete('/:id', requirePermission('transactions:delete'), asyncHandler(async (req, res) => {
   await TransactionService.remove(req.params.id, req.user.id);
   res.json({ ok: true });
-});
+}));
 
 export default router;
