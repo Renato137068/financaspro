@@ -107,6 +107,17 @@ async function verifyPassword(password, saltHex, stored) {
   return { valid, needsRehash: valid && iterations < pbkdf2Iterations };
 }
 
+// Salt fixo e descartável: o resultado nunca é comparado com nada. Existe apenas
+// para que o caminho "e-mail não cadastrado" gaste o mesmo tempo de CPU que o
+// caminho normal, nivelando o tempo de resposta do login.
+const DUMMY_SALT_HEX = '00'.repeat(saltLength);
+
+async function burnPasswordTiming(password) {
+  try {
+    await deriveHex(String(password ?? ''), DUMMY_SALT_HEX, pbkdf2Iterations);
+  } catch { /* nunca deve bloquear a resposta de erro */ }
+}
+
 function publicUser(user) {
   return {
     id: user.id,
@@ -152,11 +163,15 @@ export const AuthService = {
     }
 
     const user = await UserRepository.findByEmail(email);
+
+    // E-mail inexistente: ainda assim paga o custo de um PBKDF2 completo antes de
+    // responder. Sem isso, a ausência de derivação (~600k iterações) cria um
+    // oráculo de tempo que revela quais e-mails estão cadastrados.
     if (!user) {
+      await burnPasswordTiming(password);
       await recordFailedLogin(email);
       throw new AppError('Credenciais inválidas', 401);
     }
-    if (!user.active) throw new AppError('Conta desativada', 403);
 
     const { valid, needsRehash } = await verifyPassword(password, user.passwordSalt, user.passwordHash);
 
@@ -165,6 +180,10 @@ export const AuthService = {
       await AuditRepository.log({ userId: user.id, action: 'login_failed', resource: 'user', ...clientMeta });
       throw new AppError('Credenciais inválidas', 401);
     }
+
+    // Só depois de provar posse da senha revelamos que a conta existe porém está
+    // desativada. Checar antes transformaria o 403 num confirmador de e-mail.
+    if (!user.active) throw new AppError('Conta desativada', 403);
 
     await clearFailedLogin(email);
 

@@ -58,10 +58,14 @@ function createMemoryLimiter({ windowMs: wMs, max: limit, keyFn }) {
 function createRedisLimiter({ windowMs: wMs, max: limit, keyFn }) {
   const prefix = 'rl:';
 
+  // Fallback instanciado UMA vez: criá-lo por request daria a cada chamada um
+  // store vazio (rate limit viraria no-op) e vazaria um setInterval por request.
+  const memoryFallback = createMemoryLimiter({ windowMs: wMs, max: limit, keyFn });
+
   return async function rateLimiter(req, res, next) {
     const client = redis.client;
     if (!client || !redis.isAvailable) {
-      return createMemoryLimiter({ windowMs: wMs, max: limit, keyFn })(req, res, next);
+      return memoryFallback(req, res, next);
     }
 
     const key = prefix + (keyFn ? keyFn(req) : getClientIp(req));
@@ -87,7 +91,7 @@ function createRedisLimiter({ windowMs: wMs, max: limit, keyFn }) {
       }
       return next();
     } catch (_err) {
-      return createMemoryLimiter({ windowMs: wMs, max: limit, keyFn })(req, res, next);
+      return memoryFallback(req, res, next);
     }
   };
 }

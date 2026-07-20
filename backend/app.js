@@ -17,9 +17,21 @@ import { BillingService } from './domain/services/billing.service.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DEV_ROOT  = path.join(__dirname, '..');
 const DIST_ROOT = path.join(__dirname, '..', 'dist');
-const STATIC_ROOT = CONFIG.isProd && fs.existsSync(path.join(DIST_ROOT, 'index.html'))
-  ? DIST_ROOT
-  : DEV_ROOT;
+// Em produção servimos exclusivamente o build. Cair para a raiz do projeto
+// quando o build falta exporia backend/, prisma/, scripts/ e package.json —
+// então aqui falhamos fechado, em vez de degradar silenciosamente.
+function resolveStaticRoot() {
+  const hasBuild = fs.existsSync(path.join(DIST_ROOT, 'index.html'));
+  if (!CONFIG.isProd) return DEV_ROOT;
+  if (!hasBuild) {
+    throw new Error(
+      'Build de produção ausente: dist/index.html não encontrado. Execute `npm run build` antes de iniciar o servidor.',
+    );
+  }
+  return DIST_ROOT;
+}
+
+const STATIC_ROOT = resolveStaticRoot();
 
 export function createApp() {
   const app = express();
