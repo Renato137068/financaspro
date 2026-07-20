@@ -338,7 +338,7 @@
 <!-- ============ 8 SEGURANÇA ============ -->
 <section id="s8">
   <h2><span class="n">8.</span> Segurança</h2>
-  <div class="grade">74 / 100 <small>· Backend forte, front-end com pontos fracos evitáveis</small></div>
+  <div class="grade">80 / 100 <small>· Revisado 20/07 · backend endurecido; ressalvas de cliente mantidas</small></div>
   <div class="two">
     <div>
       <h4>Pontos fortes (reais)</h4>
@@ -346,7 +346,7 @@
         <li><strong>CSP</strong> definida via meta (default-src 'self', object-src 'none', base-uri 'self').</li>
         <li><code>X-Content-Type-Options: nosniff</code> + <code>Referrer-Policy</code>.</li>
         <li><strong>Helmet</strong> no backend Express.</li>
-        <li><strong>PIN:</strong> PBKDF2 100k iterações, salt único, rate-limit com backoff exponencial, comparação tempo-constante.</li>
+        <li><strong>PIN:</strong> PBKDF2 <s>100k</s> <strong>600k</strong> iterações <small style="color:var(--verde)">(elevado 20/07)</small>, salt único, rate-limit com backoff exponencial, comparação tempo-constante.</li>
         <li><strong>2FA TOTP</strong> (otplib) + QR code.</li>
         <li>JWT em <strong>cookie httpOnly</strong> + refresh token.</li>
         <li>Validação com <strong>Zod</strong>, <code>field-crypto.js</code>, <code>AuditLog</code> no schema.</li>
@@ -365,7 +365,21 @@
       </ul>
     </div>
   </div>
-  <p><strong>Por que 74:</strong> a engenharia de segurança do <em>servidor</em> é de nível profissional (raro num indie). O que impede uma nota alta é a proteção de dados no cliente — o marketing "criptografia local" não se sustenta com a chave guardada ao lado do dado e desligada por padrão.</p>
+  <p><strong>Por que 74 (avaliação original, 09/07):</strong> a engenharia de segurança do <em>servidor</em> é de nível profissional (raro num indie). O que impede uma nota alta é a proteção de dados no cliente — o marketing "criptografia local" não se sustenta com a chave guardada ao lado do dado e desligada por padrão.</p>
+
+  <div class="callout">
+    <strong>Atualização pós-auditoria — 20/07/2026 · 74 → 80.</strong>
+    Uma revisão de segurança focada no backend encontrou e corrigiu falhas que a auditoria original não havia detectado (o exame de servidor fora de escopo aqui). Todas verificadas por testes de regressão:
+    <ul style="margin:10px 0 4px">
+      <li><strong>DoS crítico (P0):</strong> handlers <code>async</code> sem captura de erro no Express 4 transformavam qualquer <code>AppError</code> em <code>unhandledRejection</code>, e <code>server.js</code> responde a isso com <code>process.exit(1)</code>. Na prática, <em>um login com senha errada derrubava o processo inteiro</em> — sem autenticação. Corrigido com <code>asyncHandler</code> em 36 rotas.</li>
+      <li><strong>Rate limit burlável (P1):</strong> com o Redis indisponível, o fallback em memória era reinstanciado a cada request e nunca aplicava o limite — inclusive na proteção de força-bruta do login. Corrigido.</li>
+      <li><strong>Enumeração de contas (P2):</strong> o login revelava e-mails cadastrados por status HTTP e por tempo de resposta. Nivelado.</li>
+      <li><strong>PBKDF2 elevado de 100k para 600k iterações</strong> (mínimo OWASP 2023) — o "100k" que esta seção listava como ponto forte estava, na verdade, 6× abaixo do recomendado. Re-hash transparente migra hashes antigos no login.</li>
+      <li><strong>Exposição de código-fonte:</strong> build de produção ausente fazia o servidor cair para a raiz do projeto e servir <code>backend/</code>, <code>prisma/</code> e <code>package.json</code>. Agora falha fechado.</li>
+      <li><strong>Cobertura de teste:</strong> +24 testes de integração HTTP (auth, IDOR, RBAC, rate limit, sessão) com gate no CI. O backend, que antes tinha ~11 asserções, passou a ser exercitado de ponta a ponta.</li>
+    </ul>
+    <strong>Teto mantido em 80:</strong> todas as ressalvas de <em>cliente</em> desta seção (cripto at-rest frágil, ~130 <code>innerHTML</code>, <code>style-src 'unsafe-inline'</code>, CSP via <code>&lt;meta&gt;</code>) seguem válidas — não foram alvo desta rodada. A nota geral do produto (71) permanece: segurança é 1 de 14 dimensões e o que freia o 71 é frontend e performance, não segurança.
+  </div>
 </section>
 
 <!-- ============ 9 ACESSIBILIDADE ============ -->
@@ -617,7 +631,7 @@
     <tr><td>UX</td><td class="n">72</td><td><div class="bar"><i style="width:72%;background:var(--regular)"></i></div></td></tr>
     <tr><td>Arquitetura front-end</td><td class="n">52</td><td><div class="bar"><i style="width:52%;background:var(--ruim)"></i></div></td></tr>
     <tr><td>Funcionalidades</td><td class="n">85</td><td><div class="bar"><i style="width:85%;background:var(--bom)"></i></div></td></tr>
-    <tr><td>Segurança</td><td class="n">74</td><td><div class="bar"><i style="width:74%;background:var(--regular)"></i></div></td></tr>
+    <tr><td>Segurança <small style="color:var(--verde)">↑ rev. 20/07</small></td><td class="n">80</td><td><div class="bar"><i style="width:80%;background:var(--bom)"></i></div></td></tr>
     <tr><td>Performance</td><td class="n">58</td><td><div class="bar"><i style="width:58%;background:var(--ruim)"></i></div></td></tr>
     <tr><td>Escalabilidade</td><td class="n">60</td><td><div class="bar"><i style="width:60%;background:var(--ruim)"></i></div></td></tr>
     <tr><td>Monetização</td><td class="n">76</td><td><div class="bar"><i style="width:76%;background:var(--regular)"></i></div></td></tr>
@@ -632,6 +646,7 @@
     <div>
       <strong style="font-size:19px">Nota final: 71/100</strong>
       <p class="muted" style="margin:4px 0 0;max-width:520px">Média ponderada das 14 dimensões, com peso maior em arquitetura, funcionalidades e confiança de dados. Um produto <strong>bom e ambicioso</strong>, freado por dívida técnica de frontend e por lacunas de percepção — não de capacidade.</p>
+      <p class="muted" style="margin:8px 0 0;max-width:520px;font-size:12px"><strong>Nota:</strong> a dimensão Segurança foi revisada de 74 para 80 em 20/07/2026 após remediação de backend (ver §8). A nota final permanece 71: segurança tem peso parcial e os freios do produto continuam sendo frontend e performance.</p>
     </div>
   </div>
 </section>
