@@ -26,12 +26,20 @@ async function check(name, fn) {
 }
 
 try {
+  // Garante que o Prisma Client reflete o schema atual antes de importar o app.
+  // O postinstall do @prisma/client cobre isso no `npm ci`, mas gerar aqui torna
+  // o teste correto de forma auto-contida — um client defasado (sem um modelo
+  // recém-adicionado) só apareceria como um 500 críptico em tempo de execução.
+  execSync('npx prisma generate', {
+    stdio: 'inherit',
+    env: { ...process.env, DATABASE_URL: dbUrl },
+  });
   execSync('npx prisma migrate deploy', {
     stdio: 'inherit',
     env: { ...process.env, DATABASE_URL: dbUrl },
   });
 } catch (err) {
-  console.error('[integration] migrate deploy falhou:', err.message);
+  console.error('[integration] preparação do banco falhou:', err.message);
   process.exit(1);
 }
 

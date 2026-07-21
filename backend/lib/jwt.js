@@ -28,7 +28,11 @@ export function signTokens(user) {
     audience,
   });
 
-  const refreshToken = jwt.sign({ sub: user.id }, refreshSecret, {
+  // jti próprio no refresh token: sem ele, dois logins do mesmo usuário no
+  // mesmo segundo geram payloads idênticos (sub/iat/exp iguais) → token e hash
+  // idênticos → violação da unique constraint Session.refreshToken, e o segundo
+  // login falha. Um jti aleatório por emissão garante unicidade.
+  const refreshToken = jwt.sign({ sub: user.id, jti: randomUUID() }, refreshSecret, {
     expiresIn: refreshExpiresIn,
     algorithm: 'HS256',
     issuer,
