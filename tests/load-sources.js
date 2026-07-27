@@ -19,6 +19,19 @@ function loadScript(context, relativePath) {
 }
 
 function loadCoreModules() {
+  // Captura document/window do jsdom e os fixa no global ANTES de contextificar.
+  // No Node 18, propriedades presentes no global NO MOMENTO do vm.createContext
+  // são resolvíveis dentro do sandbox (mesmo padrão do localStorage do
+  // setup-globals); propriedades adicionadas DEPOIS não são. Prioriza os
+  // identificadores diretos `document`/`window` (globais do ambiente jsdom).
+  var _jsdomWindow = (typeof window !== 'undefined' && window) || global;
+  var _jsdomDocument = (typeof document !== 'undefined' && document)
+    || global.document
+    || (_jsdomWindow && _jsdomWindow.document)
+    || null;
+  global.__jsdomWindow = _jsdomWindow;
+  global.__jsdomDocument = _jsdomDocument;
+
   const context = vm.createContext(global);
 
   global.ariaLive = global.ariaLive || {
@@ -68,21 +81,6 @@ function loadCoreModules() {
   // liga a um identificador nu → ReferenceError. Declará-los como `var` via
   // CÓDIGO rodado no contexto (idêntico a como UTILS/PARSER são carregados)
   // cria bindings que resolvem igual em todas as versões suportadas.
-  // jsdom expõe `document`/`window` via getters não-enumeráveis no global; ao
-  // contextificar com vm, esses getters não viram bindings acessíveis por
-  // identificador nu dentro do sandbox. Copiá-los para propriedades de dados
-  // planas (lidas via globalThis.__jsdomX no runInContext) os torna resolvíveis.
-  // Captura por múltiplas fontes: no Node 18 com jest-environment-jsdom@30 sob
-  // jest@29, `global.document` pode vir undefined — os identificadores diretos
-  // `window`/`document` (globais do ambiente jsdom) e `window.document` cobrem isso.
-  var _jsdomWindow = (typeof window !== 'undefined' && window) || global;
-  var _jsdomDocument = (typeof document !== 'undefined' && document)
-    || (global.document)
-    || (_jsdomWindow && _jsdomWindow.document)
-    || null;
-  global.__jsdomWindow = _jsdomWindow;
-  global.__jsdomDocument = _jsdomDocument;
-
   vm.runInContext(
     // Liga document/window do jsdom ao contexto VM. Sem isto, identificadores
     // nus como `document.createElement` dentro dos módulos (toasts, preenchimento
