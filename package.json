@@ -15,10 +15,11 @@
     "test:open-coverage": "jest --coverage && start coverage/lcov-report/index.html",
     "lint": "eslint js/ backend/ --ext .js",
     "security:xss": "node scripts/check-xss-sinks.cjs",
+    "docs:openapi": "node scripts/generate-openapi.mjs",
     "test:sync": "node scripts/sync-conflict-test.mjs",
     "dev": "vite",
     "dev:legacy": "http-server . -p 3000 -g",
-    "build": "vite build --config vite.config.cjs && node scripts/copy-static.cjs && node scripts/bundle-app.cjs && node scripts/harden-csp.cjs",
+    "build": "vite build --config vite.config.cjs && node scripts/copy-static.cjs && node scripts/harden-csp.cjs",
     "build:analyze": "vite build --config vite.config.cjs --mode analyze",
     "preview": "vite preview",
     "backend": "node backend/server.js",
@@ -119,13 +120,14 @@
       "js/core/store.js",
       "js/orcamento.js",
       "js/transacoes.js",
-      "js/pipeline.js"
+      "js/pipeline.js",
+      "js/metas.js"
     ],
     "coverageThreshold": {
       "global": {
-        "lines": 40,
-        "functions": 25,
-        "branches": 30
+        "lines": 85,
+        "functions": 88,
+        "branches": 72
       }
     },
     "coverageReporters": [

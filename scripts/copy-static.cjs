@@ -70,6 +70,7 @@ function patchIndexHtml(filePath) {
 
 patchIndexHtml(path.join(dist, 'index.html'));
 
+require('./build-lucide-subset.cjs'); // enxuga lucide antes de empacotar
 require('./bundle-app.cjs');
 require('./generate-sw-cache.cjs');
 

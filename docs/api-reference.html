@@ -1,0 +1,287 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FinançasPro API — Referência</title><style>
+:root{--bg:#f6f7fb;--card:#fff;--ink:#1a1d29;--mut:#5b6472;--line:#e6e8ef;--brand:#4f46e5}
+@media(prefers-color-scheme:dark){:root{--bg:#0e1017;--card:#171a24;--ink:#eef0f6;--mut:#9aa3b2;--line:#262a37}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.5}
+.wrap{max-width:900px;margin:0 auto;padding:28px 18px 70px}
+header{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border-radius:14px;padding:24px}
+header h1{margin:0 0 4px;font-size:23px}header p{margin:0;opacity:.9;font-size:14px}
+header .v{display:inline-block;margin-top:10px;background:rgba(255,255,255,.15);padding:3px 10px;border-radius:20px;font-size:12px}
+h2{font-size:18px;margin:30px 0 2px}.td{color:var(--mut);font-size:13px;margin:0 0 12px}
+.op{background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:10px;overflow:hidden}
+.op-head{display:flex;align-items:center;gap:10px;padding:11px 14px;flex-wrap:wrap}
+.m{color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:5px;min-width:52px;text-align:center}
+.path{font-size:13.5px;font-weight:600}.sum{color:var(--mut);font-size:13px;margin-left:auto}.auth{font-size:12px}
+.tbl-wrap{border-top:1px solid var(--line);padding:10px 14px;overflow-x:auto}
+.tbl-t{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--mut);margin-bottom:6px}
+table{width:100%;border-collapse:collapse;font-size:13px}th{text-align:left;font-size:11px;color:var(--mut);font-weight:600;padding:4px 8px}
+td{padding:5px 8px;border-top:1px solid var(--line);vertical-align:top}.fn{font-weight:600;font-family:ui-monospace,monospace;font-size:12.5px}
+.ft{color:var(--brand);font-family:ui-monospace,monospace;font-size:12.5px}.fc{color:var(--mut);font-size:12px}
+.req{color:#dc2626;margin-left:2px}.pin{background:var(--line);color:var(--mut);font-size:10px;padding:1px 5px;border-radius:4px;margin-left:5px}
+.foot{color:var(--mut);font-size:12px;text-align:center;margin-top:30px}code{font-family:ui-monospace,monospace}
+</style></head><body><div class="wrap">
+<header><h1>FinançasPro API</h1><p>API SaaS de finanças pessoais. Corpos de request gerados a partir dos schemas Zod que a API valida em runtime.</p><span class="v">v11.0.0 · OpenAPI 3.0.3 · base <code>/api/v1</code></span></header>
+<section><h2>Auth</h2><p class="td">Autenticação, sessão e 2FA</p><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#16a34a">POST</span>
+      <code class="path">/api/v1/auth/register</code>
+      
+      <span class="sum">Registrar novo usuário</span>
+    </div>
+    
+    <div class="tbl-wrap"><div class="tbl-t">Corpo (application/json)</div><table><thead><tr><th>Campo</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">name<span class="req">*</span></td><td class="ft">string</td><td class="fc">min 1 · max 80</td></tr><tr><td class="fn">email<span class="req">*</span></td><td class="ft">string</td><td class="fc">email</td></tr><tr><td class="fn">password<span class="req">*</span></td><td class="ft">string</td><td class="fc">min 8 · max 128</td></tr></tbody></table></div>
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#16a34a">POST</span>
+      <code class="path">/api/v1/auth/login</code>
+      
+      <span class="sum">Login (retorna access token + refresh cookie)</span>
+    </div>
+    
+    <div class="tbl-wrap"><div class="tbl-t">Corpo (application/json)</div><table><thead><tr><th>Campo</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">email<span class="req">*</span></td><td class="ft">string</td><td class="fc">email</td></tr><tr><td class="fn">password<span class="req">*</span></td><td class="ft">string</td><td class="fc">min 1</td></tr></tbody></table></div>
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#16a34a">POST</span>
+      <code class="path">/api/v1/auth/refresh</code>
+      
+      <span class="sum">Renovar access token via refresh cookie</span>
+    </div>
+    
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#16a34a">POST</span>
+      <code class="path">/api/v1/auth/logout</code>
+      
+      <span class="sum">Encerrar sessão</span>
+    </div>
+    
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#0891b2">GET</span>
+      <code class="path">/api/v1/auth/me</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Dados do usuário autenticado</span>
+    </div>
+    
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#16a34a">POST</span>
+      <code class="path">/api/v1/auth/totp/setup</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Iniciar configuração de 2FA (QR/secret)</span>
+    </div>
+    
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#16a34a">POST</span>
+      <code class="path">/api/v1/auth/totp/enable</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Ativar 2FA</span>
+    </div>
+    
+    
+  </div></section><section><h2>transactions</h2><p class="td">Lançamentos financeiros</p><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#0891b2">GET</span>
+      <code class="path">/api/v1/transactions</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Listar transactions</span>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">limit<span class="pin">query</span></td><td class="ft">integer</td><td class="fc">default: 50</td></tr><tr><td class="fn">offset<span class="pin">query</span></td><td class="ft">integer</td><td class="fc">default: 0</td></tr></tbody></table></div>
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#16a34a">POST</span>
+      <code class="path">/api/v1/transactions</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Criar transactions</span>
+    </div>
+    
+    <div class="tbl-wrap"><div class="tbl-t">Corpo (application/json)</div><table><thead><tr><th>Campo</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">type<span class="req">*</span></td><td class="ft">string</td><td class="fc">enum: receita | despesa</td></tr><tr><td class="fn">amount<span class="req">*</span></td><td class="ft">number</td><td class="fc">&gt; 0</td></tr><tr><td class="fn">description<span class="req">*</span></td><td class="ft">string</td><td class="fc">min 1 · max 255</td></tr><tr><td class="fn">category<span class="req">*</span></td><td class="ft">string</td><td class="fc">min 1 · max 80</td></tr><tr><td class="fn">subcategory</td><td class="ft">string</td><td class="fc">max 80</td></tr><tr><td class="fn">date<span class="req">*</span></td><td class="ft">string</td><td class="fc">date-time</td></tr><tr><td class="fn">accountId</td><td class="ft">string</td><td class="fc">uuid · nullable</td></tr><tr><td class="fn">tags</td><td class="ft">array&lt;string&gt;</td><td class="fc">default: []</td></tr><tr><td class="fn">notes</td><td class="ft">string</td><td class="fc">max 1000 · nullable</td></tr><tr><td class="fn">recurring</td><td class="ft">boolean</td><td class="fc">default: false</td></tr></tbody></table></div>
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#0891b2">GET</span>
+      <code class="path">/api/v1/transactions/{id}</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Obter transactions por id</span>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">id<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr></tbody></table></div>
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#d97706">PATCH</span>
+      <code class="path">/api/v1/transactions/{id}</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Atualizar transactions</span>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">id<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr></tbody></table></div>
+    <div class="tbl-wrap"><div class="tbl-t">Corpo (application/json)</div><table><thead><tr><th>Campo</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">type</td><td class="ft">string</td><td class="fc">enum: receita | despesa</td></tr><tr><td class="fn">amount</td><td class="ft">number</td><td class="fc">&gt; 0</td></tr><tr><td class="fn">description</td><td class="ft">string</td><td class="fc">min 1 · max 255</td></tr><tr><td class="fn">category</td><td class="ft">string</td><td class="fc">min 1 · max 80</td></tr><tr><td class="fn">subcategory</td><td class="ft">string</td><td class="fc">max 80</td></tr><tr><td class="fn">date</td><td class="ft">string</td><td class="fc">date-time</td></tr><tr><td class="fn">accountId</td><td class="ft">string</td><td class="fc">uuid · nullable</td></tr><tr><td class="fn">tags</td><td class="ft">array&lt;string&gt;</td><td class="fc">default: []</td></tr><tr><td class="fn">notes</td><td class="ft">string</td><td class="fc">max 1000 · nullable</td></tr><tr><td class="fn">recurring</td><td class="ft">boolean</td><td class="fc">default: false</td></tr></tbody></table></div>
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#dc2626">DELETE</span>
+      <code class="path">/api/v1/transactions/{id}</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Excluir transactions</span>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">id<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr></tbody></table></div>
+    
+  </div></section><section><h2>accounts</h2><p class="td">Contas</p><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#0891b2">GET</span>
+      <code class="path">/api/v1/accounts</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Listar accounts</span>
+    </div>
+    
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#16a34a">POST</span>
+      <code class="path">/api/v1/accounts</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Criar accounts</span>
+    </div>
+    
+    <div class="tbl-wrap"><div class="tbl-t">Corpo (application/json)</div><table><thead><tr><th>Campo</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">name<span class="req">*</span></td><td class="ft">string</td><td class="fc">min 1 · max 80</td></tr><tr><td class="fn">type<span class="req">*</span></td><td class="ft">string</td><td class="fc">enum: checking | savings | credit | investment</td></tr><tr><td class="fn">balance</td><td class="ft">number</td><td class="fc">default: 0</td></tr><tr><td class="fn">currency</td><td class="ft">string</td><td class="fc">min 3 · max 3 · default: &quot;BRL&quot;</td></tr><tr><td class="fn">institution</td><td class="ft">string</td><td class="fc">max 80 · nullable</td></tr></tbody></table></div>
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#0891b2">GET</span>
+      <code class="path">/api/v1/accounts/{id}</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Obter accounts por id</span>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">id<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr></tbody></table></div>
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#d97706">PATCH</span>
+      <code class="path">/api/v1/accounts/{id}</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Atualizar accounts</span>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">id<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr></tbody></table></div>
+    <div class="tbl-wrap"><div class="tbl-t">Corpo (application/json)</div><table><thead><tr><th>Campo</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">name</td><td class="ft">string</td><td class="fc">min 1 · max 80</td></tr><tr><td class="fn">type</td><td class="ft">string</td><td class="fc">enum: checking | savings | credit | investment</td></tr><tr><td class="fn">balance</td><td class="ft">number</td><td class="fc">default: 0</td></tr><tr><td class="fn">currency</td><td class="ft">string</td><td class="fc">min 3 · max 3 · default: &quot;BRL&quot;</td></tr><tr><td class="fn">institution</td><td class="ft">string</td><td class="fc">max 80 · nullable</td></tr></tbody></table></div>
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#dc2626">DELETE</span>
+      <code class="path">/api/v1/accounts/{id}</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Excluir accounts</span>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">id<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr></tbody></table></div>
+    
+  </div></section><section><h2>budgets</h2><p class="td">Orçamentos</p><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#0891b2">GET</span>
+      <code class="path">/api/v1/budgets</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Listar budgets</span>
+    </div>
+    
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#16a34a">POST</span>
+      <code class="path">/api/v1/budgets</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Criar budgets</span>
+    </div>
+    
+    <div class="tbl-wrap"><div class="tbl-t">Corpo (application/json)</div><table><thead><tr><th>Campo</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">category<span class="req">*</span></td><td class="ft">string</td><td class="fc">min 1 · max 80</td></tr><tr><td class="fn">limit<span class="req">*</span></td><td class="ft">number</td><td class="fc">&gt; 0</td></tr><tr><td class="fn">period</td><td class="ft">string</td><td class="fc">enum: monthly | weekly | yearly · default: &quot;monthly&quot;</td></tr></tbody></table></div>
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#0891b2">GET</span>
+      <code class="path">/api/v1/budgets/{id}</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Obter budgets por id</span>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">id<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr></tbody></table></div>
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#d97706">PATCH</span>
+      <code class="path">/api/v1/budgets/{id}</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Atualizar budgets</span>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">id<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr></tbody></table></div>
+    <div class="tbl-wrap"><div class="tbl-t">Corpo (application/json)</div><table><thead><tr><th>Campo</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">category</td><td class="ft">string</td><td class="fc">min 1 · max 80</td></tr><tr><td class="fn">limit</td><td class="ft">number</td><td class="fc">&gt; 0</td></tr><tr><td class="fn">period</td><td class="ft">string</td><td class="fc">enum: monthly | weekly | yearly · default: &quot;monthly&quot;</td></tr></tbody></table></div>
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#dc2626">DELETE</span>
+      <code class="path">/api/v1/budgets/{id}</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Excluir budgets</span>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">id<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr></tbody></table></div>
+    
+  </div></section><section><h2>recorrentes</h2><p class="td">Recorrências</p><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#0891b2">GET</span>
+      <code class="path">/api/v1/recorrentes</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Listar recorrentes</span>
+    </div>
+    
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#16a34a">POST</span>
+      <code class="path">/api/v1/recorrentes</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Criar recorrentes</span>
+    </div>
+    
+    <div class="tbl-wrap"><div class="tbl-t">Corpo (application/json)</div><table><thead><tr><th>Campo</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">type<span class="req">*</span></td><td class="ft">string</td><td class="fc">enum: receita | despesa</td></tr><tr><td class="fn">amount<span class="req">*</span></td><td class="ft">number</td><td class="fc">&gt; 0</td></tr><tr><td class="fn">description<span class="req">*</span></td><td class="ft">string</td><td class="fc">min 1 · max 255</td></tr><tr><td class="fn">category</td><td class="ft">string</td><td class="fc">min 1 · max 80</td></tr><tr><td class="fn">frequency<span class="req">*</span></td><td class="ft">string</td><td class="fc">enum: daily | weekly | monthly | yearly</td></tr><tr><td class="fn">startDate<span class="req">*</span></td><td class="ft">string</td><td class="fc">date-time</td></tr><tr><td class="fn">endDate</td><td class="ft">string</td><td class="fc">date-time · nullable</td></tr><tr><td class="fn">nextDue<span class="req">*</span></td><td class="ft">string</td><td class="fc">date-time</td></tr></tbody></table></div>
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#0891b2">GET</span>
+      <code class="path">/api/v1/recorrentes/{id}</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Obter recorrentes por id</span>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">id<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr></tbody></table></div>
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#d97706">PATCH</span>
+      <code class="path">/api/v1/recorrentes/{id}</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Atualizar recorrentes</span>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">id<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr></tbody></table></div>
+    <div class="tbl-wrap"><div class="tbl-t">Corpo (application/json)</div><table><thead><tr><th>Campo</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">type</td><td class="ft">string</td><td class="fc">enum: receita | despesa</td></tr><tr><td class="fn">amount</td><td class="ft">number</td><td class="fc">&gt; 0</td></tr><tr><td class="fn">description</td><td class="ft">string</td><td class="fc">min 1 · max 255</td></tr><tr><td class="fn">category</td><td class="ft">string</td><td class="fc">min 1 · max 80</td></tr><tr><td class="fn">frequency</td><td class="ft">string</td><td class="fc">enum: daily | weekly | monthly | yearly</td></tr><tr><td class="fn">startDate</td><td class="ft">string</td><td class="fc">date-time</td></tr><tr><td class="fn">endDate</td><td class="ft">string</td><td class="fc">date-time · nullable</td></tr><tr><td class="fn">nextDue</td><td class="ft">string</td><td class="fc">date-time</td></tr></tbody></table></div>
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#dc2626">DELETE</span>
+      <code class="path">/api/v1/recorrentes/{id}</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Excluir recorrentes</span>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">id<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr></tbody></table></div>
+    
+  </div></section><section><h2>Ops</h2><p class="td">Saúde e observabilidade</p><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#0891b2">GET</span>
+      <code class="path">/api/v1/health</code>
+      
+      <span class="sum">Health check (db, redis, workers)</span>
+    </div>
+    
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#0891b2">GET</span>
+      <code class="path">/api/v1/metrics</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Métricas Prometheus (requer METRICS_TOKEN)</span>
+    </div>
+    
+    
+  </div></section>
+<div class="foot">Gerado por <code>scripts/generate-openapi.mjs</code> a partir dos schemas Zod de <code>backend/middleware/validate.js</code>. Spec: <code>docs/openapi.json</code>.<br>* = obrigatório · 🔒 = requer Bearer JWT</div>
+</div></body></html>
