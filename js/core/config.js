@@ -108,7 +108,6 @@ const CONFIG = {
     assinaturas: [],
     patrimonio: { ativos: [], dividas: [] },
     openFinance: { connections: [], lastSync: null },
-    cryptoAtRestEnabled: false,
   },
 
   MOEDA_FORMATACAO: {

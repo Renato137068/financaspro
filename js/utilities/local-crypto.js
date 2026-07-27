@@ -3,32 +3,53 @@
  */
 var LOCAL_CRYPTO = {
   _keyPromise: null,
-  _computingEnabled: false,
-  _lastEnabled: false,
+
+  // Flag de cifragem at-rest guardado numa chave PLANA, FORA do prefixo 'fp-'.
+  // Motivo duplo:
+  //  1) Quebra a dependência circular: DADOS._storageGetRaw()/_storageSetRaw()
+  //     chamam isEnabled() para decidir se (de)cifram; se isEnabled() lesse o
+  //     flag via DADOS.getConfig() (que passa por _storageGetRaw), formava o
+  //     ciclo getConfig → _storageGetRaw → isEnabled → getConfig → … que
+  //     estourava a pilha. Lendo direto do localStorage, não há ciclo.
+  //  2) O flag PRECISA ser legível sem decifrar — não pode morar dentro do
+  //     próprio blob cifrado (fp-config), senão seria impossível saber que a
+  //     config está cifrada antes de decifrá-la.
+  _ENABLED_KEY: 'financaspro_crypto_enabled',
 
   /**
-   * Indica se a cifragem at-rest está ligada.
-   *
-   * Guarda de reentrância: DADOS._storageGetRaw() chama isEnabled() para decidir
-   * se decifra, e isEnabled() lê a config via DADOS.getConfig() — que por sua vez
-   * passa por _storageGetRaw(). Isso forma um ciclo
-   *   getConfig → _storageGetRaw → isEnabled → getConfig → …
-   * que estourava a pilha (RangeError) a cada leitura de config. Na reentrada
-   * devolvemos o último valor conhecido em vez de recorrer, quebrando o ciclo
-   * sem alterar o resultado (a leitura interna da config lê o valor cru).
+   * Detecta se um valor de storage já está cifrado (qualquer versão suportada
+   * pelo decrypt: enc1 legado, enc2 atual). Fonte única de verdade do prefixo —
+   * o caminho de leitura (DADOS._storageGetRaw) usa isto para decidir decifrar.
    */
+  isEncrypted: function(value) {
+    return typeof value === 'string'
+      && (value.indexOf('enc1:') === 0 || value.indexOf('enc2:') === 0);
+  },
+
+  /** Indica se a cifragem at-rest está ligada (flag plano + suporte a WebCrypto). */
   isEnabled: function() {
-    if (this._computingEnabled) return this._lastEnabled;
-    this._computingEnabled = true;
     try {
-      var cfg = typeof DADOS !== 'undefined' ? DADOS.getConfig() : {};
-      this._lastEnabled = !!cfg.cryptoAtRestEnabled && typeof crypto !== 'undefined' && !!crypto.subtle;
+      return localStorage.getItem(this._ENABLED_KEY) === '1'
+        && typeof crypto !== 'undefined' && !!crypto.subtle;
     } catch (e) {
-      this._lastEnabled = false;
-    } finally {
-      this._computingEnabled = false;
+      return false;
     }
-    return this._lastEnabled;
+  },
+
+  /**
+   * Liga/desliga a cifragem at-rest (grava o flag na chave plana).
+   * A partir de ON, novas gravações de chaves 'fp-' são cifradas e leituras
+   * decifram; dados já em texto puro seguem legíveis (unwrap sem prefixo
+   * 'enc1:' retorna como está) e passam a ser cifrados conforme reescritos.
+   * @param {boolean} on
+   * @returns {boolean} estado efetivo após a mudança
+   */
+  setEnabled: function(on) {
+    try {
+      if (on) localStorage.setItem(this._ENABLED_KEY, '1');
+      else localStorage.removeItem(this._ENABLED_KEY);
+    } catch (e) { /* storage indisponível — mantém desligado */ }
+    return this.isEnabled();
   },
 
   // Material de chave guardado FORA do prefixo 'fp-' para não ser cifrado pela

@@ -78,7 +78,10 @@ var DADOS = {
       }
       var raw = localStorage.getItem(key);
       if (!raw) return null;
-      if (raw.indexOf('enc1:') === 0) {
+      // Detecta qualquer versão de cifra (enc1/enc2). Antes checava só 'enc1:',
+      // mas encrypt() gera 'enc2:' — com a cifragem ligada, valores enc2 não
+      // eram decifrados na leitura (dados apareceriam corrompidos).
+      if (LOCAL_CRYPTO.isEncrypted(raw)) {
         var self = this;
         LOCAL_CRYPTO.unwrapStorageValue(key, raw).then(function(plain) {
           self._plainCache[key] = plain;
