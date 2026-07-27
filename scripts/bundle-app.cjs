@@ -29,6 +29,15 @@ const GENERATED = ['js/vendor.bundle.js', 'js/app.bundle.js'];
 // Prefixo de libs de terceiros que vão para o bundle de vendor (cache longo).
 const VENDOR_PREFIX = 'js/vendor/';
 
+// Features opcionais movidas para fora do bundle eager e carregadas sob demanda
+// via LAZY.load(). Só entram aqui módulos autocontidos, disparados por ação do
+// usuário e referenciados SEMPRE atrás de `typeof X !== 'undefined'`.
+const LAZY_CHUNKS = {
+  previsao: ['js/previsao.js'],
+  relatorios: ['js/relatorios.js', 'js/modules/init-relatorios.js'],
+};
+const lazySet = new Set(Object.values(LAZY_CHUNKS).reduce((a, b) => a.concat(b), []));
+
 if (!fs.existsSync(indexPath)) {
   console.log('[bundle-app] dist/index.html ausente — pulando bundle');
   process.exit(0);
@@ -74,7 +83,19 @@ if (!bundlable.length) {
 
 // Preserva a ordem original de declaração dentro de cada grupo.
 const vendorPaths = bundlable.filter((p) => p.startsWith(VENDOR_PREFIX));
-const appPaths = bundlable.filter((p) => !p.startsWith(VENDOR_PREFIX));
+const appPaths = bundlable.filter((p) => !p.startsWith(VENDOR_PREFIX) && !lazySet.has(p));
+
+// Chunks lazy: cada um vira js/lazy/<nome>.bundle.js e NÃO é injetado como tag
+// eager — só carrega quando LAZY.load(<nome>) é chamado.
+const lazyDir = path.join(dist, 'js', 'lazy');
+for (const [name, chunkPaths] of Object.entries(LAZY_CHUNKS)) {
+  const present = chunkPaths.filter((p) => bundlable.indexOf(p) !== -1);
+  if (!present.length) continue;
+  fs.mkdirSync(lazyDir, { recursive: true });
+  const code = minifyConcat(present);
+  fs.writeFileSync(path.join(lazyDir, name + '.bundle.js'), code);
+  console.log('[bundle-app]', present.length, 'lazy →', 'js/lazy/' + name + '.bundle.js (', Math.round(code.length / 1024), 'KB )');
+}
 
 const injects = [];
 

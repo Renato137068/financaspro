@@ -214,7 +214,8 @@
         <tr><th>Ação</th><th>Status</th></tr>
         <tr><td>Separar vendor em bundle próprio de cache longo; <code>bundle-app</code> idempotente + fim da execução dupla</td><td class="imp">✅ deploy do app não invalida o vendor</td></tr>
         <tr><td>Tree-shaking do lucide: 390 KB → <b>26 KB</b> via varredura dos schemas/aliases + fallback lazy da lib completa</td><td class="imp">✅ verificado em navegador (subset + rede de segurança)</td></tr>
-        <tr><td>Code-splitting por rota/aba (OCR, relatórios sob demanda) + Lighthouse CI</td><td class="imp">⏳ pendente (app.bundle ainda ~435 KB)</td></tr>
+        <tr><td>Infra de code-splitting (<code>LAZY.load</code> + chunks em <code>js/lazy/</code>) + previsão/relatórios sob demanda</td><td class="imp">✅ verificado em navegador; base reutilizável pronta</td></tr>
+        <tr><td>Estender split a mais features (OCR precisa extrair o botão; AI/insights precisam de guardas) + Lighthouse CI</td><td class="imp">⏳ pendente (app.bundle ~426 KB; exige desacoplar + E2E autenticado)</td></tr>
       </table>
     </div>
 

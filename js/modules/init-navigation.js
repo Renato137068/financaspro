@@ -182,7 +182,23 @@ const INIT_NAVIGATION = {
   },
 
   /**
-   * Alterna painel de previsão financeira (Fase 8)
+   * Garante que um chunk lazy esteja carregado antes de usar seu global.
+   * `isReady()` usa `typeof <GLOBAL>` nu — resolve tanto em dev (módulos eager,
+   * escopo compartilhado) quanto em prod após o chunk injetado carregar (o
+   * ambiente léxico global é compartilhado entre scripts clássicos, então até
+   * módulos declarados com `const` — que NÃO vão para window — ficam visíveis).
+   * onReady(justLoaded): justLoaded=true só na primeira carga real do chunk.
+   */
+  _ensureChunk: function(chunk, isReady, onReady) {
+    if (isReady()) { onReady(false); return; }
+    if (typeof LAZY === 'undefined' || !LAZY.load) { onReady(false); return; }
+    LAZY.load(chunk).then(function() { onReady(true); }).catch(function(e) {
+      console.warn('[INIT_NAVIGATION] Falha ao carregar chunk', chunk, e);
+    });
+  },
+
+  /**
+   * Alterna painel de previsão financeira (Fase 8) — carrega o chunk sob demanda.
    */
   togglePrevisao: function() {
     var painel = document.getElementById('previsao-painel');
@@ -193,7 +209,13 @@ const INIT_NAVIGATION = {
     painel.style.display = aberto ? 'none' : 'block';
     if (arrow) arrow.classList.toggle('expanded', !aberto);
     if (btn)   btn.setAttribute('aria-expanded', String(!aberto));
-    if (!aberto && typeof PREVISAO !== 'undefined') PREVISAO.renderizar();
+    if (!aberto) {
+      this._ensureChunk('previsao', function() { return typeof PREVISAO !== 'undefined'; }, function(justLoaded) {
+        if (typeof PREVISAO === 'undefined') return;
+        if (justLoaded && PREVISAO.init) { try { PREVISAO.init(); } catch (e) {} }
+        PREVISAO.renderizar();
+      });
+    }
   },
 
   toggleRelatorios: function() {
@@ -205,8 +227,12 @@ const INIT_NAVIGATION = {
     painel.style.display = aberto ? 'none' : 'block';
     if (arrow) arrow.classList.toggle('expanded', !aberto);
     if (btn)   btn.setAttribute('aria-expanded', String(!aberto));
-    if (!aberto && typeof INIT_RELATORIOS !== 'undefined' && INIT_RELATORIOS.render) {
-      INIT_RELATORIOS.render();
+    if (!aberto) {
+      this._ensureChunk('relatorios', function() { return typeof INIT_RELATORIOS !== 'undefined'; }, function() {
+        if (typeof INIT_RELATORIOS !== 'undefined' && INIT_RELATORIOS.render) {
+          INIT_RELATORIOS.render();
+        }
+      });
     }
   },
 
