@@ -37,7 +37,15 @@ function freshContext() {
   global.__TE = TextEncoder;
   global.__TD = TextDecoder;
   const ctx = vm.createContext(global);
-  vm.runInContext('var window = globalThis; var TextEncoder = __TE; var TextDecoder = __TD;', ctx);
+  // Property access (globalThis.X) em vez de nome nu: robusto no Node 18, onde
+  // propriedades adicionadas ao global após createContext não resolvem por nome.
+  // Bindamos crypto/localStorage também porque os módulos os usam como nome nu.
+  vm.runInContext(
+    'var window = globalThis;'
+    + ' var TextEncoder = globalThis.__TE; var TextDecoder = globalThis.__TD;'
+    + ' var crypto = globalThis.crypto; var localStorage = globalThis.localStorage;',
+    ctx,
+  );
   loadInto(ctx, 'js/core/config.js');
   loadInto(ctx, 'js/utilities/local-crypto.js');
   loadInto(ctx, 'js/core/dados.js');

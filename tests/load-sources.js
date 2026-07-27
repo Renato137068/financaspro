@@ -79,7 +79,11 @@ function loadCoreModules() {
     // Liga document/window do jsdom ao contexto VM. Sem isto, identificadores
     // nus como `document.createElement` dentro dos módulos (toasts, preenchimento
     // de formulário) não resolvem contra o sandbox e lançam ReferenceError.
-    'var window = __jsdomWindow; var document = __jsdomDocument;'
+    // IMPORTANTE: lemos via `globalThis.__jsdomX` (property access em runtime), e
+    // NÃO por identificador nu `__jsdomX`. No Node 18, uma propriedade adicionada
+    // ao global DEPOIS do vm.createContext não vira binding acessível por nome nu
+    // dentro do sandbox — mas a leitura por propriedade em globalThis sempre funciona.
+    'var window = globalThis.__jsdomWindow; var document = globalThis.__jsdomDocument;'
     + 'var ariaLive = { announce:function(){}, announceToast:function(){}, announceSuccess:function(){}, announceError:function(){} };'
     + 'var EVENT_BUS = { on:function(){}, off:function(){}, emit:function(){} };'
     + 'var APRENDIZADO = { sugerir:function(){ return null; } };'
