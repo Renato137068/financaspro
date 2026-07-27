@@ -71,9 +71,17 @@ function loadCoreModules() {
   // jsdom expõe `document`/`window` via getters não-enumeráveis no global; ao
   // contextificar com vm, esses getters não viram bindings acessíveis por
   // identificador nu dentro do sandbox. Copiá-los para propriedades de dados
-  // planas ANTES do runInContext os torna resolvíveis pelos módulos.
-  global.__jsdomWindow = global;
-  global.__jsdomDocument = global.document;
+  // planas (lidas via globalThis.__jsdomX no runInContext) os torna resolvíveis.
+  // Captura por múltiplas fontes: no Node 18 com jest-environment-jsdom@30 sob
+  // jest@29, `global.document` pode vir undefined — os identificadores diretos
+  // `window`/`document` (globais do ambiente jsdom) e `window.document` cobrem isso.
+  var _jsdomWindow = (typeof window !== 'undefined' && window) || global;
+  var _jsdomDocument = (typeof document !== 'undefined' && document)
+    || (global.document)
+    || (_jsdomWindow && _jsdomWindow.document)
+    || null;
+  global.__jsdomWindow = _jsdomWindow;
+  global.__jsdomDocument = _jsdomDocument;
 
   vm.runInContext(
     // Liga document/window do jsdom ao contexto VM. Sem isto, identificadores
