@@ -4,7 +4,13 @@
  */
 const { loadCoreModules, resetFixtures } = require('./load-sources');
 
-beforeAll(function() { loadCoreModules(); });
+// Carrega no nível do módulo para que a flag __vmHasDocument exista já na coleta
+// (permite describe.skip condicional). No Node 18 o document do jsdom não é
+// utilizável dentro do contexto VM — os testes de DOM são pulados lá e rodam no
+// job Node 20/24 do CI (que mede a cobertura).
+loadCoreModules();
+const domDescribe = global.__vmHasDocument ? describe : describe.skip;
+
 beforeEach(function() {
   resetFixtures();
   document.body.innerHTML = '';
@@ -29,7 +35,7 @@ describe('PIPELINE.processar', function() {
   });
 });
 
-describe('PIPELINE.preencherForm (jsdom)', function() {
+domDescribe('PIPELINE.preencherForm (jsdom)', function() {
   test('r nulo devolve false', function() {
     expect(global.PIPELINE.preencherForm(null)).toBe(false);
   });

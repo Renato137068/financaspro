@@ -5,7 +5,13 @@
  */
 const { loadCoreModules, resetFixtures } = require('./load-sources');
 
-beforeAll(function() { loadCoreModules(); });
+// Carrega no nível do módulo para a flag __vmHasDocument existir na coleta.
+// No Node 18 o document do jsdom não é utilizável no contexto VM — testes de DOM
+// pulam lá e rodam no job Node 20/24 do CI (que mede cobertura).
+loadCoreModules();
+const domDescribe = global.__vmHasDocument ? describe : describe.skip;
+const domTest = global.__vmHasDocument ? test : test.skip;
+
 beforeEach(function() {
   resetFixtures();
   if (global.UTILS) global.UTILS.limparCacheDom();
@@ -154,7 +160,7 @@ describe('UTILS.debounce', function() {
 });
 
 describe('UTILS cache DOM e storage probe', function() {
-  test('obterElemento memoiza e limparCacheDom limpa', function() {
+  domTest('obterElemento memoiza e limparCacheDom limpa', function() {
     document.body.innerHTML = '<div id="alvo"></div>';
     var el1 = global.UTILS.obterElemento('alvo');
     expect(el1).not.toBeNull();
@@ -180,7 +186,7 @@ describe('UTILS cache DOM e storage probe', function() {
   });
 });
 
-describe('UTILS.mostrarToast (jsdom)', function() {
+domDescribe('UTILS.mostrarToast (jsdom)', function() {
   test('injeta elemento .toast no body', function() {
     global.UTILS.mostrarToast('olá', 'success');
     expect(document.querySelector('.toast-success')).not.toBeNull();

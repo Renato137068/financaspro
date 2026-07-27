@@ -121,6 +121,20 @@ function loadCoreModules() {
   loadScript(context, 'js/transacoes.js');
   loadScript(context, 'js/metas.js');
   loadScript(context, 'js/core/store.js');
+
+  // Detecta se o `document` do jsdom é utilizável DENTRO do contexto VM. No
+  // Node 18, o objeto document não vira identificador nu resolvível no sandbox
+  // (funciona no Node 20/24). Testes que exercitam DOM via os módulos usam esta
+  // flag para pular graciosamente onde o VM não tem document (a cobertura desses
+  // caminhos é medida no job Node 20 do CI, que roda o coverage).
+  try {
+    global.__vmHasDocument = vm.runInContext(
+      'typeof document !== "undefined" && !!document && typeof document.getElementById === "function"',
+      context,
+    );
+  } catch (e) {
+    global.__vmHasDocument = false;
+  }
 }
 
 // Reseta o estado in-memory do fixture DADOS e os caches dos módulos, para
