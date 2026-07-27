@@ -3,14 +3,32 @@
  */
 var LOCAL_CRYPTO = {
   _keyPromise: null,
+  _computingEnabled: false,
+  _lastEnabled: false,
 
+  /**
+   * Indica se a cifragem at-rest está ligada.
+   *
+   * Guarda de reentrância: DADOS._storageGetRaw() chama isEnabled() para decidir
+   * se decifra, e isEnabled() lê a config via DADOS.getConfig() — que por sua vez
+   * passa por _storageGetRaw(). Isso forma um ciclo
+   *   getConfig → _storageGetRaw → isEnabled → getConfig → …
+   * que estourava a pilha (RangeError) a cada leitura de config. Na reentrada
+   * devolvemos o último valor conhecido em vez de recorrer, quebrando o ciclo
+   * sem alterar o resultado (a leitura interna da config lê o valor cru).
+   */
   isEnabled: function() {
+    if (this._computingEnabled) return this._lastEnabled;
+    this._computingEnabled = true;
     try {
       var cfg = typeof DADOS !== 'undefined' ? DADOS.getConfig() : {};
-      return !!cfg.cryptoAtRestEnabled && typeof crypto !== 'undefined' && !!crypto.subtle;
+      this._lastEnabled = !!cfg.cryptoAtRestEnabled && typeof crypto !== 'undefined' && !!crypto.subtle;
     } catch (e) {
-      return false;
+      this._lastEnabled = false;
+    } finally {
+      this._computingEnabled = false;
     }
+    return this._lastEnabled;
   },
 
   // Material de chave guardado FORA do prefixo 'fp-' para não ser cifrado pela
