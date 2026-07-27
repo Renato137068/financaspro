@@ -112,6 +112,60 @@ var DADOS = {
     localStorage.setItem(key, value);
   },
 
+  // Chaves elegíveis à cifragem (prefixo 'fp-'). aprendizado/rascunho ficam de fora.
+  _CRYPTO_KEYS: function() {
+    return [CONFIG.STORAGE_TRANSACOES, CONFIG.STORAGE_CONFIG, CONFIG.STORAGE_CONTAS];
+  },
+
+  /**
+   * Liga/desliga a cifragem at-rest MIGRANDO os dados existentes com segurança:
+   * lê cada chave 'fp-' no formato atual (decifrando as que estão cifradas ANTES
+   * de virar o flag), alterna o flag e regrava no novo formato. Sem esta migração,
+   * desligar deixaria valores 'enc2:' ilegíveis (o leitor só decifra com o flag on).
+   * @param {boolean} enable
+   * @returns {Promise<boolean>} estado efetivo de LOCAL_CRYPTO.isEnabled() após migrar
+   */
+  aplicarCriptografia: function(enable) {
+    if (typeof LOCAL_CRYPTO === 'undefined') return Promise.resolve(false);
+    var self = this;
+    var keys = this._CRYPTO_KEYS();
+
+    // 1. Lê em texto puro no estado ATUAL (decrypt exige o flag ainda ligado).
+    var reads = keys.map(function(key) {
+      var raw = localStorage.getItem(key);
+      if (!raw) return Promise.resolve({ key: key, plain: null });
+      if (LOCAL_CRYPTO.isEncrypted(raw)) {
+        return LOCAL_CRYPTO.decrypt(raw).then(function(plain) { return { key: key, plain: plain }; });
+      }
+      return Promise.resolve({ key: key, plain: raw });
+    });
+
+    return Promise.all(reads).then(function(items) {
+      // Aborta se algo não decifrou (evita gravar cifrado como se fosse puro).
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].plain != null && LOCAL_CRYPTO.isEncrypted(items[i].plain)) {
+          throw new Error('Falha ao decifrar dados existentes — migração abortada');
+        }
+      }
+      // 2. Alterna o flag e invalida o cache em memória.
+      LOCAL_CRYPTO.setEnabled(enable);
+      self._plainCache = {};
+
+      // 3. Regrava no novo formato (encrypt só funciona com o flag já ligado).
+      var writes = items.map(function(it) {
+        if (it.plain == null) return Promise.resolve();
+        if (enable) {
+          return LOCAL_CRYPTO.encrypt(it.plain).then(function(enc) { localStorage.setItem(it.key, enc); });
+        }
+        localStorage.setItem(it.key, it.plain);
+        return Promise.resolve();
+      });
+      return Promise.all(writes);
+    }).then(function() {
+      return LOCAL_CRYPTO.isEnabled();
+    });
+  },
+
   _storageRemoveRaw: function(key) {
     delete this._plainCache[key];
     localStorage.removeItem(key);

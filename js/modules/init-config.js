@@ -44,6 +44,7 @@ const INIT_CONFIG = {
     if (chkPin) chkPin.checked = !!config.pinAtivo;
     var pinStatus = document.getElementById('perfil-pin-status');
     if (pinStatus) pinStatus.textContent = config.pinAtivo ? 'PIN ativo' : 'PIN desativado';
+    this._refreshCryptoToggle();
     if (this.renderConfigStats) this.renderConfigStats();
     this._updateAppFooter();
     this._updateLembreteStatus();
@@ -229,6 +230,7 @@ const INIT_CONFIG = {
     bind('chk-alerta-orc','change', function() { INIT_CONFIG.toggleAlertaOrcamento(); });
     bind('chk-lembrete',  'change', function() { INIT_CONFIG.toggleLembreteDiario(); });
     bind('chk-pin',       'change', function() { if (typeof togglePinSeguranca === 'function') togglePinSeguranca(); });
+    bind('chk-crypto',    'change', function(e) { INIT_CONFIG.toggleCriptografia(!!e.target.checked); });
     bind('btn-refazer-onboarding', 'click', function() {
       if (typeof ONBOARDING !== 'undefined' && ONBOARDING.reiniciar) {
         ONBOARDING.reiniciar();
@@ -1358,6 +1360,49 @@ const INIT_CONFIG = {
     var chk = document.getElementById('chk-alerta-orc');
     DADOS.salvarConfig({ alertaOrcamento: chk ? chk.checked : false });
     UTILS.mostrarToast(chk && chk.checked ? 'Alertas ativados' : 'Alertas desativados', 'success');
+  },
+
+  /** Sincroniza o switch de cifragem com o estado real (LOCAL_CRYPTO.isEnabled). */
+  _refreshCryptoToggle: function() {
+    var chk = document.getElementById('chk-crypto');
+    var status = document.getElementById('perfil-crypto-status');
+    var card = document.getElementById('perfil-crypto-card');
+    var suportado = typeof LOCAL_CRYPTO !== 'undefined'
+      && typeof crypto !== 'undefined' && !!crypto.subtle;
+    var ativo = suportado && LOCAL_CRYPTO.isEnabled();
+    if (chk) { chk.checked = ativo; chk.disabled = !suportado; }
+    if (status) {
+      status.textContent = !suportado ? 'Indisponível neste navegador'
+        : (ativo ? 'Ativa — dados cifrados (AES-GCM)' : 'Desativada');
+    }
+    if (card) card.style.opacity = suportado ? '' : '0.6';
+  },
+
+  /**
+   * Liga/desliga a cifragem at-rest dos dados locais, migrando o que já existe.
+   * Reverte o switch e avisa em caso de falha (nunca deixa dados ilegíveis).
+   * @param {boolean} ligar
+   */
+  toggleCriptografia: function(ligar) {
+    var chk = document.getElementById('chk-crypto');
+    if (typeof DADOS === 'undefined' || typeof DADOS.aplicarCriptografia !== 'function') {
+      if (chk) chk.checked = false;
+      return;
+    }
+    if (chk) chk.disabled = true;
+    UTILS.mostrarToast(ligar ? 'Cifrando dados…' : 'Removendo cifragem…', 'info');
+    var self = this;
+    DADOS.aplicarCriptografia(ligar).then(function(estado) {
+      self._refreshCryptoToggle();
+      if (chk) chk.disabled = false;
+      UTILS.mostrarToast(estado ? 'Cifragem ativada' : 'Cifragem desativada', 'success');
+    }).catch(function(err) {
+      console.error('[INIT_CONFIG] Falha ao alternar cifragem:', err);
+      // Falhou: garante que o flag reflete o estado real e não perde dados.
+      self._refreshCryptoToggle();
+      if (chk) chk.disabled = false;
+      UTILS.mostrarToast('Não foi possível alterar a cifragem. Nada foi modificado.', 'error');
+    });
   },
 
   toggleLembreteDiario: function() {
