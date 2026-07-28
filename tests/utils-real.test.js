@@ -11,6 +11,7 @@ const { loadCoreModules, resetFixtures } = require('./load-sources');
 loadCoreModules();
 const domDescribe = global.__vmHasDocument ? describe : describe.skip;
 const domTest = global.__vmHasDocument ? test : test.skip;
+const timerDescribe = global.__vmHasTimers ? describe : describe.skip;
 
 beforeEach(function() {
   resetFixtures();
@@ -146,7 +147,7 @@ describe('UTILS.gerarId', function() {
   });
 });
 
-describe('UTILS.debounce', function() {
+timerDescribe('UTILS.debounce', function() {
   beforeAll(function() { jest.useFakeTimers(); });
   afterAll(function() { jest.useRealTimers(); });
   test('só dispara uma vez após o intervalo', function() {
