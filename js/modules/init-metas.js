@@ -140,14 +140,12 @@ const INIT_METAS = {
   _salvarNova: function(overlay) {
     try {
       var titulo = document.getElementById('meta-titulo').value;
-      var valorRaw = document.getElementById('meta-valor').value.replace(/\./g, '').replace(',', '.');
-      var atualRaw = (document.getElementById('meta-atual').value || '').replace(/\./g, '').replace(',', '.');
       var prazo = document.getElementById('meta-prazo').value || null;
       var icone = document.getElementById('meta-icone').value || 'target';
       METAS.criar({
         titulo: titulo,
-        valorAlvo: parseFloat(valorRaw),
-        valorAtual: parseFloat(atualRaw) || 0,
+        valorAlvo: UTILS.parseMoeda(document.getElementById('meta-valor').value),
+        valorAtual: UTILS.parseMoeda(document.getElementById('meta-atual').value),
         prazo: prazo,
         icone: icone
       });

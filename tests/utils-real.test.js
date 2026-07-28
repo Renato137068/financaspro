@@ -121,6 +121,30 @@ describe('UTILS.calcularSaldo / filtrarPorMes / filtrarPorTipo', function() {
   });
 });
 
+describe('UTILS.parseMoeda', function() {
+  test('número é usado direto', function() {
+    expect(global.UTILS.parseMoeda(1234.56)).toBe(1234.56);
+    expect(global.UTILS.parseMoeda(50)).toBe(50);
+  });
+  test('formato BR: ponto milhar + vírgula decimal', function() {
+    expect(global.UTILS.parseMoeda('1.234,56')).toBe(1234.56);
+    expect(global.UTILS.parseMoeda('50,5')).toBe(50.5);
+    expect(global.UTILS.parseMoeda('1.000.000,00')).toBe(1000000);
+  });
+  test('string simples (inteiro / sem separador de milhar)', function() {
+    expect(global.UTILS.parseMoeda('1234')).toBe(1234);
+    expect(global.UTILS.parseMoeda('1.234')).toBe(1234); // milhar BR
+  });
+  test('vazio / inválido / null vira 0', function() {
+    expect(global.UTILS.parseMoeda('')).toBe(0);
+    expect(global.UTILS.parseMoeda('   ')).toBe(0);
+    expect(global.UTILS.parseMoeda('abc')).toBe(0);
+    expect(global.UTILS.parseMoeda(null)).toBe(0);
+    expect(global.UTILS.parseMoeda(undefined)).toBe(0);
+    expect(global.UTILS.parseMoeda(NaN)).toBe(0);
+  });
+});
+
 describe('UTILS.escapeHtml / labelCategoria', function() {
   test('escapa caracteres perigosos', function() {
     expect(global.UTILS.escapeHtml('<script>"&\'')).toBe('&lt;script&gt;&quot;&amp;&#039;');

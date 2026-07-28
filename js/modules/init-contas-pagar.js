@@ -191,10 +191,9 @@ const INIT_CONTAS_PAGAR = {
 
   _salvarNova: function(overlay) {
     try {
-      var raw = document.getElementById('conta-valor').value.replace(/\./g, '').replace(',', '.');
       CONTAS_PAGAR.criar({
         descricao: document.getElementById('conta-desc').value,
-        valor: parseFloat(raw),
+        valor: UTILS.parseMoeda(document.getElementById('conta-valor').value),
         vencimento: document.getElementById('conta-venc').value,
         categoria: document.getElementById('conta-cat').value,
         recorrente: document.getElementById('conta-recorrente').checked

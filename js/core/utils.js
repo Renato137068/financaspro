@@ -144,6 +144,22 @@ var UTILS = {
     return { fechar: fechar };
   },
 
+  /**
+   * Converte um valor monetário digitado (ou numérico) em Number.
+   * Aceita número (usa direto), string em formato BR ("1.234,56" → 1234.56) e
+   * string simples ("1234.56", "50"). Centraliza a normalização que antes vivia
+   * duplicada (`.replace(/\./g,'').replace(',','.')`) em vários módulos.
+   * @param {number|string} input
+   * @returns {number} valor ≥ 0 (NaN/vazio → 0)
+   */
+  parseMoeda: function(input) {
+    if (typeof input === 'number') return isNaN(input) ? 0 : input;
+    var str = String(input == null ? '' : input).trim();
+    if (!str) return 0;
+    var num = parseFloat(str.replace(/\./g, '').replace(',', '.'));
+    return isNaN(num) ? 0 : num;
+  },
+
   calcularSaldo: function(transacoes) {
     return transacoes.reduce(function(acc, t) {
       return t.tipo === CONFIG.TIPO_RECEITA ? acc + t.valor : acc - t.valor;

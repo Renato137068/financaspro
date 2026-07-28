@@ -127,10 +127,9 @@ const INIT_ASSINATURAS = {
 
   _salvarNova: function(overlay) {
     try {
-      var raw = document.getElementById('sub-valor').value.replace(/\./g, '').replace(',', '.');
       ASSINATURAS.criar({
         nome: document.getElementById('sub-nome').value,
-        valor: parseFloat(raw),
+        valor: UTILS.parseMoeda(document.getElementById('sub-valor').value),
         diaCobranca: parseInt(document.getElementById('sub-dia').value, 10)
       });
       overlay.remove();
