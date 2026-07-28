@@ -19,78 +19,43 @@ function loadScript(context, relativePath) {
 }
 
 function loadCoreModules() {
-  // Captura document/window do jsdom e os fixa no global ANTES de contextificar.
-  // No Node 18, propriedades presentes no global NO MOMENTO do vm.createContext
-  // são resolvíveis dentro do sandbox (mesmo padrão do localStorage do
-  // setup-globals); propriedades adicionadas DEPOIS não são. Prioriza os
-  // identificadores diretos `document`/`window` (globais do ambiente jsdom).
-  var _jsdomWindow = (typeof window !== 'undefined' && window) || global;
-  var _jsdomDocument = (typeof document !== 'undefined' && document)
+  var jsdomWindow = (typeof window !== 'undefined' && window) || global;
+  var jsdomDocument = (typeof document !== 'undefined' && document)
     || global.document
-    || (_jsdomWindow && _jsdomWindow.document)
+    || (jsdomWindow && jsdomWindow.document)
     || null;
-  global.__jsdomWindow = _jsdomWindow;
-  global.__jsdomDocument = _jsdomDocument;
 
-  const context = vm.createContext(global);
+  // Sandbox PRÓPRIO com os globais de HOST que os módulos usam como identificador
+  // nu. vm.createContext(global) NÃO projeta host globals (document, timers,
+  // console, TextEncoder, ...) para dentro do sandbox no Node 18 — só os built-ins
+  // (Object/Array/JSON/Math/Date/Intl/Promise) e propriedades próprias do objeto
+  // contextificado. Injetá-los como PROPRIEDADES PRÓPRIAS de um sandbox resolve em
+  // TODAS as versões do Node. Os módulos são carregados aqui (var → prop do
+  // sandbox) e depois copiados para `global` para os testes acessarem.
+  // Timers como wrappers que delegam ao GLOBAL ATUAL em cada chamada — assim
+  // `jest.useFakeTimers()` (que troca os globais depois do load) intercepta os
+  // módulos. Referência estática quebraria os fake timers. São funções planas,
+  // então projetam no sandbox em qualquer versão do Node.
+  var sandbox = {
+    window: jsdomWindow,
+    document: jsdomDocument,
+    localStorage: global.localStorage,
+    console: global.console,
+    setTimeout: function() { return global.setTimeout.apply(null, arguments); },
+    clearTimeout: function() { return global.clearTimeout.apply(null, arguments); },
+    setInterval: function() { return global.setInterval.apply(null, arguments); },
+    clearInterval: function() { return global.clearInterval.apply(null, arguments); },
+    queueMicrotask: function() { return global.queueMicrotask.apply(null, arguments); },
+    fetch: function() { return global.fetch.apply(null, arguments); },
+    Intl: global.Intl,
+  };
+  sandbox.globalThis = sandbox;
+  const context = vm.createContext(sandbox);
 
-  global.ariaLive = global.ariaLive || {
-    announce: function() {},
-    announceToast: function() {},
-    announceSuccess: function() {},
-    announceError: function() {},
-  };
-  global.EVENT_BUS = global.EVENT_BUS || {
-    on: function() {},
-    off: function() {},
-    emit: function() {},
-  };
-  global.APRENDIZADO = global.APRENDIZADO || { sugerir: function() { return null; } };
-  global.CATEGORIZADOR = global.CATEGORIZADOR || { detectar: function() { return null; } };
-  global.DOMUTILS = global.DOMUTILS || { set: function() {} };
-  global.APP_STATE = global.APP_STATE || { setState: function() {} };
-  global.DADOS = global.DADOS || (function() {
-    var txs = [];
-    var cfg = { orcamentos: {}, recorrentes: [] };
-    return {
-      getConfig: function() { return cfg; },
-      getTransacoes: function() { return txs.slice(); },
-      salvarConfig: function(partial) {
-        cfg = Object.assign({}, cfg, partial);
-        return cfg;
-      },
-      salvarTransacao: function(tx) {
-        txs.push(tx);
-        return tx;
-      },
-    };
-  }());
-  global.ACTIONS = global.ACTIONS || {
-    TRANSACAO_CRIAR: 'TRANSACAO_CRIAR',
-    TRANSACAO_EDITAR: 'TRANSACAO_EDITAR',
-    TRANSACAO_DELETAR: 'TRANSACAO_DELETAR',
-    CONFIG_SALVAR: 'CONFIG_SALVAR',
-    CONTAS_SALVAR: 'CONTAS_SALVAR',
-    SYNC_CONCLUIR: 'SYNC_CONCLUIR',
-  };
-
-  // Alguns módulos referenciam estes fixtures como identificador nu (ex.:
-  // pipeline.js: `APRENDIZADO.sugerir(...)`, sem guarda typeof). Defini-los via
-  // `global.X = ...` resolve no Node ≥20, mas no ambiente jsdom do Jest sob
-  // Node 18 uma propriedade adicionada ao global depois da contextificação não
-  // liga a um identificador nu → ReferenceError. Declará-los como `var` via
-  // CÓDIGO rodado no contexto (idêntico a como UTILS/PARSER são carregados)
-  // cria bindings que resolvem igual em todas as versões suportadas.
+  // Fixtures das dependências dos módulos, declarados como `var` no contexto
+  // (viram propriedades do sandbox, resolvíveis por nome nu em qualquer versão).
   vm.runInContext(
-    // Liga document/window do jsdom ao contexto VM. Sem isto, identificadores
-    // nus como `document.createElement` dentro dos módulos (toasts, preenchimento
-    // de formulário) não resolvem contra o sandbox e lançam ReferenceError.
-    // IMPORTANTE: lemos via `globalThis.__jsdomX` (property access em runtime), e
-    // NÃO por identificador nu `__jsdomX`. No Node 18, uma propriedade adicionada
-    // ao global DEPOIS do vm.createContext não vira binding acessível por nome nu
-    // dentro do sandbox — mas a leitura por propriedade em globalThis sempre funciona.
-    'var window = globalThis.__jsdomWindow; var document = globalThis.__jsdomDocument;'
-    + 'var ariaLive = { announce:function(){}, announceToast:function(){}, announceSuccess:function(){}, announceError:function(){} };'
+    'var ariaLive = { announce:function(){}, announceToast:function(){}, announceSuccess:function(){}, announceError:function(){} };'
     + 'var EVENT_BUS = { on:function(){}, off:function(){}, emit:function(){} };'
     + 'var APRENDIZADO = { sugerir:function(){ return null; } };'
     + 'var CATEGORIZADOR = { detectar:function(){ return null; } };'
@@ -122,19 +87,26 @@ function loadCoreModules() {
   loadScript(context, 'js/metas.js');
   loadScript(context, 'js/core/store.js');
 
-  // Detecta se o `document` do jsdom é utilizável DENTRO do contexto VM. No
-  // Node 18, o objeto document não vira identificador nu resolvível no sandbox
-  // (funciona no Node 20/24). Testes que exercitam DOM via os módulos usam esta
-  // flag para pular graciosamente onde o VM não tem document (a cobertura desses
-  // caminhos é medida no job Node 20 do CI, que roda o coverage).
-  try {
-    global.__vmHasDocument = vm.runInContext(
-      'typeof document !== "undefined" && !!document && typeof document.getElementById === "function"',
-      context,
-    );
-  } catch (e) {
-    global.__vmHasDocument = false;
+  // Expõe os módulos e fixtures carregados (propriedades do sandbox) ao `global`,
+  // para os testes acessarem via global.UTILS/PIPELINE/DADOS/etc.
+  [
+    'CONFIG', 'UTILS', 'VALIDATIONS', 'SCORE', 'PARSER', 'PIPELINE', 'ORCAMENTO',
+    'TRANSACOES', 'METAS', 'APP_STORE', 'APP_STATE', 'DADOS', 'ACTIONS',
+  ].forEach(function(k) {
+    if (typeof sandbox[k] !== 'undefined') global[k] = sandbox[k];
+  });
+
+  // Flags de compatibilidade (com o sandbox injetado, devem ser true em todas as
+  // versões; permanecem como rede de segurança para os testes de DOM/timers).
+  function probe(expr) {
+    try { return !!vm.runInContext(expr, context); } catch (e) { return false; }
   }
+  global.__vmHasDocument = probe(
+    'typeof document !== "undefined" && !!document && typeof document.getElementById === "function"',
+  );
+  global.__vmHasTimers = probe(
+    'typeof setTimeout === "function" && typeof clearTimeout === "function" && typeof setInterval === "function"',
+  );
 }
 
 // Reseta o estado in-memory do fixture DADOS e os caches dos módulos, para

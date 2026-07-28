@@ -32,23 +32,29 @@ afterAll(function() {
 
 function freshContext() {
   global.localStorage.clear();
-  // Injeta TextEncoder/TextDecoder como propriedades planas — os getters
-  // não-enumeráveis não resolvem como identificador nu dentro do sandbox vm.
-  global.__TE = TextEncoder;
-  global.__TD = TextDecoder;
-  const ctx = vm.createContext(global);
-  // Property access (globalThis.X) em vez de nome nu: robusto no Node 18, onde
-  // propriedades adicionadas ao global após createContext não resolvem por nome.
-  // Bindamos crypto/localStorage também porque os módulos os usam como nome nu.
-  vm.runInContext(
-    'var window = globalThis;'
-    + ' var TextEncoder = globalThis.__TE; var TextDecoder = globalThis.__TD;'
-    + ' var crypto = globalThis.crypto; var localStorage = globalThis.localStorage;',
-    ctx,
-  );
+  // Sandbox próprio com os globais de HOST injetados como propriedades próprias
+  // (crypto, TextEncoder/Decoder, localStorage, console). No Node 18, o
+  // vm.createContext(global) não projeta esses globais como identificador nu; um
+  // sandbox com propriedades próprias resolve em todas as versões.
+  var sandbox = {
+    window: global,
+    localStorage: global.localStorage,
+    console: global.console,
+    crypto: webcrypto,
+    TextEncoder: TextEncoder,
+    TextDecoder: TextDecoder,
+    setTimeout: function() { return global.setTimeout.apply(null, arguments); },
+    clearTimeout: function() { return global.clearTimeout.apply(null, arguments); },
+  };
+  sandbox.globalThis = sandbox;
+  const ctx = vm.createContext(sandbox);
   loadInto(ctx, 'js/core/config.js');
   loadInto(ctx, 'js/utilities/local-crypto.js');
   loadInto(ctx, 'js/core/dados.js');
+  // Expõe ao global para os testes acessarem global.DADOS/LOCAL_CRYPTO/CONFIG.
+  ['CONFIG', 'LOCAL_CRYPTO', 'DADOS'].forEach(function(k) {
+    if (typeof sandbox[k] !== 'undefined') global[k] = sandbox[k];
+  });
   return ctx;
 }
 
