@@ -2,7 +2,7 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth.js';
 import { requirePermission } from '../lib/rbac.js';
-import { validateBody, accountSchema } from '../middleware/validate.js';
+import { validateBody, accountSchema, validateParams, idParamSchema } from '../middleware/validate.js';
 import { AccountService } from '../domain/services/account.service.js';
 import { asyncHandler } from '../lib/async-handler.js';
 
@@ -22,19 +22,19 @@ router.post('/', requirePermission('accounts:write'), validateBody(accountSchema
 }));
 
 // GET /api/v1/accounts/:id
-router.get('/:id', requirePermission('accounts:read'), asyncHandler(async (req, res) => {
+router.get('/:id', validateParams(idParamSchema), requirePermission('accounts:read'), asyncHandler(async (req, res) => {
   const account = await AccountService.getById(req.params.id, req.user.id);
   res.json({ data: account });
 }));
 
 // PATCH /api/v1/accounts/:id
-router.patch('/:id', requirePermission('accounts:write'), validateBody(accountSchema.partial()), asyncHandler(async (req, res) => {
+router.patch('/:id', validateParams(idParamSchema), requirePermission('accounts:write'), validateBody(accountSchema.partial()), asyncHandler(async (req, res) => {
   const account = await AccountService.update(req.params.id, req.user.id, req.body);
   res.json({ data: account });
 }));
 
 // DELETE /api/v1/accounts/:id — soft delete
-router.delete('/:id', requirePermission('accounts:delete'), asyncHandler(async (req, res) => {
+router.delete('/:id', validateParams(idParamSchema), requirePermission('accounts:delete'), asyncHandler(async (req, res) => {
   await AccountService.remove(req.params.id, req.user.id);
   res.json({ ok: true });
 }));

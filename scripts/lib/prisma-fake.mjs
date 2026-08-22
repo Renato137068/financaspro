@@ -19,9 +19,9 @@ import { randomUUID } from 'crypto';
 /** Defaults por modelo, espelhando @default() do prisma/schema.prisma. */
 const DEFAULTS = {
   user: { role: 'USER', active: true, totpEnabled: false, emailVerified: false },
-  transaction: { recurring: false, tags: [] },
+  transaction: { recurring: false, tags: [], deletedAt: null },
   session: { revokedAt: null },
-  account: { currency: 'BRL', balance: 0 },
+  account: { currency: 'BRL', balance: 0, active: true },
   budget: { period: 'monthly' },
 };
 
@@ -29,7 +29,7 @@ const DEFAULTS = {
 function applyTimestamps(record, { isCreate }) {
   const now = new Date();
   if (isCreate && record.createdAt === undefined) record.createdAt = now;
-  record.updatedAt = now;
+  if (record.updatedAt === undefined) record.updatedAt = now;
   return record;
 }
 
@@ -81,6 +81,24 @@ function matchWhere(record, where) {
       if (matchWhere(record, condition)) return false;
       continue;
     }
+
+    // Chave única composta: `where: { orgId_userId: { orgId, userId } }`. O
+    // Prisma nomeia o índice juntando os campos com `_`, e o registro NÃO tem
+    // um campo com esse nome — sem este ramo, `matchField` trataria `orgId`
+    // como operador e lançaria "operador não suportado".
+    if (
+      key.includes('_')
+      && !(key in record)
+      && condition
+      && typeof condition === 'object'
+      && !(condition instanceof Date)
+      && !Array.isArray(condition)
+      && key.split('_').every((campo) => campo in condition)
+    ) {
+      if (!matchWhere(record, condition)) return false;
+      continue;
+    }
+
     if (!matchField(record[key], condition)) return false;
   }
   return true;

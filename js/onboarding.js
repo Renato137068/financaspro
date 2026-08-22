@@ -14,11 +14,12 @@ var ONBOARDING = (function() {
   /* ── Monta passos dinamicamente ────────────────────────── */
 
   function _getPassos() {
-    var renda = 0;
-    try {
+    // Config ilegível não pode impedir o tour de abrir; ele só começa sem
+    // saber a renda, o que é exatamente o estado de quem nunca a informou.
+    var renda = UTILS.tentar('onboarding.lerRenda', function() {
       var cfg = (typeof DADOS !== 'undefined' && DADOS.getConfig) ? DADOS.getConfig() : {};
-      renda = Number(cfg.renda) || 0;
-    } catch (e) {}
+      return Number(cfg.renda) || 0;
+    }, { padrao: 0 }).valor;
 
     var passos = [
       {
@@ -60,7 +61,12 @@ var ONBOARDING = (function() {
         var list = DADOS.getTransacoes();
         if (list && list.length > 0) return true;
       }
-    } catch (e) {}
+    } catch (e) {
+      // Na dúvida, assume que NÃO há lançamentos: mostrar o tour a quem já usa
+      // o app incomoda; escondê-lo de quem está começando deixa a pessoa sem
+      // saber por onde ir.
+      UTILS.tentar('onboarding.temLancamentos', function() { throw e; });
+    }
     return false;
   }
 
@@ -80,11 +86,14 @@ var ONBOARDING = (function() {
   }
 
   function _concluir() {
-    try {
+    // Falhar aqui faz o tour reaparecer a cada abertura. Não é assunto para
+    // um toast — mas precisa deixar rastro, senão vira um relato de "o tour
+    // não para de aparecer" sem nenhuma pista.
+    UTILS.tentar('onboarding.concluir', function() {
       if (typeof DADOS !== 'undefined' && DADOS.salvarConfig) {
         DADOS.salvarConfig({ onboardingConcluido: true });
       }
-    } catch (e) {}
+    });
   }
 
   /* ── Keyboard handler ─────────────────────────────────── */
@@ -212,11 +221,14 @@ var ONBOARDING = (function() {
       var inp = document.getElementById('onb-renda-val');
       var val = inp ? parseFloat((inp.value || '').replace(',', '.')) : 0;
       if (val && val > 0) {
-        try {
+        // Este é diferente dos demais: o usuário ACABOU de digitar a renda.
+        // Perdê-la em silêncio significa que ele segue o tour inteiro achando
+        // que informou, e o orçamento 50/30/20 nasce sem base nenhuma.
+        UTILS.tentar('onboarding.salvarRenda', function() {
           if (typeof DADOS !== 'undefined' && DADOS.salvarConfig) {
             DADOS.salvarConfig({ renda: val });
           }
-        } catch (e) {}
+        }, { avisar: 'Não foi possível salvar sua renda. Tente novamente nas configurações.' });
       }
     }
 
@@ -224,7 +236,7 @@ var ONBOARDING = (function() {
       var fn = (typeof INIT_NAVIGATION !== 'undefined' && INIT_NAVIGATION.mudarAba)
         ? INIT_NAVIGATION.mudarAba.bind(INIT_NAVIGATION)
         : (typeof mudarAba !== 'undefined' ? mudarAba : null);
-      if (fn) try { fn(p.navBtn); } catch (e) {}
+      if (fn) UTILS.tentar('onboarding.navegar', function() { fn(p.navBtn); });
     }
 
     _passo++;
@@ -264,11 +276,11 @@ var ONBOARDING = (function() {
 
   function reiniciar() {
     encerrar(true);
-    try {
+    UTILS.tentar('onboarding.reiniciar', function() {
       if (typeof DADOS !== 'undefined' && DADOS.salvarConfig) {
         DADOS.salvarConfig({ onboardingConcluido: false });
       }
-    } catch (e) {}
+    });
     setTimeout(_abrirTour, 200);
   }
 
@@ -293,12 +305,12 @@ var ONBOARDING = (function() {
     }
 
     if (!silent) {
-      try {
+      UTILS.tentar('onboarding.encerrar', function() {
         var fn = (typeof INIT_NAVIGATION !== 'undefined' && INIT_NAVIGATION.mudarAba)
           ? INIT_NAVIGATION.mudarAba.bind(INIT_NAVIGATION)
           : (typeof mudarAba !== 'undefined' ? mudarAba : null);
         if (fn) fn('resumo');
-      } catch (e) {}
+      });
     }
 
     _ativo = false;

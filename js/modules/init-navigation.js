@@ -107,8 +107,15 @@ const INIT_NAVIGATION = {
       'filtro-tipo': function() { 
         safeCall('setFiltroTipo', [target.dataset.filtro || 'todos']); 
       },
-      'exportar-excel': function() { safeCall('exportarExcel'); },
-      'exportar-pdf': function() { safeCall('exportarExtrato'); },
+      // Exportação percorre todas as transações e monta o arquivo: passa de um
+      // segundo em base grande. Sem bloquear o botão, o clique duplo gera dois
+      // downloads e a impressão de que o app travou.
+      'exportar-excel': function() {
+        UTILS.comCarregamento(target, function() { return safeCall('exportarExcel'); }, 'Gerando...');
+      },
+      'exportar-pdf': function() {
+        UTILS.comCarregamento(target, function() { return safeCall('exportarExtrato'); }, 'Gerando...');
+      },
       'salvar-renda-orcamento': function() { safeCall('salvarRendaOrcamento'); },
       'editar-renda-orcamento': function() { safeCall('editarRendaOrcamento'); },
       'editar-regra-503020': function() { safeCall('editarRegra503020'); },
@@ -139,7 +146,9 @@ const INIT_NAVIGATION = {
       'gerenciar-categorias': function() { 
         safeCall('abrirGerenciarCategorias', [target.dataset.tipo]); 
       },
-      'exportar-dados': function() { safeCall('exportarDados'); },
+      'exportar-dados': function() {
+        UTILS.comCarregamento(target, function() { return safeCall('exportarDados'); }, 'Exportando...');
+      },
       'abrir-import': function() { self.abrirImport(); },
       'abrir-changelog': function() { safeCall('abrirChangelog'); },
       'abrir-feedback': function() { safeCall('abrirFeedback'); },
@@ -189,6 +198,44 @@ const INIT_NAVIGATION = {
    * módulos declarados com `const` — que NÃO vão para window — ficam visíveis).
    * onReady(justLoaded): justLoaded=true só na primeira carga real do chunk.
    */
+  /**
+   * Garante o chunk 'conta' (billing + 2FA + Open Finance) e roda o callback.
+   *
+   * Os três eram inicializados no boot. Ao virarem lazy, o `init()` de cada um
+   * precisa acontecer na primeira carga — senão o módulo existe mas nunca se
+   * liga aos elementos da tela, e o resultado é uma aba que parece funcionar
+   * e não faz nada.
+   *
+   * Em DEV os módulos vêm eager: isReady() já é verdadeiro e o callback roda
+   * na hora, sem nenhuma requisição.
+   */
+  carregarChunkConta: function(callback) {
+    this._ensureChunk(
+      'conta',
+      function() { return typeof INIT_BILLING !== 'undefined'; },
+      function(justLoaded) {
+        if (justLoaded) {
+          // Mesma ordem do lifecycle original.
+          // Um init que falha não pode impedir os outros — mas precisa deixar
+          // rastro: sem isso, "a aba de configurações não mostra o plano" vira
+          // um relato sem nenhuma pista de investigação.
+          [
+            ['BILLING', typeof BILLING !== 'undefined' ? BILLING : null],
+            ['INIT_BILLING', typeof INIT_BILLING !== 'undefined' ? INIT_BILLING : null],
+            ['INIT_2FA', typeof INIT_2FA !== 'undefined' ? INIT_2FA : null],
+            ['OPEN_FINANCE', typeof OPEN_FINANCE !== 'undefined' ? OPEN_FINANCE : null],
+            ['INIT_OPEN_FINANCE', typeof INIT_OPEN_FINANCE !== 'undefined' ? INIT_OPEN_FINANCE : null]
+          ].forEach(function(par) {
+            var mod = par[1];
+            if (!mod || typeof mod.init !== 'function') return;
+            UTILS.tentar('chunk.conta.' + par[0] + '.init', function() { mod.init(); });
+          });
+        }
+        if (typeof callback === 'function') callback();
+      },
+    );
+  },
+
   _ensureChunk: function(chunk, isReady, onReady) {
     if (isReady()) { onReady(false); return; }
     if (typeof LAZY === 'undefined' || !LAZY.load) { onReady(false); return; }
@@ -212,7 +259,7 @@ const INIT_NAVIGATION = {
     if (!aberto) {
       this._ensureChunk('previsao', function() { return typeof PREVISAO !== 'undefined'; }, function(justLoaded) {
         if (typeof PREVISAO === 'undefined') return;
-        if (justLoaded && PREVISAO.init) { try { PREVISAO.init(); } catch (e) {} }
+        if (justLoaded && PREVISAO.init) UTILS.tentar('PREVISAO.init', PREVISAO.init);
         PREVISAO.renderizar();
       });
     }
@@ -326,11 +373,18 @@ function mudarAba(nomeAba) {
         }
       }
       if (nomeAba === 'config') {
-        if (typeof INIT_CONFIG !== 'undefined' && INIT_CONFIG.refreshPerfil) {
-          INIT_CONFIG.refreshPerfil();
-        } else if (typeof renderConfigTab === 'function') {
-          renderConfigTab();
-        }
+        // Billing, 2FA e Open Finance saem do bundle eager (chunk 'conta') —
+        // são ~45 KB que só interessam a quem abre esta aba. O chunk precisa
+        // chegar ANTES do refreshPerfil: ele chama refreshPlanoCard, refreshUI
+        // e refreshCard atrás de `typeof X !== 'undefined'`, e sem os módulos
+        // essas guardas silenciariam a ausência em vez de acusá-la.
+        INIT_NAVIGATION.carregarChunkConta(function() {
+          if (typeof INIT_CONFIG !== 'undefined' && INIT_CONFIG.refreshPerfil) {
+            INIT_CONFIG.refreshPerfil();
+          } else if (typeof renderConfigTab === 'function') {
+            renderConfigTab();
+          }
+        });
       }
     } catch (e) {
       console.warn('Erro ao renderizar aba:', e);

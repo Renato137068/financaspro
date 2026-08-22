@@ -35,7 +35,7 @@ const DAILY_REMINDER = {
     if (!config || !config.lembreteDiario) return;
     if (!this.isSupported() || Notification.permission !== 'granted') return;
 
-    var hoje = new Date().toISOString().split('T')[0];
+    var hoje = UTILS.dataLocalIso();
     try {
       if (localStorage.getItem(this._lastKey) === hoje) return;
     } catch (_e) { return; }

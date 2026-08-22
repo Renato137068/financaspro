@@ -30,8 +30,11 @@ var ACTIONS = Object.freeze({
 
   // Sincronização com API
   SYNC_INICIAR:   'sync/iniciar',
+  SYNC_SALVANDO:  'sync/salvando',
   SYNC_CONCLUIR:  'sync/concluir',
   SYNC_FALHAR:    'sync/falhar',
+  SYNC_PENDENTE:  'sync/pendente',
+  SYNC_CONFLITO:  'sync/conflito',
 
   // UI
   UI_ABA_MUDAR:       'ui/aba/mudar',
@@ -110,12 +113,21 @@ function _registrarActionHandlers() {
 
   APP_STORE.registerActionHandler(ACTIONS.SYNC_INICIAR, function() {
     APP_STORE.sync.setPending(true);
+    APP_STORE.sync.setFlushing(true);
+    APP_STORE.sync.setSaving(false);
+  });
+
+  APP_STORE.registerActionHandler(ACTIONS.SYNC_SALVANDO, function() {
+    APP_STORE.sync.setSaving(true);
   });
 
   APP_STORE.registerActionHandler(ACTIONS.SYNC_CONCLUIR, function() {
     APP_STORE.sync.setPending(false);
+    APP_STORE.sync.setSaving(false);
+    APP_STORE.sync.setFlushing(false);
     APP_STORE.sync.setLastSync(Date.now());
-    APP_STORE.sync.setOnline(true);
+    APP_STORE.sync.setLastError(null);
+    APP_STORE.sync.setOnline(typeof navigator !== 'undefined' ? navigator.onLine !== false : true);
     // Invalida todos os caches — dados frescos vieram da API
     APP_STORE.cache.invalidar();
     // Incrementa todos os versioners para notificar subscribers
@@ -125,9 +137,33 @@ function _registrarActionHandlers() {
     APP_STORE.set('dados.orcamentosVer', (APP_STORE.get('dados.orcamentosVer') || 0) + 1);
   });
 
-  APP_STORE.registerActionHandler(ACTIONS.SYNC_FALHAR, function(erro) {
+  APP_STORE.registerActionHandler(ACTIONS.SYNC_FALHAR, function(payload) {
     APP_STORE.sync.setPending(false);
-    APP_STORE.sync.setOnline(false);
+    APP_STORE.sync.setSaving(false);
+    APP_STORE.sync.setFlushing(false);
+    var online = (typeof navigator !== 'undefined') ? navigator.onLine !== false : true;
+    APP_STORE.sync.setOnline(online);
+    var msg = (payload && payload.erro) ? String(payload.erro) : 'falha-sync';
+    APP_STORE.sync.setLastError(msg);
+    if (typeof ariaLive !== 'undefined' && typeof ariaLive.announceError === 'function') {
+      ariaLive.announceError(online ? 'Falha ao sincronizar. Suas alterações estão salvas neste dispositivo.' : 'Offline. Alterações serão enviadas quando a conexão voltar.');
+    }
+  });
+
+  APP_STORE.registerActionHandler(ACTIONS.SYNC_PENDENTE, function(payload) {
+    APP_STORE.sync.setOutboxCount(payload && payload.count != null ? payload.count : 0);
+    var count = payload && payload.count != null ? payload.count : 0;
+    APP_STORE.sync.setPending(count > 0);
+    APP_STORE.sync.setSaving(false);
+    APP_STORE.sync.setFlushing(false);
+  });
+
+  APP_STORE.registerActionHandler(ACTIONS.SYNC_CONFLITO, function(payload) {
+    var list = (payload && payload.conflicts) ? payload.conflicts : [];
+    APP_STORE.sync.setConflicts(list);
+    if (list.length && typeof ariaLive !== 'undefined' && typeof ariaLive.announceError === 'function') {
+      ariaLive.announceError('Conflito de sincronização. Revise os lançamentos afetados.');
+    }
   });
 
   // --- UI ---

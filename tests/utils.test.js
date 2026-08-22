@@ -6,77 +6,13 @@
 
 // Implementação inline idêntica ao source (js/utils.js)
 // Justificativa: arquivos frontend usam var globals não compatíveis com ESM require
-const UTILS = {
-  formatarData(data) {
-    const parts = String(data).split('T')[0].split('-');
-    if (parts.length === 3) {
-      return parts[2] + '/' + parts[1] + '/' + parts[0];
-    }
-    return new Intl.DateTimeFormat('pt-BR').format(new Date(data));
-  },
+const { loadCoreModules } = require('./load-sources');
 
-  calcularSaldo(transacoes) {
-    return transacoes.reduce((acc, t) => {
-      return t.tipo === CONFIG.TIPO_RECEITA ? acc + t.valor : acc - t.valor;
-    }, 0);
-  },
-
-  filtrarPorMes(transacoes, mes, ano) {
-    return transacoes.filter(t => {
-      const dataStr = String(t.data || '').split('T')[0];
-      const parts = dataStr.split('-');
-      if (parts.length === 3) {
-        const anoTx = parseInt(parts[0], 10);
-        const mesTx = parseInt(parts[1], 10);
-        return mesTx === mes && anoTx === ano;
-      }
-      const d = new Date(t.data);
-      return d.getMonth() === mes - 1 && d.getFullYear() === ano;
-    });
-  },
-
-  filtrarPorTipo(transacoes, tipo) {
-    return transacoes.filter(t => t.tipo === tipo);
-  },
-
-  escapeHtml(text) {
-    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-    return String(text).replace(/[&<>"']/g, m => map[m]);
-  },
-
-  _idCounter: 0,
-  gerarId() {
-    const timestamp = Date.now();
-    const randomPart = Math.random().toString(36).substr(2, 9);
-    const counter = (this._idCounter = (this._idCounter || 0) + 1);
-    return timestamp + '-' + randomPart + '-' + counter;
-  },
-
-  validarTransacao(transacao) {
-    if (!transacao.valor || transacao.valor <= 0) {
-      return { valido: false, erro: 'Valor deve ser maior que 0' };
-    }
-    if (!transacao.tipo || [CONFIG.TIPO_RECEITA, CONFIG.TIPO_DESPESA].indexOf(transacao.tipo) === -1) {
-      return { valido: false, erro: 'Tipo invalido' };
-    }
-    if (!transacao.categoria) {
-      return { valido: false, erro: 'Categoria obrigatoria' };
-    }
-    if (!transacao.data) {
-      return { valido: false, erro: 'Data obrigatoria' };
-    }
-    return { valido: true };
-  },
-
-  debounce(func, delay) {
-    let timeout;
-    return function() {
-      const context = this, args = arguments;
-      clearTimeout(timeout);
-      timeout = setTimeout(() => func.apply(context, args), delay);
-    };
-  },
-};
+// Carrega os módulos REAIS de js/. Antes deste ajuste o arquivo declarava uma
+// cópia inline de UTILS e testava a cópia — os testes passavam mesmo quando o
+// código de produção divergia. Ver tests/suite-integrity.test.js.
+loadCoreModules();
+const UTILS = global.UTILS;
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -271,9 +207,17 @@ describe('UTILS — validarTransacao', () => {
   });
 
   test('tipo inválido retorna erro', () => {
-    const r = UTILS.validarTransacao({ ...base, tipo: 'transferencia' });
+    // Antes este teste usava 'transferencia' como exemplo de tipo inválido.
+    // Transferência entre contas passou a ser um tipo de primeira classe, então
+    // o exemplo virou um valor que de fato não existe.
+    const r = UTILS.validarTransacao({ ...base, tipo: 'estorno-magico' });
     expect(r.valido).toBe(false);
     expect(r.erro).toMatch(/tipo/i);
+  });
+
+  test('transferencia é um tipo válido', () => {
+    const r = UTILS.validarTransacao({ ...base, tipo: 'transferencia' });
+    expect(r.valido).toBe(true);
   });
 
   test('categoria ausente retorna erro', () => {

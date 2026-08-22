@@ -215,42 +215,109 @@ var AI_ENGINE = {
    * @param {Array} transacoes
    * @returns {Array} [{ transacao, motivo, zscore }]
    */
-  detectarAnomalias: function(transacoes) {
+  /** Mediana de uma lista numérica. Não copia o array de entrada. */
+  _mediana: function(valores) {
+    if (!valores || valores.length === 0) return 0;
+    var ord = valores.slice().sort(function(a, b) { return a - b; });
+    var meio = Math.floor(ord.length / 2);
+    return ord.length % 2 ? ord[meio] : (ord[meio - 1] + ord[meio]) / 2;
+  },
+
+  /**
+   * Detecta gastos fora do padrão da própria categoria.
+   *
+   * Usa MEDIANA e MAD (desvio absoluto mediano), não média e desvio-padrão.
+   * A razão é prática: as amostras aqui são pequenas — poucas dezenas de
+   * lançamentos por categoria — e nesse regime um único valor extremo puxa a
+   * média E o desvio para cima, derrubando o próprio z-score abaixo do corte.
+   * O alerta sumia exatamente no caso mais grave. A mediana não se move com um
+   * ponto extremo, então o gasto atípico continua atípico.
+   *
+   * A mensagem informa o valor HABITUAL da categoria e o múltiplo real. A
+   * versão anterior anunciava o z-score como se fosse múltiplo da média
+   * ("Valor 3x acima da média"), o que era simplesmente falso: z é número de
+   * desvios. Quem conferia via que não batia — e passava a ignorar os alertas.
+   *
+   * @param {Array} transacoes
+   * @param {Date} [hoje] injetável para teste
+   * @param {{diasJanela?:number}} [opts] janela de alerta (padrão 90 dias)
+   * @returns {Array<{transacao:Object, motivo:string, valorHabitual:number,
+   *                  multiplo:number, categoria:string}>}
+   */
+  detectarAnomalias: function(transacoes, hoje, opts) {
     if (!Array.isArray(transacoes) || transacoes.length < 5) return [];
+    opts = opts || {};
+
+    var ref = (hoje && typeof hoje.getTime === 'function' && !isNaN(hoje.getTime()))
+      ? hoje : new Date();
+    var diasJanela = opts.diasJanela || 90;
+    var limite = new Date(ref.getTime() - diasJanela * 86400000);
+    var limiteIso = limite.getFullYear() + '-'
+      + String(limite.getMonth() + 1).padStart(2, '0') + '-'
+      + String(limite.getDate()).padStart(2, '0');
 
     var porCategoria = {};
     transacoes.forEach(function(t) {
-      if (t.tipo !== 'despesa') return;
+      // Só despesa: receita alta é boa notícia, e transferência não é gasto.
+      if (!t || t.tipo !== 'despesa') return;
       var cat = t.categoria || 'outro';
       if (!porCategoria[cat]) porCategoria[cat] = [];
       porCategoria[cat].push(t);
     });
 
     var anomalias = [];
-    var self      = this;
+    var self = this;
 
     Object.keys(porCategoria).forEach(function(cat) {
-      var txs    = porCategoria[cat];
-      if (txs.length < 3) return;
+      var txs = porCategoria[cat];
+      // Menos de quatro lançamentos não formam padrão; alertar aí é adivinhar.
+      if (txs.length < 4) return;
 
+      // A referência usa TODO o histórico da categoria — quanto mais dados,
+      // melhor a noção do que é habitual. O alerta é que fica restrito ao
+      // período recente.
       var valores = txs.map(function(t) { return Number(t.valor) || 0; });
-      var est     = self.estatisticas(valores);
-      if (est.desvio === 0) return;
+      var mediana = self._mediana(valores);
+      if (mediana <= 0) return;
+
+      var desvios = valores.map(function(v) { return Math.abs(v - mediana); });
+      var mad = self._mediana(desvios);
+
+      // Categoria com valores quase iguais (MAD ~ 0): usa uma fração da
+      // mediana como piso, senão qualquer centavo de diferença viraria alerta.
+      var escala = mad > 0 ? mad * 1.4826 : mediana * 0.5;
+      if (escala <= 0) return;
 
       txs.forEach(function(t) {
-        var z = (Number(t.valor) - est.media) / est.desvio;
-        if (z > 2.5) {
-          anomalias.push({
-            transacao: t,
-            motivo: 'Valor ' + Math.round(z) + 'x acima da média em ' + cat,
-            zscore: Math.round(z * 10) / 10
-          });
-        }
+        var data = String(t.data || '').slice(0, 10);
+        // Sem data não dá para saber se é recente — não alerta.
+        if (!data || data < limiteIso) return;
+
+        var valor = Number(t.valor) || 0;
+        var z = (valor - mediana) / escala;
+        if (z <= 3.5) return;
+
+        var multiplo = valor / mediana;
+        // Além de estatisticamente distante, precisa ser materialmente maior:
+        // R$ 13 contra R$ 10 pode ter z alto numa categoria muito regular e
+        // não interessa a ninguém.
+        if (multiplo < 2) return;
+
+        var nomeCat = (typeof CONFIG !== 'undefined' && CONFIG.CATEGORIAS_LABELS
+          && CONFIG.CATEGORIAS_LABELS[cat]) || cat;
+        var habitual = 'R$ ' + mediana.toFixed(2).replace('.', ',');
+
+        anomalias.push({
+          transacao: t,
+          categoria: cat,
+          valorHabitual: Math.round(mediana * 100) / 100,
+          multiplo: Math.round(multiplo * 10) / 10,
+          motivo: 'em ' + nomeCat + ' você costuma gastar cerca de ' + habitual
+        });
       });
     });
 
-    // Ordenar por zscore descendente
-    anomalias.sort(function(a, b) { return b.zscore - a.zscore; });
+    anomalias.sort(function(a, b) { return b.multiplo - a.multiplo; });
     return anomalias.slice(0, 5);
   },
 
@@ -415,7 +482,7 @@ var AI_ENGINE = {
     });
 
     // 5. Sem lançamentos hoje (incentivo)
-    var hojeStr = hoje.toISOString().split('T')[0];
+    var hojeStr = UTILS.dataLocalIso(hoje);
     var lancouHoje = transacoes.some(function(t) { return t.data === hojeStr; });
     if (!lancouHoje && diaMes > 3) {
       alertas.push({
@@ -645,20 +712,56 @@ var AI_ENGINE = {
       return { dadosInsuficientes: true, diasDecorridos: diasDecorridos, diasRestantes: diasRestantes };
     }
 
-    var despesas = txMes.reduce(function(a, t) { return t.tipo === 'despesa' ? a + (Number(t.valor) || 0) : a; }, 0);
-    var receitas = txMes.reduce(function(a, t) { return t.tipo === 'receita' ? a + (Number(t.valor) || 0) : a; }, 0);
+    // Separar o que JÁ aconteceu do que está agendado para o resto do mês.
+    //
+    // A versão anterior somava tudo e dividia pelos dias decorridos. Com o
+    // parcelamento — que grava uma transação por parcela, cada uma na sua data —
+    // uma parcela marcada para dia 15 sendo hoje dia 10 entrava duas vezes:
+    // somava ao gasto E inflava a taxa diária, que era multiplicada pelos dias
+    // restantes. Medido: R$ 9.300 projetados onde o correto eram R$ 5.100.
+    //
+    // O erro cresce junto com o uso do recurso principal do app, e sempre para
+    // o lado do alarme falso — que é o que ensina o usuário a ignorar a tela.
+    var hojeIso = hoje.getFullYear() + '-'
+      + String(hoje.getMonth() + 1).padStart(2, '0') + '-'
+      + String(hoje.getDate()).padStart(2, '0');
 
-    var taxaDiaria       = despesas / diasDecorridos;
-    var projecaoDespesas = Math.round((despesas + taxaDiaria * diasRestantes) * 100) / 100;
-    var saldoProjetado   = Math.round((receitas - projecaoDespesas) * 100) / 100;
+    var despesasRealizadas = 0;
+    var despesasFuturas    = 0;
+    var receitas           = 0;
+
+    txMes.forEach(function(t) {
+      var valor = Number(t.valor) || 0;
+      if (t.tipo === 'receita') { receitas += valor; return; }
+      // Só despesa entra: transferência entre contas não é gasto.
+      if (t.tipo !== 'despesa') return;
+
+      if (String(t.data).slice(0, 10) > hojeIso) despesasFuturas += valor;
+      else despesasRealizadas += valor;
+    });
+
+    // O ritmo mede o gasto do dia a dia — só o que já foi observado.
+    var taxaDiaria = despesasRealizadas / diasDecorridos;
+
+    // Os compromissos já agendados entram pelo valor cheio, uma vez só. Há uma
+    // sobreposição pequena (o ritmo também cobre os dias em que essas parcelas
+    // caem), aceita de propósito: ela puxa a estimativa para o lado cauteloso,
+    // que é o certo para um alerta de fim de mês.
+    var projecaoDespesas = Math.round(
+      (despesasRealizadas + despesasFuturas + taxaDiaria * diasRestantes) * 100,
+    ) / 100;
+    var saldoProjetado = Math.round((receitas - projecaoDespesas) * 100) / 100;
 
     return {
-      projecaoDespesas:   projecaoDespesas,
-      projecaoReceitas:   receitas,
-      saldoProjetado:     saldoProjetado,
-      diasRestantes:      diasRestantes,
-      diasDecorridos:     diasDecorridos,
-      dadosInsuficientes: false
+      projecaoDespesas:          projecaoDespesas,
+      projecaoReceitas:          receitas,
+      saldoProjetado:            saldoProjetado,
+      despesasRealizadas:        Math.round(despesasRealizadas * 100) / 100,
+      despesasFuturasConhecidas: Math.round(despesasFuturas * 100) / 100,
+      taxaDiaria:                Math.round(taxaDiaria * 100) / 100,
+      diasRestantes:             diasRestantes,
+      diasDecorridos:            diasDecorridos,
+      dadosInsuficientes:        false
     };
   },
 

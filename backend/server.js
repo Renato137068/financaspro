@@ -7,20 +7,20 @@ import { startWorkers, stopWorkers } from './workers/index.js';
 import { appErrorsTotal, activeConnections } from './lib/metrics.js';
 import CONFIG from './config.js';
 import { createApp } from './app.js';
+import { assertProductionReady } from './lib/production-guard.js';
 
 const app = createApp();
 
 async function start() {
   try {
+    assertProductionReady();
+
     await prisma.$connect();
     logger.info('Conexão com banco de dados estabelecida');
 
     await redis.connect();
     if (CONFIG.isProd && CONFIG.requireRedis && !redis.isAvailable) {
-      throw new Error('REDIS_URL obrigatório em produção (REQUIRE_REDIS=1)');
-    }
-    if (CONFIG.isProd && !redis.isAvailable) {
-      logger.warn('Redis indisponível em produção — rate limit usará memória local');
+      throw new Error('REDIS_URL obrigatório em produção');
     }
     await startWorkers();
 

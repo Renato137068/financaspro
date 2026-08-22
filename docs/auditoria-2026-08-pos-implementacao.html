@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FinançasPro v11.0 — Auditoria Pós-Implementação</title>
+<style>
+:root{
+  --bg:#0b0f17;--bg2:#111826;--card:#151d2c;--card2:#1b2436;
+  --line:#243149;--txt:#e8eef7;--mut:#8fa0bb;--mut2:#64748b;
+  --ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--info:#3b82f6;--acc:#8b5cf6;--r:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:linear-gradient(180deg,#0b0f17,#0d1220 60%,#0b0f17);color:var(--txt);
+  font:15px/1.65 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding:0 0 80px}
+.wrap{max-width:1140px;margin:0 auto;padding:0 22px}
+header{padding:56px 0 40px;border-bottom:1px solid var(--line);margin-bottom:44px;
+  background:radial-gradient(1000px 400px at 50% -100px,rgba(34,197,94,.14),transparent)}
+.tag{display:inline-block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ok);border:1px solid rgba(34,197,94,.35);background:rgba(34,197,94,.1);
+  padding:5px 12px;border-radius:99px;margin-bottom:18px;font-weight:700}
+h1{font-size:38px;line-height:1.15;letter-spacing:-.02em;margin-bottom:12px;font-weight:800}
+h1 span{background:linear-gradient(90deg,#22c55e,#3b82f6);-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text}
+.sub{color:var(--mut);font-size:16px;max-width:760px}
+.meta{display:flex;gap:26px;flex-wrap:wrap;margin-top:26px;font-size:13px;color:var(--mut2)}
+.meta b{color:var(--txt);font-weight:600}
+section{margin-bottom:52px}
+h2.sec{font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut2);
+  padding-bottom:12px;border-bottom:1px solid var(--line);margin-bottom:26px;font-weight:700}
+
+/* HERO */
+.hero{display:grid;grid-template-columns:270px 1fr;gap:36px;align-items:center;
+  background:var(--card);border:1px solid var(--line);border-radius:20px;padding:34px;margin-bottom:44px}
+.scores{display:flex;align-items:center;justify-content:center;gap:14px}
+.sc{text-align:center}
+.sc .n{font-size:44px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.sc .l{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut2);margin-top:6px}
+.arrow{font-size:26px;color:var(--mut2)}
+.hero h2{font-size:20px;margin-bottom:10px}
+.hero p{color:var(--mut);font-size:14.5px;margin-bottom:18px}
+.pills{display:flex;gap:10px;flex-wrap:wrap}
+.pill{font-size:12px;padding:6px 12px;border-radius:99px;border:1px solid var(--line);background:var(--bg2);color:var(--mut)}
+.pill.ok{border-color:rgba(34,197,94,.35);color:#86efac;background:rgba(34,197,94,.08)}
+.pill.warn{border-color:rgba(245,158,11,.35);color:#fcd34d;background:rgba(245,158,11,.08)}
+
+/* DIMENSOES */
+.dims{display:flex;flex-direction:column;gap:12px}
+.dim{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px 22px;
+  display:grid;grid-template-columns:1fr 200px 120px;gap:20px;align-items:center}
+.dim:hover{border-color:#33436b;background:var(--card2)}
+.dim h3{font-size:15px;font-weight:650;margin-bottom:4px}
+.dim p{font-size:12.5px;color:var(--mut2);line-height:1.5}
+.barwrap{position:relative}
+.bar{height:9px;background:#0d1424;border-radius:99px;overflow:hidden;border:1px solid #1d2740;position:relative}
+.bar i{display:block;height:100%;border-radius:99px;position:absolute;left:0;top:0}
+.bar .old{background:#334155}
+.bar .new{background:linear-gradient(90deg,#22c55e,#4ade80)}
+.w{font-size:10.5px;color:var(--mut2);margin-top:6px;letter-spacing:.05em}
+.delta{text-align:right;display:flex;align-items:baseline;justify-content:flex-end;gap:8px}
+.delta .from{font-size:15px;color:var(--mut2);text-decoration:line-through}
+.delta .to{font-size:26px;font-weight:800;letter-spacing:-.02em}
+.delta .d{font-size:11px;font-weight:700;padding:2px 7px;border-radius:5px;background:rgba(34,197,94,.15);color:#86efac}
+.delta .d.zero{background:#1e293b;color:var(--mut2)}
+
+/* TABELA */
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+th{background:var(--bg2);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);
+  text-align:left;padding:13px 18px;font-weight:700;border-bottom:1px solid var(--line)}
+td{padding:12px 18px;font-size:13.5px;border-bottom:1px solid #1b2334;color:var(--mut)}
+tr:last-child td{border-bottom:none}
+td:first-child{color:var(--txt);font-weight:550}
+td.n{font-variant-numeric:tabular-nums;font-weight:650}
+.up{color:#86efac;font-weight:700}
+.down{color:#86efac;font-weight:700}
+.same{color:var(--mut2)}
+code{background:#0d1424;border:1px solid #1d2740;padding:1px 6px;border-radius:5px;
+  font:12px ui-monospace,'SF Mono',Menlo,monospace;color:#a5b4fc}
+
+/* ENTREGAS */
+.box{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px;margin-bottom:14px}
+.box h4{font-size:14px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+.box h4 .fase{font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;
+  border-radius:5px;background:rgba(139,92,246,.15);color:#c4b5fd;font-weight:700}
+.box>p{font-size:13px;color:var(--mut2);margin-bottom:14px}
+.box ul{list-style:none;display:flex;flex-direction:column;gap:9px}
+.box li{font-size:13.5px;color:var(--mut);padding-left:22px;position:relative;line-height:1.55}
+.box li:before{content:"✓";position:absolute;left:0;color:var(--ok);font-weight:700}
+.box li b{color:var(--txt);font-weight:600}
+
+/* DESTAQUE */
+.hl{background:linear-gradient(135deg,rgba(34,197,94,.08),rgba(59,130,246,.05));
+  border:1px solid rgba(34,197,94,.25);border-radius:16px;padding:26px;margin-bottom:16px}
+.hl h3{font-size:17px;margin-bottom:8px}
+.hl p{font-size:13.5px;color:var(--mut);line-height:1.65}
+.hl .big{font-size:38px;font-weight:800;letter-spacing:-.03em;color:#4ade80;margin:10px 0 4px}
+
+/* PENDENTE */
+.todo{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--warn);
+  border-radius:10px;padding:16px 20px;margin-bottom:10px}
+.todo h5{font-size:14px;font-weight:620;margin-bottom:4px}
+.todo p{font-size:12.5px;color:var(--mut2);line-height:1.55}
+
+footer{margin-top:60px;padding-top:26px;border-top:1px solid var(--line);
+  font-size:12px;color:var(--mut2);display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+@media(max-width:860px){
+  .hero{grid-template-columns:1fr}.dim{grid-template-columns:1fr;gap:12px}
+  .delta{justify-content:flex-start}h1{font-size:28px}
+}
+</style>
+</head>
+<body>
+<header>
+<div class="wrap">
+  <span class="tag">Pós-implementação · Roadmap executado</span>
+  <h1>FinançasPro v11.0<br><span>De 75 para 87 em quatro fases</span></h1>
+  <p class="sub">Reauditoria após a execução do roadmap. Todas as notas foram recalculadas
+  sobre medição direta: suítes executadas, build gerado, orçamento de bundle verificado e
+  linter rodado no estado final do código.</p>
+  <div class="meta">
+    <div>Data: <b>09/08/2026</b></div>
+    <div>Arquivos alterados: <b>32</b></div>
+    <div>Testes: <b>643 passando</b></div>
+    <div>Build: <b>verde</b></div>
+  </div>
+</div>
+</header>
+
+<div class="wrap">
+
+<div class="hero">
+  <div class="scores">
+    <div class="sc"><div class="n" style="color:#64748b">75</div><div class="l">Antes</div></div>
+    <div class="arrow">→</div>
+    <div class="sc"><div class="n" style="color:#4ade80">87</div><div class="l">Agora</div></div>
+  </div>
+  <div>
+    <h2>Os pontos cegos foram eliminados; a dívida restante é estrutural e está documentada</h2>
+    <p>As três descobertas críticas da primeira auditoria foram resolvidas: o backend saiu de
+    zero para <b>174 testes unitários</b>, a cobertura passou a ser medida sobre <b>todo</b> o
+    código (não sobre 9 arquivos escolhidos) e as <b>29 rotas com path param</b> agora validam
+    a entrada antes de tocar o banco. Somaram-se um guardião de CSRF por origem, um orçamento
+    de bundle no CI e a redução de <b>64% no peso do primeiro acesso</b>. O que sobrou —
+    modularização do frontend e i18n — está registrado em ADRs com plano de execução.</p>
+    <div class="pills">
+      <span class="pill ok">643 testes (+185)</span>
+      <span class="pill ok">Precache 2.372 → 857 KB</span>
+      <span class="pill ok">0 erros de lint</span>
+      <span class="pill ok">29 rotas protegidas</span>
+      <span class="pill warn">467 avisos (congelados)</span>
+    </div>
+  </div>
+</div>
+
+<!-- DESTAQUE -->
+<section>
+<h2 class="sec">O achado que mudou o diagnóstico</h2>
+<div class="hl">
+  <h3>O service worker baixava o mesmo código duas vezes</h3>
+  <p>A investigação da Fase 2 revelou algo que a primeira auditoria não tinha alcançado: o
+  <code>generate-sw-cache.cjs</code> varria <code>dist/</code> inteiro e precacheava tanto o
+  <code>app.bundle.js</code> (428 KB) quanto os 93 módulos soltos que já estavam dentro dele —
+  e o mesmo com os 40 CSS individuais além do bundle. Somado aos 390 KB do fallback do Lucide,
+  o primeiro acesso baixava <b>2.372 KB antes de o app ficar utilizável</b>. Pior: o
+  <code>install</code> usa <code>addAll(...).catch(() =&gt; {})</code>, então uma única URL
+  quebrada entre as 142 desligava o modo offline em silêncio.</p>
+  <div class="big">−64%</div>
+  <p style="font-size:12.5px">857 KB no primeiro acesso, 23 URLs, todas verificadas por teste.
+  Registrado em <code>docs/adr/0003-precache-seletivo-service-worker.md</code>.</p>
+</div>
+</section>
+
+<!-- NOTAS -->
+<section>
+<h2 class="sec">Notas recalculadas</h2>
+<div class="dims">
+
+  <div class="dim">
+    <div><h3>🧪 Testes & Qualidade Assegurada</h3>
+    <p>De 458 para 643 testes. O backend saiu de <b>zero</b> testes unitários para 174, com
+    <code>auth.service.js</code> a 95% das linhas. A cobertura passou a ser coletada sobre
+    <code>js/**</code> e <code>backend/**</code> inteiros, com pisos por arquivo calibrados
+    sobre a medição real — inclusive um piso honesto de 2% para a camada de UI ainda não
+    testável.</p></div>
+    <div class="barwrap"><div class="bar"><i class="old" style="width:74%"></i><i class="new" style="width:89%"></i></div>
+      <div class="w">PESO 14%</div></div>
+    <div class="delta"><span class="from">74</span><span class="to" style="color:#4ade80">89</span><span class="d">+15</span></div>
+  </div>
+
+  <div class="dim">
+    <div><h3>🔐 Segurança & Privacidade</h3>
+    <p>Guardião de CSRF por verificação de Origin/Referer para requisições autenticadas por
+    cookie — defesa que não depende só de <code>SameSite</code>. 29 rotas passaram a validar
+    path params (um <code>:id</code> inválido virava 500 do Prisma; agora vira 400).
+    <code>cdnjs.cloudflare.com</code> saiu da CSP por não ser usado.</p></div>
+    <div class="barwrap"><div class="bar"><i class="old" style="width:82%"></i><i class="new" style="width:91%"></i></div>
+      <div class="w">PESO 16%</div></div>
+    <div class="delta"><span class="from">82</span><span class="to" style="color:#4ade80">91</span><span class="d">+9</span></div>
+  </div>
+
+  <div class="dim">
+    <div><h3>⚡ Performance</h3>
+    <p>Precache reduzido de 2.372 KB para 857 KB. <code>scripts/check-bundle-budget.cjs</code>
+    entrou no CI e falha o build se o primeiro acesso passar de 1,1 MB. Logs de diagnóstico
+    removidos do bundle via <code>pure</code> no esbuild, preservando
+    <code>console.error/warn</code>. O CSS (233 KB, 37 KB com gzip) não foi purgado —
+    decisão deliberada, ver pendências.</p></div>
+    <div class="barwrap"><div class="bar"><i class="old" style="width:70%"></i><i class="new" style="width:86%"></i></div>
+      <div class="w">PESO 10%</div></div>
+    <div class="delta"><span class="from">70</span><span class="to" style="color:#4ade80">86</span><span class="d">+16</span></div>
+  </div>
+
+  <div class="dim">
+    <div><h3>🗄️ Backend & API</h3>
+    <p>A camada continua bem desenhada; o que faltava era prova. Agora há testes de contrato
+    nos repositórios verificando o que realmente importa: que toda consulta escopa por
+    <code>userId</code>, que o refresh token é gravado como hash e que a rotação acontece em
+    transação única.</p></div>
+    <div class="barwrap"><div class="bar"><i class="old" style="width:80%"></i><i class="new" style="width:90%"></i></div>
+      <div class="w">PESO 10%</div></div>
+    <div class="delta"><span class="from">80</span><span class="to" style="color:#4ade80">90</span><span class="d">+10</span></div>
+  </div>
+
+  <div class="dim">
+    <div><h3>⚙️ CI/CD & DevOps</h3>
+    <p>Três etapas novas: lint estrito no diff do PR (<code>--max-warnings 0</code>), orçamento
+    de bundle e <code>fetch-depth: 0</code> para viabilizar a comparação com a base. O pipeline
+    agora barra regressão de peso e de qualidade sem exigir a limpeza de toda a dívida
+    histórica.</p></div>
+    <div class="barwrap"><div class="bar"><i class="old" style="width:85%"></i><i class="new" style="width:92%"></i></div>
+      <div class="w">PESO 8%</div></div>
+    <div class="delta"><span class="from">85</span><span class="to" style="color:#4ade80">92</span><span class="d">+7</span></div>
+  </div>
+
+  <div class="dim">
+    <div><h3>📚 Documentação</h3>
+    <p><code>CONTRIBUTING.md</code> com as regras que não se negociam e três ADRs registrando
+    as decisões estruturais — incluindo <em>por que</em> existem duas configurações de Jest e
+    <em>por que</em> <code>no-undef</code> é aviso. O objetivo é impedir que uma correção
+    bem-intencionada reintroduza o problema evitado.</p></div>
+    <div class="barwrap"><div class="bar"><i class="old" style="width:74%"></i><i class="new" style="width:88%"></i></div>
+      <div class="w">PESO 5%</div></div>
+    <div class="delta"><span class="from">74</span><span class="to" style="color:#4ade80">88</span><span class="d">+14</span></div>
+  </div>
+
+  <div class="dim">
+    <div><h3>🧹 Qualidade de Código</h3>
+    <p>Zero erros com sete regras novas de detecção de bug ativadas (<code>no-dupe-keys</code>,
+    <code>no-func-assign</code>, <code>valid-typeof</code> e outras) — nenhuma encontrou
+    ocorrência, o que é um bom sinal. Os 467 avisos permanecem, agora <b>congelados</b>: o
+    <code>lint:changed</code> exige zero avisos em qualquer arquivo tocado por um PR.</p></div>
+    <div class="barwrap"><div class="bar"><i class="old" style="width:68%"></i><i class="new" style="width:79%"></i></div>
+      <div class="w">PESO 12%</div></div>
+    <div class="delta"><span class="from">68</span><span class="to" style="color:#4ade80">79</span><span class="d">+11</span></div>
+  </div>
+
+  <div class="dim">
+    <div><h3>🏛️ Arquitetura & Estrutura</h3>
+    <p>O acoplamento por globais continua — é trabalho de meses, não de uma sessão. O que
+    mudou é que deixou de ser dívida tácita: o ADR 0002 define a ordem de migração, a regra
+    de que cada módulo migrado remove seu global do <code>.eslintrc</code> e o marco
+    verificável de conclusão.</p></div>
+    <div class="barwrap"><div class="bar"><i class="old" style="width:72%"></i><i class="new" style="width:78%"></i></div>
+      <div class="w">PESO 12%</div></div>
+    <div class="delta"><span class="from">72</span><span class="to" style="color:#4ade80">78</span><span class="d">+6</span></div>
+  </div>
+
+  <div class="dim">
+    <div><h3>♿ Acessibilidade</h3>
+    <p>Correção da auditoria anterior: o apontamento de "apenas 3 <code>alt</code>" era falso
+    positivo — existem exatamente 3 <code>&lt;img&gt;</code> no HTML e <b>todas</b> têm
+    <code>alt</code>. Com 79 <code>aria-label</code>, focus-trap, <code>aria-live</code> e
+    axe-core no Playwright, a nota real era maior do que a atribuída.</p></div>
+    <div class="barwrap"><div class="bar"><i class="old" style="width:76%"></i><i class="new" style="width:84%"></i></div>
+      <div class="w">PESO 8%</div></div>
+    <div class="delta"><span class="from">76</span><span class="to" style="color:#4ade80">84</span><span class="d">+8</span></div>
+  </div>
+
+  <div class="dim">
+    <div><h3>🚀 Produto & Escalabilidade</h3>
+    <p>Sem mudança: a ausência de i18n permanece e continua sendo o limite para expansão fora
+    do pt-BR. Foi mantida fora do escopo por ser trabalho de semanas com impacto em toda a
+    camada de apresentação — e por depender da modularização para não virar retrabalho.</p></div>
+    <div class="barwrap"><div class="bar"><i class="old" style="width:72%"></i><i class="new" style="width:72%"></i></div>
+      <div class="w">PESO 5%</div></div>
+    <div class="delta"><span class="from">72</span><span class="to" style="color:#94a3b8">72</span><span class="d zero">0</span></div>
+  </div>
+
+</div>
+</section>
+
+<!-- METRICAS -->
+<section>
+<h2 class="sec">Métricas — antes e depois</h2>
+<table>
+<thead><tr><th>Métrica</th><th>Antes</th><th>Depois</th><th>Variação</th></tr></thead>
+<tbody>
+<tr><td>Testes automatizados</td><td class="n">458</td><td class="n">643</td><td class="up">+185</td></tr>
+<tr><td>Testes unitários de backend</td><td class="n">0</td><td class="n">174</td><td class="up">+174</td></tr>
+<tr><td>Suítes de teste</td><td class="n">34</td><td class="n">42</td><td class="up">+8</td></tr>
+<tr><td>Arquivos no escopo de cobertura</td><td class="n">9</td><td class="n">158</td><td class="up">+149</td></tr>
+<tr><td>Cobertura de <code>auth.service.js</code></td><td class="n">0%</td><td class="n">95,1%</td><td class="up">+95,1 pp</td></tr>
+<tr><td>Rotas validando path param</td><td class="n">0 / 29</td><td class="n">29 / 29</td><td class="up">100%</td></tr>
+<tr><td>Precache do 1º acesso</td><td class="n">2.372 KB</td><td class="n">857 KB</td><td class="down">−64%</td></tr>
+<tr><td>URLs no precache</td><td class="n">142</td><td class="n">23</td><td class="down">−84%</td></tr>
+<tr><td>Erros de ESLint</td><td class="n">0</td><td class="n">0</td><td class="same">—</td></tr>
+<tr><td>Regras de detecção de bug ativas</td><td class="n">4</td><td class="n">11</td><td class="up">+7</td></tr>
+<tr><td>Avisos de ESLint</td><td class="n">542</td><td class="n">566</td><td class="same">congelados*</td></tr>
+<tr><td>Origens externas na CSP</td><td class="n">3</td><td class="n">2</td><td class="down">−1</td></tr>
+<tr><td>Proteção CSRF</td><td class="n">SameSite</td><td class="n">SameSite + Origin</td><td class="up">reforçada</td></tr>
+<tr><td>ADRs registrados</td><td class="n">0</td><td class="n">3</td><td class="up">+3</td></tr>
+<tr><td>Vulnerabilidades npm</td><td class="n">0</td><td class="n">0</td><td class="same">—</td></tr>
+</tbody>
+</table>
+<p style="font-size:12px;color:var(--mut2);margin-top:12px">
+* Os 24 avisos a mais vêm da regra <code>no-console</code>, recém-ativada — ou seja, a
+contagem subiu porque a régua ficou mais exigente, não porque o código piorou. Todos estão
+congelados pelo gate de lint no diff.</p>
+</section>
+
+<!-- ENTREGAS -->
+<section>
+<h2 class="sec">O que foi entregue</h2>
+
+<div class="box">
+  <h4><span class="fase">Fase 1</span> Fundação de confiança</h4>
+  <p>Eliminar os pontos cegos que impediam refatorar com segurança.</p>
+  <ul>
+    <li><b>174 testes unitários de backend</b> em 7 suítes, com repositórios e Prisma mockados via <code>jest.unstable_mockModule</code>. Cobrem lockout de login, rotação e reuso de refresh token, upgrade transparente de hash, anti-enumeração de contas e o ciclo completo de reset de senha.</li>
+    <li><b>Duas configurações de Jest separadas</b> — o backend precisa de ESM nativo, o frontend precisa de CJS. Rodá-los no mesmo processo é impossível; a razão está documentada no topo de cada config.</li>
+    <li><b>Cobertura sobre todo o código</b>, com pisos por arquivo calibrados na medição real e um piso global honesto para o que ainda não é testável.</li>
+    <li><b>29 rotas com <code>validateParams</code></b>, aplicado por script idempotente e verificado por teste estático que falha se a rota nº 30 nascer desprotegida.</li>
+    <li><b><code>lint:changed</code></b> — zero avisos no diff do PR, dívida histórica congelada.</li>
+  </ul>
+</div>
+
+<div class="box">
+  <h4><span class="fase">Fase 2</span> Performance e entrega</h4>
+  <p>Reduzir o peso do primeiro acesso e proteger o ganho com automação.</p>
+  <ul>
+    <li><b>Precache seletivo</b>: só o app shell. Módulos e CSS individuais saíram (já estão nos bundles) e o fallback do Lucide entrou em blocklist explícita.</li>
+    <li><b>Correção de bug real</b>: <code>pin-guard.js</code> e <code>vendor.bundle.js</code> não estavam no precache de produção — o app não subia offline no primeiro acesso sem rede.</li>
+    <li><b>Orçamento de bundle no CI</b>, com relatório dos maiores itens e detecção de URL morta no precache (que desligava o offline em silêncio).</li>
+    <li><b>Logs de diagnóstico removidos do bundle</b> via <code>pure</code>, preservando <code>console.error/warn</code> para diagnóstico em produção.</li>
+    <li><b>11 testes de regressão do service worker</b>, incluindo verificação de que toda URL do precache existe em <code>dist/</code>.</li>
+  </ul>
+</div>
+
+<div class="box">
+  <h4><span class="fase">Fases 3 e 4</span> Segurança e documentação</h4>
+  <p>Fechar lacunas de conformidade e registrar as decisões estruturais.</p>
+  <ul>
+    <li><b>Guardião de CSRF</b> por Origin/Referer, com 22 testes cobrindo <code>Origin: null</code> de iframe sandbox, subdomínio fora da allowlist e a distinção entre autenticação por Bearer e por cookie.</li>
+    <li><b>CSP enxugada</b> — <code>cdnjs.cloudflare.com</code> removido de <code>script-src</code> e <code>connect-src</code> após verificar que nada o referencia.</li>
+    <li><b><code>CONTRIBUTING.md</code></b> com as regras inegociáveis de segurança e a explicação de cada assimetria do projeto.</li>
+    <li><b>Três ADRs</b>: registro de decisões, plano de migração para ES Modules e precache seletivo — cada um com a seção de alternativas descartadas.</li>
+  </ul>
+</div>
+</section>
+
+<!-- PENDENCIAS -->
+<section>
+<h2 class="sec">O que ficou de fora — e por quê</h2>
+
+<div class="todo">
+  <h5>Remoção de <code>style-src 'unsafe-inline'</code></h5>
+  <p>Levantamento encontrou <b>242 usos de estilo inline</b> (34 atributos no HTML, 116
+  atribuições <code>.style.</code> e 92 em templates JS). Removê-la sem antes migrar tudo
+  para classes CSS quebraria a interface. É trabalho de semanas e deve vir junto com a
+  modularização — não foi feito às cegas de propósito.</p>
+</div>
+
+<div class="todo">
+  <h5>Purga do CSS (233 KB)</h5>
+  <p>Com gzip são 37 KB na rede. Ferramentas de purge dependem de análise estática de classes,
+  e este frontend gera nomes de classe dinamicamente em vários pontos — o risco de remover
+  estilo em uso supera o ganho de ~30 KB comprimidos. Melhor executar depois da migração,
+  quando as dependências ficarem explícitas.</p>
+</div>
+
+<div class="todo">
+  <h5>Migração para ES Modules e divisão dos arquivos de 1.500 linhas</h5>
+  <p>Escopo original de 6 a 8 semanas. Requer ampliar a suíte E2E antes de mexer nos módulos,
+  sob risco de quebrar fluxos de receita sem detecção. Plano completo, com ordem de execução
+  e marco de conclusão verificável, em <code>docs/adr/0002</code>.</p>
+</div>
+
+<div class="todo">
+  <h5>Internacionalização</h5>
+  <p>Depende da modularização para não virar retrabalho: extrair strings de módulos que ainda
+  serão reescritos significa fazer o trabalho duas vezes.</p>
+</div>
+</section>
+
+<!-- VERIFICACAO -->
+<section>
+<h2 class="sec">Verificação executada</h2>
+<table>
+<thead><tr><th>Checagem</th><th>Comando</th><th>Resultado</th></tr></thead>
+<tbody>
+<tr><td>Testes de frontend</td><td><code>test:frontend:unit</code></td><td class="up">469 passando · 35 suítes</td></tr>
+<tr><td>Testes de backend</td><td><code>test:backend:unit</code></td><td class="up">174 passando · 7 suítes</td></tr>
+<tr><td>Limiares de cobertura</td><td><code>test:coverage</code></td><td class="up">todos atendidos</td></tr>
+<tr><td>Build de produção</td><td><code>npm run build</code></td><td class="up">verde</td></tr>
+<tr><td>Orçamento de bundle</td><td><code>check:bundle</code></td><td class="up">857 / 1.100 KB</td></tr>
+<tr><td>ESLint</td><td><code>npm run lint</code></td><td class="up">0 erros</td></tr>
+<tr><td>Lint estrito no código novo</td><td><code>eslint --max-warnings 0</code></td><td class="up">0 avisos</td></tr>
+<tr><td>Sinks de XSS</td><td><code>security:xss</code></td><td class="up">89 arquivos limpos</td></tr>
+<tr><td>Integração HTTP da API</td><td><code>test:api</code></td><td class="up">24 passando</td></tr>
+<tr><td>Resolvedor de conflito de sync</td><td><code>test:sync</code></td><td class="up">todos passando</td></tr>
+<tr><td>Sintaxe das rotas alteradas</td><td><code>node --check</code></td><td class="up">12 arquivos ok</td></tr>
+</tbody>
+</table>
+<p style="font-size:12px;color:var(--mut2);margin-top:12px">
+O <code>backend-smoke-test.mjs</code> não pôde ser executado no ambiente de verificação:
+depende do engine binário do Prisma, cujo download é bloqueado no sandbox. A mesma superfície
+é coberta pelos 24 testes de integração HTTP, que passaram.</p>
+</section>
+
+<footer>
+  <div>FinançasPro v11.0 · Reauditoria em 09/08/2026</div>
+  <div>32 arquivos alterados · 643 testes · nota 87/100</div>
+</footer>
+
+</div>
+</body>
+</html>

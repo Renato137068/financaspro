@@ -49,7 +49,7 @@ var APRENDIZADO = {
   registrar: function(desc, categoria, tipo, banco, cartao, valor) {
     if (!desc || !categoria) return;
     var palavras = desc.toLowerCase().split(/\s+/);
-    var hoje = new Date().toISOString().split('T')[0];
+    var hoje = UTILS.dataLocalIso();
 
     palavras.forEach(function(p) {
       if (p.length < 3) return;

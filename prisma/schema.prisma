@@ -71,6 +71,7 @@ model User {
   config             UserConfig?
   auditLogs          AuditLog[]
   verificationTokens VerificationToken[]
+  syncOps            SyncOp[]
 
   // Fase 10 — Multi-org
   ownedOrgs      Organization[]       @relation("OrgOwner")
@@ -122,11 +123,14 @@ model Transaction {
   subcategory String?
   date        DateTime
   accountId   String?
-  account     Account?      @relation(fields: [accountId], references: [id])
+  account     Account?      @relation("TxAccount", fields: [accountId], references: [id])
+  targetAccountId String?
+  targetAccount   Account?  @relation("TxTargetAccount", fields: [targetAccountId], references: [id])
   tags        String[]
   notes       String?
   recurring   Boolean       @default(false)
   openFinanceId String?
+  deletedAt   DateTime?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
@@ -138,7 +142,22 @@ model Transaction {
   @@index([userId])
   @@index([userId, date])
   @@index([userId, category])
+  @@index([userId, updatedAt])
   @@index([orgId])
+}
+
+/// Idempotência de mutações do sync v2 (opId do cliente).
+model SyncOp {
+  id          String   @id
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entity      String
+  resourceId  String
+  action      String
+  resultJson  String?
+  processedAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 model Account {
@@ -153,7 +172,8 @@ model Account {
   active       Boolean       @default(true)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  transactions Transaction[]
+  transactions Transaction[] @relation("TxAccount")
+  incomingTransfers Transaction[] @relation("TxTargetAccount")
 
   // Fase 10
   orgId        String?
@@ -362,6 +382,14 @@ model Invoice {
 
   @@index([subscriptionId])
   @@index([status])
+}
+
+model StripeWebhookEvent {
+  id          String   @id
+  type        String
+  processedAt DateTime @default(now())
+
+  @@index([processedAt])
 }
 
 // ─── Job Log (Fase 10) ────────────────────────────────────────────────────────

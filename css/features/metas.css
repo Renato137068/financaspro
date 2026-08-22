@@ -107,7 +107,7 @@
 .meta-card-done-msg {
   margin: var(--space-2) 0 0;
   font-size: var(--text-sm);
-  color: #059669;
+  color: var(--color-success-dark);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -169,3 +169,21 @@
   padding: 8px 12px;
   font-size: var(--text-sm);
 }
+
+/* ── Diagnóstico da meta ──────────────────────────────────────────
+   A barra de progresso responde "onde estou". Esta linha responde
+   "vou conseguir?" — e, quando a resposta é não, diz de quanto é o
+   ajuste. Cores vindas dos tokens semânticos, que já existem nos
+   dois temas (o .insight aprendeu isso da forma difícil).
+─────────────────────────────────────────────────────────────────── */
+
+.meta-diagnostico {
+  margin: var(--space-2) 0 0;
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+}
+
+.meta-diagnostico--ok      { color: var(--color-success-text); }
+.meta-diagnostico--alerta  { color: var(--color-warning-text); }
+.meta-diagnostico--erro    { color: var(--color-danger-text); }
+.meta-diagnostico--neutro  { color: var(--color-text-secondary); }

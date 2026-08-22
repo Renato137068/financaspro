@@ -9,6 +9,8 @@ const CONFIG = {
   STORAGE_TRANSACOES: 'fp-transacoes',
   STORAGE_CONFIG: 'fp-config',
   STORAGE_CONTAS: 'fp-contas',
+  STORAGE_OUTBOX: 'fp-outbox',
+  STORAGE_SYNC_CURSOR: 'fp-sync-cursor',
   STORAGE_APRENDIZADO: 'aprendizado_historico',
   STORAGE_RASCUNHO: '_rascunho_transacao',
   API_BASE_URL: '',
@@ -19,6 +21,11 @@ const CONFIG = {
 
   TIPO_RECEITA: 'receita',
   TIPO_DESPESA: 'despesa',
+  // Movimentação entre contas do próprio usuário. Não é ganho nem gasto: só
+  // muda de lugar. Como todos os agregadores do app filtram por 'receita' ou
+  // 'despesa', um tipo próprio é automaticamente ignorado por eles — receitas,
+  // despesas, orçamento 50/30/20 e relatórios seguem corretos sem alteração.
+  TIPO_TRANSFERENCIA: 'transferencia',
 
   CATEGORIAS_RECEITA_SLUGS: ['salario','freelance','investimentos','vendas','reembolsos','beneficios','presentes','aluguel_recebido','premios','outros'],
   CATEGORIAS_DESPESA_SLUGS: ['alimentacao','transporte','moradia','saude','educacao','lazer','assinaturas','seguros','impostos','servicos_financeiros','compras','vestuario','viagem','pet','familia','doacoes','beleza','outro'],
@@ -108,7 +115,14 @@ const CONFIG = {
     assinaturas: [],
     patrimonio: { ativos: [], dividas: [] },
     openFinance: { connections: [], lastSync: null },
+    syncV2Enabled: true,
   },
+
+  /** Lote de transações por página no pull incremental (espelha backend). */
+  SYNC_DELTA_BATCH_SIZE: 500,
+
+  /** Meses de histórico mantidos no localStorage (resto permanece no servidor). */
+  LOCAL_TX_WINDOW_MONTHS: 24,
 
   MOEDA_FORMATACAO: {
     BRL: { locale: 'pt-BR', currency: 'BRL' },

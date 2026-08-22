@@ -361,14 +361,14 @@
 }
 
 .tipo-btn[data-tipo="despesa"].ativo {
-  background: var(--color-danger);
-  border-color: var(--color-danger);
+  background: var(--color-danger-on-light);
+  border-color: var(--color-danger-on-light);
   color: var(--color-text-inverse);
 }
 
 .tipo-btn[data-tipo="receita"].ativo {
-  background: var(--color-success);
-  border-color: var(--color-success);
+  background: var(--color-success-on-light);
+  border-color: var(--color-success-on-light);
   color: var(--color-text-inverse);
 }
 

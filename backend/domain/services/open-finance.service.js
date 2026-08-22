@@ -108,17 +108,25 @@ export const OpenFinanceService = {
         continue;
       }
 
-      await TransactionRepository.create({
-        userId,
-        type: raw.type,
-        amount: raw.amount,
-        description: raw.description,
-        category: raw.category,
-        date: new Date(`${raw.date}T12:00:00.000Z`),
-        openFinanceId,
-        tags: ['open-finance'],
-      });
-      imported += 1;
+      try {
+        await TransactionRepository.create({
+          userId,
+          type: raw.type,
+          amount: raw.amount,
+          description: raw.description,
+          category: raw.category,
+          date: new Date(`${raw.date}T12:00:00.000Z`),
+          openFinanceId,
+          tags: ['open-finance'],
+        });
+        imported += 1;
+      } catch (err) {
+        if (err?.code === 'P2002') {
+          skipped += 1;
+          continue;
+        }
+        throw err;
+      }
     }
 
     await OpenFinanceRepository.updateLastSync(connectionId, new Date());

@@ -161,7 +161,7 @@ const INIT_FORM = {
         var offset = parseInt(this.dataset.offset, 10);
         var d = new Date();
         d.setDate(d.getDate() - offset);
-        dateInput.value = d.toISOString().split('T')[0];
+        dateInput.value = UTILS.dataLocalIso(d);
       });
     });
 
@@ -325,7 +325,14 @@ const INIT_FORM = {
     var val = INIT_FORM.obterValorNumerico();
     var n = parseInt(document.getElementById('num-parcelas').value, 10) || 2;
     if (val > 0 && n >= 2) {
-      txt.textContent = n + 'x de ' + UTILS.formatarMoeda(val / n);
+      // Mesma divisão usada no registro: o preview precisa mostrar o número que
+      // vai ser gravado, não `val / n` cru — senão promete 33,33 e grava 33,34.
+      var parcelas = UTILS.dividirEmParcelas(val, n);
+      var primeira = parcelas[0];
+      var ultima = parcelas[parcelas.length - 1];
+      txt.textContent = primeira === ultima
+        ? n + 'x de ' + UTILS.formatarMoeda(primeira)
+        : n + 'x de ' + UTILS.formatarMoeda(ultima) + ' (1ª de ' + UTILS.formatarMoeda(primeira) + ')';
     } else {
       txt.textContent = '';
     }
@@ -1281,16 +1288,22 @@ const INIT_FORM = {
     }
 
     // PARCELAMENTO
+    // Os dois cálculos abaixo são delegados a UTILS de propósito: dividir por N
+    // e arredondar cada parcela fazia R$ 100 em 3x somar R$ 99,99, e somar mês
+    // com setMonth transbordava 31/01 para 03/03 (pulando fevereiro). Ambos os
+    // erros são silenciosos — só aparecem no extrato do usuário.
     if (chkParcelado && chkParcelado.checked && tipo === 'despesa') {
       var nParcelas = parseInt(document.getElementById('num-parcelas').value, 10) || 2;
-      var valorParcela = Math.round((valor / nParcelas) * 100) / 100;
-      for (var p = 0; p < nParcelas; p++) {
-        var dataParcela = new Date(data + 'T12:00:00');
-        dataParcela.setMonth(dataParcela.getMonth() + p);
+      var valoresParcelas = UTILS.dividirEmParcelas(valor, nParcelas);
+      for (var p = 0; p < valoresParcelas.length; p++) {
+        var dataParcela = UTILS.addMesesClamp(data, p) || data;
         var descParcela = descFinal + ' (' + (p + 1) + '/' + nParcelas + ')';
-        var txParcela = TRANSACOES.criar(tipo, valorParcela, categoria, dataParcela.toISOString().split('T')[0], descParcela, banco, cartao);
+        var txParcela = TRANSACOES.criar(tipo, valoresParcelas[p], categoria, dataParcela, descParcela, banco, cartao);
         if (p === 0) txId = txParcela.id;
       }
+      // A primeira parcela pode ter um centavo a mais que as demais; é ela que
+      // o usuário vê primeiro na fatura, então é ela que anunciamos.
+      var valorParcela = valoresParcelas.length ? valoresParcelas[0] : 0;
       if (typeof APRENDIZADO !== 'undefined') {
         APRENDIZADO.registrar(descricao, categoria, tipo, banco, cartao, valorParcela);
         INIT_FORM.mostrarFeedbackAprendizado('Aprendizado atualizado com sucesso.');
@@ -1429,7 +1442,7 @@ const INIT_FORM = {
     if (orc) orc.innerHTML = '';
     // Resetar data para hoje
     var dataInput = document.getElementById('novo-data');
-    if (dataInput) dataInput.value = new Date().toISOString().split('T')[0];
+    if (dataInput) dataInput.value = UTILS.dataLocalIso();
     var chips = document.querySelectorAll('.data-chip');
     chips.forEach(function(c, i) {
       var isToday = i === 0;

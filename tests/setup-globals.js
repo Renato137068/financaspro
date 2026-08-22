@@ -4,12 +4,18 @@
  */
 
 // ── localStorage mock ─────────────────────────────────────────────────────────
+// `length` e `key(i)` fazem parte da Web Storage API e faltavam aqui. Sem
+// eles, qualquer código que itere o armazenamento — medir uso, migrar chaves,
+// limpar por prefixo — roda contra um objeto que finge estar sempre vazio, e o
+// teste passa sem exercitar nada. Foi o que aconteceu com `usoArmazenamento`.
 const _lsStore = {};
 const localStorageMock = {
   getItem:    key       => Object.prototype.hasOwnProperty.call(_lsStore, key) ? _lsStore[key] : null,
   setItem:    (key, val) => { _lsStore[key] = String(val); },
   removeItem: key        => { delete _lsStore[key]; },
   clear:      ()         => { Object.keys(_lsStore).forEach(k => delete _lsStore[k]); },
+  key:        i          => { const ks = Object.keys(_lsStore); return i < ks.length ? ks[i] : null; },
+  get length() { return Object.keys(_lsStore).length; },
 };
 Object.defineProperty(global, 'localStorage', { value: localStorageMock, writable: true });
 

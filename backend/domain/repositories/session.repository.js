@@ -30,9 +30,14 @@ export const SessionRepository = {
   },
 
   async rotateToken(oldSessionId, { refreshToken, ...rest }) {
-    return prisma.$transaction([
-      prisma.session.update({ where: { id: oldSessionId }, data: { revokedAt: new Date() } }),
-      prisma.session.create({ data: { ...rest, refreshToken: hashToken(refreshToken) } }),
-    ]);
+    return prisma.$transaction(async (tx) => {
+      const revoked = await tx.session.updateMany({
+        where: { id: oldSessionId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+      if (revoked.count === 0) return false;
+      await tx.session.create({ data: { ...rest, refreshToken: hashToken(refreshToken) } });
+      return true;
+    });
   },
 };

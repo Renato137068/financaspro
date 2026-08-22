@@ -435,6 +435,19 @@ const LIFECYCLE_BOOT = {
         if (typeof ONBOARDING !== 'undefined' && ONBOARDING.iniciar) ONBOARDING.iniciar();
       }, 400);
 
+      // Recorrentes devidas. Em modo local o próprio cliente materializa —
+      // até aqui isso dependia exclusivamente do worker BullMQ do backend, e
+      // quem usava o app offline cadastrava "Aluguel mensal" e nunca via o
+      // lançamento aparecer. Havendo sessão na nuvem, RECORRENTES.processar
+      // devolve vazio e o worker segue como dono do processo.
+      if (typeof RECORRENTES !== 'undefined' && RECORRENTES.processarNaAbertura) {
+        try { RECORRENTES.processarNaAbertura(); } catch (e) {
+          if (typeof OBS !== 'undefined' && OBS.captureError) {
+            OBS.captureError(e, { contexto: 'lifecycle.recorrentes' });
+          }
+        }
+      }
+
       // Lembrete diário (se ativo e permissão concedida)
       setTimeout(function() {
         if (typeof DAILY_REMINDER !== 'undefined') DAILY_REMINDER.maybeRemind();

@@ -84,7 +84,7 @@
   padding: var(--space-3) var(--space-4);
   border: 1.5px solid var(--color-danger);
   background: transparent;
-  color: var(--color-danger);
+  color: var(--color-danger-text);
   border-radius: var(--radius-md);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
@@ -230,7 +230,7 @@
   gap: var(--space-2);
   width: 100%;
   padding: var(--space-4);
-  background: var(--color-warning);
+  background: var(--color-warning-on-light);
   color: var(--color-text-inverse);
   border: none;
   border-radius: var(--radius-lg);
@@ -272,8 +272,8 @@
   background: var(--color-bg-primary);
 }
 
-.tipo-btn.receita { color: var(--color-success); }
-.tipo-btn.despesa { color: var(--color-danger); }
+.tipo-btn.receita { color: var(--color-success-text); }
+.tipo-btn.despesa { color: var(--color-danger-text); }
 
 /* Variante do tipo-btn para [data-tipo] (aba novo) */
 .tipo-btn[data-tipo="receita"].ativo {

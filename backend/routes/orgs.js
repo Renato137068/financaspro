@@ -5,7 +5,7 @@ import { authenticate } from '../middleware/auth.js';
 import { resolveOrg, requireOrgRole, requireOrgOwner } from '../middleware/org.js';
 import { requirePlan } from '../middleware/plan.js';
 import { z } from 'zod';
-import { validateBody } from '../middleware/validate.js';
+import { validateBody, validateParams, orgIdParamSchema, tokenParamSchema, orgMemberParamSchema } from '../middleware/validate.js';
 
 const router = Router();
 router.use(authenticate);
@@ -40,7 +40,7 @@ router.post('/', validateBody(createOrgSchema), async (req, res, next) => {
 });
 
 // ─── Obter org ────────────────────────────────────────────────────────────────
-router.get('/:orgId', resolveOrg, async (req, res, next) => {
+router.get('/:orgId', validateParams(orgIdParamSchema), resolveOrg, async (req, res, next) => {
   try {
     const org = await OrgService.getById(req.params.orgId, req.user.id);
     res.json(org);
@@ -48,7 +48,7 @@ router.get('/:orgId', resolveOrg, async (req, res, next) => {
 });
 
 // ─── Atualizar org ────────────────────────────────────────────────────────────
-router.patch('/:orgId', resolveOrg, requireOrgOwner, validateBody(createOrgSchema.partial()), async (req, res, next) => {
+router.patch('/:orgId', validateParams(orgIdParamSchema), resolveOrg, requireOrgOwner, validateBody(createOrgSchema.partial()), async (req, res, next) => {
   try {
     const org = await OrgService.update(req.params.orgId, req.user.id, req.body);
     res.json(org);
@@ -56,7 +56,7 @@ router.patch('/:orgId', resolveOrg, requireOrgOwner, validateBody(createOrgSchem
 });
 
 // ─── Excluir org ──────────────────────────────────────────────────────────────
-router.delete('/:orgId', resolveOrg, requireOrgOwner, async (req, res, next) => {
+router.delete('/:orgId', validateParams(orgIdParamSchema), resolveOrg, requireOrgOwner, async (req, res, next) => {
   try {
     await OrgService.delete(req.params.orgId, req.user.id);
     res.sendStatus(204);
@@ -67,7 +67,7 @@ router.delete('/:orgId', resolveOrg, requireOrgOwner, async (req, res, next) => 
 
 // Convidar membro (requer plano PRO para times)
 router.post(
-  '/:orgId/invite',
+  '/:orgId/invite', validateParams(orgIdParamSchema),
   resolveOrg,
   requireOrgRole('ADMIN'),
   requirePlan('PRO'),
@@ -86,7 +86,7 @@ router.post(
 );
 
 // Listar convites pendentes
-router.get('/:orgId/invitations', resolveOrg, requireOrgRole('ADMIN'), async (req, res, next) => {
+router.get('/:orgId/invitations', validateParams(orgIdParamSchema), resolveOrg, requireOrgRole('ADMIN'), async (req, res, next) => {
   try {
     const invitations = await OrgService.listInvitations(req.params.orgId);
     res.json({ data: invitations });
@@ -94,7 +94,7 @@ router.get('/:orgId/invitations', resolveOrg, requireOrgRole('ADMIN'), async (re
 });
 
 // Aceitar convite (não requer resolveOrg — o token já contém orgId)
-router.post('/invitations/:token/accept', async (req, res, next) => {
+router.post('/invitations/:token/accept', validateParams(tokenParamSchema), async (req, res, next) => {
   try {
     const result = await OrgService.acceptInvitation(req.params.token, req.user.id);
     res.json(result);
@@ -103,7 +103,7 @@ router.post('/invitations/:token/accept', async (req, res, next) => {
 
 // Alterar papel de membro
 router.patch(
-  '/:orgId/members/:userId',
+  '/:orgId/members/:userId', validateParams(orgMemberParamSchema),
   resolveOrg,
   requireOrgOwner,
   validateBody(updateMemberSchema),
@@ -120,8 +120,25 @@ router.patch(
   }
 );
 
+// Transferir propriedade — a saída do dono que não destrói a organização
+router.post(
+  '/:orgId/members/:userId/transfer-ownership', validateParams(orgMemberParamSchema),
+  resolveOrg,
+  requireOrgOwner,
+  async (req, res, next) => {
+    try {
+      const result = await OrgService.transferOwnership(
+        req.params.orgId,
+        req.params.userId,
+        req.user.id,
+      );
+      res.json(result);
+    } catch (err) { next(err); }
+  },
+);
+
 // Remover membro
-router.delete('/:orgId/members/:userId', resolveOrg, async (req, res, next) => {
+router.delete('/:orgId/members/:userId', validateParams(orgMemberParamSchema), resolveOrg, async (req, res, next) => {
   try {
     await OrgService.removeMember(req.params.orgId, req.params.userId, req.user.id);
     res.sendStatus(204);

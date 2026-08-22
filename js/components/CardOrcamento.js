@@ -27,10 +27,9 @@
       nomeEl.textContent = label;
       header.appendChild(nomeEl);
 
-      var badge = document.createElement('span');
-      badge.className = 'status-' + s.status;
-      badge.textContent = pct + '%';
-      header.appendChild(badge);
+      // Badge com ícone + texto para leitor de tela: a cor sozinha não pode
+      // ser o único indicador do estado (WCAG 1.4.1).
+      header.appendChild(u.badgeStatus(s.status, pct + '%'));
 
       item.appendChild(header);
       item.appendChild(UI.ProgressBar.render(pct, cor, s.status));
@@ -66,6 +65,17 @@
       infoEl.appendChild(valoresEl);
 
       item.appendChild(infoEl);
+
+      // Este é o card que aparece no painel principal. Sem o badge, o único
+      // indicador de "dentro / atenção / excedido" seria a cor da barra de
+      // progresso — insuficiente pelo WCAG 1.4.1 e invisível para quem tem
+      // daltonismo. O percentual entra junto porque é a informação que o
+      // usuário procura primeiro.
+      var info = u.statusOrcamento(s.status);
+      if (info) {
+        infoEl.appendChild(u.badgeStatus(s.status, s.percentual + '%'));
+      }
+
       item.appendChild(UI.ProgressBar.render(pct, cor, s.status));
 
       return item;

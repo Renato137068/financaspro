@@ -45,7 +45,10 @@ var APP_BOOTSTRAP = {
         }
         var abaParam = _bootParams.get('aba');
         if (abaParam && typeof mudarAba === 'function') {
-          try { mudarAba(abaParam); } catch (e) {}
+          // Aba vinda de deep link pode não existir (link antigo, typo).
+        // Falhar aqui não impede o app de abrir no dashboard.
+        UTILS.tentar('bootstrap.mudarAba', function() { mudarAba(abaParam); },
+          { dados: { aba: abaParam } });
         }
         self._handleBelvoReturn();
       })

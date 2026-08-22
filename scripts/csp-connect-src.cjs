@@ -11,8 +11,8 @@ function buildCspConnectSrc() {
     origins.push('http://localhost:4000');
     origins.push('http://127.0.0.1:4000');
   }
+  // jsdelivr: tesseract.js carregado sob demanda pelo OCR (js/ocr.js).
   origins.push('https://cdn.jsdelivr.net');
-  origins.push('https://cdnjs.cloudflare.com');
   origins.push('https://api.belvo.com');
   origins.push('https://sandbox.belvo.com');
   origins.push('https://widget.belvo.io');

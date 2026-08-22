@@ -382,14 +382,23 @@ const DOM_SAFE_PATCH = {
    * Patch para lista de autocomplete
    */
   patchAutocomplete: function() {
+    // INIT_FORM pode estar em TDZ enquanto o bundle concatenado ainda executa.
+    var form;
+    try {
+      form = typeof INIT_FORM !== 'undefined' ? INIT_FORM : null;
+    } catch (e) {
+      return;
+    }
+    if (!form) return;
+
     // Substituir renderização de autocomplete em init-form.js
-    if (typeof INIT_FORM !== 'undefined' && INIT_FORM._renderAutocompleteOriginal) return;
-    
+    if (form._renderAutocompleteOriginal) return;
+
     // Guardar referência original
-    if (typeof INIT_FORM !== 'undefined') {
-      INIT_FORM._renderAutocompleteOriginal = INIT_FORM.renderAutocomplete;
+    if (form) {
+      form._renderAutocompleteOriginal = form.renderAutocomplete;
       
-      INIT_FORM.renderAutocomplete = function(sugestoes) {
+      form.renderAutocomplete = function(sugestoes) {
         var list = document.getElementById('autocomplete-list');
         if (!list) return;
         
@@ -433,14 +442,24 @@ const DOM_SAFE_PATCH = {
   }
 };
 
-// Auto-apply patches
-if (typeof document !== 'undefined') {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
-      DOM_SAFE_PATCH.apply();
-    });
-  } else {
+// Auto-apply patches — sempre após DOMContentLoaded. Scripts defer rodam com
+// readyState === 'interactive', antes do restante do bundle terminar; chamar
+// apply() nesse momento disparava TDZ em INIT_FORM no app.bundle.js.
+function scheduleDomSafePatch() {
+  try {
     DOM_SAFE_PATCH.apply();
+  } catch (e) {
+    if (typeof OBS !== 'undefined' && OBS.captureError) {
+      OBS.captureError(e, { contexto: 'dom-safe.schedulePatch' });
+    }
+  }
+}
+
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'complete') {
+    scheduleDomSafePatch();
+  } else {
+    document.addEventListener('DOMContentLoaded', scheduleDomSafePatch);
   }
 }
 

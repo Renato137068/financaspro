@@ -81,6 +81,13 @@ function atualizarDashboard() {
   if (RENDER.renderOrcamento) RENDER.renderOrcamento();
   if (RENDER.renderUltimasTransacoes) RENDER.renderUltimasTransacoes();
   if (RENDER.atualizarHeaderSaldo) RENDER.atualizarHeaderSaldo();
+  if (typeof CARTOES !== 'undefined' && CARTOES.render) CARTOES.render();
+  if (typeof COMPROMISSOS !== 'undefined' && COMPROMISSOS.render) COMPROMISSOS.render();
+  if (typeof CONTAS !== 'undefined' && CONTAS.renderSaldos) CONTAS.renderSaldos();
+  // INSIGHTS só era disparado após salvar transação ou mexer na config. Como o
+  // container dele agora existe no dashboard, ele precisa acompanhar o render —
+  // senão a análise só apareceria depois da próxima edição.
+  if (typeof INSIGHTS !== 'undefined' && INSIGHTS.mostrar) INSIGHTS.mostrar();
 }
 
 /* ── Config / Perfil → INIT_CONFIG ── */
@@ -125,7 +132,12 @@ function fpConfirm(msg, onOk, onNo) {
 function abrirChangelog() { _modals('abrirChangelog'); }
 function abrirFeedback() { _modals('abrirFeedback'); }
 
-/* Cache LRU do score — limpeza periódica */
-setInterval(function() {
-  if (typeof SCORE !== 'undefined') SCORE.limparCache();
-}, 300000);
+/* Cache LRU do score — limpeza periódica, só com a aba visível.
+   Um cache em memória de uma aba escondida não cresce: ninguém está gerando
+   entradas nele. Varrê-lo a cada 5 min era trabalho sobre nada. */
+setTimeout(function() {
+  if (typeof UTILS === 'undefined' || !UTILS.intervaloVisivel) return;
+  UTILS.intervaloVisivel(function() {
+    if (typeof SCORE !== 'undefined') SCORE.limparCache();
+  }, 300000);
+}, 0);

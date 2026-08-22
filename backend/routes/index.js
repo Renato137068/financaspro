@@ -7,6 +7,7 @@ import accountsRouter from './accounts.js';
 import budgetsRouter from './budgets.js';
 import recurringRouter from './recurring.js';
 import stateRouter from './state.js';
+import syncRouter from './sync.js';
 import orgsRouter from './orgs.js';
 import billingRouter from './billing.js';
 import openFinanceRouter from './open-finance.js';
@@ -20,6 +21,7 @@ router.use('/accounts', accountsRouter);
 router.use('/budgets', budgetsRouter);
 router.use('/recorrentes', recurringRouter);
 router.use('/state', stateRouter);
+router.use('/sync', syncRouter);
 
 // Fase 10 — SaaS
 router.use('/orgs', orgsRouter);

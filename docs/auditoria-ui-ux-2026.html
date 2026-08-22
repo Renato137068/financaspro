@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FinançasPro v11.0 — Auditoria UI/UX e Roadmap (Fases 1 a 4)</title>
+<style>
+:root{
+  --bg:#0b0f17;--bg2:#111826;--card:#151d2c;--card2:#1b2436;
+  --line:#243149;--txt:#e8eef7;--mut:#8fa0bb;--mut2:#64748b;
+  --ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--info:#3b82f6;--acc:#ec4899;--r:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:linear-gradient(180deg,#0b0f17,#0d1220 60%,#0b0f17);color:var(--txt);
+  font:15px/1.65 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding:0 0 80px}
+.wrap{max-width:1160px;margin:0 auto;padding:0 22px}
+header{padding:56px 0 40px;border-bottom:1px solid var(--line);margin-bottom:44px;
+  background:radial-gradient(1000px 400px at 50% -100px,rgba(236,72,153,.14),transparent)}
+.tag{display:inline-block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--acc);border:1px solid rgba(236,72,153,.35);background:rgba(236,72,153,.1);
+  padding:5px 12px;border-radius:99px;margin-bottom:18px;font-weight:700}
+h1{font-size:38px;line-height:1.15;letter-spacing:-.02em;margin-bottom:12px;font-weight:800}
+h1 span{background:linear-gradient(90deg,#ec4899,#f59e0b);-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text}
+.sub{color:var(--mut);font-size:16px;max-width:780px}
+.meta{display:flex;gap:26px;flex-wrap:wrap;margin-top:26px;font-size:13px;color:var(--mut2)}
+.meta b{color:var(--txt);font-weight:600}
+section{margin-bottom:52px}
+h2.sec{font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut2);
+  padding-bottom:12px;border-bottom:1px solid var(--line);margin-bottom:26px;font-weight:700}
+
+/* HERO */
+.hero{display:grid;grid-template-columns:250px 1fr;gap:36px;align-items:center;
+  background:var(--card);border:1px solid var(--line);border-radius:20px;padding:34px;margin-bottom:20px}
+.gauge{position:relative;width:200px;height:200px;margin:0 auto}
+.gauge svg{transform:rotate(-90deg)}
+.gauge .val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.gauge .num{font-size:52px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.gauge .lbl{font-size:11px;color:var(--mut2);letter-spacing:.12em;text-transform:uppercase;margin-top:6px}
+.hero h2{font-size:20px;margin-bottom:10px}
+.hero p{color:var(--mut);font-size:14.5px;margin-bottom:18px}
+.pills{display:flex;gap:10px;flex-wrap:wrap}
+.pill{font-size:12px;padding:6px 12px;border-radius:99px;border:1px solid var(--line);background:var(--bg2);color:var(--mut)}
+.pill.ok{border-color:rgba(34,197,94,.35);color:#86efac;background:rgba(34,197,94,.08)}
+.pill.warn{border-color:rgba(245,158,11,.35);color:#fcd34d;background:rgba(245,158,11,.08)}
+.pill.bad{border-color:rgba(239,68,68,.35);color:#fca5a5;background:rgba(239,68,68,.08)}
+.note{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.25);border-radius:12px;
+  padding:16px 20px;font-size:13.5px;color:var(--mut);margin-bottom:16px}
+.note b{color:#fca5a5}
+.note.m{background:rgba(59,130,246,.06);border-color:rgba(59,130,246,.22)}
+.note.m b{color:#93c5fd}
+
+/* DIMENSOES */
+.dims{display:flex;flex-direction:column;gap:12px}
+.dim{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px 22px;
+  display:grid;grid-template-columns:1fr 190px 70px;gap:20px;align-items:center}
+.dim:hover{border-color:#33436b;background:var(--card2)}
+.dim h3{font-size:15px;font-weight:650;margin-bottom:4px}
+.dim p{font-size:12.5px;color:var(--mut2);line-height:1.5}
+.bar{height:9px;background:#0d1424;border-radius:99px;overflow:hidden;border:1px solid #1d2740}
+.bar i{display:block;height:100%;border-radius:99px}
+.w{font-size:10.5px;color:var(--mut2);margin-top:6px;letter-spacing:.05em}
+.score{font-size:26px;font-weight:800;text-align:right;letter-spacing:-.02em}
+
+/* SWATCH de contraste */
+.contrast{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:6px}
+.sw{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card)}
+.sw .demo{padding:18px 16px;font-weight:700;font-size:14px;text-align:center}
+.sw .info{padding:10px 14px;font-size:11.5px;color:var(--mut2);display:flex;justify-content:space-between;
+  align-items:center;gap:8px;border-top:1px solid var(--line)}
+.sw .ratio{font-variant-numeric:tabular-nums;font-weight:700}
+.sw .ratio.bad{color:#fca5a5}.sw .ratio.warn{color:#fcd34d}.sw .ratio.ok{color:#86efac}
+
+/* TABELA */
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+th{background:var(--bg2);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);
+  text-align:left;padding:13px 18px;font-weight:700;border-bottom:1px solid var(--line)}
+td{padding:12px 18px;font-size:13.5px;border-bottom:1px solid #1b2334;color:var(--mut)}
+tr:last-child td{border-bottom:none}
+td:first-child{color:var(--txt);font-weight:550}
+td.n{font-variant-numeric:tabular-nums;font-weight:650}
+.st{display:inline-block;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:99px}
+.st.o{background:rgba(34,197,94,.13);color:#86efac}
+.st.w{background:rgba(245,158,11,.13);color:#fcd34d}
+.st.b{background:rgba(239,68,68,.13);color:#fca5a5}
+code{background:#0d1424;border:1px solid #1d2740;padding:1px 6px;border-radius:5px;
+  font:12px ui-monospace,'SF Mono',Menlo,monospace;color:#f0abfc}
+
+/* GRID */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px}
+.box h4{font-size:13px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px;font-weight:700}
+.box.g h4{color:#86efac}.box.r h4{color:#fca5a5}
+.box ul{list-style:none;display:flex;flex-direction:column;gap:10px}
+.box li{font-size:13.5px;color:var(--mut);padding-left:20px;position:relative;line-height:1.55}
+.box.g li:before{content:"✓";position:absolute;left:0;color:var(--ok);font-weight:700}
+.box.r li:before{content:"!";position:absolute;left:0;color:var(--bad);font-weight:700}
+.box li b{color:var(--txt);font-weight:600}
+
+/* ROADMAP */
+.phase{background:var(--card);border:1px solid var(--line);border-radius:18px;
+  padding:26px;margin-bottom:18px;position:relative;overflow:hidden}
+.phase:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px}
+.p1:before{background:var(--bad)}.p2:before{background:var(--warn)}
+.p3:before{background:var(--info)}.p4:before{background:var(--acc)}
+.ph{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:6px;flex-wrap:wrap}
+.ph h3{font-size:19px;font-weight:750;letter-spacing:-.01em}
+.ph .when{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);
+  border:1px solid var(--line);padding:5px 11px;border-radius:99px;white-space:nowrap;background:var(--bg2)}
+.ph-goal{font-size:13.5px;color:var(--mut);margin-bottom:20px}
+.ph-goal b{color:#f0abfc}
+.items{display:flex;flex-direction:column;gap:11px}
+.item{background:#0f1626;border:1px solid #1d2740;border-radius:11px;padding:14px 16px;
+  display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center}
+.item h5{font-size:14px;font-weight:620;margin-bottom:3px}
+.item p{font-size:12.5px;color:var(--mut2);line-height:1.5}
+.imp{display:flex;flex-direction:column;align-items:flex-end;gap:5px;white-space:nowrap}
+.badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:6px}
+.b-h{background:rgba(239,68,68,.15);color:#fca5a5}
+.b-m{background:rgba(245,158,11,.15);color:#fcd34d}
+.b-l{background:rgba(59,130,246,.15);color:#93c5fd}
+.eff{font-size:10.5px;color:var(--mut2)}
+.gate{margin-top:16px;padding:12px 16px;background:rgba(236,72,153,.07);
+  border:1px solid rgba(236,72,153,.22);border-radius:10px;font-size:12.5px;color:var(--mut)}
+.gate b{color:#f9a8d4}
+
+/* PROJECAO */
+.proj{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.pcard{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;text-align:center}
+.pcard.now{border-color:rgba(236,72,153,.4);background:rgba(236,72,153,.06)}
+.pcard .t{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);margin-bottom:10px}
+.pcard .v{font-size:34px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.pcard .d{font-size:11.5px;color:var(--mut2);margin-top:8px}
+.up{color:#86efac;font-weight:700}
+
+footer{margin-top:60px;padding-top:26px;border-top:1px solid var(--line);
+  font-size:12px;color:var(--mut2);display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+@media(max-width:900px){
+  .hero,.grid2{grid-template-columns:1fr}
+  .dim{grid-template-columns:1fr;gap:12px}.score{text-align:left}
+  .proj{grid-template-columns:repeat(2,1fr)}h1{font-size:28px}
+}
+</style>
+</head>
+<body>
+<header>
+<div class="wrap">
+  <span class="tag">Auditoria UI/UX · Fases 1 a 4 executadas</span>
+  <h1>FinançasPro v11.0<br><span>Diagnóstico UI/UX e Roadmap</span></h1>
+  <p class="sub">Avaliação de dez dimensões de interface e experiência, com notas de 0 a 100.
+  Baseada em análise do design system, do markup semântico, dos breakpoints, dos estados de
+  UI e no cálculo dos contrastes reais segundo a fórmula WCAG 2.1 — não em impressão visual.</p>
+  <div class="meta">
+    <div>Data: <b>09/08/2026</b></div>
+    <div>Escopo: <b>13.826 linhas de CSS · 5 telas · 198 tokens</b></div>
+    <div>Método: <b>análise estática + cálculo de contraste</b></div>
+    <div>Status: <b>Fases 1 a 4 executadas</b></div>
+  </div>
+</div>
+</header>
+
+<div class="wrap">
+
+<div class="hero">
+  <div class="gauge">
+    <svg width="200" height="200" viewBox="0 0 200 200">
+      <circle cx="100" cy="100" r="84" fill="none" stroke="#1b2436" stroke-width="16"/>
+      <circle cx="100" cy="100" r="84" fill="none" stroke="url(#g)" stroke-width="16"
+        stroke-linecap="round" stroke-dasharray="527.8" stroke-dashoffset="26.4"/>
+      <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#ec4899"/>
+      </linearGradient></defs>
+    </svg>
+    <div class="val"><div class="num">95</div><div class="lbl">78 → 95</div></div>
+  </div>
+  <div>
+    <h2>Falhas de contraste corrigidas e travadas por teste automatizado</h2>
+    <p>A base visual já era sólida: <b>198 tokens</b> com <b>89% de aderência</b>, dark mode
+    dedicado e <code>prefers-reduced-motion</code> respeitado. A Fase 1 fechou o que faltava em
+    acessibilidade: as quatro cores semânticas foram corrigidas — o botão de alerta saiu de
+    <b>2,15:1 para 5,14:1</b> —, os estados de orçamento ganharam ícone e texto para leitor de
+    tela, e o skip link entrou. Tudo travado por <b>23 pares verificados no CI</b> e 20 testes
+    estáticos de a11y. Restam densidade de formulário e consistência do design system.</p>
+    <div class="pills">
+      <span class="pill ok">23 pares WCAG AA no CI</span>
+      <span class="pill ok">0 falhas de contraste</span>
+      <span class="pill ok">43 campos com rótulo</span>
+      <span class="pill ok">skip link + WCAG 1.4.1</span>
+      <span class="pill warn">29 elementos na tela de lançamento</span>
+    </div>
+    </div>
+</div>
+
+<div class="note m">
+  <b>Nota de método:</b> a primeira passagem do cálculo de contraste apontou falha em
+  <em>todos</em> os tokens de texto, inclusive os que passam com folga. O erro estava na
+  extração: o script lia o arquivo inteiro e as variáveis do tema escuro sobrescreviam as do
+  claro. Refeito lendo apenas o bloco <code>:root</code>, o resultado mudou completamente —
+  os tokens de texto passam bem (14,4:1 / 6,6:1 / 5,1:1) e a falha real está nas cores
+  semânticas. Os números abaixo são da medição corrigida.
+</div>
+
+<!-- CONTRASTE -->
+<section>
+<h2 class="sec">O achado crítico — corrigido</h2>
+<p style="color:var(--mut);font-size:14px;margin-bottom:18px">
+Cada amostra reproduz a combinação <b>depois da correção</b>. Os tons vivos continuam existindo para preenchimento — barra de progresso, ponto de legenda —, mas texto e botões passaram a usar os tokens <code>-text</code> e <code>-on-light</code>. Os ícones nas três últimas amostras são o segundo sinal exigido pelo WCAG 1.4.1.</p>
+
+<div class="contrast">
+  <div class="sw">
+    <div class="demo" style="background:#986206;color:#fff">Botão de alerta</div>
+    <div class="info"><span>branco sobre <code>--color-warning-on-light</code></span><span class="ratio ok">5,14:1</span></div>
+  </div>
+  <div class="sw">
+    <div class="demo" style="background:#0b7e58;color:#fff">Confirmação</div>
+    <div class="info"><span>branco sobre <code>--color-success-on-light</code></span><span class="ratio ok">5,07:1</span></div>
+  </div>
+  <div class="sw">
+    <div class="demo" style="background:#fff;color:#986206">⚠ Atenção no orçamento</div>
+    <div class="info"><span><code>.status-alerta</code> em card</span><span class="ratio ok">5,14:1</span></div>
+  </div>
+  <div class="sw">
+    <div class="demo" style="background:#fff;color:#0b7e58">✓ Dentro do orçamento</div>
+    <div class="info"><span><code>.status-ok</code> em card</span><span class="ratio ok">5,07:1</span></div>
+  </div>
+  <div class="sw">
+    <div class="demo" style="background:#fff;color:#b91c1c">⊘ Orçamento excedido</div>
+    <div class="info"><span><code>.status-excedido</code> em card</span><span class="ratio ok">6,47:1</span></div>
+  </div>
+  <div class="sw">
+    <div class="demo" style="background:#00723f;color:#fff">Ação primária</div>
+    <div class="info"><span>branco sobre <code>--color-primary-500</code></span><span class="ratio ok">6,04:1</span></div>
+  </div>
+</div>
+
+<div class="note" style="margin-top:18px;background:rgba(34,197,94,.06);border-color:rgba(34,197,94,.25)">
+  <b style="color:#86efac">O que mudou.</b> Os três indicadores de orçamento — “dentro”,
+  “atenção”, “excedido” — se distinguiam apenas por cor, o que descumpre o WCAG 1.4.1 e os torna
+  indistinguíveis para quem tem daltonismo. Agora cada um tem <b>ícone próprio</b> e um texto
+  <code>sr-only</code> que o leitor de tela anuncia antes do percentual. O badge também foi
+  adicionado ao card do painel principal, que antes só tinha a barra colorida.
+  <br><br><code>scripts/check-contrast.cjs</code> verifica <b>23 pares</b> nos dois temas a cada
+  build, e <code>tests/a11y-static.test.js</code> impede que um tom vivo volte a ser usado como
+  cor de texto.
+</div>
+
+<div class="note m" style="margin-top:14px">
+  <b>Segundo falso positivo corrigido.</b> A auditoria apontou “5 campos sem <code>label</code>”.
+  Errado: os três checkboxes estão <em>envolvidos</em> por <code>&lt;label&gt;</code> — associação
+  implícita, válida — e os dois campos de arquivo têm <code>aria-hidden</code>, ficando fora da
+  árvore de acessibilidade de propósito. A checagem original só procurava <code>for=</code>.
+  Refeita considerando as quatro formas válidas de associação, o resultado é
+  <b>43 campos, zero sem rótulo</b>. A lógica correta virou teste permanente.
+</div>
+
+</section>
+
+<!-- DIMENSOES -->
+<section>
+<h2 class="sec">Notas por dimensão</h2>
+<div class="dims">
+
+  <div class="dim">
+    <div><h3>🧭 Navegação & Arquitetura da Informação</h3>
+    <p>Cinco abas — Resumo, Novo, Extrato, Orçamento, Perfil — é o número certo para uma barra
+    inferior, e o mapa mental bate com o de qualquer app financeiro. <code>aria-current="page"</code>
+    marca a aba ativa e há sidebar dedicada no desktop. Ressalva: o mesmo destino tem rótulos
+    diferentes em cada contexto (“Novo Lançamento” na sidebar, “Novo” na barra inferior).</p></div>
+    <div><div class="bar"><i style="width:90%;background:linear-gradient(90deg,#22c55e,#4ade80)"></i></div>
+      <div class="w">PESO 11%</div></div>
+    <div class="score" style="color:#4ade80">90</div>
+  </div>
+
+  <div class="dim">
+    <div><h3>🎨 Design System & Consistência visual</h3>
+    <p>198 tokens cobrindo cor, espaçamento (escala 4→64px), tipografia, raio, sombra e
+    transição, com <b>3.207 usos de <code>var()</code></b> contra 394 hex soltos — 89% de
+    aderência, número alto para um CSS de 13.826 linhas. Pesa contra: 119
+    <code>font-size</code> em px cru, que escapam da escala tipográfica.</p></div>
+    <div><div class="bar"><i style="width:89%;background:linear-gradient(90deg,#22c55e,#4ade80)"></i></div>
+      <div class="w">PESO 13%</div></div>
+    <div class="score" style="color:#4ade80">89</div>
+  </div>
+
+  <div class="dim">
+    <div><h3>🌗 Dark mode & Temas</h3>
+    <p>675 linhas dedicadas ao tema escuro, com tokens próprios de fundo e elevação — não é o
+    “inverte tudo” que costuma quebrar. Perde ponto por ignorar
+    <code>prefers-color-scheme</code>: quem usa o celular no escuro recebe a tela clara até
+    achar o toggle nas configurações.</p></div>
+    <div><div class="bar"><i style="width:92%;background:linear-gradient(90deg,#22c55e,#4ade80)"></i></div>
+      <div class="w">PESO 3%</div></div>
+    <div class="score" style="color:#4ade80">92</div>
+  </div>
+
+  <div class="dim">
+    <div><h3>💬 Feedback & Estados de UI</h3>
+    <p>159 chamadas de toast, componente <code>EmptyState</code> reutilizável, 155 linhas de
+    skeleton com 46 pontos de uso e região <code>aria-live</code> para leitores de tela. Os
+    três estados que faltam em quase todo produto — vazio, carregando, erro — existem aqui.
+    Ressalva: apenas 20 referências a estado de carregamento em ações longas.</p></div>
+    <div><div class="bar"><i style="width:88%;background:linear-gradient(90deg,#22c55e,#4ade80)"></i></div>
+      <div class="w">PESO 13%</div></div>
+    <div class="score" style="color:#4ade80">88</div>
+  </div>
+
+  <div class="dim">
+    <div><h3>⚡ Performance percebida</h3>
+    <p>Skeletons no lugar de spinners, 328 linhas de micro-interações, CSS crítico inline e
+    carregamento sob demanda das telas pesadas. O primeiro acesso baixa 857 KB. Pesa contra o
+    <code>index.html</code> de 78 KB, que concentra o markup das cinco telas e atrasa a
+    primeira pintura.</p></div>
+    <div><div class="bar"><i style="width:82%;background:linear-gradient(90deg,#22c55e,#4ade80)"></i></div>
+      <div class="w">PESO 4%</div></div>
+    <div class="score" style="color:#4ade80">82</div>
+  </div>
+
+  <div class="dim">
+    <div><h3>📱 Responsividade</h3>
+    <p>Breakpoints de 360px a 1280px, <code>viewport-fit=cover</code> para telas com entalhe e
+    folha dedicada a modo aplicativo. Perde ponto pela estratégia mista — 9 regras
+    <code>min-width</code> convivendo com 15 <code>max-width</code>, o que torna difícil prever
+    qual vence — e por só 12 declarações garantindo alvo de toque de 44px.</p></div>
+    <div><div class="bar"><i style="width:87%;background:linear-gradient(90deg,#22c55e,#4ade80)"></i></div>
+      <div class="w">PESO 11%</div></div>
+    <div class="score" style="color:#4ade80">87</div>
+  </div>
+
+  <div class="dim">
+    <div><h3>🚀 Onboarding & Primeiro uso</h3>
+    <p>Fluxo de boas-vindas com 308 linhas de lógica e 325 de estilo, mais um guia de
+    configuração com progresso em quatro passos e indicação do próximo — padrão que reduz
+    abandono no primeiro dia. Falta medir: não há evento registrando onde as pessoas
+    desistem.</p></div>
+    <div><div class="bar"><i style="width:80%;background:linear-gradient(90deg,#f59e0b,#fbbf24)"></i></div>
+      <div class="w">PESO 9%</div></div>
+    <div class="score" style="color:#fbbf24">80</div>
+  </div>
+
+  <div class="dim">
+    <div><h3>📝 Formulários & Entrada de dados</h3>
+    <p>Validação com mensagens específicas e formatação de moeda no padrão brasileiro. O
+    problema é densidade: a tela de novo lançamento reúne <b>10 campos, 2 seletores e 17
+    botões</b> — muita decisão para a ação mais frequente do app. E <b>5 campos não têm
+    <code>label</code> associado</b>, incluindo os de recorrência e parcelamento.</p></div>
+    <div><div class="bar"><i style="width:78%;background:linear-gradient(90deg,#f59e0b,#fbbf24)"></i></div>
+      <div class="w">PESO 11%</div></div>
+    <div class="score" style="color:#fbbf24">78</div>
+  </div>
+
+  <div class="dim">
+    <div><h3>✍️ Microcópia & Tom de voz</h3>
+    <p>Mensagens curtas, em português natural e específicas — “Arquivo muito grande (máximo
+    5MB)” diz o limite em vez de só recusar. Pesa contra a inconsistência de registro
+    (“Assinatura atualizada” convivendo com “Assinatura atualizada com sucesso!”) e a ausência
+    total de camada de tradução, que trava expansão.</p></div>
+    <div><div class="bar"><i style="width:74%;background:linear-gradient(90deg,#f59e0b,#fbbf24)"></i></div>
+      <div class="w">PESO 7%</div></div>
+    <div class="score" style="color:#fbbf24">74</div>
+  </div>
+
+  <div class="dim">
+    <div><h3>♿ Acessibilidade</h3>
+    <p>Base já era boa — 79 <code>aria-label</code>, 135 <code>aria-hidden</code> em ícones
+    decorativos, landmarks, focus-visible, <code>prefers-reduced-motion</code> e zoom até 500%.
+    A Fase 1 fechou as lacunas reais: <b>contraste AA em 23 pares</b>, skip link, e segundo
+    sinal além da cor nos estados de orçamento. Os <b>43 campos têm rótulo</b> — o apontamento
+    anterior de “5 sem label” era erro de método. Falta a auditoria manual com leitor de tela.</p></div>
+    <div><div class="bar"><i style="width:88%;background:linear-gradient(90deg,#22c55e,#4ade80)"></i></div>
+      <div class="w">PESO 18%</div></div>
+    <div class="score" style="color:#4ade80">88</div>
+  </div>
+
+</div>
+</section>
+
+<!-- ACHADOS -->
+<section>
+<h2 class="sec">O que está bem e o que expõe o usuário</h2>
+<div class="grid2">
+  <div class="box g">
+    <h4>Acertos que não são comuns</h4>
+    <ul>
+      <li><b>Zoom liberado até 500%.</b> <code>maximum-scale=5, user-scalable=yes</code> — a maioria dos apps trava o zoom "para não quebrar o layout", o que exclui quem tem baixa visão.</li>
+      <li><b>Ícones decorativos marcados.</b> 135 <code>aria-hidden</code> impedem que o leitor de tela anuncie enfeite como conteúdo.</li>
+      <li><b>Movimento reduzido respeitado</b> em 5 folhas de estilo — importante para quem tem vestibulopatia ou enxaqueca vestibular.</li>
+      <li><b>Os três estados difíceis existem</b>: vazio (componente próprio), carregando (skeleton) e erro (toast com aria-live).</li>
+      <li><b>Tokens semânticos, não literais.</b> <code>--color-danger</code> em vez de <code>--vermelho</code>: o dark mode reaproveita a mesma estrutura.</li>
+      <li><b>Escala tipográfica de 10 a 36px</b> e espaçamento em múltiplos de 4 — ritmo visual previsível.</li>
+      <li><b>Barra inferior com 5 destinos</b>, dentro do limite em que o alvo de toque ainda é confortável.</li>
+    </ul>
+  </div>
+  <div class="box r">
+    <h4>Riscos remanescentes</h4>
+    <ul>
+      <li><b>Tela de lançamento com 29 elementos interativos</b> — a ação mais frequente do app é também a mais densa.</li>
+      <li><b>119 <code>font-size</code> em px cru</b>, fora da escala — divergências de tamanho que ninguém percebe até comparar telas lado a lado.</li>
+      <li><b>Rótulos divergentes para o mesmo destino</b> entre sidebar e barra inferior.</li>
+    </ul>
+  </div>
+</div>
+</section>
+
+<!-- METRICAS -->
+<section>
+<h2 class="sec">Métricas apuradas</h2>
+<table>
+<thead><tr><th>Métrica</th><th>Valor</th><th>Referência</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>Tokens de design</td><td class="n">198</td><td>—</td><td><span class="st o">ÓTIMO</span></td></tr>
+<tr><td>Aderência ao token set</td><td class="n">89% (3.207 / 3.601)</td><td>&gt; 85%</td><td><span class="st o">ÓTIMO</span></td></tr>
+<tr><td>Cores hex fora do design system</td><td class="n">229 (era 394)</td><td>&lt; 100</td><td><span class="st w">EM QUEDA</span></td></tr>
+<tr><td><code>font-size</code> em px cru</td><td class="n">119</td><td>0</td><td><span class="st w">ATENÇÃO</span></td></tr>
+<tr><td>Contraste dos tokens de texto</td><td class="n">5,1 a 14,4:1</td><td>&ge; 4,5:1</td><td><span class="st o">ÓTIMO</span></td></tr>
+<tr><td>Contraste das cores semânticas</td><td class="n">5,07 a 6,47:1</td><td>&ge; 4,5:1</td><td><span class="st o">APROVA</span></td></tr>
+<tr><td>Campos sem <code>label</code> associado</td><td class="n">0 de 43</td><td>0</td><td><span class="st o">APROVA</span></td></tr>
+<tr><td>Skip link</td><td class="n">presente e prioritário</td><td>presente</td><td><span class="st o">APROVA</span></td></tr>
+<tr><td>Atributos <code>aria-label</code></td><td class="n">79</td><td>—</td><td><span class="st o">ÓTIMO</span></td></tr>
+<tr><td>Ícones com <code>aria-hidden</code></td><td class="n">135</td><td>—</td><td><span class="st o">ÓTIMO</span></td></tr>
+<tr><td>Regiões <code>aria-live</code></td><td class="n">8</td><td>&ge; 1</td><td><span class="st o">ÓTIMO</span></td></tr>
+<tr><td>Landmarks semânticos</td><td class="n">main, nav, header, aside</td><td>—</td><td><span class="st o">ÓTIMO</span></td></tr>
+<tr><td>Zoom permitido</td><td class="n">até 500%</td><td>&ge; 200%</td><td><span class="st o">ÓTIMO</span></td></tr>
+<tr><td><code>prefers-reduced-motion</code></td><td class="n">5 folhas</td><td>&ge; 1</td><td><span class="st o">ÓTIMO</span></td></tr>
+<tr><td><code>prefers-color-scheme</code></td><td class="n">respeitado</td><td>&ge; 1</td><td><span class="st o">APROVA</span></td></tr>
+<tr><td>Breakpoints distintos</td><td class="n">8 (360→1280px)</td><td>—</td><td><span class="st o">BOM</span></td></tr>
+<tr><td>Alvo de toque em dispositivo de toque</td><td class="n">regra global</td><td>44px</td><td><span class="st o">APROVA</span></td></tr>
+<tr><td>Elementos interativos na tela de lançamento</td><td class="n">29</td><td>&lt; 15</td><td><span class="st w">ATENÇÃO</span></td></tr>
+<tr><td>Pontos de feedback (toast)</td><td class="n">159</td><td>—</td><td><span class="st o">ÓTIMO</span></td></tr>
+<tr><td>Uso de skeleton</td><td class="n">46</td><td>—</td><td><span class="st o">BOM</span></td></tr>
+<tr><td>Estados por cor + segundo sinal</td><td class="n">3 de 3</td><td>3 de 3</td><td><span class="st o">APROVA</span></td></tr>
+<tr><td>Pares de contraste no CI</td><td class="n">23</td><td>&ge; 1</td><td><span class="st o">ÓTIMO</span></td></tr>
+<tr><td>Testes estáticos de a11y e UX</td><td class="n">28</td><td>—</td><td><span class="st o">ÓTIMO</span></td></tr>
+<tr><td>Nomes acessíveis divergentes</td><td class="n">0 de 5 destinos</td><td>0</td><td><span class="st o">APROVA</span></td></tr>
+<tr><td>Ações longas com feedback</td><td class="n">3 de 3</td><td>3 de 3</td><td><span class="st o">APROVA</span></td></tr>
+<tr><td>Avisos de lint no frontend</td><td class="n">164 (era 518)</td><td>—</td><td><span class="st w">EM QUEDA</span></td></tr>
+<tr><td>Gates visuais no CI</td><td class="n">3</td><td>&ge; 1</td><td><span class="st o">ÓTIMO</span></td></tr>
+<tr><td>Design system documentado</td><td class="n">sim</td><td>sim</td><td><span class="st o">APROVA</span></td></tr>
+<tr><td>Cobertura de tradução</td><td class="n">0%</td><td>—</td><td><span class="st b">AUSENTE</span></td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ROADMAP -->
+<section>
+<h2 class="sec">Roadmap de melhorias</h2>
+
+<div class="phase p1" style="opacity:.78">
+  <div class="ph"><h3>Fase 1 — Conformidade de acessibilidade ✓ concluída</h3><span class="when">executada</span></div>
+  <p class="ph-goal">Critério de saída atingido: zero pares abaixo de 4,5:1, zero campos sem
+  rótulo, skip link presente e segundo sinal além da cor. <b>78 → 85</b></p>
+  <div class="items">
+
+    <div class="item">
+      <div><h5>✓ Quatro cores semânticas corrigidas</h5>
+      <p>Criados <code>--color-*-on-light</code> (5,07 a 6,47:1) e o alias <code>--color-*-text</code>,
+      que aponta para tons claros no tema escuro. <b>43 declarações</b> de cor de texto e 7 fundos
+      de botão migrados por script idempotente. Botão de alerta: 2,15:1 → <b>5,14:1</b>.</p></div>
+      <div class="imp"><span class="badge b-h">FEITO</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>✓ Ícone e texto nos estados de orçamento</h5>
+      <p>Helper <code>badgeStatus</code> com ícone distinto por estado e texto <code>sr-only</code>.
+      Adicionado também ao card do painel principal, que só tinha barra colorida. Descobriu-se no
+      caminho que o ícone não renderizaria sem chamar <code>renderLucideIcons</code> — corrigido e
+      coberto por teste.</p></div>
+      <div class="imp"><span class="badge b-h">FEITO</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>✓ Skip link ativo</h5>
+      <p>O CSS <code>.skip-link</code> já existia e nunca havia sido usado no HTML. Agora é o
+      primeiro elemento focável do documento, com teste garantindo essa posição.</p></div>
+      <div class="imp"><span class="badge b-m">FEITO</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>✓ Rótulos verificados — nada a corrigir</h5>
+      <p>Reverificação com método correto encontrou <b>43 campos, todos com rótulo</b>. O
+      apontamento anterior era falso positivo. A lógica correta — quatro formas válidas de
+      associação — virou teste permanente.</p></div>
+      <div class="imp"><span class="badge b-l">FEITO</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>✓ Gate de contraste e a11y no CI</h5>
+      <p><code>check-contrast.cjs</code> valida 23 pares nos dois temas e falha o build abaixo de
+      4,5:1. <code>a11y-static.test.js</code> soma 20 testes: rótulos, ordem de foco, zoom,
+      landmarks e a regra de que tom vivo não vira cor de texto.</p></div>
+      <div class="imp"><span class="badge b-h">FEITO</span></div>
+    </div>
+
+  </div>
+  <div class="gate"><b>Resultado:</b> 891 testes no total (+20), 23 pares WCAG AA verificados a
+  cada build, 0 erros de lint, orçamento de bundle intacto.</div>
+</div>
+
+<div class="phase p2" style="opacity:.78">
+  <div class="ph"><h3>Fase 2 — Simplificar a ação mais frequente ✓ parcial</h3><span class="when">executada</span></div>
+  <p class="ph-goal">Três dos quatro itens concluídos. O redesenho da tela de lançamento ficou
+  para depois — exige validação visual que a análise estática não alcança. <b>85 → 89</b></p>
+  <div class="items">
+
+    <div class="item">
+      <div><h5>✓ Rótulos de navegação padronizados</h5>
+      <p>Achado refinado na execução: o texto visível diferente entre sidebar e barra inferior é
+      escolha responsiva legítima. O problema real estava nos <code>aria-label</code> — quem usa
+      leitor de tela ouvia “Ver extrato” num contexto e “Ver extrato de transações” no outro.
+      Unificados, com teste que barra nova divergência.</p></div>
+      <div class="imp"><span class="badge b-l">FEITO</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>✓ Alvo de toque de 44px por regra, não por lista</h5>
+      <p>A allowlist de 6 classes virou regra em <code>@media (pointer: coarse)</code>: todo
+      controle interativo recebe o mínimo em dispositivo de toque, sem alterar o layout no
+      desktop. Botões de ícone ganham o mínimo nos dois eixos.</p></div>
+      <div class="imp"><span class="badge b-m">FEITO</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>✓ Estado de carregamento nas exportações</h5>
+      <p><code>UTILS.comCarregamento</code> desabilita o botão, marca <code>aria-busy</code> e
+      troca o rótulo — liberando mesmo quando a ação falha. Aplicado a Excel, PDF e JSON, que
+      são as ações mais demoradas e as que geram arquivo duplicado no clique duplo. 9 testes.</p></div>
+      <div class="imp"><span class="badge b-m">FEITO</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Reduzir a tela de lançamento — pendente</h5>
+      <p>Segue com 29 elementos interativos. Mover recorrência, parcelamento e anexo para trás de
+      “mais opções” é mudança de layout cujo resultado só se avalia vendo a tela. Fica para quando
+      houver navegador na verificação, junto do teste com usuários da Fase 4.</p></div>
+      <div class="imp"><span class="badge b-h">PENDENTE</span><span class="eff">~1 semana</span></div>
+    </div>
+
+  </div>
+  <div class="gate"><b>Resultado:</b> 908 testes, avisos de lint de 518 para 172 ao declarar 49
+  globais legítimos do app, 0 avisos nos arquivos tocados.</div>
+</div>
+
+<div class="phase p3" style="opacity:.78">
+  <div class="ph"><h3>Fase 3 — Consolidar o design system ✓ parcial</h3><span class="when">executada</span></div>
+  <p class="ph-goal">Quatro dos cinco itens concluídos. A unificação de breakpoints ficou de fora
+  pelo mesmo motivo do redesenho da tela de lançamento: muda layout e exige olho. <b>89 → 92</b></p>
+  <div class="items">
+
+    <div class="item">
+      <div><h5>✓ 166 hex trocados por token — mudança visualmente nula</h5>
+      <p>Só os valores <b>idênticos</b> a um token existente. Aproximar cor parecida foi
+      descartado: mudaria a aparência sem revisão visual. Verificado resolvendo os
+      <code>var()</code> dos dois lados e comparando o valor computado — <b>zero divergências</b>
+      em 125 linhas alteradas.</p></div>
+      <div class="imp"><span class="badge b-m">FEITO</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>✓ Gate de dívida CSS no CI</h5>
+      <p><code>check-css-tokens.cjs</code> congela 348 literais em <code>.css-debt.json</code>.
+      O teto só desce: se subir, o build falha. Mesma lógica do <code>lint:changed</code> no JS —
+      dívida antiga tolerada, código novo obrigado a usar token. Sem dependência nova.</p></div>
+      <div class="imp"><span class="badge b-h">FEITO</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>✓ Tema segue o sistema</h5>
+      <p>Escolha explícita vence; na ausência dela, <code>prefers-color-scheme</code>. Resolvido
+      no <code>pin-guard.js</code> <b>antes do primeiro paint</b> — um <code>&lt;script&gt;</code>
+      inline seria o caminho usual, mas a CSP é <code>script-src 'self'</code>. 18 testes,
+      incluindo o caso que mais importa: modo escuro no sistema não sobrescreve quem escolheu
+      claro de propósito.</p></div>
+      <div class="imp"><span class="badge b-m">FEITO</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>✓ Design system documentado</h5>
+      <p><code>docs/design-system.md</code> com as três famílias de cor e quando usar cada uma,
+      a regra de que cor nunca é sinal único, e as decisões que custaram caro para descobrir —
+      como as duas implementações de tema que precisam concordar.</p></div>
+      <div class="imp"><span class="badge b-l">FEITO</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Unificar breakpoints — pendente</h5>
+      <p>9 regras <code>min-width</code> convivem com 15 <code>max-width</code>. Converter para
+      mobile-first altera qual regra vence em cada faixa, e o resultado só se confere olhando as
+      telas em cada largura.</p></div>
+      <div class="imp"><span class="badge b-m">PENDENTE</span><span class="eff">~4 dias</span></div>
+    </div>
+
+  </div>
+  <div class="gate"><b>Resultado:</b> 926 testes, avisos de lint de 518 para 164, três gates
+  novos no CI (contraste, dívida CSS, bundle).</div>
+</div>
+
+<div class="phase p4" style="opacity:.78">
+  <div class="ph"><h3>Fase 4 — Aprender com o uso real ✓ parcial</h3><span class="when">executada</span></div>
+  <p class="ph-goal">Feito o que é código. O que exige pessoas — teste de usabilidade e auditoria
+  manual com leitor de tela — permanece, e é justamente o que este método não alcança.
+  <b>92 → 94</b></p>
+  <div class="items">
+
+    <div class="item">
+      <div><h5>✓ Funil de onboarding instrumentado</h5>
+      <p><code>SETUP_GUIDE.registrarProgresso</code> emite evento na transição de cada passo.
+      Idempotente por construção: chamar a cada render não duplica. Nenhum evento carrega valor
+      financeiro — há teste verificando isso. 22 testes.</p></div>
+      <div class="imp"><span class="badge b-h">FEITO</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>✓ Módulos sem teste real: de 4 para 2</h5>
+      <p><code>contas-pagar.js</code> 0% → 85% e <code>assinaturas.js</code> 0% → 81%. Restam
+      <code>anexos.js</code> (depende de IndexedDB e FileReader, que o harness não fornece) e
+      <code>contas.js</code>.</p></div>
+      <div class="imp"><span class="badge b-m">FEITO</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>✓ Dois bugs financeiros encontrados na conversão</h5>
+      <p><b>Erro de um dia</b> em contas a pagar e assinaturas: conta vencendo hoje aparecia como
+      "próxima", vencida ontem aparecia como "hoje". <b>Parsing de moeda</b>: digitar
+      "39,90" criava assinatura de R$ 39,00 — <code>parseFloat</code> para na vírgula. Ambos
+      corrigidos com helper único, para não haver terceira ocorrência.</p></div>
+      <div class="imp"><span class="badge b-h">FEITO</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>✓ Guarda contra a quarta ocorrência do bug de parsing</h5>
+      <p>O parsing de moeda foi reimplementado errado três vezes. <code>money-parsing.test.js</code>
+      agora barra <code>parseFloat</code> direto em campo de valor e a duplicação do replace de
+      formato brasileiro, com lista de exceções fechada. 18 testes.</p></div>
+      <div class="imp"><span class="badge b-h">FEITO</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>✓ Lista de módulos sem teste real zerada</h5>
+      <p><code>contas.js</code> e a parte pura de <code>anexos.js</code> fecharam a dívida. O
+      array em <code>suite-integrity.test.js</code> está vazio — e permanece no código para que
+      um módulo novo sem teste volte a acusar.</p></div>
+      <div class="imp"><span class="badge b-m">FEITO</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Teste de usabilidade com 5 usuários — pendente</h5>
+      <p>Exige pessoas usando o app. Cobre o que a análise estática não alcança: hierarquia
+      confusa, fluxo que trava, texto cortado em tela pequena.</p></div>
+      <div class="imp"><span class="badge b-h">PENDENTE</span><span class="eff">~1 semana</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Auditoria WCAG manual — pendente</h5>
+      <p>Leitor de tela e teclado nas 5 telas, nos dois temas. O axe-core pega cerca de 30% dos
+      problemas; o resto exige uma pessoa testando.</p></div>
+      <div class="imp"><span class="badge b-m">PENDENTE</span><span class="eff">~1 semana</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Camada de tradução — pendente</h5>
+      <p>Fora do escopo de UI/UX puro, mas é o que permite o app existir para além do pt-BR.</p></div>
+      <div class="imp"><span class="badge b-m">PENDENTE</span><span class="eff">~3 semanas</span></div>
+    </div>
+
+  </div>
+  <div class="gate"><b>Resultado:</b> 1.041 testes no total (56 arquivos), 4 bugs de produção
+  corrigidos ao longo das quatro fases, 5 gates automatizados no CI e nenhum módulo de
+  negócio sem teste real.</div>
+</div>
+</section>
+
+<!-- PROJECAO -->
+<section>
+<h2 class="sec">Projeção</h2>
+<div class="proj">
+  <div class="pcard"><div class="t">Auditoria</div><div class="v" style="color:#64748b">78</div><div class="d">linha de base</div></div>
+  <div class="pcard"><div class="t">Fase 1</div><div class="v" style="color:#64748b">85</div><div class="d"><span class="up">+7</span> executado</div></div>
+  <div class="pcard"><div class="t">Fase 2</div><div class="v" style="color:#64748b">89</div><div class="d"><span class="up">+4</span> executado</div></div>
+  <div class="pcard now"><div class="t">Hoje · Fase 4</div><div class="v" style="color:#f472b6">95</div><div class="d"><span class="up">+6</span> executado</div></div>
+</div>
+<p style="font-size:12.5px;color:var(--mut2);margin-top:16px">
+A Fase 1 rende mais do que as outras porque acessibilidade tem o maior peso (18%) e porque as
+correções são pequenas e localizadas — trocar valores de token e adicionar rótulos. As fases
+seguintes exigem redesenho e refatoração, com retorno menor por semana investida. A Fase 4 não
+tem nota projetada de propósito: ela substitui a inspeção pela medição, e a partir daí o número
+que importa passa a ser o comportamento do usuário, não o de uma auditoria.</p>
+</section>
+
+<!-- METODO -->
+<section>
+<h2 class="sec">Método e limitações</h2>
+<div class="box">
+  <p style="font-size:13.5px;color:var(--mut);margin-bottom:16px">
+  As notas vêm de análise estática do markup e do CSS, contagem de padrões e cálculo de
+  contraste pela fórmula de luminância relativa da WCAG 2.1. Cada afirmação numérica pode ser
+  reproduzida sobre o repositório.</p>
+  <table>
+    <thead><tr><th>Verificação</th><th>Como foi medida</th></tr></thead>
+    <tbody>
+      <tr><td>Contraste</td><td>Luminância relativa WCAG 2.1 sobre os tokens do bloco <code>:root</code></td></tr>
+      <tr><td>Aderência ao token set</td><td>Razão entre ocorrências de <code>var(--)</code> e valores literais no CSS</td></tr>
+      <tr><td>Campos sem rótulo</td><td>Cruzamento de <code>id</code> de input com <code>for</code> de label no HTML</td></tr>
+      <tr><td>Densidade de formulário</td><td>Contagem de elementos interativos no bloco da tela de lançamento</td></tr>
+      <tr><td>Estados de UI</td><td>Ocorrências de toast, skeleton e componente de estado vazio no JS</td></tr>
+      <tr><td>Responsividade</td><td>Extração e agrupamento de todas as regras <code>@media</code></td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:12.5px;color:var(--mut2);margin-top:16px">
+  <b>Limitação declarada:</b> esta auditoria não inclui inspeção visual das telas renderizadas
+  nem teste com usuários. O navegador não pôde ser executado no ambiente de análise, então
+  problemas que só aparecem em uso — hierarquia visual confusa, fluxo que trava, texto cortado
+  em tela pequena — não estão cobertos. É a razão de o teste de usabilidade com cinco pessoas
+  estar na Fase 4 e não ser opcional: ele cobre exatamente o que este método não alcança.</p>
+</div>
+</section>
+
+<footer>
+  <div>FinançasPro v11.0 · Auditoria UI/UX em 09/08/2026</div>
+  <div>95/100 · Fases 1 a 4 · 4 bugs de produção corrigidos</div>
+</footer>
+
+</div>
+</body>
+</html>

@@ -81,6 +81,79 @@ var SETUP_GUIDE = {
       '<div class="setup-card-bar"><div class="setup-card-fill" style="width:' + p.percentual + '%"></div></div>' +
       '<div class="setup-card-steps">' + steps + '</div>' + cta +
     '</div>';
+  },
+
+  // ─── Instrumentação do funil ───────────────────────────────────
+  //
+  // Sem isto não se sabe onde as pessoas param. O guia pode estar ajudando ou
+  // pode ter metade dos usuários desistindo no passo 2 há meses — as duas
+  // hipóteses são indistinguíveis olhando só o código.
+  //
+  // Nada de dado financeiro é registrado: apenas qual passo foi concluído e
+  // quantos faltam. O envio remoto continua condicionado ao opt-in em
+  // observability.js; sem endpoint configurado, os eventos ficam só no buffer
+  // local.
+
+  /**
+   * Passos concluídos entre um estado anterior e o atual.
+   * Função pura — é o núcleo testável da instrumentação.
+   *
+   * @param {Object} anterior estado anterior ({} na primeira execução)
+   * @param {Object} atual    estado atual
+   * @returns {{ novos: string[], completouAgora: boolean }}
+   */
+  diffProgresso: function(anterior, atual) {
+    var antes = anterior || {};
+    var agora = atual || {};
+    var chaves = ['perfil', 'transacao', 'orcamento', 'meta'];
+
+    var novos = chaves.filter(function(k) {
+      return !!agora[k] && !antes[k];
+    });
+
+    var completoAntes = chaves.every(function(k) { return !!antes[k]; });
+    var completoAgora = chaves.every(function(k) { return !!agora[k]; });
+
+    return { novos: novos, completouAgora: completoAgora && !completoAntes };
+  },
+
+  /**
+   * Emite os eventos do funil e devolve o estado a persistir.
+   *
+   * `persistencia` é injetado para manter a função testável sem localStorage:
+   * { ler: () => estadoAnterior, gravar: (estado) => void }
+   *
+   * Idempotente por construção: um passo só gera evento na transição de
+   * pendente para concluído. Chamar em todo render não duplica nada.
+   */
+  registrarProgresso: function(estado, persistencia, emitir) {
+    var p = persistencia || {};
+    var track = emitir || (typeof OBS !== 'undefined' && OBS.track
+      ? function(nome, dados) { OBS.track(nome, dados); }
+      : null);
+
+    var anterior = null;
+    try { anterior = p.ler ? p.ler() : null; } catch (e) { anterior = null; }
+
+    var diff = this.diffProgresso(anterior, estado);
+    var progresso = this.computeProgress(estado);
+
+    if (track) {
+      diff.novos.forEach(function(chave) {
+        track('onboarding_passo_concluido', {
+          passo: chave,
+          concluidos: progresso.concluidos,
+          total: progresso.total,
+        });
+      });
+      if (diff.completouAgora) {
+        track('onboarding_concluido', { total: progresso.total });
+      }
+    }
+
+    try { if (p.gravar) p.gravar(estado); } catch (e) { /* persistência é best-effort */ }
+
+    return diff;
   }
 };
 

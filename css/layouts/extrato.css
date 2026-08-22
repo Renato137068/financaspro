@@ -233,7 +233,7 @@
 
 .kpi-card-premium.despesa .kpi-icon {
   background: var(--color-bg-primary);
-  color: var(--color-danger);
+  color: var(--color-danger-text);
 }
 
 .kpi-card-premium.movimentacoes .kpi-icon {
@@ -268,7 +268,7 @@
 }
 
 .kpi-card-premium.despesa .kpi-value {
-  color: var(--color-danger);
+  color: var(--color-danger-text);
 }
 
 /* ── Busca Premium ─────────────────────────────────────────── */
@@ -430,7 +430,7 @@
 
 .btn-massa-deletar {
   background: var(--color-danger-bg);
-  color: var(--color-danger);
+  color: var(--color-danger-text);
   border: 1px solid var(--color-danger);
 }
 
@@ -592,7 +592,7 @@
 .btn-limpar-filtros:hover {
   background: var(--color-danger-bg);
   border-color: var(--color-danger);
-  color: var(--color-danger);
+  color: var(--color-danger-text);
 }
 
 /* ── Agrupamento Temporal Premium ───────────────────────────── */
@@ -660,7 +660,7 @@
 }
 
 .ext-grupo-subtotal.negativo {
-  color: var(--color-danger);
+  color: var(--color-danger-text);
   background: var(--color-danger-bg);
 }
 
@@ -762,7 +762,7 @@
 }
 
 .ext-tx-valor.despesa {
-  color: var(--color-danger);
+  color: var(--color-danger-text);
 }
 
 /* Painel expandido premium */
@@ -833,7 +833,7 @@
 
 .ext-btn-delete {
   background: var(--color-danger-bg);
-  color: var(--color-danger);
+  color: var(--color-danger-text);
   border: 1px solid var(--color-border);
 }
 
@@ -931,8 +931,8 @@
   text-align: right;
 }
 
-.extrato-valor.receita { color: var(--color-success); }
-.extrato-valor.despesa { color: var(--color-danger); }
+.extrato-valor.receita { color: var(--color-success-text); }
+.extrato-valor.despesa { color: var(--color-danger-text); }
 
 .extrato-actions {
   display: flex;
@@ -1232,11 +1232,11 @@
 }
 
 .extrato-grupo-subtotal.positivo {
-  color: var(--color-success);
+  color: var(--color-success-text);
 }
 
 .extrato-grupo-subtotal.negativo {
-  color: var(--color-danger);
+  color: var(--color-danger-text);
 }
 
 /* ── Item de Transação Premium ────────────────────────────── */
@@ -1355,11 +1355,11 @@
 }
 
 .extrato-item-valor.receita {
-  color: var(--color-success);
+  color: var(--color-success-text);
 }
 
 .extrato-item-valor.despesa {
-  color: var(--color-danger);
+  color: var(--color-danger-text);
 }
 
 .extrato-item-actions {
@@ -1396,7 +1396,7 @@
 
 .btn-deletar-premium:hover {
   background: var(--color-danger-bg);
-  color: var(--color-danger);
+  color: var(--color-danger-text);
   transform: scale(1.1);
 }
 
@@ -1582,8 +1582,8 @@
   margin-left: var(--space-3);
 }
 
-.transacao-valor.receita { color: var(--color-success); }
-.transacao-valor.despesa { color: var(--color-danger); }
+.transacao-valor.receita { color: var(--color-success-text); }
+.transacao-valor.despesa { color: var(--color-danger-text); }
 
 /* Transação full (com ações) */
 .transacao-item-full {

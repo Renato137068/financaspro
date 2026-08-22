@@ -22,7 +22,33 @@ export const VerificationTokenRepository = {
   },
 
   async consume(id) {
-    return prisma.verificationToken.update({ where: { id }, data: { usedAt: new Date() } });
+    const result = await prisma.verificationToken.updateMany({
+      where: { id, usedAt: null },
+      data: { usedAt: new Date() },
+    });
+    return result.count > 0;
+  },
+
+  /** Consome token, troca senha e revoga sessões em uma única transação. */
+  async consumeForPasswordReset({ tokenId, userId, passwordSalt, passwordHash }) {
+    return prisma.$transaction(async (tx) => {
+      const consumed = await tx.verificationToken.updateMany({
+        where: { id: tokenId, usedAt: null },
+        data: { usedAt: new Date() },
+      });
+      if (consumed.count === 0) return false;
+
+      await tx.user.update({
+        where: { id: userId },
+        data: { passwordSalt, passwordHash },
+      });
+
+      await tx.session.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+      return true;
+    });
   },
 
   // Invalida tokens anteriores do mesmo tipo (um pedido novo revoga os antigos).

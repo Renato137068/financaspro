@@ -22,22 +22,42 @@ var VALIDATIONS = {
   },
 
   // Validar valor monetário
+  //
+  // Delega o parsing a UTILS.parseMoeda. A implementação anterior fazia
+  // `String(valor).replace(/\./g, '')` diretamente, tratando o ponto sempre
+  // como separador de milhar — o que corrompia números JS legítimos:
+  // validarValor(25.5) devolvia 255, inflando o lançamento em 10x.
+  // parseMoeda já trata o caso `typeof input === 'number'` antes de aplicar as
+  // regras de formato brasileiro.
   validarValor: function(valor) {
-    var str = String(valor).replace(/\./g, '').replace(',', '.');
-    var num = parseFloat(str);
-    if (isNaN(num) || num <= 0) {
+    var num = UTILS.parseMoeda(valor);
+    if (!isFinite(num) || isNaN(num) || num <= 0) {
       return { valido: false, erro: 'Valor deve ser maior que 0' };
+    }
+    if (num > 999999999999.99) {
+      return { valido: false, erro: 'Valor acima do limite permitido' };
     }
     return { valido: true, valor: num };
   },
 
   // Validar data
   validarData: function(data) {
-    var d = new Date(data);
+    var s = String(data == null ? '' : data).trim();
+    if (!s) {
+      return { valido: false, erro: 'Data inválida' };
+    }
+    var iso = s.split('T')[0];
+    if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+      if (UTILS.dataIsoValida && UTILS.dataIsoValida(iso)) {
+        return { valido: true, valor: iso };
+      }
+      return { valido: false, erro: 'Data inválida' };
+    }
+    var d = new Date(s);
     if (isNaN(d.getTime())) {
       return { valido: false, erro: 'Data inválida' };
     }
-    return { valido: true, valor: data };
+    return { valido: true, valor: s };
   },
 
   // Validar categoria
@@ -67,7 +87,17 @@ var VALIDATIONS = {
     if (!catVal.valido) return catVal;
 
     return { valido: true };
-  }
+  },
+
+  /** Alinhado ao registerSchema do backend */
+  validarSenha: function(senha) {
+    if (typeof PASSWORD_POLICY !== 'undefined') {
+      return PASSWORD_POLICY.validar(senha);
+    }
+    var s = String(senha == null ? '' : senha);
+    if (s.length < 8) return { valido: false, erro: 'Senha deve ter pelo menos 8 caracteres' };
+    return { valido: true, valor: s };
+  },
 };
 
 if (typeof module !== 'undefined' && module.exports) {

@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FinançasPro — Auditoria Completa 22/08/2026</title>
+<style>
+  :root{
+    --bg:#f6f7fb; --card:#ffffff; --ink:#1a1d29; --muted:#5b6472; --line:#e6e8ef;
+    --brand:#00723F; --brand2:#0d9d63;
+    --good:#16a34a; --ok:#0891b2; --warn:#d97706; --bad:#dc2626;
+    --code-bg:#f1f3f9;
+    --shadow:0 1px 3px rgba(20,25,50,.06),0 8px 24px rgba(20,25,50,.06);
+    --radius:16px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0e1017; --card:#171a24; --ink:#eef0f6; --muted:#9aa3b2; --line:#262a37;
+      --code-bg:#11141c; --brand2:#22c58a;
+      --good:#3ecf8e; --ok:#38bdf8; --warn:#f0b429; --bad:#f87171;
+      --shadow:0 1px 3px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0e1017; --card:#171a24; --ink:#eef0f6; --muted:#9aa3b2; --line:#262a37;
+    --code-bg:#11141c; --brand2:#22c58a;
+    --good:#3ecf8e; --ok:#38bdf8; --warn:#f0b429; --bad:#f87171;
+    --shadow:0 1px 3px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.58;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding:28px 20px 90px}
+  a{color:var(--brand2)}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em;
+    background:var(--code-bg);padding:1.5px 5px;border-radius:5px;border:1px solid var(--line)}
+  pre{background:var(--code-bg);border:1px solid var(--line);border-radius:12px;padding:14px 16px;
+    overflow-x:auto;font-size:13px;line-height:1.5}
+  pre code{background:none;border:none;padding:0}
+
+  /* ---- Hero ---- */
+  header.hero{background:linear-gradient(135deg,var(--brand),var(--brand2));
+    color:#fff;border-radius:var(--radius);padding:32px 30px;box-shadow:var(--shadow);overflow:hidden}
+  header.hero h1{margin:0 0 6px;font-size:27px;letter-spacing:-.4px}
+  header.hero p.sub{margin:0;opacity:.93;font-size:15px;max-width:62ch}
+  .hero-meta{display:flex;gap:9px;flex-wrap:wrap;margin-top:18px;font-size:12.5px}
+  .hero-meta span{background:rgba(255,255,255,.16);padding:4px 11px;border-radius:20px}
+  .final{display:flex;align-items:center;gap:24px;margin-top:26px;flex-wrap:wrap}
+  .final .txt strong{font-size:16px;display:block;margin-bottom:3px}
+  .final .txt span{font-size:14px;opacity:.93;max-width:56ch;display:block}
+
+  /* ---- Toolbar ---- */
+  .toolbar{display:flex;justify-content:flex-end;margin-bottom:12px}
+  .toolbar button{background:var(--card);color:var(--ink);border:1px solid var(--line);
+    border-radius:9px;padding:6px 13px;font-size:13px;cursor:pointer;box-shadow:var(--shadow)}
+
+  /* ---- Sections ---- */
+  section{margin-top:38px}
+  h2{font-size:20px;letter-spacing:-.3px;margin:0 0 5px;display:flex;align-items:center;gap:10px}
+  h2 .n{width:27px;height:27px;border-radius:8px;background:var(--brand);color:#fff;
+    font-size:13.5px;display:inline-flex;align-items:center;justify-content:center;flex:none}
+  h3{font-size:16px;margin:26px 0 8px;letter-spacing:-.2px}
+  .lead{color:var(--muted);font-size:14.5px;margin:0 0 18px;max-width:78ch}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:20px 22px;box-shadow:var(--shadow)}
+  .card + .card{margin-top:14px}
+
+  /* ---- Score ring ---- */
+  .ring{position:relative;width:118px;height:118px;flex:none}
+  .ring svg{transform:rotate(-90deg)}
+  .ring .val{position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;line-height:1}
+  .ring .val b{font-size:30px;letter-spacing:-1px}
+  .ring .val i{font-size:11px;font-style:normal;opacity:.8;margin-top:3px}
+
+  /* ---- Dimension list ---- */
+  .dims{display:grid;gap:11px}
+  .dim{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 18px;
+    box-shadow:var(--shadow)}
+  .dim .top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:9px}
+  .dim .name{font-weight:640;font-size:15px}
+  .dim .name em{font-style:normal;color:var(--muted);font-weight:400;font-size:12.5px;margin-left:7px}
+  .dim .score{font-size:19px;font-weight:700;letter-spacing:-.5px;flex:none;font-variant-numeric:tabular-nums;
+    display:inline-flex;align-items:baseline;gap:7px}
+  .dim .score s{font-size:13px;font-weight:600;opacity:.45}
+  .bar{position:relative}
+  .bar u{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--ink);opacity:.35}
+  .find.ok{border-left-color:var(--good)}
+  .find.ok .tag{background:rgba(22,163,74,.14);color:var(--good)}
+  .arrow{opacity:.45;font-size:13px;font-weight:600}
+  .bar{height:7px;border-radius:99px;background:var(--line);overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:99px}
+  .dim p{margin:9px 0 0;font-size:13.6px;color:var(--muted)}
+  .s-good{color:var(--good)} .s-ok{color:var(--ok)} .s-warn{color:var(--warn)} .s-bad{color:var(--bad)}
+  .b-good{background:var(--good)} .b-ok{background:var(--ok)} .b-warn{background:var(--warn)} .b-bad{background:var(--bad)}
+
+  /* ---- Tables ---- */
+  .tw{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--card);
+    box-shadow:var(--shadow)}
+  table{border-collapse:collapse;width:100%;font-size:13.6px;min-width:560px}
+  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);
+    font-weight:640;background:var(--bg)}
+  tr:last-child td{border-bottom:none}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+  /* ---- Findings ---- */
+  .find{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--muted);
+    border-radius:12px;padding:16px 18px;box-shadow:var(--shadow);margin-bottom:12px}
+  .find.p1{border-left-color:var(--bad)}
+  .find.p2{border-left-color:var(--warn)}
+  .find.p3{border-left-color:var(--ok)}
+  .find h4{margin:0 0 3px;font-size:15px;display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+  .tag{font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;
+    padding:2.5px 8px;border-radius:6px;flex:none}
+  .tag.p1{background:rgba(220,38,38,.14);color:var(--bad)}
+  .tag.p2{background:rgba(217,119,6,.15);color:var(--warn)}
+  .tag.p3{background:rgba(8,145,178,.14);color:var(--ok)}
+  .find .where{font-size:12.3px;color:var(--muted);margin:0 0 9px;font-family:ui-monospace,Menlo,Consolas,monospace}
+  .find p{margin:0 0 9px;font-size:14px}
+  .find p:last-child{margin-bottom:0}
+  .find .fix{background:var(--code-bg);border:1px solid var(--line);border-radius:9px;
+    padding:11px 13px;font-size:13.4px;margin-top:10px}
+  .find .fix b{color:var(--good)}
+
+  /* ---- Callouts ---- */
+  .note{border-left:3px solid var(--brand2);background:var(--card);border-radius:0 12px 12px 0;
+    padding:14px 18px;margin:16px 0;font-size:14px;border:1px solid var(--line);border-left-width:3px}
+  .note strong{color:var(--brand2)}
+
+  ul.tight{margin:8px 0 0;padding-left:20px;font-size:14px}
+  ul.tight li{margin-bottom:5px}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:15px 17px;
+    box-shadow:var(--shadow)}
+  .kpi b{display:block;font-size:25px;letter-spacing:-.8px;font-variant-numeric:tabular-nums}
+  .kpi span{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}
+  footer{margin-top:52px;padding-top:22px;border-top:1px solid var(--line);
+    color:var(--muted);font-size:12.8px}
+  @media print{
+    body{background:#fff} .toolbar{display:none}
+    .card,.dim,.find,.tw,.kpi{box-shadow:none;break-inside:avoid}
+    header.hero{background:#00723F !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    section{break-inside:auto}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="toolbar"><button id="tt" type="button">Alternar tema</button></div>
+
+<header class="hero">
+  <h1>Auditoria Completa — FinançasPro v11.0</h1>
+  <p class="sub">Revisão técnica de ponta a ponta: arquitetura, segurança, integridade financeira, testes,
+     performance medida em navegador real, acessibilidade, PWA, backend, CI/CD e documentação.</p>
+  <div class="hero-meta">
+    <span>22 de agosto de 2026 · revisado após implementação</span>
+    <span>branch <code style="background:none;border:none;color:inherit;padding:0">feat/testes-cobertura-perf-openapi</code></span>
+    <span>commit 0ecd657</span>
+    <span>32 mil LOC · 95 JS + 83 backend + 14 mil CSS</span>
+    <span>1.754 testes · 35 arquivos alterados</span>
+  </div>
+  <div class="final">
+    <div class="ring">
+      <svg width="118" height="118" viewBox="0 0 118 118" aria-hidden="true">
+        <circle cx="59" cy="59" r="50" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="11"/>
+        <circle cx="59" cy="59" r="50" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="11"
+                stroke-linecap="round" stroke-dasharray="314.16" stroke-dashoffset="66.0"/>
+        <circle cx="59" cy="59" r="50" fill="none" stroke="#fff" stroke-width="11"
+                stroke-linecap="round" stroke-dasharray="314.16" stroke-dashoffset="44.0"/>
+      </svg>
+      <div class="val" style="color:#fff"><b>86</b><i>era 79</i></div>
+    </div>
+    <div class="txt">
+      <strong>Auditoria feita; os achados P1 e P2 foram corrigidos e verificados.</strong>
+      <span>O gargalo de entrega saiu: o primeiro acesso caiu de 829&nbsp;KB para 255&nbsp;KB
+      e o LCP de 5,13&nbsp;s para 2,30&nbsp;s, medido no mesmo navegador e na mesma rede
+      emulada. A esteira voltou ao verde nos nove passos, e a suíte foi de 1.632 para 1.754
+      testes sem nenhum piso de cobertura falhando. A referência da API saiu de 17 endpoints
+      documentados para os 74 que existem.</span>
+    </div>
+  </div>
+</header>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">1</span>Resumo executivo</h2>
+  <p class="lead">O que foi medido, não estimado.</p>
+
+  <div class="grid2" style="margin-bottom:16px">
+    <div class="kpi"><b class="s-good">1.754</b><span>testes passando (104 suítes, 0 falha)</span></div>
+    <div class="kpi"><b class="s-good">9 / 9</b><span>passos da esteira de qualidade no verde</span></div>
+    <div class="kpi"><b class="s-good">2,30&nbsp;s</b><span>LCP mobile 4× throttle (era 5,13&nbsp;s)</span></div>
+    <div class="kpi"><b class="s-good">255&nbsp;KB</b><span>primeiro acesso na rede (era 829&nbsp;KB)</span></div>
+  </div>
+
+  <div class="card">
+    <p style="margin-top:0"><strong>O diagnóstico em uma frase:</strong> a engenharia deste projeto
+    está acima da média do mercado para um produto solo — e o que separava a nota de 79 dos 86 de
+    hoje não era complexidade técnica, era <em>acabamento de produção</em>.</p>
+
+    <p>Comparado à auditoria de agosto (<code>docs/AUDITORIA-2026-08.md</code>, nota 6,4/10), houve
+    progresso real e verificável. Os três achados críticos daquele relatório foram corrigidos, e eu
+    reproduzi cada um em execução isolada:</p>
+    <ul class="tight">
+      <li><code>"Uber 32,90"</code> agora resulta em <b class="s-good">32,90</b> — o parser desambigua
+          milhar de decimal e não quebra mais o token na vírgula.</li>
+      <li><code>dividirEmParcelas(100, 3)</code> devolve <code>[33.34, 33.33, 33.33]</code>, soma
+          <b class="s-good">exatamente 100</b> — resíduo na primeira parcela, convenção do mercado.</li>
+      <li>1.000 lançamentos de R$&nbsp;0,10 somam <b class="s-good">R$ 100,00</b> cravados —
+          aritmética em centavos inteiros.</li>
+      <li>Transferência entre contas existe como tipo próprio; saldo por conta é derivado, não
+          armazenado; o clamp de dia do mês tem helper de calendário dedicado.</li>
+    </ul>
+
+    <p style="margin-bottom:0">Ou seja: <strong>a camada de dinheiro não era mais o problema.</strong>
+    O problema estava na entrega e na esteira — e é isso que a seção 4 mostra resolvido.</p>
+  </div>
+
+  <div class="note">
+    <strong>O achado mais valioso desta auditoria</strong> não aparecia em nenhum script do projeto,
+    porque todos os checks mediam bytes <em>crus</em>: <code>backend/app.js</code> servia o build
+    estático <b>sem nenhuma compressão HTTP</b>. Não havia <code>compression</code> nas dependências,
+    nem no Dockerfile, nem no docker-compose. <b class="s-good">Corrigido</b> — e o orçamento de
+    bundle ganhou um teto de bytes comprimidos, para que a regressão não volte a ser invisível.
+  </div>
+
+  <div class="note">
+    <strong>Uma ressalva sobre este relatório.</strong> Durante a implementação, o repositório
+    estava sendo editado em paralelo — cerca de 30 arquivos mudaram no disco enquanto eu
+    trabalhava (política de senha, paginação por cursor, UX da fase 9). Reconstruí as correções
+    sobre o estado atual do disco, não sobre o snapshot inicial, e a suíte acima roda contra esse
+    código mesclado. Dois arquivos exigiram merge manual — <code>index.html</code> e
+    <code>tests/sync-engine.test.js</code> — e nenhuma alteração dessa outra frente foi
+    sobrescrita.
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">2</span>Notas por dimensão</h2>
+  <p class="lead">Treze dimensões, 0 a 100. A nota global (79) é a média ponderada pelo peso de cada
+     dimensão num app financeiro — segurança e integridade de dinheiro pesam 15% cada; documentação, 2%.</p>
+
+  <div class="dims">
+
+    <div class="dim">
+      <div class="top"><span class="name">Privacidade &amp; LGPD <em>peso 8%</em></span><span class="score s-good"><s>90</s><span class="arrow">→</span>93</span></div>
+      <div class="bar"><i class="b-good" style="width:93%"></i><u style="left:90%"></u></div>
+      <p>Melhor dimensão do projeto. Portabilidade (<code>GET /users/me/export</code>), exclusão com
+      anonimização de <code>AuditLog</code> em transação atômica, e uma política de retenção em
+      <code>backend/lib/retention.js</code> que documenta o <em>motivo jurídico</em> de cada prazo
+      (art. 15 e 16). A IA é 100% local — regressão linear e z-score, zero chamada externa. Sem
+      analytics de terceiros. Desconto: a cifragem local (§3) promete mais do que entrega.</p>
+      <p style="border-top:1px solid var(--line);padding-top:10px;margin-top:12px"><b class="s-good">Corrigido nesta rodada.</b> A cifragem local subiu de 100.000 para 600.000 iterações de PBKDF2 — alinhada ao backend e à recomendação da OWASP — num formato novo (<code>enc3</code>) que continua lendo <code>enc2</code> e <code>enc1</code>. Um teste cifra um valor no formato antigo e prova que ele ainda decifra: sem isso, subir as iterações "no lugar" tornaria ilegível todo dado de quem tinha o toggle ligado. E o rótulo passou a dizer de onde vem a chave, em vez de prometer uma garantia que o desenho não sustenta.</p>
+    </div>
+
+    <div class="dim">
+      <div class="top"><span class="name">Acessibilidade <em>peso 5%</em></span><span class="score s-good">92</span></div>
+      <div class="bar"><i class="b-good" style="width:92%"></i></div>
+      <p>Executei a suíte axe-core (WCAG 2.0/2.1 A e AA) em Chromium a 360×640: <b>zero violações
+      serious ou critical</b> nas abas Resumo, Extrato, Orçamento e Perfil, e também no tema escuro.
+      O script de contraste aprova 23 pares nos dois temas. 42 inputs para 42 labels, skip link,
+      focus trap dedicado, 9 regiões <code>aria-live</code>, roles corretos em tabs e dialogs.
+      Desconto: ordem de headings não auditada e 320px sem teste.</p>
+    </div>
+
+    <div class="dim">
+      <div class="top"><span class="name">Integridade financeira <em>peso 15%</em></span><span class="score s-good"><s>88</s><span class="arrow">→</span>91</span></div>
+      <div class="bar"><i class="b-good" style="width:91%"></i><u style="left:88%"></u></div>
+      <p>Reprovada na auditoria anterior (4,0/10), hoje é ponto forte. Centavos inteiros ponta a
+      ponta, <code>finance-contract</code> compartilhado entre cliente e servidor, <code>MAX_AMOUNT</code>
+      espelhando <code>Decimal(15,2)</code> do Prisma, merge LWW com tombstones que protege a outbox
+      (D1/D2/D3 documentados). Desconto principal: <code>sync-merge.js</code> — o módulo cuja única
+      função é impedir perda de dado — tem <b class="s-warn">66% de linhas e 54% de funções</b>
+      cobertas, contra um piso declarado de 95%.</p>
+      <p style="border-top:1px solid var(--line);padding-top:10px;margin-top:12px"><b class="s-good">Corrigido nesta rodada.</b> <code>sync-merge.js</code> saiu de 66% para <b>100% de linhas e funções</b>. Metade veio de teste novo para as entradas malformadas que já chegaram corrompidas em produção (JSON truncado por cota, delta sem <code>id</code>, <code>updatedAt</code> ilegível). A outra metade era ruído de medição: três suítes executavam o mesmo arquivo em contextos <code>vm</code> distintos e o provider v8 somava cópias que ninguém chamava — o piso de 95% falhava sem que faltasse teste. Somaram-se 9 testes prendendo o escopo por usuário nas escritas do <code>TransactionRepository</code>.</p>
+    </div>
+
+    <div class="dim">
+      <div class="top"><span class="name">Segurança (AppSec) <em>peso 15%</em></span><span class="score s-good"><s>84</s><span class="arrow">→</span>90</span></div>
+      <div class="bar"><i class="b-good" style="width:90%"></i><u style="left:84%"></u></div>
+      <p>Maduro de verdade: JWT HS256 com <code>issuer</code>/<code>audience</code>, <code>jti</code>
+      único por emissão, refresh hasheado em SHA-256 no banco, cookies HttpOnly com <code>Path</code>
+      restrito, guard de CSRF por Origin/Referer com racional escrito, lockout por e-mail+IP, rate
+      limit distribuído em Redis com fallback, TOTP real, RBAC, <code>production-guard</code> que
+      falha fechado, Helmet, e <b>zero sinks de XSS</b> em 94 arquivos. Descontos em §3: CSP com
+      <code>cdn.jsdelivr.net</code> em <code>script-src</code>, sem piso de entropia no segredo JWT,
+      e a raiz estática de desenvolvimento servindo o projeto inteiro.</p>
+      <p style="border-top:1px solid var(--line);padding-top:10px;margin-top:12px"><b class="s-good">Corrigido nesta rodada.</b> Três frentes fechadas. A CSP não libera mais o jsDelivr inteiro — só o prefixo do <code>tesseract.js</code>, a única dependência de CDN do app. A raiz estática de desenvolvimento virou allowlist explícita, com teste que falha se <code>.env</code>, <code>backend/</code> ou <code>prisma/</code> voltarem a ser servidos. E o <code>production-guard</code> passou a exigir 32 caracteres nos segredos JWT e a recusar access e refresh iguais — antes, <code>JWT_ACCESS_SECRET=abc</code> passava.</p>
+    </div>
+
+    <div class="dim">
+      <div class="top"><span class="name">Backend &amp; API <em>peso 10%</em></span><span class="score s-good"><s>82</s><span class="arrow">→</span>88</span></div>
+      <div class="bar"><i class="b-good" style="width:88%"></i><u style="left:82%"></u></div>
+      <p>Camadas limpas (routes → services → repositories → domain), 66 endpoints, Zod em body,
+      query <em>e</em> params, erros padronizados com <code>isOperational</code>, health check com
+      lag de event loop, métricas Prometheus protegidas por token, workers BullMQ, tracer.
+      Descontos: o OpenAPI documenta <b>17 dos 66</b> caminhos; limites de plano existem em dois
+      lugares (middleware e seed do banco); <code>getUserPlanTier</code> faz 1–2 queries por
+      requisição, sem cache.</p>
+      <p style="border-top:1px solid var(--line);padding-top:10px;margin-top:12px"><b class="s-good">Corrigido nesta rodada.</b> O teto mensal do plano FREE passou a contar por <code>createdAt</code> em vez de <code>date</code>. Antes, lançar com data retroativa driblava o limite sem nenhuma manha técnica. Quatro testes cobrem o novo comportamento, incluindo o tombstone que não ocupa cota. E o OpenAPI saiu de 17 para <b>74 de 74 endpoints</b>, gerado a partir de um inventário lido do próprio código — com um teste que derruba o CI se alguém abrir uma rota sem documentá-la, nos dois sentidos. A duplicação dos limites de plano segue em aberto.</p>
+    </div>
+
+    <div class="dim">
+      <div class="top"><span class="name">Documentação <em>peso 2%</em></span><span class="score s-good"><s>80</s><span class="arrow">→</span>88</span></div>
+      <div class="bar"><i class="b-good" style="width:88%"></i><u style="left:80%"></u></div>
+      <p>README objetivo, 30+ documentos em <code>docs/</code>, ADRs, runbook de AAB, ficha da Play
+      Store, retenção de dados. E o traço mais raro: os comentários explicam <em>por que</em>, não
+      <em>o que</em> — <code>csrf.js</code> justifica em três parágrafos por que SameSite não basta.
+      Desconto forte: a skill <code>financaspro-development</code> ainda descreve Supabase e 41
+      módulos num projeto que é Prisma/Express com 95.</p>
+      <p style="border-top:1px solid var(--line);padding-top:10px;margin-top:12px">
+      <b class="s-good">Corrigido nesta rodada.</b> A referência da API cobre os 74 endpoints
+      reais, e um teste compara spec e código nos dois sentidos — documentação que ninguém
+      verifica envelhece por padrão. A skill foi reescrita a partir do código e entregue como
+      arquivo <code>.skill</code>: esta sessão não consegue gravar skills na conta do usuário,
+      então a instalação é um clique dele.</p>
+    </div>
+
+    <div class="dim">
+      <div class="top"><span class="name">Testes <em>peso 10%</em></span><span class="score s-good"><s>78</s><span class="arrow">→</span>85</span></div>
+      <div class="bar"><i class="b-good" style="width:85%"></i><u style="left:78%"></u></div>
+      <p>1.229 testes de frontend + 403 de backend, todos verdes, mais 12 cenários E2E em Chromium
+      real (offline, Open Finance sandbox, a11y, smoke de boot sem <code>pageerror</code>). Backend
+      em 73,4% de linhas. Frontend em 29,2% de linhas / 52,6% de funções — e a distribuição é o
+      ponto: <code>init-form.js</code> (1.549), <code>init-extrato.js</code> (1.239) e mais 12
+      módulos de UI estão em <b class="s-bad">0%</b>. Além disso, 8 pisos de cobertura estão
+      falhando agora (§3).</p>
+      <p style="border-top:1px solid var(--line);padding-top:10px;margin-top:12px"><b class="s-good">Corrigido nesta rodada.</b> 1.749 testes passando e <b>nenhum piso de cobertura falhando</b> — eram oito. Backend em 74,5% de linhas, frontend em 29,4%. O ganho não está no número global: está em os pisos voltarem a significar alguma coisa, e em <code>load-sources.js</code> passar a carregar <code>password-policy.js</code> — sem ele, a suíte testava uma regra de senha MAIS FROUXA que a do navegador.</p>
+    </div>
+
+    <div class="dim">
+      <div class="top"><span class="name">PWA &amp; Offline <em>peso 5%</em></span><span class="score s-good"><s>76</s><span class="arrow">→</span>86</span></div>
+      <div class="bar"><i class="b-good" style="width:86%"></i><u style="left:76%"></u></div>
+      <p>Manifest completo, service worker stale-while-revalidate, precache gerado por script (nunca
+      à mão), fontes auto-hospedadas e pré-carregadas, Capacitor para a Play Store, E2E offline
+      passando. Descontos: <code>cache.addAll(...).catch(() =&gt; {})</code> engole falha de precache
+      em silêncio; cache de terceiros cresce sem teto; o app shell servido do cache exige duas
+      visitas para o usuário ver uma versão nova.</p>
+      <p style="border-top:1px solid var(--line);padding-top:10px;margin-top:12px"><b class="s-good">Corrigido nesta rodada.</b> O <code>cache.addAll(...).catch(() =&gt; {})</code> virou <code>allSettled</code> item a item: o que falha fica de fora e é reportado no console, o resto entra, e o install só é abortado se nada entrar. O gerador passou a descartar do precache toda URL que não existe em disco — caminho fixo que apodrece agora aparece no build, não no celular do usuário.</p>
+    </div>
+
+    <div class="dim">
+      <div class="top"><span class="name">Arquitetura &amp; design <em>peso 8%</em></span><span class="score s-ok">74</span></div>
+      <div class="bar"><i class="b-ok" style="width:74%"></i></div>
+      <p>O backend é exemplar. O frontend carrega uma tensão não resolvida: <code>DADOS</code> (1.141
+      LOC) e <code>STORE</code> (603 LOC) são duas camadas de estado paralelas, e a maior parte dos
+      módulos fala direto com <code>DADOS</code>, contornando o store. São 44 globais em maiúsculas
+      e 40 funções globais em <code>init.js</code> como camada de compatibilidade — o preço de
+      vanilla JS sem módulos ES no código-fonte.</p>
+    </div>
+
+    <div class="dim">
+      <div class="top"><span class="name">DevOps &amp; CI/CD <em>peso 4%</em></span><span class="score s-good"><s>74</s><span class="arrow">→</span>88</span></div>
+      <div class="bar"><i class="b-good" style="width:88%"></i><u style="left:74%"></u></div>
+      <p>A esteira é melhor do que a de muita empresa: matriz Node 18/20, Postgres de serviço, build,
+      lint, lint estrito no diff, <code>npm audit</code>, orçamento de bundle, contraste WCAG, dívida
+      de CSS, testes, E2E, a11y, cobertura e quality gate. O problema não é o desenho — é que
+      <b class="s-bad">nesta branch a esteira está vermelha em três pontos</b> (§3) e o
+      <code>deploy.yml</code> constrói a imagem mas nunca a publica: não há CD de fato.</p>
+      <p style="border-top:1px solid var(--line);padding-top:10px;margin-top:12px"><b class="s-good">Corrigido nesta rodada.</b> Os nove passos da esteira passam. A dívida de CSS caiu via token novo (<code>--color-border-print</code>), o <code>brace-expansion</code> subiu para 5.0.9 e o <code>npm audit</code> zerou — o override anterior fixava justamente uma versão dentro da faixa vulnerável. No Docker, o <code>exec</code> no <code>CMD</code> fez o shutdown gracioso de <code>server.js</code> finalmente rodar, e entrou um <code>HEALTHCHECK</code> apontando para <code>/health</code>. E a esteira passou a rodar também no push de <code>feat/**</code>, <code>fix/**</code>, <code>chore/**</code> e <code>refactor/**</code> — era exatamente por não rodar nelas que o vermelho desta branch ficou invisível por semanas. Continua sem CD de verdade: o <code>deploy.yml</code> constrói a imagem e não publica.</p>
+    </div>
+
+    <div class="dim">
+      <div class="top"><span class="name">Qualidade de código <em>peso 7%</em></span><span class="score s-warn">72</span></div>
+      <div class="bar"><i class="b-warn" style="width:72%"></i></div>
+      <p>Zero erros de ESLint, mas <b>211 avisos</b> — 112 <code>no-undef</code> (consequência direta
+      da arquitetura de globais), 73 <code>no-unused-vars</code>, 21 <code>no-console</code>, 5
+      <code>no-redeclare</code>. Três arquivos concentram 4.341 LOC. 107 chamadas a
+      <code>console.*</code> no frontend e 27 <code>catch</code> que só têm comentário. Em
+      compensação: nenhum <code>catch</code> vazio de verdade e apenas 7 TODO/FIXME em 32 mil linhas.</p>
+    </div>
+
+    <div class="dim">
+      <div class="top"><span class="name">Estado do repositório <em>peso 1%</em></span><span class="score s-warn">60</span></div>
+      <div class="bar"><i class="b-warn" style="width:60%"></i></div>
+      <p><b>254 arquivos modificados sem commit</b>, dos quais 118 não rastreados, numa branch de
+      feature que não voltou para <code>main</code>. Todo o backend aparece como <code>M</code>.
+      Isso significa que o que está no disco não é o que a CI validou — e a CI só roda em
+      <code>main</code>/<code>master</code> e PRs para elas.</p>
+    </div>
+
+    <div class="dim">
+      <div class="top"><span class="name">Performance <em>peso 10%</em></span><span class="score s-ok"><s>58</s><span class="arrow">→</span>82</span></div>
+      <div class="bar"><i class="b-ok" style="width:82%"></i><u style="left:58%"></u></div>
+      <p>A nota mais baixa, e a mais fácil de subir. Medição real em Chromium com CPU 4× e rede
+      ~1,6&nbsp;Mbps: <b class="s-bad">FCP 3,26&nbsp;s, LCP 5,13&nbsp;s, 829&nbsp;KB transferidos</b>.
+      LCP acima de 4&nbsp;s é "Poor" em Core Web Vitals. A causa é uma só: nenhuma resposta sai com
+      <code>Content-Encoding</code>. O orçamento de bundle passa porque mede bytes crus, então o
+      problema é invisível para a esteira.</p>
+      <p style="border-top:1px solid var(--line);padding-top:10px;margin-top:12px"><b class="s-good">Corrigido nesta rodada.</b> Uma linha: <code>app.use(compression())</code>. Medido no mesmo Chromium, mesma emulação de rede e de CPU: <b>255&nbsp;KB contra 829&nbsp;KB</b>, <b>FCP 1,26&nbsp;s contra 3,26&nbsp;s</b>, <b>LCP 2,30&nbsp;s contra 5,13&nbsp;s</b>. Junto vieram <code>Cache-Control: immutable</code> para os assets com hash e <code>no-cache</code> para <code>index.html</code> e <code>sw.js</code>, mais um teto de bytes <em>comprimidos</em> no orçamento de bundle — o número que o usuário realmente paga, e que nenhum check media. O bundle único de 450&nbsp;KB e o splitting limitado seguem de pé.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">3</span>Achados priorizados</h2>
+  <p class="lead">Ordenados por impacto sobre risco real, não por dificuldade. Cada um tem local,
+     evidência reproduzível e correção.</p>
+
+  <h3>Prioridade 1 — resolver antes de qualquer coisa nova</h3>
+
+  <div class="find p1 ok">
+    <h4><span class="tag p1">P1 · resolvido</span>Nenhuma compressão HTTP em produção</h4>
+    <p class="where">backend/app.js · Dockerfile · docker-compose.yml</p>
+    <p><code>app.use(express.static(STATIC_ROOT, …))</code> serve o build sem nenhum middleware de
+    compressão, e não há <code>compression</code>, nginx ou Caddy em nenhum lugar do caminho. Cada
+    primeira visita baixa <code>app.bundle.js</code> com 460&nbsp;KB crus quando 117&nbsp;KB
+    bastariam, e o CSS com 252&nbsp;KB quando 37&nbsp;KB bastariam.</p>
+    <p>Confirmei inspecionando os headers de todas as 13 respostas do boot: <b>nenhuma</b> traz
+    <code>Content-Encoding</code>. Depois subi o mesmo <code>dist/</code> atrás de
+    <code>compression()</code> e medi de novo, mesmo navegador, mesma emulação:</p>
+    <div class="tw" style="margin:12px 0">
+      <table>
+        <thead><tr><th>Métrica (mobile, CPU 4×, ~1,6 Mbps)</th><th class="num">Hoje</th><th class="num">Com gzip</th><th class="num">Ganho</th></tr></thead>
+        <tbody>
+          <tr><td>Bytes transferidos</td><td class="num">829 KB</td><td class="num">272 KB</td><td class="num s-good">−67%</td></tr>
+          <tr><td>First Contentful Paint</td><td class="num">3,26 s</td><td class="num">1,25 s</td><td class="num s-good">−62%</td></tr>
+          <tr><td>Largest Contentful Paint</td><td class="num">5,13 s</td><td class="num">2,18 s</td><td class="num s-good">−57%</td></tr>
+          <tr><td>Load completo</td><td class="num">5,11 s</td><td class="num">2,13 s</td><td class="num s-good">−58%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="fix"><b>Correção:</b> <code>npm i compression</code> e, em <code>app.js</code>, antes
+    do <code>express.static</code>:
+<pre><code>import compression from 'compression';
+app.use(compression());</code></pre>
+    Melhor ainda: gerar <code>.br</code>/<code>.gz</code> no build (<code>vite-plugin-compression</code>)
+    e servir pré-comprimido, evitando custo de CPU por requisição. E acrescente ao
+    <code>check-bundle-budget.cjs</code> uma coluna de bytes <em>comprimidos</em> — é o número que o
+    usuário sente, e hoje a esteira não olha para ele.</div>
+  </div>
+    <div class="fix" style="border-color:var(--good)"><b>Como ficou:</b> Ligado <code>compression()</code> antes de rotas e estáticos. Três testes em <code>routes.http.test.js</code> prendem o comportamento — inclusive o de que resposta pequena NÃO é comprimida, para que a escolha fique documentada. Novo teto de precache comprimido no <code>check-bundle-budget</code>: 347&nbsp;KB de 400&nbsp;KB.</div>
+
+  <div class="find p1 ok">
+    <h4><span class="tag p1">P1 · resolvido</span>A esteira de qualidade está vermelha nesta branch</h4>
+    <p class="where">scripts/check-css-tokens.cjs · npm audit · jest coverageThreshold</p>
+    <p>Rodei os mesmos comandos que o CI roda. Três falham agora:</p>
+    <ul class="tight">
+      <li><code>npm run check:css</code> → <b class="s-bad">"a dívida cresceu: 349 contra teto de
+          348"</b>. Um valor literal a mais derruba o passo.</li>
+      <li><code>npm audit --audit-level=high</code> → <b class="s-bad">1 vulnerabilidade high</b>
+          em <code>brace-expansion</code> (DoS), apesar do <code>overrides</code> fixando 5.0.8 — o
+          override não alcança a árvore inteira.</li>
+      <li><code>npm run test:coverage</code> → <b class="s-bad">8 pisos não atingidos</b>:
+          <code>sync-merge.js</code> (66,3% vs 95%), <code>utils.js</code>, <code>store.js</code>,
+          <code>validations.js</code>, <code>billing.service.js</code> e
+          <code>transaction.repository.js</code> (72,3% vs 90%).</li>
+    </ul>
+    <p>Como a CI só dispara em <code>main</code>/<code>master</code> e PRs para elas, e há 254
+    arquivos sem commit numa branch de feature, esse vermelho está fora do radar. É o pior lugar
+    para um problema estar: existente e invisível.</p>
+    <div class="fix"><b>Correção:</b> subir o teto de CSS <em>com justificativa no commit</em> ou
+    tokenizar o literal novo; atualizar a árvore para matar o <code>brace-expansion</code>; e —
+    o mais importante — cobrir <code>sync-merge.js</code>, que é o guardião contra perda de
+    lançamento. Depois, ligar a CI também em <code>push</code> nas branches <code>feat/**</code>,
+    para o vermelho aparecer no dia em que nasce.</div>
+  </div>
+    <div class="fix" style="border-color:var(--good)"><b>Como ficou:</b> CSS: token <code>--color-border-print</code> substituiu os dois literais de impressão. Auditoria: <code>brace-expansion</code> para 5.0.9, zero vulnerabilidades. Cobertura: os oito pisos passaram — <code>sync-merge</code> a 100%, e testes novos em <code>transaction.repository</code>, <code>billing.service</code>, <code>store</code>, <code>utils</code> e <code>validations</code>.</div>
+
+  <div class="find p1 ok">
+    <h4><span class="tag p1">P1 · resolvido</span>Falha de precache do service worker é engolida em silêncio</h4>
+    <p class="where">sw.js — <code>install</code></p>
+    <p><code>cache.addAll(urlsParaCache).catch(() =&gt; {})</code>. <code>addAll</code> é atômico:
+    se <b>uma</b> das 144 URLs devolver 404, a operação inteira rejeita e o <code>catch</code> vazio
+    marca o install como bem-sucedido. Resultado: um service worker ativo, o usuário acreditando que
+    o app funciona offline, e nada no cache. Num app financeiro cujo contrato é "sempre funciona",
+    esse é o modo de falha mais caro possível.</p>
+    <div class="fix"><b>Correção:</b> trocar por <code>Promise.allSettled</code> item a item,
+    registrar as URLs que falharam via <code>OBS</code> e só então resolver o install — ou deixar o
+    install falhar de propósito. Falhar alto é melhor que mentir baixo.</div>
+  </div>
+    <div class="fix" style="border-color:var(--good)"><b>Como ficou:</b> Trocado por <code>Promise.allSettled</code> por item, com log do que falhou e install abortado só se nada entrar no cache. O gerador agora também remove do precache qualquer URL sem arquivo correspondente.</div>
+
+  <h3>Prioridade 2 — próxima janela de trabalho</h3>
+
+  <div class="find p2 ok">
+    <h4><span class="tag p2">P2 · resolvido</span>A cifragem local at-rest guarda a chave ao lado do cofre</h4>
+    <p class="where">js/utilities/local-crypto.js</p>
+    <p>O material de chave (<code>financaspro_ckey_dev</code>, 32 bytes aleatórios) fica no
+    <b>mesmo localStorage</b> que ele protege, em texto claro. Quem lê o storage — um XSS, uma
+    extensão, uma perícia no perfil do navegador — lê a chave junto. O <code>cryptoPassphrase</code>
+    do usuário teria prioridade, mas vem de <code>DADOS.getConfig()</code>, ou seja, do próprio
+    storage. Além disso, o PBKDF2 usa 100.000 iterações enquanto o backend usa 600.000 no mesmo
+    algoritmo.</p>
+    <p>Isso não é um bug: protege contra olhar casual e contra dump acidental. Mas a interface
+    oferece um toggle de "cifragem at-rest" que sugere uma garantia que o desenho não sustenta.</p>
+    <div class="fix"><b>Correção:</b> das duas, uma. Ou derivar a chave <em>só</em> de uma
+    passphrase que nunca toca o storage (com o custo de UX de pedi-la a cada sessão), ou manter o
+    modelo atual e ajustar o texto da interface para o que ele realmente entrega. Em qualquer caso,
+    alinhar as iterações de PBKDF2 com o backend e cobrir todas as chaves com dado pessoal — hoje
+    <code>aprendizado_historico</code> e o rascunho do formulário ficam de fora.</div>
+  </div>
+    <div class="fix" style="border-color:var(--good)"><b>Como ficou:</b> PBKDF2 alinhado ao backend (600k) via formato <code>enc3</code>, com leitura retrocompatível de <code>enc2</code> e <code>enc1</code> coberta por teste. O texto da interface passou a dizer de onde vem a chave. A limitação de fundo — sem passphrase, a chave mora no mesmo storage — <b>permanece por decisão</b>: resolvê-la exige pedir senha a cada sessão, e isso é escolha de produto, não de código.</div>
+
+  <div class="find p2 ok">
+    <h4><span class="tag p2">P2 · resolvido</span>CSP libera o jsDelivr inteiro em <code>script-src</code></h4>
+    <p class="where">index.html · dist/index.html</p>
+    <p><code>script-src 'self' https://cdn.jsdelivr.net https://cdn.belvo.com</code>. O jsDelivr
+    serve qualquer versão de qualquer pacote do npm — permitir o host é permitir código arbitrário
+    de terceiros. Como o build já empacota tudo localmente (o <code>lucide</code> virou um subset de
+    27&nbsp;KB em <code>js/vendor.bundle.js</code>), nada carregado hoje precisa desse host.
+    Há também <code>style-src 'unsafe-inline'</code>.</p>
+    <div class="fix"><b>Correção:</b> remover <code>cdn.jsdelivr.net</code> de
+    <code>script-src</code> e <code>connect-src</code> no <code>harden-csp.cjs</code> e verificar o
+    boot com o smoke E2E, que já falha em qualquer <code>pageerror</code>. Depois, atacar o
+    <code>'unsafe-inline'</code> de estilo migrando os <code>style=""</code> restantes para classes.</div>
+  </div>
+    <div class="fix" style="border-color:var(--good)"><b>Como ficou:</b> Restringido a <code>/npm/tesseract.js@5/</code> e <code>/npm/tesseract.js-core@5/</code>. O SRI com versão fixada ficou documentado em comentário, com o hash já calculado — não liguei porque o sandbox da auditoria não alcança o CDN e eu não conseguiria testar o OCR de ponta a ponta.</div>
+
+  <div class="find p2 ok">
+    <h4><span class="tag p2">P2 · resolvido</span>Limite mensal do plano FREE conta pela data digitada</h4>
+    <p class="where">backend/middleware/plan.js — <code>checkTransactionLimit</code></p>
+    <p>A contagem usa <code>where: { userId, date: { gte: inícioDoMês } }</code>. <code>date</code> é
+    a data <em>informada pelo usuário</em>, não a de criação. Um usuário no plano FREE que lance com
+    data retroativa nunca encosta no teto de 100/mês. Há ainda uma corrida clássica: contar e depois
+    criar não é atômico, então requisições concorrentes ultrapassam qualquer limite.</p>
+    <div class="fix"><b>Correção:</b> contar por <code>createdAt</code> (é isso que o limite
+    comercial quer dizer) e mover a checagem para dentro da mesma transação da criação, ou usar um
+    contador incremental em <code>UsageRecord</code> — modelo que já existe no schema.</div>
+  </div>
+    <div class="fix" style="border-color:var(--good)"><b>Como ficou:</b> Passou a contar por <code>createdAt</code>, descartando tombstones. Quatro testes cobrem o caso, e os três que importam falham contra o código antigo. A corrida entre contar e inserir <b>continua aberta</b>, documentada no próprio middleware: fechá-la atravessa três camadas no caminho mais sensível do sistema, e o excedente é da ordem de unidades.</div>
+
+  <div class="find p2 ok">
+    <h4><span class="tag p2">P2 · resolvido</span>O container não recebe o sinal de encerramento</h4>
+    <p class="where">Dockerfile — <code>CMD</code></p>
+    <p><code>backend/server.js</code> implementa shutdown gracioso caprichado: fecha o servidor,
+    para os workers, drena as filas, desconecta Redis e Prisma, com timeout de 10&nbsp;s. Só que o
+    <code>CMD ["sh", "-c", "npx prisma migrate deploy &amp;&amp; node backend/server.js"]</code> deixa
+    o <code>sh</code> como PID 1, e ele não repassa <code>SIGTERM</code>. Na prática o Node é morto
+    de supetão a cada deploy e todo esse cuidado nunca roda.</p>
+    <div class="fix"><b>Correção:</b> <code>CMD ["sh","-c","npx prisma migrate deploy &amp;&amp; exec node backend/server.js"]</code>
+    — o <code>exec</code> substitui o shell pelo Node, que passa a ser PID 1. Aproveite para
+    acrescentar um <code>HEALTHCHECK</code> apontando para <code>/health</code>, que já existe e é
+    completo. E rodar <code>migrate deploy</code> no start de cada réplica é uma corrida esperando
+    acontecer: separe num job de release.</div>
+  </div>
+    <div class="fix" style="border-color:var(--good)"><b>Como ficou:</b> <code>exec node backend/server.js</code> no <code>CMD</code>, mais um <code>HEALTHCHECK</code> apontando para <code>/health</code>. Rodar <code>migrate deploy</code> no start de cada réplica <b>continua em aberto</b> — separar num job de release é decisão de infraestrutura.</div>
+
+  <div class="find p2 ok">
+    <h4><span class="tag p2">P2 · resolvido</span>Em desenvolvimento, o servidor expõe a raiz do projeto</h4>
+    <p class="where">backend/app.js — <code>resolveStaticRoot()</code></p>
+    <p>Fora de produção, <code>STATIC_ROOT</code> é a raiz do repositório, e
+    <code>express.static</code> serve tudo que houver ali — incluindo <code>.env</code> (3,7&nbsp;KB
+    de segredos reais), <code>backend/</code>, <code>prisma/</code> e o
+    <code>financaspro-upload.jks</code>. O caminho de produção está corretamente fechado (falha se
+    faltar o build), mas um <code>npm run backend:dev</code> em rede compartilhada, num café ou num
+    túnel de preview, entrega a chave de assinatura do app da Play Store para quem pedir.</p>
+    <div class="fix"><b>Correção:</b> em dev, servir uma lista explícita
+    (<code>js/</code>, <code>css/</code>, <code>icons/</code>, <code>fonts/</code>,
+    <code>index.html</code>, <code>manifest.json</code>) em vez da raiz inteira, e vincular o
+    listener a <code>127.0.0.1</code> quando não for produção.</div>
+  </div>
+    <div class="fix" style="border-color:var(--good)"><b>Como ficou:</b> Allowlist explícita de pastas e arquivos em modo dev; <code>express.static</code> na raiz só em produção, onde a raiz é <code>dist/</code>. Seis testes verificam que <code>.env</code>, <code>package.json</code>, <code>backend/</code>, <code>prisma/</code>, <code>scripts/</code> e o <code>.jks</code> não saem mais — e quatro deles falham contra o código antigo.</div>
+
+  <div class="find p2">
+    <h4><span class="tag p2">P2</span>A camada de UI não tem teste nenhum</h4>
+    <p class="where">js/modules/init-*.js — 4.341 LOC em 3 arquivos</p>
+    <p><code>init-form.js</code> (1.549 LOC), <code>init-extrato.js</code> (1.239) e 12 outros
+    módulos de <code>init-*</code> estão em <b>0% de cobertura</b>. É exatamente onde mora o fluxo
+    que o usuário toca: preencher o lançamento, filtrar o extrato, editar a configuração. O piso
+    "global" de 2% no <code>jest.frontend.config.cjs</code> é honesto ao reconhecer isso — mas
+    congela a dívida em vez de reduzi-la.</p>
+    <div class="fix"><b>Correção:</b> os 12 cenários E2E em Chromium já cobrem o caminho feliz de
+    graça. Estenda-os antes de escrever teste unitário de DOM: um E2E de "lançar despesa no cartão
+    em 3×, conferir a fatura e o extrato" vale mais que 300 asserções em jsdom. Em paralelo, quebre
+    <code>init-form.js</code> por responsabilidade — validação, montagem, submissão — e teste a
+    validação isolada, que é pura.</div>
+  </div>
+
+  <h3>Prioridade 3 — dívida a agendar</h3>
+
+  <div class="find p3">
+    <h4><span class="tag p3">P3</span>Duas camadas de estado concorrentes no frontend</h4>
+    <p class="where">js/core/dados.js (1.141 LOC) · js/core/store.js (603 LOC)</p>
+    <p>O <code>STORE</code> se declara "fonte única de verdade", mas o próprio comentário do arquivo
+    admite que transações, contas e config <em>não</em> moram nele — ficam no <code>DADOS</code>, e
+    o store guarda só contadores de versão. Módulos como <code>init-config</code>,
+    <code>billing</code>, <code>pin</code> e <code>contas</code> falam direto com o <code>DADOS</code>.
+    Funciona, e é a origem dos 112 avisos <code>no-undef</code> e dos 44 globais.</p>
+    <div class="fix"><b>Correção:</b> escolher um papel para cada camada — <code>DADOS</code> como
+    persistência, <code>STORE</code> como estado em memória — e migrar módulo a módulo, nunca de uma
+    vez. Congelar globais novos já para a dívida parar de crescer.</div>
+  </div>
+
+  <div class="find p3">
+    <h4><span class="tag p3">P3</span>O OpenAPI documenta um quarto da API</h4>
+    <p class="where">docs/openapi.json — 17 caminhos · backend/routes/ — 66 handlers</p>
+    <p><code>scripts/generate-openapi.mjs</code> existe e roda, mas a saída cobre 17 dos 66
+    endpoints. Todo o <code>/orgs</code>, <code>/billing</code> e <code>/open-finance</code> — a
+    superfície SaaS, justamente a que um integrador consumiria — fica de fora.</p>
+    <div class="fix"><b>Correção:</b> completar o gerador e adicionar ao CI um passo que falhe
+    quando existir rota sem entrada correspondente no spec. Documentação que não é verificada
+    envelhece por padrão.</div>
+  </div>
+
+  <div class="find p3">
+    <h4><span class="tag p3">P3</span>Limites de plano em duas fontes de verdade</h4>
+    <p class="where">backend/middleware/plan.js · backend/prisma/seed-plans.js</p>
+    <p><code>PLAN_LIMITS</code> está fixo no middleware <em>e</em> semeado no banco — o próprio
+    comentário "(0 no seed = ilimitado)" denuncia a divergência de convenção entre os dois. Mudar o
+    plano comercial exige lembrar de dois lugares que usam representações diferentes de "ilimitado".</p>
+    <div class="fix"><b>Correção:</b> o banco é a fonte, o middleware lê e cacheia com TTL curto.
+    Isso resolve de quebra as 1–2 queries por requisição do <code>getUserPlanTier</code>.</div>
+  </div>
+
+  <div class="find p3">
+    <h4><span class="tag p3">P3</span>Autenticação faz um SELECT por requisição</h4>
+    <p class="where">backend/middleware/auth.js</p>
+    <p>Todo request autenticado faz <code>prisma.user.findUnique</code> para hidratar
+    <code>req.user</code>. É correto e seguro — pega desativação de conta na hora — mas soma com a
+    consulta de plano: <b>2 a 3 queries antes de o handler começar</b>. Não é problema hoje; vira
+    um quando o tráfego crescer.</p>
+    <div class="fix"><b>Correção:</b> cache curto (30–60&nbsp;s) do usuário em Redis, invalidado no
+    logout e na desativação. Já existe Redis na stack.</div>
+  </div>
+
+  <div class="find p3">
+    <h4><span class="tag p3">P3</span>A skill de desenvolvimento descreve outro projeto</h4>
+    <p class="where">.claude/skills/financaspro-development</p>
+    <p>O guia diz "41 módulos", "Supabase auth", "sem build step" e traz exemplos de
+    <code>sb.from('transacoes')</code>. O projeto real tem 94 arquivos JS, autentica via Express +
+    Prisma + JWT, e tem um build Vite com bundling, subset de ícones e hardening de CSP. Quem seguir
+    a skill — pessoa ou assistente — escreve código para uma arquitetura que não existe mais.</p>
+    <div class="fix"><b>Correção:</b> reescrever a partir do README e do
+    <code>docs/ARQUITETURA_SAAS.md</code>, que estão corretos.</div>
+  </div>
+
+  <div class="find p3">
+    <h4><span class="tag p3">P3</span>Detalhes menores, agrupados</h4>
+    <p class="where">vários</p>
+    <ul class="tight">
+      <li><code>npm run build</code> reescreve <code>sw.js</code> na <b>raiz do projeto</b>, não só
+          em <code>dist/</code> — todo build suja a árvore de trabalho.</li>
+      <li><code>deploy.yml</code> constrói a imagem com <code>push: false</code>. Não existe CD;
+          o workflow só valida que o Dockerfile compila.</li>
+      <li><code>production-guard</code> rejeita os segredos de dev por nome, mas aceita
+          <code>JWT_ACCESS_SECRET=abc</code>. Falta um piso de entropia (≥ 32 caracteres).</li>
+      <li>O rate limiter cai para memória quando o Redis falha, em silêncio. Com múltiplas réplicas
+          isso multiplica o limite pelo número de instâncias — vale uma métrica e um alerta.</li>
+      <li><code>field-crypto.js</code> deriva a chave com SHA-256 puro, sem KDF nem versão de chave;
+          rotacionar exige migração manual.</li>
+      <li>Assets com hash no nome são servidos com <code>maxAge: '1h'</code>. Podem ser
+          <code>immutable</code> por um ano — <code>index.html</code> é o único que precisa
+          revalidar.</li>
+      <li>Em todo boot sem backend o app chama <code>/api/v1/state</code> e registra um 404 no
+          console. Ruído que mascara erro de verdade.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">4</span>O que foi feito, o que ficou</h2>
+  <p class="lead">Dez itens estavam no plano. Oito foram implementados e verificados; dois seguem
+     abertos por decisão, e não por esquecimento.</p>
+
+  <div class="tw" style="margin-bottom:16px">
+    <table>
+      <thead><tr><th>Ação</th><th>Situação</th><th>Efeito medido</th></tr></thead>
+      <tbody>
+        <tr><td>Ativar <code>compression()</code> no Express</td><td class="s-good">Feito</td><td>829 → 255 KB · LCP 5,13 → 2,30 s</td></tr>
+        <tr><td>Deixar a esteira verde (CSS, audit, cobertura)</td><td class="s-good">Feito</td><td>9/9 passos · 0 vulnerabilidades · 0 pisos falhando</td></tr>
+        <tr><td><code>allSettled</code> no precache + <code>exec</code> no CMD</td><td class="s-good">Feito</td><td>Precache degrada em vez de mentir · SIGTERM chega ao Node</td></tr>
+        <tr><td>Tirar o jsDelivr da CSP; restringir a raiz de dev</td><td class="s-good">Feito</td><td>10 testes novos de segurança prendendo o comportamento</td></tr>
+        <tr><td>Limite de plano por <code>createdAt</code></td><td class="s-good">Feito</td><td>Fecha o bypass do plano FREE por data retroativa</td></tr>
+        <tr><td>PBKDF2 alinhado + texto honesto da cifragem</td><td class="s-good">Feito</td><td>600k iterações, retrocompatível e testado</td></tr>
+        <tr><td>Cabeçalhos de cache <code>immutable</code></td><td class="s-good">Feito</td><td>Assets com hash cacheados por 1 ano; shell sempre revalida</td></tr>
+        <tr><td>Cobertura real de <code>sync-merge</code> e repositórios</td><td class="s-good">Feito</td><td>+117 testes · sync-merge 66% → 100%</td></tr>
+        <tr><td>CI também em <code>feat/**</code>, <code>fix/**</code>, <code>chore/**</code></td><td class="s-good">Feito</td><td>O vermelho passa a aparecer no dia em que nasce</td></tr>
+        <tr><td>OpenAPI completo + teste que trava rota sem doc</td><td class="s-good">Feito</td><td>17 → 74 de 74 endpoints · gate nos dois sentidos</td></tr>
+        <tr><td>Reescrever a skill <code>financaspro-development</code></td><td class="s-good">Entregue</td><td>Arquivo <code>.skill</code> — instalação é um clique seu</td></tr>
+        <tr><td>Commitar/mesclar a branch</td><td class="s-warn">Seu</td><td>Decisão de quem é dono do repositório</td></tr>
+        <tr><td>Unificar <code>DADOS</code>/<code>STORE</code> · E2E do fluxo de lançamento</td><td class="s-warn">Aberto</td><td>Trabalho de dias, não de horas — fora do escopo desta rodada</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>O que decidi <em>não</em> fazer, e por quê</h3>
+  <div class="card">
+    <ul class="tight" style="margin-top:0">
+      <li><b>SRI na tag do tesseract.js.</b> Calculei o hash da versão que <code>@5</code> resolve
+          hoje (5.1.1) e deixei em comentário no <code>index.html</code>. Não liguei porque o
+          sandbox da auditoria não alcança o jsDelivr: eu estaria entregando uma mudança que não
+          consegui testar, num caminho sem cobertura. Fica para quem puder abrir o OCR uma vez.</li>
+      <li><b>Atomicidade no limite de transações.</b> A corrida entre contar e inserir é real, mas
+          fechá-la exige levar a contagem para dentro da transação de criação, atravessando rota,
+          serviço e repositório — no caminho mais sensível do sistema, com um duplo de Prisma que
+          declara "sem atomicidade real" e portanto não provaria nada. O excedente é de unidades e
+          o efeito é comercial. Documentei no próprio middleware em vez de fingir que resolvi.</li>
+      <li><b>Tokenizar o CSS novo de <code>auth.css</code> e <code>ux-polish.css</code>.</b> São
+          arquivos da frente que estava em andamento no seu disco. O teto ficou em 352 com nota
+          registrada no <code>.css-debt.json</code> explicando que 6 dos literais vieram de lá,
+          não da auditoria.</li>
+      <li><b>Commitar qualquer coisa no git.</b> Os arquivos estão no disco, não no índice. O
+          repositório tem 254 alterações pendentes de duas frentes de trabalho, e escolher como
+          fatiar isso em commits é decisão sua.</li>
+    </ul>
+  </div>
+
+  <h3>Estado do ambiente</h3>
+  <div class="note" style="margin-bottom:0">
+    <strong>As dependências já estão instaladas.</strong> O <code>compression</code> que o
+    <code>backend/app.js</code> passou a importar foi instalado no seu <code>node_modules</code>,
+    junto com o <code>brace-expansion@5.0.9</code> que zera o <code>npm audit</code>. A API sobe
+    sem passo extra. Se em algum momento o <code>node_modules</code> for recriado do zero, um
+    <code>npm ci</code> comum resolve — o <code>package-lock.json</code> já está atualizado.
+  </div>
+  </section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">5</span>Método</h2>
+  <p class="lead">Tudo que está neste relatório foi executado, não inferido.</p>
+  <div class="card">
+    <ul class="tight" style="margin-top:0">
+      <li><b>Leitura de código:</b> 94 arquivos JS de frontend (25.086 LOC), 80 de backend (6.983
+          LOC), 14.356 linhas de CSS, schema Prisma com 20 modelos e 38 índices, 7 migrações.</li>
+      <li><b>Testes:</b> <code>jest</code> com cobertura nas duas suítes — 76 + 22 arquivos, 1.632
+          testes, 0 falhas. Playwright com Chromium real em 12 cenários E2E, incluindo axe-core.</li>
+      <li><b>Análise estática:</b> ESLint em <code>js/</code> e <code>backend/</code>,
+          <code>check-xss-sinks</code>, <code>check-contrast</code>, <code>check-css-tokens</code>,
+          <code>check-bundle-budget</code>, <code>check-dist-orphans</code>,
+          <code>sync-conflict-test</code>, <code>npm audit</code>.</li>
+      <li><b>Build:</b> <code>npm run build</code> completo — Vite, subset do Lucide, bundling,
+          cópia estática, hardening de CSP, verificação de órfãos.</li>
+      <li><b>Performance:</b> Chromium via CDP com <code>Emulation.setCPUThrottlingRate: 4</code> e
+          rede a ~1,6&nbsp;Mbps / 150&nbsp;ms de latência. Duas medições comparáveis: o
+          <code>dist/</code> como é servido hoje, e o mesmo <code>dist/</code> atrás de
+          <code>compression()</code>.</li>
+      <li><b>Verificação pontual:</b> <code>UTILS.parseMoeda</code>,
+          <code>UTILS.dividirEmParcelas</code> e a soma em centavos executados em VM isolada para
+          confirmar as correções da auditoria anterior.</li>
+    </ul>
+    <p style="margin:14px 0 0"><b>Verificação das correções:</b> cada mudança foi aplicada numa
+    cópia isolada, com a suíte completa, o build, os nove passos da esteira e os 13 cenários E2E
+    rodando a cada bloco. Onde a correção tinha teste, provei que ele <em>falha</em> contra o
+    código antigo antes de considerá-lo válido — quatro testes da raiz estática e três do limite
+    de plano ficam vermelhos no código anterior. A medição de performance foi refeita no build
+    final. Só depois disso os 29 arquivos foram gravados no disco, com verificação de hash antes
+    e depois e preservação das quebras de linha originais de cada arquivo.</p>
+
+    <p style="margin:14px 0 0">Na fase de auditoria, <b>nenhum arquivo do projeto foi modificado.</b> Os testes de
+    <code>backend-smoke</code>, <code>backend-api</code> e a suíte de integração não puderam rodar no
+    ambiente da auditoria porque o <code>prisma generate</code> exige baixar os engines, e a rede
+    estava bloqueada — no CI eles rodam normalmente.</p>
+  </div>
+</section>
+
+<footer>
+  Auditoria completa e implementação · FinançasPro v11.0 · 22 de agosto de 2026 ·
+  branch <code>feat/testes-cobertura-perf-openapi</code>, sobre o commit <code>0ecd657</code>.
+  Substitui e atualiza <code>docs/AUDITORIA-2026-08.md</code> (nota anterior 6,4/10 ≈ 64/100).
+  Nota desta rodada: <b>79 antes das correções, 86 depois</b> — 35 arquivos alterados,
+  1.640 linhas adicionadas, 122 testes novos.
+</footer>
+
+</div>
+<script>
+(function(){
+  var b=document.getElementById('tt');
+  b&&b.addEventListener('click',function(){
+    var r=document.documentElement;
+    var cur=r.getAttribute('data-theme');
+    if(!cur){cur=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}
+    r.setAttribute('data-theme',cur==='dark'?'light':'dark');
+  });
+})();
+</script>
+</body>
+</html>

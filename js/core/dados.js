@@ -71,6 +71,12 @@ var DADOS = {
   /** Cache em memória para leitura síncrona com crypto at-rest */
   _plainCache: {},
 
+  /** Aviso de cota é uma vez por sessão — repetido, vira ruído ignorável. */
+  _avisouCota: false,
+
+  /** Idem para o desvio de relógio: uma vez por sessão. */
+  _avisouRelogio: false,
+
   _storageGetRaw: function(key) {
     if (typeof LOCAL_CRYPTO !== 'undefined' && LOCAL_CRYPTO.isEnabled()) {
       if (Object.prototype.hasOwnProperty.call(this._plainCache, key)) {
@@ -97,19 +103,131 @@ var DADOS = {
     return localStorage.getItem(key);
   },
 
+  /** Teto prático do localStorage. Não é consultável: 5 MB é o valor que os
+   *  navegadores convergiram e o mais conservador entre eles. */
+  LIMITE_STORAGE_BYTES: 5 * 1024 * 1024,
+
+  /** Acima disto o usuário é avisado — ainda com espaço para agir. */
+  _LIMIAR_AVISO: 0.8,
+
+  /**
+   * Um DOMException de cota, ou outra coisa?
+   *
+   * O nome muda por navegador e versão; o código 22 é o legado e o 1014 é o
+   * do Firefox. Errar essa detecção significa tratar um bug qualquer como
+   * "acabou o espaço" e mandar o usuário apagar dados sem necessidade.
+   */
+  _ehErroDeCota: function(e) {
+    if (!e) return false;
+    return e.name === 'QuotaExceededError'
+      || e.name === 'NS_ERROR_DOM_QUOTA_REACHED'
+      || e.code === 22
+      || e.code === 1014;
+  },
+
+  /**
+   * Quantos bytes o app ocupa no localStorage, e quão perto do teto está.
+   *
+   * A auditoria de dimensões ocultas mediu 60 mil lançamentos em 8,79 MB — bem
+   * acima do teto de 5 MB. O limite prático fica perto de 35 mil lançamentos, e
+   * até agora o app não dizia nada a respeito: o usuário simplesmente batia no
+   * teto um dia, no meio de um cadastro.
+   */
+  usoArmazenamento: function() {
+    var bytes = 0;
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        var v = localStorage.getItem(k) || '';
+        // UTF-16: o navegador contabiliza 2 bytes por unidade de código.
+        bytes += (k.length + v.length) * 2;
+      }
+    } catch (e) {
+      return { bytes: 0, limite: this.LIMITE_STORAGE_BYTES, percentual: 0, disponivel: false };
+    }
+    return {
+      bytes: bytes,
+      limite: this.LIMITE_STORAGE_BYTES,
+      percentual: Math.min(100, Math.round((bytes / this.LIMITE_STORAGE_BYTES) * 100)),
+      disponivel: true,
+    };
+  },
+
+  /**
+   * Avisa uma vez por sessão quando o armazenamento passa do limiar.
+   *
+   * Uma vez por sessão porque o aviso precisa ser levado a sério: repetido a
+   * cada gravação vira ruído e a pessoa aprende a ignorá-lo — justamente antes
+   * do dia em que ele importa.
+   */
+  verificarCota: function() {
+    var uso = this.usoArmazenamento();
+    if (!uso.disponivel || this._avisouCota) return uso;
+    if (uso.percentual < this._LIMIAR_AVISO * 100) return uso;
+
+    this._avisouCota = true;
+    if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+      UTILS.mostrarToast(
+        'Armazenamento em ' + uso.percentual + '%. Exporte um backup e '
+        + 'considere apagar lançamentos antigos.',
+        'warning',
+      );
+    }
+    return uso;
+  },
+
+  /**
+   * Grava no localStorage. Devolve true se gravou.
+   *
+   * O caminho criptografado engolia o erro de cota com um console.error: a
+   * gravação falhava, o cache em memória seguia com o valor novo e o app
+   * parecia funcionar até o próximo reload — quando o lançamento simplesmente
+   * não estava mais lá. Perder dado financeiro em silêncio é o pior desfecho
+   * possível aqui; qualquer aviso é melhor.
+   */
   _storageSetRaw: function(key, value) {
+    var self = this;
+
+    function avisarCotaEsgotada() {
+      if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+        UTILS.mostrarToast(
+          'Sem espaço para salvar. Exporte um backup e apague lançamentos '
+          + 'antigos para continuar.',
+          'error',
+        );
+      }
+    }
+
     if (typeof LOCAL_CRYPTO !== 'undefined' && LOCAL_CRYPTO.isEnabled()) {
       this._plainCache[key] = value;
       LOCAL_CRYPTO.wrapStorageValue(key, value).then(function(stored) {
         try {
           localStorage.setItem(key, stored);
+          self.verificarCota();
         } catch (e) {
+          if (self._ehErroDeCota(e)) {
+            // O cache em memória tem um valor que o disco não tem. Removê-lo
+            // seria pior (a UI perderia o dado na hora); o que não pode é o
+            // usuário seguir digitando achando que está tudo salvo.
+            avisarCotaEsgotada();
+          }
           console.error('Erro ao persistir storage criptografado:', e);
         }
       });
-      return;
+      return true;
     }
-    localStorage.setItem(key, value);
+
+    try {
+      localStorage.setItem(key, value);
+      this.verificarCota();
+      return true;
+    } catch (e) {
+      if (this._ehErroDeCota(e)) {
+        avisarCotaEsgotada();
+        return false;
+      }
+      throw e;
+    }
   },
 
   // Chaves elegíveis à cifragem (prefixo 'fp-'). aprendizado/rascunho ficam de fora.
@@ -175,6 +293,62 @@ var DADOS = {
     return !!this._apiBaseUrl();
   },
 
+  _syncV2Ativo: function() {
+    if (!this._apiAtiva()) return false;
+    if (typeof SYNC_ENGINE === 'undefined') return false;
+    var cfg = this.getConfig();
+    return cfg.syncV2Enabled !== false;
+  },
+
+  /**
+   * Desvio tolerado antes de avisar o usuário.
+   *
+   * O dano concreto de um relógio errado é a DATA do lançamento. Alguns
+   * minutos só mudam o dia se a pessoa lançar exatamente à meia-noite; horas
+   * mudam com facilidade, e dias ou meses mandam o lançamento para o orçamento
+   * e o relatório errados. Seis horas fica bem acima de qualquer jitter de NTP
+   * e bem abaixo do ponto em que o estrago aparece.
+   */
+  _LIMITE_DESVIO_MS: 6 * 60 * 60 * 1000,
+
+  /** Último desvio medido, em ms. Positivo = relógio do aparelho adiantado. */
+  desvioRelogioMs: null,
+
+  /**
+   * Compara o relógio do aparelho com o do servidor usando o cabeçalho `Date`.
+   *
+   * Toda data de lançamento nasce do relógio local. Um aparelho com a data
+   * errada — restauro de fábrica, bateria de RTC velha, fuso alterado à mão —
+   * gera um extrato inteiro deslocado, e nada no produto acusava. Fica o
+   * pior tipo de erro: os números batem, a conta fecha, mas o mês está errado.
+   *
+   * A comparação é de epoch absoluto, então fuso horário não interfere: quem
+   * está com o fuso errado e a hora certa não é incomodado.
+   */
+  _conferirRelogio: function(res) {
+    if (this._avisouRelogio || !res || !res.headers || !res.headers.get) return;
+
+    var cabecalho = res.headers.get('Date');
+    if (!cabecalho) return;
+
+    var doServidor = Date.parse(cabecalho);
+    if (!isFinite(doServidor)) return;
+
+    this.desvioRelogioMs = Date.now() - doServidor;
+    if (Math.abs(this.desvioRelogioMs) < this._LIMITE_DESVIO_MS) return;
+
+    this._avisouRelogio = true;
+    var horas = Math.round(Math.abs(this.desvioRelogioMs) / 3600000);
+    if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+      UTILS.mostrarToast(
+        'O relógio deste aparelho está ' + horas + 'h '
+        + (this.desvioRelogioMs > 0 ? 'adiantado' : 'atrasado')
+        + '. Corrija a data para os lançamentos ficarem no mês certo.',
+        'warning',
+      );
+    }
+  },
+
   _apiFetch: function(path, options, _isRetry) {
     var self = this;
     var base = this._apiBaseUrl();
@@ -191,6 +365,7 @@ var DADOS = {
       headers: headers,
       credentials: 'include',
     }, options || {})).then(function(res) {
+      self._conferirRelogio(res);
       if (res.status === 401 && !_isRetry) {
         return self._refreshAccessToken().then(function(ok) {
           if (!ok) return Promise.reject(Object.assign(new Error('Sessao expirada'), { status: 401 }));
@@ -241,6 +416,9 @@ var DADOS = {
 
   // Converte campo de transação do formato EN (API) para PT (localStorage)
   _txEnToPt: function(tx) {
+    if (typeof FINANCE_CONTRACT !== 'undefined') {
+      return FINANCE_CONTRACT.txEnToPt(tx);
+    }
     if (!tx || typeof tx !== 'object') return tx;
     return {
       id:          tx.id,
@@ -251,17 +429,24 @@ var DADOS = {
       data:        tx.date ? tx.date.substring(0, 10) : '',
       descricao:   tx.description || '',
       banco:       tx.accountId || '',
+      contaDestinoId: tx.targetAccountId || null,
+      contaDestino: '',
       cartao:      '',
       notas:       tx.notes || '',
       tags:        tx.tags || [],
       recorrente:  tx.recurring || false,
       dataCriacao: tx.createdAt || tx.date || new Date().toISOString(),
+      updatedAt:   tx.updatedAt || tx.createdAt || new Date().toISOString(),
+      deletedAt:   tx.deletedAt || null,
       _apiId:      tx.id
     };
   },
 
   // Converte campo de conta do formato EN (API) para PT (localStorage)
   _contaEnToPt: function(ac) {
+    if (typeof FINANCE_CONTRACT !== 'undefined') {
+      return FINANCE_CONTRACT.contaEnToPt(ac);
+    }
     if (!ac || typeof ac !== 'object') return ac;
     return {
       id:          ac.id,
@@ -279,10 +464,17 @@ var DADOS = {
   _mergeSnapshotLocal: function(snapshot) {
     if (!snapshot || typeof snapshot !== 'object') return;
 
-    if (Array.isArray(snapshot.transactions)) {
+    if (this._syncV2Ativo() && typeof SYNC_ENGINE !== 'undefined') {
+      SYNC_ENGINE.bootstrapFromSnapshot(snapshot);
+    } else if (Array.isArray(snapshot.transactions)) {
       var txsPt = snapshot.transactions.map(this._txEnToPt.bind(this));
-      this._storageSetRaw(CONFIG.STORAGE_TRANSACOES, JSON.stringify(txsPt));
+      var local = this.getTransacoesRaw();
+      var merged = (typeof SYNC_MERGE !== 'undefined')
+        ? SYNC_MERGE.mergeDelta(local, [], txsPt)
+        : txsPt;
+      this._storageSetTransacoes(merged);
     }
+
     if (Array.isArray(snapshot.accounts)) {
       var contasPt = snapshot.accounts.map(this._contaEnToPt.bind(this));
       this._storageSetRaw(CONFIG.STORAGE_CONTAS, JSON.stringify(contasPt));
@@ -292,7 +484,10 @@ var DADOS = {
       cfg = Object.assign(cfg, snapshot.config);
     }
     if (Array.isArray(snapshot.recurringTransactions)) {
-      cfg.recorrentes = snapshot.recurringTransactions;
+      var mapRec = (typeof FINANCE_CONTRACT !== 'undefined')
+        ? function(r) { return FINANCE_CONTRACT.recorrenteEnToPt(r); }
+        : function(r) { return r; };
+      cfg.recorrentes = snapshot.recurringTransactions.map(mapRec);
     }
     this._storageSetRaw(CONFIG.STORAGE_CONFIG, JSON.stringify(cfg));
 
@@ -306,6 +501,37 @@ var DADOS = {
 
     if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
       APP_STORE.dispatch(ACTIONS.SYNC_INICIAR);
+    }
+
+    if (this._syncV2Ativo() && typeof SYNC_ENGINE !== 'undefined') {
+      var fetchFn = this._apiFetch.bind(this);
+      var chain = SYNC_ENGINE.getCursor()
+        ? SYNC_ENGINE.syncCycle(fetchFn)
+        : self._apiFetch('/api/v1/state').then(function(snapshot) {
+            self._mergeSnapshotLocal(snapshot);
+            return SYNC_ENGINE.pullAll(fetchFn);
+          }).then(function() {
+            return SYNC_ENGINE.flush(fetchFn);
+          });
+
+      return chain.then(function() {
+        self.aplicarJanelaLocal();
+        if (typeof BILLING !== 'undefined' && BILLING.sync) {
+          BILLING.sync().catch(function() {});
+        }
+        if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
+          APP_STORE.dispatch(ACTIONS.SYNC_CONCLUIR);
+        }
+        return true;
+      }).catch(function(err) {
+        console.warn('Sync v2 falhou, dados locais preservados:', err.message);
+        if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
+          APP_STORE.dispatch(ACTIONS.SYNC_FALHAR, { erro: err.message });
+        }
+        return false;
+      }).finally(function() {
+        self._syncPending = false;
+      });
     }
 
     return this._apiFetch('/api/v1/state').then(function(snapshot) {
@@ -340,6 +566,9 @@ var DADOS = {
 
   // Converte transação PT (localStorage) para EN (API)
   _txPtToEn: function(tx) {
+    if (typeof FINANCE_CONTRACT !== 'undefined') {
+      return FINANCE_CONTRACT.txPtToEn(tx);
+    }
     if (!tx || typeof tx !== 'object') return tx;
     var data = tx.data || '';
     // Garante ISO 8601 com hora — backend valida datetime
@@ -368,8 +597,11 @@ var DADOS = {
       body: JSON.stringify(payload)
     }).then(function(resp) {
       return resp && resp.data ? resp.data : transacao;
-    }).catch(function() {
-      return transacao;
+    }).catch(function(err) {
+      if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
+        APP_STORE.dispatch(ACTIONS.SYNC_FALHAR, { erro: err.message || 'push-tx' });
+      }
+      return Promise.reject(err);
     });
   },
 
@@ -377,18 +609,29 @@ var DADOS = {
     if (!this._apiAtiva()) return Promise.resolve(true);
     return this._apiFetch('/api/v1/transactions/' + encodeURIComponent(id), {
       method: 'DELETE'
-    }).then(function() { return true; }).catch(function() { return true; });
+    }).then(function() { return true; }).catch(function(err) {
+      if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
+        APP_STORE.dispatch(ACTIONS.SYNC_FALHAR, { erro: err.message || 'delete-tx' });
+      }
+      return Promise.reject(err);
+    });
   },
 
   _pushContasApi: function(conta) {
     if (!this._apiAtiva()) return Promise.resolve(conta);
+    var payload = (typeof FINANCE_CONTRACT !== 'undefined')
+      ? FINANCE_CONTRACT.contaPtToEn(conta)
+      : conta;
     return this._apiFetch('/api/v1/accounts', {
       method: 'POST',
-      body: JSON.stringify(conta)
+      body: JSON.stringify(payload)
     }).then(function(resp) {
       return resp && resp.data ? resp.data : conta;
-    }).catch(function() {
-      return conta;
+    }).catch(function(err) {
+      if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
+        APP_STORE.dispatch(ACTIONS.SYNC_FALHAR, { erro: err.message || 'push-conta' });
+      }
+      return Promise.reject(err);
     });
   },
 
@@ -419,24 +662,19 @@ var DADOS = {
 
   _pushRecorrenteApi: function(recData) {
     if (!this._apiAtiva()) return Promise.resolve(recData);
-    var isoStart = recData.inicio ? recData.inicio + 'T00:00:00.000Z' : new Date().toISOString();
-    var isoNext  = recData.proxima ? recData.proxima + 'T00:00:00.000Z' : isoStart;
-    var payload = {
-      type:        recData.tipo,
-      amount:      Number(recData.valor) || 0,
-      description: recData.descricao || 'Recorrente',
-      category:    recData.categoria || 'outro',
-      frequency:   recData.frequencia || 'monthly',
-      startDate:   isoStart,
-      nextDue:     isoNext
-    };
+    var payload = (typeof FINANCE_CONTRACT !== 'undefined')
+      ? FINANCE_CONTRACT.recorrentePtToEn(recData)
+      : recData;
     return this._apiFetch('/api/v1/recorrentes', {
       method: 'POST',
       body: JSON.stringify(payload)
     }).then(function(resp) {
       return resp && resp.data ? resp.data : recData;
-    }).catch(function() {
-      return recData;
+    }).catch(function(err) {
+      if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
+        APP_STORE.dispatch(ACTIONS.SYNC_FALHAR, { erro: err.message || 'push-recorrente' });
+      }
+      return Promise.reject(err);
     });
   },
 
@@ -637,16 +875,102 @@ var DADOS = {
    * Retorna todas transações persistidas. Falha silenciosamente em JSON inválido.
    * @returns {Transacao[]}
    */
-  getTransacoes: function() {
+  /**
+   * Marcado quando uma leitura do storage falhou nesta sessão.
+   *
+   * Existe porque `[]` é ambíguo de um jeito perigoso: pode significar "não há
+   * lançamentos" ou "não consegui ler os lançamentos". Para o usuário, a tela é
+   * idêntica — ele abre o app e vê zero — e a diferença é enorme: no segundo
+   * caso os dados ainda estão no disco e um backup pode salvá-los, mas a
+   * primeira gravação seguinte sobrescreve o conteúdo corrompido e a perda vira
+   * definitiva.
+   */
+  _falhaLeitura: null,
+
+  /** Houve falha de leitura nesta sessão? */
+  leituraFalhou: function() {
+    return !!this._falhaLeitura;
+  },
+
+  /** Detalhe da falha, para a UI explicar o que aconteceu. */
+  detalheFalhaLeitura: function() {
+    return this._falhaLeitura;
+  },
+
+  /**
+   * Registra a falha e avisa — uma vez por sessão, para não virar ruído.
+   *
+   * O aviso é deliberadamente instrutivo em vez de técnico: a ação que salva
+   * os dados do usuário é exportar um backup ANTES de continuar mexendo.
+   */
+  _registrarFalhaLeitura: function(chave, erro) {
+    if (this._falhaLeitura) return;
+    this._falhaLeitura = { chave: chave, mensagem: erro && erro.message, em: new Date().toISOString() };
+
+    if (typeof OBS !== 'undefined' && OBS.captureError) {
+      OBS.captureError(erro, { contexto: 'DADOS.leitura', chave: chave });
+    }
+    if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+      UTILS.mostrarToast(
+        'Não foi possível ler seus dados salvos. Eles podem estar íntegros — '
+        + 'exporte um backup antes de registrar qualquer lançamento novo.',
+        'error',
+      );
+    }
+  },
+
+  getTransacoesRaw: function() {
     try {
       var data = this._storageGetRaw(CONFIG.STORAGE_TRANSACOES);
       if (!data) return [];
       var parsed = JSON.parse(data);
-      if (!Array.isArray(parsed)) return [];
+      if (!Array.isArray(parsed)) {
+        this._registrarFalhaLeitura(CONFIG.STORAGE_TRANSACOES,
+          new Error('conteúdo não é uma lista'));
+        return [];
+      }
       return parsed;
     } catch (e) {
-      console.error('Erro ao carregar transacoes:', e);
+      this._registrarFalhaLeitura(CONFIG.STORAGE_TRANSACOES, e);
       return [];
+    }
+  },
+
+  _storageSetTransacoes: function(transacoes) {
+    var check = UTILS.verificarStorageDisponivel(transacoes, CONFIG.STORAGE_TRANSACOES);
+    if (!check.disponivel) {
+      console.error('Storage indisponível:', check.erro);
+      throw new Error(check.erro);
+    }
+    this._storageSetRaw(CONFIG.STORAGE_TRANSACOES, JSON.stringify(transacoes));
+  },
+
+  getTransacoes: function() {
+    return this.getTransacoesRaw().filter(function(t) {
+      return !t.deletedAt;
+    });
+  },
+
+  /**
+   * Limita o cache local a N meses — histórico completo permanece no servidor.
+   * Preserva itens pendentes na outbox de sync.
+   */
+  aplicarJanelaLocal: function() {
+    var meses = (typeof CONFIG !== 'undefined' && CONFIG.LOCAL_TX_WINDOW_MONTHS) || 24;
+    var cutoff = new Date();
+    cutoff.setMonth(cutoff.getMonth() - meses);
+    var cutoffStr = cutoff.toISOString().slice(0, 10);
+    var raw = this.getTransacoesRaw();
+    var pending = (typeof SYNC_ENGINE !== 'undefined' && SYNC_ENGINE.pendingIds)
+      ? SYNC_ENGINE.pendingIds()
+      : [];
+    var trimmed = raw.filter(function(t) {
+      if (pending.indexOf(t.id) !== -1) return true;
+      var d = t.data || (t.updatedAt && String(t.updatedAt).slice(0, 10)) || '';
+      return d >= cutoffStr;
+    });
+    if (trimmed.length < raw.length) {
+      this._storageSetTransacoes(trimmed);
     }
   },
 
@@ -657,46 +981,54 @@ var DADOS = {
    * @throws {Error} se localStorage cheio
    */
   salvarTransacao: function(transacao) {
-    var transacoes = this.getTransacoes();
-    transacao.id = transacao.id || UTILS.gerarId();
+    var transacoes = this.getTransacoesRaw();
+    var syncV2 = this._syncV2Ativo();
+    transacao.id = transacao.id || (syncV2 && UTILS.gerarUuid ? UTILS.gerarUuid() : UTILS.gerarId());
     transacao.dataCriacao = transacao.dataCriacao || new Date().toISOString();
+    transacao.updatedAt = new Date().toISOString();
+    transacao.deletedAt = null;
     var index = transacoes.findIndex(function(t) { return t.id === transacao.id; });
     if (index >= 0) {
       transacoes[index] = transacao;
     } else {
       transacoes.push(transacao);
     }
-    var check = UTILS.verificarStorageDisponivel(transacoes, CONFIG.STORAGE_TRANSACOES);
-    if (!check.disponivel) {
-      console.error('Storage indisponível:', check.erro);
-      throw new Error(check.erro);
-    }
-    this._storageSetRaw(CONFIG.STORAGE_TRANSACOES, JSON.stringify(transacoes));
+    this._storageSetTransacoes(transacoes);
     var actionType = (typeof ACTIONS !== 'undefined')
       ? (index >= 0 ? ACTIONS.TRANSACAO_EDITAR : ACTIONS.TRANSACAO_CRIAR)
       : null;
     if (typeof APP_STORE !== 'undefined' && actionType) {
       APP_STORE.dispatch(actionType, transacao);
     }
-    this._pushTransacaoApi(transacao, index >= 0 ? 'PATCH' : 'POST');
+    if (syncV2 && typeof SYNC_ENGINE !== 'undefined') {
+      if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
+        APP_STORE.dispatch(ACTIONS.SYNC_SALVANDO);
+      }
+      SYNC_ENGINE.enqueueTransaction('upsert', transacao);
+    } else {
+      this._pushTransacaoApi(transacao, index >= 0 ? 'PATCH' : 'POST').catch(function() {});
+    }
     return transacao;
   },
 
   deletarTransacao: function(id) {
-    var transacoes = this.getTransacoes();
-    var index = transacoes.findIndex(function(t) { return t.id === id; });
+    var transacoes = this.getTransacoesRaw();
+    var index = transacoes.findIndex(function(t) { return t.id === id && !t.deletedAt; });
     if (index >= 0) {
-      transacoes.splice(index, 1);
-      var check = UTILS.verificarStorageDisponivel(transacoes, CONFIG.STORAGE_TRANSACOES);
-      if (!check.disponivel) {
-        console.error('Storage indisponível:', check.erro);
-        return false;
+      var now = new Date().toISOString();
+      if (this._syncV2Ativo() && typeof SYNC_ENGINE !== 'undefined') {
+        transacoes[index].deletedAt = now;
+        transacoes[index].updatedAt = now;
+        this._storageSetTransacoes(transacoes);
+        SYNC_ENGINE.enqueueTransaction('delete', transacoes[index]);
+      } else {
+        transacoes.splice(index, 1);
+        this._storageSetTransacoes(transacoes);
+        this._deleteTransacaoApi(id).catch(function() {});
       }
-      this._storageSetRaw(CONFIG.STORAGE_TRANSACOES, JSON.stringify(transacoes));
       if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
         APP_STORE.dispatch(ACTIONS.TRANSACAO_DELETAR, id);
       }
-      this._deleteTransacaoApi(id);
       return true;
     }
     return false;
@@ -713,7 +1045,7 @@ var DADOS = {
       var parsed = JSON.parse(data);
       return Object.assign({}, CONFIG.DEFAULT_CONFIG, parsed);
     } catch (e) {
-      console.error('Erro ao carregar config:', e);
+      this._registrarFalhaLeitura(CONFIG.STORAGE_CONFIG, e);
       return Object.assign({}, CONFIG.DEFAULT_CONFIG);
     }
   },
@@ -761,6 +1093,11 @@ var DADOS = {
     return recData;
   },
 
+  /**
+   * Snapshot cru do armazenamento. NÃO é o formato de backup — não carrega
+   * anexos e o importador (INIT_CONFIG.importarDados) não lê este shape.
+   * Para backup do usuário use INIT_CONFIG.exportarDados.
+   */
   exportarDados: function() {
     return {
       transacoes: this.getTransacoes(),
@@ -810,7 +1147,7 @@ var DADOS = {
       var parsed = JSON.parse(data);
       return Array.isArray(parsed) ? parsed : [];
     } catch (e) {
-      console.error('Erro ao carregar contas:', e);
+      this._registrarFalhaLeitura(CONFIG.STORAGE_CONTAS, e);
       return [];
     }
   },

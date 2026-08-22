@@ -3,6 +3,8 @@ import { OrgRepository } from '../repositories/org.repository.js';
 import { AppError } from '../errors.js';
 import { enqueue, QUEUES } from '../../lib/queue.js';
 import prisma from '../../lib/db.js';
+import logger from '../../lib/logger.js';
+import { assertOrgMemberCapacity } from '../../middleware/plan.js';
 
 function slugify(name) {
   return name
@@ -47,25 +49,25 @@ export const OrgService = {
   async create(userId, body) {
     const { name } = body;
     const slug = await uniqueSlug(name);
-    const org = await OrgRepository.create({ name, slug, ownerId: userId });
 
-    // Cria subscription FREE por padrão
     const freePlan = await prisma.plan.findFirst({ where: { tier: 'FREE' } });
-    if (freePlan) {
-      const now = new Date();
-      const periodEnd = new Date(now);
-      periodEnd.setFullYear(periodEnd.getFullYear() + 10); // FREE não expira
+    const now = new Date();
+    const periodEnd = new Date(now);
+    periodEnd.setFullYear(periodEnd.getFullYear() + 10);
 
-      await prisma.subscription.create({
-        data: {
-          orgId:              org.id,
-          planId:             freePlan.id,
-          status:             'ACTIVE',
-          currentPeriodStart: now,
-          currentPeriodEnd:   periodEnd,
-        },
-      });
-    }
+    const org = await OrgRepository.create(
+      { name, slug, ownerId: userId },
+      freePlan
+        ? {
+          subscription: {
+            planId: freePlan.id,
+            status: 'ACTIVE',
+            currentPeriodStart: now,
+            currentPeriodEnd: periodEnd,
+          },
+        }
+        : undefined,
+    );
 
     return org;
   },
@@ -98,6 +100,8 @@ export const OrgService = {
     });
     if (existing) throw new AppError('Convite já enviado para este e-mail', 409);
 
+    await assertOrgMemberCapacity(orgId);
+
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
@@ -115,21 +119,24 @@ export const OrgService = {
 
   async acceptInvitation(token, userId) {
     const invitation = await OrgRepository.findInvitation(token);
-
     if (!invitation) throw new AppError('Convite inválido', 404);
     if (invitation.acceptedAt) throw new AppError('Convite já utilizado', 409);
     if (invitation.expiresAt < new Date()) throw new AppError('Convite expirado', 410);
 
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (user?.email !== invitation.email) throw new AppError('Este convite não é para sua conta', 403);
-
     const existing = await OrgRepository.findMember(invitation.orgId, userId);
     if (existing) throw new AppError('Você já é membro desta organização', 409);
 
-    await OrgRepository.addMember(invitation.orgId, userId, invitation.role);
-    await OrgRepository.acceptInvitation(token);
+    await assertOrgMemberCapacity(invitation.orgId, { accepting: true });
 
-    return { orgId: invitation.orgId, role: invitation.role };
+    const result = await OrgRepository.acceptInvitationForUser(token, userId);
+
+    if (result.error === 'NOT_FOUND') throw new AppError('Convite inválido', 404);
+    if (result.error === 'USED') throw new AppError('Convite já utilizado', 409);
+    if (result.error === 'EXPIRED') throw new AppError('Convite expirado', 410);
+    if (result.error === 'EMAIL_MISMATCH') throw new AppError('Este convite não é para sua conta', 403);
+    if (result.error === 'ALREADY_MEMBER') throw new AppError('Você já é membro desta organização', 409);
+
+    return { orgId: result.orgId, role: result.role };
   },
 
   async updateMemberRole(orgId, targetUserId, newRole, actorUserId) {
@@ -152,6 +159,36 @@ export const OrgService = {
     if (isOwner && targetUserId === org.ownerId) throw new AppError('O dono não pode ser removido', 400);
 
     await OrgRepository.removeMember(orgId, targetUserId);
+  },
+
+  /**
+   * Transfere a propriedade da organização para outro membro.
+   *
+   * Sem isto, o dono de uma organização com membros não tinha saída: apagar a
+   * conta era bloqueado (409) e a única alternativa era excluir a organização
+   * inteira — levando junto os dados de todo mundo que estava lá dentro. Quem
+   * quisesse apenas sair do produto era obrigado a destruir o trabalho dos
+   * outros, ou a manter a conta aberta para sempre.
+   */
+  async transferOwnership(orgId, targetUserId, actorUserId) {
+    const org = await OrgRepository.findById(orgId);
+    if (!org) throw new AppError('Organização não encontrada', 404);
+    if (org.ownerId !== actorUserId) {
+      throw new AppError('Apenas o dono pode transferir a propriedade', 403);
+    }
+    if (targetUserId === actorUserId) {
+      throw new AppError('Você já é o dono desta organização', 400);
+    }
+
+    // O destinatário precisa já pertencer à organização: promover alguém de
+    // fora daria acesso a dados que essa pessoa nunca teve permissão de ver.
+    const membro = await OrgRepository.findMember(orgId, targetUserId);
+    if (!membro) throw new AppError('O novo dono precisa ser membro da organização', 400);
+
+    await OrgRepository.transferOwnership(orgId, actorUserId, targetUserId);
+    logger.info({ orgId, de: actorUserId, para: targetUserId }, 'Propriedade da organização transferida');
+
+    return { orgId, ownerId: targetUserId };
   },
 
   async listInvitations(orgId) {

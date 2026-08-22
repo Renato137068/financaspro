@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FinançasPro v11.0 — Auditoria de Dimensões Ocultas</title>
+<style>
+:root{
+  --bg:#0a0c12;--bg2:#10141d;--card:#141924;--card2:#1a2030;
+  --line:#242c3d;--txt:#e9edf5;--mut:#94a1b8;--mut2:#5f6b80;
+  --ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--info:#3b82f6;--acc:#a78bfa;--r:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:linear-gradient(180deg,#0a0c12,#0c1018 55%,#0a0c12);color:var(--txt);
+  font:15px/1.65 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding:0 0 80px}
+.wrap{max-width:1160px;margin:0 auto;padding:0 22px}
+header{padding:56px 0 40px;border-bottom:1px solid var(--line);margin-bottom:44px;
+  background:radial-gradient(1100px 420px at 50% -120px,rgba(167,139,250,.15),transparent)}
+.tag{display:inline-block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--acc);border:1px solid rgba(167,139,250,.35);background:rgba(167,139,250,.1);
+  padding:5px 12px;border-radius:99px;margin-bottom:18px;font-weight:700}
+h1{font-size:38px;line-height:1.15;letter-spacing:-.02em;margin-bottom:12px;font-weight:800}
+h1 span{background:linear-gradient(90deg,#a78bfa,#22d3ee);-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text}
+.sub{color:var(--mut);font-size:16px;max-width:800px}
+.meta{display:flex;gap:26px;flex-wrap:wrap;margin-top:26px;font-size:13px;color:var(--mut2)}
+.meta b{color:var(--txt);font-weight:600}
+section{margin-bottom:52px}
+h2.sec{font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut2);
+  padding-bottom:12px;border-bottom:1px solid var(--line);margin-bottom:26px;font-weight:700}
+
+.hero{display:grid;grid-template-columns:250px 1fr;gap:36px;align-items:center;
+  background:var(--card);border:1px solid var(--line);border-radius:20px;padding:34px;margin-bottom:20px}
+.gauge{position:relative;width:200px;height:200px;margin:0 auto}
+.gauge svg{transform:rotate(-90deg)}
+.gauge .val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.gauge .num{font-size:52px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.gauge .lbl{font-size:11px;color:var(--mut2);letter-spacing:.12em;text-transform:uppercase;margin-top:6px}
+.hero h2{font-size:20px;margin-bottom:10px}
+.hero p{color:var(--mut);font-size:14.5px;margin-bottom:18px}
+.pills{display:flex;gap:10px;flex-wrap:wrap}
+.pill{font-size:12px;padding:6px 12px;border-radius:99px;border:1px solid var(--line);background:var(--bg2);color:var(--mut)}
+.pill.ok{border-color:rgba(34,197,94,.35);color:#86efac;background:rgba(34,197,94,.08)}
+.pill.warn{border-color:rgba(245,158,11,.35);color:#fcd34d;background:rgba(245,158,11,.08)}
+.pill.bad{border-color:rgba(239,68,68,.35);color:#fca5a5;background:rgba(239,68,68,.08)}
+
+.note{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.25);border-radius:14px;
+  padding:20px 24px;font-size:14px;color:var(--mut);margin-bottom:16px}
+.note b{color:#fca5a5}
+.note.m{background:rgba(167,139,250,.07);border-color:rgba(167,139,250,.25)}
+.note.m b{color:#c4b5fd}
+
+/* demo visual da falha */
+.demo{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0 4px}
+.demoCard{background:#0f1420;border:1px solid var(--line);border-radius:12px;padding:18px}
+.demoCard .t{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);margin-bottom:12px}
+.orcRow{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:14px}
+.orcRow b{font-weight:650}
+.badgeS{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;
+  padding:3px 10px;border-radius:99px}
+.badgeS.al{background:rgba(245,158,11,.15);color:#fcd34d}
+.badgeS.ex{background:rgba(239,68,68,.15);color:#fca5a5}
+.barra{height:10px;background:#0a0e17;border-radius:99px;overflow:hidden;border:1px solid #222a3a}
+.barra i{display:block;height:100%;border-radius:99px}
+.mono{font:12px ui-monospace,'SF Mono',Menlo,monospace;color:#c4b5fd;margin-top:12px;
+  background:#0a0e17;border:1px solid #222a3a;border-radius:8px;padding:8px 10px}
+
+.dims{display:flex;flex-direction:column;gap:12px}
+.dim{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px 22px;
+  display:grid;grid-template-columns:1fr 190px 62px;gap:20px;align-items:center}
+.dim:hover{border-color:#33406b;background:var(--card2)}
+.dim h3{font-size:15px;font-weight:650;margin-bottom:4px}
+.dim p{font-size:12.5px;color:var(--mut2);line-height:1.55}
+.bar{height:9px;background:#0a0e17;border-radius:99px;overflow:hidden;border:1px solid #222a3a}
+.bar i{display:block;height:100%;border-radius:99px}
+.w{font-size:10.5px;color:var(--mut2);margin-top:6px;letter-spacing:.05em}
+.score{font-size:26px;font-weight:800;text-align:right;letter-spacing:-.02em}
+
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+th{background:var(--bg2);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);
+  text-align:left;padding:13px 18px;font-weight:700;border-bottom:1px solid var(--line)}
+td{padding:12px 18px;font-size:13.5px;border-bottom:1px solid #1a2130;color:var(--mut)}
+tr:last-child td{border-bottom:none}
+td:first-child{color:var(--txt);font-weight:550}
+td.n{font-variant-numeric:tabular-nums;font-weight:650}
+.st{display:inline-block;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:99px}
+.st.o{background:rgba(34,197,94,.13);color:#86efac}
+.st.w{background:rgba(245,158,11,.13);color:#fcd34d}
+.st.b{background:rgba(239,68,68,.13);color:#fca5a5}
+code{background:#0a0e17;border:1px solid #222a3a;padding:1px 6px;border-radius:5px;
+  font:12px ui-monospace,'SF Mono',Menlo,monospace;color:#c4b5fd}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px}
+.box h4{font-size:13px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px;font-weight:700}
+.box.g h4{color:#86efac}.box.r h4{color:#fca5a5}
+.box ul{list-style:none;display:flex;flex-direction:column;gap:10px}
+.box li{font-size:13.5px;color:var(--mut);padding-left:20px;position:relative;line-height:1.55}
+.box.g li:before{content:"✓";position:absolute;left:0;color:var(--ok);font-weight:700}
+.box.r li:before{content:"!";position:absolute;left:0;color:var(--bad);font-weight:700}
+.box li b{color:var(--txt);font-weight:600}
+
+.phase{background:var(--card);border:1px solid var(--line);border-radius:18px;
+  padding:26px;margin-bottom:18px;position:relative;overflow:hidden}
+.phase:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px}
+.p1:before{background:var(--bad)}.p2:before{background:var(--warn)}
+.p3:before{background:var(--info)}.p4:before{background:var(--acc)}
+.ph{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:6px;flex-wrap:wrap}
+.ph h3{font-size:19px;font-weight:750;letter-spacing:-.01em}
+.ph .when{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);
+  border:1px solid var(--line);padding:5px 11px;border-radius:99px;white-space:nowrap;background:var(--bg2)}
+.ph-goal{font-size:13.5px;color:var(--mut);margin-bottom:20px}
+.ph-goal b{color:#c4b5fd}
+.items{display:flex;flex-direction:column;gap:11px}
+.item{background:#0f1420;border:1px solid #222a3a;border-radius:11px;padding:14px 16px;
+  display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center}
+.item h5{font-size:14px;font-weight:620;margin-bottom:3px}
+.item p{font-size:12.5px;color:var(--mut2);line-height:1.55}
+.imp{display:flex;flex-direction:column;align-items:flex-end;gap:5px;white-space:nowrap}
+.badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:6px}
+.b-h{background:rgba(239,68,68,.15);color:#fca5a5}
+.b-m{background:rgba(245,158,11,.15);color:#fcd34d}
+.b-l{background:rgba(59,130,246,.15);color:#93c5fd}
+.eff{font-size:10.5px;color:var(--mut2)}
+.gate{margin-top:16px;padding:12px 16px;background:rgba(167,139,250,.07);
+  border:1px solid rgba(167,139,250,.22);border-radius:10px;font-size:12.5px;color:var(--mut)}
+.gate b{color:#c4b5fd}
+
+footer{margin-top:60px;padding-top:26px;border-top:1px solid var(--line);
+  font-size:12px;color:var(--mut2);display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+@media(max-width:900px){
+  .hero,.grid2,.demo{grid-template-columns:1fr}
+  .dim{grid-template-columns:1fr;gap:12px}.score{text-align:left}
+  h1{font-size:28px}
+}
+</style>
+</head>
+<body>
+<header>
+<div class="wrap">
+  <span class="tag">Auditoria de dimensões ocultas</span>
+  <h1>FinançasPro v11.0<br><span>O que auditoria nenhuma costuma olhar</span></h1>
+  <p class="sub">Dez dimensões que raramente entram em revisão de código: precisão numérica em
+  fronteiras, consumo de bateria, integridade temporal, direito ao esquecimento, custo de saída,
+  bus factor de terceiros e o tom do app com quem está no vermelho. Cada achado foi
+  <b>reproduzido empiricamente</b> — nenhum vem de leitura de código.</p>
+  <div class="meta">
+    <div>Data: <b>10/08/2026</b></div>
+    <div>Método: <b>execução e medição, não inspeção</b></div>
+    <div>Achados reproduzidos: <b>11</b></div>
+    <div>Base: <b>1.041 testes verdes</b></div>
+  </div>
+</div>
+</header>
+
+<div class="wrap">
+
+<div class="hero">
+  <div class="gauge">
+    <svg width="200" height="200" viewBox="0 0 200 200">
+      <circle cx="100" cy="100" r="84" fill="none" stroke="#1a2030" stroke-width="16"/>
+      <circle cx="100" cy="100" r="84" fill="none" stroke="url(#g)" stroke-width="16"
+        stroke-linecap="round" stroke-dasharray="527.8" stroke-dashoffset="174.2"/>
+      <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#ef4444"/><stop offset="100%" stop-color="#a78bfa"/>
+      </linearGradient></defs>
+    </svg>
+    <div class="val"><div class="num">67</div><div class="lbl">de 100</div></div>
+  </div>
+  <div>
+    <h2>Bem construído para o caminho feliz; frágil nas bordas que ninguém testa</h2>
+    <p>As auditorias anteriores elevaram este produto a 90 em engenharia e 95 em UI/UX. Olhando
+    de outro ângulo, aparece um perfil diferente: o backend guarda dinheiro em
+    <code>Decimal(15,2)</code> — correto —, mas o frontend calcula em ponto flutuante e
+    <b>o erro chega à decisão do usuário</b>. Quatro timers rodam com o app em segundo plano
+    sem nenhum <code>visibilitychange</code>. O <b>direito ao esquecimento deixa rastro de IP</b>.
+    E os anexos do usuário <b>podem ser importados, mas nunca exportados</b>.</p>
+    <div class="pills">
+      <span class="pill bad">100% do orçamento vira "atenção"</span>
+      <span class="pill bad">anexos não exportáveis</span>
+      <span class="pill warn">4 timers em segundo plano</span>
+      <span class="pill warn">zero política de retenção</span>
+      <span class="pill ok">cancelamento em 2 cliques</span>
+    </div>
+  </div>
+</div>
+
+<!-- ACHADO PRINCIPAL -->
+<section>
+<h2 class="sec">O achado que ninguém procura — o centavo que muda o veredito</h2>
+
+<div class="note">
+  <b>A tela e o cálculo discordam.</b> Mil lançamentos de R$ 0,10 num orçamento de R$ 100,00.
+  A soma em ponto flutuante dá <code>99,9999999999986</code>. O formatador arredonda para
+  <b>R$ 100,00</b> e o percentual, via <code>Math.round</code>, mostra <b>100%</b> — mas a
+  comparação interna <code>percentual >= 100</code> falha por 0,0000000000014, e o status
+  fica em <b>"atenção"</b> em vez de <b>"excedido"</b>.
+</div>
+
+<div class="demo">
+  <div class="demoCard">
+    <div class="t">O que o usuário vê</div>
+    <div class="orcRow"><span>Alimentação</span>
+      <span class="badgeS al">⚠ 100%</span></div>
+    <div class="barra"><i style="width:100%;background:linear-gradient(90deg,#f59e0b,#fbbf24)"></i></div>
+    <div class="orcRow" style="margin-top:10px;font-size:12.5px;color:#94a1b8">
+      <span>R$ 100,00 de R$ 100,00</span><span>Atenção</span></div>
+    <div class="mono">"Gastei tudo, mas ainda está amarelo?"</div>
+  </div>
+  <div class="demoCard">
+    <div class="t">O que deveria ver</div>
+    <div class="orcRow"><span>Alimentação</span>
+      <span class="badgeS ex">⊘ 100%</span></div>
+    <div class="barra"><i style="width:100%;background:linear-gradient(90deg,#b91c1c,#ef4444)"></i></div>
+    <div class="orcRow" style="margin-top:10px;font-size:12.5px;color:#94a1b8">
+      <span>R$ 100,00 de R$ 100,00</span><span>Limite atingido</span></div>
+    <div class="mono">gasto=99.9999999999986 → percentual=100 → status='alerta'</div>
+  </div>
+</div>
+
+<div class="note m" style="margin-top:18px">
+  <b>Por que passa despercebido:</b> nenhum teste unitário monta mil lançamentos de centavos, e a
+  tela <em>parece</em> certa — o número exibido está correto. Só a cor está errada. É o tipo de
+  divergência que o usuário sente como "o app está confuso" sem conseguir explicar, e que erode
+  confiança devagar. O backend não sofre disso: <code>Decimal(15,2)</code> no Postgres é exato.
+  O problema é exclusivamente do cálculo no navegador.
+</div>
+</section>
+
+<!-- DIMENSOES -->
+<section>
+<h2 class="sec">Notas por dimensão</h2>
+<div class="dims">
+
+  <div class="dim">
+    <div><h3>🗣️ Tom com quem está no vermelho</h3>
+    <p>Dimensão que quase nunca é auditada e importa muito num app de finanças: as mensagens
+    são <b>descritivas, não moralizantes</b>. "Projeção: saldo negativo", "Gastos acima do
+    normal", "1 mês negativo recente" — informam sem culpar. Não há "você gastou demais" nem
+    emoji de decepção. Falta oferecer caminho de ação junto do diagnóstico.</p></div>
+    <div><div class="bar"><i style="width:78%;background:linear-gradient(90deg,#f59e0b,#fbbf24)"></i></div>
+      <div class="w">PESO 5%</div></div>
+    <div class="score" style="color:#fbbf24">78</div>
+  </div>
+
+  <div class="dim">
+    <div><h3>💳 Ética de cobrança e assinatura</h3>
+    <p>Cancelamento em <b>dois cliques</b>, sem labirinto de retenção, e o acesso continua até o
+    fim do período pago — postura correta e rara. O problema é o silêncio: o Stripe dispara
+    <code>trial_will_end</code> três dias antes de cobrar, e o app <b>ignora esse webhook</b>.
+    O usuário é cobrado ao fim dos 14 dias sem nenhum aviso vindo do produto.</p></div>
+    <div><div class="bar"><i style="width:76%;background:linear-gradient(90deg,#f59e0b,#fbbf24)"></i></div>
+      <div class="w">PESO 8%</div></div>
+    <div class="score" style="color:#fbbf24">76</div>
+  </div>
+
+  <div class="dim">
+    <div><h3>📦 Portabilidade e custo de saída</h3>
+    <p>A rota de exportação do backend é generosa: perfil, config, transações, contas,
+    orçamentos, recorrências e conexões — sete entidades. Mas <b>anexos não são exportados</b>.
+    E há uma assimetria reveladora: <code>ANEXOS.exportarTodos()</code> existe, o import
+    <em>aceita</em> <code>data.anexos</code> — e o export nunca os produz. Quem sai do produto
+    deixa os comprovantes para trás.</p></div>
+    <div><div class="bar"><i style="width:74%;background:linear-gradient(90deg,#f59e0b,#fbbf24)"></i></div>
+      <div class="w">PESO 11%</div></div>
+    <div class="score" style="color:#fbbf24">74</div>
+  </div>
+
+  <div class="dim">
+    <div><h3>🔗 Bus factor de terceiros</h3>
+    <p>Sete origens externas em runtime. A crítica é uma: a folha de estilo do Google Fonts é
+    <b>bloqueante de renderização</b> e <b>não está no precache</b> do service worker. Num app
+    que promete "sempre funciona offline", a primeira pintura depende de um domínio de
+    terceiro — que é bloqueado em várias redes corporativas e em alguns países. O
+    <code>display=swap</code> na URL evita o texto invisível, mas não a espera.</p></div>
+    <div><div class="bar"><i style="width:70%;background:linear-gradient(90deg,#f59e0b,#fbbf24)"></i></div>
+      <div class="w">PESO 10%</div></div>
+    <div class="score" style="color:#fbbf24">70</div>
+  </div>
+
+  <div class="dim">
+    <div><h3>🧹 Direito ao esquecimento e retenção</h3>
+    <p>A exclusão funciona: 12 relações em <code>onDelete: Cascade</code> e confirmação por
+    senha. Duas ressalvas. <b>O AuditLog sobrevive com <code>userId</code> nulo mas mantém
+    <code>ipAddress</code> e <code>userAgent</code></b> — dado pessoal órfão, sem titular para
+    reclamar. E <b>não existe política de retenção alguma</b>: nenhum expurgo, nenhuma
+    janela. Além disso, quem é dono de uma organização recebe 409 e não consegue apagar a conta.</p></div>
+    <div><div class="bar"><i style="width:68%;background:linear-gradient(90deg,#f59e0b,#fbbf24)"></i></div>
+      <div class="w">PESO 12%</div></div>
+    <div class="score" style="color:#fbbf24">68</div>
+  </div>
+
+  <div class="dim">
+    <div><h3>📊 Resiliência a volume e esgotamento</h3>
+    <p>Medido: <b>60 mil transações ocupam 8,79 MB</b> em localStorage (UTF-16), acima do teto
+    típico de 5 MB — o limite prático fica perto de <b>35 mil lançamentos</b>, cerca de oito
+    anos de uso intenso. O filtro por mês custa 25 ms nesse volume, o que trava a interface a
+    cada render. Existe <code>verificarStorageDisponivel</code>, mas usado em apenas dois
+    pontos.</p></div>
+    <div><div class="bar"><i style="width:66%;background:linear-gradient(90deg,#f59e0b,#fbbf24)"></i></div>
+      <div class="w">PESO 12%</div></div>
+    <div class="score" style="color:#fbbf24">66</div>
+  </div>
+
+  <div class="dim">
+    <div><h3>🕐 Integridade temporal</h3>
+    <p>Todo carimbo de data vem do <code>Date()</code> do dispositivo, e a sincronização resolve
+    conflito por <b>last-write-wins sobre <code>updatedAt</code></b>. Um celular com relógio
+    adiantado vence toda disputa e sobrescreve o dado correto do outro aparelho — em silêncio.
+    Some-se o erro de um dia já corrigido em vencimentos: datas são um ponto historicamente
+    frágil neste código.</p></div>
+    <div><div class="bar"><i style="width:64%;background:linear-gradient(90deg,#f59e0b,#fbbf24)"></i></div>
+      <div class="w">PESO 12%</div></div>
+    <div class="score" style="color:#fbbf24">64</div>
+  </div>
+
+  <div class="dim">
+    <div><h3>🔢 Precisão monetária em fronteiras</h3>
+    <p>Backend correto com <code>Decimal(15,2)</code>. Frontend em ponto flutuante: mil somas de
+    R$ 0,10 resultam em <code>99,9999999999986</code>, e <b>a divergência atravessa até a decisão
+    de status do orçamento</b>. O display esconde o problema — o que o torna pior, porque a tela
+    parece certa enquanto a lógica erra.</p></div>
+    <div><div class="bar"><i style="width:62%;background:linear-gradient(90deg,#ef4444,#f87171)"></i></div>
+      <div class="w">PESO 15%</div></div>
+    <div class="score" style="color:#f87171">62</div>
+  </div>
+
+  <div class="dim">
+    <div><h3>♻️ Recuperação de desastre e reversibilidade</h3>
+    <p>Quatro migrações Prisma, <b>nenhuma com rollback</b>, e nenhum runbook de backup ou
+    restauração do banco em <code>docs/</code>. O produto tem runbook detalhado para publicar na
+    Play Store, mas nada sobre o que fazer se o Postgres de produção corromper. A importação
+    valida schema e confirma antes de sobrescrever — esse lado está bem feito.</p></div>
+    <div><div class="bar"><i style="width:58%;background:linear-gradient(90deg,#ef4444,#f87171)"></i></div>
+      <div class="w">PESO 5%</div></div>
+    <div class="score" style="color:#f87171">58</div>
+  </div>
+
+  <div class="dim">
+    <div><h3>🔋 Eficiência energética e ciclo de vida</h3>
+    <p>Quatro timers periódicos — indicador de sync a cada 15 s, auto-save a cada 30 s, alertas
+    e limpeza de cache a cada 5 min — e <b>zero ocorrências de <code>visibilitychange</code></b>.
+    Num PWA instalado no celular, tudo isso continua rodando com o app em segundo plano,
+    consumindo bateria para recalcular uma tela que ninguém está vendo.</p></div>
+    <div><div class="bar"><i style="width:55%;background:linear-gradient(90deg,#ef4444,#f87171)"></i></div>
+      <div class="w">PESO 10%</div></div>
+    <div class="score" style="color:#f87171">55</div>
+  </div>
+
+</div>
+</section>
+
+<!-- ACHADOS -->
+<section>
+<h2 class="sec">O que surpreendeu, nos dois sentidos</h2>
+<div class="grid2">
+  <div class="box g">
+    <h4>Melhor do que o esperado</h4>
+    <ul>
+      <li><b>Cancelamento sem dark pattern.</b> Dois cliques, sem oferta de retenção, sem "tem certeza" triplo. Acesso mantido até o fim do período pago.</li>
+      <li><b>Dinheiro como <code>Decimal(15,2)</code> no banco.</b> A maioria dos projetos usa float e descobre tarde.</li>
+      <li><b>Rota de exportação LGPD de verdade</b>, com sete entidades e cabeçalho de download — não um placeholder.</li>
+      <li><b>Exclusão de conta pede senha</b> e cascateia 12 relações. Muitos produtos apenas marcam <code>deleted=true</code>.</li>
+      <li><b>Tom das mensagens é descritivo</b>, não moralizante. Num app de finanças, "você gastou demais" afasta justamente quem mais precisa da ferramenta.</li>
+      <li><b>Importação valida schema e confirma</b> antes de sobrescrever, avisando que o PIN local será preservado.</li>
+      <li><b>Merge por registro no sync</b> (LWW por <code>updatedAt</code>), nunca substituição destrutiva — decisão consciente, documentada no módulo.</li>
+    </ul>
+  </div>
+  <div class="box r">
+    <h4>Riscos que ninguém tinha visto</h4>
+    <ul>
+      <li><b>O centavo que muda a cor.</b> 100% do orçamento exibido como "atenção" em vez de "excedido", por 1,4 × 10⁻¹² de erro em ponto flutuante.</li>
+      <li><b>Anexos entram mas não saem.</b> O import aceita <code>data.anexos</code>, o export nunca os gera. Comprovantes ficam presos no produto.</li>
+      <li><b>IP sobrevive à exclusão da conta.</b> AuditLog mantém <code>ipAddress</code> e <code>userAgent</code> com <code>userId</code> nulo, sem prazo para expurgo.</li>
+      <li><b>Zero política de retenção.</b> Nenhuma tabela tem janela de expurgo — o banco cresce para sempre.</li>
+      <li><b>Relógio errado vence o conflito.</b> LWW sobre <code>updatedAt</code> do dispositivo: adiantar o relógio sobrescreve o dado do outro aparelho.</li>
+      <li><b>Teto silencioso em ~35 mil transações.</b> Depois disso o localStorage estoura, e a checagem de quota só existe em dois pontos.</li>
+      <li><b>Timers rodando em segundo plano</b>, sem <code>visibilitychange</code>: bateria gasta para atualizar tela invisível.</li>
+      <li><b>Fonte de terceiro bloqueia a primeira pintura</b> num app que se vende como offline-first.</li>
+      <li><b>Nenhuma migração tem rollback</b> e não há runbook de restauração do banco.</li>
+      <li><b>Dono de organização não consegue apagar a conta</b> — 409 sem caminho de saída na interface.</li>
+    </ul>
+  </div>
+</div>
+</section>
+
+<!-- MEDIÇÕES -->
+<section>
+<h2 class="sec">Medições — todas reproduzíveis</h2>
+<table>
+<thead><tr><th>Medição</th><th>Resultado</th><th>Como reproduzir</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>Soma de 1.000 × R$ 0,10</td><td class="n">99,9999999999986</td><td>módulo ORCAMENTO real</td><td><span class="st b">DIVERGE</span></td></tr>
+<tr><td>Status no limite exato</td><td class="n">alerta (esperado: excedido)</td><td><code>obterStatus()</code></td><td><span class="st b">FALHA</span></td></tr>
+<tr><td>Percentual exibido</td><td class="n">100%</td><td><code>Math.round</code></td><td><span class="st w">ENGANOSO</span></td></tr>
+<tr><td>Tipo do valor no Postgres</td><td class="n">Decimal(15,2)</td><td>prisma/schema.prisma</td><td><span class="st o">CORRETO</span></td></tr>
+<tr><td>60 mil transações</td><td class="n">8,79 MB</td><td>UTF-16, teto ~5 MB</td><td><span class="st b">ESTOURA</span></td></tr>
+<tr><td>Filtro por mês em 60 mil</td><td class="n">25,7 ms</td><td>por render</td><td><span class="st w">LENTO</span></td></tr>
+<tr><td>Limite prático de uso</td><td class="n">~35 mil lançamentos</td><td>≈ 8 anos de uso intenso</td><td><span class="st w">ATENÇÃO</span></td></tr>
+<tr><td>Timers periódicos</td><td class="n">4</td><td>15 s · 30 s · 5 min · 5 min</td><td><span class="st w">ATENÇÃO</span></td></tr>
+<tr><td>Uso de <code>visibilitychange</code></td><td class="n">0</td><td>grep em js/</td><td><span class="st b">AUSENTE</span></td></tr>
+<tr><td>Relações com Cascade na exclusão</td><td class="n">12</td><td>prisma/schema.prisma</td><td><span class="st o">BOM</span></td></tr>
+<tr><td>AuditLog após exclusão</td><td class="n">mantém IP e userAgent</td><td>relação opcional</td><td><span class="st b">VAZAMENTO</span></td></tr>
+<tr><td>Política de retenção</td><td class="n">nenhuma</td><td>grep por purge/retention</td><td><span class="st b">AUSENTE</span></td></tr>
+<tr><td>Entidades na exportação (API)</td><td class="n">7</td><td><code>UserService.exportData</code></td><td><span class="st o">BOM</span></td></tr>
+<tr><td>Anexos na exportação</td><td class="n">não</td><td><code>DADOS.exportarDados</code></td><td><span class="st b">FALTA</span></td></tr>
+<tr><td>Anexos na importação</td><td class="n">sim</td><td><code>init-config.js:702</code></td><td><span class="st w">ASSIMÉTRICO</span></td></tr>
+<tr><td>Origens de terceiros em runtime</td><td class="n">7</td><td>Google, jsDelivr, Belvo</td><td><span class="st w">ATENÇÃO</span></td></tr>
+<tr><td>Fonte externa no precache</td><td class="n">não</td><td>dist/sw.js</td><td><span class="st w">ATENÇÃO</span></td></tr>
+<tr><td>Webhooks Stripe tratados</td><td class="n">5</td><td><code>trial_will_end</code> fora</td><td><span class="st w">INCOMPLETO</span></td></tr>
+<tr><td>Cliques para cancelar assinatura</td><td class="n">2</td><td>sem retenção forçada</td><td><span class="st o">ÉTICO</span></td></tr>
+<tr><td>Migrações com rollback</td><td class="n">0 de 4</td><td>prisma/migrations</td><td><span class="st b">AUSENTE</span></td></tr>
+<tr><td>Runbook de restauração do banco</td><td class="n">nenhum</td><td>docs/</td><td><span class="st b">AUSENTE</span></td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ROADMAP -->
+<section>
+<h2 class="sec">Roadmap de melhorias</h2>
+
+<div class="phase p1">
+  <div class="ph"><h3>Fase 1 — Onde o erro chega ao bolso</h3><span class="when">Semanas 1–2</span></div>
+  <p class="ph-goal">Objetivo: nenhuma divergência entre o que a tela mostra e o que o app
+  calcula. É a única fase em que o defeito muda a decisão financeira do usuário.
+  <b>67 → 76</b></p>
+  <div class="items">
+
+    <div class="item">
+      <div><h5>Comparar dinheiro em centavos inteiros</h5>
+      <p>Converter para inteiro antes de comparar: <code>Math.round(gasto * 100) >= Math.round(limite * 100)</code>.
+      Elimina a classe inteira do problema em orçamento, metas e projeção — sem migrar o
+      armazenamento.</p></div>
+      <div class="imp"><span class="badge b-h">ALTO</span><span class="eff">~3 dias</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Teste de fronteira com centavos</h5>
+      <p>Suíte que monta mil lançamentos de R$ 0,10 e afirma que o status vira "excedido" no
+      limite exato. Sem isso, a correção volta a se perder na próxima refatoração.</p></div>
+      <div class="imp"><span class="badge b-h">ALTO</span><span class="eff">~1 dia</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Alinhar exibição e cálculo</h5>
+      <p>Se o percentual exibido é arredondado, o status precisa usar o <em>mesmo</em> valor
+      arredondado. Discordância entre os dois é sempre bug, mesmo quando o erro numérico
+      desaparecer.</p></div>
+      <div class="imp"><span class="badge b-m">MÉDIO</span><span class="eff">~1 dia</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Exportar anexos junto com os dados</h5>
+      <p><code>ANEXOS.exportarTodos()</code> já existe e o import já aceita o campo. Falta só
+      ligar os dois pontos — é a diferença entre poder sair do produto e ficar preso a ele.</p></div>
+      <div class="imp"><span class="badge b-h">ALTO</span><span class="eff">~1 dia</span></div>
+    </div>
+
+  </div>
+  <div class="gate"><b>Critério de saída:</b> status do orçamento correto no limite exato, e
+  exportação que reimporta sem perda — incluindo comprovantes.</div>
+</div>
+
+<div class="phase p2">
+  <div class="ph"><h3>Fase 2 — Privacidade que se cumpre sozinha</h3><span class="when">Semanas 3–5</span></div>
+  <p class="ph-goal">Objetivo: transformar conformidade declarada em conformidade verificável.
+  Aplicar a LGPD por automação, não por lembrança. <b>76 → 83</b></p>
+  <div class="items">
+
+    <div class="item">
+      <div><h5>Anonimizar o audit log na exclusão</h5>
+      <p>Zerar <code>ipAddress</code> e <code>userAgent</code> ao excluir a conta, mantendo o
+      registro da ação para trilha de auditoria. Preserva o que a auditoria precisa e descarta
+      o que identifica a pessoa.</p></div>
+      <div class="imp"><span class="badge b-h">ALTO</span><span class="eff">~2 dias</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Política de retenção com expurgo automático</h5>
+      <p>Janela declarada por tabela — audit log, sessões revogadas, tokens consumidos, job log —
+      com worker de expurgo. Hoje tudo cresce para sempre, o que é risco de vazamento e custo
+      de banco ao mesmo tempo.</p></div>
+      <div class="imp"><span class="badge b-h">ALTO</span><span class="eff">~4 dias</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Saída para o dono de organização</h5>
+      <p>Hoje o 409 é um beco sem saída: a conta não pode ser apagada e não há interface para
+      transferir a titularidade. Ou se oferece a transferência, ou se exclui a organização
+      junto, com confirmação explícita.</p></div>
+      <div class="imp"><span class="badge b-m">MÉDIO</span><span class="eff">~3 dias</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Teste de exclusão que verifica o resíduo</h5>
+      <p>Após excluir, varrer todas as tabelas atrás do <code>userId</code> e de qualquer PII
+      remanescente. É o único jeito de garantir que uma tabela nova não passe despercebida.</p></div>
+      <div class="imp"><span class="badge b-h">ALTO</span><span class="eff">~2 dias</span></div>
+    </div>
+
+  </div>
+  <div class="gate"><b>Critério de saída:</b> nenhum dado pessoal identificável sobrevive à
+  exclusão, e toda tabela com dado de usuário tem janela de retenção declarada.</div>
+</div>
+
+<div class="phase p3">
+  <div class="ph"><h3>Fase 3 — Comportamento sob condições reais</h3><span class="when">Semanas 6–9</span></div>
+  <p class="ph-goal">Objetivo: o app precisa se comportar bem no celular antigo, na rede ruim,
+  com oito anos de histórico e o relógio errado. <b>83 → 89</b></p>
+  <div class="items">
+
+    <div class="item">
+      <div><h5>Pausar timers em segundo plano</h5>
+      <p>Suspender os quatro timers em <code>visibilitychange</code> e retomar ao voltar.
+      Ganho direto de bateria, sem custo funcional — o usuário não vê a tela que está sendo
+      recalculada.</p></div>
+      <div class="imp"><span class="badge b-h">ALTO</span><span class="eff">~2 dias</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Migrar o armazenamento local para IndexedDB</h5>
+      <p>O teto de 5 MB do localStorage chega por volta de 35 mil lançamentos. IndexedDB já é
+      usado para anexos — estender às transações remove o limite e elimina o custo de
+      serializar tudo a cada escrita.</p></div>
+      <div class="imp"><span class="badge b-h">ALTO</span><span class="eff">~2 semanas</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Avisar antes de encher, não depois</h5>
+      <p><code>verificarStorageDisponivel</code> existe e é usado em dois pontos. Aplicar em
+      toda escrita e avisar em 80% da capacidade, com sugestão de exportar e arquivar.</p></div>
+      <div class="imp"><span class="badge b-m">MÉDIO</span><span class="eff">~2 dias</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Detectar relógio fora de hora</h5>
+      <p>Comparar o relógio local com o <code>Date</code> das respostas da API. Divergência
+      acima de alguns minutos precisa alertar — hoje um celular adiantado vence toda disputa de
+      sincronização em silêncio.</p></div>
+      <div class="imp"><span class="badge b-m">MÉDIO</span><span class="eff">~3 dias</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Servir as fontes localmente</h5>
+      <p>Elimina a dependência de rede na primeira pintura, entra no precache e cumpre de fato a
+      promessa de offline-first. Também remove <code>fonts.googleapis.com</code> da CSP.</p></div>
+      <div class="imp"><span class="badge b-m">MÉDIO</span><span class="eff">~2 dias</span></div>
+    </div>
+
+  </div>
+  <div class="gate"><b>Critério de saída:</b> zero timers ativos com o app oculto, 100 mil
+  transações sem degradação perceptível, primeira pintura sem depender de terceiro.</div>
+</div>
+
+<div class="phase p4">
+  <div class="ph"><h3>Fase 4 — Confiança de longo prazo</h3><span class="when">Semanas 10+</span></div>
+  <p class="ph-goal">Objetivo: o que protege o produto quando algo dá muito errado, e o que
+  mantém a relação com o usuário honesta. <b>89 → 93</b></p>
+  <div class="items">
+
+    <div class="item">
+      <div><h5>Avisar antes de cobrar o fim do teste</h5>
+      <p>Tratar <code>customer.subscription.trial_will_end</code> e enviar e-mail três dias
+      antes. Cobrar sem aviso é legal e é ruim: gera estorno, reclamação e desconfiança em quem
+      teria ficado.</p></div>
+      <div class="imp"><span class="badge b-h">ALTO</span><span class="eff">~2 dias</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Runbook de restauração do banco</h5>
+      <p>O projeto tem runbook detalhado para publicar na Play Store e nada sobre restaurar o
+      Postgres. Documentar backup, ponto de recuperação e ensaio de restore — um backup nunca
+      testado é uma suposição, não uma garantia.</p></div>
+      <div class="imp"><span class="badge b-h">ALTO</span><span class="eff">~3 dias</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Rollback nas migrações</h5>
+      <p>Nenhuma das quatro migrações tem caminho de volta. Enquanto o schema era pequeno, dava
+      para refazer do zero; com 18 modelos e dados reais, não dá mais.</p></div>
+      <div class="imp"><span class="badge b-m">MÉDIO</span><span class="eff">~3 dias</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Ação junto do diagnóstico</h5>
+      <p>As mensagens informam bem e param aí. "Projeção: saldo negativo" fica melhor com um
+      próximo passo concreto — qual categoria cortar, quanto falta. Diagnóstico sem caminho
+      vira ansiedade.</p></div>
+      <div class="imp"><span class="badge b-m">MÉDIO</span><span class="eff">~1 semana</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Ensaio de recuperação semestral</h5>
+      <p>Restaurar um backup num ambiente limpo e medir o tempo até o serviço voltar. É o único
+      jeito de saber se o plano funciona antes de precisar dele.</p></div>
+      <div class="imp"><span class="badge b-l">BAIXO</span><span class="eff">recorrente</span></div>
+    </div>
+
+  </div>
+</div>
+</section>
+
+<!-- PROJECAO -->
+<section>
+<h2 class="sec">Projeção</h2>
+<div class="proj" style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px">
+  <div class="box" style="text-align:center;padding:18px">
+    <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);margin-bottom:10px">Hoje</div>
+    <div style="font-size:32px;font-weight:800;color:#f472b6">67</div>
+    <div style="font-size:11px;color:var(--mut2);margin-top:8px">linha de base</div>
+  </div>
+  <div class="box" style="text-align:center;padding:18px">
+    <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);margin-bottom:10px">Fase 1</div>
+    <div style="font-size:32px;font-weight:800;color:#fbbf24">76</div>
+    <div style="font-size:11px;color:var(--mut2);margin-top:8px">+9 · 2 semanas</div>
+  </div>
+  <div class="box" style="text-align:center;padding:18px">
+    <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);margin-bottom:10px">Fase 2</div>
+    <div style="font-size:32px;font-weight:800;color:#fbbf24">83</div>
+    <div style="font-size:11px;color:var(--mut2);margin-top:8px">+7 · 5 semanas</div>
+  </div>
+  <div class="box" style="text-align:center;padding:18px">
+    <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);margin-bottom:10px">Fase 3</div>
+    <div style="font-size:32px;font-weight:800;color:#4ade80">89</div>
+    <div style="font-size:11px;color:var(--mut2);margin-top:8px">+6 · 9 semanas</div>
+  </div>
+  <div class="box" style="text-align:center;padding:18px">
+    <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);margin-bottom:10px">Fase 4</div>
+    <div style="font-size:32px;font-weight:800;color:#4ade80">93</div>
+    <div style="font-size:11px;color:var(--mut2);margin-top:8px">+4 · contínuo</div>
+  </div>
+</div>
+<p style="font-size:12.5px;color:var(--mut2);margin-top:16px">
+A Fase 1 rende mais porque precisão monetária tem o maior peso e as correções são pequenas —
+comparar em centavos inteiros e ligar dois pontos que já existem no código de exportação. As
+fases seguintes exigem trabalho de infraestrutura, cujo retorno aparece em conformidade e
+durabilidade, não em funcionalidade visível. Nenhuma delas gera tela nova: são o tipo de
+investimento que só se percebe quando falta.</p>
+</section>
+
+<!-- METODO -->
+<section>
+<h2 class="sec">Por que estas dimensões escapam</h2>
+<div class="box">
+  <p style="font-size:13.5px;color:var(--mut);margin-bottom:18px">
+  Auditoria comum cobre segurança, testes, performance e acessibilidade — dimensões com
+  ferramenta pronta e resultado binário. As dez acima compartilham três traços que as tornam
+  invisíveis:</p>
+  <table>
+    <thead><tr><th>Traço</th><th>Exemplo neste produto</th></tr></thead>
+    <tbody>
+      <tr><td>O sintoma aparece longe da causa</td><td>Erro de 10⁻¹² no ponto flutuante vira um selo amarelo em vez de vermelho</td></tr>
+      <tr><td>Só se manifesta com o tempo</td><td>Teto de armazenamento chega no oitavo ano de uso</td></tr>
+      <tr><td>Só se manifesta na saída</td><td>Anexos não exportáveis: o usuário descobre quando já decidiu ir embora</td></tr>
+      <tr><td>Depende de contexto físico</td><td>Bateria drenada em segundo plano; relógio do aparelho errado</td></tr>
+      <tr><td>É omissão, não erro</td><td>Nenhuma política de retenção — não há linha de código errada para encontrar</td></tr>
+      <tr><td>Envolve julgamento, não regra</td><td>Tom de voz com quem está endividado; ética do fluxo de cancelamento</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:12.5px;color:var(--mut2);margin-top:18px">
+  <b>Método:</b> cada achado foi obtido executando código — somas em ponto flutuante contra o
+  módulo <code>ORCAMENTO</code> real, medição de bytes e latência com volumes sintéticos,
+  varredura do schema Prisma por relações e políticas, e leitura dos webhooks efetivamente
+  tratados. Nenhum número foi estimado.</p>
+  <p style="font-size:12.5px;color:var(--mut2);margin-top:12px">
+  <b>Limitação:</b> não foi possível medir consumo real de bateria, latência em rede móvel nem
+  comportamento com o banco de produção. Os achados de energia e volume são derivados de
+  contagem de timers e de simulação de carga — indicam o problema com segurança, mas a
+  magnitude precisa de medição em aparelho real.</p>
+</div>
+</section>
+
+<footer>
+  <div>FinançasPro v11.0 · Auditoria de dimensões ocultas · 10/08/2026</div>
+  <div>67/100 · 10 dimensões · 11 achados reproduzidos</div>
+</footer>
+
+</div>
+</body>
+</html>

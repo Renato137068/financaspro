@@ -34,6 +34,31 @@ export const BillingRepository = {
     });
   },
 
+  async upsertSubscription(orgId, data) {
+    return prisma.subscription.upsert({
+      where: { orgId },
+      create: { orgId, ...data },
+      update: data,
+      include: { plan: true },
+    });
+  },
+
+  /** Grava stripeCustomerId só se ainda vazio (evita corrida paralela). */
+  async setStripeCustomerIfEmpty(orgId, stripeCustomerId) {
+    const result = await prisma.subscription.updateMany({
+      where: { orgId, stripeCustomerId: null },
+      data: { stripeCustomerId },
+    });
+    return result.count > 0;
+  },
+
+  async findStripeLinkedSubscriptions() {
+    return prisma.subscription.findMany({
+      where: { stripeSubId: { not: null } },
+      select: { orgId: true, stripeSubId: true },
+    });
+  },
+
   async recordUsage(subscriptionId, metric, value, periodStart, periodEnd) {
     return prisma.usageRecord.create({
       data: { subscriptionId, metric, value, periodStart, periodEnd },
@@ -57,6 +82,47 @@ export const BillingRepository = {
 
   async createInvoice(data) {
     return prisma.invoice.create({ data });
+  },
+
+  async findInvoiceByStripeId(stripeInvoiceId) {
+    if (!stripeInvoiceId) return null;
+    return prisma.invoice.findUnique({ where: { stripeInvoiceId } });
+  },
+
+  async upsertInvoice(data) {
+    if (!data.stripeInvoiceId) return this.createInvoice(data);
+    return prisma.invoice.upsert({
+      where: { stripeInvoiceId: data.stripeInvoiceId },
+      create: data,
+      update: {
+        amount: data.amount,
+        status: data.status,
+        paidAt: data.paidAt,
+        hostedUrl: data.hostedUrl,
+        pdfUrl: data.pdfUrl,
+      },
+    });
+  },
+
+  /** Registra event.id do Stripe; retorna false se já processado. */
+  async claimWebhookEvent(eventId, type) {
+    try {
+      await prisma.stripeWebhookEvent.create({ data: { id: eventId, type } });
+      return true;
+    } catch (err) {
+      if (err.code === 'P2002') return false;
+      throw err;
+    }
+  },
+
+  /** Libera claim para permitir retry do Stripe após falha de processamento. */
+  async releaseWebhookEvent(eventId) {
+    try {
+      await prisma.stripeWebhookEvent.delete({ where: { id: eventId } });
+    } catch (err) {
+      if (err.code === 'P2025') return;
+      throw err;
+    }
   },
 
   async updateInvoice(id, data) {

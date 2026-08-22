@@ -4,7 +4,7 @@ import { AppError } from '../errors.js';
 import CONFIG from '../../config.js';
 import logger from '../../lib/logger.js';
 import { enqueue, QUEUES } from '../../lib/queue.js';
-
+import { assertAllowedRedirectUrl } from '../../lib/billing-urls.js';
 let _stripePromise = null;
 
 function getStripe() {
@@ -45,14 +45,21 @@ export const BillingService = {
     }
 
     if (stripe && plan.tier !== 'FREE') {
-      // Cria customer no Stripe se ainda não existir
       let stripeCustomerId = existing?.stripeCustomerId;
+
       if (!stripeCustomerId && userEmail) {
         const customer = await stripe.customers.create({
           email: userEmail,
           metadata: { orgId },
         });
         stripeCustomerId = customer.id;
+        if (existing) {
+          const set = await BillingRepository.setStripeCustomerIfEmpty(orgId, stripeCustomerId);
+          if (!set) {
+            const fresh = await BillingRepository.findSubscription(orgId);
+            stripeCustomerId = fresh?.stripeCustomerId || stripeCustomerId;
+          }
+        }
       }
 
       const priceId = interval === 'yearly'
@@ -79,13 +86,8 @@ export const BillingService = {
         trialEndsAt:        stripeSub.trial_end ? new Date(stripeSub.trial_end * 1000) : null,
       };
 
-      const sub = existing
-        ? await BillingRepository.updateSubscription(orgId, data)
-        : await BillingRepository.createSubscription({ orgId, ...data });
-
-      return sub;
+      return BillingRepository.upsertSubscription(orgId, data);
     }
-
     // Modo sem Stripe — apenas FREE em dev
     if (plan.tier !== 'FREE') {
       throw new AppError('Plano pago requer Stripe configurado', 503);
@@ -104,9 +106,8 @@ export const BillingService = {
 
     return existing
       ? BillingRepository.updateSubscription(orgId, data)
-      : BillingRepository.createSubscription({ orgId, ...data });
+      : BillingRepository.upsertSubscription(orgId, data);
   },
-
   async cancel(orgId) {
     const sub = await BillingRepository.findSubscription(orgId);
     if (!sub) throw new AppError('Assinatura não encontrada', 404);
@@ -122,8 +123,9 @@ export const BillingService = {
   },
 
   async createPortalSession(orgId, returnUrl) {
-    const sub = await BillingRepository.findSubscription(orgId);
-    if (!sub?.stripeCustomerId) throw new AppError('Sem conta Stripe associada', 400);
+    assertAllowedRedirectUrl(returnUrl);
+
+    const sub = await BillingRepository.findSubscription(orgId);    if (!sub?.stripeCustomerId) throw new AppError('Sem conta Stripe associada', 400);
 
     const stripe = await getStripe();
     if (!stripe) throw new AppError('Stripe não configurado', 503);
@@ -137,8 +139,10 @@ export const BillingService = {
   },
 
   async createCheckoutSession(orgId, planTier, interval, userEmail, successUrl, cancelUrl) {
-    const plan = await BillingRepository.findPlan(planTier);
-    if (!plan || plan.tier === 'FREE') throw new AppError('Plano inválido para checkout', 400);
+    assertAllowedRedirectUrl(successUrl);
+    assertAllowedRedirectUrl(cancelUrl);
+
+    const plan = await BillingRepository.findPlan(planTier);    if (!plan || plan.tier === 'FREE') throw new AppError('Plano inválido para checkout', 400);
 
     const stripe = await getStripe();
     if (!stripe) throw new AppError('Stripe não configurado', 503);
@@ -153,10 +157,13 @@ export const BillingService = {
       });
       stripeCustomerId = customer.id;
       if (existing) {
-        await BillingRepository.updateSubscription(orgId, { stripeCustomerId });
+        const set = await BillingRepository.setStripeCustomerIfEmpty(orgId, stripeCustomerId);
+        if (!set) {
+          const fresh = await BillingRepository.findSubscription(orgId);
+          stripeCustomerId = fresh?.stripeCustomerId || stripeCustomerId;
+        }
       }
     }
-
     const priceId = interval === 'yearly'
       ? plan.stripePriceIdYearly
       : plan.stripePriceIdMonthly;
@@ -205,24 +212,35 @@ export const BillingService = {
       throw new AppError('Assinatura de webhook inválida', 400);
     }
 
-    logger.info({ type: event.type }, 'Webhook Stripe recebido');
+    logger.info({ type: event.type, id: event.id }, 'Webhook Stripe recebido');
 
-    switch (event.type) {
-      case 'invoice.payment_succeeded':
-        await this._onInvoicePaid(event.data.object);
-        break;
-      case 'invoice.payment_failed':
-        await this._onPaymentFailed(event.data.object);
-        break;
-      case 'customer.subscription.deleted':
-        await this._onSubscriptionDeleted(event.data.object);
-        break;
-      case 'customer.subscription.updated':
-        await this._onSubscriptionUpdated(event.data.object);
-        break;
-      case 'checkout.session.completed':
-        await this._onCheckoutCompleted(event.data.object);
-        break;
+    const isNew = await BillingRepository.claimWebhookEvent(event.id, event.type);
+    if (!isNew) {
+      logger.info({ eventId: event.id }, 'Webhook Stripe duplicado — ignorado');
+      return { received: true, duplicate: true };
+    }
+
+    try {
+      switch (event.type) {
+        case 'invoice.payment_succeeded':
+          await this._onInvoicePaid(event.data.object);
+          break;
+        case 'invoice.payment_failed':
+          await this._onPaymentFailed(event.data.object);
+          break;
+        case 'customer.subscription.deleted':
+          await this._onSubscriptionDeleted(event.data.object);
+          break;
+        case 'customer.subscription.updated':
+          await this._onSubscriptionUpdated(event.data.object);
+          break;
+        case 'checkout.session.completed':
+          await this._onCheckoutCompleted(event.data.object);
+          break;
+      }
+    } catch (err) {
+      await BillingRepository.releaseWebhookEvent(event.id);
+      throw err;
     }
 
     return { received: true };
@@ -232,7 +250,10 @@ export const BillingService = {
     const sub = await BillingRepository.findByStripeSubId(invoice.subscription);
     if (!sub) return;
 
-    await BillingRepository.createInvoice({
+    const jaExiste = await BillingRepository.findInvoiceByStripeId(invoice.id);
+    if (jaExiste) return;
+
+    await BillingRepository.upsertInvoice({
       subscriptionId:  sub.id,
       stripeInvoiceId: invoice.id,
       amount:          invoice.amount_paid / 100,
@@ -314,12 +335,44 @@ export const BillingService = {
     };
 
     const existing = await BillingRepository.findSubscription(orgId);
-    if (existing) {
-      await BillingRepository.updateSubscription(orgId, data);
-    } else {
-      await BillingRepository.createSubscription({ orgId, ...data });
-    }
+    await BillingRepository.upsertSubscription(orgId, data);
 
     logger.info({ orgId, planTier }, 'Checkout Stripe concluído');
+  },
+
+  /** Reconcilia uma org com o estado atual no Stripe. */
+  async reconcileSubscription(orgId) {
+    const sub = await BillingRepository.findSubscription(orgId);
+    if (!sub?.stripeSubId) return { orgId, skipped: true };
+
+    const stripe = await getStripe();
+    if (!stripe) throw new AppError('Stripe não configurado', 503);
+
+    const stripeSub = await stripe.subscriptions.retrieve(sub.stripeSubId);
+    await BillingRepository.updateSubscription(orgId, {
+      status:             String(stripeSub.status).toUpperCase(),
+      currentPeriodStart: new Date(stripeSub.current_period_start * 1000),
+      currentPeriodEnd:   new Date(stripeSub.current_period_end * 1000),
+      cancelAtPeriodEnd:  !!stripeSub.cancel_at_period_end,
+    });
+
+    return { orgId, status: stripeSub.status };
+  },
+
+  /** Reconciliação periódica Stripe ↔ banco. */
+  async reconcileAll() {
+    const rows = await BillingRepository.findStripeLinkedSubscriptions();
+    const results = [];
+
+    for (const { orgId } of rows) {
+      try {
+        results.push(await this.reconcileSubscription(orgId));
+      } catch (err) {
+        logger.warn({ orgId, err: err.message }, 'Reconciliação Stripe falhou');
+        results.push({ orgId, error: err.message });
+      }
+    }
+
+    return { reconciled: results.filter((r) => !r.error && !r.skipped).length, results };
   },
 };

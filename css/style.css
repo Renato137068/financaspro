@@ -87,7 +87,7 @@ body {
 
 header {
   padding: 14px var(--space-5);
-  background: linear-gradient(135deg, #005c33 0%, #00723f 40%, #10b981 100%);
+  background: linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-primary-500) 40%, var(--color-success) 100%);
   border-radius: 0 0 var(--radius-xl) var(--radius-xl);
   box-shadow: 0 4px 20px rgba(0, 114, 63, 0.28);
 }
@@ -257,7 +257,7 @@ main {
     align-items: center;
     gap: 12px;
     padding: 22px 20px 20px;
-    background: linear-gradient(145deg, #005c33 0%, #00723f 50%, #0d9a52 100%);
+    background: linear-gradient(145deg, var(--color-primary-600) 0%, var(--color-primary-500) 50%, #0d9a52 100%);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     position: relative;
     overflow: hidden;
@@ -285,7 +285,7 @@ main {
   }
 
   .sidebar-title {
-    color: #ffffff;
+    color: var(--color-white);
     font-weight: 800;
     font-size: 17px;
     letter-spacing: -0.3px;
@@ -338,5 +338,5 @@ main {
 }
 
 [data-theme="dark"] .sidebar-brand {
-  background: linear-gradient(145deg, #002d1a 0%, #003d22 50%, #00723f 100%);
+  background: linear-gradient(145deg, #002d1a 0%, #003d22 50%, var(--color-primary-500) 100%);
 }

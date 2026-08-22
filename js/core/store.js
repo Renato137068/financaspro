@@ -56,7 +56,12 @@ const APP_STORE = {
     sync: {
       online: false,
       pending: false,
-      lastSyncAt: null
+      saving: false,
+      flushing: false,
+      lastSyncAt: null,
+      outboxCount: 0,
+      conflicts: [],
+      lastError: null,
     }
   },
   
@@ -330,15 +335,40 @@ const APP_STORE = {
     return result;
   },
   
+  /**
+   * Auto-save do estado de UI.
+   *
+   * Diferente dos outros timers periódicos, este NÃO pode simplesmente pausar
+   * em segundo plano: uma aba escondida é justamente a que o sistema
+   * operacional descarta sem avisar. Pausar sem mais nada trocaria bateria por
+   * perda de estado.
+   *
+   * A solução é gravar NA HORA em que a aba some — o momento em que há algo
+   * novo para gravar e a última chance de fazê-lo — e só então parar o ciclo.
+   * Fica mais barato E mais seguro que o setInterval cego de antes.
+   */
   _setupAutoSave: function() {
-    // Limpar interval anterior se existir (evita múltiplos intervals)
-    if (this._autoSaveInterval) {
-      clearInterval(this._autoSaveInterval);
-    }
+    this.stopAutoSave();
     var self = this;
+
     this._autoSaveInterval = setInterval(function() {
       self._persistirUI();
-    }, 30000); // Auto-save a cada 30s
+    }, 30000);
+
+    if (typeof document === 'undefined' || !document || !document.addEventListener) return;
+
+    this._autoSaveVisibilidade = function() {
+      if (document.visibilityState === 'hidden') {
+        self._persistirUI();                       // grava antes de sumir
+        clearInterval(self._autoSaveInterval);
+        self._autoSaveInterval = null;
+        return;
+      }
+      if (!self._autoSaveInterval) {
+        self._autoSaveInterval = setInterval(function() { self._persistirUI(); }, 30000);
+      }
+    };
+    document.addEventListener('visibilitychange', this._autoSaveVisibilidade);
   },
 
   /**
@@ -348,6 +378,11 @@ const APP_STORE = {
     if (this._autoSaveInterval) {
       clearInterval(this._autoSaveInterval);
       this._autoSaveInterval = null;
+    }
+    if (this._autoSaveVisibilidade && typeof document !== 'undefined'
+        && document && document.removeEventListener) {
+      document.removeEventListener('visibilitychange', this._autoSaveVisibilidade);
+      this._autoSaveVisibilidade = null;
     }
   },
   
@@ -506,8 +541,23 @@ const APP_STORE = {
     setPending: function(pending) {
       APP_STORE.set('sync.pending', pending, { persist: false });
     },
+    setSaving: function(saving) {
+      APP_STORE.set('sync.saving', saving, { persist: false });
+    },
+    setFlushing: function(flushing) {
+      APP_STORE.set('sync.flushing', flushing, { persist: false });
+    },
     setLastSync: function(timestamp) {
       APP_STORE.set('sync.lastSyncAt', timestamp, { persist: false });
+    },
+    setOutboxCount: function(count) {
+      APP_STORE.set('sync.outboxCount', count, { persist: false });
+    },
+    setConflicts: function(conflicts) {
+      APP_STORE.set('sync.conflicts', conflicts || [], { persist: false });
+    },
+    setLastError: function(erro) {
+      APP_STORE.set('sync.lastError', erro || null, { persist: false });
     },
     getStatus: function() {
       return APP_STORE.get('sync');

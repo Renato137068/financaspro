@@ -17,6 +17,8 @@ export const QUEUES = {
   EMAIL:      'email',
   REPORT:     'report-generator',
   AI_ANALYSIS:'ai-analysis',
+  RETENTION:  'retention-purge',
+  BILLING:    'billing-reconcile',
 };
 
 /**

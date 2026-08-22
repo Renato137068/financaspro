@@ -26,10 +26,17 @@ const EVENT_BUS = {
    * @param {Object} handlers - Map de data-action -> handler function
    */
   initNamespace: function(namespace, containerSelector, handlers) {
+    // Falha fechada: sem mapa de handlers, `handlers[action]` estouraria a cada
+    // clique dentro do container — um erro por clique, em silêncio, no console.
+    if (!handlers || typeof handlers !== 'object') {
+      if (this._debug) console.warn('[EVENT_BUS] Namespace sem handlers:', namespace);
+      return false;
+    }
+
     if (this._namespaces.has(namespace)) {
       this.cleanupNamespace(namespace);
     }
-    
+
     var container = document.querySelector(containerSelector);
     if (!container) {
       if (this._debug) console.warn('[EVENT_BUS] Container não encontrado:', containerSelector);
@@ -179,16 +186,7 @@ const EVENT_BUS = {
 
 const EVENT_HANDLERS = {
   // --- NAVEGAÇÃO ---
-  nav: {
-    'mudar-aba': function(ctx) {
-      var aba = ctx.dataset.aba || ctx.target.dataset.aba;
-      if (aba && typeof mudarAba === 'function') {
-        mudarAba(aba);
-      }
-    }
-  },
-  
-  // --- FORMULÁRIO NOVO ---
+    // --- FORMULÁRIO NOVO ---
   form: {
     'toggle-extras': function(ctx) {
       var panel = document.getElementById('extras-panel');
@@ -225,19 +223,7 @@ const EVENT_HANDLERS = {
   
   // --- EXTRATO ---
   extrato: {
-    'navegar-periodo': function(ctx) {
-      var dir = parseInt(ctx.dataset.dir || '0', 10);
-      if (typeof INIT_EXTRATO !== 'undefined' && typeof INIT_EXTRATO.navegarPeriodo === 'function') {
-        INIT_EXTRATO.navegarPeriodo(dir);
-      }
-    },
     
-    'filtro-tipo': function(ctx) {
-      var filtro = ctx.dataset.filtro || 'todos';
-      if (typeof INIT_EXTRATO !== 'undefined' && typeof INIT_EXTRATO.setFiltroTipo === 'function') {
-        INIT_EXTRATO.setFiltroTipo(filtro);
-      }
-    },
     
     'ordenar': function(ctx) {
       var ordenacao = ctx.dataset.ordenacao || 'data-desc';
@@ -275,108 +261,24 @@ const EVENT_HANDLERS = {
       if (typeof INIT_EXTRATO !== 'undefined' && typeof INIT_EXTRATO.cancelarSelecao === 'function') {
         INIT_EXTRATO.cancelarSelecao();
       }
-    },
-    
-    'exportar-excel': function() {
-      if (typeof INIT_EXTRATO !== 'undefined' && typeof INIT_EXTRATO.exportarExcel === 'function') {
-        INIT_EXTRATO.exportarExcel();
-      }
-    },
-    
-    'exportar-pdf': function() {
-      if (typeof INIT_EXTRATO !== 'undefined' && typeof INIT_EXTRATO.exportarExtrato === 'function') {
-        INIT_EXTRATO.exportarExtrato();
-      }
     }
+    
+    
   },
   
   // --- ORÇAMENTO ---
   orcamento: {
-    'salvar-renda-orcamento': function() {
-      if (typeof salvarRendaOrcamento === 'function') salvarRendaOrcamento();
-    },
     
-    'editar-renda-orcamento': function() {
-      if (typeof editarRendaOrcamento === 'function') editarRendaOrcamento();
-    },
     
     'editar-regra-503020': function() {
       if (typeof editarRegra503020 === 'function') editarRegra503020();
-    },
-    
-    'toggle-detalhes-categorias': function() {
-      if (typeof toggleDetalhesCategorias === 'function') toggleDetalhesCategorias();
     }
+    
   },
   
   // --- CONFIGURAÇÕES ---
-  config: {
-    'abrir-editar-perfil': function() {
-      if (typeof INIT_CONFIG !== 'undefined' && typeof INIT_CONFIG.abrirEditarPerfil === 'function') {
-        INIT_CONFIG.abrirEditarPerfil();
-      }
-    },
-    
-    'abrir-editar-renda': function() {
-      if (typeof abrirEditarRenda === 'function') abrirEditarRenda();
-    },
-    
-    'abrir-config-bancos': function() {
-      if (typeof INIT_CONFIG !== 'undefined' && typeof INIT_CONFIG.abrirConfigBancos === 'function') {
-        INIT_CONFIG.abrirConfigBancos();
-      }
-    },
-    
-    'gerenciar-categorias': function(ctx) {
-      var tipo = ctx.dataset.tipo;
-      if (typeof abrirGerenciarCategorias === 'function') {
-        abrirGerenciarCategorias(tipo);
-      }
-    },
-    
-    'exportar-dados': function() {
-      if (typeof exportarDados === 'function') exportarDados();
-    },
-    
-    'abrir-import': function() {
-      var importInput = document.getElementById('import-file');
-      if (importInput) importInput.click();
-    },
-    
-    'abrir-changelog': function() {
-      if (typeof abrirChangelog === 'function') abrirChangelog();
-    },
-    
-    'abrir-feedback': function() {
-      if (typeof abrirFeedback === 'function') abrirFeedback();
-    },
-    
-    'limpar-dados': function() {
-      if (typeof CONFIG_USER !== 'undefined' && CONFIG_USER.limparDados) {
-        CONFIG_USER.limparDados();
-      }
-    }
-  },
-  
-  // --- DASHBOARD ---
-  dashboard: {
-    'toggle-graficos': function() {
-      var panel = document.getElementById('graficos-panel');
-      var arrow = document.getElementById('graficos-arrow');
-      var btn = document.getElementById('btn-graficos');
-      if (!panel) return;
-      
-      var isOpen = panel.style.display !== 'none';
-      panel.style.display = isOpen ? 'none' : 'block';
-      if (arrow) arrow.classList.toggle('expanded', !isOpen);
-      if (btn) btn.setAttribute('aria-expanded', String(!isOpen));
-    },
-    
-    'abrir-entrada-rapida': function() {
-      if (typeof abrirEntradaRapida === 'function') abrirEntradaRapida();
-    }
-  }
-};
+    // --- DASHBOARD ---
+  };
 
 // ============================================================
 // INICIALIZAÇÃO SIMPLIFICADA
@@ -388,12 +290,21 @@ const EVENT_INIT = {
     EVENT_BUS.cleanupAll();
     
     // Inicializar namespaces
-    EVENT_BUS.initNamespace('nav', '.nav-bottom', EVENT_HANDLERS.nav);
-    EVENT_BUS.initNamespace('dashboard', '#main-content', EVENT_HANDLERS.dashboard);
+    // Só os namespaces que ainda têm handlers próprios.
+    //
+    // 'nav', 'dashboard' e 'config' foram removidos: todas as ações deles já
+    // eram tratadas por INIT_NAVIGATION, no listener do document. Como o clique
+    // borbulha do container até o document, os dois handlers viam o MESMO
+    // evento e a ação rodava duas vezes — 'navegar-periodo' andava dois meses
+    // por clique, 'toggle-graficos' abria e fechava o painel, 'exportar-excel'
+    // baixava dois arquivos.
+    //
+    // O que sobrou aqui é o que só existe aqui: busca avançada, seleção em
+    // massa e ordenação do extrato, além de toggle-extras e a grade de
+    // categorias do formulário.
     EVENT_BUS.initNamespace('form', '#form-transacao', EVENT_HANDLERS.form);
     EVENT_BUS.initNamespace('extrato', '#aba-extrato', EVENT_HANDLERS.extrato);
     EVENT_BUS.initNamespace('orcamento', '#aba-orcamento', EVENT_HANDLERS.orcamento);
-    EVENT_BUS.initNamespace('config', '#aba-config', EVENT_HANDLERS.config);
     
     console.log('[EVENT_INIT] Eventos inicializados:', EVENT_BUS.getActiveNamespaces());
   },

@@ -6,7 +6,7 @@
  * disponível e cai para navigator.onLine quando a API está desativada
  * (modo 100% local). Defensivo: nunca quebra se o store não existir.
  *
- * Estados: sincronizado · sincronizando · pendente · offline · local
+ * Estados: salvo no servidor · salvando · sincronizando · pendente · falha · conflito · offline · local
  */
 (function() {
   'use strict';
@@ -18,16 +18,26 @@
 
   function lerStatus() {
     var online = (typeof navigator !== 'undefined') ? navigator.onLine !== false : true;
-    var pending = false, lastSyncAt = null;
+    var pending = false, saving = false, flushing = false, lastSyncAt = null;
+    var outboxCount = 0, conflicts = [], lastError = null;
     try {
       if (typeof APP_STORE !== 'undefined' && APP_STORE.get) {
         var s = APP_STORE.get('sync') || {};
         if (typeof s.online === 'boolean') online = s.online;
         pending = !!s.pending;
+        saving = !!s.saving;
+        flushing = !!s.flushing;
         lastSyncAt = s.lastSyncAt || null;
+        outboxCount = s.outboxCount || 0;
+        conflicts = s.conflicts || [];
+        lastError = s.lastError || null;
       }
     } catch (e) { /* usa fallback */ }
-    return { online: online, pending: pending, lastSyncAt: lastSyncAt, api: apiAtiva() };
+    return {
+      online: online, pending: pending, saving: saving, flushing: flushing,
+      lastSyncAt: lastSyncAt, outboxCount: outboxCount, conflicts: conflicts,
+      lastError: lastError, api: apiAtiva(),
+    };
   }
 
   function textoRelativo(ts) {
@@ -44,10 +54,20 @@
 
   function classificar(st) {
     if (!st.api) return { cls: 'local', label: 'Salvo neste dispositivo' };
+    if (st.conflicts && st.conflicts.length) {
+      return { cls: 'conflito', label: 'Conflito de sync — revise seus dados' };
+    }
     if (!st.online) return { cls: 'offline', label: 'Offline — alterações pendentes' };
-    if (st.pending) return { cls: 'sincronizando', label: 'Sincronizando…' };
+    if (st.lastError) {
+      return { cls: 'falha', label: 'Falha ao sincronizar — tentaremos de novo' };
+    }
+    if (st.saving) return { cls: 'salvando', label: 'Salvando…' };
+    if (st.flushing || st.pending) return { cls: 'sincronizando', label: 'Sincronizando…' };
+    if (st.outboxCount > 0) {
+      return { cls: 'pendente', label: st.outboxCount + ' alteração(ões) aguardando envio' };
+    }
     var quando = textoRelativo(st.lastSyncAt);
-    return { cls: 'ok', label: 'Sincronizado' + (quando ? ' ' + quando : '') };
+    return { cls: 'ok', label: 'Salvo no servidor' + (quando ? ' · ' + quando : '') };
   }
 
   var el = null;
@@ -91,8 +111,10 @@
         APP_STORE.subscribe('sync', render);
       }
     } catch (e) { /* segue com polling */ }
-    // Rede de segurança: revalida periodicamente (barato).
-    setInterval(render, 15000);
+    // Rede de segurança: revalida periodicamente (barato) — mas só com a aba
+    // visível. Era o timer mais frequente do app (15s) rodando em segundo
+    // plano para atualizar um ícone que ninguém estava olhando.
+    UTILS.intervaloVisivel(render, 15000);
   }
 
   if (typeof document !== 'undefined') {

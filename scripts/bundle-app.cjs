@@ -35,6 +35,23 @@ const VENDOR_PREFIX = 'js/vendor/';
 const LAZY_CHUNKS = {
   previsao: ['js/previsao.js'],
   relatorios: ['js/relatorios.js', 'js/modules/init-relatorios.js'],
+
+  // Billing, 2FA e Open Finance vivem exclusivamente na aba de configurações.
+  // Vão juntos num chunk só porque são carregados pelo mesmo gatilho: separá-los
+  // renderia três requisições onde uma resolve.
+  //
+  // ATENÇÃO: os três eram inicializados no boot (lifecycle.js) e referenciados
+  // atrás de `typeof X !== 'undefined'`. Sem o gatilho em mudarAba('config'),
+  // eles simplesmente não existiriam e as guardas silenciariam a ausência —
+  // exatamente o tipo de falha invisível que a auditoria encontrou em 15 lugares.
+  // O teste tests/lazy-chunks.test.js trava a existência do gatilho.
+  conta: [
+    'js/billing.js',
+    'js/modules/init-billing.js',
+    'js/modules/init-2fa.js',
+    'js/open-finance.js',
+    'js/modules/init-open-finance.js',
+  ],
 };
 const lazySet = new Set(Object.values(LAZY_CHUNKS).reduce((a, b) => a.concat(b), []));
 
@@ -68,6 +85,12 @@ function minifyConcat(relPaths) {
     minify: true,
     target: 'es2015',
     legalComments: 'none',
+    // Remove os logs de diagnóstico do build de produção. `pure` (em vez de
+    // `drop: ['console']`) preserva console.error/warn: são o último recurso
+    // para diagnosticar um bug relatado pelo usuário, e o custo é desprezível.
+    // debugger nunca deve chegar ao usuário final.
+    pure: ['console.log', 'console.debug', 'console.info', 'console.trace'],
+    drop: ['debugger'],
   }).code;
 }
 
@@ -123,3 +146,52 @@ html = html.replace('</body>', injects.join('\n') + '\n</body>');
 fs.writeFileSync(indexPath, html);
 
 console.log('[bundle-app] bloqueantes mantidos:', KEEP_BLOCKING.join(', '));
+
+// ── Purga o que já está dentro dos bundles ───────────────────────────────────
+//
+// Os arquivos crus precisam existir em dist/ porque são a ENTRADA deste script:
+// `minifyConcat` lê `dist/js/*.js`. Terminado o empacotamento, cada um deles
+// virou cópia morta do que está em app.bundle.js / vendor.bundle.js / lazy.
+//
+// Ninguém os baixa — o HTML não os referencia mais. Mas `npm run android:sync`
+// empacota dist/ inteiro no APK, então o usuário baixa da loja e guarda no
+// telefone. E, ao contrário dos bundles, eles não são minificados: expõem
+// comentários internos e a estrutura do app em texto claro.
+//
+// A lista apagada é EXATAMENTE `bundlable` — o que este script leu e inlineou.
+// Não é heurística de "parece não usado": é conhecimento de quem consumiu.
+// Arquivos que existem em js/ mas NENHUM <script> carrega — logo, não entram em
+// `bundlable` e sobreviveriam ao purge acima. Cada entrada exige justificativa:
+// embarcar código sem ponto de entrada é pagar APK e expor fonte por nada.
+const SEM_PONTO_DE_ENTRADA = [
+  // sync-merge.js e sync-engine.js agora têm <script src> no index.html.
+];
+
+const purgados = [];
+for (const rel of SEM_PONTO_DE_ENTRADA) {
+  const file = path.join(dist, rel);
+  if (!fs.existsSync(file)) continue;
+  purgados.push(fs.statSync(file).size);
+  fs.unlinkSync(file);
+}
+for (const rel of bundlable) {
+  const file = path.join(dist, rel);
+  if (!fs.existsSync(file)) continue;
+  purgados.push(fs.statSync(file).size);
+  fs.unlinkSync(file);
+}
+
+// Diretórios que ficaram vazios após o purge. `js/lazy` e `js/vendor` seguem
+// povoados — são pedidos por caminho montado em runtime, nunca entram em
+// `bundlable`, e apagá-los quebraria os chunks e o fallback de ícones.
+function limparVazios(dir) {
+  if (!fs.existsSync(dir)) return;
+  for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (ent.isDirectory()) limparVazios(path.join(dir, ent.name));
+  }
+  if (!fs.readdirSync(dir).length) fs.rmdirSync(dir);
+}
+limparVazios(path.join(dist, 'js'));
+
+const kbPurgado = Math.round(purgados.reduce((a, b) => a + b, 0) / 1024);
+console.log('[bundle-app]', purgados.length, 'fontes cruas removidas de dist (', kbPurgado, 'KB )');

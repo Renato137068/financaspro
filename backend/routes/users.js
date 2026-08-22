@@ -3,7 +3,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { authenticate } from '../middleware/auth.js';
 import { requireRole } from '../lib/rbac.js';
-import { validateBody } from '../middleware/validate.js';
+import { validateBody, validateParams, idParamSchema } from '../middleware/validate.js';
 import { UserService } from '../domain/services/user.service.js';
 import { AuthService } from '../domain/services/auth.service.js';
 import { clearAuthCookies } from '../lib/authCookies.js';
@@ -100,7 +100,7 @@ router.get('/', requireRole('ADMIN'), async (_req, res) => {
 });
 
 // PATCH /api/v1/users/:id — gerenciar usuários (apenas ADMIN)
-router.patch('/:id', requireRole('ADMIN'), validateBody(z.object({
+router.patch('/:id', validateParams(idParamSchema), requireRole('ADMIN'), validateBody(z.object({
   name: z.string().trim().min(1).max(80).optional(),
   role: z.enum(['ADMIN', 'USER', 'VIEWER']).optional(),
   active: z.boolean().optional(),

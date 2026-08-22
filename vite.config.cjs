@@ -27,7 +27,10 @@ module.exports = defineConfig({
         drop_debugger: true,
       },
     },
-    sourcemap: true,
+    // Sem sourcemap em produção: publicar o mapa junto do bundle entrega o
+    // fonte original a qualquer visitante e amplia a superfície de análise sem
+    // nenhum benefício para o usuário final.
+    sourcemap: false,
     target: 'es2015',
   },
 

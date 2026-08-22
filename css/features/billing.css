@@ -93,7 +93,7 @@
 }
 
 .billing-interval-btn.ativo {
-  background: #fff;
+  background: var(--color-white);
   color: var(--color-primary-700);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
@@ -116,7 +116,7 @@
   border: 1px solid var(--border-soft, rgba(16, 24, 40, 0.1));
   border-radius: var(--radius-xl);
   padding: var(--space-5);
-  background: var(--surface-1, #fff);
+  background: var(--surface-1, var(--color-white));
   box-shadow: var(--shadow-soft);
   display: flex;
   flex-direction: column;
@@ -130,7 +130,7 @@
 
 .billing-plan--current {
   border-color: rgba(0, 114, 63, 0.5);
-  background: linear-gradient(180deg, rgba(0, 114, 63, 0.04) 0%, #fff 40%);
+  background: linear-gradient(180deg, rgba(0, 114, 63, 0.04) 0%, var(--color-white) 40%);
 }
 
 .billing-plan h3 {
@@ -219,8 +219,8 @@
 }
 
 .perfil-avatar-badge--business {
-  background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
-  color: #fff;
+  background: linear-gradient(135deg, #1e3a5f 0%, var(--color-info-dark) 100%);
+  color: var(--color-white);
 }
 
 .perfil-card-premium--plano-highlight {

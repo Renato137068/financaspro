@@ -17,6 +17,14 @@ const localStorageMock = (() => {
 Object.defineProperty(global, 'localStorage', { value: localStorageMock });
 
 // Mock do CONFIG
+const { loadCoreModules } = require('./load-sources');
+
+loadCoreModules();
+
+// Fixture mínimo, não uma cópia do módulo: estes testes só precisam de algumas
+// constantes. O teste logo abaixo garante que os valores continuam iguais aos
+// do js/core/config.js real — sem ele, renomear TIPO_DESPESA no código deixaria
+// esta suíte verde testando um mundo que não existe mais.
 const CONFIG = {
   STORAGE_TRANSACOES: 'fp-transacoes',
   STORAGE_CONFIG: 'fp-config',
@@ -27,6 +35,18 @@ const CONFIG = {
     alimentacao: 'Alimentação'
   }
 };
+
+describe('fixture de CONFIG não divergiu do módulo real', () => {
+  test('as constantes usadas aqui batem com js/core/config.js', () => {
+    const real = global.CONFIG;
+    expect(real).toBeDefined();
+
+    expect(CONFIG.TIPO_DESPESA).toBe(real.TIPO_DESPESA);
+    expect(CONFIG.TIPO_RECEITA).toBe(real.TIPO_RECEITA);
+    expect(CONFIG.STORAGE_TRANSACOES).toBe(real.STORAGE_TRANSACOES);
+    expect(CONFIG.STORAGE_CONFIG).toBe(real.STORAGE_CONFIG);
+  });
+});
 
 describe('CORE - Cálculos Financeiros', () => {
   beforeEach(() => {
@@ -79,7 +99,6 @@ describe('CORE - Parcelamento', () => {
   });
 
   test('geração de datas de parcelas', () => {
-    const dataInicial = '2024-01-15';
     const numParcelas = 3;
     const parcelas = [];
     
@@ -187,7 +206,7 @@ describe('CORE - Store Unificada', () => {
       setState: (patch) => appStorePatch(patch)
     };
     
-    const state = APP_STATE.getState();
+    APP_STATE.getState();
     APP_STATE.setState({ transacoes: [{ id: 1 }] });
     
     expect(appStoreGet).toHaveBeenCalled();

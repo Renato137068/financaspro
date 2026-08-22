@@ -46,7 +46,7 @@ const PATRIMONIO = {
 
   criarAtivo: function(dados) {
     var nome = (dados.nome || '').trim();
-    var valor = parseFloat(dados.valor);
+    var valor = UTILS.parseMoedaEstrita(dados.valor);
     var tipo = dados.tipo || 'corrente';
     if (!nome) throw new Error('Informe o nome do ativo');
     if (isNaN(valor) || valor < 0) throw new Error('Valor inválido');
@@ -75,7 +75,7 @@ const PATRIMONIO = {
     if (idx === -1) throw new Error('Ativo não encontrado');
     ativos[idx] = Object.assign({}, ativos[idx], patch);
     if (patch.valor !== undefined) {
-      var v = parseFloat(patch.valor);
+      var v = UTILS.parseMoedaEstrita(patch.valor);
       if (isNaN(v) || v < 0) throw new Error('Valor inválido');
       ativos[idx].valor = v;
     }
@@ -89,7 +89,7 @@ const PATRIMONIO = {
 
   criarDivida: function(dados) {
     var nome = (dados.nome || '').trim();
-    var valor = parseFloat(dados.valor);
+    var valor = UTILS.parseMoedaEstrita(dados.valor);
     var tipo = dados.tipo || 'emprestimo';
     if (!nome) throw new Error('Informe o nome da dívida');
     if (!valor || valor <= 0) throw new Error('Valor inválido');
@@ -117,7 +117,7 @@ const PATRIMONIO = {
     if (idx === -1) throw new Error('Dívida não encontrada');
     dividas[idx] = Object.assign({}, dividas[idx], patch);
     if (patch.valor !== undefined) {
-      var v = parseFloat(patch.valor);
+      var v = UTILS.parseMoedaEstrita(patch.valor);
       if (!v || v <= 0) throw new Error('Valor inválido');
       dividas[idx].valor = v;
     }

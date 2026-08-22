@@ -25,7 +25,7 @@ const ASSINATURAS = {
 
   criar: function(dados) {
     var nome = (dados.nome || '').trim();
-    var valor = parseFloat(dados.valor);
+    var valor = UTILS.parseMoeda(dados.valor);
     var dia = parseInt(dados.diaCobranca, 10);
     if (!nome) throw new Error('Informe o nome da assinatura');
     if (!valor || valor <= 0) throw new Error('Valor inválido');
@@ -76,11 +76,13 @@ const ASSINATURAS = {
     ].join('-');
   },
 
+  /**
+   * Dias até a próxima cobrança. 0 = hoje.
+   * Tinha o mesmo erro de um dia de contas-pagar; agora ambos usam o mesmo
+   * helper, então uma correção vale para os dois.
+   */
   diasAteCobranca: function(item) {
-    var hoje = new Date();
-    hoje.setHours(0, 0, 0, 0);
-    var prox = new Date(this.proximaCobranca(item) + 'T12:00:00');
-    return Math.ceil((prox - hoje) / 86400000);
+    return UTILS.diasAte(this.proximaCobranca(item));
   },
 
   totalMensal: function() {

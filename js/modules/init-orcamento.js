@@ -297,6 +297,24 @@ const INIT_ORCAMENTO = {
         dicas.push({ lucide: 'bar-chart-2', texto: 'Estimativa: mantendo esse ritmo, o mês pode fechar em ~' + UTILS.formatarMoeda(projecao) + ' (' + Math.round((projecao / data.renda) * 100) + '% da renda).', tipo: 'warning' });
       }
     }
+    // Risco por CATEGORIA. As dicas acima olham os três grupos do 50/30/20;
+    // o estouro, porém, acontece numa categoria específica — e é lá que dá
+    // para agir. Vem com o teto diário porque "segure os gastos" não é uma
+    // instrução: "R$ 10 por dia até o fim do mês" é.
+    if (typeof ORCAMENTO !== 'undefined' && typeof ORCAMENTO.categoriasEmRisco === 'function') {
+      try {
+        ORCAMENTO.categoriasEmRisco(agora).slice(0, 3).forEach(function(p) {
+          var texto = ORCAMENTO.mensagemRisco(p.categoria, agora);
+          if (!texto) return;
+          dicas.push({
+            lucide: p.risco === 'estourado' ? 'alert-octagon' : 'alert-triangle',
+            texto: UTILS.escapeHtml(texto),
+            tipo: p.risco === 'estourado' ? 'danger' : 'warning'
+          });
+        });
+      } catch (e) { /* orçamento indisponível não pode derrubar a aba */ }
+    }
+
     if (dicas.length === 0) dicas.push({ lucide: 'sparkles', texto: 'Tudo sob controle! Continue assim.', tipo: 'success' });
     el.innerHTML = dicas.map(function(d) {
       return '<div class="orc-insight ' + d.tipo + '"><span class="orc-insight-icon">' + self._lucideHtml(d.lucide) + '</span><span>' + d.texto + '</span></div>';

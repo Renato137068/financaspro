@@ -98,7 +98,7 @@
   justify-content: center;
   border-radius: var(--radius-lg);
   background: rgba(0, 114, 63, 0.12);
-  color: #00723F;
+  color: var(--color-primary-500);
   flex-shrink: 0;
 }
 
@@ -125,7 +125,7 @@
 }
 
 .pat-item-valor--positivo {
-  color: #00723F;
+  color: var(--color-primary-500);
 }
 
 .pat-item-valor--negativo {

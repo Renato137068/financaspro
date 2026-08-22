@@ -4,7 +4,7 @@ import { BillingService } from '../domain/services/billing.service.js';
 import { authenticate } from '../middleware/auth.js';
 import { resolveOrg, requireOrgRole } from '../middleware/org.js';
 import { z } from 'zod';
-import { validateBody } from '../middleware/validate.js';
+import { validateBody, validateParams, orgIdParamSchema } from '../middleware/validate.js';
 
 const router = Router();
 
@@ -38,7 +38,7 @@ router.get('/plans', async (_req, res, next) => {
 router.use(authenticate);
 
 // Obter assinatura da org
-router.get('/:orgId/subscription', resolveOrg, async (req, res, next) => {
+router.get('/:orgId/subscription', validateParams(orgIdParamSchema), resolveOrg, async (req, res, next) => {
   try {
     const sub = await BillingService.getSubscription(req.params.orgId);
     res.json(sub);
@@ -47,7 +47,7 @@ router.get('/:orgId/subscription', resolveOrg, async (req, res, next) => {
 
 // Assinar/mudar plano
 router.post(
-  '/:orgId/subscribe',
+  '/:orgId/subscribe', validateParams(orgIdParamSchema),
   resolveOrg,
   requireOrgRole('OWNER'),
   validateBody(subscribeSchema),
@@ -65,7 +65,7 @@ router.post(
 );
 
 // Cancelar assinatura (ao final do período)
-router.post('/:orgId/cancel', resolveOrg, requireOrgRole('OWNER'), async (req, res, next) => {
+router.post('/:orgId/cancel', validateParams(orgIdParamSchema), resolveOrg, requireOrgRole('OWNER'), async (req, res, next) => {
   try {
     const sub = await BillingService.cancel(req.params.orgId);
     res.json(sub);
@@ -74,7 +74,7 @@ router.post('/:orgId/cancel', resolveOrg, requireOrgRole('OWNER'), async (req, r
 
 // Abrir portal de billing do Stripe
 router.post(
-  '/:orgId/portal',
+  '/:orgId/portal', validateParams(orgIdParamSchema),
   resolveOrg,
   requireOrgRole('OWNER'),
   validateBody(portalSchema),
@@ -91,7 +91,7 @@ router.post(
 
 // Stripe Checkout hosted (redirect)
 router.post(
-  '/:orgId/checkout',
+  '/:orgId/checkout', validateParams(orgIdParamSchema),
   resolveOrg,
   requireOrgRole('OWNER'),
   validateBody(checkoutSchema),
@@ -111,7 +111,7 @@ router.post(
 );
 
 // Listar faturas
-router.get('/:orgId/invoices', resolveOrg, requireOrgRole('MEMBER'), async (req, res, next) => {
+router.get('/:orgId/invoices', validateParams(orgIdParamSchema), resolveOrg, requireOrgRole('MEMBER'), async (req, res, next) => {
   try {
     const invoices = await BillingService.listInvoices(req.params.orgId);
     res.json({ data: invoices });

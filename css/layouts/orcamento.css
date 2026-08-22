@@ -216,7 +216,7 @@
 
 .orc-kpi-percent {
   font-weight: 700;
-  color: #10b981;
+  color: var(--color-success-text);
 }
 
 .orc-kpi-separator {
@@ -507,13 +507,13 @@
 
 .status-healthy {
   background: rgba(16, 185, 129, 0.12);
-  color: #059669;
+  color: #047857;
   border: 1px solid rgba(16, 185, 129, 0.2);
 }
 
 .status-attention {
   background: rgba(245, 158, 11, 0.12);
-  color: #d97706;
+  color: var(--color-warning-dark);
   border: 1px solid rgba(245, 158, 11, 0.2);
 }
 
@@ -525,7 +525,7 @@
 
 .status-exceeded {
   background: rgba(220, 38, 38, 0.15);
-  color: #b91c1c;
+  color: var(--color-danger-dark);
   border: 1px solid rgba(220, 38, 38, 0.3);
   animation: pulseCritical 2s ease-in-out infinite;
 }
@@ -611,22 +611,22 @@
 
 /* Progress bar colors based on status */
 .orc-progress-fill-premium.healthy {
-  background: linear-gradient(90deg, #10b981, #34d399);
+  background: linear-gradient(90deg, var(--color-success), var(--color-success-light));
   box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
 }
 
 .orc-progress-fill-premium.attention {
-  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+  background: linear-gradient(90deg, var(--color-warning), var(--color-warning-light));
   box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
 }
 
 .orc-progress-fill-premium.critical {
-  background: linear-gradient(90deg, #ef4444, #f87171);
+  background: linear-gradient(90deg, var(--color-danger), var(--color-danger-light));
   box-shadow: 0 0 12px rgba(239, 68, 68, 0.3);
 }
 
 .orc-progress-fill-premium.exceeded {
-  background: linear-gradient(90deg, #dc2626, #ef4444);
+  background: linear-gradient(90deg, #dc2626, var(--color-danger));
   box-shadow: 0 0 16px rgba(220, 38, 38, 0.4);
   animation: pulseBar 1.5s ease-in-out infinite;
 }
@@ -752,9 +752,9 @@
   min-width: 2px;
 }
 
-.orc-progress-fill.ok       { background: linear-gradient(90deg, #10b981, #34d399); }
-.orc-progress-fill.alerta   { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
-.orc-progress-fill.excedido { background: linear-gradient(90deg, #ef4444, #f87171); }
+.orc-progress-fill.ok       { background: linear-gradient(90deg, var(--color-success), var(--color-success-light)); }
+.orc-progress-fill.alerta   { background: linear-gradient(90deg, var(--color-warning), var(--color-warning-light)); }
+.orc-progress-fill.excedido { background: linear-gradient(90deg, var(--color-danger), var(--color-danger-light)); }
 .orc-progress-fill.otimo    { background: linear-gradient(90deg, #6366f1, #818cf8); }
 
 /* ── Insights Premium ───────────────────────────────────────── */
@@ -809,9 +809,9 @@
 
 .orc-insight-text strong { font-weight: 700; }
 
-.orc-insight.positivo { border-left: 4px solid #10b981; }
-.orc-insight.alerta   { border-left: 4px solid #f59e0b; }
-.orc-insight.negativo { border-left: 4px solid #ef4444; }
+.orc-insight.positivo { border-left: 4px solid var(--color-success); }
+.orc-insight.alerta   { border-left: 4px solid var(--color-warning); }
+.orc-insight.negativo { border-left: 4px solid var(--color-danger); }
 .orc-insight.dica     { border-left: 4px solid #6366f1; }
 
 /* ── Categorias Section Premium ───────────────────────────────── */
@@ -1010,7 +1010,7 @@
 
 .orc-cat-item-badge.necessidades {
   background: rgba(59, 130, 246, 0.12);
-  color: #2563eb;
+  color: var(--color-info-dark);
 }
 
 .orc-cat-item-badge.desejos {
@@ -1293,15 +1293,15 @@
   transition: height var(--transition-slow);
 }
 
-.orc-hist-bar.receita { background: linear-gradient(180deg, #10b981, #34d399); }
-.orc-hist-bar.despesa { background: linear-gradient(180deg, #ef4444, #f87171); }
+.orc-hist-bar.receita { background: linear-gradient(180deg, var(--color-success), var(--color-success-light)); }
+.orc-hist-bar.despesa { background: linear-gradient(180deg, var(--color-danger), var(--color-danger-light)); }
 
 .orc-hist-label  { font-size: var(--font-size-2xs); color: var(--color-text-secondary); font-weight: var(--font-weight-medium); text-transform: capitalize; }
 .orc-hist-valor  { font-size: var(--font-size-2xs); color: var(--color-text-secondary); font-weight: var(--font-weight-semibold); }
 .orc-hist-saldo  { font-size: var(--font-size-2xs); font-weight: var(--font-weight-bold); margin-top: 2px; }
 
-.orc-hist-saldo.positivo { color: var(--color-success); }
-.orc-hist-saldo.negativo { color: var(--color-danger); }
+.orc-hist-saldo.positivo { color: var(--color-success-text); }
+.orc-hist-saldo.negativo { color: var(--color-danger-text); }
 
 .orc-hist-legenda {
   display: flex;
@@ -1761,7 +1761,7 @@
 .orc-regra-total-value {
   font-size: 18px;
   font-weight: 700;
-  color: var(--color-success);
+  color: var(--color-success-text);
   transition: color var(--transition-fast);
 }
 
@@ -1919,13 +1919,13 @@
 }
 
 .orc-preview-alerta {
-  color: var(--color-danger);
+  color: var(--color-danger-text);
   font-weight: var(--font-weight-bold);
   animation: pulseText 1s ease infinite alternate;
 }
 
 .orc-preview-aviso {
-  color: var(--color-warning);
+  color: var(--color-warning-text);
   font-weight: var(--font-weight-semibold);
 }
 

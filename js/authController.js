@@ -177,6 +177,16 @@ function setupAuthUI() {
       var nome = document.getElementById('auth-register-name').value.trim();
       var email = document.getElementById('auth-register-email').value.trim();
       var password = document.getElementById('auth-register-password').value;
+      if (typeof VALIDATIONS !== 'undefined' && VALIDATIONS.validarSenha) {
+        var senhaVal = VALIDATIONS.validarSenha(password);
+        if (!senhaVal.valido) {
+          UTILS.mostrarToast(senhaVal.erro, 'error');
+          if (typeof ariaLive !== 'undefined' && typeof ariaLive.announceError === 'function') {
+            ariaLive.announceError(senhaVal.erro);
+          }
+          return;
+        }
+      }
       _setAuthSubmitting(registerForm, true);
       DADOS.registrarApi(nome, email, password).then(function() {
         return DADOS.loginApi(email, password);

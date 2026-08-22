@@ -4,8 +4,8 @@ import logger from '../lib/logger.js';
 import { QUEUES } from '../lib/queue.js';
 import CONFIG from '../config.js';
 
-// Templates de e-mail disponíveis
-const TEMPLATES = {
+// Templates de e-mail disponíveis (exportado para teste de conteúdo)
+export const TEMPLATES = {
   'recurring-processed': (data) => ({
     subject: `Transação recorrente: ${data.description}`,
     text: [
@@ -57,7 +57,9 @@ const TEMPLATES = {
     ].join('\n'),
   }),
 
-  'payment-failed': (data) => ({
+  // Sem interpolação de dados: mensagem genérica de propósito, para não expor
+  // valor cobrado nem últimos dígitos do cartão num e-mail.
+  'payment-failed': (_data) => ({
     subject: `Falha no pagamento — FinançasPro`,
     text: [
       `Olá,`,
@@ -96,7 +98,15 @@ const TEMPLATES = {
   }),
 };
 
-async function sendEmail(job) {
+/**
+ * Renderiza e envia um e-mail a partir do nome do template.
+ *
+ * Exportada junto com TEMPLATES para teste: o conteúdo de e-mail transacional
+ * é a parte do sistema que o usuário mais lê e que menos alguém revisa — vale
+ * garantir que valores monetários e datas saiam formatados e que um template
+ * inexistente não derrube o worker.
+ */
+export async function sendEmail(job) {
   const { to, templateName, data } = job.data;
 
   const template = TEMPLATES[templateName];

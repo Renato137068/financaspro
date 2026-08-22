@@ -4,12 +4,6 @@ import redis from '../../lib/redis.js';
 
 const STATE_TTL_SECONDS = 30;
 
-const TX_SELECT = {
-  id: true, type: true, amount: true, description: true,
-  category: true, subcategory: true, date: true,
-  accountId: true, tags: true, notes: true, recurring: true, createdAt: true, updatedAt: true,
-};
-
 const ACCOUNT_SELECT = {
   id: true, name: true, type: true, balance: true,
   currency: true, institution: true, active: true, createdAt: true, updatedAt: true,
@@ -44,13 +38,7 @@ export const StateService = {
       } catch { /* ignora */ }
     }
 
-    const [transactions, accounts, budgets, recurring, config] = await prisma.$transaction([
-      prisma.transaction.findMany({
-        where: { userId },
-        select: TX_SELECT,
-        orderBy: { date: 'desc' },
-        take: 1000,
-      }),
+    const [accounts, budgets, recurring, config, txTotal] = await prisma.$transaction([
       prisma.account.findMany({
         where: { userId, active: true },
         select: ACCOUNT_SELECT,
@@ -67,11 +55,16 @@ export const StateService = {
         orderBy: { nextDue: 'asc' },
       }),
       prisma.userConfig.findUnique({ where: { userId }, select: { data: true } }),
+      prisma.transaction.count({ where: { userId, deletedAt: null } }),
     ]);
 
     const snapshot = {
-      meta: { syncedAt: new Date().toISOString(), schemaVersion: 2 },
-      transactions,
+      meta: {
+        syncedAt: new Date().toISOString(),
+        schemaVersion: 2,
+        transactions: { total: txTotal, strategy: 'sync-pull' },
+      },
+      transactions: [],
       accounts,
       budgets,
       recurringTransactions: recurring,

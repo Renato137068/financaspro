@@ -2,6 +2,7 @@
 import { BudgetRepository } from '../repositories/budget.repository.js';
 import { StateService } from './state.service.js';
 import { AppError } from '../errors.js';
+import { assertBudgetCapacity } from '../../middleware/plan.js';
 
 export const BudgetService = {
   async list(userId) {
@@ -16,6 +17,7 @@ export const BudgetService = {
 
   async upsert(userId, body) {
     const { category, period = 'monthly', ...rest } = body;
+    await assertBudgetCapacity(userId, category, period);
     return BudgetRepository.upsert(userId, category, period, rest);
   },
 

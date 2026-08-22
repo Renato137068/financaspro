@@ -132,6 +132,9 @@
     if (typeof renderLucideIconsNow === 'function') {
       renderLucideIconsNow();
     }
+
+    var abaResumo = document.getElementById('aba-resumo');
+    if (abaResumo) abaResumo.setAttribute('data-dashboard-ready', '1');
   };
 
   // ============================================================

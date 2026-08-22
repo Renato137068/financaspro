@@ -8,8 +8,12 @@ const vm = require('vm');
 
 function loadAiEngine() {
   const ctx = vm.createContext({ Date, Math, Number, String, Array, Object, JSON });
-  const code = fs.readFileSync(path.join(__dirname, '..', 'js', 'ai-engine.js'), 'utf8');
-  vm.runInContext(code, ctx, { filename: 'ai-engine.js' });
+  // O filename PRECISA ser o caminho absoluto real: é por ele que o provider v8
+  // mapeia o código executado de volta ao arquivo-fonte. Com um nome relativo o
+  // teste passa, mas a cobertura do módulo aparece como 0% no relatório.
+  const file = path.join(__dirname, '..', 'js', 'ai-engine.js');
+  const code = fs.readFileSync(file, 'utf8');
+  vm.runInContext(code, ctx, { filename: file });
   return ctx.AI_ENGINE;
 }
 const AI = loadAiEngine();

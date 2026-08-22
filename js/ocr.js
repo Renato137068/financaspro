@@ -297,7 +297,7 @@ var OCR = {
             ? new Date(md[1] + '-' + md[2] + '-' + md[3])
             : new Date(md[3] + '-' + md[2] + '-' + md[1]);
           if (!isNaN(d.getTime())) {
-            data = d.toISOString().split('T')[0];
+            data = UTILS.dataLocalIso(d);
             break;
           }
         } catch (e) { /* silencioso */ }
@@ -380,8 +380,8 @@ var OCR = {
   },
 
   _formatarDataParaEntrada: function(dataIso) {
-    var hoje    = new Date().toISOString().split('T')[0];
-    var ontem   = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+    var hoje    = UTILS.dataLocalIso();
+    var ontem   = UTILS.dataLocalIso(new Date(Date.now() - 86400000));
     if (dataIso === hoje)  return 'hoje';
     if (dataIso === ontem) return 'ontem';
     return dataIso;

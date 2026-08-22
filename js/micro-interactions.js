@@ -299,16 +299,33 @@ var MICRO = (function() {
   /* ── Init público ──────────────────────────────────────── */
 
   function init() {
-    try { setupRipple();            } catch (e) {}
-    try { animarValoresMonetarios();} catch (e) {}
-    try { setupCatPop();            } catch (e) {}
-    try { setupInputFeedback();     } catch (e) {}
-    try { setupCategoryScroll();    } catch (e) {}
-    try { setupTabTransitions();    } catch (e) {}
-    try { setupButtonLoading();     } catch (e) {}
-    try { setupQuickAmounts();      } catch (e) {}
-    try { setupFormProgress();      } catch (e) {}
-    try { setupGridStagger();       } catch (e) {}
+    // Cada setup fica isolado de propósito: um efeito visual que falha não pode
+    // derrubar os outros nove nem o boot do app. O que mudou é que a falha
+    // deixa RASTRO — antes, uma animação que sumia na máquina de alguém não
+    // tinha como ser diagnosticada.
+    //
+    // Nenhum deles avisa o usuário: efeito visual ausente não é assunto dele, e
+    // um toast de erro por animação seria pior que a própria ausência.
+    [
+      ['ripple', setupRipple],
+      ['valoresMonetarios', animarValoresMonetarios],
+      ['catPop', setupCatPop],
+      ['inputFeedback', setupInputFeedback],
+      ['categoryScroll', setupCategoryScroll],
+      ['tabTransitions', setupTabTransitions],
+      ['buttonLoading', setupButtonLoading],
+      ['quickAmounts', setupQuickAmounts],
+      ['formProgress', setupFormProgress],
+      ['gridStagger', setupGridStagger]
+    ].forEach(function(par) {
+      if (typeof UTILS !== 'undefined' && UTILS.tentar) {
+        UTILS.tentar('micro-interactions.' + par[0], par[1]);
+        return;
+      }
+      // UTILS ausente é cenário de boot muito precoce; aqui o efeito visual
+      // realmente não importa e não há para onde registrar.
+      try { par[1](); } catch (e) { void e; }
+    });
   }
 
   return {

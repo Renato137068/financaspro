@@ -30,7 +30,7 @@ const INIT_METAS = {
   },
 
   _renderCard: function(meta, compact) {
-    var prog = METAS.calcularProgresso(meta);
+    var prog = METAS.calcularProjecao(meta);
     var barClass = prog.concluida ? 'otimo' : (prog.percentual >= 80 ? 'healthy' : 'attention');
     var prazoTxt = '';
     if (meta.prazo) {
@@ -38,6 +38,24 @@ const INIT_METAS = {
       else if (prog.diasRestantes === 0) prazoTxt = 'Vence hoje';
       else if (prog.diasRestantes !== null) prazoTxt = prog.diasRestantes + ' dias restantes';
       else prazoTxt = 'Até ' + UTILS.formatarData(meta.prazo);
+    }
+
+    // A barra diz onde a pessoa está; esta linha diz se ela chega lá. Sem o
+    // valor do ajuste, "você está atrasado" é só ansiedade sem saída.
+    var diagnostico = '';
+    if (!compact) {
+      var msg = METAS.mensagemProjecao(meta);
+      if (msg) {
+        var classeSituacao = {
+          atrasado: 'meta-diagnostico--alerta',
+          vencida: 'meta-diagnostico--erro',
+          adiantado: 'meta-diagnostico--ok',
+          'no-ritmo': 'meta-diagnostico--ok',
+          concluida: 'meta-diagnostico--ok'
+        }[prog.situacao] || 'meta-diagnostico--neutro';
+        diagnostico = '<p class="meta-diagnostico ' + classeSituacao + '">'
+          + UTILS.escapeHtml(msg) + '</p>';
+      }
     }
 
     var actions = '';
@@ -65,7 +83,7 @@ const INIT_METAS = {
       '<div class="orc-progress-premium meta-progress">' +
         '<div class="orc-progress-fill-premium ' + barClass + '" style="width:' + prog.percentual + '%"></div>' +
       '</div>' +
-      (prog.concluida ? '<p class="meta-card-done-msg"><i data-lucide="check-circle" aria-hidden="true"></i> Meta concluída!</p>' : '') +
+      (prog.concluida ? '<p class="meta-card-done-msg"><i data-lucide="check-circle" aria-hidden="true"></i> Meta concluída!</p>' : diagnostico) +
       actions +
     '</article>';
   },
@@ -178,8 +196,11 @@ const INIT_METAS = {
       ok.textContent = 'Confirmar';
       ok.onclick = function() {
         try {
-          var raw = document.getElementById('meta-aporte-valor').value.replace(/\./g, '').replace(',', '.');
-          METAS.registrarAporte(metaId, parseFloat(raw));
+          // UTILS.parseMoeda centraliza o formato brasileiro. Repetir o
+          // replace aqui foi como o bug de parsing nasceu nos módulos que
+          // esqueceram de fazê-lo.
+          var valor = UTILS.parseMoeda(document.getElementById('meta-aporte-valor').value);
+          METAS.registrarAporte(metaId, valor);
           ov.remove();
           UTILS.mostrarToast('Aporte registrado!', 'success');
           self.renderOrcamento();

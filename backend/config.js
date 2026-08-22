@@ -98,8 +98,11 @@ const CONFIG = {
     pluggyClientSecret: process.env.PLUGGY_CLIENT_SECRET || null,
   },
 
-  /** Em produção, exige REDIS_URL para rate limit distribuído */
-  requireRedis: process.env.REQUIRE_REDIS === '1' || false,
+  /** Em produção, Redis é obrigatório para rate limit distribuído e workers. */
+  requireRedis: env === 'production' || process.env.REQUIRE_REDIS === '1',
+
+  /** E-mail de contato na política de privacidade */
+  privacyContactEmail: process.env.PRIVACY_CONTACT_EMAIL || 'privacidade@financaspro.com.br',
 
   metrics: {
     token: process.env.METRICS_TOKEN || null,
@@ -107,6 +110,12 @@ const CONFIG = {
 
   crypto: {
     totpEncryptionKey: process.env.TOTP_ENCRYPTION_KEY || null,
+  },
+
+  performance: {
+    syncDeltaBatchSize: parseInt(process.env.SYNC_DELTA_BATCH_SIZE, 10) || 500,
+    txListMaxLimit: 200,
+    localTxWindowMonths: parseInt(process.env.LOCAL_TX_WINDOW_MONTHS, 10) || 24,
   },
 };
 

@@ -238,9 +238,16 @@ export const AuthService = {
     const tokens = signTokens(user);
     const expiresAt = new Date(Date.now() + sessionDurationMs);
 
-    await SessionRepository.rotateToken(session.id, {
+    const rotated = await SessionRepository.rotateToken(session.id, {
       userId: user.id, refreshToken: tokens.refreshToken, expiresAt, ...clientMeta,
     });
+    if (!rotated) {
+      await SessionRepository.revokeAllForUser(session.userId);
+      await AuditRepository.log({
+        userId: session.userId, action: 'refresh_concurrent_detected', resource: 'session', resourceId: session.id, ...clientMeta,
+      });
+      throw new AppError('Sessão inválida', 401);
+    }
 
     return tokens;
   },
@@ -312,12 +319,15 @@ export const AuthService = {
     if (!rec) throw new AppError('Token inválido ou expirado', 400);
 
     const salt = randomBytes(saltLength).toString('hex');
-    await UserRepository.update(rec.userId, {
+    const passwordHash = await hashPassword(newPassword, salt);
+    const ok = await VerificationTokenRepository.consumeForPasswordReset({
+      tokenId: rec.id,
+      userId: rec.userId,
       passwordSalt: salt,
-      passwordHash: await hashPassword(newPassword, salt),
+      passwordHash,
     });
-    await VerificationTokenRepository.consume(rec.id);
-    await SessionRepository.revokeAllForUser(rec.userId);
+    if (!ok) throw new AppError('Token inválido ou expirado', 400);
+
     await AuditRepository.log({ userId: rec.userId, action: 'password_reset', resource: 'user', ...clientMeta });
     logger.info({ userId: rec.userId }, 'Senha redefinida via token');
   },
@@ -340,8 +350,9 @@ export const AuthService = {
   async verifyEmail(token) {
     const rec = await VerificationTokenRepository.findValid(token, 'email_verify');
     if (!rec) throw new AppError('Token inválido ou expirado', 400);
+    const consumed = await VerificationTokenRepository.consume(rec.id);
+    if (!consumed) throw new AppError('Token inválido ou expirado', 400);
     await UserRepository.update(rec.userId, { emailVerified: true });
-    await VerificationTokenRepository.consume(rec.id);
     logger.info({ userId: rec.userId }, 'E-mail verificado');
     return { verified: true };
   },

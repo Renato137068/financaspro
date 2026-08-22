@@ -4,75 +4,13 @@
  *        validarCategoria, validarTransacaoCompleta
  */
 
-// ── Deps inline ───────────────────────────────────────────────────────────────
-function escapeHtml(text) {
-  const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-  return String(text).replace(/[&<>"']/g, m => map[m]);
-}
+const { loadCoreModules } = require('./load-sources');
 
-// Implementação inline idêntica a js/validations.js
-const VALIDATIONS = {
-  sanitizarTexto(texto) {
-    return escapeHtml(String(texto).trim());
-  },
-
-  validarDescricao(descricao) {
-    const texto = this.sanitizarTexto(descricao);
-    if (!texto || texto.length === 0) {
-      return { valido: false, erro: 'Descrição é obrigatória' };
-    }
-    if (texto.length > 100) {
-      return { valido: false, erro: 'Descrição não pode ter mais de 100 caracteres' };
-    }
-    return { valido: true, valor: texto };
-  },
-
-  validarValor(valor) {
-    const str = String(valor).replace(/\./g, '').replace(',', '.');
-    const num = parseFloat(str);
-    if (isNaN(num) || num <= 0) {
-      return { valido: false, erro: 'Valor deve ser maior que 0' };
-    }
-    return { valido: true, valor: num };
-  },
-
-  validarData(data) {
-    const d = new Date(data);
-    if (isNaN(d.getTime())) {
-      return { valido: false, erro: 'Data inválida' };
-    }
-    return { valido: true, valor: data };
-  },
-
-  validarCategoria(categoria, tipo) {
-    if (!categoria) {
-      return { valido: false, erro: 'Categoria obrigatória' };
-    }
-    const cats = tipo === CONFIG.TIPO_RECEITA
-      ? CONFIG.CATEGORIAS_RECEITA
-      : CONFIG.CATEGORIAS_DESPESA;
-    if (cats.indexOf(categoria) === -1) {
-      return { valido: false, erro: 'Categoria inválida' };
-    }
-    return { valido: true, valor: categoria };
-  },
-
-  validarTransacaoCompleta(dados) {
-    const descVal = this.validarDescricao(dados.descricao);
-    if (!descVal.valido) return descVal;
-
-    const valVal = this.validarValor(dados.valor);
-    if (!valVal.valido) return valVal;
-
-    const dataVal = this.validarData(dados.data);
-    if (!dataVal.valido) return dataVal;
-
-    const catVal = this.validarCategoria(dados.categoria, dados.tipo);
-    if (!catVal.valido) return catVal;
-
-    return { valido: true };
-  },
-};
+// Carrega os módulos REAIS de js/. Antes deste ajuste o arquivo declarava uma
+// cópia inline de VALIDATIONS e testava a cópia — os testes passavam mesmo quando o
+// código de produção divergia. Ver tests/suite-integrity.test.js.
+loadCoreModules();
+const VALIDATIONS = global.VALIDATIONS;
 
 // ─────────────────────────────────────────────────────────────────────────────
 

@@ -8,8 +8,23 @@
 
   var isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 
-  // Dev: desregistra SW para reload previsível
-  if (isLocalhost) {
+  // Em desenvolvimento o SW é desregistrado para o reload ser previsível — sem
+  // isso você depura a versão anterior sem perceber.
+  //
+  // O efeito colateral é que o comportamento offline, que é uma promessa
+  // central do produto, fica impossível de testar na máquina de quem
+  // desenvolve. `?sw=1` liga o SW de propósito para essa verificação; a
+  // preferência fica gravada para sobreviver ao reload que o próprio teste
+  // exige, e `?sw=0` desliga.
+  var params = new URLSearchParams(location.search);
+  if (params.has('sw')) {
+    try { localStorage.setItem('fp-dev-sw', params.get('sw') === '1' ? '1' : '0'); } catch (e) { /* modo privado */ }
+  }
+  var swForcadoEmDev = (function() {
+    try { return localStorage.getItem('fp-dev-sw') === '1'; } catch (e) { return false; }
+  })();
+
+  if (isLocalhost && !swForcadoEmDev) {
     navigator.serviceWorker.getRegistrations()
       .then(function(regs) {
         return Promise.all(regs.map(function(reg) { return reg.unregister(); }));

@@ -22,7 +22,7 @@
   padding: 10px 12px;
   border-radius: 10px;
   border-left: 4px solid transparent;
-  background: var(--cor-surface, #fff);
+  background: var(--cor-surface, var(--color-white));
   box-shadow: 0 1px 4px rgba(0,0,0,.07);
   animation: alerta-entrada .25s ease;
 }
@@ -83,7 +83,7 @@
   white-space: nowrap;
   transition: background .15s;
 }
-.alerta-btn:hover { background: var(--cor-primary, #3182ce); color: #fff; }
+.alerta-btn:hover { background: var(--cor-primary, #3182ce); color: var(--color-white); }
 
 .alerta-dispensar {
   background: none;
@@ -132,7 +132,7 @@
   gap: 10px;
   padding: 8px 14px;
   border-radius: 10px;
-  background: var(--cor-surface, #fff);
+  background: var(--cor-surface, var(--color-white));
   box-shadow: 0 1px 4px rgba(0,0,0,.07);
   border-left: 3px solid var(--cor-primary, #3182ce);
 }
@@ -189,7 +189,7 @@
 
 .previsao-card {
   background: var(--cor-bg, #f7fafc);
-  border: 1px solid var(--cor-border, #e2e8f0);
+  border: 1px solid var(--cor-border, var(--color-gray-200));
   border-radius: 12px;
   padding: 12px;
   display: flex;
@@ -228,7 +228,7 @@
   font-size: .8rem;
   font-weight: 700;
   padding-top: 4px;
-  border-top: 1px solid var(--cor-border, #e2e8f0);
+  border-top: 1px solid var(--cor-border, var(--color-gray-200));
 }
 .previsao-card-saldo.positivo { color: var(--cor-success, #38a169); }
 .previsao-card-saldo.negativo { color: var(--cor-danger,  #e53e3e); }
@@ -253,7 +253,7 @@
 
 .previsao-saude {
   background: var(--cor-bg, #f7fafc);
-  border: 1px solid var(--cor-border, #e2e8f0);
+  border: 1px solid var(--cor-border, var(--color-gray-200));
   border-radius: 12px;
   padding: 14px;
   display: flex;
@@ -282,7 +282,7 @@
 
 .saude-barra-bg {
   height: 6px;
-  background: var(--cor-border, #e2e8f0);
+  background: var(--cor-border, var(--color-gray-200));
   border-radius: 99px;
   overflow: hidden;
 }
@@ -320,7 +320,7 @@
   font-size: .82rem;
   margin-bottom: 6px;
   border-left: 3px solid transparent;
-  background: var(--cor-surface, #fff);
+  background: var(--cor-surface, var(--color-white));
   color: var(--cor-text-1, #1a202c);
 }
 
@@ -340,7 +340,7 @@
   margin-left: 6px;
   transition: background .15s, color .15s;
 }
-.btn-insight:hover { background: var(--cor-primary, #3182ce); color: #fff; }
+.btn-insight:hover { background: var(--cor-primary, #3182ce); color: var(--color-white); }
 
 .orc-insights-titulo {
   font-size: .82rem;
@@ -370,7 +370,7 @@
 .orc-insight-barra-bg {
   flex: 1;
   height: 5px;
-  background: var(--cor-border, #e2e8f0);
+  background: var(--cor-border, var(--color-gray-200));
   border-radius: 99px;
   overflow: hidden;
 }
@@ -395,7 +395,7 @@
 ───────────────────────────────────────────────────────────────── */
 
 .ocr-btn {
-  background: var(--cor-surface, #fff) !important;
+  background: var(--cor-surface, var(--color-white)) !important;
   color: var(--cor-primary, #3182ce) !important;
   border: 1px solid var(--cor-primary, #3182ce) !important;
   border-radius: 8px !important;
@@ -404,11 +404,16 @@
   transition: background .15s, transform .12s;
 }
 
+/* O .er-btn nasce com opacity 0 e só aparece com o wrapper em foco — regra
+   pensada para o botão de confirmar. O de escanear precisa estar sempre
+   visível: é ponto de entrada, não confirmação de algo já digitado. */
+.ocr-btn { opacity: 1 !important; }
+
 .ocr-btn:active { transform: scale(.92); }
 
 .ocr-btn:hover {
   background: var(--cor-primary, #3182ce) !important;
-  color: #fff !important;
+  color: var(--color-white) !important;
 }
 
 .er-feedback-sucesso { color: var(--cor-success, #38a169); }
@@ -431,3 +436,39 @@
 #previsao-painel {
   padding: 14px 4px 6px;
 }
+
+/* ─────────────────────────────────────────────────────────────────
+   INSIGHTS NO DASHBOARD
+
+   insights.js sempre existiu, mas procurava #insights-container — que não
+   estava no HTML — e caía no fallback #orc-insights. Na prática a análise só
+   era vista por quem abrisse a aba de orçamento.
+
+   As regras .insight acima usam cores claras fixas (#fff5f5, #ebf8ff…) e não
+   têm contraparte no dark-mode.css: no tema escuro dariam texto claro sobre
+   fundo claro. Aqui, no container do dashboard, usamos os tokens semânticos,
+   que já são definidos nos dois temas — e assim não adicionamos hex novo à
+   dívida rastreada por check-css-tokens.
+───────────────────────────────────────────────────────────────── */
+
+.insights-container:empty { display: none; }
+
+.insights-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.insights-container .insight {
+  margin-bottom: 0;
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+  border-left-width: 3px;
+  border-left-style: solid;
+}
+
+.insights-container .insight-alta  { border-left-color: var(--color-danger);  background: var(--color-danger-bg); }
+.insights-container .insight-media { border-left-color: var(--color-warning); background: var(--color-warning-bg); }
+.insights-container .insight-baixa { border-left-color: var(--color-info);    background: var(--color-info-bg); }
+.insights-container .insight-ok    { border-left-color: var(--color-success); background: var(--color-success-bg); }

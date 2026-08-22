@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auditoria Técnica FinançasPro v11.0 — Notas & Roadmap</title>
+<style>
+:root{
+  --bg:#0b0f17; --bg2:#111826; --card:#151d2c; --card2:#1b2436;
+  --line:#243149; --txt:#e8eef7; --mut:#8fa0bb; --mut2:#64748b;
+  --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444; --info:#3b82f6; --acc:#8b5cf6;
+  --r:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:linear-gradient(180deg,#0b0f17,#0d1220 60%,#0b0f17);color:var(--txt);
+  font:15px/1.65 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding:0 0 80px}
+.wrap{max-width:1140px;margin:0 auto;padding:0 22px}
+
+/* HEADER */
+header{padding:56px 0 40px;border-bottom:1px solid var(--line);margin-bottom:44px;
+  background:radial-gradient(1000px 400px at 50% -100px,rgba(139,92,246,.16),transparent)}
+.tag{display:inline-block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--acc);border:1px solid rgba(139,92,246,.35);background:rgba(139,92,246,.1);
+  padding:5px 12px;border-radius:99px;margin-bottom:18px;font-weight:700}
+h1{font-size:38px;line-height:1.15;letter-spacing:-.02em;margin-bottom:12px;font-weight:800}
+h1 span{background:linear-gradient(90deg,#8b5cf6,#3b82f6);-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text}
+.sub{color:var(--mut);font-size:16px;max-width:720px}
+.meta{display:flex;gap:26px;flex-wrap:wrap;margin-top:26px;font-size:13px;color:var(--mut2)}
+.meta b{color:var(--txt);font-weight:600}
+
+/* SCORE GERAL */
+.hero{display:grid;grid-template-columns:230px 1fr;gap:36px;align-items:center;
+  background:var(--card);border:1px solid var(--line);border-radius:20px;padding:34px;margin-bottom:44px}
+.gauge{position:relative;width:200px;height:200px;margin:0 auto}
+.gauge svg{transform:rotate(-90deg)}
+.gauge .val{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center}
+.gauge .num{font-size:52px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.gauge .lbl{font-size:11px;color:var(--mut2);letter-spacing:.12em;text-transform:uppercase;margin-top:6px}
+.hero h2{font-size:20px;margin-bottom:10px}
+.hero p{color:var(--mut);font-size:14.5px;margin-bottom:18px}
+.pills{display:flex;gap:10px;flex-wrap:wrap}
+.pill{font-size:12px;padding:6px 12px;border-radius:99px;border:1px solid var(--line);
+  background:var(--bg2);color:var(--mut)}
+.pill.ok{border-color:rgba(34,197,94,.35);color:#86efac;background:rgba(34,197,94,.08)}
+.pill.warn{border-color:rgba(245,158,11,.35);color:#fcd34d;background:rgba(245,158,11,.08)}
+.pill.bad{border-color:rgba(239,68,68,.35);color:#fca5a5;background:rgba(239,68,68,.08)}
+
+/* SECTIONS */
+section{margin-bottom:52px}
+h2.sec{font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut2);
+  padding-bottom:12px;border-bottom:1px solid var(--line);margin-bottom:26px;font-weight:700}
+
+/* DIMENSOES */
+.dims{display:flex;flex-direction:column;gap:12px}
+.dim{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px 22px;
+  display:grid;grid-template-columns:1fr 210px 62px;gap:20px;align-items:center;transition:.2s}
+.dim:hover{border-color:#33436b;background:var(--card2)}
+.dim h3{font-size:15px;font-weight:650;margin-bottom:4px}
+.dim p{font-size:12.5px;color:var(--mut2);line-height:1.5}
+.bar{height:9px;background:#0d1424;border-radius:99px;overflow:hidden;border:1px solid #1d2740}
+.bar i{display:block;height:100%;border-radius:99px}
+.score{font-size:26px;font-weight:800;text-align:right;letter-spacing:-.02em}
+.w{font-size:10.5px;color:var(--mut2);text-align:right;font-weight:500;letter-spacing:.05em}
+
+/* ACHADOS */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px}
+.box h4{font-size:13px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px;font-weight:700}
+.box.g h4{color:#86efac} .box.r h4{color:#fca5a5}
+.box ul{list-style:none;display:flex;flex-direction:column;gap:10px}
+.box li{font-size:13.5px;color:var(--mut);padding-left:20px;position:relative;line-height:1.55}
+.box.g li:before{content:"✓";position:absolute;left:0;color:var(--ok);font-weight:700}
+.box.r li:before{content:"!";position:absolute;left:0;color:var(--bad);font-weight:700}
+.box li b{color:var(--txt);font-weight:600}
+code{background:#0d1424;border:1px solid #1d2740;padding:1px 6px;border-radius:5px;
+  font:12px ui-monospace,'SF Mono',Menlo,monospace;color:#a5b4fc}
+
+/* TABELA METRICAS */
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);
+  border-radius:var(--r);overflow:hidden}
+th{background:var(--bg2);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--mut2);text-align:left;padding:13px 18px;font-weight:700;border-bottom:1px solid var(--line)}
+td{padding:13px 18px;font-size:13.5px;border-bottom:1px solid #1b2334;color:var(--mut)}
+tr:last-child td{border-bottom:none}
+td:first-child{color:var(--txt);font-weight:550}
+td.n{font-variant-numeric:tabular-nums;font-weight:650;color:var(--txt)}
+.st{display:inline-block;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:99px;letter-spacing:.03em}
+.st.o{background:rgba(34,197,94,.13);color:#86efac}
+.st.w{background:rgba(245,158,11,.13);color:#fcd34d}
+.st.b{background:rgba(239,68,68,.13);color:#fca5a5}
+
+/* ROADMAP */
+.phase{background:var(--card);border:1px solid var(--line);border-radius:18px;
+  padding:26px;margin-bottom:18px;position:relative;overflow:hidden}
+.phase:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px}
+.p1:before{background:var(--bad)} .p2:before{background:var(--warn)}
+.p3:before{background:var(--info)} .p4:before{background:var(--acc)}
+.ph{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;
+  margin-bottom:6px;flex-wrap:wrap}
+.ph h3{font-size:19px;font-weight:750;letter-spacing:-.01em}
+.ph .when{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);
+  border:1px solid var(--line);padding:5px 11px;border-radius:99px;white-space:nowrap;background:var(--bg2)}
+.ph-goal{font-size:13.5px;color:var(--mut);margin-bottom:20px}
+.ph-goal b{color:#a5b4fc}
+.items{display:flex;flex-direction:column;gap:11px}
+.item{background:#0f1626;border:1px solid #1d2740;border-radius:11px;padding:14px 16px;
+  display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center}
+.item h5{font-size:14px;font-weight:620;margin-bottom:3px}
+.item p{font-size:12.5px;color:var(--mut2);line-height:1.5}
+.item p em{color:#93a5c4;font-style:normal}
+.imp{display:flex;flex-direction:column;align-items:flex-end;gap:5px;white-space:nowrap}
+.badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:6px;letter-spacing:.04em}
+.b-h{background:rgba(239,68,68,.15);color:#fca5a5}
+.b-m{background:rgba(245,158,11,.15);color:#fcd34d}
+.b-l{background:rgba(59,130,246,.15);color:#93c5fd}
+.eff{font-size:10.5px;color:var(--mut2)}
+
+/* PROJECAO */
+.proj{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.pcard{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+  padding:20px;text-align:center}
+.pcard .t{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);margin-bottom:10px}
+.pcard .v{font-size:34px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.pcard .d{font-size:11.5px;color:var(--mut2);margin-top:8px}
+.up{color:var(--ok);font-weight:650}
+
+footer{margin-top:60px;padding-top:26px;border-top:1px solid var(--line);
+  font-size:12px;color:var(--mut2);display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+
+@media(max-width:860px){
+  .hero,.grid2,.proj{grid-template-columns:1fr}
+  .dim{grid-template-columns:1fr;gap:12px}
+  .score{text-align:left} .w{text-align:left}
+  h1{font-size:28px}
+  .proj{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<header>
+<div class="wrap">
+  <span class="tag">Auditoria Técnica · Agosto 2026</span>
+  <h1>FinançasPro v11.0<br><span>Diagnóstico & Roadmap de Melhorias</span></h1>
+  <p class="sub">Avaliação de 10 dimensões técnicas com notas de 0 a 100, baseada em análise estática do
+  código, execução de linter, auditoria de dependências, relatório de cobertura de testes e inspeção
+  da arquitetura de backend, CI/CD e segurança.</p>
+  <div class="meta">
+    <div>Auditor: <b>Claude (análise automatizada)</b></div>
+    <div>Data: <b>09/08/2026</b></div>
+    <div>Commit base: <b>0ecd657</b></div>
+    <div>Escopo: <b>~27k LOC · 158 arquivos JS · 18 modelos</b></div>
+  </div>
+</div>
+</header>
+
+<div class="wrap">
+
+<!-- SCORE GERAL -->
+<div class="hero">
+  <div class="gauge">
+    <svg width="200" height="200" viewBox="0 0 200 200">
+      <circle cx="100" cy="100" r="84" fill="none" stroke="#1b2436" stroke-width="16"/>
+      <circle cx="100" cy="100" r="84" fill="none" stroke="url(#g)" stroke-width="16"
+        stroke-linecap="round" stroke-dasharray="527.8" stroke-dashoffset="129.3"/>
+      <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#22c55e"/>
+      </linearGradient></defs>
+    </svg>
+    <div class="val"><div class="num">75</div><div class="lbl">de 100</div></div>
+  </div>
+  <div>
+    <h2>Produto sólido, com dívida arquitetural concentrada no frontend</h2>
+    <p>O backend está em nível profissional — arquitetura em camadas, 18 modelos Prisma com 48 índices,
+    métricas Prometheus, workers BullMQ, RBAC e billing Stripe. A segurança tem controles reais e
+    verificados (0 vulnerabilidades, CSP restritiva, cookies HttpOnly, checker de XSS automatizado no CI).
+    O ponto fraco é o <b>frontend vanilla acoplado por variáveis globais</b>: 465 avisos <code>no-undef</code>
+    silenciados por configuração, arquivos de até 1.540 linhas e cobertura de testes medida sobre apenas
+    9 dos 90 arquivos. O caminho para 90+ passa por modularizar o frontend e testar o backend.</p>
+    <div class="pills">
+      <span class="pill ok">0 vulnerabilidades npm</span>
+      <span class="pill ok">CI matriz Node 18/20</span>
+      <span class="pill ok">92,6% cobertura (escopo parcial)</span>
+      <span class="pill warn">542 avisos de lint</span>
+      <span class="pill warn">824 KB de JS no bundle</span>
+      <span class="pill bad">0 testes unitários no backend</span>
+    </div>
+  </div>
+</div>
+
+<!-- DIMENSOES -->
+<section>
+<h2 class="sec">Notas por dimensão</h2>
+<div class="dims">
+
+  <div class="dim">
+    <div><h3>🔐 Segurança & Privacidade</h3>
+    <p>CSP sem <code>unsafe-eval</code>, cookies HttpOnly + SameSite + Secure, helmet, rate limiting com Redis,
+    CORS allowlist, RBAC, TOTP 2FA, criptografia de campo e at-rest, checker de XSS no CI. Pendências:
+    validação Zod em apenas 6 de 12 rotas, ausência de CSRF token explícito e <code>style-src 'unsafe-inline'</code>.</p></div>
+    <div><div class="bar"><i style="width:82%;background:linear-gradient(90deg,#22c55e,#4ade80)"></i></div>
+      <div class="w" style="margin-top:6px">PESO 16%</div></div>
+    <div class="score" style="color:#4ade80">82</div>
+  </div>
+
+  <div class="dim">
+    <div><h3>⚙️ CI/CD & DevOps</h3>
+    <p>Pipeline com matriz Node 18/20, serviço Postgres, build + lint + <code>npm audit</code> + testes +
+    Playwright, workflow de deploy separado, Docker Compose e Capacitor para Android/iOS. Falta gate
+    real de lint (avisos não quebram o build) e verificação de bundle size.</p></div>
+    <div><div class="bar"><i style="width:85%;background:linear-gradient(90deg,#22c55e,#4ade80)"></i></div>
+      <div class="w" style="margin-top:6px">PESO 8%</div></div>
+    <div class="score" style="color:#4ade80">85</div>
+  </div>
+
+  <div class="dim">
+    <div><h3>🗄️ Backend & API</h3>
+    <p>Separação limpa em <code>domain/services</code>, <code>repositories</code>, <code>routes</code>,
+    <code>middleware</code>, <code>lib</code> e <code>workers</code>. 18 modelos Prisma, 48 índices/uniques,
+    migrations versionadas, logger Pino, tracer, métricas Prometheus e OpenAPI gerado. Penalizado pela
+    validação de entrada parcial e ausência de testes unitários de serviço.</p></div>
+    <div><div class="bar"><i style="width:80%;background:linear-gradient(90deg,#22c55e,#4ade80)"></i></div>
+      <div class="w" style="margin-top:6px">PESO 10%</div></div>
+    <div class="score" style="color:#4ade80">80</div>
+  </div>
+
+  <div class="dim">
+    <div><h3>♿ Acessibilidade</h3>
+    <p>79 <code>aria-label</code>, 34 <code>role</code>, focus-trap, região <code>aria-live</code> e
+    suíte axe-core rodando no Playwright — muito acima da média. Apenas 3 atributos <code>alt</code>
+    no HTML principal e ausência de auditoria de contraste sistemática seguram a nota.</p></div>
+    <div><div class="bar"><i style="width:76%;background:linear-gradient(90deg,#f59e0b,#fbbf24)"></i></div>
+      <div class="w" style="margin-top:6px">PESO 8%</div></div>
+    <div class="score" style="color:#fbbf24">76</div>
+  </div>
+
+  <div class="dim">
+    <div><h3>📚 Documentação</h3>
+    <p>README objetivo, <code>ARQUITETURA_SAAS.md</code> com 353 linhas, runbooks de build AAB e Play Store,
+    OpenAPI gerado por script e 7 auditorias históricas. Faltam JSDoc sistemático nos módulos, guia de
+    contribuição e registros de decisão arquitetural (ADRs).</p></div>
+    <div><div class="bar"><i style="width:74%;background:linear-gradient(90deg,#f59e0b,#fbbf24)"></i></div>
+      <div class="w" style="margin-top:6px">PESO 5%</div></div>
+    <div class="score" style="color:#fbbf24">74</div>
+  </div>
+
+  <div class="dim">
+    <div><h3>🧪 Testes & Qualidade Assegurada</h3>
+    <p>36 suítes Jest com 92,6% de statements e 97,1% de funções — <em>porém</em> o
+    <code>collectCoverageFrom</code> inclui só 9 de 90 arquivos do frontend, então a cobertura real do
+    produto é muito menor. Backend tem 0 testes unitários (apenas 537 linhas de scripts smoke/API/integração).
+    4 specs E2E no Playwright, incluindo acessibilidade.</p></div>
+    <div><div class="bar"><i style="width:74%;background:linear-gradient(90deg,#f59e0b,#fbbf24)"></i></div>
+      <div class="w" style="margin-top:6px">PESO 14%</div></div>
+    <div class="score" style="color:#fbbf24">74</div>
+  </div>
+
+  <div class="dim">
+    <div><h3>🏛️ Arquitetura & Estrutura</h3>
+    <p>Backend exemplar em camadas. Frontend permanece como app clássico multi-script com estado
+    compartilhado por globais em <code>window</code> — o <code>.eslintrc</code> lista 30 globais como
+    <code>readonly</code> para tolerar o padrão. <code>index.html</code> com 80 KB concentra markup de
+    todas as telas.</p></div>
+    <div><div class="bar"><i style="width:72%;background:linear-gradient(90deg,#f59e0b,#fbbf24)"></i></div>
+      <div class="w" style="margin-top:6px">PESO 12%</div></div>
+    <div class="score" style="color:#fbbf24">72</div>
+  </div>
+
+  <div class="dim">
+    <div><h3>🚀 Produto & Escalabilidade</h3>
+    <p>Multi-tenant com organizações, convites e planos; billing Stripe com invoices e usage records;
+    Open Finance via Belvo; OCR; motor de IA. Internacionalização é inexistente (4 ocorrências de
+    <code>i18n</code> em todo o código), o que trava expansão para fora do pt-BR.</p></div>
+    <div><div class="bar"><i style="width:72%;background:linear-gradient(90deg,#f59e0b,#fbbf24)"></i></div>
+      <div class="w" style="margin-top:6px">PESO 5%</div></div>
+    <div class="score" style="color:#fbbf24">72</div>
+  </div>
+
+  <div class="dim">
+    <div><h3>⚡ Performance</h3>
+    <p>Code-splitting sob demanda já implementado (previsão e relatórios) e service worker com
+    stale-while-revalidate. Contudo o <code>dist</code> tem 4 MB, com <code>app.bundle.js</code> de 432 KB
+    e <code>lucide-full.min.js</code> de 392 KB ainda publicado apesar de existir subset de 28 KB.
+    CSS somam 424 KB divididos em 40 arquivos.</p></div>
+    <div><div class="bar"><i style="width:70%;background:linear-gradient(90deg,#f59e0b,#fbbf24)"></i></div>
+      <div class="w" style="margin-top:6px">PESO 10%</div></div>
+    <div class="score" style="color:#fbbf24">70</div>
+  </div>
+
+  <div class="dim">
+    <div><h3>🧹 Qualidade de Código</h3>
+    <p>542 avisos de ESLint (465 <code>no-undef</code>, 73 <code>no-unused-vars</code>, 4
+    <code>no-redeclare</code>) e 0 erros — mas as regras críticas foram rebaixadas para
+    <em>warning</em>, o que mascara a dívida. 27 <code>console.log</code> residuais e três arquivos
+    acima de 1.200 linhas (<code>init-form.js</code> com 1.540).</p></div>
+    <div><div class="bar"><i style="width:68%;background:linear-gradient(90deg,#f59e0b,#fbbf24)"></i></div>
+      <div class="w" style="margin-top:6px">PESO 12%</div></div>
+    <div class="score" style="color:#fbbf24">68</div>
+  </div>
+
+</div>
+</section>
+
+<!-- ACHADOS -->
+<section>
+<h2 class="sec">Pontos fortes e riscos</h2>
+<div class="grid2">
+  <div class="box g">
+    <h4>O que já está bem resolvido</h4>
+    <ul>
+      <li><b>Zero vulnerabilidades</b> em dependências de produção, com <code>overrides</code> aplicados para forçar versões seguras de <code>tar</code>, <code>postcss</code> e <code>brace-expansion</code>.</li>
+      <li><b>Segurança verificada por automação</b>: <code>check-xss-sinks.cjs</code> varre 89 arquivos no CI e nenhum sink de <code>innerHTML</code> recebe texto de usuário sem escape.</li>
+      <li><b>Backend em camadas reais</b> — services, repositories e middlewares separados, com <code>async-handler</code> padronizando o tratamento de erro assíncrono.</li>
+      <li><b>Observabilidade nativa</b>: métricas Prometheus implementadas do zero, logger estruturado Pino e tracer próprio.</li>
+      <li><b>Modelagem de dados madura</b> — 18 modelos com 48 índices e constraints únicas, audit log e job log incluídos.</li>
+      <li><b>Acessibilidade testada</b>, não apenas declarada: axe-core roda como spec dedicada no Playwright.</li>
+      <li><b>CI abrangente</b> com matriz de versões, banco real em serviço e auditoria de dependências como etapa bloqueante.</li>
+    </ul>
+  </div>
+  <div class="box r">
+    <h4>Riscos que merecem ação</h4>
+    <ul>
+      <li><b>Cobertura de testes superestimada.</b> Os 92,6% referem-se a 9 arquivos selecionados; os outros 81 do frontend não entram na métrica nem no <code>coverageThreshold</code>.</li>
+      <li><b>Backend sem testes unitários.</b> Serviços críticos como <code>auth.service.js</code> (348 linhas) e <code>billing.service.js</code> (325) só são exercitados indiretamente por scripts de smoke.</li>
+      <li><b>Validação de entrada incompleta</b> — apenas 6 das 12 rotas usam Zod, deixando superfícies de API sem schema declarado.</li>
+      <li><b>Acoplamento global no frontend</b> torna refatoração arriscada: 465 referências não resolvidas estaticamente significam que o linter não consegue detectar quebras.</li>
+      <li><b>Peso de bundle</b> — publicar <code>lucide-full.min.js</code> (392 KB) junto do subset de 28 KB entrega 14× mais ícones do que o necessário.</li>
+      <li><b>Sem CSRF token explícito</b> em fluxo com cookies; a proteção depende inteiramente de <code>SameSite</code> e da allowlist de CORS.</li>
+      <li><b>Ausência de i18n</b> cria retrabalho crescente: cada string nova nasce acoplada ao pt-BR.</li>
+      <li><b>Keystore de assinatura</b> (<code>financaspro-upload.jks</code>) presente no diretório de trabalho — confirmado fora do Git, mas exige política de custódia formal.</li>
+    </ul>
+  </div>
+</div>
+</section>
+
+<!-- METRICAS -->
+<section>
+<h2 class="sec">Métricas coletadas</h2>
+<table>
+<thead><tr><th>Métrica</th><th>Valor apurado</th><th>Referência saudável</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>Vulnerabilidades (produção)</td><td class="n">0</td><td>0</td><td><span class="st o">ÓTIMO</span></td></tr>
+<tr><td>Erros de ESLint</td><td class="n">0</td><td>0</td><td><span class="st o">ÓTIMO</span></td></tr>
+<tr><td>Avisos de ESLint</td><td class="n">542</td><td>&lt; 50</td><td><span class="st b">CRÍTICO</span></td></tr>
+<tr><td>Cobertura — statements (escopo)</td><td class="n">92,6%</td><td>&gt; 80%</td><td><span class="st o">ÓTIMO</span></td></tr>
+<tr><td>Cobertura — branches</td><td class="n">79,5%</td><td>&gt; 75%</td><td><span class="st o">BOM</span></td></tr>
+<tr><td>Arquivos no escopo de cobertura</td><td class="n">9 / 90</td><td>&gt; 70%</td><td><span class="st b">CRÍTICO</span></td></tr>
+<tr><td>Testes unitários de backend</td><td class="n">0</td><td>&gt; 40</td><td><span class="st b">CRÍTICO</span></td></tr>
+<tr><td>Suítes Jest</td><td class="n">36</td><td>—</td><td><span class="st o">BOM</span></td></tr>
+<tr><td>Specs E2E (Playwright)</td><td class="n">4</td><td>&gt; 6</td><td><span class="st w">ATENÇÃO</span></td></tr>
+<tr><td>Rotas com validação Zod</td><td class="n">6 / 12</td><td>12 / 12</td><td><span class="st w">ATENÇÃO</span></td></tr>
+<tr><td>Maior arquivo JS</td><td class="n">1.540 linhas</td><td>&lt; 400</td><td><span class="st b">CRÍTICO</span></td></tr>
+<tr><td>Tamanho do <code>dist</code></td><td class="n">4,0 MB</td><td>&lt; 2 MB</td><td><span class="st w">ATENÇÃO</span></td></tr>
+<tr><td>Maior chunk JS</td><td class="n">432 KB</td><td>&lt; 250 KB</td><td><span class="st w">ATENÇÃO</span></td></tr>
+<tr><td>CSS total</td><td class="n">424 KB (40 arquivos)</td><td>&lt; 150 KB</td><td><span class="st w">ATENÇÃO</span></td></tr>
+<tr><td><code>console.log</code> residuais</td><td class="n">27</td><td>0</td><td><span class="st w">ATENÇÃO</span></td></tr>
+<tr><td>Blocos <code>try/catch</code></td><td class="n">171</td><td>—</td><td><span class="st o">BOM</span></td></tr>
+<tr><td>Usos de <code>escHtml</code>/sanitização</td><td class="n">138</td><td>—</td><td><span class="st o">ÓTIMO</span></td></tr>
+<tr><td>Índices e constraints no schema</td><td class="n">48</td><td>—</td><td><span class="st o">ÓTIMO</span></td></tr>
+<tr><td>Ocorrências de i18n</td><td class="n">4</td><td>—</td><td><span class="st b">CRÍTICO</span></td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ROADMAP -->
+<section>
+<h2 class="sec">Roadmap de melhorias</h2>
+
+<div class="phase p1">
+  <div class="ph"><h3>Fase 1 — Fundação de confiança</h3><span class="when">Semanas 1–3</span></div>
+  <p class="ph-goal">Objetivo: eliminar os pontos cegos que hoje impedem refatorar com segurança.
+  <b>Impacto projetado: 75 → 81</b></p>
+  <div class="items">
+
+    <div class="item">
+      <div><h5>Cobrir o backend com testes unitários</h5>
+      <p>Criar <code>backend/**/*.test.js</code> começando por <em>auth.service</em>, <em>billing.service</em>
+      e os repositories. Meta: 60% de cobertura nos serviços de domínio, com Prisma mockado.</p></div>
+      <div class="imp"><span class="badge b-h">ALTO</span><span class="eff">~5 dias</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Expandir o escopo de cobertura do frontend</h5>
+      <p>Trocar a lista fixa em <code>collectCoverageFrom</code> por <code>js/**/*.js</code> com exclusões
+      explícitas. Aceitar a queda temporária da métrica e definir threshold realista como novo piso.</p></div>
+      <div class="imp"><span class="badge b-h">ALTO</span><span class="eff">~1 dia</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Completar validação Zod nas 6 rotas restantes</h5>
+      <p>Aplicar o middleware <code>validate.js</code> em <em>accounts</em>, <em>budgets</em>,
+      <em>recurring</em>, <em>state</em>, <em>orgs</em> e <em>users</em>. Nenhum handler deve ler
+      <code>req.body</code> sem schema.</p></div>
+      <div class="imp"><span class="badge b-h">ALTO</span><span class="eff">~2 dias</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Tornar o lint bloqueante em código novo</h5>
+      <p>Adicionar etapa no CI que roda ESLint apenas sobre o diff do PR com <code>--max-warnings 0</code>.
+      Congela a dívida sem exigir refatoração imediata de tudo.</p></div>
+      <div class="imp"><span class="badge b-m">MÉDIO</span><span class="eff">~0,5 dia</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Remover <code>console.log</code> de produção</h5>
+      <p>Substituir os 27 usos pelo módulo <code>observability.js</code> e ativar
+      <code>drop_console</code> no Terser durante o build.</p></div>
+      <div class="imp"><span class="badge b-l">BAIXO</span><span class="eff">~0,5 dia</span></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="phase p2">
+  <div class="ph"><h3>Fase 2 — Performance e entrega</h3><span class="when">Semanas 4–6</span></div>
+  <p class="ph-goal">Objetivo: reduzir o payload em pelo menos 50% e proteger o ganho com automação.
+  <b>Impacto projetado: 81 → 85</b></p>
+  <div class="items">
+
+    <div class="item">
+      <div><h5>Eliminar o Lucide completo do bundle</h5>
+      <p>Garantir que apenas <code>lucide.min.js</code> (28 KB) chegue ao <code>dist</code>. Remove
+      ~392 KB de uma vez — o maior ganho isolado do roadmap.</p></div>
+      <div class="imp"><span class="badge b-h">ALTO</span><span class="eff">~1 dia</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Quebrar o <code>app.bundle.js</code> de 432 KB</h5>
+      <p>Estender o code-splitting já usado em previsão/relatórios para extrato, config, patrimônio,
+      OCR e motor de IA. Alvo: chunk inicial abaixo de 150 KB.</p></div>
+      <div class="imp"><span class="badge b-h">ALTO</span><span class="eff">~4 dias</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Consolidar e minificar o CSS</h5>
+      <p>Reduzir os 40 arquivos (424 KB) via purge do que não é usado, mantendo apenas o
+      <code>critical-inline.css</code> no head e carregando o resto de forma assíncrona.</p></div>
+      <div class="imp"><span class="badge b-m">MÉDIO</span><span class="eff">~3 dias</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Orçamento de bundle no CI</h5>
+      <p>Etapa que falha o build se o chunk inicial passar de 200 KB ou o <code>dist</code> de 2,5 MB.
+      Impede regressão silenciosa do que foi conquistado.</p></div>
+      <div class="imp"><span class="badge b-m">MÉDIO</span><span class="eff">~1 dia</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Fatiar o <code>index.html</code> de 80 KB</h5>
+      <p>Extrair o markup de cada aba para templates carregados sob demanda, reduzindo o HTML crítico
+      e o tempo até a primeira interação.</p></div>
+      <div class="imp"><span class="badge b-m">MÉDIO</span><span class="eff">~4 dias</span></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="phase p3">
+  <div class="ph"><h3>Fase 3 — Modularização do frontend</h3><span class="when">Semanas 7–14</span></div>
+  <p class="ph-goal">Objetivo: substituir o acoplamento por globais por módulos ES reais, de forma
+  incremental e sem congelar o produto. <b>Impacto projetado: 85 → 90</b></p>
+  <div class="items">
+
+    <div class="item">
+      <div><h5>Migrar módulo a módulo para ES Modules</h5>
+      <p>Ordem sugerida: <em>core</em> (utils, validations, store) → <em>features</em> → <em>init/*</em>.
+      A cada módulo migrado, remover o global correspondente do <code>.eslintrc</code>. Os 465 avisos
+      <code>no-undef</code> caem naturalmente.</p></div>
+      <div class="imp"><span class="badge b-h">ALTO</span><span class="eff">~6 semanas</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Dividir os três arquivos gigantes</h5>
+      <p><code>init-form.js</code> (1.540), <code>init-config.js</code> (1.478) e
+      <code>init-extrato.js</code> (1.237) devem virar submódulos coesos abaixo de 400 linhas cada.</p></div>
+      <div class="imp"><span class="badge b-h">ALTO</span><span class="eff">~2 semanas</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Elevar <code>no-undef</code> a erro</h5>
+      <p>Marco final da fase: quando os globais forem eliminados, promover a regra para <code>error</code>
+      e remover a lista de 30 globais do <code>.eslintrc</code>.</p></div>
+      <div class="imp"><span class="badge b-m">MÉDIO</span><span class="eff">~1 dia</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Ampliar a suíte E2E</h5>
+      <p>Cobrir os fluxos de receita: onboarding completo, checkout Stripe, convite de organização e
+      importação por OCR. Meta: 10+ specs, servindo de rede de proteção para a migração.</p></div>
+      <div class="imp"><span class="badge b-m">MÉDIO</span><span class="eff">~1 semana</span></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="phase p4">
+  <div class="ph"><h3>Fase 4 — Maturidade e expansão</h3><span class="when">Meses 4–6</span></div>
+  <p class="ph-goal">Objetivo: fechar as lacunas de conformidade, acessibilidade e alcance de mercado.
+  <b>Impacto projetado: 90 → 93+</b></p>
+  <div class="items">
+
+    <div class="item">
+      <div><h5>Camada de internacionalização</h5>
+      <p>Extrair strings para arquivos de tradução com fallback pt-BR e formatação de moeda/data por
+      locale. Desbloqueia expansão para EN e ES sem retrabalho por tela.</p></div>
+      <div class="imp"><span class="badge b-m">MÉDIO</span><span class="eff">~3 semanas</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Endurecer a política de CSP</h5>
+      <p>Remover <code>style-src 'unsafe-inline'</code> usando nonces ou hashes gerados no build,
+      aproveitando o script <code>harden-csp.cjs</code> já existente.</p></div>
+      <div class="imp"><span class="badge b-m">MÉDIO</span><span class="eff">~3 dias</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Defesa CSRF em profundidade</h5>
+      <p>Adicionar double-submit token nas mutações autenticadas por cookie, para não depender apenas
+      de <code>SameSite</code> e da allowlist de CORS.</p></div>
+      <div class="imp"><span class="badge b-m">MÉDIO</span><span class="eff">~2 dias</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Auditoria completa de WCAG 2.1 AA</h5>
+      <p>Corrigir <code>alt</code> ausentes, validar contraste em ambos os temas e testar navegação
+      por teclado e leitor de tela em todas as telas.</p></div>
+      <div class="imp"><span class="badge b-m">MÉDIO</span><span class="eff">~1 semana</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Documentação de engenharia</h5>
+      <p>Adicionar <code>CONTRIBUTING.md</code>, ADRs para as decisões estruturais e JSDoc nas
+      APIs públicas dos módulos core.</p></div>
+      <div class="imp"><span class="badge b-l">BAIXO</span><span class="eff">~4 dias</span></div>
+    </div>
+
+    <div class="item">
+      <div><h5>Política formal de custódia de segredos</h5>
+      <p>Mover o keystore de assinatura Android para um cofre gerenciado com rotação documentada e
+      acesso auditado, mantendo-o fora de qualquer diretório de trabalho.</p></div>
+      <div class="imp"><span class="badge b-l">BAIXO</span><span class="eff">~1 dia</span></div>
+    </div>
+
+  </div>
+</div>
+</section>
+
+<!-- PROJECAO -->
+<section>
+<h2 class="sec">Projeção de evolução</h2>
+<div class="proj">
+  <div class="pcard"><div class="t">Hoje</div><div class="v">75</div><div class="d">Linha de base</div></div>
+  <div class="pcard"><div class="t">Após Fase 1</div><div class="v" style="color:#fbbf24">81</div><div class="d"><span class="up">+6</span> · 3 semanas</div></div>
+  <div class="pcard"><div class="t">Após Fase 2</div><div class="v" style="color:#4ade80">85</div><div class="d"><span class="up">+4</span> · 6 semanas</div></div>
+  <div class="pcard"><div class="t">Após Fase 4</div><div class="v" style="color:#4ade80">93</div><div class="d"><span class="up">+18</span> · 6 meses</div></div>
+</div>
+</section>
+
+<!-- CRITERIOS -->
+<section>
+<h2 class="sec">Como as notas foram calculadas</h2>
+<div class="box">
+  <p style="font-size:13.5px;color:var(--mut);margin-bottom:16px">
+  A nota global é a média ponderada das dez dimensões, com pesos definidos pela criticidade para um
+  produto financeiro em produção. Cada dimensão foi pontuada a partir de evidência mensurável —
+  saída de ferramentas, contagem de arquivos e inspeção de código — e não de impressão subjetiva.</p>
+  <table>
+    <thead><tr><th>Faixa</th><th>Interpretação</th></tr></thead>
+    <tbody>
+      <tr><td class="n">90–100</td><td>Referência de mercado. Pronto para escala sem ressalvas técnicas.</td></tr>
+      <tr><td class="n">80–89</td><td>Sólido e production-ready, com pontos de melhoria localizados.</td></tr>
+      <tr><td class="n">70–79</td><td>Funcional e seguro, mas com dívida técnica que encarece a evolução.</td></tr>
+      <tr><td class="n">60–69</td><td>Aceitável no curto prazo; a dívida já limita a velocidade da equipe.</td></tr>
+      <tr><td class="n">&lt; 60</td><td>Risco relevante. Exige intervenção antes de novas funcionalidades.</td></tr>
+    </tbody>
+  </table>
+</div>
+</section>
+
+<footer>
+  <div>FinançasPro v11.0 · Auditoria técnica gerada em 09/08/2026</div>
+  <div>Base: commit <code>0ecd657</code> · 53 commits · MIT</div>
+</footer>
+
+</div>
+</body>
+</html>

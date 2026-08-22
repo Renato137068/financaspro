@@ -677,7 +677,7 @@ const INIT_EXTRATO = {
       } else if (btnCarregarMais) {
         e.stopPropagation();
         INIT_EXTRATO._carregarMais(txs);
-      } else if (txItem && !btnEdit && !btnDel && !btnAnexo) {
+      } else if (txItem && !btnEdit && !btnDel && !btnAnexo && !e.target.closest('.tx-checkbox')) {
         var itemId = txItem.dataset.id;
         INIT_EXTRATO.editarTransacao(itemId);
       }
@@ -699,7 +699,7 @@ const INIT_EXTRATO = {
     var catCor = INIT_EXTRATO.getCatCor(t.categoria);
     var isChecked = this.state.selecionados.indexOf(String(t.id)) > -1 ? 'checked' : '';
     
-    return '<button class="ext-tx" data-id="' + UTILS.escapeHtml(String(t.id)) + '" aria-label="Transação: ' + UTILS.escapeHtml(t.descricao || t.categoria) + '">' +
+    return '<div class="ext-tx" role="listitem" tabindex="0" data-id="' + UTILS.escapeHtml(String(t.id)) + '" aria-label="Transação: ' + UTILS.escapeHtml(t.descricao || t.categoria) + '">' +
       '<input type="checkbox" class="tx-checkbox" data-tx-id="' + UTILS.escapeHtml(String(t.id)) + '" ' + isChecked + ' aria-label="Selecionar transação">' +
       '<div class="ext-tx-icon" style="background: ' + catCor + '20; color: ' + catCor + '">' + catIcon + '</div>' +
       '<div class="ext-tx-info">' +
@@ -713,7 +713,7 @@ const INIT_EXTRATO = {
       '<div class="ext-tx-valor ' + UTILS.escapeHtml(t.tipo) + '">' +
         (t.tipo === CONFIG.TIPO_RECEITA ? '+' : '-') + UTILS.formatarMoeda(t.valor) +
       '</div>' +
-    '</button>';
+    '</div>';
   },
 
   /**
@@ -770,7 +770,7 @@ const INIT_EXTRATO = {
       var catIcon = INIT_EXTRATO.getCatIcon(t.categoria);
       var catCor = INIT_EXTRATO.getCatCor(t.categoria);
       
-      html += '<button class="extrato-item ' + UTILS.escapeHtml(t.tipo) + '" data-id="' + UTILS.escapeHtml(String(t.id)) + '" aria-label="Transação: ' + UTILS.escapeHtml(t.descricao || t.categoria) + '">' +
+      html += '<div class="extrato-item ' + UTILS.escapeHtml(t.tipo) + '" role="listitem" tabindex="0" data-id="' + UTILS.escapeHtml(String(t.id)) + '" aria-label="Transação: ' + UTILS.escapeHtml(t.descricao || t.categoria) + '">' +
         '<div class="extrato-data">' + dataStr + '</div>' +
         '<div class="extrato-desc">' +
           '<div class="extrato-categoria" style="color:' + catCor + '" aria-hidden="true">' + catIcon + ' ' + UTILS.escapeHtml(t.categoria) + '</div>' +
@@ -784,7 +784,7 @@ const INIT_EXTRATO = {
           '<button type="button" class="btn-editar" data-id="' + UTILS.escapeHtml(String(t.id)) + '" title="Editar transação" aria-label="Editar transação"><i data-lucide="pencil" aria-hidden="true"></i></button>' +
           '<button type="button" class="btn-deletar" data-id="' + UTILS.escapeHtml(String(t.id)) + '" title="Deletar transação" aria-label="Deletar transação"><i data-lucide="trash-2" aria-hidden="true"></i></button>' +
         '</div>' +
-      '</button>';
+      '</div>';
     });
 
     // Adicionar botão "carregar mais" se houver mais itens
@@ -816,7 +816,7 @@ const INIT_EXTRATO = {
       } else if (btnCarregarMais) {
         e.stopPropagation();
         INIT_EXTRATO._carregarMais(txs);
-      } else if (txItem && !btnEdit && !btnDel && !btnAnexo) {
+      } else if (txItem && !btnEdit && !btnDel && !btnAnexo && !e.target.closest('.tx-checkbox')) {
         var itemId = txItem.dataset.id;
         INIT_EXTRATO.editarTransacao(itemId);
       }
@@ -848,7 +848,7 @@ const INIT_EXTRATO = {
       var catIcon = INIT_EXTRATO.getCatIcon(t.categoria);
       var catCor = INIT_EXTRATO.getCatCor(t.categoria);
       
-      html += '<button class="extrato-item ' + UTILS.escapeHtml(t.tipo) + '" data-id="' + UTILS.escapeHtml(String(t.id)) + '" aria-label="Transação: ' + UTILS.escapeHtml(t.descricao || t.categoria) + '">' +
+      html += '<div class="extrato-item ' + UTILS.escapeHtml(t.tipo) + '" role="listitem" tabindex="0" data-id="' + UTILS.escapeHtml(String(t.id)) + '" aria-label="Transação: ' + UTILS.escapeHtml(t.descricao || t.categoria) + '">' +
         '<div class="extrato-data">' + dataStr + '</div>' +
         '<div class="extrato-desc">' +
           '<div class="extrato-categoria" style="color:' + catCor + '" aria-hidden="true">' + catIcon + ' ' + UTILS.escapeHtml(t.categoria) + '</div>' +
@@ -862,7 +862,7 @@ const INIT_EXTRATO = {
           '<button type="button" class="btn-editar" data-id="' + UTILS.escapeHtml(String(t.id)) + '" title="Editar transação" aria-label="Editar transação"><i data-lucide="pencil" aria-hidden="true"></i></button>' +
           '<button type="button" class="btn-deletar" data-id="' + UTILS.escapeHtml(String(t.id)) + '" title="Deletar transação" aria-label="Deletar transação"><i data-lucide="trash-2" aria-hidden="true"></i></button>' +
         '</div>' +
-      '</button>';
+      '</div>';
     });
 
     // Adicionar botão "carregar mais" se houver mais itens
@@ -1030,7 +1030,8 @@ const INIT_EXTRATO = {
     var receitas = 0, despesas = 0;
     txs.forEach(function(t) {
       if (t.tipo === CONFIG.TIPO_RECEITA) receitas += t.valor;
-      else despesas += t.valor;
+      // Explícito e não `else`: transferência entre contas não é gasto.
+      else if (t.tipo === CONFIG.TIPO_DESPESA) despesas += t.valor;
     });
     var saldo = receitas - despesas;
 
@@ -1098,7 +1099,8 @@ const INIT_EXTRATO = {
     var receitas = 0, despesas = 0;
     txs.forEach(function(t) {
       if (t.tipo === CONFIG.TIPO_RECEITA) receitas += t.valor;
-      else despesas += t.valor;
+      // Explícito e não `else`: transferência entre contas não é gasto.
+      else if (t.tipo === CONFIG.TIPO_DESPESA) despesas += t.valor;
     });
     var saldo = receitas - despesas;
 

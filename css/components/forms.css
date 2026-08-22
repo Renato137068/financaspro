@@ -71,7 +71,7 @@
   display: none;
   margin-top: var(--space-2);
   font-size: var(--font-size-xs);
-  color: var(--color-danger);
+  color: var(--color-danger-text);
   font-weight: var(--font-weight-semibold);
 }
 
@@ -394,9 +394,9 @@ legend {
 
 /* ── Status indicators ────────────────────────────────────── */
 
-.status-ok       { color: var(--color-success); font-weight: var(--font-weight-semibold); }
-.status-alerta   { color: var(--color-warning); font-weight: var(--font-weight-semibold); }
-.status-excedido { color: var(--color-danger);  font-weight: var(--font-weight-semibold); }
+.status-ok       { color: var(--color-success-text); font-weight: var(--font-weight-semibold); }
+.status-alerta   { color: var(--color-warning-text); font-weight: var(--font-weight-semibold); }
+.status-excedido { color: var(--color-danger-text);  font-weight: var(--font-weight-semibold); }
 
 /* ── btn-small (delete orcamento) ────────────────────────── */
 
@@ -405,7 +405,7 @@ legend {
   font-size: var(--font-size-2xs);
   background: none;
   border: 1px solid var(--color-danger);
-  color: var(--color-danger);
+  color: var(--color-danger-text);
   border-radius: var(--radius-sm);
   cursor: pointer;
   font-weight: var(--font-weight-semibold);
@@ -431,5 +431,24 @@ legend {
 
 .btn-delete:hover {
   background: var(--color-danger-bg);
-  color: var(--color-danger);
+  color: var(--color-danger-text);
+}
+
+/* ── Badge de status de orçamento ─────────────────────────────
+   O ícone é o segundo sinal exigido pelo WCAG 1.4.1: sem ele, "dentro",
+   "atenção" e "excedido" se distinguiriam apenas pela cor. */
+.status-ok,
+.status-alerta,
+.status-excedido {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.status-ok i[data-lucide],
+.status-alerta i[data-lucide],
+.status-excedido i[data-lucide] {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
 }

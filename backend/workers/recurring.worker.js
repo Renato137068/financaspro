@@ -4,14 +4,10 @@ import prisma from '../lib/db.js';
 import logger from '../lib/logger.js';
 import { QUEUES, enqueue } from '../lib/queue.js';
 
-const FREQUENCY_DAYS = {
-  daily:     1,
-  weekly:    7,
-  biweekly:  14,
-  monthly:   30,
-  quarterly: 90,
-  yearly:    365,
-};
+// Nota: não há mapa de "dias por frequência" de propósito. Mensal, trimestral
+// e anual usam mês de calendário (addMonths) — tratá-los como 30/90/365 dias
+// faria a recorrência escorregar alguns dias por ano em relação à data
+// contratada pelo usuário.
 
 function addDays(date, days) {
   const d = new Date(date);
@@ -19,13 +15,39 @@ function addDays(date, days) {
   return d;
 }
 
+/**
+ * Soma meses limitando o dia ao último do mês destino.
+ *
+ * `d.setMonth(d.getMonth() + 1)` sobre 31/01 NÃO devolve 28/02 — o Date
+ * transborda para 03/03. Numa recorrência isso não é um erro pontual: a data
+ * nova vira a base da próxima, e o vencimento deriva para sempre
+ * (31 → 03 → 03 → 03...). Um aluguel do dia 31 passa a ser cobrado dia 3
+ * depois do primeiro ciclo, sem que ninguém tenha mudado nada.
+ *
+ * Preserva a hora do original: `nextDue` é comparado com `lte: now`, e zerar
+ * a hora anteciparia todo lançamento em algumas horas.
+ */
 function addMonths(date, months) {
   const d = new Date(date);
+  const dia = d.getDate();
+
+  // Vai para o dia 1 antes de mexer no mês: assim o setMonth nunca transborda.
+  d.setDate(1);
   d.setMonth(d.getMonth() + months);
+
+  const ultimoDia = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  d.setDate(Math.min(dia, ultimoDia));
   return d;
 }
 
-function nextDueDate(frequency, fromDate) {
+/**
+ * Próxima data de vencimento a partir da atual.
+ *
+ * Exportada para teste: a aritmética de calendário é a parte do worker onde um
+ * erro passa despercebido em produção — um mês somado como 30 dias faz a
+ * recorrência escorregar alguns dias por ano.
+ */
+export function nextDueDate(frequency, fromDate) {
   switch (frequency) {
     case 'daily':     return addDays(fromDate, 1);
     case 'weekly':    return addDays(fromDate, 7);
@@ -37,7 +59,15 @@ function nextDueDate(frequency, fromDate) {
   }
 }
 
-async function processRecurring(_job) {
+/**
+ * Processa todas as recorrências vencidas.
+ *
+ * Exportada para teste: rodar dentro de um Worker do BullMQ exigiria Redis, e
+ * o que importa validar aqui é o comportamento — que um erro numa recorrência
+ * não aborte as demais, e que o lançamento e o avanço da data aconteçam na
+ * mesma transação.
+ */
+export async function processRecurring(_job) {
   const now = new Date();
 
   // Busca todas as recorrentes ativas com nextDue <= agora
@@ -55,8 +85,21 @@ async function processRecurring(_job) {
 
   for (const rec of due) {
     try {
+      let claimed = false;
+
       await prisma.$transaction(async (tx) => {
-        // Cria a transação efetiva
+        const oldNextDue = rec.nextDue;
+        const next = nextDueDate(rec.frequency, oldNextDue);
+        const shouldDeactivate = rec.endDate && next > rec.endDate;
+
+        // Claim atômico: só um worker/processamento avança nextDue deste período.
+        const claim = await tx.recurringTransaction.updateMany({
+          where: { id: rec.id, active: true, nextDue: oldNextDue },
+          data: { nextDue: next, active: !shouldDeactivate },
+        });
+        if (claim.count === 0) return;
+
+        claimed = true;
         await tx.transaction.create({
           data: {
             userId:      rec.userId,
@@ -65,23 +108,13 @@ async function processRecurring(_job) {
             amount:      rec.amount,
             description: rec.description,
             category:    rec.category,
-            date:        rec.nextDue,
+            date:        oldNextDue,
             recurring:   true,
           },
         });
-
-        // Avança a próxima data de vencimento
-        const next = nextDueDate(rec.frequency, rec.nextDue);
-        const shouldDeactivate = rec.endDate && next > rec.endDate;
-
-        await tx.recurringTransaction.update({
-          where: { id: rec.id },
-          data: {
-            nextDue: next,
-            active:  !shouldDeactivate,
-          },
-        });
       });
+
+      if (!claimed) continue;
 
       processed++;
 

@@ -25,7 +25,7 @@ const CONTAS_PAGAR = {
 
   criar: function(dados) {
     var descricao = (dados.descricao || '').trim();
-    var valor = parseFloat(dados.valor);
+    var valor = UTILS.parseMoeda(dados.valor);
     var vencimento = dados.vencimento;
     if (!descricao) throw new Error('Informe a descrição');
     if (!valor || valor <= 0) throw new Error('Valor inválido');
@@ -51,15 +51,16 @@ const CONTAS_PAGAR = {
     this._salvarLista(this.listar().filter(function(c) { return c.id !== id; }));
   },
 
+  /**
+   * Avança o vencimento em um mês.
+   *
+   * Delegado a UTILS.addMesesClamp: o `setMonth` cru transbordava um
+   * vencimento dia 31 para o dia 3 do mês seguinte, e a conta então derivava
+   * para sempre (31 → 3 → 3 → 3...). Uma conta de aluguel do dia 31 passava a
+   * vencer dia 3 depois do primeiro pagamento.
+   */
   _addMes: function(dataStr) {
-    var p = dataStr.split('-');
-    var d = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
-    d.setMonth(d.getMonth() + 1);
-    return [
-      d.getFullYear(),
-      String(d.getMonth() + 1).padStart(2, '0'),
-      String(d.getDate()).padStart(2, '0')
-    ].join('-');
+    return UTILS.addMesesClamp(dataStr, 1) || dataStr;
   },
 
   marcarPago: function(id, registrarDespesa) {
@@ -77,7 +78,9 @@ const CONTAS_PAGAR = {
         CONFIG.TIPO_DESPESA,
         conta.valor,
         conta.categoria,
-        new Date().toISOString().split('T')[0],
+        // Data local: toISOString devolve UTC e, depois das 21h no horário de
+        // Brasília, gravava a baixa da conta com a data do dia seguinte.
+        UTILS.dataLocalIso(),
         conta.descricao + (conta.recorrente ? ' (conta)' : ''),
         '',
         ''
@@ -100,11 +103,20 @@ const CONTAS_PAGAR = {
     return lista[idx];
   },
 
+  /**
+   * Dias até o vencimento: 0 = hoje, negativo = vencida.
+   *
+   * A versão anterior ancorava "hoje" em 00:00 e o vencimento em 12:00, e
+   * arredondava para cima. A meia diferença de 12 horas empurrava tudo um dia:
+   * conta vencendo HOJE devolvia 1 (e aparecia como "próxima"), e conta vencida
+   * ONTEM devolvia 0 (e aparecia como "hoje"). Num módulo de contas a pagar,
+   * um dia de defasagem em toda a escala é o que faz alguém perder o prazo.
+   *
+   * Ancorar os dois lados ao meio-dia elimina a defasagem; `Math.round` absorve
+   * a hora a mais ou a menos nas viradas de horário de verão.
+   */
   diasAteVencimento: function(vencimento) {
-    var hoje = new Date();
-    hoje.setHours(0, 0, 0, 0);
-    var v = new Date(vencimento + 'T12:00:00');
-    return Math.ceil((v - hoje) / 86400000);
+    return UTILS.diasAte(vencimento);
   },
 
   situacao: function(conta) {
@@ -144,7 +156,7 @@ const CONTAS_PAGAR = {
   /** Notifica contas vencendo hoje ou vencidas (1x por dia) */
   notificarVencimentos: function() {
     if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
-    var hoje = new Date().toISOString().split('T')[0];
+    var hoje = UTILS.dataLocalIso();
     try {
       if (localStorage.getItem('fp-contas-notif-dia') === hoje) return;
     } catch (_e) { return; }

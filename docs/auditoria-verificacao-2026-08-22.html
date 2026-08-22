@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>FinançasPro — Auditoria de Verificação</title>
+  <style>
+    :root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#607089;--line:#dce4ef;--green:#087f5b;--amber:#a15c00;--red:#b42318;--blue:#1856a8;--navy:#10233e}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+    main{max-width:1220px;margin:auto;padding:34px 22px 70px}h1,h2,h3{line-height:1.2;color:var(--navy)}h1{font-size:34px;margin:0 0 8px}h2{font-size:24px;margin:38px 0 14px;border-bottom:2px solid var(--line);padding-bottom:8px}h3{font-size:18px;margin:24px 0 8px}p{margin:8px 0 12px}.sub{color:var(--muted)}.hero{background:linear-gradient(135deg,#10233e,#176b62);color:#fff;border-radius:18px;padding:30px 32px;margin-bottom:22px}.hero h1,.hero h2{color:#fff;border:0;margin:0}.hero .sub{color:#d7e6ef}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:18px 0}.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}.score{font-size:32px;font-weight:800;color:var(--blue)}.label{font-weight:700}.good{color:var(--green)}.warn{color:var(--amber)}.bad{color:var(--red)}.pill{display:inline-block;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:800;letter-spacing:.03em}.p0{background:#ffe1df;color:#8d1710}.p1{background:#fff0cf;color:#8a4d00}.p2{background:#e4efff;color:#174e99}.ok{background:#dff5e9;color:#086340}.partial{background:#fff0cf;color:#8a4d00}.open{background:#ffe1df;color:#8d1710}.table-wrap{overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:12px}table{width:100%;border-collapse:collapse;min-width:800px}th,td{text-align:left;vertical-align:top;padding:10px 11px;border-bottom:1px solid var(--line)}th{background:#edf3fa;color:var(--navy);font-size:13px}tr:last-child td{border-bottom:0}code{background:#eef2f7;border-radius:4px;padding:1px 4px;font-size:.9em}a{color:#1856a8}.callout{border-left:5px solid var(--amber);background:#fff8e8;padding:14px 17px;border-radius:8px;margin:14px 0}.danger{border-left-color:var(--red);background:#fff0ef}.success{border-left-color:var(--green);background:#effbf4}.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px;white-space:pre-wrap;background:#101b2e;color:#e3edf7;padding:15px;border-radius:10px}.small{font-size:13px;color:var(--muted)}ul{margin-top:6px}.footer{margin-top:40px;padding-top:15px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+  </style>
+</head>
+<body>
+<main>
+  <section class="hero">
+    <div class="sub">22 de agosto de 2026 · Auditoria de verificação · somente leitura no código</div>
+    <h1>FinançasPro</h1>
+    <p>Verificação das melhorias solicitadas na auditoria forense anterior.</p>
+    <p><strong>Conclusão:</strong> houve avanço substancial, mas a integração ainda não está pronta para dados financeiros cloud de produção.</p>
+  </section>
+
+  <div class="callout danger"><strong>Gate de lançamento: NÃO APROVADO.</strong> O Sync v2 protege transações, mas contas, recorrentes, orçamento e configuração ainda passam por caminhos legados. O primeiro bootstrap ainda substitui contas locais diretamente. Também existe uma validação financeira incompleta no endpoint de sync.</div>
+
+  <section>
+    <h2>Resumo executivo</h2>
+    <div class="grid">
+      <div class="card"><div class="label">Nota consolidada</div><div class="score bad">61/100</div><div class="small">Engenharia avançou; distribuição e monetização ainda bloqueiam o release.</div></div>
+      <div class="card"><div class="label">Sync transações</div><div class="score">72/100</div><div class="small">Outbox, tombstones, cursor e LWW integrados.</div></div>
+      <div class="card"><div class="label">Sync do produto inteiro</div><div class="score bad">42/100</div><div class="small">Contas/config/recorrentes ainda fora do v2.</div></div>
+      <div class="card"><div class="label">Integridade financeira</div><div class="score">71/100</div><div class="small">Ledger e dinheiro corrigidos; sync ainda contorna invariantes.</div></div>
+      <div class="card"><div class="label">Testes</div><div class="score good">86/100</div><div class="small">Muita cobertura automatizada; pouca concorrência real.</div></div>
+      <div class="card"><div class="label">Operação</div><div class="score bad">55/100</div><div class="small">Sem backup/restore e rollback operacional comprovados.</div></div>
+      <div class="card"><div class="label">Play Store</div><div class="score warn">58/100</div><div class="small">AAB e assets existem; Console, QA real e screenshot final pendentes.</div></div>
+      <div class="card"><div class="label">Monetização no Android</div><div class="score bad">32/100</div><div class="small">Stripe está implementado, mas o fluxo atual não é Play Billing.</div></div>
+      <div class="card"><div class="label">Dispositivos</div><div class="score">74/100</div><div class="small">Boa base responsiva; enquadramento real em aparelhos ainda não comprovado.</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Verificação das recomendações anteriores</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>#</th><th>Recomendação</th><th>Status</th><th>Evidência atual</th><th>Nota</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Outbox, tombstones, merge e retry</td><td><span class="pill partial">PARCIAL</span></td><td>Implementado para transações em <code>js/core/sync-engine.js</code>, <code>sync-merge.js</code> e <code>backend/routes/sync.js</code>. Contas e configuração continuam no bootstrap legado.</td><td>65</td></tr>
+        <tr><td>2</td><td>IDs UUID e contrato frontend/API</td><td><span class="pill partial">PARCIAL</span></td><td><code>FINANCE_CONTRACT</code> existe e transações v2 usam UUID. <code>js/contas.js</code> ainda cria IDs com <code>UTILS.gerarId()</code> e envia POST direto.</td><td>62</td></tr>
+        <tr><td>3</td><td>Ledger e invariantes financeiras</td><td><span class="pill partial">PARCIAL</span></td><td><code>LedgerService</code>, centavos, transferências e testes foram adicionados. O endpoint de sync ainda não chama <code>assertValidAmount</code> nem valida integralmente transferências.</td><td>72</td></tr>
+        <tr><td>4</td><td>Concorrência de recorrentes</td><td><span class="pill ok">CORRIGIDO</span></td><td>Worker usa <code>updateMany</code> condicional por <code>id + nextDue</code> antes de criar o lançamento.</td><td>88</td></tr>
+        <tr><td>5</td><td>Concorrência de refresh token</td><td><span class="pill partial">PARCIAL</span></td><td>Rotação agora é condicional e single-use. O serviço não trata explicitamente o retorno <code>false</code>, podendo devolver tokens sem sessão válida ao perdedor da corrida.</td><td>82</td></tr>
+        <tr><td>6</td><td>Reset de senha atomicamente consumível</td><td><span class="pill ok">CORRIGIDO</span></td><td><code>consumeForPasswordReset()</code> consome token, altera senha e revoga sessões na mesma transação.</td><td>94</td></tr>
+        <tr><td>7</td><td>Open Finance idempotente e transacional</td><td><span class="pill partial">PARCIAL</span></td><td>Duplicate key é tratado, mas o fluxo ainda faz check-then-create e importa lote parcialmente.</td><td>58</td></tr>
+        <tr><td>8</td><td>Webhook Stripe idempotente</td><td><span class="pill ok">CORRIGIDO</span></td><td><code>StripeWebhookEvent</code>, claim/release, invoice upsert e testes de reenvio implementados.</td><td>91</td></tr>
+        <tr><td>9</td><td>Impedir assinatura Stripe duplicada</td><td><span class="pill partial">PARCIAL</span></td><td>Checkout concluído usa upsert; <code>BillingService.subscribe()</code> ainda cria nova subscription mesmo com uma existente.</td><td>68</td></tr>
+        <tr><td>10</td><td>Ownership de contas e isolamento</td><td><span class="pill partial">PARCIAL</span></td><td>Serviços CRUD e SyncService validam contas do usuário. O banco ainda não tem FK composta nem RLS.</td><td>75</td></tr>
+        <tr><td>11</td><td>Limite de 1.000 transações</td><td><span class="pill ok">CORRIGIDO</span></td><td><code>/state</code> retorna apenas metadados de total; histórico é puxado por delta/cursor.</td><td>91</td></tr>
+        <tr><td>12</td><td>Parser monetário com ponto decimal</td><td><span class="pill ok">CORRIGIDO</span></td><td>Testes atuais cobrem <code>1234.56</code>, formato BR, NaN, Infinity e limites.</td><td>94</td></tr>
+        <tr><td>13</td><td>Auditoria de mutações financeiras</td><td><span class="pill partial">PARCIAL</span></td><td>Transações CRUD registram anterior/novo/correlationId. Contas, orçamento, recorrentes e Open Finance não têm a mesma cobertura.</td><td>63</td></tr>
+        <tr><td>14</td><td>Redis obrigatório em produção</td><td><span class="pill ok">CORRIGIDO</span></td><td><code>CONFIG.requireRedis</code> é verdadeiro em produção e o guard falha sem REDIS_URL.</td><td>90</td></tr>
+        <tr><td>15</td><td>Limites de plano</td><td><span class="pill partial">PARCIAL</span></td><td>Contas, orçamentos, membros e convites agora possuem capacity checks. A contagem mensal ainda é otimista sob concorrência.</td><td>78</td></tr>
+        <tr><td>16</td><td>Transferências como entidade suportada</td><td><span class="pill partial">PARCIAL</span></td><td>CRUD API, ledger e contrato suportam transferência. O SyncService não aplica <code>assertTransferPayload</code>.</td><td>76</td></tr>
+        <tr><td>17</td><td>Privacidade sem placeholder</td><td><span class="pill ok">CORRIGIDO</span></td><td>O e-mail foi preenchido em <code>privacidade.html</code> e existe política de retenção.</td><td>84</td></tr>
+        <tr><td>18</td><td>Cursor pagination e performance</td><td><span class="pill ok">CORRIGIDO</span></td><td>Listagem e delta possuem cursor; bundle e CSS estão dentro do orçamento.</td><td>82</td></tr>
+        <tr><td>19</td><td>Backup, restore e rollback operacional</td><td><span class="pill open">ABERTO</span></td><td>Não foram encontrados scripts ou runbook executável para <code>pg_dump</code>, restore, RPO/RTO ou rollback de migração.</td><td>25</td></tr>
+        <tr><td>20</td><td>Testes de concorrência e carga real</td><td><span class="pill partial">PARCIAL</span></td><td>Existem testes unitários e mocks. Não há evidência suficiente de teste concorrente real com PostgreSQL/Redis em escala.</td><td>55</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Achados críticos remanescentes</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Prioridade</th><th>Achado</th><th>Confiança</th><th>Evidência</th><th>Impacto</th></tr></thead>
+      <tbody>
+        <tr><td><span class="pill p0">P0</span></td><td>Bootstrap do Sync v2 ainda substitui contas locais</td><td>CONFIRMADO</td><td><code>js/core/dados.js:478-480</code> grava <code>snapshot.accounts</code> diretamente. Não há outbox de contas.</td><td>Perda de contas locais durante primeira sincronização, inclusive se o servidor retornar lista vazia.</td></tr>
+        <tr><td><span class="pill p0">P0</span></td><td>Contas locais continuam incompatíveis com o contrato cloud</td><td>CONFIRMADO</td><td><code>js/contas.js:213</code> usa ID legado; <code>js/core/dados.js:1155-1163</code> faz POST isolado.</td><td>Contas podem não ser vinculáveis a transações UUID e falhas podem deixar local/cloud divergentes.</td></tr>
+        <tr><td><span class="pill p1">P1</span></td><td>Sync endpoint contorna validação monetária e de transferência</td><td>CONFIRMADO</td><td><code>backend/routes/sync.js:24-40</code> aceita amount genérico; <code>SyncService._applyOne()</code> não chama <code>assertValidAmount</code> nem <code>assertTransferPayload</code>.</td><td>Mutação autenticada pode gravar valor zero/negativo ou transferência incompleta.</td></tr>
+        <tr><td><span class="pill p1">P1</span></td><td>Outbox e cursor não são cifrados junto dos dados financeiros</td><td>CONFIRMADO</td><td><code>js/core/dados.js:234-236</code> cifra apenas transações/config/contas; <code>sync-engine.js</code> usa <code>localStorage.setItem</code> diretamente.</td><td>Payloads financeiros pendentes permanecem em texto local mesmo com criptografia ativada.</td></tr>
+        <tr><td><span class="pill p1">P1</span></td><td>Open Finance continua check-then-create e importação parcial</td><td>CONFIRMADO</td><td><code>open-finance.service.js</code> consulta e depois cria cada item, sem transação de lote nem claim único.</td><td>Duplicidade concorrente ou estado parcialmente importado.</td></tr>
+        <tr><td><span class="pill p1">P1</span></td><td>Assinatura direta ainda pode duplicar cobrança</td><td>CONFIRMADO</td><td><code>billing.service.js:31-83</code> sempre chama <code>stripe.subscriptions.create</code> para plano pago.</td><td>Duas subscriptions Stripe para a mesma organização.</td></tr>
+        <tr><td><span class="pill p1">P1</span></td><td>Worker recorrente não associa conta ao lançamento</td><td>CONFIRMADO</td><td><code>RecurringTransaction</code> não tem accountId e <code>recurring.worker.js</code> cria transação sem conta.</td><td>Recorrentes não entram no saldo derivado de uma conta específica.</td></tr>
+        <tr><td><span class="pill p1">P1</span></td><td>Validação de SyncOp não é atomicamente claimada</td><td>PROVÁVEL</td><td><code>sync.service.js</code> faz find e só depois grava <code>SyncOp</code>; concorrência do mesmo opId não é travada.</td><td>Reprocessamento concorrente pode aplicar a mesma mutação antes do registro de idempotência.</td></tr>
+        <tr><td><span class="pill p1">P1</span></td><td>Sem RLS ou constraint composta de tenant</td><td>CONFIRMADO</td><td>As sete migrações não contêm <code>CREATE POLICY</code>, RLS ou FK composta usuário-conta.</td><td>Isolamento depende exclusivamente da aplicação.</td></tr>
+        <tr><td><span class="pill p1">P1</span></td><td>Backup/restore operacional não comprovado</td><td>CONFIRMADO</td><td>Não há <code>pg_dump</code>, <code>pg_restore</code>, RPO/RTO ou procedimento automatizado no repositório.</td><td>Falha de banco pode não ter recuperação testada.</td></tr>
+        <tr><td><span class="pill p2">P2</span></td><td>Persistência criptografada ainda retorna sucesso antes da escrita</td><td>CONFIRMADO</td><td><code>_storageSetRaw()</code> inicia Promise e retorna <code>true</code> antes de <code>localStorage.setItem</code>.</td><td>Quota pode produzir divergência entre memória e disco.</td></tr>
+        <tr><td><span class="pill p2">P2</span></td><td>Invalidação de cache não é consistente</td><td>CONFIRMADO</td><td>Budget e recurring não invalidam cache; vários serviços chamam <code>StateService.invalidateCache</code> sem await.</td><td>Snapshot pode ficar stale por até o TTL ou além em corrida.</td></tr>
+        <tr><td><span class="pill p2">P2</span></td><td>Lint não pôde ser validado neste ambiente</td><td>CONFIRMADO</td><td><code>npm run lint</code> falhou antes de analisar código: módulo <code>balanced-match</code> ausente em <code>node_modules</code>.</td><td>Gate de qualidade local inconclusivo; CI limpo precisa ser confirmado.</td></tr>
+        <tr><td><span class="pill p2">P2</span></td><td>Script npm de a11y aponta para caminho possivelmente incorreto</td><td>PROVÁVEL</td><td><code>package.json</code> usa <code>accessibility.spec.cjs</code>, enquanto o arquivo está em <code>e2e/accessibility.spec.cjs</code>.</td><td>Execução manual do gate a11y pode não encontrar o teste.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Notas por dimensão</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Dimensão</th><th>Nota /100</th><th>Leitura</th></tr></thead>
+      <tbody>
+        <tr><td>Arquitetura</td><td>65</td><td>Boa separação de serviços, mas frontend local e cloud ainda possuem caminhos concorrentes.</td></tr>
+        <tr><td>Sync/offline</td><td>42</td><td>Transações avançaram; entidades restantes continuam fora do protocolo v2.</td></tr>
+        <tr><td>Integridade financeira</td><td>71</td><td>Ledger, centavos, transferências e parser melhoraram; endpoint sync ainda é bypass.</td></tr>
+        <tr><td>Autenticação</td><td>84</td><td>Cookies, JWT, rotação condicional, reset transacional e TOTP.</td></tr>
+        <tr><td>Autorização</td><td>76</td><td>Ownership aplicado nos serviços; sem RLS/FK composta.</td></tr>
+        <tr><td>Banco/migrações</td><td>61</td><td>Novas tabelas e índices, mas ausência de invariantes e rollback.</td></tr>
+        <tr><td>Concorrência</td><td>70</td><td>Recorrentes, Stripe e sessão melhoraram; Open Finance/SyncOp ainda têm janela.</td></tr>
+        <tr><td>Billing</td><td>75</td><td>Webhook e URLs fortes; subscribe direto ainda pode duplicar subscription.</td></tr>
+        <tr><td>Performance</td><td>78</td><td>Cursor, delta, janela local e bundle dentro do orçamento.</td></tr>
+        <tr><td>Resiliência</td><td>66</td><td>Retry, health, workers e produção guard; faltam backups/restore comprovados.</td></tr>
+        <tr><td>Observabilidade</td><td>70</td><td>Métricas Prometheus, tracing e logs existem; falta operação externa e retenção de HTTP logs.</td></tr>
+        <tr><td>Testes</td><td>86</td><td>1.294 frontend + 448 backend passaram; concorrência real e carga permanecem insuficientes.</td></tr>
+        <tr><td>Acessibilidade/UX</td><td>78</td><td>Contraste e smoke passaram; validação visual e leitor de tela real ainda faltam.</td></tr>
+        <tr><td>PWA/mobile</td><td>77</td><td>Precache e smoke bons; release nativo e restore mobile não foram provados.</td></tr>
+        <tr><td>Privacidade/LGPD</td><td>78</td><td>Contato e retenção melhoraram; Data Safety e base legal precisam revisão jurídica final.</td></tr>
+        <tr><td>Deploy/operação</td><td>55</td><td>Guard de produção, healthcheck e shutdown corrigidos; sem backup/rollback operacional.</td></tr>
+        <tr><td>Manutenibilidade</td><td>64</td><td>Contratos e testes novos ajudam, mas há legacy push, globais e debt CSS registrada.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Evidências de verificação executadas</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Verificação</th><th>Resultado</th><th>Observação</th></tr></thead>
+      <tbody>
+        <tr><td>Frontend unitário</td><td class="good"><strong>78 suites / 1.294 passed / 7 skipped</strong></td><td>Passou sem cobertura.</td></tr>
+        <tr><td>Backend unitário</td><td class="good"><strong>25 suites / 448 passed</strong></td><td>Passou sem cobertura.</td></tr>
+        <tr><td>Sync, ledger, billing e plan limits</td><td class="good"><strong>59 passed</strong></td><td>Testes focados passaram, usando principalmente Prisma fake.</td></tr>
+        <tr><td>Sync frontend, dinheiro e invariantes</td><td class="good"><strong>37 passed</strong></td><td>Inclui outbox, merge, parser e invariantes locais.</td></tr>
+        <tr><td>Smoke E2E dist</td><td class="good"><strong>1 passed</strong></td><td>Boot sem pageerror e dashboard hidratado.</td></tr>
+        <tr><td>XSS estático</td><td class="good"><strong>95 arquivos verificados</strong></td><td>Nenhum sink livre sem escape.</td></tr>
+        <tr><td>Contraste WCAG</td><td class="good"><strong>23 pares AA</strong></td><td>Tema claro e escuro aprovados.</td></tr>
+        <tr><td>Bundle</td><td class="good"><strong>Dentro do orçamento</strong></td><td>Precache 980 KB, JS app 449 KB, CSS 246 KB.</td></tr>
+        <tr><td>Dependências</td><td class="good"><strong>0 advisory offline</strong></td><td>Resultado local/offline; não substitui auditoria online.</td></tr>
+        <tr><td>Lint</td><td class="bad"><strong>Não executado</strong></td><td>Instalação local de dependências incompleta: <code>balanced-match</code> ausente.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>O que deve ser corrigido antes do próximo release</h2>
+    <ol>
+      <li>Colocar contas, orçamento, recorrentes e configuração no mesmo protocolo outbox/sync, ou desativar o bootstrap destrutivo.</li>
+      <li>Eliminar <code>salvarContas()</code> e os pushes legados como caminhos paralelos; criar UUID e operação idempotente para cada entidade.</li>
+      <li>Aplicar no SyncService o mesmo contrato monetário e de transferência usado no CRUD.</li>
+      <li>Cifrar outbox/cursor ou documentar explicitamente que a proteção local não os cobre.</li>
+      <li>Corrigir subscription direta, Open Finance e claim de SyncOp.</li>
+      <li>Associar recorrentes a contas e auditar todas as mutações financeiras.</li>
+      <li>Implementar backup, restore ensaiado, RPO/RTO e rollback de migração.</li>
+      <li>Reinstalar dependências de forma limpa e confirmar lint/CI completo.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Adendo — Play Store, monetização e dispositivos</h2>
+    <p class="small">Este adendo amplia a auditoria de engenharia com o que o usuário verá na loja, o caminho de receita e o enquadramento em telas Android. As notas abaixo são independentes e entram na nota consolidada de 61/100.</p>
+
+    <div class="grid">
+      <div class="card"><div class="label">Prontidão técnica do pacote</div><div class="score">82/100</div><div class="small">Há AAB release de 5,05 MB, assinado, versionCode 11/versionName 11.0.0, target/compile SDK 36, minSdk 24, ícones adaptativos, splash e cleartext desligado.</div></div>
+      <div class="card"><div class="label">Ficha e experiência da loja</div><div class="score warn">61/100</div><div class="small">Ficha, feature graphic e screenshots existem, mas há arte promocional com markup literal e não há prova de preenchimento/publicação no Play Console.</div></div>
+      <div class="card"><div class="label">Monetização Play Store</div><div class="score bad">32/100</div><div class="small">Planos e Stripe estão estruturados, porém o app Android não possui integração Play Billing para desbloqueios consumidos dentro do app.</div></div>
+      <div class="card"><div class="label">Enquadramento responsivo</div><div class="score">74/100</div><div class="small">Viewport, safe areas, navegação mobile/desktop, breakpoints e alvos de toque estão previstos; falta validação em aparelhos e teclado virtual.</div></div>
+    </div>
+
+    <div class="callout danger"><strong>Bloqueador de publicação:</strong> o fluxo atual de assinatura usa Stripe Checkout/Portal e redirecionamento web. A política do Google Play exige o sistema de cobrança do Google para acesso pago a funcionalidades, conteúdo digital, software em nuvem e serviços de gestão financeira consumidos no app, salvo exceção ou programa aplicável. Como o paywall promete IA, OCR, exportação e sincronização cloud dentro do produto, o enquadramento como exceção web-only não está demonstrado. Antes de publicar, escolher entre integrar Play Billing com validação server-side e catálogo no Play Console, ou remover/desativar a compra e o CTA de assinatura na variante distribuída pela Play.</div>
+
+    <h3>Experiência na Play Store</h3>
+    <table>
+      <thead><tr><th>Área</th><th>Verificação</th><th>Nota</th><th>Impacto</th></tr></thead>
+      <tbody>
+        <tr><td>Pacote Android</td><td>AAB release presente em <code>android/app/build/outputs/bundle/release/app-release.aab</code>; assinatura RSA 2048 detectada por <code>jarsigner</code>.</td><td>85</td><td class="good">Base técnica forte.</td></tr>
+        <tr><td>Atualidade do AAB</td><td>Arquivo existente datado de 10/07/2026, enquanto esta auditoria é de 22/08/2026.</td><td>55</td><td class="warn">Regenerar após as últimas alterações; o artefato atual não prova que contém o estado auditado.</td></tr>
+        <tr><td>Assets de listing</td><td>Ícone 512, feature graphic 1024×500 e screenshots 1080×1920 existem.</td><td>75</td><td class="warn">O screenshot de extrato mostra literalmente <code>&lt;i data-lucide=...&gt;</code> na pílula de tendência; substituir por captura limpa.</td></tr>
+        <tr><td>Ficha e declarações</td><td><code>docs/play-store-ficha.md</code>, runbook e folha Data Safety existem, mas URL da política está como placeholder e há cenários local/cloud distintos.</td><td>52</td><td class="warn">Preencher com o cenário exato do binário enviado e publicar a política em URL HTTPS real.</td></tr>
+        <tr><td>Teste fechado</td><td>Há procedimento documentado, sem evidência no repositório de faixa, testers, instalação do AAB ou aprovação em aparelho real.</td><td>48</td><td class="bad">Gate operacional aberto.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Monetização e enquadramento de cobrança</h3>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Camada</th><th>O que foi encontrado</th><th>Nota</th><th>Conclusão</th></tr></thead>
+      <tbody>
+        <tr><td>Produto/preços</td><td>FREE, PRO e BUSINESS; PRO em R$ 16,90/mês ou R$ 119/ano; trial de 14 dias; paywall e limites por plano.</td><td>78</td><td>Proposta comercial legível e com valor recorrente.</td></tr>
+        <tr><td>Backend Stripe</td><td>Checkout, portal, cancelamento, webhook idempotente, allowlist de URLs e worker de reconciliação presentes.</td><td>68</td><td>Boa base SaaS, mas subscribe direto ainda pode criar subscription paga nova para uma org que já possui uma.</td></tr>
+        <tr><td>Android/Play Billing</td><td>Não há dependência <code>com.android.billingclient</code>, produtos/base plans no Play Console, verificação de purchase token ou Real-time Developer Notifications.</td><td>20</td><td class="bad">Não pronto para vender premium dentro da versão da Play.</td></tr>
+        <tr><td>Conformidade de UX</td><td>O paywall informa preço, trial e Stripe Checkout, mas não informa uma escolha Play Billing nem termos de renovação no fluxo Google.</td><td>38</td><td class="warn">Revisar preço localizado, renovação automática, cancelamento e entitlement por origem da compra.</td></tr>
+      </tbody>
+    </table></div>
+    <p class="small">Base regulatória consultada: <a href="https://support.google.com/googleplay/android-developer/answer/10281818?hl=pt-BR">Payments policy do Google Play</a> e <a href="https://developer.android.com/google/play/billing/integrate?hl=pt-BR">integração oficial do Play Billing</a>. A política cita expressamente funcionalidades do app, software em nuvem e gestão financeira como categorias normalmente cobradas pelo sistema do Google. A aplicação final depende da configuração concreta do produto e das exceções/programas elegíveis.</p>
+
+    <h3>Como o app se enquadra nos dispositivos</h3>
+    <table>
+      <thead><tr><th>Faixa</th><th>Comportamento previsto</th><th>Nota</th><th>Risco residual</th></tr></thead>
+      <tbody>
+        <tr><td>Celular pequeno — 360–480 px</td><td>Nav inferior de cinco itens, FAB “Novo”, conteúdo com padding reduzido, categorias em 3 colunas, fontes e cards compactados.</td><td>76</td><td>Não há evidência de teste real em 320 px; validar teclado e modais com altura curta.</td></tr>
+        <tr><td>Celular alto / notch</td><td><code>viewport-fit=cover</code> e variáveis <code>safe-area-inset-*</code> protegem header, nav inferior e conteúdo.</td><td>78</td><td>Confirmar em aparelho com notch e gestos; screenshots de loja não substituem esse teste.</td></tr>
+        <tr><td>Tablet — a partir de 768 px</td><td>Nav inferior some e sidebar fixa de 240 px entra; o main ganha padding e grids passam a duas ou mais colunas.</td><td>74</td><td>Validar 768–1024 px, onde a sidebar consome espaço útil e alguns módulos podem ficar estreitos.</td></tr>
+        <tr><td>Desktop / Chromebook — a partir de 1280 px</td><td>Main limitado a 1200 px e centralizado à direita da sidebar; modal de billing usa largura fluida e auto-fit.</td><td>80</td><td>Não é o foco principal da Play, mas vale testar teclado, hover e zoom.</td></tr>
+        <tr><td>Orientação e splash</td><td>Recursos splash port/land existem e a Activity preserva mudanças de configuração.</td><td>72</td><td>Não foi comprovada rotação em execução nem restauração de estado depois de matar o processo.</td></tr>
+      </tbody>
+    </table>
+    <div class="callout warn"><strong>Leitura de experiência:</strong> a base visual é adequada para um app financeiro mobile e o enquadramento esperado é bom, mas a prova apresentada é indireta: CSS, assets e smoke E2E. Para elevar a nota, capturar o AAB atual em 360×640, 390×844, 412×915, 768×1024 e 1280×800, incluindo login/local, dashboard, novo lançamento, extrato, paywall e teclado aberto.</div>
+
+    <h3>Checklist adicional antes do envio</h3>
+    <ol>
+      <li>Gerar novo AAB após o estado de 22/08/2026 e verificar assinatura, versionCode e hash do artefato.</li>
+      <li>Refazer o screenshot do extrato sem markup literal e remover qualquer imagem placeholder da seleção final.</li>
+      <li>Publicar a política de privacidade e substituir placeholders de e-mail/URL na ficha e no Data Safety.</li>
+      <li>Decidir o modo de cobrança Android: Play Billing com purchase token/entitlement server-side, ou versão Play sem CTA/compra Stripe.</li>
+      <li>Executar teste fechado em pelo menos um aparelho Android real e registrar instalação, reabertura, rotação, notch, teclado, offline e restauração.</li>
+      <li>Confirmar que a descrição da loja deixa claro quais recursos são gratuitos, quais exigem assinatura e como os dados locais/cloud funcionam.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Veredito final</h2>
+    <div class="callout"><strong>Resultado consolidado: 61/100 — progresso substancial, aprovação de produção e Play Store negadas neste estado.</strong><br>
+      As correções eliminaram vários riscos originais: parser monetário, limite de snapshot, refresh/reset, Stripe webhook, ledger, cursor, ownership de contas, Redis em produção, retenção e contratos básicos. Porém, o produto ainda não pode prometer sincronização cloud integral porque apenas transações estão realmente no Sync v2. A perda de contas no bootstrap e o bypass de validação no endpoint sync mantêm riscos P0/P1.</div>
+    <p><strong>Próximo gate:</strong> além de corrigir os fluxos de contas/configuração/recorrentes/orçamento, fechar a estratégia Play Billing/Stripe, atualizar a ficha e validar o AAB atual em dispositivos reais. A nota consolidada pondera engenharia 55%, distribuição Play Store 20%, monetização 15% e dispositivos 10%.</p>
+  </section>
+
+  <div class="footer">Relatório gerado a partir do estado atual do worktree em 22/08/2026. A auditoria não modificou código-fonte, migrações ou configurações; apenas este relatório HTML foi criado.</div>
+</main>
+</body>
+</html>

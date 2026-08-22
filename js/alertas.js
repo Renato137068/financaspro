@@ -77,7 +77,11 @@ var ALERTAS = {
         id:        'anomalia-' + a.transacao.id,
         tipo:      'anomalia',
         titulo:    'Gasto incomum detectado',
-        msg:       '"' + (a.transacao.descricao || 'Transação') + '" — ' + a.motivo,
+        // Valor + referência: "Jantar caro (R$ 600,00) — em Alimentação você
+        // costuma gastar cerca de R$ 102,50". Sem o valor de comparação, o
+        // aviso é só sobressalto.
+        msg:       '"' + (a.transacao.descricao || 'Transação') + '" ('
+                     + UTILS.formatarMoeda(a.transacao.valor) + ') — ' + a.motivo,
         gravidade: 'media',
         acao:      'editarTransacao',
         parametros: { id: a.transacao.id }
@@ -385,9 +389,11 @@ var ALERTAS = {
       });
     }
 
-    // Verificação periódica em background (a cada 5 min)
+    // Verificação periódica (a cada 5 min) — só enquanto a aba está visível.
+    // Recalcular alerta de orçamento com o app em segundo plano não muda nada
+    // que alguém possa ver.
     var self = this;
-    setInterval(function() {
+    this._timer = UTILS.intervaloVisivel(function() {
       self.renderizar();
     }, this._CHECK_INTERVAL);
   }

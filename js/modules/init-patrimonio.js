@@ -199,11 +199,10 @@ const INIT_PATRIMONIO = {
 
   _salvarAtivo: function(overlay, editId) {
     try {
-      var raw = document.getElementById('pat-ativo-valor').value.replace(/\./g, '').replace(',', '.');
       var dados = {
         nome: document.getElementById('pat-ativo-nome').value,
         tipo: document.getElementById('pat-ativo-tipo').value,
-        valor: parseFloat(raw) || 0,
+        valor: UTILS.parseMoeda(document.getElementById('pat-ativo-valor').value),
         contaId: document.getElementById('pat-ativo-conta-id').value || null
       };
       if (editId) PATRIMONIO.atualizarAtivo(editId, dados);
@@ -254,11 +253,10 @@ const INIT_PATRIMONIO = {
 
   _salvarDivida: function(overlay, editId) {
     try {
-      var raw = document.getElementById('pat-div-valor').value.replace(/\./g, '').replace(',', '.');
       var dados = {
         nome: document.getElementById('pat-div-nome').value,
         tipo: document.getElementById('pat-div-tipo').value,
-        valor: parseFloat(raw)
+        valor: UTILS.parseMoeda(document.getElementById('pat-div-valor').value)
       };
       if (editId) PATRIMONIO.atualizarDivida(editId, dados);
       else PATRIMONIO.criarDivida(dados);

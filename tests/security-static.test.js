@@ -107,10 +107,41 @@ describe('security guardrails', () => {
     expect(userService).toContain('sanitizeUserConfig');
   });
 
-  test('dist SW precache inclui CSS bundle Vite', () => {
-    const distSw = fs.readFileSync(path.join(root, 'dist', 'sw.js'), 'utf8');
-    expect(distSw).toMatch(/\/css\/index-[^"]+\.css/);
-    expect(distSw).toContain('/js/app.bundle.js');
+  // Estes só existem depois de `npm run build`. Num clone recém-feito não há
+  // dist/ e o `readFileSync` estourava um ENOENT cru, que se lê como "a
+  // segurança quebrou" quando na verdade é "não há build para inspecionar".
+  // `describe` condicional em vez de try/catch dentro do teste: assim ele
+  // aparece como PULADO na saída, em vez de passar em silêncio.
+  const temDist = fs.existsSync(path.join(root, 'dist', 'sw.js'));
+  const seTemBuild = temDist ? describe : describe.skip;
+
+  seTemBuild('build de produção', () => {
+    const distSw = () => fs.readFileSync(path.join(root, 'dist', 'sw.js'), 'utf8');
+
+    test('SW precache aponta para os bundles, não para as fontes', () => {
+      expect(distSw()).toMatch(/\/css\/index-[^"]+\.css/);
+      expect(distSw()).toContain('/js/app.bundle.js');
+    });
+
+    test('SW não precacheia fonte crua — ela nem existe mais no build', () => {
+      // O purge do bundle-app apaga o que foi inlineado. Se o SW voltasse a
+      // listar esses caminhos, `cache.addAll` rejeitaria TUDO no install por
+      // causa de um 404 — e o app perderia o modo offline inteiro, calado.
+      const sw = distSw();
+      ['/js/core/utils.js', '/js/transacoes.js', '/css/style.css'].forEach((caminho) => {
+        expect(sw).not.toContain('"' + caminho + '"');
+      });
+    });
+
+    test('toda URL do precache existe de fato em dist', () => {
+      const bloco = distSw().match(/urlsParaCache = \[([\s\S]*?)\];/);
+      expect(bloco).toBeTruthy();
+      const urls = [...bloco[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]).filter((u) => u !== '/');
+      const ausentes = urls.filter(
+        (u) => !fs.existsSync(path.join(root, 'dist', u.replace(/^\//, ''))),
+      );
+      expect(ausentes).toEqual([]);
+    });
   });
 
   test('dados.js integra storage helpers com local-crypto', () => {
@@ -120,5 +151,53 @@ describe('security guardrails', () => {
     expect(dados).toContain('_storageSetRaw');
     expect(dados).toContain('LOCAL_CRYPTO');
     expect(crypto).toContain('wrapStorageValue');
+  });
+
+  test('produção exige Redis e rejeita defaults inseguros no boot', () => {
+    const guard = fs.readFileSync(path.join(root, 'backend/lib/production-guard.js'), 'utf8');
+    const server = fs.readFileSync(path.join(root, 'backend/server.js'), 'utf8');
+    const config = fs.readFileSync(path.join(root, 'backend/config.js'), 'utf8');
+
+    expect(guard).toContain('assertProductionReady');
+    expect(guard).toContain('dev-access-secret');
+    expect(server).toContain('assertProductionReady');
+    expect(config).toContain('requireRedis');
+  });
+
+  test('mutações de transação registram auditoria financeira', () => {
+    const txService = fs.readFileSync(path.join(root, 'backend/domain/services/transaction.service.js'), 'utf8');
+    const txRoutes = fs.readFileSync(path.join(root, 'backend/routes/transactions.js'), 'utf8');
+    const audit = fs.readFileSync(path.join(root, 'backend/lib/finance-audit.js'), 'utf8');
+
+    expect(txService).toContain('logFinancialMutation');
+    expect(txRoutes).toContain('clientMetaFromRequest');
+    expect(audit).toContain('snapshotTransaction');
+  });
+
+  test('política de privacidade não contém placeholder de e-mail', () => {
+    const privacidade = fs.readFileSync(path.join(root, 'privacidade.html'), 'utf8');
+    expect(privacidade).not.toContain('[coloque aqui');
+    expect(privacidade).toContain('privacidade@financaspro.com.br');
+  });
+
+  test('snapshot delega transações ao sync pull (sem take 1000)', () => {
+    const state = fs.readFileSync(path.join(root, 'backend/domain/services/state.service.js'), 'utf8');
+    expect(state).toContain("strategy: 'sync-pull'");
+    expect(state).not.toMatch(/take:\s*1000/);
+  });
+
+  test('sync e listagem suportam paginação por cursor', () => {
+    const repo = fs.readFileSync(path.join(root, 'backend/domain/repositories/transaction.repository.js'), 'utf8');
+    const syncRoutes = fs.readFileSync(path.join(root, 'backend/routes/sync.js'), 'utf8');
+    const txRoutes = fs.readFileSync(path.join(root, 'backend/routes/transactions.js'), 'utf8');
+    expect(repo).toContain('findManyCursor');
+    expect(syncRoutes).toContain('cursor');
+    expect(txRoutes).toContain('cursor');
+  });
+
+  test('bundle budget script mede precache e app.bundle', () => {
+    const budget = fs.readFileSync(path.join(root, 'scripts/check-bundle-budget.cjs'), 'utf8');
+    expect(budget).toContain('precacheTotal');
+    expect(budget).toContain('appBundle');
   });
 });

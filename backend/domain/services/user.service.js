@@ -70,19 +70,42 @@ export const UserService = {
 
   /**
    * LGPD — direito ao esquecimento: apaga a conta e todos os dados pessoais.
-   * As relações filhas têm onDelete: Cascade; logs de auditoria são anonimizados
-   * (userId → null). Bloqueia se o usuário for dono de organização.
+   *
+   * Todas as relações filhas têm onDelete: Cascade e somem junto. A exceção é
+   * AuditLog, cuja relação com User é opcional — ao apagar o usuário o Prisma
+   * faz SetNull e a LINHA PERMANECE. Isso é proposital: o registro de auditoria
+   * precisa sobreviver para provar que a exclusão aconteceu.
+   *
+   * O que NÃO pode sobreviver é o conteúdo pessoal dessa linha. Endereço IP e
+   * user-agent são dado pessoal (LGPD art. 5º, I) e ficavam gravados sem
+   * titular — nem apagados, nem reclamáveis por ninguém. `metadata` é Json
+   * livre e pode conter qualquer coisa que o chamador tenha posto lá.
+   *
+   * Por isso limpamos esses campos ANTES do delete, na mesma transação: se o
+   * delete falhar, não sobra um log meio anonimizado; se a limpeza falhar, a
+   * conta não é apagada e o pedido pode ser repetido.
    */
   async deleteAccount(userId) {
     const ownedOrgs = await prisma.organization.count({ where: { ownerId: userId } });
     if (ownedOrgs > 0) {
       throw new AppError(
-        'Transfira ou exclua suas organizações antes de apagar a conta',
+        'Transfira a propriedade ou exclua suas organizações antes de apagar a conta',
         409,
       );
     }
-    await prisma.user.delete({ where: { id: userId } });
-    logger.info({ userId }, 'Conta excluída a pedido do titular (LGPD)');
-    return { deleted: true };
+
+    const [anonimizados] = await prisma.$transaction([
+      prisma.auditLog.updateMany({
+        where: { userId },
+        data: { ipAddress: null, userAgent: null, metadata: null },
+      }),
+      prisma.user.delete({ where: { id: userId } }),
+    ]);
+
+    logger.info(
+      { userId, logsAnonimizados: anonimizados.count },
+      'Conta excluída a pedido do titular (LGPD)',
+    );
+    return { deleted: true, auditLogsAnonymized: anonimizados.count };
   },
 };

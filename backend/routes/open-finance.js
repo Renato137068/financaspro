@@ -2,7 +2,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { authenticate } from '../middleware/auth.js';
-import { validateBody } from '../middleware/validate.js';
+import { validateBody, validateParams, idParamSchema } from '../middleware/validate.js';
 import { OpenFinanceService } from '../domain/services/open-finance.service.js';
 
 const router = Router();
@@ -58,14 +58,14 @@ router.post('/belvo/complete', validateBody(belvoCompleteSchema), async (req, re
   } catch (err) { next(err); }
 });
 
-router.delete('/connections/:id', async (req, res, next) => {
+router.delete('/connections/:id', validateParams(idParamSchema), async (req, res, next) => {
   try {
     const result = await OpenFinanceService.disconnect(req.user.id, req.params.id);
     res.json(result);
   } catch (err) { next(err); }
 });
 
-router.post('/connections/:id/sync', async (req, res, next) => {
+router.post('/connections/:id/sync', validateParams(idParamSchema), async (req, res, next) => {
   try {
     const data = await OpenFinanceService.sync(req.user.id, req.params.id);
     res.json({ data });

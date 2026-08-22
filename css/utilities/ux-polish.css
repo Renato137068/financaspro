@@ -141,15 +141,57 @@ textarea:focus-visible {
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22);
 }
 
-/* Touch targets mínimos (WCAG 2.5.5) */
+/* Touch targets mínimos (WCAG 2.5.5)
+   ────────────────────────────────────
+   A lista abaixo cobre os componentes conhecidos. O problema de manter só uma
+   lista é que todo botão de ícone novo precisa ser lembrado — e não é.
+
+   A regra em @media (pointer: coarse) resolve isso por baixo: em dispositivo de
+   toque, TODO controle interativo recebe o mínimo. Fica restrita ao ponteiro
+   grosso de propósito — no desktop, com mouse, forçar 44px em botões pequenos
+   distorceria o layout sem ganho de acessibilidade. */
 .alerta-dispensar,
 .alerta-btn,
 .filtro-chip-premium,
 .ordenacao-btn,
 .btn-busca-avancada,
-.periodo-nav-premium {
-  min-width: 44px;
-  min-height: 44px;
+.periodo-nav-premium,
+.perfil-action-btn,
+.btn-remover-banco,
+.btn-small,
+.anexo-remover {
+  min-width: var(--tap-target-min);
+  min-height: var(--tap-target-min);
+}
+
+@media (pointer: coarse) {
+  button,
+  a[role="button"],
+  [role="button"],
+  input[type="checkbox"],
+  input[type="radio"],
+  .nav-item,
+  .chip,
+  .tipo-btn {
+    min-height: var(--tap-target-min);
+  }
+
+  /* Botão de ícone precisa do mínimo nos dois eixos: sem isto, um <button>
+     com um único ícone fica alto e estreito, e continua difícil de acertar. */
+  button:not(:has(> :not(i))),
+  .btn-icone,
+  .perfil-action-btn,
+  .periodo-nav-premium {
+    min-width: var(--tap-target-min);
+  }
+
+  /* Itens de lista clicáveis: o alvo é a linha inteira, não só o texto. */
+  .transacao-item,
+  .extrato-item,
+  .orcamento-item,
+  .orcamento-item--link {
+    min-height: var(--tap-target-min);
+  }
 }
 
 .alerta-dispensar {
@@ -193,6 +235,10 @@ textarea:focus-visible {
 .sync-indicator .sync-dot{ width:8px; height:8px; border-radius:50%; background:#8a9791; flex:0 0 auto; }
 .sync-ok .sync-dot{ background:#1f9d55; }
 .sync-sincronizando .sync-dot{ background:#c9a400; animation:sync-pulse 1s ease-in-out infinite; }
+.sync-salvando .sync-dot{ background:#3b82f6; animation:sync-pulse 1s ease-in-out infinite; }
+.sync-pendente .sync-dot{ background:#d97706; }
+.sync-falha .sync-dot{ background:#dc2626; }
+.sync-conflito .sync-dot{ background:#9333ea; }
 .sync-offline .sync-dot{ background:#e07b00; }
 .sync-local .sync-dot{ background:#5b6b62; }
 @keyframes sync-pulse{ 0%,100%{ opacity:1; } 50%{ opacity:.35; } }
@@ -209,5 +255,6 @@ textarea:focus-visible {
 
 /* Respeita preferências de movimento reduzido */
 @media (prefers-reduced-motion: reduce){
-  .sync-sincronizando .sync-dot{ animation:none; }
+  .sync-sincronizando .sync-dot,
+  .sync-salvando .sync-dot{ animation:none; }
 }

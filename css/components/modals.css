@@ -237,15 +237,15 @@
   opacity: 0;
 }
 
-.success-confetti span:nth-child(1)  { left: 10%; background: #fff;  animation-delay: 0ms;   animation-duration: 1.1s; }
+.success-confetti span:nth-child(1)  { left: 10%; background: var(--color-white);  animation-delay: 0ms;   animation-duration: 1.1s; }
 .success-confetti span:nth-child(2)  { left: 25%; background: #a7f3d0; animation-delay: 60ms;  animation-duration: 1.3s; width: 7px; height: 7px; }
-.success-confetti span:nth-child(3)  { left: 40%; background: #fff;  animation-delay: 120ms; animation-duration: 1.0s; border-radius: 50%; }
+.success-confetti span:nth-child(3)  { left: 40%; background: var(--color-white);  animation-delay: 120ms; animation-duration: 1.0s; border-radius: 50%; }
 .success-confetti span:nth-child(4)  { left: 55%; background: #6ee7b7; animation-delay: 80ms;  animation-duration: 1.4s; }
-.success-confetti span:nth-child(5)  { left: 70%; background: #fff;  animation-delay: 30ms;  animation-duration: 1.2s; width: 6px; height: 12px; }
+.success-confetti span:nth-child(5)  { left: 70%; background: var(--color-white);  animation-delay: 30ms;  animation-duration: 1.2s; width: 6px; height: 12px; }
 .success-confetti span:nth-child(6)  { left: 85%; background: #a7f3d0; animation-delay: 150ms; animation-duration: 1.1s; border-radius: 50%; }
-.success-confetti span:nth-child(7)  { left: 20%; background: #fff;  animation-delay: 200ms; animation-duration: 1.3s; width: 8px; height: 8px; }
+.success-confetti span:nth-child(7)  { left: 20%; background: var(--color-white);  animation-delay: 200ms; animation-duration: 1.3s; width: 8px; height: 8px; }
 .success-confetti span:nth-child(8)  { left: 60%; background: #d1fae5; animation-delay: 100ms; animation-duration: 1.0s; }
-.success-confetti span:nth-child(9)  { left: 80%; background: #fff;  animation-delay: 250ms; animation-duration: 1.5s; border-radius: 50%; }
+.success-confetti span:nth-child(9)  { left: 80%; background: var(--color-white);  animation-delay: 250ms; animation-duration: 1.5s; border-radius: 50%; }
 .success-confetti span:nth-child(10) { left: 45%; background: #6ee7b7; animation-delay: 50ms;  animation-duration: 1.2s; }
 
 /* ── Insight alerts ───────────────────────────────────────── */

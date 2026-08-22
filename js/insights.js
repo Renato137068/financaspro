@@ -18,7 +18,11 @@ var INSIGHTS = {
   _estadoSetup: function(txs) {
     var cfg = (typeof DADOS !== 'undefined' && DADOS.getConfig) ? DADOS.getConfig() : {};
     var temOrcamento = false;
-    try { temOrcamento = !!(cfg.orcamentos && Object.keys(cfg.orcamentos).length); } catch (e) {}
+    // Config com formato inesperado não pode derrubar o dashboard inteiro;
+    // o card "comece aqui" apenas deixa de contar o orçamento como concluído.
+    temOrcamento = UTILS.tentar('INSIGHTS.temOrcamento', function() {
+      return !!(cfg.orcamentos && Object.keys(cfg.orcamentos).length);
+    }, { padrao: false }).valor;
     return {
       perfil:    !!(cfg.nome && cfg.nome !== 'Usuário'),
       transacao: Array.isArray(txs) && txs.length > 0,
@@ -31,7 +35,28 @@ var INSIGHTS = {
   _setupCardHtml: function() {
     if (typeof SETUP_GUIDE === 'undefined' || !SETUP_GUIDE.buildCardHtml) return '';
     var txs = (typeof DADOS !== 'undefined' && DADOS.getTransacoes) ? DADOS.getTransacoes() : [];
-    try { return SETUP_GUIDE.buildCardHtml(this._estadoSetup(txs)); } catch (e) { return ''; }
+    try {
+      var estado = this._estadoSetup(txs);
+
+      // Registra a evolução do funil. É idempotente: só emite evento na
+      // transição de pendente para concluído, então chamar a cada render do
+      // dashboard não duplica nada.
+      if (SETUP_GUIDE.registrarProgresso) {
+        SETUP_GUIDE.registrarProgresso(estado, {
+          ler: function() {
+            var cfg = (typeof DADOS !== 'undefined' && DADOS.getConfig) ? DADOS.getConfig() : {};
+            return cfg._onboardingUltimoEstado || null;
+          },
+          gravar: function(novo) {
+            if (typeof DADOS !== 'undefined' && DADOS.salvarConfig) {
+              DADOS.salvarConfig({ _onboardingUltimoEstado: novo });
+            }
+          },
+        });
+      }
+
+      return SETUP_GUIDE.buildCardHtml(estado);
+    } catch (e) { return ''; }
   },
 
   // ─────────────────────────────────────────────────────────────────
@@ -73,6 +98,25 @@ var INSIGHTS = {
           });
         }
       }
+    }
+
+    // ── 1b. Categorias a caminho de estourar ───────────────────────
+    // O selo "excedido" só aparece depois do estrago. Aqui o aviso chega
+    // enquanto ainda sobra mês para reagir, e já com o teto diário que evita
+    // o estouro — "pare de gastar" não ajuda ninguém; "R$ 10 por dia" ajuda.
+    if (typeof ORCAMENTO !== 'undefined' && typeof ORCAMENTO.categoriasEmRisco === 'function') {
+      try {
+        // Só as duas piores: uma lista de sete alertas não é lida, é fechada.
+        ORCAMENTO.categoriasEmRisco(agora).slice(0, 2).forEach(function(p) {
+          var texto = ORCAMENTO.mensagemRisco(p.categoria, agora);
+          if (!texto) return;
+          insights.push({
+            tipo:      'orcamento-risco',
+            msg:       '<i data-lucide="alert-triangle" aria-hidden="true"></i> ' + esc(texto),
+            gravidade: p.risco === 'estourado' ? 'alta' : 'media'
+          });
+        });
+      } catch (e) { /* orçamento indisponível não pode derrubar o dashboard */ }
     }
 
     // ── 2. Projeção de fim de mês ──────────────────────────────────
@@ -248,7 +292,10 @@ var INSIGHTS = {
       var a = anomalias[0];
       insights.push({
         tipo:      'anomalia',
-        msg:       '<i data-lucide="search" aria-hidden="true"></i> Gasto incomum: "' + esc(a.transacao.descricao || 'Transação') + '" — ' + esc(a.motivo) + '.',
+        msg:       '<i data-lucide="search" aria-hidden="true"></i> Gasto incomum: "'
+                     + esc(a.transacao.descricao || 'Transação') + '" ('
+                     + esc(UTILS.formatarMoeda(a.transacao.valor)) + ') — '
+                     + esc(a.motivo) + '.',
         gravidade: 'media'
       });
     }

@@ -132,6 +132,55 @@ var TRANSACOES = {
   },
 
   /**
+   * Registra uma movimentação entre contas do próprio usuário.
+   *
+   * Um registro só, com origem (`banco`) e destino (`contaDestino`) — não um
+   * par receita+despesa. O par parece equivalente e não é: além de inflar
+   * receitas e despesas do mês, ele se desfaz quando alguém edita ou apaga
+   * apenas uma das pontas, e o saldo passa a mentir sem nenhum sinal.
+   *
+   * @param {{valor:number|string, data:string, origem:string,
+   *          destino:string, descricao?:string}} dados
+   * @returns {Object} a transação criada
+   */
+  criarTransferencia: function(dados) {
+    dados = dados || {};
+    var origem = UTILS.nomeDeConta(dados.origem);
+    var destino = UTILS.nomeDeConta(dados.destino);
+    var valor = UTILS.parseMoeda(dados.valor);
+
+    if (!origem) throw new Error('Informe a conta de origem');
+    if (!destino) throw new Error('Informe a conta de destino');
+    if (origem.toLowerCase() === destino.toLowerCase()) {
+      throw new Error('Origem e destino não podem ser a mesma conta');
+    }
+    if (!valor || valor <= 0) throw new Error('Valor deve ser maior que 0');
+    if (!dados.data) throw new Error('Data obrigatória');
+
+    var transacao = {
+      id: UTILS.gerarId(),
+      tipo: CONFIG.TIPO_TRANSFERENCIA,
+      valor: valor,
+      // Categoria fixa: transferência não entra em nenhum orçamento, mas o
+      // campo é obrigatório em todo o resto do app (validação, filtros,
+      // exportação) e deixá-lo vazio quebraria essas telas.
+      categoria: CONFIG.TIPO_TRANSFERENCIA,
+      data: dados.data,
+      descricao: this._sanitizarDescricao(dados.descricao)
+        || ('Transferência: ' + origem + ' → ' + destino),
+      banco: origem,
+      contaDestino: destino,
+      cartao: '',
+      dataCriacao: new Date().toISOString()
+    };
+
+    DADOS.salvarTransacao(transacao);
+    this._cache = DADOS.getTransacoes();
+    if (typeof APP_STATE !== 'undefined') APP_STATE.setState({ transacoes: this._cache });
+    return transacao;
+  },
+
+  /**
    * Filtra cache de transações.
    * @param {FiltroTransacao} [filtros]
    * @returns {Transacao[]}
@@ -200,12 +249,22 @@ var TRANSACOES = {
       return TRANSACTION_SERVICE.summarizeMonth(this._cache || [], mes, ano);
     }
     var txMes = this.obter({ mes: mes, ano: ano });
-    var receitas = 0, despesas = 0;
+    // Centavos inteiros, igual ao TRANSACTION_SERVICE: os dois caminhos têm de
+    // produzir o mesmo número, senão o total do mês muda conforme o service
+    // estar carregado ou não.
+    var receitasC = 0, despesasC = 0;
     txMes.forEach(function(t) {
-      if (t.tipo === CONFIG.TIPO_RECEITA) receitas += t.valor;
-      else despesas += t.valor;
+      if (t.tipo === CONFIG.TIPO_RECEITA) receitasC += UTILS.paraCentavos(t.valor);
+      // Explícito e não `else`: transferência entre contas não é gasto.
+      // Somar tudo que não é receita inflava as despesas do mês.
+      else if (t.tipo === CONFIG.TIPO_DESPESA) despesasC += UTILS.paraCentavos(t.valor);
     });
-    return { receitas: receitas, despesas: despesas, saldo: receitas - despesas, total: txMes.length };
+    return {
+      receitas: receitasC / 100,
+      despesas: despesasC / 100,
+      saldo: (receitasC - despesasC) / 100,
+      total: txMes.length
+    };
   },
 
   obterResumoPorCategoria: function(mes, ano) {
@@ -217,7 +276,7 @@ var TRANSACOES = {
     txMes.forEach(function(t) {
       if (!resumo[t.categoria]) resumo[t.categoria] = { receita: 0, despesa: 0 };
       if (t.tipo === CONFIG.TIPO_RECEITA) resumo[t.categoria].receita += t.valor;
-      else resumo[t.categoria].despesa += t.valor;
+      else if (t.tipo === CONFIG.TIPO_DESPESA) resumo[t.categoria].despesa += t.valor;
     });
     return resumo;
   },

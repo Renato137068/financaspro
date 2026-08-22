@@ -3,75 +3,37 @@
  * Cobre: extrair (tokens, valor, data, banco, cartão, descrição), parseData
  */
 
-// ── parseData inline (idêntico a js/parser.js) ───────────────────────────────
-function parseData(str) {
-  const hoje = new Date();
-  const dow = hoje.getDay();
-  const s = str.toLowerCase();
+const { loadCoreModules } = require('./load-sources');
 
-  const offsets = { 'hoje': 0, 'ontem': 1, 'anteontem': 2, 'amanhã': -1, 'amanha': -1 };
-  if (offsets[s] !== undefined) {
-    const d = new Date(hoje);
-    d.setDate(d.getDate() - offsets[s]);
-    return d.toISOString().split('T')[0];
-  }
-
-  const diasSemana = {
-    'domingo': 0, 'segunda': 1, 'terca': 2, 'terça': 2,
-    'quarta': 3, 'quinta': 4, 'sexta': 5, 'sabado': 6, 'sábado': 6,
-  };
-  if (diasSemana[s] !== undefined) {
-    const alvo = diasSemana[s];
-    const diff = (dow - alvo + 7) % 7 || 7; // sempre para trás, mínimo 1 dia
-    const d2 = new Date(hoje);
-    d2.setDate(d2.getDate() - diff);
-    return d2.toISOString().split('T')[0];
-  }
-
-  return null;
-}
-
-// ── extrair inline (idêntico a js/parser.js, sem DADOS) ──────────────────────
-const PARSER = {
-  parseData,
-
-  extrair(texto) {
-    const tokens = texto.toLowerCase().split(/[\s,]+/);
-    const r = { valor: null, desc: [], data: null, banco: null, cartao: null };
-
-    const bancosFixos = ['nubank', 'itaú', 'itau', 'caixa', 'bradesco', 'santander', 'bbva', 'inter', 'sicredi'];
-
-    tokens.forEach(token => {
-      if (!token || token.length < 2) return;
-
-      if (/^\d+([.,]\d{1,2})?$/.test(token)) {
-        r.valor = parseFloat(token.replace(',', '.'));
-      } else if (/^(hoje|ontem|anteontem|amanhã?|segunda|ter[cç]a|quarta|quinta|sexta|s[aá]bado|domingo)$/.test(token)) {
-        r.data = parseData(token);
-      } else if (bancosFixos.indexOf(token) !== -1) {
-        r.banco = token;
-      } else if (/^(cr[eé]dito|d[eé]bito)$/.test(token)) {
-        r.cartao = token;
-      } else if (token.length >= 3) {
-        r.desc.push(token);
-      }
-    });
-
-    r.desc = r.desc.join(' ');
-    return r;
-  },
-};
+// Carrega os módulos REAIS de js/. Antes deste ajuste o arquivo declarava uma
+// cópia inline de PARSER e testava a cópia — os testes passavam mesmo quando o
+// código de produção divergia. Ver tests/suite-integrity.test.js.
+loadCoreModules();
+const PARSER = global.PARSER;
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Data de referência para testes determinísticos
+// Data de referência para testes determinísticos.
+//
+// As expectativas são montadas com a data LOCAL, não com toISOString(). Este
+// arquivo usava toISOString() — o mesmo idioma que causava o bug em produção —
+// e por isso concordava com o código defeituoso: em America/Sao_Paulo, depois
+// das 21h, ambos devolviam a data de amanhã e o teste passava. Um teste escrito
+// com o bug dentro nunca pega o bug.
 const HOJE = new Date();
-const HOJE_STR = HOJE.toISOString().split('T')[0];
+
+function isoLocal(d) {
+  return d.getFullYear() + '-'
+    + String(d.getMonth() + 1).padStart(2, '0') + '-'
+    + String(d.getDate()).padStart(2, '0');
+}
+
+const HOJE_STR = isoLocal(HOJE);
 
 function dataOffset(dias) {
   const d = new Date(HOJE);
   d.setDate(d.getDate() - dias);
-  return d.toISOString().split('T')[0];
+  return isoLocal(d);
 }
 
 describe('PARSER — parseData', () => {
