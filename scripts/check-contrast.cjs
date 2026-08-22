@@ -61,7 +61,30 @@ function paraRgb(cor) {
     const [r, g, b] = m[1].split('');
     return [parseInt(r + r, 16), parseInt(g + g, 16), parseInt(b + b, 16)];
   }
-  return null; // rgba(), gradientes e afins ficam fora da checagem
+  m = hex.match(/^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)\s*(?:[,/]\s*([\d.]+)\s*)?\)$/i);
+  if (m) {
+    const canal = (v) => Math.max(0, Math.min(255, Math.round(parseFloat(v))));
+    const alfa = m[4] === undefined ? 1 : Math.max(0, Math.min(1, parseFloat(m[4])));
+    return [canal(m[1]), canal(m[2]), canal(m[3]), alfa];
+  }
+  return null; // gradientes e afins continuam fora da checagem
+}
+
+/**
+ * Compoe uma cor semitransparente sobre uma base opaca.
+ *
+ * Sem isto, todo token em rgba() era "sem valor hex resolvivel" e saia da
+ * checagem em silencio -- que foi exatamente como o chip de categoria do
+ * extrato passou despercebido: --color-bg-primary e rgba(0,114,63,.08), o
+ * script pulava, e o texto de apoio ficava em 4,2:1 sobre o verde resultante.
+ * Um check que pula sozinho e pior que nenhum, porque parece cobertura.
+ */
+function compor(cor, base) {
+  if (!cor) return null;
+  const alfa = cor.length > 3 ? cor[3] : 1;
+  if (alfa >= 1) return [cor[0], cor[1], cor[2]];
+  if (!base) return null;
+  return [0, 1, 2].map((i) => Math.round(cor[i] * alfa + base[i] * (1 - alfa)));
 }
 
 // ─── cálculo WCAG 2.1 ────────────────────────────────────────────────────────
@@ -108,6 +131,25 @@ const PARES_CLARO = [
   ['color-text-inverse', 'color-warning-on-light', AA_TEXTO, 'botão de alerta'],
   ['color-text-inverse', 'color-danger-on-light', AA_TEXTO, 'botão destrutivo'],
 
+  // superfícies TINGIDAS — o buraco que a auditoria de 22/08 encontrou.
+  //
+  // Os pares acima cobriam texto sobre branco e sobre o fundo da página. Só que
+  // texto de apoio também aparece sobre tinta: os chips de categoria do extrato
+  // (.ext-tx-meta-tag, background --color-bg-primary) e legendas sobre cards com
+  // fundo verde-claro. Ali o axe mediu 4,21:1 e 4,25:1, abaixo do mínimo AA.
+  //
+  // Ressalva honesta: mesmo com estes pares, este script sozinho NÃO teria
+  // reprovado a cor antiga — daria 4,58:1, logo acima do limite. Ele compõe um
+  // nível de transparência sobre o card; na tela a pilha é mais profunda (chip
+  // tingido sobre card sobre página tingida), e cada camada tira um pouco mais.
+  // Quem mede a pilha real é o axe, no e2e/accessibility.spec.cjs. O valor
+  // destes pares é outro: eles impedem que um token tingido volte a sair da
+  // checagem em silêncio, e dão o sinal de que a margem está apertada.
+  ['color-text-muted', 'color-bg-primary', AA_TEXTO, 'texto de apoio em chip tingido'],
+  ['color-text-secondary', 'color-bg-primary', AA_TEXTO, 'texto secundário em chip tingido'],
+  ['color-text-primary', 'color-bg-primary', AA_TEXTO, 'texto principal em chip tingido'],
+  ['color-text-muted', 'color-primary-50', AA_TEXTO, 'texto de apoio sobre tinta clara'],
+
   // borda e elemento não textual: exigência menor (1.4.11)
   ['color-border-focus', 'color-bg-card', AA_UI, 'anel de foco'],
 ];
@@ -129,14 +171,18 @@ const darkCss = fs.readFileSync(path.join(root, 'css', 'themes', 'dark-mode.css'
 const tokensClaro = lerTokens(dsCss, ':root');
 const tokensEscuro = { ...tokensClaro, ...lerTokens(darkCss, '\\[data-theme="dark"\\]') };
 
-function verificar(pares, tokens, rotuloTema) {
+function verificar(pares, tokens, rotuloTema, tokenBase) {
   const linhas = [];
   const falhas = [];
   const pulados = [];
 
+  // Superficie opaca sob os tokens semitransparentes: um chip com 8% de verde
+  // esta, na pratica, sobre o card.
+  const base = paraRgb(resolver(tokens, tokens[tokenBase]));
+
   for (const [frente, fundo, minimo, descricao] of pares) {
-    const cf = paraRgb(resolver(tokens, tokens[frente]));
-    const cb = paraRgb(resolver(tokens, tokens[fundo]));
+    const cf = compor(paraRgb(resolver(tokens, tokens[frente])), base);
+    const cb = compor(paraRgb(resolver(tokens, tokens[fundo])), base);
 
     if (!cf || !cb) { pulados.push(`${descricao} (${frente} / ${fundo})`); continue; }
 
@@ -157,8 +203,8 @@ function verificar(pares, tokens, rotuloTema) {
 console.log('\n[contraste] Verificação WCAG 2.1 dos tokens de cor');
 
 const falhas = [
-  ...verificar(PARES_CLARO, tokensClaro, 'Tema claro'),
-  ...verificar(PARES_ESCURO, tokensEscuro, 'Tema escuro'),
+  ...verificar(PARES_CLARO, tokensClaro, 'Tema claro', 'color-bg-card'),
+  ...verificar(PARES_ESCURO, tokensEscuro, 'Tema escuro', 'color-bg-dark-card'),
 ];
 
 if (falhas.length && !reportOnly) {

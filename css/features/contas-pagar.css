@@ -49,8 +49,11 @@
   background: none;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
-  width: 32px;
-  height: 32px;
+  /* 44px e o piso do WCAG 2.5.5 e o minimo confortavel para o polegar; o
+     Material recomenda 48dp. Sao os dois botoes usados a cada troca de mes,
+     entao errar aqui custa a cada uso, nao uma vez. */
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;

@@ -105,6 +105,23 @@
   margin-left: 4px;
 }
 
+/* Desconto anual do proprio plano, ao lado do preco. Calculado em
+   INIT_BILLING._descontoAnual a partir de priceMonthly e priceYearly -- nao ha
+   numero fixo no CSS nem no HTML para sair de sincronia com a tabela de precos. */
+.billing-plan-save {
+  display: inline-block;
+  margin-left: var(--space-2);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--color-success-50, var(--color-bg-page));
+  color: var(--color-primary-600);
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0;
+  vertical-align: middle;
+}
+
 .billing-plans {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));

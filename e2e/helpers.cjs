@@ -43,7 +43,31 @@ async function dismissOverlays(page) {
     if (auth) auth.style.display = 'none';
     var sk = document.getElementById('dashboard-skeleton');
     if (sk) sk.remove();
+
+    // Congela animacoes e transicoes.
+    //
+    // O axe le a cor computada no instante em que roda. Com os cards entrando
+    // por fade, ele as vezes media o meio da transicao -- verde a 1,47:1 sobre
+    // branco, por exemplo -- e acusava violacao de contraste num elemento que,
+    // parado, passa folgado. O resultado era um teste que reprovava uma aba
+    // diferente a cada rodada, dependendo de quem ganhava a corrida.
+    //
+    // Isso NAO esconde problema real: o criterio de contraste do WCAG vale para
+    // o estado final, que e o que o usuario le. E o mesmo que
+    // scripts/capture-screenshots.cjs ja fazia para as capturas nao saírem
+    // borradas.
+    var congelar = document.createElement('style');
+    congelar.id = 'e2e-sem-animacao';
+    congelar.textContent = '*, *::before, *::after {'
+      + ' animation-duration: 0s !important;'
+      + ' animation-delay: 0s !important;'
+      + ' transition-duration: 0s !important;'
+      + ' transition-delay: 0s !important; }';
+    document.head.appendChild(congelar);
   });
+
+  // Um quadro para o estilo acima valer e o layout assentar.
+  await page.waitForTimeout(250);
 }
 
 async function waitForAppBoot(page, opts) {

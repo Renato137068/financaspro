@@ -1087,6 +1087,12 @@
 
     <!-- BLOCO: CONTA -->
     <div class="perfil-section">
+      <!-- data-requer-nuvem: escondido quando nao ha backend configurado.
+           O build Android do piloto roda em modo local (sem API), e um app que
+           oferece login, assinatura e Open Finance nao pode declarar no Data
+           safety da Play Store que nao coleta dados. A visibilidade e aplicada
+           por INIT_CONFIG.aplicarVisibilidadeNuvem(), a partir de
+           DADOS._apiAtiva() -- uma fonte de verdade so, nao um segundo flag. -->
       <h2 class="perfil-section-title">Conta</h2>
       <div class="perfil-cards-grid">
         <div class="perfil-card-premium" data-action="abrir-editar-perfil" role="button" aria-label="Editar dados pessoais">
@@ -1100,7 +1106,7 @@
           <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
         </div>
 
-        <div class="perfil-card-premium perfil-card-premium--plano-highlight" data-action="abrir-plano" role="button" aria-label="Gerenciar plano e assinatura">
+        <div class="perfil-card-premium perfil-card-premium--plano-highlight" data-action="abrir-plano" data-requer-nuvem role="button" aria-label="Gerenciar plano e assinatura">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="sparkles" aria-hidden="true"></i>
           </div>
@@ -1122,7 +1128,7 @@
           <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
         </div>
 
-        <div class="perfil-card-premium" data-action="abrir-open-finance" role="button" aria-label="Conectar contas via Open Finance">
+        <div class="perfil-card-premium" data-action="abrir-open-finance" data-requer-nuvem role="button" aria-label="Conectar contas via Open Finance">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="link" aria-hidden="true"></i>
           </div>
@@ -1153,7 +1159,7 @@
           </label>
         </div>
 
-        <div class="perfil-card-premium perfil-card-toggle" id="perfil-2fa-card">
+        <div class="perfil-card-premium perfil-card-toggle" id="perfil-2fa-card" data-requer-nuvem>
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="shield-check" aria-hidden="true"></i>
           </div>
@@ -1344,7 +1350,7 @@
     </div>
 
     <!-- LOGOUT -->
-    <div class="perfil-section">
+    <div class="perfil-section" data-requer-nuvem>
       <button type="button" id="btn-logout" class="perfil-logout-btn">
         <i data-lucide="log-out" aria-hidden="true"></i>
         Sair da conta
@@ -1357,6 +1363,14 @@
       <button class="perfil-danger-btn" data-action="limpar-dados">
         <i data-lucide="trash-2" aria-hidden="true"></i>
         Apagar todos os dados
+      </button>
+      <!-- Exclusao da conta na nuvem. O Google Play exige um caminho DENTRO do
+           app para quem permite criar conta; a API ja tinha DELETE /users/me,
+           mas nada no frontend chamava. Some junto com o resto da nuvem quando
+           nao ha backend, porque ai nao existe conta para excluir. -->
+      <button class="perfil-danger-btn" data-action="excluir-conta" data-requer-nuvem>
+        <i data-lucide="user-x" aria-hidden="true"></i>
+        Excluir minha conta
       </button>
     </div>
 

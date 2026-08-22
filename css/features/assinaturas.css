@@ -1,7 +1,11 @@
 /* Assinaturas */
 .sub-kpis {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  /* minmax(0, 1fr) e nao 1fr: item de grid tambem tem min-width auto, entao uma
+     coluna com "R$ 1.234,56" ficava mais larga que a fracao e empurrava o
+     documento para fora da tela. Aparecia a partir de 280px (Galaxy Fold
+     fechado), onde as tres colunas nao cabem no espaco nominal. */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-2);
   margin-bottom: var(--space-4);
 }

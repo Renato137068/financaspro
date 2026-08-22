@@ -28,7 +28,10 @@ const PLANS = [
     name:             'Pro',
     tier:             'PRO',
     priceMonthly:     16.90,
-    priceYearly:      119.00,
+    // 169,00 = 12 x 16,90 menos ~17%, a mesma proporcao do Business. Antes eram
+    // 119,00, que dao 41% de desconto -- desalinhado do outro plano e bem alem
+    // do que o seletor anunciava.
+    priceYearly:      169.00,
     maxUsers:         5,
     maxTransPerMonth: 0,
     maxAccounts:      20,

@@ -34,7 +34,7 @@ var MICRO = (function() {
 
   /* ── Counter-up (animação de número) ───────────────────── */
 
-  function contarAte(el, fim, duracao, prefixo, sufixo) {
+  function contarAte(el, fim, duracao, prefixo, sufixo, aoTerminar) {
     prefixo = prefixo || '';
     sufixo  = sufixo  || '';
     duracao = duracao || 600;
@@ -52,7 +52,17 @@ var MICRO = (function() {
         maximumFractionDigits: 2
       }) + sufixo;
 
-      if (progresso < 1) requestAnimationFrame(_step);
+      if (progresso < 1) {
+        requestAnimationFrame(_step);
+      } else {
+        // Garante o valor exato no fim: o easing chega perto, e arredondamento
+        // de ponto flutuante nao pode decidir o numero que o usuario le.
+        el.textContent = prefixo + fim.toLocaleString('pt-BR', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }) + sufixo;
+        if (typeof aoTerminar === 'function') aoTerminar();
+      }
     }
 
     requestAnimationFrame(_step);
@@ -61,15 +71,38 @@ var MICRO = (function() {
   /* Anima valores monetários quando mudam — IDs fixos + .valor-animado */
   function animarValoresMonetarios() {
     var ids = ['resumo-receitas', 'resumo-despesas'];
+    var OPCOES_OBS = { childList: true, characterData: true, subtree: true };
+
     ids.forEach(function(id) {
       var el = document.getElementById(id);
       if (!el) return;
+
+      // O observador PRECISA parar enquanto a animação escreve.
+      //
+      // contarAte() reescreve o textContent a cada quadro. Como o observador
+      // reagia a qualquer mudança de texto, cada quadro disparava uma contagem
+      // nova, mirando o valor intermediário que o quadro anterior tinha
+      // acabado de escrever. O alvo encolhia a cada rodada e os cartões de
+      // Receitas e Despesas do painel acabavam parados em "R$ 0,01",
+      // oscilando com "R$ -0,00" para sempre — no lugar dos valores reais.
+      // O saldo não passava pelo observador, e por isso continuava certo:
+      // era o único número correto na tela.
+      var animando = false;
       var obs = new MutationObserver(function() {
+        if (animando) return;
+
         var txt = el.textContent.replace('R$', '').replace(/\./g, '').replace(',', '.').trim();
         var num = parseFloat(txt);
-        if (!isNaN(num) && num > 0) contarAte(el, num, 550, 'R$ ');
+        if (isNaN(num) || num <= 0) return;
+
+        animando = true;
+        obs.disconnect();
+        contarAte(el, num, 550, 'R$ ', '', function() {
+          animando = false;
+          obs.observe(el, OPCOES_OBS);
+        });
       });
-      obs.observe(el, { childList: true, characterData: true, subtree: true });
+      obs.observe(el, OPCOES_OBS);
     });
 
     /* IntersectionObserver para elementos com .valor-animado */

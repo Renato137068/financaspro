@@ -1,5 +1,12 @@
 /**
- * capture-screenshots.cjs — Capturas reais do app para Play Store (1080×1920)
+ * capture-screenshots.cjs — Capturas reais do app para Play Store
+ *
+ * Gera telefone (1080x1920), tablet 7" retrato (1200x1920) e tablet 10"
+ * paisagem (2560x1600). As de tablet nao existiam, e sem elas o Google marca o
+ * app como nao otimizado para telas grandes e reduz o destaque nesses
+ * aparelhos -- injusto aqui, porque em paisagem o app troca a barra inferior
+ * por navegacao lateral. A captura em paisagem existe justamente para mostrar
+ * isso na vitrine.
  *
  * Uso:
  *   npm install -D playwright
@@ -94,13 +101,39 @@ function startServer() {
   });
 }
 
-async function shotPage(page, dest) {
+/**
+ * Espera os valores pararem de mudar.
+ *
+ * Os cartoes do resumo animam o numero de 0 ate o valor final. Sem esperar, a
+ * captura pega o meio da contagem -- uma geracao anterior saiu com
+ * "RECEITAS R$ -31,19", que alem de errado e o tipo de imagem que derruba a
+ * confianca de quem esta decidindo se instala um app de financas.
+ */
+async function esperarValoresEstaveis(page, tentativas) {
+  var anterior = null;
+  for (var i = 0; i < (tentativas || 12); i++) {
+    var atual = await page.evaluate(function() {
+      return [].slice.call(document.querySelectorAll('.card-valor, .saldo-value-premium'))
+        .map(function(el) { return el.textContent.trim(); }).join('|');
+    });
+    if (atual && atual === anterior) return true;
+    anterior = atual;
+    await page.waitForTimeout(250);
+  }
+  return false;
+}
+
+async function shotPage(page, dest, device) {
   try {
+    // Sem `clip`: a captura pega exatamente a viewport, ja multiplicada pelo
+    // deviceScaleFactor. Com clip em px de CSS mais `scale: 'device'` o recorte
+    // saia do tamanho certo mas com o conteudo so no quadrante superior
+    // esquerdo, e o resto branco.
     await page.screenshot({
       path: dest,
       type: 'png',
       timeout: 12000,
-      clip: { x: 0, y: 0, width: 360, height: 640 },
+      fullPage: false,
       scale: 'device',
       animations: 'disabled',
     });
@@ -108,10 +141,37 @@ async function shotPage(page, dest) {
     var cdp = await page.context().newCDPSession(page);
     var result = await cdp.send('Page.captureScreenshot', {
       format: 'png',
-      clip: { x: 0, y: 0, width: 1080, height: 1920, scale: 1 },
+      clip: {
+        x: 0, y: 0,
+        width: device.width * device.scale,
+        height: device.height * device.scale,
+        scale: 1,
+      },
     });
     fs.writeFileSync(dest, Buffer.from(result.data, 'base64'));
   }
+}
+
+/**
+ * Formatos capturados.
+ *
+ * `width`/`height` sao CSS px e `scale` o deviceScaleFactor; o arquivo sai com
+ * width*scale por height*scale. O Play exige ao menos 1080px no lado maior.
+ */
+const DEVICES = [
+  { id: 'phone',    width: 360,  height: 640,  scale: 3, sufixo: '1080x1920', abas: ['resumo', 'extrato', 'orcamento'] },
+  { id: 'tablet7',  width: 600,  height: 960,  scale: 2, sufixo: 'tablet-1200x1920', abas: ['resumo', 'orcamento'] },
+  { id: 'tablet10', width: 1280, height: 800,  scale: 2, sufixo: 'tablet-2560x1600', abas: ['resumo', 'extrato'] },
+];
+
+/** Remove modais, toasts e banners que aparecem por conta propria durante a captura. */
+async function limparSobreposicoes(page) {
+  await page.evaluate(function() {
+    document.querySelectorAll('.modal-overlay, .billing-overlay, .toast, #sw-update-banner')
+      .forEach(function(el) { el.remove(); });
+    var sk = document.getElementById('dashboard-skeleton');
+    if (sk) sk.remove();
+  });
 }
 
 async function capture() {
@@ -128,62 +188,80 @@ async function capture() {
   fs.mkdirSync(playStoreDir, { recursive: true });
 
   var server = await startServer();
-  var browser = await playwright.chromium.launch({ headless: true });
+  // PLAYWRIGHT_CHROMIUM_PATH permite apontar para um Chromium ja instalado no
+  // sistema (container de CI, imagem com o browser em outro caminho). Sem isso,
+  // o script so roda onde `npx playwright install chromium` baixou a versao
+  // exata que o pacote espera.
+  var browser = await playwright.chromium.launch({
+    headless: true,
+    executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined,
+  });
   var seed = demoSeed();
 
-  var shots = [
-    { aba: 'resumo', file: 'screenshot-resumo-1080x1920.png', alias: 'phone-1080x1920.png' },
-    { aba: 'extrato', file: 'screenshot-extrato-1080x1920.png', alias: 'extrato-1080x1920.png' },
-    { aba: 'orcamento', file: 'screenshot-orcamento-1080x1920.png', alias: 'orcamento-1080x1920.png' },
-  ];
-
   try {
-    var context = await browser.newContext({
-      viewport: { width: 360, height: 640 },
-      deviceScaleFactor: 3,
-      locale: 'pt-BR',
-    });
-
-    await context.addInitScript(function(data) {
-      Object.keys(data).forEach(function(key) {
-        localStorage.setItem(key, data[key]);
+    for (var d = 0; d < DEVICES.length; d++) {
+      var device = DEVICES[d];
+      var context = await browser.newContext({
+        viewport: { width: device.width, height: device.height },
+        deviceScaleFactor: device.scale,
+        locale: 'pt-BR',
+        isMobile: device.id === 'phone',
+        hasTouch: true,
       });
-    }, seed);
 
-    var page = await context.newPage();
-    await page.route('**/*', function(route) {
-      if (route.request().resourceType() === 'font') {
-        route.abort();
-      } else {
-        route.continue();
+      await context.addInitScript(function(data) {
+        Object.keys(data).forEach(function(key) {
+          localStorage.setItem(key, data[key]);
+        });
+      }, seed);
+
+      var page = await context.newPage();
+      await page.route('**/*', function(route) {
+        if (route.request().resourceType() === 'font') {
+          route.abort();
+        } else {
+          route.continue();
+        }
+      });
+      await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 60000 });
+      await page.waitForTimeout(1200);
+
+      await page.evaluate(function() {
+        if (typeof ONBOARDING !== 'undefined' && ONBOARDING.encerrar) ONBOARDING.encerrar();
+        var ov = document.getElementById('onboarding-overlay');
+        if (ov) ov.remove();
+        var auth = document.getElementById('auth-overlay');
+        if (auth) auth.style.display = 'none';
+        var style = document.createElement('style');
+        style.textContent = '*, *::before, *::after { animation: none !important; transition: none !important; }';
+        document.head.appendChild(style);
+      });
+      await limparSobreposicoes(page);
+
+      for (var i = 0; i < device.abas.length; i++) {
+        var aba = device.abas[i];
+        if (aba !== 'resumo') {
+          await page.evaluate(function(a) {
+            if (typeof mudarAba === 'function') mudarAba(a);
+          }, aba);
+          await page.waitForTimeout(900);
+        }
+        // O healthService abre um confirm ("N transacoes sem backup") alguns
+        // segundos depois do boot. Numa captura de loja isso e um modal cinza
+        // cobrindo o app -- ja saiu assim numa geracao anterior. Limpar antes de
+        // cada disparo, e nao so no inicio, porque ele aparece com atraso.
+        await limparSobreposicoes(page);
+        await esperarValoresEstaveis(page);
+        await limparSobreposicoes(page);
+        var nome = 'screenshot-' + aba + '-' + device.sufixo + '.png';
+        var dest = path.join(playStoreDir, nome);
+        await shotPage(page, dest, device);
+        // screenshots/ alimenta o manifest.json do PWA; docs/play-store/ e a
+        // pasta que vai para o Play Console.
+        fs.copyFileSync(dest, path.join(screenshotsDir, aba + '-' + device.sufixo + '.png'));
+        console.log('✓ ' + nome);
       }
-    });
-    await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 60000 });
-    await page.waitForTimeout(1200);
-
-    await page.evaluate(function() {
-      if (typeof ONBOARDING !== 'undefined' && ONBOARDING.encerrar) ONBOARDING.encerrar();
-      var ov = document.getElementById('onboarding-overlay');
-      if (ov) ov.remove();
-      var auth = document.getElementById('auth-overlay');
-      if (auth) auth.style.display = 'none';
-      var style = document.createElement('style');
-      style.textContent = '*, *::before, *::after { animation: none !important; transition: none !important; }';
-      document.head.appendChild(style);
-    });
-
-    for (var i = 0; i < shots.length; i++) {
-      var shot = shots[i];
-      if (shot.aba !== 'resumo') {
-        await page.evaluate(function(aba) {
-          if (typeof mudarAba === 'function') mudarAba(aba);
-        }, shot.aba);
-        await page.waitForTimeout(900);
-      }
-      var dest = path.join(playStoreDir, shot.file);
-      await shotPage(page, dest);
-      fs.copyFileSync(dest, path.join(screenshotsDir, shot.alias));
-      console.log('✓ ' + shot.file);
+      await context.close();
     }
   } finally {
     await browser.close();

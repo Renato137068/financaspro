@@ -59,15 +59,39 @@
   <h2>7. Seus direitos (LGPD)</h2>
   <p>Você pode solicitar acesso, correção, portabilidade ou exclusão dos seus dados. Para dados apenas locais, use as funções de exportar e apagar em Perfil. Para dados de conta, use o app ou o e-mail de contato abaixo.</p>
 
-  <h2>8. Crianças</h2>
+  <!-- Secao com ancora propria (#exclusao-de-conta) porque o Google Play exige,
+       para apps que permitem criar conta, DOIS caminhos de exclusao: um dentro
+       do app e um endereco web publico, acessivel sem instalar o app, informado
+       no Play Console. O caminho no app ja existia (Perfil -> Zona de perigo, e
+       DELETE /api/v1/users/me na API); faltava a URL. Ao publicar esta pagina,
+       informe no Play Console:
+         https://SEU-DOMINIO/privacidade.html#exclusao-de-conta -->
+  <h2 id="exclusao-de-conta">8. Como excluir sua conta e seus dados</h2>
+  <p><strong>Pelo app:</strong> abra <em>Perfil → Zona de perigo → Excluir conta</em>. A
+  exclusão é imediata e não precisa de aprovação nossa.</p>
+  <p><strong>Sem o app instalado:</strong> envie um pedido para
+  <strong>privacidade@financaspro.com.br</strong> a partir do e-mail cadastrado na conta.
+  Respondemos em até 7 dias corridos e concluímos a exclusão em até 30 dias.</p>
+  <p><strong>O que é apagado:</strong> seus lançamentos, contas, orçamentos, metas, conexões
+  bancárias, sessões ativas e o cadastro (nome, e-mail e senha).</p>
+  <p><strong>O que é mantido, e por quê:</strong> registros de auditoria são
+  <em>anonimizados</em> — perdem o vínculo com você, mas permanecem pelo prazo da política de
+  retenção, porque são a prova de que as operações aconteceram. Registros fiscais de
+  pagamentos, quando existirem, são mantidos pelo prazo que a legislação exige.</p>
+  <p><strong>Dados que ficam só no aparelho</strong> não passam por nós: desinstalar o app
+  ou usar <em>Perfil → Apagar dados locais</em> remove tudo, sem pedido nenhum.</p>
+
+  <h2>9. Crianças</h2>
   <p>O app é destinado a maiores de 18 anos e não é direcionado a crianças.</p>
 
-  <h2>9. Alterações</h2>
+  <h2>10. Alterações</h2>
   <p>Podemos atualizar esta política. A data no topo indica a versão vigente.</p>
 
-  <h2>10. Contato</h2>
+  <h2>11. Contato</h2>
   <p>Dúvidas sobre privacidade ou solicitações sobre seus dados: <strong>privacidade@financaspro.com.br</strong>.</p>
 
-  <div class="box">Documento pronto para hospedagem pública (ex.: GitHub Pages ou seu domínio). Antes de publicar: confirme a data e, se necessário, ajuste o e-mail de contato no item 10.</div>
+  <div class="box">Documento pronto para hospedagem pública (ex.: GitHub Pages ou seu domínio). Antes de publicar: confirme a data e, se necessário, ajuste o e-mail de contato no item 11.
+  A URL com a âncora <code>#exclusao-de-conta</code> precisa ser informada no Play Console,
+  em Política → Segurança dos dados → Exclusão de conta.</div>
 </body>
 </html>

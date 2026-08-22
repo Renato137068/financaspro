@@ -213,7 +213,16 @@ button i[data-lucide] {
   /* ── Texto ───────────────────────────────────────────────── */
   --color-text-primary:   #1a2e23;
   --color-text-secondary: #4a6355;
-  --color-text-muted:     #5f7266;  /* AA: 5.1:1 s/ branco, 4.8:1 s/ fundo da página */
+  /* Escurecido de #5f7266 em 22/08/2026. O valor antigo passava sobre branco
+     (5,1:1) e sobre o fundo da pagina (4,8:1) -- que era o que o
+     check-contrast.cjs media -- mas falhava sobre as SUPERFICIES TINGIDAS onde o
+     texto secundario tambem aparece: chips como .ext-tx-meta-tag
+     (background: --color-bg-primary) e legendas sobre cards com tinta verde.
+     Ali o axe media 4,21:1 e 4,25:1, abaixo do minimo AA de 4,5. Quem mede a
+     pilha real de transparencias e o axe, no e2e/accessibility.spec.cjs; o
+     check-contrast.cjs ganhou os pares tingidos para pelo menos parar de
+     ignora-los em silencio. */
+  --color-text-muted:     #556759;  /* AA: 6.0:1 s/ branco, 5.3:1 s/ tinta, 5.7:1 s/ fundo da página */
   --color-text-inverse:   #ffffff;
 
   /* ── Borda ───────────────────────────────────────────────── */

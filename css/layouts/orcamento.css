@@ -126,6 +126,12 @@
 
 .orc-renda-input input {
   flex: 1;
+  /* Item flex nao encolhe abaixo do proprio tamanho intrinseco enquanto
+     min-width for `auto`, e um <input> tem largura intrinseca de cerca de 20
+     caracteres (~270px). Num telefone de 320px o pai tem 246px, entao o campo
+     vazava 27px para fora da tela -- e em 280px (Fold fechado), 75px. O
+     `flex: 1` nao resolve sozinho: e preciso soltar o piso. */
+  min-width: 0;
   padding: var(--space-4);
   border: 2px solid var(--color-border);
   border-radius: var(--radius-lg);

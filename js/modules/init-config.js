@@ -31,6 +31,43 @@ const INIT_CONFIG = {
     this._updateDynamicValues();
     this._bindEditarPerfilEvents();
     this._bindBancosEvents();
+    this.aplicarVisibilidadeNuvem();
+  },
+
+  /**
+   * Esconde as superficies que dependem de backend quando nao ha backend.
+   *
+   * O build Android do piloto roda em modo local: `_apiBaseUrl()` devolve string
+   * vazia e nada sobe para servidor nenhum. Mesmo assim a aba Perfil continuava
+   * oferecendo assinatura, Open Finance e verificacao em duas etapas -- recursos
+   * que so existem com nuvem.
+   *
+   * Isso nao era so ruido de interface. A folha de respostas do Data safety da
+   * Play Store declara, para o piloto, que o app NAO coleta nem compartilha
+   * dados; um app que oferece criacao de conta, cobranca e conexao bancaria
+   * contradiz essa declaracao, e a revisao do Google compara as duas coisas.
+   * Alem disso, exibir preco e botao de assinar dentro do app, levando a um
+   * checkout externo, e o padrao que a politica de pagamentos do Google proibe
+   * fora dos mercados onde o link externo foi liberado -- o Brasil nao esta
+   * entre eles.
+   *
+   * A condicao deriva de `DADOS._apiAtiva()` em vez de um flag proprio: assim
+   * nao ha um segundo interruptor para esquecer de virar. Configure
+   * `CONFIG.API_BASE_URL` e a nuvem reaparece sozinha.
+   */
+  aplicarVisibilidadeNuvem: function() {
+    var temNuvem = typeof DADOS !== 'undefined'
+      && typeof DADOS._apiAtiva === 'function'
+      && DADOS._apiAtiva();
+
+    var alvos = document.querySelectorAll('[data-requer-nuvem]');
+    for (var i = 0; i < alvos.length; i++) {
+      var el = alvos[i];
+      el.hidden = !temNuvem;
+      // `hidden` sozinho perde para qualquer `display` do CSS dos cards.
+      el.style.display = temNuvem ? '' : 'none';
+    }
+    return temNuvem;
   },
 
   /** Atualiza perfil + toggles (substitui renderConfigTab legado) */

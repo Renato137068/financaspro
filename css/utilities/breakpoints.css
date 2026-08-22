@@ -88,3 +88,37 @@
     display: block;
   }
 }
+
+/* ── Telas largas: parar de esticar o recheio ──────────────────────
+   Em tablet paisagem o app ja faz a parte dificil -- troca a barra inferior
+   por navegacao lateral e limita o conteudo a 1200px. O que faltava era o
+   micro: dentro dos cards, botoes de acao herdavam largura de telefone e
+   viravam faixas. Medido em 1280x800, botoes secundarios chegavam a 799px de
+   largura por 38px de altura, e "Nova conta" ocupava 1.240px para dizer duas
+   palavras.
+
+   O escopo e `#main-content` de proposito: modais e overlays sao filhos de
+   <body>, ficam de fora, e continuam podendo usar a largura toda. */
+@media (min-width: 900px) {
+  #main-content .btn-primario,
+  #main-content .btn-secundario {
+    max-width: 320px;
+  }
+
+  /* Botao que era o unico filho de um bloco ficava encostado a esquerda depois
+     do limite de largura. Centralizar mantem a relacao com o card. */
+  #main-content .btn-primario:only-child,
+  #main-content .btn-secundario:only-child {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Alvo de toque tambem em telas grandes: 38px de altura passava no mouse e
+     falhava no dedo, e tablet e um aparelho de toque. */
+  #main-content .btn-primario,
+  #main-content .btn-secundario {
+    min-height: 44px;
+  }
+}
+

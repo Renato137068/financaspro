@@ -166,7 +166,8 @@ const INIT_NAVIGATION = {
         if (typeof CONFIG_USER !== 'undefined' && CONFIG_USER.limparDados) {
           CONFIG_USER.limparDados();
         }
-      }
+      },
+      'excluir-conta': function() { self.excluirConta(); }
     };
 
     if (actions[action]) {
@@ -174,6 +175,47 @@ const INIT_NAVIGATION = {
     } else {
       console.warn('[INIT_NAVIGATION] Ação desconhecida:', action);
     }
+  },
+
+  /**
+   * Exclui a conta na nuvem — LGPD art. 18, VI e exigencia do Google Play.
+   *
+   * A API ja fazia o trabalho pesado (anonimiza o log de auditoria na mesma
+   * transacao em que apaga o usuario). Faltava o caminho dentro do app: sem ele
+   * o unico jeito era pedir por e-mail, e o Play recusa apps com criacao de
+   * conta que nao oferecem exclusao in-app.
+   *
+   * Dupla confirmacao de proposito: e destrutivo, definitivo e nao tem desfazer.
+   * Os dados locais ficam — apagar tudo de uma vez surpreenderia quem so queria
+   * sair da nuvem e continuar usando offline. Quem quiser os dois usa tambem
+   * "Apagar todos os dados".
+   */
+  excluirConta: function() {
+    if (typeof DADOS === 'undefined' || !DADOS._apiAtiva()) return;
+
+    var confirmar = (typeof INIT_MODALS !== 'undefined' && INIT_MODALS.confirm)
+      ? INIT_MODALS.confirm.bind(INIT_MODALS)
+      : function(msg, ok) { if (window.confirm(msg)) ok(); };
+
+    confirmar(
+      'Excluir sua conta apaga da nuvem seus lançamentos, contas, orçamentos e o cadastro. '
+      + 'Não há como desfazer. Os dados salvos neste aparelho continuam aqui.',
+      function() {
+        confirmar('Confirma a exclusão definitiva da conta?', function() {
+          DADOS._apiFetch('/api/v1/users/me', { method: 'DELETE' })
+            .then(function() {
+              DADOS.encerrarSessao();
+              UTILS.mostrarToast('Conta excluída', 'info');
+              if (typeof INIT_CONFIG !== 'undefined' && INIT_CONFIG.refreshPerfil) {
+                INIT_CONFIG.refreshPerfil();
+              }
+            })
+            .catch(function() {
+              UTILS.mostrarToast('Não foi possível excluir agora. Tente de novo.', 'error');
+            });
+        });
+      },
+    );
   },
 
   /**

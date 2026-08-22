@@ -53,6 +53,17 @@ const INIT_BILLING = {
 
   abrirPaywall: function(contextMsg) {
     var self = this;
+
+    // Sem backend nao ha o que assinar, e mostrar preco com botao "Assinar"
+    // dentro do app Android e justamente o que a politica de pagamentos do
+    // Google proibe onde o link externo nao foi liberado. Guarda de profundidade:
+    // a entrada pela aba Perfil ja some por data-requer-nuvem, mas ocr.js e
+    // previsao.js tambem chamam este metodo.
+    if (typeof DADOS !== 'undefined' && typeof DADOS._apiAtiva === 'function'
+        && !DADOS._apiAtiva()) {
+      return;
+    }
+
     this._fecharPaywall();
 
     var ov = document.createElement('div');
@@ -70,7 +81,7 @@ const INIT_BILLING = {
         '</div>' +
         '<div class="billing-interval" role="group" aria-label="Periodicidade">' +
           '<button type="button" class="billing-interval-btn ativo" data-action="billing-interval" data-interval="monthly">Mensal</button>' +
-          '<button type="button" class="billing-interval-btn" data-action="billing-interval" data-interval="yearly">Anual <span class="billing-save">−17%</span></button>' +
+          '<button type="button" class="billing-interval-btn" data-action="billing-interval" data-interval="yearly">Anual <span class="billing-save" id="billing-save-badge" hidden></span></button>' +
         '</div>' +
         '<div class="billing-plans" id="billing-plans"><p class="billing-loading">Carregando planos…</p></div>' +
         '<div class="billing-footer" id="billing-footer"></div>' +
@@ -120,6 +131,42 @@ const INIT_BILLING = {
     this._renderPlans(ov);
   },
 
+  /**
+   * Desconto do plano anual sobre 12 meses, em pontos percentuais inteiros.
+   *
+   * O selo era fixo em "-17%" no seletor de periodicidade. Batia com o Business
+   * (12 x 99,90 = 1.198,80 contra 999,00) e errava no Pro, que estava a 119,00
+   * sobre 12 x 16,90 = 202,80, ou seja 41% -- o app anunciava menos desconto do
+   * que dava, justamente no plano de volume. Calcular por plano faz o numero
+   * seguir o preco, em vez de o preco precisar lembrar do numero.
+   *
+   * @returns {number|null} null quando o plano nao tem os dois precos
+   */
+  _descontoAnual: function(plan) {
+    if (!plan) return null;
+    var mensal = Number(plan.priceMonthly);
+    var anual = Number(plan.priceYearly);
+    if (!isFinite(mensal) || !isFinite(anual) || mensal <= 0 || anual <= 0) return null;
+    var cheio = mensal * 12;
+    if (anual >= cheio) return null;
+    return Math.round((1 - anual / cheio) * 100);
+  },
+
+  /** Maior desconto anual entre os planos pagos, para o selo do seletor. */
+  _atualizarSeloAnual: function(ov, plans) {
+    var selo = ov.querySelector('#billing-save-badge');
+    if (!selo) return;
+    var self = this;
+    var maior = 0;
+    (plans || []).forEach(function(plan) {
+      var d = self._descontoAnual(plan);
+      if (d && d > maior) maior = d;
+    });
+    if (!maior) { selo.hidden = true; return; }
+    selo.textContent = '−' + maior + '%';
+    selo.hidden = false;
+  },
+
   _renderPlans: function(ov) {
     var self = this;
     var container = ov.querySelector('#billing-plans');
@@ -134,11 +181,14 @@ const INIT_BILLING = {
         var priceLabel = price > 0
           ? 'R$ ' + Number(price).toFixed(2).replace('.', ',') + (self._interval === 'yearly' ? '/ano' : '/mês')
           : 'Grátis';
+        var desconto = self._interval === 'yearly' ? self._descontoAnual(plan) : null;
         var isCurrent = tierAtual === plan.tier;
         var features = Array.isArray(plan.features) ? plan.features : [];
         html += '<article class="billing-plan' + (plan.tier === 'PRO' ? ' billing-plan--featured' : '') + (isCurrent ? ' billing-plan--current' : '') + '">' +
           '<h3>' + UTILS.escapeHtml(plan.name || plan.tier) + '</h3>' +
-          '<p class="billing-plan-price">' + UTILS.escapeHtml(priceLabel) + '</p>' +
+          '<p class="billing-plan-price">' + UTILS.escapeHtml(priceLabel) +
+            (desconto ? ' <span class="billing-plan-save">economize ' + desconto + '%</span>' : '') +
+          '</p>' +
           '<ul class="billing-plan-features">' +
             features.map(function(frozen) {
               return '<li><i data-lucide="check" aria-hidden="true"></i> ' + UTILS.escapeHtml(frozen) + '</li>';
@@ -152,6 +202,7 @@ const INIT_BILLING = {
         '</article>';
       });
       container.innerHTML = html || '<p class="billing-empty">Nenhum plano pago disponível no momento.</p>';
+      self._atualizarSeloAnual(ov, plans);
       if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(container);
     };
 

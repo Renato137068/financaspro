@@ -51,7 +51,7 @@ var BILLING = {
       tier: 'PRO',
       name: 'Pro',
       priceMonthly: 16.9,
-      priceYearly: 119,
+      priceYearly: 169,
       features: [
         'Transações ilimitadas',
         'IA e previsão financeira',
