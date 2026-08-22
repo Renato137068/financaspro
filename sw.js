@@ -18,6 +18,7 @@ const urlsParaCache = [
   "/css/features/assinaturas.css",
   "/css/features/auth.css",
   "/css/features/billing.css",
+  "/css/features/brand.css",
   "/css/features/contas-pagar.css",
   "/css/features/form-novo.css",
   "/css/features/ia.css",
@@ -28,6 +29,7 @@ const urlsParaCache = [
   "/css/features/premium.css",
   "/css/features/relatorios.css",
   "/css/features/skeleton.css",
+  "/css/fonts.css",
   "/css/layouts/config.css",
   "/css/layouts/dashboard.css",
   "/css/layouts/extrato.css",
@@ -40,6 +42,10 @@ const urlsParaCache = [
   "/css/utilities/performance.css",
   "/css/utilities/responsive.css",
   "/css/utilities/ux-polish.css",
+  "/fonts/inter-latin-400-normal.woff2",
+  "/fonts/inter-latin-600-normal.woff2",
+  "/fonts/inter-latin-700-normal.woff2",
+  "/fonts/plus-jakarta-sans-latin-700-normal.woff2",
   "/icons/android/icon-192.png",
   "/icons/android/icon-512.png",
   "/icons/logo.svg",
@@ -55,6 +61,7 @@ const urlsParaCache = [
   "/js/automacao.js",
   "/js/billing.js",
   "/js/capacitor-init.js",
+  "/js/cartoes.js",
   "/js/categories.js",
   "/js/categorizador.js",
   "/js/components/AlertaCard.js",
@@ -68,6 +75,7 @@ const urlsParaCache = [
   "/js/components/LegendaChart.js",
   "/js/components/ProgressBar.js",
   "/js/components/_base.js",
+  "/js/compromissos.js",
   "/js/config-user.js",
   "/js/contas-pagar.js",
   "/js/contas.js",
@@ -77,8 +85,14 @@ const urlsParaCache = [
   "/js/core/domUtils.js",
   "/js/core/event-bus.js",
   "/js/core/events-catalog.js",
+  "/js/core/finance-contract.js",
+  "/js/core/lazy-load.js",
   "/js/core/lifecycle.js",
+  "/js/core/password-policy.js",
+  "/js/core/setup-guide.js",
   "/js/core/store.js",
+  "/js/core/sync-engine.js",
+  "/js/core/sync-merge.js",
   "/js/core/utils.js",
   "/js/core/validations.js",
   "/js/init.js",
@@ -111,6 +125,7 @@ const urlsParaCache = [
   "/js/pin.js",
   "/js/pipeline.js",
   "/js/previsao.js",
+  "/js/recorrentes.js",
   "/js/relatorios.js",
   "/js/render-core.js",
   "/js/render-dashboard.js",
@@ -128,14 +143,35 @@ const urlsParaCache = [
   "/js/utilities/daily-reminder.js",
   "/js/utilities/focus-trap.js",
   "/js/utilities/local-crypto.js",
+  "/js/utilities/observability.js",
+  "/js/utilities/sync-indicator.js",
   "/js/vendor/lucide.min.js",
   "/manifest.json",
   "/privacidade.html"
 ];
 
+// cache.addAll é tudo-ou-nada: uma única URL com 404 rejeita a operação
+// inteira. Com um catch vazio, o install ainda assim é dado como bem-sucedido
+// — o service worker ativa, o app anuncia que funciona offline, e o cache está
+// VAZIO. É a pior falha possível num app offline-first, porque ela mente.
+// Aqui cada item é buscado por conta própria: o que falhar fica de fora e é
+// reportado, o resto entra. O app degrada em vez de enganar.
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsParaCache).catch(() => {})),
+    caches.open(CACHE_NAME).then((cache) => Promise.allSettled(
+      urlsParaCache.map((url) => cache.add(new Request(url, { cache: 'reload' }))),
+    )).then((r) => {
+      const falhas = [];
+      r.forEach((res, i) => { if (res.status === 'rejected') falhas.push(urlsParaCache[i]); });
+      if (falhas.length) {
+        console.error('[sw] precache incompleto —', falhas.length, 'de', urlsParaCache.length, 'falharam:', falhas);
+      }
+      // Se NADA entrou no cache, não há offline nenhum: falhar o install
+      // impede que este SW assuma e passe a servir um cache vazio.
+      if (falhas.length === urlsParaCache.length) {
+        throw new Error('[sw] precache falhou por completo — install abortado');
+      }
+    }),
   );
 });
 

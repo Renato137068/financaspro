@@ -69,16 +69,16 @@ describe('DADOS.aplicarCriptografia — migração segura', function() {
     expect(!!(global.crypto && global.crypto.subtle)).toBe(true);
   });
 
-  test('ligar cifra os dados existentes (enc2) e mantém legíveis via decrypt', async function() {
+  test('ligar cifra os dados existentes (enc3) e mantém legíveis via decrypt', async function() {
     global.localStorage.setItem('fp-transacoes', TX);
     global.localStorage.setItem('fp-config', CFG);
 
     const enabled = await global.DADOS.aplicarCriptografia(true);
     expect(enabled).toBe(true);
 
-    // Armazenado cifrado
-    expect(global.localStorage.getItem('fp-transacoes').indexOf('enc2:')).toBe(0);
-    expect(global.localStorage.getItem('fp-config').indexOf('enc2:')).toBe(0);
+    // Armazenado cifrado, no formato ATUAL (600k iterações de PBKDF2)
+    expect(global.localStorage.getItem('fp-transacoes').indexOf('enc3:')).toBe(0);
+    expect(global.localStorage.getItem('fp-config').indexOf('enc3:')).toBe(0);
 
     // Decifra de volta ao original
     expect(await global.LOCAL_CRYPTO.decrypt(global.localStorage.getItem('fp-transacoes'))).toBe(TX);
@@ -88,7 +88,7 @@ describe('DADOS.aplicarCriptografia — migração segura', function() {
   test('desligar decifra de volta para texto puro (sem perder dados)', async function() {
     global.localStorage.setItem('fp-transacoes', TX);
     await global.DADOS.aplicarCriptografia(true);
-    expect(global.localStorage.getItem('fp-transacoes').indexOf('enc2:')).toBe(0);
+    expect(global.localStorage.getItem('fp-transacoes').indexOf('enc3:')).toBe(0);
 
     const disabled = await global.DADOS.aplicarCriptografia(false);
     expect(disabled).toBe(false);
@@ -115,5 +115,37 @@ describe('DADOS.aplicarCriptografia — migração segura', function() {
     global.DADOS._plainCache['fp-transacoes'] = 'valor-velho';
     await global.DADOS.aplicarCriptografia(true);
     expect(global.DADOS._plainCache['fp-transacoes']).toBeUndefined();
+  });
+  /**
+   * O ponto que torna a mudança de 100k para 600k iterações segura: um valor
+   * já gravado como enc2 PRECISA continuar legível. Sem este teste, subir as
+   * iterações "no lugar" tornaria ilegível todo dado de quem tinha a cifragem
+   * ligada — perda silenciosa, descoberta só pelo usuário.
+   */
+  test('dado antigo em enc2 (100k) continua legível depois da subida para enc3', async function() {
+    const LC = global.LOCAL_CRYPTO;
+    LC.setEnabled(true);
+
+    // Cifra manualmente no formato antigo, usando a MESMA rotina de derivação
+    // com a versão enc2 — é exatamente o que a versão anterior gravava.
+    const iv = global.crypto.getRandomValues(new Uint8Array(12));
+    const key = await LC._deriveKey('enc2');
+    const buf = await global.crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv: iv }, key, new TextEncoder().encode(TX),
+    );
+    const hex = function(bytes) {
+      return Array.from(bytes).map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+    };
+    const antigo = 'enc2:' + hex(iv) + ':' + hex(new Uint8Array(buf));
+
+    expect(LC.isEncrypted(antigo)).toBe(true);
+    expect(await LC.decrypt(antigo)).toBe(TX);
+  });
+
+  test('encrypt sempre grava na versão atual, nunca na antiga', async function() {
+    global.LOCAL_CRYPTO.setEnabled(true);
+    const cifrado = await global.LOCAL_CRYPTO.encrypt(TX);
+    expect(cifrado.indexOf('enc3:')).toBe(0);
+    expect(await global.LOCAL_CRYPTO.decrypt(cifrado)).toBe(TX);
   });
 });

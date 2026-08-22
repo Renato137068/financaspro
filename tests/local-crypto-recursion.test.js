@@ -65,9 +65,10 @@ describe('LOCAL_CRYPTO — flag em chave plana (sem recursão)', function() {
     }
   });
 
-  test('isEncrypted detecta enc1 e enc2 (versões suportadas pelo decrypt)', function() {
+  test('isEncrypted detecta enc1, enc2 e enc3 (versões suportadas pelo decrypt)', function() {
     expect(LOCAL_CRYPTO.isEncrypted('enc1:abc:def')).toBe(true);
     expect(LOCAL_CRYPTO.isEncrypted('enc2:abc:def')).toBe(true);
+    expect(LOCAL_CRYPTO.isEncrypted('enc3:abc:def')).toBe(true);
     expect(LOCAL_CRYPTO.isEncrypted('{"nome":"texto puro"}')).toBe(false);
     expect(LOCAL_CRYPTO.isEncrypted('')).toBe(false);
     expect(LOCAL_CRYPTO.isEncrypted(null)).toBe(false);

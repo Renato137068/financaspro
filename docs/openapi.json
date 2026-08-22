@@ -42,6 +42,26 @@
       "description": "Recorrências"
     },
     {
+      "name": "Usuários",
+      "description": "Perfil, configuração e direitos de LGPD"
+    },
+    {
+      "name": "Sync",
+      "description": "Delta, outbox e estado agregado"
+    },
+    {
+      "name": "Orgs",
+      "description": "Organizações, membros e convites"
+    },
+    {
+      "name": "Billing",
+      "description": "Planos, assinatura e faturas (Stripe)"
+    },
+    {
+      "name": "Open Finance",
+      "description": "Conexões bancárias e importação"
+    },
+    {
       "name": "Ops",
       "description": "Saúde e observabilidade"
     }
@@ -230,11 +250,13 @@
                     "type": "string",
                     "enum": [
                       "receita",
-                      "despesa"
+                      "despesa",
+                      "transferencia"
                     ]
                   },
                   "amount": {
                     "type": "number",
+                    "maximum": 999999999999.99,
                     "exclusiveMinimum": 0
                   },
                   "description": {
@@ -256,6 +278,11 @@
                     "format": "date-time"
                   },
                   "accountId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "nullable": true
+                  },
+                  "targetAccountId": {
                     "type": "string",
                     "format": "uuid",
                     "nullable": true
@@ -347,11 +374,13 @@
                     "type": "string",
                     "enum": [
                       "receita",
-                      "despesa"
+                      "despesa",
+                      "transferencia"
                     ]
                   },
                   "amount": {
                     "type": "number",
+                    "maximum": 999999999999.99,
                     "exclusiveMinimum": 0
                   },
                   "description": {
@@ -373,6 +402,11 @@
                     "format": "date-time"
                   },
                   "accountId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "nullable": true
+                  },
+                  "targetAccountId": {
                     "type": "string",
                     "format": "uuid",
                     "nullable": true
@@ -968,9 +1002,758 @@
         ]
       }
     },
+    "/auth/forgot-password": {
+      "post": {
+        "summary": "Solicitar link de redefinição de senha",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/reset-password": {
+      "post": {
+        "summary": "Redefinir senha com o token recebido por e-mail",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/verify-email": {
+      "post": {
+        "summary": "Confirmar endereço de e-mail",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/resend-verification": {
+      "post": {
+        "summary": "Reenviar e-mail de verificação",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/totp/verify": {
+      "post": {
+        "summary": "Concluir login enviando o código de 2FA",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/totp/status": {
+      "get": {
+        "summary": "Saber se o 2FA está ativo",
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/auth/totp/disable": {
+      "post": {
+        "summary": "Desativar 2FA",
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/users": {
+      "get": {
+        "summary": "Listar usuários (ADMIN)",
+        "tags": [
+          "Usuários"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/users/me": {
+      "get": {
+        "summary": "Perfil do usuário autenticado",
+        "tags": [
+          "Usuários"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "summary": "Atualizar nome e preferências do perfil",
+        "tags": [
+          "Usuários"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Excluir a conta (LGPD art. 18, VI) — anonimiza o log de auditoria",
+        "tags": [
+          "Usuários"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/users/me/config": {
+      "get": {
+        "summary": "Ler a configuração do app",
+        "tags": [
+          "Usuários"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "Gravar a configuração do app",
+        "tags": [
+          "Usuários"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/users/me/password": {
+      "post": {
+        "summary": "Trocar a própria senha",
+        "tags": [
+          "Usuários"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/users/me/export": {
+      "get": {
+        "summary": "Exportar todos os dados pessoais em JSON (LGPD art. 18, V)",
+        "tags": [
+          "Usuários"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/users/{id}": {
+      "patch": {
+        "summary": "Alterar papel ou situação de um usuário (ADMIN)",
+        "tags": [
+          "Usuários"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/state": {
+      "get": {
+        "summary": "Estado consolidado do usuário para hidratar o app",
+        "tags": [
+          "Sync"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/sync": {
+      "get": {
+        "summary": "Delta desde um cursor — devolve alterações e tombstones",
+        "tags": [
+          "Sync"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Enviar o lote da outbox; resolve conflitos e devolve o veredito por operação",
+        "tags": [
+          "Sync"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/orgs": {
+      "get": {
+        "summary": "Listar organizações de que o usuário participa",
+        "tags": [
+          "Orgs"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Criar organização",
+        "tags": [
+          "Orgs"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/orgs/{orgId}": {
+      "get": {
+        "summary": "Detalhes da organização",
+        "tags": [
+          "Orgs"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "orgId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      },
+      "patch": {
+        "summary": "Atualizar a organização (papel mínimo: ADMIN)",
+        "tags": [
+          "Orgs"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "orgId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Excluir a organização (apenas o dono)",
+        "tags": [
+          "Orgs"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "orgId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/orgs/{orgId}/invite": {
+      "post": {
+        "summary": "Convidar alguém — respeita o limite de assentos do plano",
+        "tags": [
+          "Orgs"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "orgId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/orgs/{orgId}/invitations": {
+      "get": {
+        "summary": "Listar convites pendentes",
+        "tags": [
+          "Orgs"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "orgId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/orgs/invitations/{token}/accept": {
+      "post": {
+        "summary": "Aceitar um convite",
+        "tags": [
+          "Orgs"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        ]
+      }
+    },
+    "/orgs/{orgId}/members/{userId}": {
+      "patch": {
+        "summary": "Mudar o papel de um membro",
+        "tags": [
+          "Orgs"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "orgId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Remover um membro",
+        "tags": [
+          "Orgs"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "orgId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/orgs/{orgId}/members/{userId}/transfer-ownership": {
+      "post": {
+        "summary": "Transferir a propriedade da organização",
+        "tags": [
+          "Orgs"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "orgId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/billing/plans": {
+      "get": {
+        "summary": "Planos disponíveis e seus limites",
+        "tags": [
+          "Billing"
+        ]
+      }
+    },
+    "/billing/{orgId}/subscription": {
+      "get": {
+        "summary": "Assinatura atual da organização",
+        "tags": [
+          "Billing"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "orgId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/billing/{orgId}/subscribe": {
+      "post": {
+        "summary": "Assinar um plano",
+        "tags": [
+          "Billing"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "orgId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/billing/{orgId}/checkout": {
+      "post": {
+        "summary": "Abrir sessão de checkout do Stripe",
+        "tags": [
+          "Billing"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "orgId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/billing/{orgId}/portal": {
+      "post": {
+        "summary": "Abrir o portal de cobrança do Stripe",
+        "tags": [
+          "Billing"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "orgId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/billing/{orgId}/cancel": {
+      "post": {
+        "summary": "Cancelar ao fim do período vigente",
+        "tags": [
+          "Billing"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "orgId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/billing/{orgId}/invoices": {
+      "get": {
+        "summary": "Faturas emitidas",
+        "tags": [
+          "Billing"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "orgId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/open-finance/providers": {
+      "get": {
+        "summary": "Provedores disponíveis (Belvo, sandbox)",
+        "tags": [
+          "Open Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/open-finance/connections": {
+      "get": {
+        "summary": "Conexões bancárias do usuário",
+        "tags": [
+          "Open Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Criar conexão bancária",
+        "tags": [
+          "Open Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/open-finance/connections/{id}": {
+      "delete": {
+        "summary": "Remover conexão bancária",
+        "tags": [
+          "Open Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/open-finance/connections/{id}/sync": {
+      "post": {
+        "summary": "Importar lançamentos — deduplica por openFinanceId",
+        "tags": [
+          "Open Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/open-finance/belvo/widget-token": {
+      "post": {
+        "summary": "Token de acesso ao widget da Belvo",
+        "tags": [
+          "Open Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/open-finance/belvo/complete": {
+      "post": {
+        "summary": "Concluir o vínculo após o widget",
+        "tags": [
+          "Open Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/health": {
       "get": {
-        "summary": "Health check (db, redis, workers)",
+        "summary": "Health check (db, redis, workers, lag do event loop)",
         "tags": [
           "Ops"
         ]
@@ -979,6 +1762,19 @@
     "/metrics": {
       "get": {
         "summary": "Métricas Prometheus (requer METRICS_TOKEN)",
+        "tags": [
+          "Ops"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/metrics.json": {
+      "get": {
+        "summary": "As mesmas métricas em JSON",
         "tags": [
           "Ops"
         ],

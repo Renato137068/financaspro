@@ -122,6 +122,9 @@ function crud(tag, name, createSchema, patchSchema) {
 }
 
 const idParam = { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } };
+const orgIdParam = { name: 'orgId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } };
+const userIdParam = { name: 'userId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } };
+const tokenParam = { name: 'token', in: 'path', required: true, schema: { type: 'string', pattern: '^[0-9a-f]{64}$' } };
 function body(schema) {
   return { required: true, content: { 'application/json': { schema: zodToJson(schema) } } };
 }
@@ -138,8 +141,81 @@ const paths = {
   ...crud('accounts', 'accounts', accountSchema, accountSchema.partial()),
   ...crud('budgets', 'budgets', budgetSchema, budgetSchema.partial()),
   ...crud('recorrentes', 'recorrentes', recurringSchema, recurringSchema.partial()),
-  '/health': { get: { ...P('Health check (db, redis, workers)'), tags: ['Ops'] } },
+
+  // ─── Auth: recuperação de senha e verificação de e-mail ────────────────────
+  '/auth/forgot-password': { post: { ...P('Solicitar link de redefinição de senha'), tags: ['Auth'] } },
+  '/auth/reset-password': { post: { ...P('Redefinir senha com o token recebido por e-mail'), tags: ['Auth'] } },
+  '/auth/verify-email': { post: { ...P('Confirmar endereço de e-mail'), tags: ['Auth'] } },
+  '/auth/resend-verification': { post: { ...P('Reenviar e-mail de verificação'), tags: ['Auth'] } },
+  '/auth/totp/verify': { post: { ...P('Concluir login enviando o código de 2FA'), tags: ['Auth'] } },
+  '/auth/totp/status': { get: { ...P('Saber se o 2FA está ativo'), tags: ['Auth'], security: bearer } },
+  '/auth/totp/disable': { post: { ...P('Desativar 2FA'), tags: ['Auth'], security: bearer } },
+
+  // ─── Usuário: perfil, configuração e direitos de LGPD ──────────────────────
+  '/users': { get: { ...P('Listar usuários (ADMIN)'), tags: ['Usuários'], security: bearer } },
+  '/users/me': {
+    get: { ...P('Perfil do usuário autenticado'), tags: ['Usuários'], security: bearer },
+    patch: { ...P('Atualizar nome e preferências do perfil'), tags: ['Usuários'], security: bearer },
+    delete: { ...P('Excluir a conta (LGPD art. 18, VI) — anonimiza o log de auditoria'), tags: ['Usuários'], security: bearer },
+  },
+  '/users/me/config': {
+    get: { ...P('Ler a configuração do app'), tags: ['Usuários'], security: bearer },
+    put: { ...P('Gravar a configuração do app'), tags: ['Usuários'], security: bearer },
+  },
+  '/users/me/password': { post: { ...P('Trocar a própria senha'), tags: ['Usuários'], security: bearer } },
+  '/users/me/export': { get: { ...P('Exportar todos os dados pessoais em JSON (LGPD art. 18, V)'), tags: ['Usuários'], security: bearer } },
+  '/users/{id}': { patch: { ...P('Alterar papel ou situação de um usuário (ADMIN)'), tags: ['Usuários'], security: bearer, parameters: [idParam] } },
+
+  // ─── Sincronização e estado agregado ──────────────────────────────────────
+  '/state': { get: { ...P('Estado consolidado do usuário para hidratar o app'), tags: ['Sync'], security: bearer } },
+  '/sync': {
+    get: { ...P('Delta desde um cursor — devolve alterações e tombstones'), tags: ['Sync'], security: bearer },
+    post: { ...P('Enviar o lote da outbox; resolve conflitos e devolve o veredito por operação'), tags: ['Sync'], security: bearer },
+  },
+
+  // ─── Organizações (multi-tenant) ──────────────────────────────────────────
+  '/orgs': {
+    get: { ...P('Listar organizações de que o usuário participa'), tags: ['Orgs'], security: bearer },
+    post: { ...P('Criar organização'), tags: ['Orgs'], security: bearer },
+  },
+  '/orgs/{orgId}': {
+    get: { ...P('Detalhes da organização'), tags: ['Orgs'], security: bearer, parameters: [orgIdParam] },
+    patch: { ...P('Atualizar a organização (papel mínimo: ADMIN)'), tags: ['Orgs'], security: bearer, parameters: [orgIdParam] },
+    delete: { ...P('Excluir a organização (apenas o dono)'), tags: ['Orgs'], security: bearer, parameters: [orgIdParam] },
+  },
+  '/orgs/{orgId}/invite': { post: { ...P('Convidar alguém — respeita o limite de assentos do plano'), tags: ['Orgs'], security: bearer, parameters: [orgIdParam] } },
+  '/orgs/{orgId}/invitations': { get: { ...P('Listar convites pendentes'), tags: ['Orgs'], security: bearer, parameters: [orgIdParam] } },
+  '/orgs/invitations/{token}/accept': { post: { ...P('Aceitar um convite'), tags: ['Orgs'], security: bearer, parameters: [tokenParam] } },
+  '/orgs/{orgId}/members/{userId}': {
+    patch: { ...P('Mudar o papel de um membro'), tags: ['Orgs'], security: bearer, parameters: [orgIdParam, userIdParam] },
+    delete: { ...P('Remover um membro'), tags: ['Orgs'], security: bearer, parameters: [orgIdParam, userIdParam] },
+  },
+  '/orgs/{orgId}/members/{userId}/transfer-ownership': { post: { ...P('Transferir a propriedade da organização'), tags: ['Orgs'], security: bearer, parameters: [orgIdParam, userIdParam] } },
+
+  // ─── Billing (Stripe) ─────────────────────────────────────────────────────
+  '/billing/plans': { get: { ...P('Planos disponíveis e seus limites'), tags: ['Billing'] } },
+  '/billing/{orgId}/subscription': { get: { ...P('Assinatura atual da organização'), tags: ['Billing'], security: bearer, parameters: [orgIdParam] } },
+  '/billing/{orgId}/subscribe': { post: { ...P('Assinar um plano'), tags: ['Billing'], security: bearer, parameters: [orgIdParam] } },
+  '/billing/{orgId}/checkout': { post: { ...P('Abrir sessão de checkout do Stripe'), tags: ['Billing'], security: bearer, parameters: [orgIdParam] } },
+  '/billing/{orgId}/portal': { post: { ...P('Abrir o portal de cobrança do Stripe'), tags: ['Billing'], security: bearer, parameters: [orgIdParam] } },
+  '/billing/{orgId}/cancel': { post: { ...P('Cancelar ao fim do período vigente'), tags: ['Billing'], security: bearer, parameters: [orgIdParam] } },
+  '/billing/{orgId}/invoices': { get: { ...P('Faturas emitidas'), tags: ['Billing'], security: bearer, parameters: [orgIdParam] } },
+
+  // ─── Open Finance ─────────────────────────────────────────────────────────
+  '/open-finance/providers': { get: { ...P('Provedores disponíveis (Belvo, sandbox)'), tags: ['Open Finance'], security: bearer } },
+  '/open-finance/connections': {
+    get: { ...P('Conexões bancárias do usuário'), tags: ['Open Finance'], security: bearer },
+    post: { ...P('Criar conexão bancária'), tags: ['Open Finance'], security: bearer },
+  },
+  '/open-finance/connections/{id}': { delete: { ...P('Remover conexão bancária'), tags: ['Open Finance'], security: bearer, parameters: [idParam] } },
+  '/open-finance/connections/{id}/sync': { post: { ...P('Importar lançamentos — deduplica por openFinanceId'), tags: ['Open Finance'], security: bearer, parameters: [idParam] } },
+  '/open-finance/belvo/widget-token': { post: { ...P('Token de acesso ao widget da Belvo'), tags: ['Open Finance'], security: bearer } },
+  '/open-finance/belvo/complete': { post: { ...P('Concluir o vínculo após o widget'), tags: ['Open Finance'], security: bearer } },
+
+  // ─── Operação ─────────────────────────────────────────────────────────────
+  '/health': { get: { ...P('Health check (db, redis, workers, lag do event loop)'), tags: ['Ops'] } },
   '/metrics': { get: { ...P('Métricas Prometheus (requer METRICS_TOKEN)'), tags: ['Ops'], security: bearer } },
+  '/metrics.json': { get: { ...P('As mesmas métricas em JSON'), tags: ['Ops'], security: bearer } },
 };
 
 // Adiciona paginação como query params nas listagens
@@ -168,6 +244,11 @@ const doc = {
     { name: 'accounts', description: 'Contas' },
     { name: 'budgets', description: 'Orçamentos' },
     { name: 'recorrentes', description: 'Recorrências' },
+    { name: 'Usuários', description: 'Perfil, configuração e direitos de LGPD' },
+    { name: 'Sync', description: 'Delta, outbox e estado agregado' },
+    { name: 'Orgs', description: 'Organizações, membros e convites' },
+    { name: 'Billing', description: 'Planos, assinatura e faturas (Stripe)' },
+    { name: 'Open Finance', description: 'Conexões bancárias e importação' },
     { name: 'Ops', description: 'Saúde e observabilidade' },
   ],
   paths,

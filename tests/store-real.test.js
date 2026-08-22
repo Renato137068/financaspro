@@ -240,3 +240,119 @@ describe('APP_STATE — adaptador de compatibilidade', function() {
     expect(function() { global.APP_STATE.hydrateFromDados(); }).not.toThrow();
   });
 });
+
+/**
+ * O indicador de sincronização lê `sync.outboxCount` e `sync.conflicts` para
+ * dizer ao usuário quantos lançamentos ainda não subiram. Sem teste, um erro
+ * de path nesses setters faz o indicador mentir "tudo sincronizado" com a
+ * outbox cheia — e o usuário fecha o app confiando nisso.
+ */
+describe('APP_STORE.sync — contadores da outbox', function() {
+  test('setOutboxCount reflete em getStatus e não persiste', function() {
+    S().sync.setOutboxCount(7);
+    expect(S().sync.getStatus().outboxCount).toBe(7);
+    // sync é estado de sessão: persistir faria o contador sobreviver a um
+    // reload com a outbox já drenada, e o app mostraria pendências que já
+    // subiram. O que é gravado no storage só pode conter `ui`.
+    const salvo = global.localStorage.getItem('fp-store-v2');
+    if (salvo) expect(JSON.parse(salvo).sync).toBeUndefined();
+  });
+
+  test('setConflicts guarda a lista recebida', function() {
+    const conflitos = [{ opId: '1', motivo: 'server-wins' }];
+    S().sync.setConflicts(conflitos);
+    expect(S().sync.getStatus().conflicts).toEqual(conflitos);
+  });
+
+  test('setConflicts com null vira lista vazia, nunca null', function() {
+    // Quem renderiza faz .length direto; um null aqui quebraria a tela.
+    S().sync.setConflicts(null);
+    expect(S().sync.getStatus().conflicts).toEqual([]);
+    S().sync.setConflicts(undefined);
+    expect(S().sync.getStatus().conflicts).toEqual([]);
+  });
+
+  test('setOutboxCount notifica quem assina o caminho', function() {
+    const vistos = [];
+    S().subscribe('sync.outboxCount', function(v) { vistos.push(v); });
+    S().sync.setOutboxCount(3);
+    expect(vistos).toContain(3);
+  });
+});
+
+describe('APP_STORE.init', function() {
+  afterEach(function() { S().stopAutoSave(); });
+
+  test('init carrega a UI persistida e liga o auto-save uma única vez', function() {
+    const S0 = S();
+    S0._initialized = false;
+    S0.stopAutoSave();
+
+    global.localStorage.setItem('fp-store-v2', JSON.stringify({
+      ui: { abaAtiva: 'metas' }, timestamp: Date.now(),
+    }));
+    S0.init();
+
+    expect(S0._initialized).toBe(true);
+    expect(S0.get('ui.abaAtiva')).toBe('metas');
+    expect(S0._autoSaveInterval).not.toBeNull();
+  });
+
+  test('init é idempotente — chamar de novo não duplica o auto-save', function() {
+    const S0 = S();
+    S0._initialized = false;
+    S0.stopAutoSave();
+    S0.init();
+    const primeiro = S0._autoSaveInterval;
+
+    S0.init();
+
+    // Sem a guarda, o segundo setInterval vazaria: dois timers gravando o
+    // mesmo estado, para sempre.
+    expect(S0._autoSaveInterval).toBe(primeiro);
+  });
+});
+
+/**
+ * setSaving, setFlushing e setLastError alimentam o indicador de sincronização.
+ * São o que separa "salvando…" de "salvo" e de "falhou" na tela. Um path
+ * errado aqui não quebra nada visivelmente — só faz o indicador contar uma
+ * história que não aconteceu.
+ */
+describe('APP_STORE.sync — estados do indicador', function() {
+  test('setSaving e setFlushing são independentes', function() {
+    S().sync.setSaving(true);
+    S().sync.setFlushing(false);
+    const st = S().sync.getStatus();
+    expect(st.saving).toBe(true);
+    expect(st.flushing).toBe(false);
+
+    S().sync.setFlushing(true);
+    expect(S().sync.getStatus().saving).toBe(true);
+    expect(S().sync.getStatus().flushing).toBe(true);
+  });
+
+  test('setLastError guarda o erro e null o limpa', function() {
+    S().sync.setLastError('rede indisponível');
+    expect(S().sync.getStatus().lastError).toBe('rede indisponível');
+
+    S().sync.setLastError(null);
+    expect(S().sync.getStatus().lastError).toBeNull();
+  });
+
+  test('setLastError com undefined vira null, nunca undefined', function() {
+    // A tela testa `if (lastError)`; undefined e null se comportam igual ali,
+    // mas só null sobrevive a um JSON.stringify do estado.
+    S().sync.setLastError(undefined);
+    expect(S().sync.getStatus().lastError).toBeNull();
+  });
+
+  test('nenhum desses estados é persistido', function() {
+    S().sync.setSaving(true);
+    S().sync.setFlushing(true);
+    S().sync.setLastError('x');
+    const salvo = global.localStorage.getItem('fp-store-v2');
+    if (salvo) expect(JSON.parse(salvo).sync).toBeUndefined();
+  });
+});
+

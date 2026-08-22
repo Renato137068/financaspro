@@ -22,7 +22,10 @@ const INIT_CONFIG = {
   init: function() {
     this.setupImport();
     this.setupInsightActions();
-    this.setupLogoutButton();
+    // O logout vive em authController.setupLogoutButton (#btn-logout). Havia
+    // aqui uma segunda implementação, ligada a um #logout-btn que não existe no
+    // HTML e que limpava 'fp-user-token'/'fp-user-data' — chaves que o app nunca
+    // gravou. Além de morta, teria deixado a sessão real intacta se rodasse.
     this._bindToggles();
     this._bindKeyboardNavigation();
     this._updateDynamicValues();
@@ -150,7 +153,9 @@ const INIT_CONFIG = {
         var nome = document.getElementById('cartao-nome').value;
         var bandeira = document.getElementById('cartao-bandeira').value;
         var limite = document.getElementById('cartao-limite').value;
-        INIT_CONFIG.adicionarCartao(nome, bandeira, limite);
+        var fechamento = (document.getElementById('cartao-fechamento') || {}).value;
+        var vencimento = (document.getElementById('cartao-vencimento') || {}).value;
+        INIT_CONFIG.adicionarCartao(nome, bandeira, limite, fechamento, vencimento);
       });
     }
     
@@ -588,32 +593,6 @@ const INIT_CONFIG = {
   },
 
   /**
-   * Configura botão de logout
-   */
-  setupLogoutButton: function() {
-    var logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', function() {
-        INIT_CONFIG.handleLogout();
-      });
-    }
-  },
-
-  /**
-   * Processa logout
-   */
-  handleLogout: function() {
-    INIT_MODALS.confirm('Deseja sair da sua conta?', function() {
-      // Limpar dados de autenticação
-      localStorage.removeItem('fp-user-token');
-      localStorage.removeItem('fp-user-data');
-      
-      // Recarregar página
-      window.location.reload();
-    });
-  },
-
-  /**
    * Processa arquivo de importação
    */
   processarImport: function(file) {
@@ -674,10 +653,11 @@ const INIT_CONFIG = {
       // Importar transações
       if (data.transacoes && Array.isArray(data.transacoes)) {
         data.transacoes.forEach(function(tx) {
-          if (tx.id && tx.valor && tx.data && tx.tipo && tx.categoria) {
-            TRANSACOES.criar(tx.tipo, tx.valor, tx.categoria, tx.data, tx.descricao, tx.banco, tx.cartao, true);
-            transacoesImportadas++;
-          }
+          if (!tx || !tx.id || !tx.valor || !tx.data || !tx.tipo || !tx.categoria) return;
+          var jaExiste = DADOS.getTransacoesRaw().some(function(t) { return t.id === tx.id; });
+          if (jaExiste) return;
+          DADOS.salvarTransacao(Object.assign({}, tx));
+          transacoesImportadas++;
         });
       }
       
@@ -688,6 +668,18 @@ const INIT_CONFIG = {
         configImportada = true;
       }
       
+      // Importar contas bancárias ANTES das demais entidades de tela, para que
+      // os `contaId` das transações já recém-importadas resolvam para um nome.
+      var contasImportadas = 0;
+      if (data.contas && Array.isArray(data.contas)) {
+        var validas = data.contas.filter(function(c) { return c && c.id && c.nome; });
+        if (validas.length) {
+          DADOS.salvarContas(validas);
+          if (typeof CONTAS !== 'undefined' && CONTAS.init) CONTAS.init();
+          contasImportadas = validas.length;
+        }
+      }
+
       // Importar orçamentos
       if (data.orcamentos && typeof data.orcamentos === 'object') {
         Object.keys(data.orcamentos).forEach(function(cat) {
@@ -695,6 +687,16 @@ const INIT_CONFIG = {
             ORCAMENTO.definirLimite(cat, data.orcamentos[cat].limite);
           }
         });
+      }
+
+      // Restaurar outbox e cursor de sync (operações pendentes)
+      if (typeof SYNC_ENGINE !== 'undefined') {
+        if (data.outbox && Array.isArray(data.outbox)) {
+          SYNC_ENGINE.saveOutbox(data.outbox);
+        }
+        if (data.sync_cursor) {
+          SYNC_ENGINE.setCursor(data.sync_cursor);
+        }
       }
 
       var anexosImportados = 0;
@@ -708,9 +710,10 @@ const INIT_CONFIG = {
 
       importAnexos.then(function(n) {
         anexosImportados = n || 0;
-        RENDER.init();
+        if (typeof RENDER !== 'undefined' && RENDER.init) RENDER.init();
         var msg = [];
         if (transacoesImportadas > 0) msg.push(transacoesImportadas + ' transações');
+        if (contasImportadas > 0) msg.push(contasImportadas + ' contas');
         if (configImportada) msg.push('configurações');
         if (anexosImportados > 0) msg.push(anexosImportados + ' anexos');
         if (msg.length > 0) {
@@ -737,11 +740,21 @@ const INIT_CONFIG = {
           versao: (typeof CONFIG !== 'undefined' ? CONFIG.VERSION : '11.0.0'),
           dataExportacao: new Date().toISOString(),
           transacoes: TRANSACOES.obter({}),
+          // Contas bancárias precisam viajar junto: cada transação guarda um
+          // `contaId`. Sem elas, todo lançamento restaurado aponta para uma
+          // conta inexistente e a coluna de banco no extrato fica em branco —
+          // o backup parece completo e não é.
+          contas: DADOS.getContas(),
           config: DADOS.getConfig(),
           orcamentos: self.getOrcamentosData(),
           anexos: anexos || [],
+          outbox: (typeof SYNC_ENGINE !== 'undefined' && SYNC_ENGINE.loadOutbox)
+            ? SYNC_ENGINE.loadOutbox() : [],
+          sync_cursor: (typeof SYNC_ENGINE !== 'undefined' && SYNC_ENGINE.getCursor)
+            ? SYNC_ENGINE.getCursor() : null,
           metadados: {
             totalTransacoes: TRANSACOES.obter({}).length,
+            totalContas: DADOS.getContas().length,
             totalAnexos: (anexos || []).length,
             periodo: self.getPeriodoDados()
           }
@@ -962,8 +975,7 @@ const INIT_CONFIG = {
       if (okBtn) {
         okBtn.textContent = 'Salvar';
         okBtn.onclick = function() {
-          var valorStr = valorInput.value.replace(/\./g, '').replace(',', '.');
-          var valor = parseFloat(valorStr) || 0;
+          var valor = UTILS.parseMoeda(valorInput.value);
           
           var validacao = INIT_CONFIG._validateValor(valor);
           if (!validacao.valid) {
@@ -1143,7 +1155,7 @@ const INIT_CONFIG = {
   /**
    * Adiciona cartão
    */
-  adicionarCartao: function(nome, bandeira, limite) {
+  adicionarCartao: function(nome, bandeira, limite, fechamento, vencimento) {
     var validacao = INIT_CONFIG._validateBancoNome(nome);
     if (!validacao.valid) {
       UTILS.mostrarToast(validacao.message, 'error');
@@ -1152,10 +1164,20 @@ const INIT_CONFIG = {
     
     var config = DADOS.getConfig();
     var cartoes = config.cartoes || [];
-    cartoes.push({ 
-      nome: validacao.value, 
+    // fechamento e vencimento são o que dá CICLO ao cartão: sem eles o app
+    // não sabe em qual fatura a compra cai, e CARTOES trata o cadastro como
+    // "sem ciclo" em vez de inventar datas.
+    var dia = function(v) {
+      var n = parseInt(v, 10);
+      return (isFinite(n) && n >= 1 && n <= 31) ? n : null;
+    };
+
+    cartoes.push({
+      nome: validacao.value,
       bandeira: bandeira,
-      limite: limite ? parseFloat(limite) : null
+      limite: limite ? parseFloat(limite) : null,
+      fechamento: dia(fechamento),
+      vencimento: dia(vencimento)
     });
     DADOS.salvarConfig({ cartoes: cartoes });
     
@@ -1163,6 +1185,10 @@ const INIT_CONFIG = {
     document.getElementById('cartao-nome').value = '';
     document.getElementById('cartao-bandeira').value = 'Visa';
     document.getElementById('cartao-limite').value = '';
+    var fechEl = document.getElementById('cartao-fechamento');
+    if (fechEl) fechEl.value = '';
+    var vencEl = document.getElementById('cartao-vencimento');
+    if (vencEl) vencEl.value = '';
     
     // Re-renderizar lista
     INIT_CONFIG._renderizarListaCartoes();
@@ -1372,8 +1398,18 @@ const INIT_CONFIG = {
     var ativo = suportado && LOCAL_CRYPTO.isEnabled();
     if (chk) { chk.checked = ativo; chk.disabled = !suportado; }
     if (status) {
+      // "Ativa — dados cifrados (AES-GCM)" prometia proteção que o desenho não
+      // sustenta: sem passphrase do usuário, a chave mora no MESMO localStorage
+      // que ela protege. Continua valendo a pena (backup em texto puro, olhada
+      // no DevTools, sincronização acidental), mas o usuário precisa saber o
+      // que está comprando antes de confiar demais.
+      var nivel = ativo && typeof LOCAL_CRYPTO.nivelDeProtecao === 'function'
+        ? LOCAL_CRYPTO.nivelDeProtecao() : null;
       status.textContent = !suportado ? 'Indisponível neste navegador'
-        : (ativo ? 'Ativa — dados cifrados (AES-GCM)' : 'Desativada');
+        : (!ativo ? 'Desativada'
+          : (nivel === 'passphrase'
+            ? 'Ativa (AES-GCM) — chave derivada da sua senha'
+            : 'Ativa (AES-GCM) — a chave fica neste dispositivo'));
     }
     if (card) card.style.opacity = suportado ? '' : '0.6';
   },
@@ -1460,7 +1496,7 @@ const INIT_CONFIG = {
         descricao: parametros.descricao || 'Recorrente',
         frequencia: parametros.frequencia || 'mensal',
         valor: isNaN(valorRec) ? 0 : valorRec,
-        dataInicio: new Date().toISOString().split('T')[0],
+        dataInicio: UTILS.dataLocalIso(),
         ativo: true
       });
       UTILS.mostrarToast('"' + (parametros.descricao || 'Lançamento') + '" marcado como recorrente', 'success');

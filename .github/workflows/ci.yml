@@ -2,7 +2,14 @@ name: CI - FinancasPro
 
 on:
   push:
-    branches: [main, master]
+    # Branches de trabalho tambem disparam a esteira.
+    #
+    # Antes so main/master e PRs para elas rodavam. O efeito pratico era que
+    # uma branch de feature podia acumular semanas de trabalho com o CI
+    # vermelho sem ninguem ver — e o vermelho so aparecia na hora de abrir o
+    # PR, quando desfazer ja custa caro. Rodar no push da branch move a
+    # descoberta para o dia em que o problema nasce.
+    branches: [main, master, 'feat/**', 'fix/**', 'chore/**', 'refactor/**']
   pull_request:
     branches: [main, master]
 
@@ -31,6 +38,9 @@ jobs:
     steps:
       - name: Checkout codigo
         uses: actions/checkout@v4
+        with:
+          # lint:changed compara com a base do PR — precisa do historico.
+          fetch-depth: 0
 
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
@@ -47,8 +57,21 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Lint estrito no codigo alterado
+        # Congela a divida existente e exige zero avisos no que o PR toca.
+        run: npm run lint:changed
+
       - name: Auditoria de dependencias
         run: npm audit --audit-level=high
+
+      - name: Orcamento de bundle
+        run: npm run check:bundle
+
+      - name: Contraste WCAG dos tokens de cor
+        run: npm run check:contrast
+
+      - name: Divida de tokens no CSS
+        run: npm run check:css
 
       - name: Testes
         run: npm run test:ci
@@ -59,6 +82,10 @@ jobs:
       - name: Instalar Chromium (Playwright)
         if: matrix.node-version == '20.x'
         run: npx playwright install chromium
+
+      - name: Smoke boot dist (pageerror)
+        if: matrix.node-version == '20.x'
+        run: npm run test:e2e:smoke
 
       - name: Testes E2E
         if: matrix.node-version == '20.x'

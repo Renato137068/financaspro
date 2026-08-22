@@ -165,6 +165,29 @@ button i[data-lucide] {
   --color-info-dark:  #2563eb;
   --color-info-bg:    rgba(59, 130, 246, 0.08);
 
+  /* ── Semântica acessível (texto e botões) ────────────────────
+     Os tons vivos acima (--color-success, --color-warning, ...) existem para
+     PREENCHIMENTO: barra de progresso, ponto de legenda, fundo de toast. Eles
+     reprovam no contraste WCAG AA quando usados como cor de texto ou sob texto
+     branco — o warning chega a 2,15:1, contra o mínimo de 4,5:1.
+
+     Use SEMPRE os tokens -on-light abaixo para texto e botões no tema claro.
+     O tema escuro remapeia estes mesmos nomes para os tons -light, que passam
+     sobre os fundos escuros (ver themes/dark-mode.css).
+
+     Todos os valores são verificados por scripts/check-contrast.cjs no CI.
+     ───────────────────────────────────────────────────────────── */
+  --color-success-on-light: #0b7e58;  /* 5,07:1 sobre branco */
+  --color-warning-on-light: #986206;  /* 5,14:1 sobre branco */
+  --color-danger-on-light:  #b91c1c;  /* 6,47:1 sobre branco */
+  --color-info-on-light:    #2563eb;  /* 5,17:1 sobre branco */
+
+  /* Alias que alterna com o tema — é este que o CSS de componente deve usar. */
+  --color-success-text: var(--color-success-on-light);
+  --color-warning-text: var(--color-warning-on-light);
+  --color-danger-text:  var(--color-danger-on-light);
+  --color-info-text:    var(--color-info-on-light);
+
   /* ── Neutros ─────────────────────────────────────────────── */
   --color-white:     #ffffff;
   --color-gray-50:   #f8fafc;
@@ -197,6 +220,10 @@ button i[data-lucide] {
   --color-border:       #d4e5dc;
   --color-border-light: #e8f2ec;
   --color-border-focus: #00723f;
+  /* Borda para impressão: no papel não há tema, e a borda esverdeada do app
+     sai como um cinza sujo. Um neutro puro imprime previsível em qualquer
+     impressora. Usado só dentro de @media print. */
+  --color-border-print: #cccccc;
 
   /* ── Gradientes ──────────────────────────────────────────── */
   --gradient-primary:     linear-gradient(135deg, #00723f 0%, #33a532 100%);
@@ -469,7 +496,7 @@ button i[data-lucide] {
 
 /* Danger */
 .fp-btn--danger {
-  background: var(--color-danger);
+  background: var(--color-danger-on-light);
   color: var(--color-text-inverse);
 }
 
@@ -583,9 +610,11 @@ button i[data-lucide] {
 .fp-text-primary { color: var(--color-text-primary); }
 .fp-text-secondary { color: var(--color-text-secondary); }
 .fp-text-muted { color: var(--color-text-muted); }
-.fp-text-success { color: var(--color-success); }
-.fp-text-danger { color: var(--color-danger); }
-.fp-text-warning { color: var(--color-warning); }
+/* Utilitários de TEXTO usam os aliases acessíveis, nunca os tons vivos. */
+.fp-text-success { color: var(--color-success-text); }
+.fp-text-danger { color: var(--color-danger-text); }
+.fp-text-warning { color: var(--color-warning-text); }
+.fp-text-info { color: var(--color-info-text); }
 
 /* ============================================================
    ESPAÇAMENTO UTILITÁRIO

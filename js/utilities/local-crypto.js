@@ -23,7 +23,29 @@ var LOCAL_CRYPTO = {
    */
   isEncrypted: function(value) {
     return typeof value === 'string'
-      && (value.indexOf('enc1:') === 0 || value.indexOf('enc2:') === 0);
+      && (value.indexOf('enc1:') === 0
+       || value.indexOf('enc2:') === 0
+       || value.indexOf('enc3:') === 0);
+  },
+
+  /**
+   * Que tipo de proteção a cifragem oferece AGORA — e, por consequência, o que
+   * a interface pode honestamente prometer.
+   *
+   * 'passphrase': a chave deriva de um segredo que o usuário sabe e que não
+   *   fica no localStorage. Protege inclusive contra quem tenha acesso ao
+   *   armazenamento do navegador.
+   *
+   * 'dispositivo': a chave deriva de `financaspro_ckey_dev`, um segredo
+   *   aleatório guardado NO MESMO localStorage que ela protege. Isso embaralha
+   *   o dado contra leitura casual, backup em texto puro e olhada no DevTools
+   *   — mas NÃO protege contra XSS nem contra perícia no perfil do navegador,
+   *   porque quem lê o storage lê a chave junto. A interface precisa dizer
+   *   isso; prometer mais do que se entrega é pior que não cifrar.
+   */
+  nivelDeProtecao: function() {
+    var cfg = typeof DADOS !== 'undefined' ? DADOS.getConfig() : {};
+    return cfg.cryptoPassphrase ? 'passphrase' : 'dispositivo';
   },
 
   /** Indica se a cifragem at-rest está ligada (flag plano + suporte a WebCrypto). */
@@ -85,22 +107,39 @@ var LOCAL_CRYPTO = {
     };
   },
 
-  // Chave AES-GCM derivada via PBKDF2-SHA256 (100k iterações) — formato 'enc2'.
-  _deriveKey: function() {
+  // Iterações de PBKDF2 por versão de formato.
+  //
+  // Mudar o número de iterações muda a CHAVE derivada. Trocar 100k por 600k
+  // "no lugar" tornaria ilegível todo dado já gravado como enc2 — perda de
+  // dados silenciosa para quem tivesse a cifragem ligada. Por isso a mudança
+  // vem como formato novo: escreve-se enc3 (600k, alinhado ao PBKDF2 do
+  // backend e à recomendação da OWASP para SHA-256) e continua-se lendo enc2
+  // (100k) e enc1 (legado). Cada valor migra sozinho na primeira reescrita.
+  _ITERACOES: { enc2: 100000, enc3: 600000 },
+  _VERSAO_ATUAL: 'enc3',
+
+  _keyPromises: null,
+  _keyMats: null,
+
+  _deriveKey: function(versao) {
     var self = this;
+    var v = versao || this._VERSAO_ATUAL;
     var m = this._material();
     var matId = m.passphrase + '|' + m.saltHex;
-    if (this._keyPromise && this._keyMat === matId) return this._keyPromise;
-    this._keyMat = matId;
-    this._keyPromise = crypto.subtle.importKey(
+
+    if (!this._keyPromises) { this._keyPromises = {}; this._keyMats = {}; }
+    if (this._keyPromises[v] && this._keyMats[v] === matId) return this._keyPromises[v];
+    this._keyMats[v] = matId;
+
+    this._keyPromises[v] = crypto.subtle.importKey(
       'raw', new TextEncoder().encode(m.passphrase), { name: 'PBKDF2' }, false, ['deriveKey']
     ).then(function(base) {
       return crypto.subtle.deriveKey(
-        { name: 'PBKDF2', salt: self._hexToBytes(m.saltHex), iterations: 100000, hash: 'SHA-256' },
+        { name: 'PBKDF2', salt: self._hexToBytes(m.saltHex), iterations: self._ITERACOES[v], hash: 'SHA-256' },
         base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
       );
     });
-    return this._keyPromise;
+    return this._keyPromises[v];
   },
 
   // Chave legada (SHA-256 do passphrase antigo) — SÓ para decifrar dados 'enc1'.
@@ -117,32 +156,40 @@ var LOCAL_CRYPTO = {
 
   encrypt: function(plain) {
     if (!this.isEnabled()) return Promise.resolve(plain);
+    var self = this;
     var iv = crypto.getRandomValues(new Uint8Array(12));
-    return this._deriveKey().then(function(key) {
+    return this._deriveKey(this._VERSAO_ATUAL).then(function(key) {
       return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, new TextEncoder().encode(plain));
     }).then(function(cipher) {
       var ivHex = Array.from(iv).map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
       var dataHex = Array.from(new Uint8Array(cipher)).map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
-      return 'enc2:' + ivHex + ':' + dataHex;
+      return self._VERSAO_ATUAL + ':' + ivHex + ':' + dataHex;
     });
   },
 
   decrypt: function(value) {
     if (!value || typeof value !== 'string') return Promise.resolve(value);
-    var isV2 = value.indexOf('enc2:') === 0;
-    var isV1 = value.indexOf('enc1:') === 0;
-    if (!isV2 && !isV1) return Promise.resolve(value);
+    if (!this.isEncrypted(value)) return Promise.resolve(value);
     if (!this.isEnabled()) return Promise.resolve(value);
+
     var parts = value.split(':');
     if (parts.length !== 3) return Promise.resolve(value);
+
+    var versao = parts[0];
     var iv = this._hexToBytes(parts[1]);
     var data = this._hexToBytes(parts[2]);
-    var keyPromise = isV2 ? this._deriveKey() : this._deriveLegacyKey();
+    var keyPromise = versao === 'enc1'
+      ? this._deriveLegacyKey()
+      : this._deriveKey(versao);
+
     return keyPromise.then(function(key) {
       return crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, data);
     }).then(function(buf) {
       return new TextDecoder().decode(buf);
     }).catch(function() {
+      // Devolver o texto cifrado é deliberado: o chamador prefere um valor
+      // ilegível a perder o dado. Quem escrever por cima disso reescreve na
+      // versão atual.
       return value;
     });
   },

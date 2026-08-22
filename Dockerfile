@@ -47,5 +47,13 @@ EXPOSE 4000
 
 USER appuser
 
-# Migra e inicia o servidor
-CMD ["sh", "-c", "npx prisma migrate deploy && node backend/server.js"]
+# /health já reporta banco, Redis, workers e lag do event loop — usar o mesmo
+# endpoint aqui evita um segundo conceito de "vivo" divergindo do primeiro.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||4000)+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+
+# `exec` é obrigatório: sem ele o `sh` fica como PID 1 e NÃO repassa SIGTERM ao
+# Node. Todo o shutdown gracioso de backend/server.js (fechar servidor, parar
+# workers, drenar filas, desconectar Redis e Prisma) nunca rodava — o processo
+# era morto de supetão a cada deploy, no meio de qualquer job em andamento.
+CMD ["sh", "-c", "npx prisma migrate deploy && exec node backend/server.js"]

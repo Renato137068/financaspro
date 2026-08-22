@@ -3,7 +3,7 @@
  * Cobre: formatação (moeda/data/relativa), validação, filtros, saldo,
  *        escapeHtml, gerarId, debounce, cache DOM, storage probe, toasts.
  */
-const { loadCoreModules, resetFixtures } = require('./load-sources');
+const { loadCoreModules, resetFixtures, execNoSandbox } = require('./load-sources');
 
 // Carrega no nível do módulo para a flag __vmHasDocument existir na coleta.
 // No Node 18 o document do jsdom não é utilizável no contexto VM — testes de DOM
@@ -17,6 +17,101 @@ beforeEach(function() {
   resetFixtures();
   if (global.UTILS) global.UTILS.limparCacheDom();
   document.body.innerHTML = '';
+});
+
+describe('UTILS.comCarregamento', function() {
+  function botaoFalso() {
+    return {
+      disabled: false,
+      textContent: 'Exportar',
+      _attrs: {},
+      setAttribute: function(k, v) { this._attrs[k] = v; },
+      removeAttribute: function(k) { delete this._attrs[k]; },
+    };
+  }
+
+  test('bloqueia o botão enquanto a ação assíncrona corre', async function() {
+    const btn = botaoFalso();
+    let estadoDurante = null;
+
+    await global.UTILS.comCarregamento(btn, function() {
+      estadoDurante = { disabled: btn.disabled, busy: btn._attrs['aria-busy'] };
+      return Promise.resolve('ok');
+    });
+
+    expect(estadoDurante).toEqual({ disabled: true, busy: 'true' });
+  });
+
+  test('libera o botão ao concluir', async function() {
+    const btn = botaoFalso();
+    await global.UTILS.comCarregamento(btn, function() { return Promise.resolve(1); });
+
+    expect(btn.disabled).toBe(false);
+    expect(btn._attrs['aria-busy']).toBe('false');
+    expect(btn._attrs['aria-disabled']).toBeUndefined();
+  });
+
+  test('libera o botão mesmo quando a ação falha', async function() {
+    // Deixar o botão travado após um erro troca um bug por outro: o usuário
+    // fica sem conseguir tentar de novo.
+    const btn = botaoFalso();
+
+    await expect(
+      global.UTILS.comCarregamento(btn, function() { return Promise.reject(new Error('falhou')); }),
+    ).rejects.toThrow('falhou');
+
+    expect(btn.disabled).toBe(false);
+    expect(btn._attrs['aria-busy']).toBe('false');
+  });
+
+  test('libera o botão quando a ação lança de forma síncrona', async function() {
+    const btn = botaoFalso();
+
+    await expect(
+      global.UTILS.comCarregamento(btn, function() { throw new Error('sync'); }),
+    ).rejects.toThrow('sync');
+
+    expect(btn.disabled).toBe(false);
+  });
+
+  test('troca e restaura o rótulo', async function() {
+    const btn = botaoFalso();
+    let rotuloDurante = null;
+
+    await global.UTILS.comCarregamento(btn, function() {
+      rotuloDurante = btn.textContent;
+      return Promise.resolve();
+    }, 'Gerando...');
+
+    expect(rotuloDurante).toBe('Gerando...');
+    expect(btn.textContent).toBe('Exportar');
+  });
+
+  test('sem rótulo, o texto do botão não é tocado', async function() {
+    const btn = botaoFalso();
+    await global.UTILS.comCarregamento(btn, function() { return Promise.resolve(); });
+
+    expect(btn.textContent).toBe('Exportar');
+  });
+
+  test('devolve o valor da ação', async function() {
+    await expect(
+      global.UTILS.comCarregamento(null, function() { return Promise.resolve(42); }),
+    ).resolves.toBe(42);
+  });
+
+  test('aceita botão nulo sem quebrar', async function() {
+    // O handler pode ser disparado por teclado sem elemento associado.
+    await expect(
+      global.UTILS.comCarregamento(null, function() { return 'ok'; }),
+    ).resolves.toBe('ok');
+  });
+
+  test('ação síncrona também resolve como Promise', async function() {
+    const btn = botaoFalso();
+    await expect(global.UTILS.comCarregamento(btn, function() { return 7; })).resolves.toBe(7);
+    expect(btn.disabled).toBe(false);
+  });
 });
 
 describe('UTILS.formatarMoeda', function() {
@@ -224,5 +319,59 @@ domDescribe('UTILS.mostrarToast (jsdom)', function() {
     btn.click();
     expect(clicado).toBe(true);
     expect(typeof ctrl.fechar).toBe('function');
+  });
+});
+
+/**
+ * gerarUuid alimenta o sync v2: a API só aceita UUID, e um id fora do formato
+ * faz o lançamento ser recusado no servidor — offline, em silêncio, sem o
+ * usuário saber que aquilo nunca vai subir. Os dois caminhos precisam valer.
+ */
+
+/**
+ * gerarUuid alimenta o sync v2: a API só aceita UUID, e um id fora do formato
+ * faz o lançamento ser recusado no servidor — offline, em silêncio, sem o
+ * usuário saber que aquilo nunca vai subir. Os dois caminhos precisam valer.
+ */
+
+/**
+ * gerarUuid alimenta o sync v2: a API só aceita UUID, e um id fora do formato
+ * faz o lançamento ser recusado no servidor — offline e em silêncio, sem o
+ * usuário saber que aquilo nunca vai subir.
+ *
+ * O sandbox do vm NÃO expõe `crypto`, então o caminho exercitado por padrão é
+ * o fallback. Para cobrir o outro ramo é preciso injetar um `crypto` dentro do
+ * próprio sandbox — mexer em `global.crypto` do Jest não alcança o módulo.
+ */
+describe('UTILS.gerarUuid', function() {
+  const RE_UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const FIXO = '3f2504e0-4f89-41d3-9a0c-0305e82c3301';
+
+  afterEach(function() {
+    execNoSandbox('crypto = undefined;');
+  });
+
+  test('usa crypto.randomUUID quando o ambiente oferece', function() {
+    execNoSandbox('crypto = { randomUUID: function() { return "' + FIXO + '"; } };');
+    expect(global.UTILS.gerarUuid()).toBe(FIXO);
+  });
+
+  test('sem crypto, o fallback ainda produz UUID v4 válido', function() {
+    execNoSandbox('crypto = undefined;');
+    expect(global.UTILS.gerarUuid()).toMatch(RE_UUID_V4);
+  });
+
+  test('fallback marca a versão 4 e o variant correto', function() {
+    execNoSandbox('crypto = undefined;');
+    const id = global.UTILS.gerarUuid();
+    expect(id[14]).toBe('4');
+    expect('89ab').toContain(id[19].toLowerCase());
+  });
+
+  test('fallback não repete ids', function() {
+    execNoSandbox('crypto = undefined;');
+    const ids = new Set();
+    for (let i = 0; i < 200; i++) ids.add(global.UTILS.gerarUuid());
+    expect(ids.size).toBe(200);
   });
 });

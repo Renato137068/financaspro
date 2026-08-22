@@ -84,6 +84,69 @@ td{padding:5px 8px;border-top:1px solid var(--line);vertical-align:top}.fn{font-
     </div>
     
     
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#16a34a">POST</span>
+      <code class="path">/api/v1/auth/forgot-password</code>
+      
+      <span class="sum">Solicitar link de redefinição de senha</span>
+    </div>
+    
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#16a34a">POST</span>
+      <code class="path">/api/v1/auth/reset-password</code>
+      
+      <span class="sum">Redefinir senha com o token recebido por e-mail</span>
+    </div>
+    
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#16a34a">POST</span>
+      <code class="path">/api/v1/auth/verify-email</code>
+      
+      <span class="sum">Confirmar endereço de e-mail</span>
+    </div>
+    
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#16a34a">POST</span>
+      <code class="path">/api/v1/auth/resend-verification</code>
+      
+      <span class="sum">Reenviar e-mail de verificação</span>
+    </div>
+    
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#16a34a">POST</span>
+      <code class="path">/api/v1/auth/totp/verify</code>
+      
+      <span class="sum">Concluir login enviando o código de 2FA</span>
+    </div>
+    
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#0891b2">GET</span>
+      <code class="path">/api/v1/auth/totp/status</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Saber se o 2FA está ativo</span>
+    </div>
+    
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#16a34a">POST</span>
+      <code class="path">/api/v1/auth/totp/disable</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Desativar 2FA</span>
+    </div>
+    
+    
   </div></section><section><h2>transactions</h2><p class="td">Lançamentos financeiros</p><div class="op">
     <div class="op-head">
       <span class="m" style="background:#0891b2">GET</span>
@@ -101,7 +164,7 @@ td{padding:5px 8px;border-top:1px solid var(--line);vertical-align:top}.fn{font-
       <span class="sum">Criar transactions</span>
     </div>
     
-    <div class="tbl-wrap"><div class="tbl-t">Corpo (application/json)</div><table><thead><tr><th>Campo</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">type<span class="req">*</span></td><td class="ft">string</td><td class="fc">enum: receita | despesa</td></tr><tr><td class="fn">amount<span class="req">*</span></td><td class="ft">number</td><td class="fc">&gt; 0</td></tr><tr><td class="fn">description<span class="req">*</span></td><td class="ft">string</td><td class="fc">min 1 · max 255</td></tr><tr><td class="fn">category<span class="req">*</span></td><td class="ft">string</td><td class="fc">min 1 · max 80</td></tr><tr><td class="fn">subcategory</td><td class="ft">string</td><td class="fc">max 80</td></tr><tr><td class="fn">date<span class="req">*</span></td><td class="ft">string</td><td class="fc">date-time</td></tr><tr><td class="fn">accountId</td><td class="ft">string</td><td class="fc">uuid · nullable</td></tr><tr><td class="fn">tags</td><td class="ft">array&lt;string&gt;</td><td class="fc">default: []</td></tr><tr><td class="fn">notes</td><td class="ft">string</td><td class="fc">max 1000 · nullable</td></tr><tr><td class="fn">recurring</td><td class="ft">boolean</td><td class="fc">default: false</td></tr></tbody></table></div>
+    <div class="tbl-wrap"><div class="tbl-t">Corpo (application/json)</div><table><thead><tr><th>Campo</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">type<span class="req">*</span></td><td class="ft">string</td><td class="fc">enum: receita | despesa | transferencia</td></tr><tr><td class="fn">amount<span class="req">*</span></td><td class="ft">number</td><td class="fc">&gt; 0 · ≤ 999999999999.99</td></tr><tr><td class="fn">description<span class="req">*</span></td><td class="ft">string</td><td class="fc">min 1 · max 255</td></tr><tr><td class="fn">category<span class="req">*</span></td><td class="ft">string</td><td class="fc">min 1 · max 80</td></tr><tr><td class="fn">subcategory</td><td class="ft">string</td><td class="fc">max 80</td></tr><tr><td class="fn">date<span class="req">*</span></td><td class="ft">string</td><td class="fc">date-time</td></tr><tr><td class="fn">accountId</td><td class="ft">string</td><td class="fc">uuid · nullable</td></tr><tr><td class="fn">targetAccountId</td><td class="ft">string</td><td class="fc">uuid · nullable</td></tr><tr><td class="fn">tags</td><td class="ft">array&lt;string&gt;</td><td class="fc">default: []</td></tr><tr><td class="fn">notes</td><td class="ft">string</td><td class="fc">max 1000 · nullable</td></tr><tr><td class="fn">recurring</td><td class="ft">boolean</td><td class="fc">default: false</td></tr></tbody></table></div>
   </div><div class="op">
     <div class="op-head">
       <span class="m" style="background:#0891b2">GET</span>
@@ -119,7 +182,7 @@ td{padding:5px 8px;border-top:1px solid var(--line);vertical-align:top}.fn{font-
       <span class="sum">Atualizar transactions</span>
     </div>
     <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">id<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr></tbody></table></div>
-    <div class="tbl-wrap"><div class="tbl-t">Corpo (application/json)</div><table><thead><tr><th>Campo</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">type</td><td class="ft">string</td><td class="fc">enum: receita | despesa</td></tr><tr><td class="fn">amount</td><td class="ft">number</td><td class="fc">&gt; 0</td></tr><tr><td class="fn">description</td><td class="ft">string</td><td class="fc">min 1 · max 255</td></tr><tr><td class="fn">category</td><td class="ft">string</td><td class="fc">min 1 · max 80</td></tr><tr><td class="fn">subcategory</td><td class="ft">string</td><td class="fc">max 80</td></tr><tr><td class="fn">date</td><td class="ft">string</td><td class="fc">date-time</td></tr><tr><td class="fn">accountId</td><td class="ft">string</td><td class="fc">uuid · nullable</td></tr><tr><td class="fn">tags</td><td class="ft">array&lt;string&gt;</td><td class="fc">default: []</td></tr><tr><td class="fn">notes</td><td class="ft">string</td><td class="fc">max 1000 · nullable</td></tr><tr><td class="fn">recurring</td><td class="ft">boolean</td><td class="fc">default: false</td></tr></tbody></table></div>
+    <div class="tbl-wrap"><div class="tbl-t">Corpo (application/json)</div><table><thead><tr><th>Campo</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">type</td><td class="ft">string</td><td class="fc">enum: receita | despesa | transferencia</td></tr><tr><td class="fn">amount</td><td class="ft">number</td><td class="fc">&gt; 0 · ≤ 999999999999.99</td></tr><tr><td class="fn">description</td><td class="ft">string</td><td class="fc">min 1 · max 255</td></tr><tr><td class="fn">category</td><td class="ft">string</td><td class="fc">min 1 · max 80</td></tr><tr><td class="fn">subcategory</td><td class="ft">string</td><td class="fc">max 80</td></tr><tr><td class="fn">date</td><td class="ft">string</td><td class="fc">date-time</td></tr><tr><td class="fn">accountId</td><td class="ft">string</td><td class="fc">uuid · nullable</td></tr><tr><td class="fn">targetAccountId</td><td class="ft">string</td><td class="fc">uuid · nullable</td></tr><tr><td class="fn">tags</td><td class="ft">array&lt;string&gt;</td><td class="fc">default: []</td></tr><tr><td class="fn">notes</td><td class="ft">string</td><td class="fc">max 1000 · nullable</td></tr><tr><td class="fn">recurring</td><td class="ft">boolean</td><td class="fc">default: false</td></tr></tbody></table></div>
   </div><div class="op">
     <div class="op-head">
       <span class="m" style="background:#dc2626">DELETE</span>
@@ -264,12 +327,345 @@ td{padding:5px 8px;border-top:1px solid var(--line);vertical-align:top}.fn{font-
     </div>
     <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">id<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr></tbody></table></div>
     
+  </div></section><section><h2>Usuários</h2><p class="td">Perfil, configuração e direitos de LGPD</p><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#0891b2">GET</span>
+      <code class="path">/api/v1/users</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Listar usuários (ADMIN)</span>
+    </div>
+    
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#0891b2">GET</span>
+      <code class="path">/api/v1/users/me</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Perfil do usuário autenticado</span>
+    </div>
+    
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#d97706">PATCH</span>
+      <code class="path">/api/v1/users/me</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Atualizar nome e preferências do perfil</span>
+    </div>
+    
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#dc2626">DELETE</span>
+      <code class="path">/api/v1/users/me</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Excluir a conta (LGPD art. 18, VI) — anonimiza o log de auditoria</span>
+    </div>
+    
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#0891b2">GET</span>
+      <code class="path">/api/v1/users/me/config</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Ler a configuração do app</span>
+    </div>
+    
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#7c3aed">PUT</span>
+      <code class="path">/api/v1/users/me/config</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Gravar a configuração do app</span>
+    </div>
+    
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#16a34a">POST</span>
+      <code class="path">/api/v1/users/me/password</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Trocar a própria senha</span>
+    </div>
+    
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#0891b2">GET</span>
+      <code class="path">/api/v1/users/me/export</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Exportar todos os dados pessoais em JSON (LGPD art. 18, V)</span>
+    </div>
+    
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#d97706">PATCH</span>
+      <code class="path">/api/v1/users/{id}</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Alterar papel ou situação de um usuário (ADMIN)</span>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">id<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr></tbody></table></div>
+    
+  </div></section><section><h2>Sync</h2><p class="td">Delta, outbox e estado agregado</p><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#0891b2">GET</span>
+      <code class="path">/api/v1/state</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Estado consolidado do usuário para hidratar o app</span>
+    </div>
+    
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#0891b2">GET</span>
+      <code class="path">/api/v1/sync</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Delta desde um cursor — devolve alterações e tombstones</span>
+    </div>
+    
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#16a34a">POST</span>
+      <code class="path">/api/v1/sync</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Enviar o lote da outbox; resolve conflitos e devolve o veredito por operação</span>
+    </div>
+    
+    
+  </div></section><section><h2>Orgs</h2><p class="td">Organizações, membros e convites</p><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#0891b2">GET</span>
+      <code class="path">/api/v1/orgs</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Listar organizações de que o usuário participa</span>
+    </div>
+    
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#16a34a">POST</span>
+      <code class="path">/api/v1/orgs</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Criar organização</span>
+    </div>
+    
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#0891b2">GET</span>
+      <code class="path">/api/v1/orgs/{orgId}</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Detalhes da organização</span>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">orgId<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr></tbody></table></div>
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#d97706">PATCH</span>
+      <code class="path">/api/v1/orgs/{orgId}</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Atualizar a organização (papel mínimo: ADMIN)</span>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">orgId<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr></tbody></table></div>
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#dc2626">DELETE</span>
+      <code class="path">/api/v1/orgs/{orgId}</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Excluir a organização (apenas o dono)</span>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">orgId<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr></tbody></table></div>
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#16a34a">POST</span>
+      <code class="path">/api/v1/orgs/{orgId}/invite</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Convidar alguém — respeita o limite de assentos do plano</span>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">orgId<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr></tbody></table></div>
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#0891b2">GET</span>
+      <code class="path">/api/v1/orgs/{orgId}/invitations</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Listar convites pendentes</span>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">orgId<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr></tbody></table></div>
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#16a34a">POST</span>
+      <code class="path">/api/v1/orgs/invitations/{token}/accept</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Aceitar um convite</span>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">token<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr></tbody></table></div>
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#d97706">PATCH</span>
+      <code class="path">/api/v1/orgs/{orgId}/members/{userId}</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Mudar o papel de um membro</span>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">orgId<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr><tr><td class="fn">userId<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr></tbody></table></div>
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#dc2626">DELETE</span>
+      <code class="path">/api/v1/orgs/{orgId}/members/{userId}</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Remover um membro</span>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">orgId<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr><tr><td class="fn">userId<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr></tbody></table></div>
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#16a34a">POST</span>
+      <code class="path">/api/v1/orgs/{orgId}/members/{userId}/transfer-ownership</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Transferir a propriedade da organização</span>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">orgId<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr><tr><td class="fn">userId<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr></tbody></table></div>
+    
+  </div></section><section><h2>Billing</h2><p class="td">Planos, assinatura e faturas (Stripe)</p><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#0891b2">GET</span>
+      <code class="path">/api/v1/billing/plans</code>
+      
+      <span class="sum">Planos disponíveis e seus limites</span>
+    </div>
+    
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#0891b2">GET</span>
+      <code class="path">/api/v1/billing/{orgId}/subscription</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Assinatura atual da organização</span>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">orgId<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr></tbody></table></div>
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#16a34a">POST</span>
+      <code class="path">/api/v1/billing/{orgId}/subscribe</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Assinar um plano</span>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">orgId<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr></tbody></table></div>
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#16a34a">POST</span>
+      <code class="path">/api/v1/billing/{orgId}/checkout</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Abrir sessão de checkout do Stripe</span>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">orgId<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr></tbody></table></div>
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#16a34a">POST</span>
+      <code class="path">/api/v1/billing/{orgId}/portal</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Abrir o portal de cobrança do Stripe</span>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">orgId<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr></tbody></table></div>
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#16a34a">POST</span>
+      <code class="path">/api/v1/billing/{orgId}/cancel</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Cancelar ao fim do período vigente</span>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">orgId<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr></tbody></table></div>
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#0891b2">GET</span>
+      <code class="path">/api/v1/billing/{orgId}/invoices</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Faturas emitidas</span>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">orgId<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr></tbody></table></div>
+    
+  </div></section><section><h2>Open Finance</h2><p class="td">Conexões bancárias e importação</p><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#0891b2">GET</span>
+      <code class="path">/api/v1/open-finance/providers</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Provedores disponíveis (Belvo, sandbox)</span>
+    </div>
+    
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#0891b2">GET</span>
+      <code class="path">/api/v1/open-finance/connections</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Conexões bancárias do usuário</span>
+    </div>
+    
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#16a34a">POST</span>
+      <code class="path">/api/v1/open-finance/connections</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Criar conexão bancária</span>
+    </div>
+    
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#dc2626">DELETE</span>
+      <code class="path">/api/v1/open-finance/connections/{id}</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Remover conexão bancária</span>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">id<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr></tbody></table></div>
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#16a34a">POST</span>
+      <code class="path">/api/v1/open-finance/connections/{id}/sync</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Importar lançamentos — deduplica por openFinanceId</span>
+    </div>
+    <div class="tbl-wrap"><div class="tbl-t">Parâmetros</div><table><thead><tr><th>Nome</th><th>Tipo</th><th>Regras</th></tr></thead><tbody><tr><td class="fn">id<span class="pin">path</span><span class="req">*</span></td><td class="ft">string</td><td class="fc"></td></tr></tbody></table></div>
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#16a34a">POST</span>
+      <code class="path">/api/v1/open-finance/belvo/widget-token</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Token de acesso ao widget da Belvo</span>
+    </div>
+    
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#16a34a">POST</span>
+      <code class="path">/api/v1/open-finance/belvo/complete</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">Concluir o vínculo após o widget</span>
+    </div>
+    
+    
   </div></section><section><h2>Ops</h2><p class="td">Saúde e observabilidade</p><div class="op">
     <div class="op-head">
       <span class="m" style="background:#0891b2">GET</span>
       <code class="path">/api/v1/health</code>
       
-      <span class="sum">Health check (db, redis, workers)</span>
+      <span class="sum">Health check (db, redis, workers, lag do event loop)</span>
     </div>
     
     
@@ -279,6 +675,15 @@ td{padding:5px 8px;border-top:1px solid var(--line);vertical-align:top}.fn{font-
       <code class="path">/api/v1/metrics</code>
       <span class="auth" title="Requer Bearer JWT">🔒</span>
       <span class="sum">Métricas Prometheus (requer METRICS_TOKEN)</span>
+    </div>
+    
+    
+  </div><div class="op">
+    <div class="op-head">
+      <span class="m" style="background:#0891b2">GET</span>
+      <code class="path">/api/v1/metrics.json</code>
+      <span class="auth" title="Requer Bearer JWT">🔒</span>
+      <span class="sum">As mesmas métricas em JSON</span>
     </div>
     
     

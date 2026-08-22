@@ -72,8 +72,8 @@
 }
 
 .perfil-avatar-badge--premium {
-  background: linear-gradient(135deg, #005c33 0%, #059669 55%, #10b981 100%);
-  color: #fff;
+  background: linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-success-dark) 55%, var(--color-success) 100%);
+  color: var(--color-white);
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 2px 8px rgba(0, 114, 63, 0.35);
 }
@@ -192,7 +192,7 @@
 }
 
 .perfil-section-title-danger {
-  color: var(--color-danger);
+  color: var(--color-danger-text);
 }
 
 /* ── CARDS PREMIUM ────────────────────────────────────────── */
@@ -306,6 +306,17 @@
   line-height: var(--line-height-normal);
 }
 
+/* Legenda do que a cifragem local realmente entrega. Fica abaixo do estado,
+   menor e mais apagada: é contexto para uma decisão, não um rótulo. */
+.perfil-card-hint {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  line-height: var(--line-height-normal);
+  text-wrap: pretty;
+}
+
 .perfil-card-arrow {
   flex-shrink: 0;
   color: var(--color-text-muted);
@@ -356,7 +367,7 @@
   width: 24px;
   left: 3px;
   bottom: 3px;
-  background: #fff;
+  background: var(--color-white);
   border-radius: var(--radius-full);
   transition: all var(--transition-smooth);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
@@ -451,7 +462,7 @@
 .perfil-logout-btn:hover {
   background: var(--color-danger-bg);
   border-color: rgba(239, 68, 68, 0.3);
-  color: var(--color-danger);
+  color: var(--color-danger-text);
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
 }
@@ -478,7 +489,7 @@
   background: var(--color-danger-bg);
   border: 2px solid var(--color-danger);
   border-radius: var(--radius-xl);
-  color: var(--color-danger);
+  color: var(--color-danger-text);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
   cursor: pointer;
@@ -488,7 +499,7 @@
 }
 
 .perfil-danger-btn:hover {
-  background: var(--color-danger);
+  background: var(--color-danger-on-light);
   color: var(--color-text-inverse);
   transform: translateY(-2px);
   box-shadow: 0 12px 32px rgba(239, 68, 68, 0.35);
@@ -617,7 +628,7 @@
 .btn-remover-banco {
   padding: var(--space-2) var(--space-3);
   background: var(--color-danger-bg);
-  color: var(--color-danger);
+  color: var(--color-danger-text);
   border: 1px solid rgba(239, 68, 68, 0.2);
   border-radius: var(--radius-md);
   font-size: var(--font-size-sm);
@@ -627,7 +638,7 @@
 }
 
 .btn-remover-banco:hover {
-  background: var(--color-danger);
+  background: var(--color-danger-on-light);
   color: var(--color-text-inverse);
   border-color: var(--color-danger);
 }
@@ -833,13 +844,13 @@
 
 .er-feedback.sucesso {
   background: var(--color-success-bg);
-  color: var(--color-success);
+  color: var(--color-success-text);
   border: 1px solid rgba(16, 185, 129, 0.2);
 }
 
 .er-feedback.erro {
   background: var(--color-danger-bg);
-  color: var(--color-danger);
+  color: var(--color-danger-text);
   border: 1px solid rgba(239, 68, 68, 0.18);
 }
 
@@ -882,13 +893,13 @@
   .perfil-header-premium {
     break-inside: avoid;
     box-shadow: none;
-    border: 1px solid #ccc;
+    border: 1px solid var(--color-border-print);
   }
   
   .perfil-card-premium {
     break-inside: avoid;
     box-shadow: none;
-    border: 1px solid #ccc;
+    border: 1px solid var(--color-border-print);
     page-break-inside: avoid;
   }
   
@@ -1073,6 +1084,6 @@
 }
 
 [data-theme="dark"] .perfil-danger-btn:hover {
-  background: var(--color-danger);
+  background: var(--color-danger-on-light);
   color: var(--color-text-inverse);
 }

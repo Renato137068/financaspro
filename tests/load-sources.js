@@ -12,7 +12,7 @@ function loadScript(context, relativePath) {
   if (!fs.existsSync(file)) return;
   let code = fs.readFileSync(file, 'utf8');
   code = code.replace(
-    /\bconst (CONFIG|UTILS|VALIDATIONS|SCORE|PARSER|PIPELINE|ORCAMENTO|TRANSACOES|APP_STORE|METAS) =/g,
+    /\bconst (CONFIG|UTILS|VALIDATIONS|SCORE|PARSER|PIPELINE|ORCAMENTO|TRANSACOES|APP_STORE|METAS|RELATORIOS|PATRIMONIO|CONTAS_PAGAR|ASSINATURAS|CONTAS|ANEXOS|INIT_CONFIG) =/g,
     'var $1 =',
   );
   vm.runInContext(code, context, { filename: file });
@@ -51,6 +51,7 @@ function loadCoreModules() {
   };
   sandbox.globalThis = sandbox;
   const context = vm.createContext(sandbox);
+  _ctx = context;
 
   // Fixtures das dependências dos módulos, declarados como `var` no contexto
   // (viram propriedades do sandbox, resolvíveis por nome nu em qualquer versão).
@@ -65,19 +66,32 @@ function loadCoreModules() {
     // Fixture DADOS fiel o suficiente para exercitar upsert/delete/reset dos
     // módulos reais (TRANSACOES.atualizar/deletar, ORCAMENTO.*). salvarTransacao
     // faz upsert por id — sem isso, atualizar() duplicaria em vez de substituir.
-    + 'var DADOS = (function(){ var txs=[]; var cfg={orcamentos:{},recorrentes:[]};'
+    + 'var DADOS = (function(){ var txs=[]; var contas=[]; var cfg={orcamentos:{},recorrentes:[]};'
     + ' function idx(id){ for(var i=0;i<txs.length;i++){ if(txs[i].id===id) return i; } return -1; }'
     + ' return { getConfig:function(){return cfg;}, getTransacoes:function(){return txs.slice();},'
+    + ' getTransacoesRaw:function(){return txs;},'
     + ' salvarConfig:function(p){cfg=Object.assign({},cfg,p);return cfg;},'
     + ' salvarTransacao:function(t){ var i=idx(t.id); if(i>=0){txs[i]=t;}else{txs.push(t);} return t; },'
     + ' deletarTransacao:function(id){ var i=idx(id); if(i>=0){txs.splice(i,1);return true;} return false; },'
-    + ' _resetFixture:function(){ txs.length=0; cfg={orcamentos:{},recorrentes:[]}; } }; })();',
+    + ' getRecorrentes:function(){return Array.isArray(cfg.recorrentes)?cfg.recorrentes.slice():[];},'
+    + ' getContas:function(){return contas.slice();},'
+    + ' salvarContas:function(l){contas=l.slice();return contas;},'
+    + ' _resetFixture:function(){ txs.length=0; contas.length=0; cfg={orcamentos:{},recorrentes:[]}; } }; })();',
     context,
     { filename: 'test-fixtures-bootstrap' },
   );
 
   loadScript(context, 'js/core/config.js');
+  // Tier 0, antes de validations.js: sem ele, VALIDATIONS.validarSenha cai no
+  // fallback interno e a suíte passa a testar uma regra MAIS FROUXA que a do
+  // navegador — o formulário aceitaria senha que o backend recusa, e nenhum
+  // teste veria.
+  loadScript(context, 'js/core/password-policy.js');
   loadScript(context, 'js/core/utils.js');
+  // Carregado antes de transacoes.js: TRANSACOES delega a ele quando presente,
+  // então testar sem ele exercitaria só o caminho de fallback — justamente o
+  // que NÃO roda em produção.
+  loadScript(context, 'js/services/transactionService.js');
   loadScript(context, 'js/core/validations.js');
   loadScript(context, 'js/score.js');
   loadScript(context, 'js/parser.js');
@@ -86,12 +100,29 @@ function loadCoreModules() {
   loadScript(context, 'js/transacoes.js');
   loadScript(context, 'js/metas.js');
   loadScript(context, 'js/core/store.js');
+  // Módulos de leitura pura, sem DOM — dependem apenas de TRANSACOES/DADOS/UTILS,
+  // já carregados acima. Antes ficavam fora do harness e, por isso, sem teste real.
+  loadScript(context, 'js/relatorios.js');
+  loadScript(context, 'js/patrimonio.js');
+  loadScript(context, 'js/contas.js');
+  loadScript(context, 'js/contas-pagar.js');
+  loadScript(context, 'js/ai-engine.js');
+  loadScript(context, 'js/cartoes.js');
+  loadScript(context, 'js/recorrentes.js');
+  loadScript(context, 'js/compromissos.js');
+  loadScript(context, 'js/assinaturas.js');
+  loadScript(context, 'js/modules/init-config.js');
+  // anexos.js só é carregado pela parte pura (validarArquivo); as funções de
+  // IndexedDB não são exercitadas aqui — exigiriam polyfill.
+  loadScript(context, 'js/anexos.js');
 
   // Expõe os módulos e fixtures carregados (propriedades do sandbox) ao `global`,
   // para os testes acessarem via global.UTILS/PIPELINE/DADOS/etc.
   [
     'CONFIG', 'UTILS', 'VALIDATIONS', 'SCORE', 'PARSER', 'PIPELINE', 'ORCAMENTO',
     'TRANSACOES', 'METAS', 'APP_STORE', 'APP_STATE', 'DADOS', 'ACTIONS',
+    'RELATORIOS', 'PATRIMONIO', 'CONTAS', 'CONTAS_PAGAR', 'ASSINATURAS', 'ANEXOS',
+    'TRANSACTION_SERVICE', 'COMPROMISSOS', 'CARTOES', 'RECORRENTES', 'AI_ENGINE', 'INIT_CONFIG',
   ].forEach(function(k) {
     if (typeof sandbox[k] !== 'undefined') global[k] = sandbox[k];
   });
@@ -122,4 +153,41 @@ function resetFixtures() {
   if (global.ORCAMENTO) global.ORCAMENTO._cache = null;
 }
 
-module.exports = { loadCoreModules, loadScript, resetFixtures };
+/**
+ * Executa uma expressão DENTRO do contexto de vm onde os módulos vivem.
+ *
+ * Existe porque os módulos leem seus vizinhos como identificador nu
+ * (`typeof TRANSACTION_SERVICE !== 'undefined'`), resolvido no sandbox — não em
+ * `global`. Mexer em `global.X` a partir do teste não muda nada para eles.
+ *
+ * O uso concreto é exercitar caminhos de fallback: `TRANSACOES` delega ao
+ * TRANSACTION_SERVICE quando ele existe, e a implementação interna — que roda
+ * de verdade sempre que o service não carrega — só é alcançável desligando-o
+ * aqui dentro.
+ */
+let _ctx = null;
+function execNoSandbox(expressao) {
+  if (!_ctx) throw new Error('loadCoreModules() precisa rodar antes');
+  return vm.runInContext(expressao, _ctx, {
+    filename: path.join(__dirname, 'load-sources.sandbox.js'),
+  });
+}
+
+/** Roda `fn` com um global do sandbox temporariamente indisponível. */
+function semGlobalNoSandbox(nome, fn) {
+  const backup = '__bkp_' + nome;
+  execNoSandbox('var ' + backup + ' = ' + nome + '; ' + nome + ' = undefined;');
+  try {
+    return fn();
+  } finally {
+    execNoSandbox(nome + ' = ' + backup + '; ' + backup + ' = undefined;');
+  }
+}
+
+module.exports = {
+  loadCoreModules,
+  loadScript,
+  resetFixtures,
+  execNoSandbox,
+  semGlobalNoSandbox,
+};

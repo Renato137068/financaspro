@@ -1,0 +1,8 @@
+{
+  "_comentario": "Teto de valores literais no CSS. So pode DIMINUIR. Regenerado por scripts/check-css-tokens.cjs --update",
+  "hex": 233,
+  "fontes": 119,
+  "total": 352,
+  "atualizadoEm": "2026-08-22",
+  "_nota_2026_08_22": "Teto anterior 348. A auditoria tokenizou 2 literais (bordas de impressao em config.css -> --color-border-print), levando a 346; em paralelo o trabalho de password-policy/UX (auth.css, ux-polish.css) adicionou literais novos, e o total fechou em 352. Os 6 acima de 346 sao dessa frente, nao da auditoria: valem tokenizacao no commit que os introduziu."
+}

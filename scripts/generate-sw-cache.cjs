@@ -20,11 +20,16 @@ function walkDir(dir, prefix) {
   return out;
 }
 
-function extractScripts(htmlPath, distMode) {
+/**
+ * Scripts locais referenciados pelo index.html.
+ *
+ * Em dist são exatamente três: pin-guard (bloqueante, roda antes do primeiro
+ * paint), vendor.bundle e app.bundle. A versão anterior devolvia apenas
+ * app.bundle.js em dist — pin-guard e vendor ficavam fora do precache e o app
+ * não subia offline no primeiro acesso sem rede.
+ */
+function extractScripts(htmlPath) {
   const html = fs.readFileSync(htmlPath, 'utf8');
-  if (distMode && html.includes('app.bundle.js')) {
-    return ['/js/app.bundle.js'];
-  }
   const re = /<script[^>]+src="([^"]+)"[^>]*>/g;
   const out = [];
   let m;
@@ -48,10 +53,20 @@ function extractLinkedAssets(htmlPath) {
   return out;
 }
 
-/** Arquivos estáticos em dist/assets, dist/css, dist/js (hashes Vite) */
-function walkDistStatic(distDir) {
+/**
+ * Ícones e assets com hash do Vite — precisam estar no precache porque o
+ * manifest do PWA e a tela inicial os referenciam antes de qualquer navegação.
+ *
+ * Deliberadamente NÃO varre dist/js e dist/css: em produção o index.html
+ * carrega apenas os bundles, e precachear também os ~93 módulos soltos e os
+ * ~40 CSS individuais fazia o primeiro acesso baixar o mesmo código duas
+ * vezes. O handler de fetch já é stale-while-revalidate, então qualquer chunk
+ * sob demanda (previsão, relatórios) entra no cache na primeira vez que o
+ * usuário abre a tela — e a partir daí funciona offline.
+ */
+function walkDistAssets(distDir) {
   const out = [];
-  for (const sub of ['assets', 'css', 'js']) {
+  for (const sub of ['assets', 'icons']) {
     const base = path.join(distDir, sub);
     if (!fs.existsSync(base)) continue;
     (function walk(dir, urlPrefix) {
@@ -59,11 +74,89 @@ function walkDistStatic(distDir) {
         const full = path.join(dir, ent.name);
         const url = urlPrefix + '/' + ent.name;
         if (ent.isDirectory()) walk(full, url);
-        else if (/\.(css|js|png|svg|json|webp)$/i.test(ent.name)) {
+        else if (/\.(png|svg|json|webp|ico)$/i.test(ent.name)) {
           out.push(url.replace(/\\/g, '/'));
         }
       }
     })(base, '/' + sub);
+  }
+  return out;
+}
+
+/**
+ * Fallback pesado do lucide (~390 KB): carregado sob demanda pelo lucide-init
+ * apenas se algum ícone do subset não resolver. Precacheá-lo anulava toda a
+ * economia do subset de 26 KB.
+ */
+const PRECACHE_BLOCKLIST = [/\/js\/vendor\/lucide-full\.min\.js$/];
+
+/**
+ * Fontes que entram no precache: só as da primeira pintura, mais o CSS que as
+ * declara. As outras 4 chegam pelo cache de runtime quando aparecerem.
+ *
+ * Precachear os 8 pesos custaria ~156 KB no primeiro acesso para tipos que
+ * talvez nem apareçam na tela inicial — trocaria um problema de rede por um
+ * problema de peso.
+ *
+ * A lista é gerada por scripts/setup-fonts.cjs. Se o arquivo não existir, o
+ * precache segue sem fontes em vez de quebrar o build: elas ainda funcionam
+ * online, e a alternativa seria travar o deploy por um passo opcional.
+ */
+function fontesCriticas(targetDir, distMode) {
+  const manifesto = path.join(root, 'fonts', 'criticas.json');
+  if (!fs.existsSync(manifesto)) return [];
+
+  let nomes;
+  try {
+    nomes = JSON.parse(fs.readFileSync(manifesto, 'utf8'));
+  } catch (e) {
+    console.warn('[generate-sw-cache] fonts/criticas.json ilegível — precache sem fontes');
+    return [];
+  }
+
+  if (!distMode) return ['/css/fonts.css', ...nomes.map(n => '/fonts/' + n)];
+
+  // Em produção o Vite reemite as woff2 em dist/assets com hash no nome, e o
+  // CSS bundlado aponta para essas. Precachear o caminho cru baixaria arquivos
+  // que nada referencia E deixaria os realmente usados fora do cache — offline
+  // continuaria caindo na fonte do sistema, com o custo pago mesmo assim.
+  const assetsDir = path.join(targetDir, 'assets');
+  if (!fs.existsSync(assetsDir)) return [];
+
+  const emitidos = fs.readdirSync(assetsDir).filter(f => /\.woff2$/i.test(f));
+  const out = [];
+
+  for (const nome of nomes) {
+    const base = nome.replace(/\.woff2$/i, '');
+    const casado = emitidos.find(f => f.startsWith(base + '-') || f === nome);
+    if (casado) out.push('/assets/' + casado);
+    else console.warn(`[generate-sw-cache] fonte crítica sem correspondente em dist: ${nome}`);
+  }
+  return out;
+}
+
+/**
+ * Remove do precache o que não existe no disco.
+ *
+ * A lista `base` traz caminhos fixos, e caminho fixo apodrece: basta um script
+ * de cópia mudar o layout de dist/ para o SW passar a pedir um arquivo que não
+ * existe. Antes isso derrubava o precache inteiro em silêncio; agora o item
+ * some aqui, na geração, com aviso no build — o erro aparece no CI, e não no
+ * celular do usuário.
+ */
+function apenasExistentes(urls, targetDir) {
+  const out = [];
+  const ausentes = [];
+  for (const url of urls) {
+    // '/' é a navegação raiz, servida pelo index.html — não é um arquivo.
+    if (url === '/') { out.push(url); continue; }
+    const rel = url.replace(/^\//, '');
+    if (fs.existsSync(path.join(targetDir, rel))) out.push(url);
+    else ausentes.push(url);
+  }
+  if (ausentes.length) {
+    console.warn('[generate-sw-cache] fora do precache (não existem em '
+      + path.basename(targetDir) + '):', ausentes.join(', '));
   }
   return out;
 }
@@ -80,20 +173,22 @@ function buildUrls(targetDir) {
     '/icons/logo.svg',
     '/icons/android/icon-192.png',
     '/icons/android/icon-512.png',
+    ...fontesCriticas(targetDir, distMode),
   ];
 
   if (distMode) {
     const linked = extractLinkedAssets(indexPath);
-    const scripts = extractScripts(indexPath, true);
-    const distStatic = walkDistStatic(targetDir);
-    const unique = [...new Set([...base, ...linked, ...scripts, ...distStatic])];
-    return unique.sort();
+    const scripts = extractScripts(indexPath);
+    const assets = walkDistAssets(targetDir);
+    const unique = [...new Set([...base, ...linked, ...scripts, ...assets])]
+      .filter(u => !PRECACHE_BLOCKLIST.some(re => re.test(u)));
+    return apenasExistentes(unique.sort(), targetDir);
   }
 
   const css = walkDir(path.join(root, 'css'), '');
-  const scripts = extractScripts(indexPath, false);
+  const scripts = extractScripts(indexPath);
   const unique = [...new Set([...base, ...css, ...scripts])];
-  return unique.sort();
+  return apenasExistentes(unique.sort(), targetDir);
 }
 
 function renderSw(urls) {
@@ -103,9 +198,28 @@ function renderSw(urls) {
 const CACHE_NAME = '${CACHE_NAME}';
 const urlsParaCache = ${JSON.stringify(urls, null, 2)};
 
+// cache.addAll é tudo-ou-nada: uma única URL com 404 rejeita a operação
+// inteira. Com um catch vazio, o install ainda assim é dado como bem-sucedido
+// — o service worker ativa, o app anuncia que funciona offline, e o cache está
+// VAZIO. É a pior falha possível num app offline-first, porque ela mente.
+// Aqui cada item é buscado por conta própria: o que falhar fica de fora e é
+// reportado, o resto entra. O app degrada em vez de enganar.
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsParaCache).catch(() => {})),
+    caches.open(CACHE_NAME).then((cache) => Promise.allSettled(
+      urlsParaCache.map((url) => cache.add(new Request(url, { cache: 'reload' }))),
+    )).then((r) => {
+      const falhas = [];
+      r.forEach((res, i) => { if (res.status === 'rejected') falhas.push(urlsParaCache[i]); });
+      if (falhas.length) {
+        console.error('[sw] precache incompleto —', falhas.length, 'de', urlsParaCache.length, 'falharam:', falhas);
+      }
+      // Se NADA entrou no cache, não há offline nenhum: falhar o install
+      // impede que este SW assuma e passe a servir um cache vazio.
+      if (falhas.length === urlsParaCache.length) {
+        throw new Error('[sw] precache falhou por completo — install abortado');
+      }
+    }),
   );
 });
 

@@ -5,26 +5,32 @@
   "type": "module",
   "main": "index.html",
   "scripts": {
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "test:ci": "jest --ci && node scripts/backend-smoke-test.mjs && node scripts/backend-api-test.mjs && node scripts/backend-integration-test.mjs && node scripts/check-xss-sinks.cjs && node scripts/sync-conflict-test.mjs",
+    "test": "npm run test:frontend:unit && npm run test:backend:unit",
+    "test:frontend:unit": "node node_modules/jest/bin/jest.js --config jest.frontend.config.cjs",
+    "test:backend:unit": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.backend.config.cjs",
+    "test:watch": "node node_modules/jest/bin/jest.js --config jest.frontend.config.cjs --watch",
+    "test:coverage": "node node_modules/jest/bin/jest.js --config jest.frontend.config.cjs --coverage && node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.backend.config.cjs --coverage",
+    "test:ci": "node node_modules/jest/bin/jest.js --config jest.frontend.config.cjs --ci --coverage && node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.backend.config.cjs --ci --coverage && node scripts/backend-smoke-test.mjs && node scripts/backend-api-test.mjs && node scripts/backend-integration-test.mjs && node scripts/check-xss-sinks.cjs && node scripts/check-contrast.cjs && node scripts/check-css-tokens.cjs && node scripts/sync-conflict-test.mjs",
     "test:backend": "node scripts/backend-smoke-test.mjs",
     "test:api": "node scripts/backend-api-test.mjs",
-    "test:unit": "jest --testPathPattern=tests/ --verbose",
-    "test:open-coverage": "jest --coverage && start coverage/lcov-report/index.html",
+    "test:unit": "npm run test",
+    "test:open-coverage": "npm run test:coverage && start coverage/frontend/lcov-report/index.html",
     "lint": "eslint js/ backend/ --ext .js",
+    "lint:strict": "eslint js/ backend/ --ext .js --max-warnings 0",
+    "lint:changed": "node scripts/lint-changed.cjs",
     "security:xss": "node scripts/check-xss-sinks.cjs",
     "docs:openapi": "node scripts/generate-openapi.mjs",
     "test:sync": "node scripts/sync-conflict-test.mjs",
     "dev": "vite",
     "dev:legacy": "http-server . -p 3000 -g",
-    "build": "vite build --config vite.config.cjs && node scripts/copy-static.cjs && node scripts/harden-csp.cjs",
+    "build": "node scripts/setup-fonts.cjs && vite build --config vite.config.cjs && node scripts/copy-static.cjs && node scripts/harden-csp.cjs && node scripts/check-dist-orphans.cjs",
+    "check:bundle": "node scripts/check-bundle-budget.cjs",
+    "check:bundle:report": "node scripts/check-bundle-budget.cjs --report",
     "build:analyze": "vite build --config vite.config.cjs --mode analyze",
     "preview": "vite preview",
     "backend": "node backend/server.js",
     "backend:dev": "node --watch backend/server.js",
-    "start": "vite preview",
+    "start": "node scripts/servidor-local.cjs",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:prod": "prisma migrate deploy",
@@ -43,6 +49,7 @@
     "play-assets:generate": "node scripts/generate-play-assets.cjs",
     "screenshots:capture": "node scripts/capture-screenshots.cjs",
     "test:e2e": "playwright test --config playwright.config.cjs",
+    "test:e2e:smoke": "playwright test --config playwright.config.cjs e2e/smoke-boot.spec.cjs",
     "test:a11y": "playwright test --config playwright.config.cjs accessibility.spec.cjs",
     "android:sync": "npm run build && npx cap sync android",
     "android:open": "npx cap open android",
@@ -51,7 +58,15 @@
     "android:bundle": "npm run android:sync && node scripts/android-bundle.cjs",
     "ios:sync": "npm run build && npx cap sync ios",
     "ios:open": "npx cap open ios",
-    "ios:add": "npx cap add ios"
+    "ios:add": "npx cap add ios",
+    "check:contrast": "node scripts/check-contrast.cjs",
+    "check:a11y": "node scripts/check-contrast.cjs && npm run test:frontend:unit -- tests/a11y-static.test.js",
+    "check:css": "node scripts/check-css-tokens.cjs",
+    "check:css:update": "node scripts/check-css-tokens.cjs --update",
+    "css:tokenize": "node scripts/css-hex-to-token.cjs",
+    "fonts": "node scripts/setup-fonts.cjs",
+    "start:dist": "node scripts/servidor-local.cjs --dist",
+    "check:dist": "node scripts/check-dist-orphans.cjs"
   },
   "keywords": [
     "finanças",
@@ -87,6 +102,8 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.10.1",
     "@capacitor/cli": "^8.4.1",
+    "@fontsource/inter": "^5.0.0",
+    "@fontsource/plus-jakarta-sans": "^5.0.0",
     "@playwright/test": "^1.61.1",
     "@types/node": "^20.10.0",
     "esbuild": "^0.28.1",
@@ -103,44 +120,9 @@
     "vite": "^6.4.3"
   },
   "overrides": {
-    "brace-expansion": "5.0.8",
+    "brace-expansion": "5.0.9",
     "postcss": "^8.5.18",
     "tar": "^7.5.22"
-  },
-  "jest": {
-    "testEnvironment": "jsdom",
-    "setupFiles": [
-      "<rootDir>/tests/setup-globals.js"
-    ],
-    "coverageProvider": "v8",
-    "transform": {},
-    "testMatch": [
-      "<rootDir>/tests/**/*.test.js"
-    ],
-    "collectCoverageFrom": [
-      "js/core/utils.js",
-      "js/core/validations.js",
-      "js/score.js",
-      "js/parser.js",
-      "js/core/store.js",
-      "js/orcamento.js",
-      "js/transacoes.js",
-      "js/pipeline.js",
-      "js/metas.js"
-    ],
-    "coverageThreshold": {
-      "global": {
-        "lines": 85,
-        "functions": 88,
-        "branches": 72
-      }
-    },
-    "coverageReporters": [
-      "text",
-      "lcov",
-      "html"
-    ],
-    "verbose": true
   },
   "engines": {
     "node": ">=18.0.0",
