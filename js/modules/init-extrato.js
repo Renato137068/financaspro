@@ -1042,7 +1042,7 @@ const INIT_EXTRATO = {
     var csv = '\uFEFF'; // BOM
     
     // Header informativo
-    csv += 'Extrato FinançasPro\n';
+    csv += 'Extrato Sobra\n';
     csv += 'Período: ' + mesNome + ' de ' + info.ano + '\n';
     csv += 'Gerado em: ' + new Date().toLocaleDateString('pt-BR') + ' às ' + new Date().toLocaleTimeString('pt-BR') + '\n';
     csv += '\n';
@@ -1080,7 +1080,7 @@ const INIT_EXTRATO = {
     link.download = 'extrato_' + mesNome.toLowerCase() + '_' + info.ano + '.csv';
     link.click();
     
-    UTILS.mostrarToast('Planilha CSV exportada!', 'success');
+    UTILS.mostrarToast('Planilha exportada', 'success');
   },
 
   /**
@@ -1107,38 +1107,38 @@ const INIT_EXTRATO = {
     var nomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
     var mesNome = nomes[info.mes - 1];
 
-    var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Extrato FinançasPro - ' + mesNome + ' ' + info.ano + '</title>';
+    var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Extrato Sobra - ' + mesNome + ' ' + info.ano + '</title>';
     html += '<style>';
     html += '@page { margin: 20mm; size: A4; }';
-    html += 'body { font-family: "Segoe UI", Arial, sans-serif; margin: 0; padding: 20px; color: #1e293b; }';
-    html += '.header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #00723F; padding-bottom: 20px; }';
-    html += '.header h1 { color: #00723F; margin: 0 0 10px 0; font-size: 28px; }';
-    html += '.header p { color: #64748b; margin: 5px 0; font-size: 14px; }';
+    html += 'body { font-family: "Segoe UI", Arial, sans-serif; margin: 0; padding: 20px; color: #242a27; }';
+    html += '.header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #12694E; padding-bottom: 20px; }';
+    html += '.header h1 { color: #12694E; margin: 0 0 10px 0; font-size: 28px; }';
+    html += '.header p { color: #6e7a74; margin: 5px 0; font-size: 14px; }';
     html += '.summary { display: flex; justify-content: space-between; margin-bottom: 30px; gap: 20px; }';
     html += '.summary-card { flex: 1; padding: 15px; border-radius: 8px; text-align: center; }';
     html += '.summary-card.receitas { background: #dcfce7; border: 1px solid #86efac; }';
     html += '.summary-card.despesas { background: #fee2e2; border: 1px solid #fca5a5; }';
     html += '.summary-card.saldo { background: #dbeafe; border: 1px solid #93c5fd; }';
-    html += '.summary-card h3 { margin: 0 0 10px 0; font-size: 12px; text-transform: uppercase; color: #64748b; }';
+    html += '.summary-card h3 { margin: 0 0 10px 0; font-size: 12px; text-transform: uppercase; color: #6e7a74; }';
     html += '.summary-card .value { font-size: 24px; font-weight: bold; }';
     html += '.receitas .value { color: #16a34a; }';
     html += '.despesas .value { color: #dc2626; }';
-    html += '.saldo .value { color: #2563eb; }';
+    html += '.saldo .value { color: #2c6e8f; }';
     html += 'table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }';
-    html += 'th { background: #f1f5f9; padding: 12px; text-align: left; font-weight: 600; font-size: 12px; text-transform: uppercase; color: #64748b; border-bottom: 2px solid #e2e8f0; }';
-    html += 'td { padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 13px; }';
-    html += 'tr:hover { background: #f8fafc; }';
+    html += 'th { background: #f3f5f4; padding: 12px; text-align: left; font-weight: 600; font-size: 12px; text-transform: uppercase; color: #6e7a74; border-bottom: 2px solid #e5e9e7; }';
+    html += 'td { padding: 12px; border-bottom: 1px solid #e5e9e7; font-size: 13px; }';
+    html += 'tr:hover { background: #fbfcfb; }';
     html += '.receita { color: #16a34a; font-weight: 600; }';
     html += '.despesa { color: #dc2626; font-weight: 600; }';
-    html += '.categoria { font-weight: 500; color: #475569; }';
-    html += '.footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center; color: #94a3b8; font-size: 12px; }';
+    html += '.categoria { font-weight: 500; color: #55605a; }';
+    html += '.footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e9e7; text-align: center; color: #98a39d; font-size: 12px; }';
     html += '@media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }';
     html += '</style>';
     html += '</head><body>';
     
     // Header
     html += '<div class="header">';
-    html += '<h1>FinançasPro</h1>';
+    html += '<h1>Sobra</h1>';
     html += '<p>Extrato de ' + mesNome + ' de ' + info.ano + '</p>';
     html += '<p>Gerado em ' + new Date().toLocaleDateString('pt-BR') + ' às ' + new Date().toLocaleTimeString('pt-BR') + '</p>';
     html += '</div>';
@@ -1172,7 +1172,7 @@ const INIT_EXTRATO = {
     
     // Footer
     html += '<div class="footer">';
-    html += '<p>FinançasPro - Controle suas finanças com simplicidade</p>';
+    html += '<p>Sobra - Controle suas finanças com simplicidade</p>';
     html += '<p>Total de ' + txs.length + ' transações neste período</p>';
     html += '</div>';
     
@@ -1186,7 +1186,7 @@ const INIT_EXTRATO = {
       setTimeout(function() { win.print(); }, 250);
       UTILS.mostrarToast('Extrato gerado para impressão/PDF', 'success');
     } else {
-      UTILS.mostrarToast('Não foi possível abrir janela de impressão. Verifique o bloqueador de pop-ups.', 'error');
+      UTILS.mostrarToast('O navegador bloqueou a janela de impressão. Libere pop-ups para este site.', 'error');
     }
   },
 
@@ -1203,7 +1203,7 @@ const INIT_EXTRATO = {
    * Obtém cor da categoria
    */
   getCatCor: function(cat) { 
-    return this.CATEGORIA_CORES[cat] || this.CATEGORIA_CORES[cat.toLowerCase()] || '#94a3b8'; 
+    return this.CATEGORIA_CORES[cat] || this.CATEGORIA_CORES[cat.toLowerCase()] || '#98a39d'; 
   }
 };
 
@@ -1223,14 +1223,14 @@ INIT_EXTRATO.CATEGORIA_ICONES = {
 
 // Cores por categoria
 INIT_EXTRATO.CATEGORIA_CORES = {
-  'salario': '#10b981', 'freelance': '#6366f1', 'investimentos': '#0ea5e9', 'vendas': '#f59e0b',
-  'alimentacao': '#ef4444', 'transporte': '#8b5cf6', 'utilities': '#06b6d4', 'moradia': '#14b8a6',
-  'saude': '#ec4899', 'educacao': '#3b82f6', 'entretenimento': '#f97316', 'lazer': '#a855f7',
+  'salario': '#2f9c6d', 'freelance': '#6366f1', 'investimentos': '#0ea5e9', 'vendas': '#c98a1e',
+  'alimentacao': '#c9573a', 'transporte': '#8b5cf6', 'utilities': '#06b6d4', 'moradia': '#14b8a6',
+  'saude': '#ec4899', 'educacao': '#3c86a8', 'entretenimento': '#f97316', 'lazer': '#a855f7',
   'compras': '#e11d48', 'vestuario': '#7c3aed', 'viagem': '#0284c7', 'pet': '#84cc16',
-  'assinaturas': '#6366f1', 'outro': '#94a3b8', 'outros': '#94a3b8',
-  'Salário': '#10b981', 'Alimentação': '#ef4444', 'Transporte': '#8b5cf6', 'Saúde': '#ec4899',
-  'Educação': '#3b82f6', 'Moradia': '#14b8a6', 'Lazer': '#a855f7', 'Freelance': '#6366f1',
-  'Investimentos': '#0ea5e9', 'Vendas': '#f59e0b', 'Entretenimento': '#f97316', 'Outros': '#94a3b8'
+  'assinaturas': '#6366f1', 'outro': '#98a39d', 'outros': '#98a39d',
+  'Salário': '#2f9c6d', 'Alimentação': '#c9573a', 'Transporte': '#8b5cf6', 'Saúde': '#ec4899',
+  'Educação': '#3c86a8', 'Moradia': '#14b8a6', 'Lazer': '#a855f7', 'Freelance': '#6366f1',
+  'Investimentos': '#0ea5e9', 'Vendas': '#c98a1e', 'Entretenimento': '#f97316', 'Outros': '#98a39d'
 };
 
 // Export para compatibilidade

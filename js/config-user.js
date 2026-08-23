@@ -49,7 +49,7 @@ var CONFIG_USER = {
     }
     // Sem INIT_CONFIG carregado, exportar um formato incompatível seria pior do
     // que não exportar: o usuário guardaria um backup que não restaura.
-    UTILS.mostrarToast('Exportação indisponível — recarregue a página', 'error');
+    UTILS.mostrarToast('Não foi possível exportar agora. Recarregue a página.', 'error');
   },
 
   limparDados: function() {
@@ -57,7 +57,7 @@ var CONFIG_USER = {
       DADOS.limparTodos();
       TRANSACOES.init();
       ORCAMENTO.init();
-      UTILS.mostrarToast('Todos os dados foram apagados.', 'warning');
+      UTILS.mostrarToast('Tudo apagado. Não sobrou nada neste aparelho.', 'warning');
       setTimeout(function() { location.reload(); }, 1500);
     });
   },

@@ -133,7 +133,7 @@ const INIT_ASSINATURAS = {
         diaCobranca: parseInt(document.getElementById('sub-dia').value, 10)
       });
       overlay.remove();
-      UTILS.mostrarToast('Assinatura adicionada!', 'success');
+      UTILS.mostrarToast('Assinatura salva', 'success');
       this.render();
       this.renderResumo();
     } catch (e) {

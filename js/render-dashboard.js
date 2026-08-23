@@ -8,7 +8,7 @@
 
   // Constantes compartilhadas — fonte única em core/config.js
   var CORES_CATEGORIAS = (typeof CONFIG !== 'undefined' && CONFIG.CORES_CATEGORIAS) ||
-    { alimentacao: '#ef6c00', transporte: '#1565c0', moradia: '#2e7d32', saude: '#c62828', lazer: '#7b1fa2', salario: '#00723F', outro: '#78909c' };
+    { alimentacao: '#ef6c00', transporte: '#1565c0', moradia: '#2e7d32', saude: '#c62828', lazer: '#7b1fa2', salario: '#12694E', outro: '#78909c' };
   var NOMES_MESES = (typeof CONFIG !== 'undefined' && CONFIG.NOMES_MESES) ||
     ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
@@ -287,7 +287,7 @@
           pctGasto.toFixed(0) + '% da renda',
           pctGasto > 100 ? 'Indicador alerta' : 'Indicador ok',
           tipo1,
-          { pct: Math.min(pctGasto, 100), cor: pctGasto > 100 ? '#ef4444' : pctGasto > 80 ? '#f59e0b' : '#10b981' }
+          { pct: Math.min(pctGasto, 100), cor: pctGasto > 100 ? '#c9573a' : pctGasto > 80 ? '#c98a1e' : '#2f9c6d' }
         ));
       }
 

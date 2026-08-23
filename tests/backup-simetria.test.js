@@ -148,10 +148,14 @@ describe('backup — um único formato', () => {
 
     // Quem cria um link de download com nome de backup está gerando um
     // formato. Deve haver exatamente um.
+    // A busca é por NOME DE PRODUTO qualquer, não pelo nome atual: quando o app
+    // foi renomeado de FinançasPro para Sobra este teste quebrou por citar a
+    // marca antiga, e um teste de arquitetura não deveria depender do nome
+    // comercial. Agora ele casa com qualquer prefixo seguido de _backup_.
     const geradores = arquivos.filter(f => {
       const s = fs.readFileSync(f, 'utf8');
-      return /download.*financaspro[_-]backup|financaspro[_-]backup.*download/is.test(s)
-        || /link\.download\s*=\s*'financaspro/.test(s);
+      return /link\.download\s*=\s*'[a-z0-9]+[_-]backup[_-]/i.test(s)
+        || /download.*[a-z0-9]+[_-]backup|[a-z0-9]+[_-]backup.*download/is.test(s);
     });
 
     expect(geradores.map(f => path.relative(root, f))).toEqual([

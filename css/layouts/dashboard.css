@@ -76,7 +76,7 @@
 }
 
 .card-saldo-principal.saldo-negativo:hover {
-  border-color: var(--color-danger-dark);
+  border-color: var(--color-danger-text);
   box-shadow: var(--shadow-card-hover);
 }
 
@@ -167,8 +167,8 @@
 }
 
 /* Cores específicas por tipo de card */
-.card.receita .card-valor { color: var(--color-success-dark); }
-.card.despesa .card-valor { color: var(--color-danger-dark); }
+.card.receita .card-valor { color: var(--color-success-text); }
+.card.despesa .card-valor { color: var(--color-danger-text); }
 
 .card-comparacao {
   margin-top: var(--space-2);
@@ -549,13 +549,13 @@
 
 .cartao-barra {
   height: 6px;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   background: var(--color-bg-subtle, var(--color-border));
   overflow: hidden;
   margin-bottom: var(--space-2);
 }
 
-.cartao-barra-fill { height: 100%; border-radius: 3px; transition: width var(--transition-base, .2s); }
+.cartao-barra-fill { height: 100%; border-radius: var(--radius-sm); transition: width var(--transition-base, .2s); }
 .cartao-barra-fill.ok        { background: var(--color-success); }
 .cartao-barra-fill.alerta    { background: var(--color-warning); }
 .cartao-barra-fill.estourado { background: var(--color-danger); }

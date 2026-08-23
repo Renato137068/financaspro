@@ -19,7 +19,7 @@ const INIT_ORCAMENTO = {
 
   _getCatCor: function(cat) {
     if (typeof INIT_EXTRATO !== 'undefined' && INIT_EXTRATO.getCatCor) return INIT_EXTRATO.getCatCor(cat);
-    return '#94a3b8';
+    return '#98a39d';
   },
 
   _catLucideName: function(cat) {
@@ -44,7 +44,7 @@ const INIT_ORCAMENTO = {
       return;
     }
     DADOS.salvarConfig({ renda: val });
-    UTILS.mostrarToast('Renda definida!', 'success');
+    UTILS.mostrarToast('Renda definida', 'success');
     this.renderDashboard();
     if (typeof INIT_CONFIG !== 'undefined' && INIT_CONFIG.refreshPerfil) INIT_CONFIG.refreshPerfil();
   },
@@ -81,7 +81,7 @@ const INIT_ORCAMENTO = {
           overlay.remove();
           self.renderDashboard();
           if (typeof INIT_CONFIG !== 'undefined' && INIT_CONFIG.refreshPerfil) INIT_CONFIG.refreshPerfil();
-          UTILS.mostrarToast('Renda atualizada!', 'success');
+          UTILS.mostrarToast('Renda atualizada', 'success');
           if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(overlay);
         };
       }
@@ -127,7 +127,7 @@ const INIT_ORCAMENTO = {
           DADOS.salvarConfig({ regra503020: { nec: nec, des: des, pou: pou } });
           overlay.remove();
           self.renderDashboard();
-          UTILS.mostrarToast('Regra personalizada! ' + nec + '/' + des + '/' + pou, 'success');
+          UTILS.mostrarToast('Regra ajustada para ' + nec + '/' + des + '/' + pou, 'success');
         };
       }
       var inputs = overlay.querySelectorAll('.orc-regra-input-field');
@@ -243,7 +243,7 @@ const INIT_ORCAMENTO = {
       }
     } catch (error) {
       console.error('Erro ao renderizar orçamento:', error);
-      UTILS.mostrarToast('Erro ao carregar orçamento', 'error');
+      UTILS.mostrarToast('Não foi possível carregar o orçamento. Recarregue a página.', 'error');
     }
   },
 

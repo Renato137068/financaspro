@@ -24,8 +24,8 @@ var ONBOARDING = (function() {
     var passos = [
       {
         emoji:  '<i data-lucide="hand" aria-hidden="true"></i>',
-        titulo: 'Bem-vindo ao FinançasPro!',
-        texto:  'Controle financeiro inteligente com IA. Você pode explorar o app agora e configurar o restante quando quiser.',
+        titulo: 'Seus dados ficam neste aparelho.',
+        texto:  'Sem cadastro, sem e-mail e sem conectar o seu banco. Você exporta tudo quando quiser — e apaga tudo também.',
         dica:   'Esc para fechar • Enter para continuar'
       }
     ];
@@ -33,8 +33,8 @@ var ONBOARDING = (function() {
     if (!renda) {
       passos.push({
         emoji:     '<i data-lucide="wallet" aria-hidden="true"></i>',
-        titulo:    'Renda mensal (opcional)',
-        texto:     'Informe para ativar orçamento 50/30/20 e indicadores personalizados. Pode pular e definir depois em Orçamento.',
+        titulo:    'Quanto entra por mês?',
+        texto:     'É só para o app saber o tamanho da sua folga. Dá para pular agora e definir depois em Orçamento.',
         rendaStep: true,
         dica:      'Toque em "Pular" para configurar depois'
       });
@@ -42,8 +42,8 @@ var ONBOARDING = (function() {
 
     passos.push({
       emoji:  '<i data-lucide="rocket" aria-hidden="true"></i>',
-      titulo: 'Pronto para começar!',
-      texto:  'Dica: na aba Novo, digite <em>"mercado 45 ontem"</em> — o app entende linguagem natural.',
+      titulo: 'Pronto.',
+      texto:  'Na aba Novo, escreva do seu jeito: <em>"mercado 45 ontem"</em> já vira um lançamento.',
       navBtn: 'novo',
       dica:   'Você pode refazer este tour em Perfil → Preferências'
     });

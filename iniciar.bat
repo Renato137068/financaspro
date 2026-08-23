@@ -1,6 +1,6 @@
 @echo off
 REM ============================================================
-REM  FinancasPro - servidor local para teste
+REM  Sobra - servidor local para teste
 REM
 REM  Clique duas vezes neste arquivo. Ele sobe um servidor em
 REM  http://localhost:3000 e abre o navegador.

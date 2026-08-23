@@ -141,7 +141,7 @@
 }
 
 .auth-field label {
-  color: #374151;
+  color: var(--color-gray-700);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
   letter-spacing: 0.025em;
@@ -150,7 +150,7 @@
 .auth-field-hint {
   margin: 0;
   font-size: var(--font-size-xs, 12px);
-  color: #6b7280;
+  color: var(--color-gray-500);
   line-height: 1.4;
 }
 
@@ -158,10 +158,10 @@
   width: 100%;
   min-height: 52px;
   padding: var(--space-4);
-  border: 2px solid #e5e7eb;
+  border: 2px solid var(--color-gray-200);
   border-radius: var(--radius-lg);
   background: var(--color-white);
-  color: #1f2937;
+  color: var(--color-gray-800);
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-medium);
   transition: all var(--transition-smooth);
@@ -170,7 +170,7 @@
 }
 
 .auth-form input::placeholder {
-  color: #9ca3af;
+  color: var(--color-gray-400);
   font-weight: var(--font-weight-normal);
 }
 
@@ -182,8 +182,8 @@
 }
 
 .auth-form input:hover:not(:focus) {
-  border-color: #d1d5db;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-color: var(--color-gray-300);
+  box-shadow: var(--elevacao-1);
 }
 
 /* Botão primário específico do auth */
@@ -192,11 +192,11 @@
   margin-top: var(--space-2);
   background: var(--color-primary-500);
   border: none;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-controle);
   color: var(--color-text-inverse);
   font-size: var(--font-size-base);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: 0.025em;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0;
   box-shadow: var(--shadow-primary);
   transition: all var(--transition-smooth);
   position: relative;
@@ -289,7 +289,7 @@
   display: block;
   margin: 0 auto var(--space-4);
   border-radius: var(--radius-md);
-  border: 1px solid rgba(16, 24, 40, 0.1);
+  border: 1px solid rgba(18, 25, 21, 0.1);
 }
 
 .totp-secret {

@@ -199,7 +199,7 @@ const INIT_CONTAS_PAGAR = {
         recorrente: document.getElementById('conta-recorrente').checked
       });
       overlay.remove();
-      UTILS.mostrarToast('Conta adicionada!', 'success');
+      UTILS.mostrarToast('Conta salva', 'success');
       this.render();
       this.renderResumo();
       if (typeof RENDER !== 'undefined' && RENDER.init) RENDER.init();

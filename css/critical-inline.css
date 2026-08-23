@@ -20,9 +20,7 @@ html.pin-locked body {
 /* ── Auth UI Override ─────────────────────────────────────────── */
 /* Auth UI melhorada - override para forçar aplicação */
 .auth-overlay {
-  background: radial-gradient(circle at 30% 20%, rgba(0, 114, 63, 0.12), transparent 40%),
-              radial-gradient(circle at 70% 80%, rgba(34, 197, 94, 0.08), transparent 35%),
-              linear-gradient(135deg, var(--color-gray-50) 0%, var(--color-gray-100) 50%, var(--color-gray-200) 100%) !important;
+  background: var(--color-gray-50) !important;
   backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
 }
@@ -30,9 +28,9 @@ html.pin-locked body {
 .auth-card {
   background: rgba(255, 255, 255, 0.95) !important;
   border: 1px solid rgba(226, 232, 240, 0.8) !important;
-  border-radius: 16px !important;
+  border-radius: var(--radius-xl) !important;
   padding: 32px !important;
-  box-shadow: 0 20px 50px rgba(0, 114, 63, 0.08),
+  box-shadow: 0 20px 50px rgba(18, 105, 78, 0.08),
              0 8px 25px rgba(0, 0, 0, 0.04),
              inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
   backdrop-filter: blur(12px) !important;
@@ -42,7 +40,7 @@ html.pin-locked body {
 
 .auth-card:hover {
   transform: translateY(-2px) !important;
-  box-shadow: 0 25px 60px rgba(0, 114, 63, 0.12),
+  box-shadow: 0 25px 60px rgba(18, 105, 78, 0.12),
              0 12px 35px rgba(0, 0, 0, 0.06),
              inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
 }
@@ -58,8 +56,8 @@ html.pin-locked body {
 .auth-logo {
   width: 64px !important;
   height: 64px !important;
-  border-radius: 16px !important;
-  background: linear-gradient(135deg, var(--color-success) 0%, var(--color-success-dark) 50%, #047857 100%) !important;
+  border-radius: var(--radius-xl) !important;
+  background: var(--color-success) !important;
   font-size: 32px !important;
   margin-bottom: 16px !important;
   animation: logoFloat 3s ease-in-out infinite !important;
@@ -87,7 +85,7 @@ html.pin-locked body {
 .auth-tabs {
   background: rgba(241, 245, 249, 0.8) !important;
   border: 1px solid rgba(226, 232, 240, 0.6) !important;
-  border-radius: 12px !important;
+  border-radius: var(--radius-xl) !important;
   padding: 3px !important;
   gap: 2px !important;
 }
@@ -95,7 +93,7 @@ html.pin-locked body {
 .auth-tab {
   background: transparent !important;
   color: var(--color-gray-500) !important;
-  border-radius: 10px !important;
+  border-radius: var(--radius-md) !important;
   font-weight: 600 !important;
   font-size: 14px !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -103,54 +101,52 @@ html.pin-locked body {
 
 .auth-tab.ativo {
   background: white !important;
-  color: var(--color-success-dark) !important;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15),
-             0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  color: var(--color-success-text) !important;
+  box-shadow: var(--elevacao-1);
   font-weight: 700 !important;
 }
 
 .auth-form input {
   min-height: 52px !important;
-  border: 2px solid #e5e7eb !important;
-  border-radius: 12px !important;
+  border: 2px solid var(--color-gray-200) !important;
+  border-radius: var(--radius-xl) !important;
   background: var(--color-white) !important;
-  color: #1f2937 !important;
+  color: var(--color-gray-800) !important;
   font-size: 15px !important;
   font-weight: 500 !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  box-shadow: var(--elevacao-1);
 }
 
 .auth-form input:focus {
   border-color: var(--color-success) !important;
-  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1),
-             0 4px 12px rgba(16, 185, 129, 0.15) !important;
+  box-shadow: 0 0 0 4px rgba(47, 156, 109, 0.1),
+             0 4px 12px rgba(47, 156, 109, 0.15) !important;
   transform: translateY(-1px) !important;
 }
 
 .auth-form .btn-primario {
   min-height: 52px !important;
-  background: linear-gradient(135deg, var(--color-success) 0%, var(--color-success-dark) 100%) !important;
+  /* O botão de entrar é o botão PRIMÁRIO, não o de confirmação: usa a cor da
+     marca, não o verde semântico de "deu certo". Eram cores diferentes por
+     acidente — a regra com !important daqui vencia a de auth.css. */
+  background: var(--color-primary-500) !important;
   border: none !important;
-  border-radius: 12px !important;
+  border-radius: var(--radius-controle) !important;
   font-size: 16px !important;
   font-weight: 700 !important;
-  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.25),
-             0 4px 12px rgba(16, 185, 129, 0.15) !important;
+  box-shadow: var(--elevacao-2);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .auth-form .btn-primario:hover {
   transform: translateY(-2px) !important;
-  box-shadow: 0 12px 32px rgba(16, 185, 129, 0.35),
-             0 6px 16px rgba(16, 185, 129, 0.2) !important;
+  box-shadow: var(--elevacao-2);
 }
 
 /* ── Dark Theme Overrides ─────────────────────────────────────── */
 [data-theme="dark"] .auth-overlay {
-  background: radial-gradient(circle at 30% 20%, rgba(16, 185, 129, 0.08), transparent 40%),
-              radial-gradient(circle at 70% 80%, rgba(34, 197, 94, 0.05), transparent 35%),
-              linear-gradient(135deg, var(--color-gray-900) 0%, var(--color-gray-800) 50%, var(--color-gray-900) 100%) !important;
+  background: var(--color-gray-900) !important;
 }
 
 [data-theme="dark"] .auth-card {
@@ -188,6 +184,6 @@ html.pin-locked body {
 
 [data-theme="dark"] .auth-form input:focus {
   border-color: var(--color-success) !important;
-  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15),
-             0 4px 12px rgba(16, 185, 129, 0.25) !important;
+  box-shadow: 0 0 0 4px rgba(47, 156, 109, 0.15),
+             0 4px 12px rgba(47, 156, 109, 0.25) !important;
 }

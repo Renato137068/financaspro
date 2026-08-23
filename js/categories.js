@@ -11,20 +11,20 @@ const CATEGORIES = {
    */
   DEFINICOES: {
     // Receitas
-    salario: { label: 'Salário', icon: 'wallet', cor: '#10b981', tipo: 'receita' },
+    salario: { label: 'Salário', icon: 'wallet', cor: '#2f9c6d', tipo: 'receita' },
     freelance: { label: 'Freelance', icon: 'laptop', cor: '#6366f1', tipo: 'receita' },
     investimentos: { label: 'Investimentos', icon: 'trending-up', cor: '#0ea5e9', tipo: 'receita' },
-    vendas: { label: 'Vendas', icon: 'shopping-cart', cor: '#f59e0b', tipo: 'receita' },
-    outros: { label: 'Outros', icon: 'pin', cor: '#94a3b8', tipo: 'receita' },
+    vendas: { label: 'Vendas', icon: 'shopping-cart', cor: '#c98a1e', tipo: 'receita' },
+    outros: { label: 'Outros', icon: 'pin', cor: '#98a39d', tipo: 'receita' },
     
     // Despesas
-    alimentacao: { label: 'Alimentação', icon: 'utensils', cor: '#ef4444', tipo: 'despesa' },
+    alimentacao: { label: 'Alimentação', icon: 'utensils', cor: '#c9573a', tipo: 'despesa' },
     transporte: { label: 'Transporte', icon: 'car', cor: '#8b5cf6', tipo: 'despesa' },
     moradia: { label: 'Moradia', icon: 'home', cor: '#14b8a6', tipo: 'despesa' },
     saude: { label: 'Saúde', icon: 'pill', cor: '#ec4899', tipo: 'despesa' },
-    educacao: { label: 'Educação', icon: 'book-open', cor: '#3b82f6', tipo: 'despesa' },
+    educacao: { label: 'Educação', icon: 'book-open', cor: '#3c86a8', tipo: 'despesa' },
     lazer: { label: 'Lazer', icon: 'film', cor: '#a855f7', tipo: 'despesa' },
-    outro: { label: 'Outro', icon: 'pin', cor: '#94a3b8', tipo: 'despesa' },
+    outro: { label: 'Outro', icon: 'pin', cor: '#98a39d', tipo: 'despesa' },
     
     // Despesas adicionais (mantidas para compatibilidade)
     entretenimento: { label: 'Entretenimento', icon: 'gamepad-2', cor: '#f97316', tipo: 'despesa' },
@@ -67,7 +67,7 @@ const CATEGORIES = {
     return {
       label: this.formatarLabel(slug),
       icon: 'pin',
-      cor: '#94a3b8',
+      cor: '#98a39d',
       tipo: this.inferirTipo(slug)
     };
   },
@@ -99,7 +99,7 @@ const CATEGORIES = {
    */
   getCor: function(slug) {
     var cat = this.get(slug);
-    return cat ? cat.cor : '#94a3b8';
+    return cat ? cat.cor : '#98a39d';
   },
 
   /**
@@ -194,7 +194,7 @@ const CATEGORIES = {
         return {
           label: slug,
           icon: 'sparkles',
-          cor: '#fbbf24',
+          cor: '#e9b44c',
           tipo: tipo
         };
       }

@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">FinançasPro</string>
-    <string name="title_activity_main">FinançasPro</string>
-    <string name="package_name">com.financaspro.app</string>
-    <string name="custom_url_scheme">com.financaspro.app</string>
+    <string name="app_name">Sobra</string>
+    <string name="title_activity_main">Sobra</string>
+    <string name="package_name">br.com.sobra.app</string>
+    <string name="custom_url_scheme">br.com.sobra.app</string>
 </resources>

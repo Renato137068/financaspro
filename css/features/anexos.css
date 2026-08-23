@@ -35,7 +35,7 @@
 
 .anexo-chip--pendente {
   border-style: dashed;
-  background: rgba(0, 114, 63, 0.05);
+  background: rgba(18, 105, 78, 0.05);
 }
 
 .anexo-chip span {
@@ -64,7 +64,7 @@
   border: none;
   border-radius: var(--radius-md);
   background: rgba(99, 102, 241, 0.12);
-  color: #6366f1;
+  color: var(--color-info-on-light);
   cursor: pointer;
 }
 
@@ -104,6 +104,6 @@
 
 .ext-tx-anexo-badge {
   display: inline-flex;
-  color: #6366f1;
+  color: var(--color-info-on-light);
   margin-left: 4px;
 }

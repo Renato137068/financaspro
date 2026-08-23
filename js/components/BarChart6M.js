@@ -1,4 +1,4 @@
-// FinançasPro — BarChart6M: gráfico de barras dos últimos 6 meses (SVG)
+// Sobra — BarChart6M: gráfico de barras dos últimos 6 meses (SVG)
 // v11.0 — Depende de: _base.js
 // dados: [{ mes: string, receitas: number, despesas: number }]
 (function() {
@@ -34,16 +34,16 @@
       var hDesp = (dados[j].despesas / maxVal) * chartH;
 
       // SVG seguro: dados[j].mes é string curta de mês (ex: "Jan"), sem dados de usuário
-      svg += '<rect x="' + x + '" y="' + (padding + chartH - hRec) + '" width="' + barW + '" height="' + hRec + '" rx="3" fill="#10b981" opacity="0.85">' +
+      svg += '<rect x="' + x + '" y="' + (padding + chartH - hRec) + '" width="' + barW + '" height="' + hRec + '" rx="3" fill="#2f9c6d" opacity="0.85">' +
         '<title>Receita ' + dados[j].mes + ': ' + moeda(dados[j].receitas) + '</title></rect>';
-      svg += '<rect x="' + (x + barW + gap) + '" y="' + (padding + chartH - hDesp) + '" width="' + barW + '" height="' + hDesp + '" rx="3" fill="#ef4444" opacity="0.85">' +
+      svg += '<rect x="' + (x + barW + gap) + '" y="' + (padding + chartH - hDesp) + '" width="' + barW + '" height="' + hDesp + '" rx="3" fill="#c9573a" opacity="0.85">' +
         '<title>Despesa ' + dados[j].mes + ': ' + moeda(dados[j].despesas) + '</title></rect>';
       svg += '<text x="' + (x + groupW / 2) + '" y="' + (h - 4) + '" text-anchor="middle" fill="#666" font-size="9" font-weight="600">' + dados[j].mes + '</text>';
     }
 
-    svg += '<rect x="' + (w - 120) + '" y="4" width="8" height="8" rx="2" fill="#10b981"/>';
+    svg += '<rect x="' + (w - 120) + '" y="4" width="8" height="8" rx="2" fill="#2f9c6d"/>';
     svg += '<text x="' + (w - 108) + '" y="12" fill="#666" font-size="8">Receitas</text>';
-    svg += '<rect x="' + (w - 60) + '" y="4" width="8" height="8" rx="2" fill="#ef4444"/>';
+    svg += '<rect x="' + (w - 60) + '" y="4" width="8" height="8" rx="2" fill="#c9573a"/>';
     svg += '<text x="' + (w - 48) + '" y="12" fill="#666" font-size="8">Despesas</text>';
     svg += '</svg>';
     return svg;

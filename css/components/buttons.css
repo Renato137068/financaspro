@@ -189,7 +189,7 @@
 
 .btn-export-pdf {
   background: #fff7ed;
-  border-color: #ea580c;
+  border-color: var(--color-warning-on-light);
   color: #c2410c;
 }
 
@@ -277,15 +277,15 @@
 
 /* Variante do tipo-btn para [data-tipo] (aba novo) */
 .tipo-btn[data-tipo="receita"].ativo {
-  background: rgba(16, 185, 129, 0.1);
+  background: rgba(47, 156, 109, 0.1);
   border-color: var(--color-success);
-  color: var(--color-success-dark);
+  color: var(--color-success-text);
 }
 
 .tipo-btn[data-tipo="despesa"].ativo {
   background: var(--color-danger-bg);
   border-color: var(--color-danger);
-  color: var(--color-danger-dark);
+  color: var(--color-danger-text);
 }
 
 /* ── Filtro chip (extrato/categorias) ────────────────────── */
@@ -407,5 +407,5 @@
 /* Variante destrutiva discreta com hover suave em vermelho */
 .btn-ghost.meta-btn-danger:hover:not(:disabled) {
   background: var(--color-danger-bg);
-  color: #dc2626;
+  color: var(--color-danger-on-light);
 }

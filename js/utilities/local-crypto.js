@@ -143,10 +143,14 @@ var LOCAL_CRYPTO = {
   },
 
   // Chave legada (SHA-256 do passphrase antigo) — SÓ para decifrar dados 'enc1'.
+  // ATENÇÃO: o literal abaixo entra na derivação da chave de dados já gravados.
+  // Ele NÃO acompanha o nome do produto e não pode ser renomeado nunca — trocá-lo
+  // torna ilegível todo dado cifrado no formato 'enc1'. Coberto por teste.
+  _PASSE_LEGADO: 'financaspro',
   _deriveLegacyKey: function() {
     if (this._legacyKeyPromise) return this._legacyKeyPromise;
     var cfg = typeof DADOS !== 'undefined' ? DADOS.getConfig() : {};
-    var base = (cfg.cryptoPassphrase || cfg.nome || 'financaspro') + '|' + (cfg._deviceId || 'local');
+    var base = (cfg.cryptoPassphrase || cfg.nome || this._PASSE_LEGADO) + '|' + (cfg._deviceId || 'local');
     this._legacyKeyPromise = crypto.subtle.digest('SHA-256', new TextEncoder().encode(base))
       .then(function(raw) {
         return crypto.subtle.importKey('raw', raw, { name: 'AES-GCM' }, false, ['decrypt']);

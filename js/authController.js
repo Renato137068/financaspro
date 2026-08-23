@@ -273,14 +273,14 @@ function setupLogoutButton() {
         var overlay = document.getElementById('auth-overlay');
         if (overlay) _abrirAuthOverlay(overlay);
         atualizarBarraSessao();
-        UTILS.mostrarToast('Sessão encerrada', 'info');
+        UTILS.mostrarToast('Você saiu da conta. Seus dados continuam neste aparelho.', 'info');
       });
     } else {
       DADOS.encerrarSessao();
       var overlay = document.getElementById('auth-overlay');
       if (overlay) _abrirAuthOverlay(overlay);
       atualizarBarraSessao();
-      UTILS.mostrarToast('Sessão encerrada', 'info');
+      UTILS.mostrarToast('Você saiu da conta. Seus dados continuam neste aparelho.', 'info');
     }
   });
 }

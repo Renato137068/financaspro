@@ -34,8 +34,8 @@ const CONFIG = {
     cookieSameSite: process.env.COOKIE_SAME_SITE || 'Lax',
     pbkdf2Iterations: parseInt(process.env.PBKDF2_ITERATIONS) || 600000,
     saltLength: 16,
-    issuer: process.env.JWT_ISSUER || 'financaspro-api',
-    audience: process.env.JWT_AUDIENCE || 'financaspro-client',
+    issuer: process.env.JWT_ISSUER || 'sobra-api',
+    audience: process.env.JWT_AUDIENCE || 'sobra-client',
     loginMaxAttempts: parseInt(process.env.LOGIN_MAX_ATTEMPTS) || 5,
     loginLockoutMs: parseInt(process.env.LOGIN_LOCKOUT_MS) || 15 * 60 * 1000,
   },
@@ -82,7 +82,7 @@ const CONFIG = {
     secure: process.env.SMTP_SECURE === 'true',
     user:   process.env.SMTP_USER || null,
     pass:   process.env.SMTP_PASS || null,
-    from:   process.env.SMTP_FROM || 'FinançasPro <noreply@financaspro.com.br>',
+    from:   process.env.SMTP_FROM || 'Sobra <noreply@financaspro.com.br>',
   },
 
   // Fase 10 — URL pública do app (usada em e-mails e portal Stripe)

@@ -21,24 +21,24 @@ function esc(s) {
 function mockScreenSvg(opts) {
   var title = esc(opts.title);
   var subtitle = esc(opts.subtitle);
-  var accent = opts.accent || '#00723F';
+  var accent = opts.accent || '#12694E';
   return Buffer.from(
     '<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920">' +
-      '<rect width="1080" height="1920" fill="#f5f8f6"/>' +
+      '<rect width="1080" height="1920" fill="#f7faf8"/>' +
       '<rect x="0" y="0" width="1080" height="200" fill="' + accent + '"/>' +
       '<text x="540" y="120" text-anchor="middle" fill="#fff" font-family="Segoe UI,Arial,sans-serif" font-size="52" font-weight="700">' + title + '</text>' +
-      '<text x="540" y="280" text-anchor="middle" fill="#64748b" font-family="Segoe UI,Arial,sans-serif" font-size="28">' + subtitle + '</text>' +
-      '<rect x="60" y="360" width="960" height="200" rx="24" fill="#fff" stroke="#e2e8f0"/>' +
-      '<text x="100" y="430" fill="#94a3b8" font-family="Segoe UI,Arial,sans-serif" font-size="22">Saldo do mês</text>' +
+      '<text x="540" y="280" text-anchor="middle" fill="#6e7a74" font-family="Segoe UI,Arial,sans-serif" font-size="28">' + subtitle + '</text>' +
+      '<rect x="60" y="360" width="960" height="200" rx="24" fill="#fff" stroke="#e5e9e7"/>' +
+      '<text x="100" y="430" fill="#98a39d" font-family="Segoe UI,Arial,sans-serif" font-size="22">Saldo do mês</text>' +
       '<text x="100" y="500" fill="' + accent + '" font-family="Segoe UI,Arial,sans-serif" font-size="56" font-weight="700">' + esc(opts.balance || 'R$ 3.240,00') + '</text>' +
-      '<rect x="60" y="600" width="460" height="140" rx="20" fill="#fff" stroke="#e2e8f0"/>' +
-      '<rect x="560" y="600" width="460" height="140" rx="20" fill="#fff" stroke="#e2e8f0"/>' +
-      '<text x="100" y="660" fill="#94a3b8" font-size="20" font-family="Segoe UI,Arial,sans-serif">Receitas</text>' +
+      '<rect x="60" y="600" width="460" height="140" rx="20" fill="#fff" stroke="#e5e9e7"/>' +
+      '<rect x="560" y="600" width="460" height="140" rx="20" fill="#fff" stroke="#e5e9e7"/>' +
+      '<text x="100" y="660" fill="#98a39d" font-size="20" font-family="Segoe UI,Arial,sans-serif">Receitas</text>' +
       '<text x="100" y="710" fill="#16a34a" font-size="36" font-weight="700" font-family="Segoe UI,Arial,sans-serif">' + esc(opts.income || 'R$ 8.500') + '</text>' +
-      '<text x="600" y="660" fill="#94a3b8" font-size="20" font-family="Segoe UI,Arial,sans-serif">Despesas</text>' +
+      '<text x="600" y="660" fill="#98a39d" font-size="20" font-family="Segoe UI,Arial,sans-serif">Despesas</text>' +
       '<text x="600" y="710" fill="#dc2626" font-size="36" font-weight="700" font-family="Segoe UI,Arial,sans-serif">' + esc(opts.expense || 'R$ 5.260') + '</text>' +
       (opts.extra || '') +
-      '<text x="540" y="1820" text-anchor="middle" fill="#94a3b8" font-family="Segoe UI,Arial,sans-serif" font-size="24">FinançasPro v11</text>' +
+      '<text x="540" y="1820" text-anchor="middle" fill="#98a39d" font-family="Segoe UI,Arial,sans-serif" font-size="24">Sobra v11</text>' +
     '</svg>'
   );
 }
@@ -108,11 +108,11 @@ async function main() {
         income: '42 lançamentos',
         expense: 'Exportar CSV',
         extra:
-          '<rect x="60" y="800" width="960" height="72" rx="16" fill="#fff" stroke="#e2e8f0"/>' +
-          '<text x="100" y="845" fill="#334155" font-size="24" font-family="Segoe UI,Arial,sans-serif">Supermercado · Alimentação</text>' +
+          '<rect x="60" y="800" width="960" height="72" rx="16" fill="#fff" stroke="#e5e9e7"/>' +
+          '<text x="100" y="845" fill="#3c4541" font-size="24" font-family="Segoe UI,Arial,sans-serif">Supermercado · Alimentação</text>' +
           '<text x="900" y="845" text-anchor="end" fill="#dc2626" font-size="24" font-family="Segoe UI,Arial,sans-serif">- R$ 248,90</text>' +
-          '<rect x="60" y="890" width="960" height="72" rx="16" fill="#fff" stroke="#e2e8f0"/>' +
-          '<text x="100" y="935" fill="#334155" font-size="24" font-family="Segoe UI,Arial,sans-serif">Salário · Receita</text>' +
+          '<rect x="60" y="890" width="960" height="72" rx="16" fill="#fff" stroke="#e5e9e7"/>' +
+          '<text x="100" y="935" fill="#3c4541" font-size="24" font-family="Segoe UI,Arial,sans-serif">Salário · Receita</text>' +
           '<text x="900" y="935" text-anchor="end" fill="#16a34a" font-size="24" font-family="Segoe UI,Arial,sans-serif">+ R$ 8.500,00</text>',
       }),
     },
@@ -127,12 +127,12 @@ async function main() {
         income: '3 metas ativas',
         expense: 'R$ 420/mês assinaturas',
         extra:
-          '<rect x="60" y="800" width="960" height="48" rx="12" fill="#e2e8f0"/>' +
+          '<rect x="60" y="800" width="960" height="48" rx="12" fill="#e5e9e7"/>' +
           '<rect x="60" y="800" width="720" height="48" rx="12" fill="#7b1fa2"/>' +
-          '<text x="100" y="832" fill="#334155" font-size="22" font-family="Segoe UI,Arial,sans-serif">Alimentação · 72%</text>' +
-          '<rect x="60" y="880" width="960" height="48" rx="12" fill="#e2e8f0"/>' +
+          '<text x="100" y="832" fill="#3c4541" font-size="22" font-family="Segoe UI,Arial,sans-serif">Alimentação · 72%</text>' +
+          '<rect x="60" y="880" width="960" height="48" rx="12" fill="#e5e9e7"/>' +
           '<rect x="60" y="880" width="480" height="48" rx="12" fill="#ef6c00"/>' +
-          '<text x="100" y="912" fill="#334155" font-size="22" font-family="Segoe UI,Arial,sans-serif">Transporte · 48%</text>',
+          '<text x="100" y="912" fill="#3c4541" font-size="22" font-family="Segoe UI,Arial,sans-serif">Transporte · 48%</text>',
       }),
     },
   ];

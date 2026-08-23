@@ -2,7 +2,7 @@
 import { authenticator } from 'otplib';
 import QRCode from 'qrcode';
 
-const ISSUER = 'FinançasPro';
+const ISSUER = 'Sobra';
 
 authenticator.options = { window: 1 };
 

@@ -75,7 +75,7 @@ function paraRgb(cor) {
  *
  * Sem isto, todo token em rgba() era "sem valor hex resolvivel" e saia da
  * checagem em silencio -- que foi exatamente como o chip de categoria do
- * extrato passou despercebido: --color-bg-primary e rgba(0,114,63,.08), o
+ * extrato passou despercebido: --color-bg-primary e rgba(18,105,78,.08), o
  * script pulava, e o texto de apoio ficava em 4,2:1 sobre o verde resultante.
  * Um check que pula sozinho e pior que nenhum, porque parece cobertura.
  */
@@ -154,7 +154,17 @@ const PARES_CLARO = [
   ['color-border-focus', 'color-bg-card', AA_UI, 'anel de foco'],
 ];
 
+// Estes pares foram acrescentados em 23/08/2026, quando o axe reprovou o valor
+// do cartao de receita no tema escuro com 2,2:1: a regra usava
+// --color-success-dark, que e' um tom fixo pensado para fundo claro, em vez do
+// alias --color-success-text, que troca com o tema. O script nao pegava porque
+// so' verificava os aliases. Agora verifica tambem os tons -dark e -on-light
+// sobre fundo escuro, para que usar o token errado reprove aqui e nao la'.
 const PARES_ESCURO = [
+  ['color-text-primary', 'color-bg-dark-card', AA_TEXTO, 'texto principal em card escuro'],
+  ['color-text-secondary', 'color-bg-dark-card', AA_TEXTO, 'texto secundario em card escuro'],
+  ['color-text-muted', 'color-bg-dark-card', AA_TEXTO, 'texto de apoio em card escuro'],
+  ['color-text-muted', 'color-bg-dark-elevated', AA_TEXTO, 'texto de apoio em superficie elevada'],
   ['color-success-text', 'color-bg-dark-card', AA_TEXTO, 'status positivo (escuro)'],
   ['color-warning-text', 'color-bg-dark-card', AA_TEXTO, 'status de atenção (escuro)'],
   ['color-danger-text', 'color-bg-dark-card', AA_TEXTO, 'status negativo (escuro)'],
@@ -169,7 +179,16 @@ const dsCss = fs.readFileSync(path.join(root, 'css', 'design-system.css'), 'utf8
 const darkCss = fs.readFileSync(path.join(root, 'css', 'themes', 'dark-mode.css'), 'utf8');
 
 const tokensClaro = lerTokens(dsCss, ':root');
-const tokensEscuro = { ...tokensClaro, ...lerTokens(darkCss, '\\[data-theme="dark"\\]') };
+// O bloco [data-theme="dark"] existe em DOIS arquivos: os tokens de texto,
+// borda e fundo ficam em design-system.css e os aliases semânticos em
+// themes/dark-mode.css. Ler só o segundo fazia o script comparar o texto do
+// tema CLARO contra o fundo escuro e reportar 1,09:1 — número sem sentido que
+// esconderia uma falha real no meio do ruído.
+const tokensEscuro = {
+  ...tokensClaro,
+  ...lerTokens(dsCss, '\\[data-theme="dark"\\]'),
+  ...lerTokens(darkCss, '\\[data-theme="dark"\\]'),
+};
 
 function verificar(pares, tokens, rotuloTema, tokenBase) {
   const linhas = [];

@@ -64,7 +64,7 @@ services:
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
-      SMTP_FROM: ${SMTP_FROM:-FinançasPro <noreply@financaspro.com.br>}
+      SMTP_FROM: ${SMTP_FROM:-Sobra <noreply@financaspro.com.br>}
       LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
       - "${PORT:-4000}:4000"
@@ -98,7 +98,7 @@ services:
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
-      SMTP_FROM: ${SMTP_FROM:-FinançasPro <noreply@financaspro.com.br>}
+      SMTP_FROM: ${SMTP_FROM:-Sobra <noreply@financaspro.com.br>}
 
 volumes:
   postgres_data:

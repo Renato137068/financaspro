@@ -1,7 +1,7 @@
-// FinancasPro - Service Worker (PWA offline-first, stale-while-revalidate)
+// Sobra - Service Worker (PWA offline-first, stale-while-revalidate)
 // Gerado por scripts/generate-sw-cache.cjs — não edite urlsParaCache manualmente
 
-const CACHE_NAME = 'financaspro-v1100-p2';
+const CACHE_NAME = 'sobra-v1100-p2';
 const urlsParaCache = [
   "/",
   "/css/base.css",
@@ -10,7 +10,7 @@ const urlsParaCache = [
   "/css/components/forms.css",
   "/css/components/modals.css",
   "/css/components/navigation.css",
-  "/css/components/page-premium.css",
+  "/css/components/page-superficie.css",
   "/css/components/toasts.css",
   "/css/critical-inline.css",
   "/css/design-system.css",
@@ -26,9 +26,9 @@ const urlsParaCache = [
   "/css/features/onboarding.css",
   "/css/features/open-finance.css",
   "/css/features/patrimonio.css",
-  "/css/features/premium.css",
   "/css/features/relatorios.css",
   "/css/features/skeleton.css",
+  "/css/features/superficie.css",
   "/css/fonts.css",
   "/css/layouts/config.css",
   "/css/layouts/dashboard.css",
@@ -48,6 +48,7 @@ const urlsParaCache = [
   "/fonts/plus-jakarta-sans-latin-700-normal.woff2",
   "/icons/android/icon-192.png",
   "/icons/android/icon-512.png",
+  "/icons/logo-simbolo.svg",
   "/icons/logo.svg",
   "/index.html",
   "/js/ai-engine.js",

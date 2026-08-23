@@ -1,7 +1,12 @@
 /**
- * features/premium.css — Fase 4: Experiência Premium
- * Sistema de animações sofisticadas, tipografia display, profundidade visual
- * e motion design para identidade high-end.
+ * features/superficie.css — profundidade, movimento e tipografia de destaque.
+ *
+ * Chamava-se premium.css. O nome era o problema: "premium" descreve aspiração,
+ * não função, e por isso o arquivo acumulou uma segunda família de sombras
+ * concorrendo com a escala oficial e dezenas de brilhos decorativos. Um sistema
+ * de design nomeia por função — superfície, elevação, movimento — para que a
+ * pergunta "esse componente é o premium ou o normal?" deixe de existir.
+ *
  * Depende de: design-system.css
  */
 
@@ -23,8 +28,8 @@
 
 /* Glow pulse — brilho verde respirando */
 @keyframes glowPulse {
-  0%, 100% { box-shadow: 0 0  0px 0px rgba(0, 114, 63, 0.00); }
-  50%       { box-shadow: 0 0 24px 4px rgba(0, 114, 63, 0.22); }
+  0%, 100% { box-shadow: var(--elevacao-1); }
+  50%       { box-shadow: var(--elevacao-2); }
 }
 
 /* Card entrance — entrada com elevação */
@@ -56,8 +61,8 @@
 
 /* Border glow — focus ring pulsante */
 @keyframes borderGlow {
-  0%, 100% { box-shadow: 0 0 0 3px rgba(0, 114, 63, 0.12); }
-  50%       { box-shadow: 0 0 0 4px rgba(0, 114, 63, 0.26); }
+  0%, 100% { box-shadow: 0 0 0 3px rgba(18, 105, 78, 0.12); }
+  50%       { box-shadow: 0 0 0 4px rgba(18, 105, 78, 0.26); }
 }
 
 /* Surface light — linha de luz passando */
@@ -155,7 +160,7 @@ header h1,
 
 /* Utilitário: texto gradient verde */
 .text-gradient-green {
-  background: linear-gradient(135deg, var(--color-primary-600) 0%, #00a355 50%, var(--color-success) 100%);
+  background: var(--color-primary-600);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -172,69 +177,27 @@ header h1,
 }
 
 .card-saldo-principal.saldo-positivo {
-  background: linear-gradient(145deg, #004d2e 0%, var(--color-primary-600) 30%, var(--color-primary-500) 60%, var(--color-success-dark) 85%, var(--color-success) 100%);
-  box-shadow:
-    inset 0  1px 0 rgba(255, 255, 255, 0.14),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.18),
-    0  4px  8px rgba(0,  80, 48, 0.28),
-    0 14px 36px rgba(0, 114, 63, 0.36),
-    0 32px 64px rgba(0, 114, 63, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  /* O ÚNICO gradiente de marca do produto inteiro.
+     Ele é raro de propósito: gradiente que aparece em toda parte deixa de
+     enfatizar e vira textura de fundo. Aqui ele marca a única superfície que
+     a tela existe para mostrar. A outra exceção é o brilho do esqueleto de
+     carregamento, onde o gradiente É a animação. */
+  background: linear-gradient(160deg,
+    var(--color-primary-700) 0%, var(--color-primary-500) 100%);
+  box-shadow: var(--elevacao-1);
 }
 
 .card-saldo-principal.saldo-negativo {
-  background: linear-gradient(145deg, #7f1d1d 0%, #991b1b 35%, var(--color-danger-dark) 65%, #dc2626 88%, var(--color-danger) 100%);
-  box-shadow:
-    inset 0  1px 0 rgba(255, 255, 255, 0.10),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.18),
-    0  4px  8px rgba(120, 20, 20, 0.28),
-    0 14px 36px rgba(185, 28, 28, 0.36),
-    0 32px 64px rgba(185, 28, 28, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  /* Saldo negativo não é emergência: é um fato. Cor chapada e dessaturada,
+     sem alarme — a voz calma da marca vale para a cor também. */
+  background: var(--color-danger-dark);
+  box-shadow: var(--elevacao-1);
 }
 
-/* Reflexo de luz no topo */
-.card-saldo-principal::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 55%);
-  border-radius: inherit;
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* Linha de brilho no topo */
-.card-saldo-principal::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 10%;
-  right: 10%;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.32);
-  pointer-events: none;
-  z-index: 1;
-}
-
-/* Conteúdo acima dos pseudo-elements */
+/* Conteúdo acima do fundo */
 .card-saldo-principal > * {
   position: relative;
-  z-index: 2;
-}
-
-/* Shimmer ao passar o mouse */
-.card-saldo-principal:hover::before {
-  animation: surfaceLight 900ms var(--ease-decelerate) both;
-  background: linear-gradient(
-    90deg,
-    transparent        0%,
-    rgba(255,255,255,0.14) 50%,
-    transparent        100%
-  );
-  width: 50%;
-  inset: auto;
-  top: 0; bottom: 0; left: 0;
+  z-index: 1;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -250,34 +213,20 @@ header h1,
     box-shadow 280ms var(--ease-decelerate);
 }
 
-.card.receita {
-  box-shadow:
-    0 2px 8px  rgba(16, 185, 129, 0.12),
-    0 1px 3px  rgba(0,  0,   0,   0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.80);
-}
-
+/* Cartão está NA página, não flutuando sobre ela: nível 0 de elevação, e a
+   borda é quem define a superfície. A sombra colorida que existia aqui era
+   decoração — e uma sombra verde sob um cartão branco não significa nada. */
+.card.receita,
 .card.despesa {
-  box-shadow:
-    0 2px 8px  rgba(239, 68, 68, 0.12),
-    0 1px 3px  rgba(0,   0,  0,  0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.80);
+  box-shadow: var(--elevacao-0);
+  border: 1px solid var(--color-border);
 }
 
-.card.receita:hover {
-  transform: translateY(-3px);
-  box-shadow:
-    0  8px 24px rgba(16, 185, 129, 0.20),
-    0  4px 10px rgba(0,  0,   0,   0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.80);
-}
-
+/* No hover ele sobe um nível — aí sim está flutuando. */
+.card.receita:hover,
 .card.despesa:hover {
-  transform: translateY(-3px);
-  box-shadow:
-    0  8px 24px rgba(239, 68, 68, 0.20),
-    0  4px 10px rgba(0,  0,  0,  0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.80);
+  transform: translateY(-2px);
+  box-shadow: var(--elevacao-1);
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -286,8 +235,8 @@ header h1,
 
 .dashboard-section {
   box-shadow:
-    0 1px 2px  rgba(16, 24, 40, 0.04),
-    0 4px 16px rgba(16, 24, 40, 0.055),
+    0 1px 2px  rgba(18, 25, 21, 0.04),
+    0 4px 16px rgba(18, 25, 21, 0.055),
     inset 0 1px 0 rgba(255, 255, 255, 0.82);
   border: 1px solid rgba(212, 229, 220, 0.65);
 }
@@ -295,7 +244,7 @@ header h1,
 .indicador-card {
   box-shadow:
     0 1px 2px  rgba(0,  0,  0,  0.03),
-    0 4px 12px rgba(16, 24, 40, 0.05),
+    0 4px 12px rgba(18, 25, 21, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.90);
   border: 1px solid rgba(212, 229, 220, 0.55);
 }
@@ -308,24 +257,12 @@ header h1,
 .fp-btn--primary {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(145deg, #007a43 0%, var(--color-primary-500) 50%, var(--color-primary-600) 100%);
+  background: var(--color-primary-500);
   box-shadow: var(--shadow-btn-primary);
   transition:
     transform     120ms var(--ease-decelerate),
     box-shadow    180ms ease,
     background    180ms ease;
-}
-
-/* Faixa de luz que varre ao hover */
-.btn-primario::before,
-.fp-btn--primary::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  width: 55%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.20), transparent);
-  transform: translateX(-150%) skewX(-20deg);
-  pointer-events: none;
 }
 
 .btn-primario:hover::before,
@@ -345,7 +282,7 @@ header h1,
   transform: translateY(1px);
   box-shadow:
     inset 0 1px 0 rgba(0, 0, 0, 0.12),
-    0 2px 6px rgba(0, 114, 63, 0.22);
+    0 2px 6px rgba(18, 105, 78, 0.22);
   transition-duration: 60ms;
 }
 
@@ -354,24 +291,13 @@ header h1,
    ══════════════════════════════════════════════════════════════ */
 
 header {
-  background: linear-gradient(145deg, #004d2e 0%, var(--color-primary-600) 25%, var(--color-primary-500) 60%, #0a9050 85%, var(--color-success) 100%);
+  background: var(--color-primary-700);
   box-shadow:
     0  4px 20px rgba(0,  80,  48, 0.35),
     0  1px  4px rgba(0,   0,   0, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.12);
   position: relative;
   overflow: hidden;
-}
-
-/* Reflexo interno no topo do header */
-header::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 52%;
-  background: linear-gradient(180deg, rgba(255,255,255,0.09) 0%, transparent 100%);
-  pointer-events: none;
-  z-index: 0;
 }
 
 /* Linha de luz no rodapé do header */
@@ -396,7 +322,7 @@ header > * {
 
 @media (min-width: 768px) {
   .sidebar-brand {
-    background: linear-gradient(145deg, #003a20 0%, #004d2c 40%, var(--color-primary-500) 80%, #0d8a4a 100%);
+    background: var(--color-primary-800);
     box-shadow:
       0 2px 12px rgba(0, 0, 0, 0.18),
       inset 0 1px 0 rgba(255, 255, 255, 0.10);
@@ -412,7 +338,7 @@ header > * {
     bottom: -18px;
     width: 72px;
     height: 72px;
-    background: radial-gradient(circle, rgba(16, 185, 129, 0.28) 0%, transparent 70%);
+    background: rgba(47, 156, 109, 0.28);
     pointer-events: none;
   }
 
@@ -428,7 +354,7 @@ header > * {
 
   /* Borda lateral como indicador de aba ativa */
   .sidebar-btn.ativo {
-    background: linear-gradient(90deg, rgba(0, 114, 63, 0.10) 0%, rgba(0, 114, 63, 0.04) 100%);
+    background: rgba(18, 105, 78, 0.10);
     box-shadow: inset 3px 0 0 var(--color-primary-500);
     border-radius: var(--radius-lg);
   }
@@ -445,7 +371,7 @@ header > * {
 
 .nav-btn.ativo .nav-emoji {
   animation: iconSpring 420ms var(--ease-expressive) both;
-  filter: drop-shadow(0 2px 6px rgba(0, 114, 63, 0.35));
+  filter: drop-shadow(0 2px 6px rgba(18, 105, 78, 0.35));
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -459,8 +385,8 @@ header > * {
 .fp-input:focus {
   border-color: var(--color-primary-500);
   box-shadow:
-    0 0 0 3px rgba(0, 114, 63, 0.13),
-    0 2px 8px rgba(0, 114, 63, 0.09);
+    0 0 0 3px rgba(18, 105, 78, 0.13),
+    0 2px 8px rgba(18, 105, 78, 0.09);
   animation: borderGlow 2.2s ease-in-out infinite;
 }
 
@@ -469,7 +395,7 @@ header > * {
    ══════════════════════════════════════════════════════════════ */
 
 .indicador-fill {
-  background: linear-gradient(90deg, var(--color-primary-600) 0%, var(--color-primary-500) 40%, var(--color-success) 80%, var(--color-success-light) 100%);
+  background: var(--color-primary-600);
   background-size: 200% 100%;
   animation: gradientFlow 3.5s ease infinite;
 }
@@ -504,10 +430,7 @@ header > * {
 
 .hover-lift:hover {
   transform: translateY(-4px);
-  box-shadow:
-    0  2px  4px rgba(16, 24, 40, 0.04),
-    0 12px 36px rgba(16, 24, 40, 0.10),
-    0 36px 80px rgba(16, 24, 40, 0.05);
+  box-shadow: var(--elevacao-2);
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -516,7 +439,7 @@ header > * {
 
 /* Seleção de texto com verde */
 ::selection {
-  background: rgba(0, 114, 63, 0.15);
+  background: rgba(18, 105, 78, 0.15);
   color: var(--color-text-primary);
 }
 
@@ -529,21 +452,17 @@ header > * {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 114, 63, 0.20);
-  border-radius: 99px;
+  background: rgba(18, 105, 78, 0.20);
+  border-radius: var(--radius-full);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 114, 63, 0.36);
+  background: rgba(18, 105, 78, 0.36);
 }
 
 /* Alerta card — accent lateral */
 .alerta-card {
   border-left-width: 4px;
-  background: linear-gradient(
-    90deg,
-    rgba(245, 158, 11, 0.06) 0%,
-    rgba(255, 255, 255, 0.00) 100%
-  );
+  background: rgba(201, 138, 30, 0.06);
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -551,7 +470,7 @@ header > * {
    ══════════════════════════════════════════════════════════════ */
 
 [data-theme="dark"] .card-saldo-principal.saldo-positivo {
-  background: linear-gradient(145deg, #002d18 0%, #003d22 35%, #005030 65%, #006840 88%, #0d8a4a 100%);
+  background: var(--color-primary-800);
   box-shadow:
     inset 0  1px 0 rgba(255, 255, 255, 0.07),
     inset 0 -1px 0 rgba(0, 0, 0, 0.22),
@@ -561,7 +480,7 @@ header > * {
 }
 
 [data-theme="dark"] .card-saldo-principal.saldo-negativo {
-  background: linear-gradient(145deg, #4a0b0b 0%, #6b1414 35%, #891818 65%, #a81e1e 88%, var(--color-danger-dark) 100%);
+  background: var(--color-danger-dark);
   box-shadow:
     inset 0  1px 0 rgba(255, 255, 255, 0.05),
     inset 0 -1px 0 rgba(0, 0, 0, 0.22),
@@ -587,20 +506,16 @@ header > * {
 }
 
 [data-theme="dark"] .card.receita {
-  box-shadow:
-    0 2px 8px rgba(16, 185, 129, 0.10),
-    0 1px 3px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--elevacao-1);
 }
 
 [data-theme="dark"] .card.despesa {
-  box-shadow:
-    0 2px 8px rgba(239, 68, 68, 0.10),
-    0 1px 3px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--elevacao-1);
 }
 
 [data-theme="dark"] .btn-primario,
 [data-theme="dark"] .fp-btn--primary {
-  background: linear-gradient(145deg, var(--color-primary-600) 0%, var(--color-primary-500) 50%, #008548 100%);
+  background: var(--color-primary-600);
   box-shadow:
     inset 0  1px 0 rgba(255, 255, 255, 0.10),
     inset 0 -1px 0 rgba(0,   0,   0,   0.30),
@@ -612,12 +527,12 @@ header > * {
   box-shadow:
     inset 0  1px 0 rgba(255, 255, 255, 0.10),
     inset 0 -1px 0 rgba(0,   0,   0,   0.30),
-    0 8px 24px rgba(0, 114, 63, 0.42),
+    0 8px 24px rgba(18, 105, 78, 0.42),
     0 4px 8px  rgba(0,  0,  0,  0.14);
 }
 
 [data-theme="dark"] header {
-  background: linear-gradient(145deg, #001f10 0%, #002d1a 28%, #003d22 60%, #005030 84%, #006840 100%);
+  background: var(--color-primary-900);
   box-shadow:
     0 4px 20px rgba(0,  15,  8, 0.55),
     0 1px  4px rgba(0,   0,  0, 0.30),
@@ -625,19 +540,19 @@ header > * {
 }
 
 [data-theme="dark"] .indicador-fill {
-  background: linear-gradient(90deg, #004d2e 0%, var(--color-primary-500) 45%, var(--color-success) 80%, var(--color-success-light) 100%);
+  background: var(--color-primary-700);
   background-size: 200% 100%;
 }
 
 [data-theme="dark"] ::selection {
-  background: rgba(0, 114, 63, 0.28);
+  background: rgba(18, 105, 78, 0.28);
   color: var(--color-gray-100);
 }
 
 [data-theme="dark"] ::-webkit-scrollbar-thumb {
-  background: rgba(51, 165, 50, 0.24);
+  background: rgba(47, 163, 123, 0.24);
 }
 
 [data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
-  background: rgba(51, 165, 50, 0.42);
+  background: rgba(47, 163, 123, 0.42);
 }

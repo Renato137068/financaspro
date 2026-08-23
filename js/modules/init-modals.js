@@ -203,7 +203,7 @@ const INIT_MODALS = {
         okBtn.onclick = function() {
           var msg = document.getElementById('feedback-msg').value.trim();
           if (!msg) { 
-            UTILS.mostrarToast('Escreva algo', 'error'); 
+            UTILS.mostrarToast('Escreva sua mensagem antes de enviar', 'error'); 
             return; 
           }
           
@@ -229,13 +229,13 @@ const INIT_MODALS = {
             }
 
             okBtn.textContent = 'Salvo!';
-            okBtn.style.background = '#10b981';
+            okBtn.style.background = '#2f9c6d';
             okBtn.style.color = 'white';
 
             setTimeout(function() {
               overlay.remove();
               UTILS.mostrarToast('Feedback salvo. Você também pode enviar por e-mail.', 'success');
-              var mail = 'mailto:?subject=' + encodeURIComponent('Feedback FinançasPro') +
+              var mail = 'mailto:?subject=' + encodeURIComponent('Feedback Sobra') +
                 '&body=' + encodeURIComponent(corpo);
               try { window.open(mail, '_blank'); } catch (_e) { /* ignore */ }
             }, 800);

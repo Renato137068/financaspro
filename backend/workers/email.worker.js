@@ -17,16 +17,16 @@ export const TEMPLATES = {
       `Tipo: ${data.type === 'expense' ? 'Despesa' : 'Receita'}`,
       `Data: ${new Date(data.date).toLocaleDateString('pt-BR')}`,
       ``,
-      `Acesse o FinançasPro para mais detalhes.`,
+      `Acesse o Sobra para mais detalhes.`,
     ].join('\n'),
   }),
 
   'invite-member': (data) => ({
-    subject: `Convite para ${data.orgName} no FinançasPro`,
+    subject: `Convite para ${data.orgName} no Sobra`,
     text: [
       `Olá!`,
       ``,
-      `Você foi convidado para participar da organização "${data.orgName}" no FinançasPro.`,
+      `Você foi convidado para participar da organização "${data.orgName}" no Sobra.`,
       ``,
       `Clique no link para aceitar o convite:`,
       `${CONFIG.appUrl}/invite/${data.token}`,
@@ -43,7 +43,7 @@ export const TEMPLATES = {
       `Sua assinatura do plano ${data.planName} foi ativada com sucesso.`,
       `Próxima cobrança: ${new Date(data.nextBilling).toLocaleDateString('pt-BR')}`,
       ``,
-      `Aproveite todos os recursos do FinançasPro!`,
+      `Aproveite todos os recursos do Sobra!`,
     ].join('\n'),
   }),
 
@@ -60,19 +60,19 @@ export const TEMPLATES = {
   // Sem interpolação de dados: mensagem genérica de propósito, para não expor
   // valor cobrado nem últimos dígitos do cartão num e-mail.
   'payment-failed': (_data) => ({
-    subject: `Falha no pagamento — FinançasPro`,
+    subject: `Falha no pagamento — Sobra`,
     text: [
       `Olá,`,
       ``,
       `Não foi possível processar o pagamento da sua assinatura.`,
-      `Por favor, atualize seu método de pagamento para continuar usando o FinançasPro.`,
+      `Por favor, atualize seu método de pagamento para continuar usando o Sobra.`,
       ``,
       `Acesse: ${CONFIG.appUrl}/billing`,
     ].join('\n'),
   }),
 
   'password-reset': (data) => ({
-    subject: `Redefinição de senha — FinançasPro`,
+    subject: `Redefinição de senha — Sobra`,
     text: [
       `Olá${data.name ? ', ' + data.name : ''}!`,
       ``,
@@ -86,11 +86,11 @@ export const TEMPLATES = {
   }),
 
   'email-verify': (data) => ({
-    subject: `Confirme seu e-mail — FinançasPro`,
+    subject: `Confirme seu e-mail — Sobra`,
     text: [
       `Olá${data.name ? ', ' + data.name : ''}!`,
       ``,
-      `Bem-vindo(a) ao FinançasPro. Confirme seu e-mail clicando no link:`,
+      `Bem-vindo(a) ao Sobra. Confirme seu e-mail clicando no link:`,
       `${data.url}`,
       ``,
       `O link expira em ${data.expiresHours || 24} horas.`,

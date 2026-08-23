@@ -20,10 +20,10 @@
   justify-content: space-between;
   gap: 10px;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border-left: 4px solid transparent;
-  background: var(--cor-surface, var(--color-white));
-  box-shadow: 0 1px 4px rgba(0,0,0,.07);
+  background: var(--color-bg-card);
+  box-shadow: var(--elevacao-1);
   animation: alerta-entrada .25s ease;
 }
 
@@ -32,10 +32,10 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.alerta-critico { border-left-color: #e53e3e; background: #fff5f5; }
-.alerta-alto    { border-left-color: #dd6b20; background: #fffaf0; }
-.alerta-medio   { border-left-color: #d69e2e; background: #fffff0; }
-.alerta-baixo   { border-left-color: #3182ce; background: #ebf8ff; }
+.alerta-critico { border-left-color: var(--color-danger-on-light); background: var(--color-danger-bg); }
+.alerta-alto    { border-left-color: var(--color-warning-on-light); background: var(--color-warning-bg); }
+.alerta-medio   { border-left-color: var(--color-warning-on-light); background: var(--color-warning-bg); }
+.alerta-baixo   { border-left-color: var(--color-info-on-light); background: var(--color-info-bg); }
 
 [data-tema="dark"] .alerta-critico { background: rgba(229,62,62,.12); }
 [data-tema="dark"] .alerta-alto    { background: rgba(221,107,32,.12); }
@@ -53,7 +53,7 @@
 .alerta-titulo {
   font-size: .85rem;
   font-weight: 700;
-  color: var(--cor-text-1, #1a202c);
+  color: var(--color-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -61,7 +61,7 @@
 
 .alerta-msg {
   font-size: .8rem;
-  color: var(--cor-text-2, #4a5568);
+  color: var(--color-text-secondary);
   line-height: 1.4;
 }
 
@@ -75,35 +75,35 @@
 .alerta-btn {
   font-size: .72rem;
   padding: 4px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   border: 1px solid currentColor;
   background: transparent;
   cursor: pointer;
-  color: var(--cor-primary, #3182ce);
+  color: var(--color-primary-500);
   white-space: nowrap;
   transition: background .15s;
 }
-.alerta-btn:hover { background: var(--cor-primary, #3182ce); color: var(--color-white); }
+.alerta-btn:hover { background: var(--color-primary-500); color: var(--color-white); }
 
 .alerta-dispensar {
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--cor-text-3, #a0aec0);
+  color: var(--color-text-muted);
   font-size: .85rem;
   line-height: 1;
   padding: 2px 4px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   transition: color .15s;
 }
-.alerta-dispensar:hover { color: #e53e3e; }
+.alerta-dispensar:hover { color: var(--color-danger-on-light); }
 
 .alertas-ver-mais {
   font-size: .78rem;
-  color: var(--cor-primary, #3182ce);
+  color: var(--color-primary-500);
   background: none;
   border: 1px dashed currentColor;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 6px 12px;
   cursor: pointer;
   width: 100%;
@@ -113,7 +113,7 @@
 
 .alertas-vazio {
   font-size: .85rem;
-  color: var(--cor-success, #38a169);
+  color: var(--color-success-on-light);
   padding: 12px;
   text-align: center;
 }
@@ -131,15 +131,15 @@
   align-items: center;
   gap: 10px;
   padding: 8px 14px;
-  border-radius: 10px;
-  background: var(--cor-surface, var(--color-white));
-  box-shadow: 0 1px 4px rgba(0,0,0,.07);
-  border-left: 3px solid var(--cor-primary, #3182ce);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-card);
+  box-shadow: var(--elevacao-1);
+  border-left: 3px solid var(--color-primary-500);
 }
 
 .previsao-mini-label {
   font-size: .78rem;
-  color: var(--cor-text-2, #4a5568);
+  color: var(--color-text-secondary);
   white-space: nowrap;
 }
 
@@ -148,8 +148,8 @@
   font-weight: 700;
   flex: 1;
 }
-.previsao-mini-saldo.pos { color: var(--cor-success, #38a169); }
-.previsao-mini-saldo.neg { color: var(--cor-danger,  #e53e3e); }
+.previsao-mini-saldo.pos { color: var(--color-success-on-light); }
+.previsao-mini-saldo.neg { color: var(--color-danger-on-light); }
 
 .previsao-mini-tend {
   font-size: 1rem;
@@ -171,7 +171,7 @@
 .previsao-titulo {
   font-size: .95rem;
   font-weight: 700;
-  color: var(--cor-text-1, #1a202c);
+  color: var(--color-text-primary);
   margin: 0;
 }
 
@@ -188,9 +188,9 @@
 }
 
 .previsao-card {
-  background: var(--cor-bg, #f7fafc);
-  border: 1px solid var(--cor-border, var(--color-gray-200));
-  border-radius: 12px;
+  background: var(--color-bg-page);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-xl);
   padding: 12px;
   display: flex;
   flex-direction: column;
@@ -200,7 +200,7 @@
 .previsao-card-mes {
   font-size: .8rem;
   font-weight: 700;
-  color: var(--cor-text-2, #4a5568);
+  color: var(--color-text-secondary);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -215,34 +215,34 @@
   gap: 4px;
 }
 
-.previsao-label { font-size: .72rem; color: var(--cor-text-3, #a0aec0); }
+.previsao-label { font-size: .72rem; color: var(--color-text-muted); }
 
 .previsao-valor {
   font-size: .82rem;
   font-weight: 600;
 }
-.previsao-valor.receita { color: var(--cor-success, #38a169); }
-.previsao-valor.despesa { color: var(--cor-danger,  #e53e3e); }
+.previsao-valor.receita { color: var(--color-success-on-light); }
+.previsao-valor.despesa { color: var(--color-danger-on-light); }
 
 .previsao-card-saldo {
   font-size: .8rem;
   font-weight: 700;
   padding-top: 4px;
-  border-top: 1px solid var(--cor-border, var(--color-gray-200));
+  border-top: 1px solid var(--color-gray-200);
 }
-.previsao-card-saldo.positivo { color: var(--cor-success, #38a169); }
-.previsao-card-saldo.negativo { color: var(--cor-danger,  #e53e3e); }
+.previsao-card-saldo.positivo { color: var(--color-success-on-light); }
+.previsao-card-saldo.negativo { color: var(--color-danger-on-light); }
 
 .previsao-vazia {
   font-size: .85rem;
-  color: var(--cor-text-2, #4a5568);
+  color: var(--color-text-secondary);
   padding: 16px;
   text-align: center;
 }
 
 .previsao-meta {
   font-size: .8rem;
-  color: var(--cor-text-2, #4a5568);
+  color: var(--color-text-secondary);
   text-align: center;
   margin-top: 8px;
 }
@@ -252,9 +252,9 @@
 ───────────────────────────────────────────────────────────────── */
 
 .previsao-saude {
-  background: var(--cor-bg, #f7fafc);
-  border: 1px solid var(--cor-border, var(--color-gray-200));
-  border-radius: 12px;
+  background: var(--color-bg-page);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-xl);
   padding: 14px;
   display: flex;
   flex-direction: column;
@@ -270,7 +270,7 @@
 .saude-titulo {
   font-size: .85rem;
   font-weight: 700;
-  color: var(--cor-text-1, #1a202c);
+  color: var(--color-text-primary);
 }
 
 .saude-score {
@@ -278,18 +278,18 @@
   font-weight: 800;
   line-height: 1;
 }
-.saude-score small { font-size: .65rem; color: var(--cor-text-3, #a0aec0); }
+.saude-score small { font-size: .65rem; color: var(--color-text-muted); }
 
 .saude-barra-bg {
   height: 6px;
-  background: var(--cor-border, var(--color-gray-200));
-  border-radius: 99px;
+  background: var(--color-gray-200);
+  border-radius: var(--radius-full);
   overflow: hidden;
 }
 
 .saude-barra-fill {
   height: 100%;
-  border-radius: 99px;
+  border-radius: var(--radius-full);
   transition: width .5s ease;
 }
 
@@ -307,8 +307,8 @@
 }
 
 .saude-check { flex-shrink: 0; }
-.saude-item-nome { font-weight: 600; color: var(--cor-text-1, #1a202c); flex: 1; }
-.saude-item-desc { color: var(--cor-text-3, #a0aec0); font-size: .73rem; }
+.saude-item-nome { font-weight: 600; color: var(--color-text-primary); flex: 1; }
+.saude-item-desc { color: var(--color-text-muted); font-size: .73rem; }
 
 /* ─────────────────────────────────────────────────────────────────
    INSIGHTS (orçamento)
@@ -316,36 +316,36 @@
 
 .insight {
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: .82rem;
   margin-bottom: 6px;
   border-left: 3px solid transparent;
-  background: var(--cor-surface, var(--color-white));
-  color: var(--cor-text-1, #1a202c);
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
 }
 
-.insight-alta   { border-left-color: #e53e3e; background: #fff5f5; }
-.insight-media  { border-left-color: #d69e2e; background: #fffff0; }
-.insight-baixa  { border-left-color: #3182ce; background: #ebf8ff; }
-.insight-ok     { border-left-color: #38a169; background: #f0fff4; }
+.insight-alta   { border-left-color: var(--color-danger-on-light); background: var(--color-danger-bg); }
+.insight-media  { border-left-color: var(--color-warning-on-light); background: var(--color-warning-bg); }
+.insight-baixa  { border-left-color: var(--color-info-on-light); background: var(--color-info-bg); }
+.insight-ok     { border-left-color: var(--color-success-on-light); background: var(--color-success-bg); }
 
 .btn-insight {
   font-size: .72rem;
   padding: 3px 8px;
-  border-radius: 6px;
-  border: 1px solid var(--cor-primary, #3182ce);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-primary-500);
   background: transparent;
-  color: var(--cor-primary, #3182ce);
+  color: var(--color-primary-500);
   cursor: pointer;
   margin-left: 6px;
   transition: background .15s, color .15s;
 }
-.btn-insight:hover { background: var(--cor-primary, #3182ce); color: var(--color-white); }
+.btn-insight:hover { background: var(--color-primary-500); color: var(--color-white); }
 
 .orc-insights-titulo {
   font-size: .82rem;
   font-weight: 700;
-  color: var(--cor-text-2, #4a5568);
+  color: var(--color-text-secondary);
   margin-bottom: 8px;
 }
 
@@ -360,7 +360,7 @@
 .orc-insight-cat {
   width: 90px;
   font-weight: 600;
-  color: var(--cor-text-1, #1a202c);
+  color: var(--color-text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -370,21 +370,21 @@
 .orc-insight-barra-bg {
   flex: 1;
   height: 5px;
-  background: var(--cor-border, var(--color-gray-200));
-  border-radius: 99px;
+  background: var(--color-gray-200);
+  border-radius: var(--radius-full);
   overflow: hidden;
 }
 
 .orc-insight-barra-fill {
   height: 100%;
-  background: var(--cor-primary, #3182ce);
-  border-radius: 99px;
+  background: var(--color-primary-500);
+  border-radius: var(--radius-full);
   transition: width .4s ease;
 }
 
 .orc-insight-pct {
   font-size: .72rem;
-  color: var(--cor-text-3, #a0aec0);
+  color: var(--color-text-muted);
   width: 30px;
   text-align: right;
   flex-shrink: 0;
@@ -395,10 +395,10 @@
 ───────────────────────────────────────────────────────────────── */
 
 .ocr-btn {
-  background: var(--cor-surface, var(--color-white)) !important;
-  color: var(--cor-primary, #3182ce) !important;
-  border: 1px solid var(--cor-primary, #3182ce) !important;
-  border-radius: 8px !important;
+  background: var(--color-bg-card) !important;
+  color: var(--color-primary-500) !important;
+  border: 1px solid var(--color-primary-500) !important;
+  border-radius: var(--radius-md) !important;
   font-size: 1.1rem !important;
   width: 36px !important;
   transition: background .15s, transform .12s;
@@ -412,14 +412,14 @@
 .ocr-btn:active { transform: scale(.92); }
 
 .ocr-btn:hover {
-  background: var(--cor-primary, #3182ce) !important;
+  background: var(--color-primary-500) !important;
   color: var(--color-white) !important;
 }
 
-.er-feedback-sucesso { color: var(--cor-success, #38a169); }
-.er-feedback-erro    { color: var(--cor-danger,  #e53e3e); }
-.er-feedback-aviso   { color: var(--cor-warning, #d69e2e); }
-.er-feedback-info    { color: var(--cor-text-2,  #4a5568); }
+.er-feedback-sucesso { color: var(--color-success-on-light); }
+.er-feedback-erro    { color: var(--color-danger-on-light); }
+.er-feedback-aviso   { color: var(--color-warning-on-light); }
+.er-feedback-info    { color: var(--color-text-secondary); }
 
 /* ─────────────────────────────────────────────────────────────────
    TOGGLE PREVISÃO (mesmo padrão toggle-graficos)
@@ -444,7 +444,7 @@
    estava no HTML — e caía no fallback #orc-insights. Na prática a análise só
    era vista por quem abrisse a aba de orçamento.
 
-   As regras .insight acima usam cores claras fixas (#fff5f5, #ebf8ff…) e não
+   As regras .insight acima usam cores claras fixas (var(--color-danger-bg), var(--color-info-bg)…) e não
    têm contraparte no dark-mode.css: no tema escuro dariam texto claro sobre
    fundo claro. Aqui, no container do dashboard, usamos os tokens semânticos,
    que já são definidos nos dois temas — e assim não adicionamos hex novo à

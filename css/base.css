@@ -201,7 +201,7 @@ main {
 
 .card-lift:hover {
   transform: translateY(-3px);
-  box-shadow: var(--shadow-lift, 0 14px 34px rgba(16, 24, 40, 0.12));
+  box-shadow: var(--shadow-lift, 0 14px 34px rgba(18, 25, 21, 0.12));
 }
 
 /* ── Input focus ring premium ─────────────────────────────── */

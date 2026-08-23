@@ -67,7 +67,7 @@ for (const file of listarCss(cssDir)) {
   let trocas = 0;
 
   // Preserva comentários: substituir hex dentro de /* ... */ não muda nada no
-  // resultado e estraga a documentação — um comentário que explica "#1e293b"
+  // resultado e estraga a documentação — um comentário que explica "#242a27"
   // vira "var(--color-gray-800)" e perde justamente o valor que ilustrava.
   const comentarios = [];
   const semComentarios = original.replace(/\/\*[\s\S]*?\*\//g, (c) => {

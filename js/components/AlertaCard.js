@@ -1,4 +1,4 @@
-// FinançasPro — AlertaCard: card de alertas de orçamento
+// Sobra — AlertaCard: card de alertas de orçamento
 // v11.0 — sem dependências externas
 (function() {
   var UI = window.UI || {};

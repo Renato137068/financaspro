@@ -1,4 +1,4 @@
-# FinançasPro
+# Sobra
 
 App de finanças pessoais com PWA, experiência mobile/Android e API SaaS opcional. Frontend em JavaScript vanilla; backend com Express, Prisma/Postgres, JWT, Redis/BullMQ e Stripe (opcional).
 

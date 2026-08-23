@@ -24,7 +24,7 @@
 @import './components/navigation.css';
 @import './components/modals.css';
 @import './components/toasts.css';
-@import './components/page-premium.css';
+@import './components/page-superficie.css';
 
 /* ── Layouts ──────────────────────────────────────────────── */
 @import './layouts/dashboard.css';
@@ -61,23 +61,21 @@
 @import './features/anexos.css';
 @import './features/billing.css';
 @import './features/open-finance.css';
-@import './features/premium.css';
+@import './features/superficie.css';
 
 /* ── UI Polish — visual premium (overrides finais) ───────── */
 
 :root {
   --surface-1:        rgba(255, 255, 255, 0.95);
   --surface-2:        rgba(255, 255, 255, 0.80);
-  --border-soft:      rgba(16, 24, 40, 0.07);
-  --shadow-soft:      0 2px 12px rgba(16, 24, 40, 0.05), 0 1px 3px rgba(16, 24, 40, 0.04);
-  --shadow-lift:      0 12px 32px rgba(16, 24, 40, 0.10), 0 4px 10px rgba(16, 24, 40, 0.06);
+  --border-soft:      rgba(18, 25, 21, 0.07);
+  --shadow-soft:      0 2px 12px rgba(18, 25, 21, 0.05), 0 1px 3px rgba(18, 25, 21, 0.04);
+  --shadow-lift:      0 12px 32px rgba(18, 25, 21, 0.10), 0 4px 10px rgba(18, 25, 21, 0.06);
   --sidebar-width:    240px;
 }
 
 body {
-  background:
-    radial-gradient(ellipse 80% 40% at 50% 0%, rgba(0, 114, 63, 0.07) 0%, transparent 60%),
-    linear-gradient(180deg, #f6fbf8 0%, #edf5f1 100%);
+  background: #f6fbf8;
   letter-spacing: 0.01em;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -87,9 +85,9 @@ body {
 
 header {
   padding: 14px var(--space-5);
-  background: linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-primary-500) 40%, var(--color-success) 100%);
+  background: var(--color-primary-600);
   border-radius: 0 0 var(--radius-xl) var(--radius-xl);
-  box-shadow: 0 4px 20px rgba(0, 114, 63, 0.28);
+  box-shadow: var(--elevacao-2);
 }
 
 header h1 {
@@ -142,8 +140,8 @@ main {
   -webkit-backdrop-filter: blur(16px) saturate(140%);
   background: rgba(255, 255, 255, 0.90);
   box-shadow:
-    0 16px 40px rgba(16, 24, 40, 0.18),
-    0 4px 12px rgba(16, 24, 40, 0.08),
+    0 16px 40px rgba(18, 25, 21, 0.18),
+    0 4px 12px rgba(18, 25, 21, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
@@ -152,7 +150,7 @@ main {
 }
 
 .nav-btn.ativo {
-  background: linear-gradient(180deg, rgba(0, 114, 63, 0.07) 0%, rgba(0, 114, 63, 0.02) 100%);
+  background: rgba(18, 105, 78, 0.07);
 }
 
 .nav-emoji { font-size: 22px; }
@@ -184,14 +182,12 @@ main {
 
 /* ── Hover em transações do extrato ────────────────────────── */
 
-.ext-tx:hover { background: rgba(0, 114, 63, 0.04); }
+.ext-tx:hover { background: rgba(18, 105, 78, 0.04); }
 
 /* ── Dark mode — body e cards ───────────────────────────────── */
 
 [data-theme="dark"] body {
-  background:
-    radial-gradient(ellipse 80% 40% at 50% 0%, rgba(0, 114, 63, 0.10) 0%, transparent 55%),
-    linear-gradient(180deg, #0c1710 0%, #090f0c 100%);
+  background: #0c1710;
 }
 
 [data-theme="dark"] .formulario,
@@ -204,7 +200,7 @@ main {
 [data-theme="dark"] .orc-header,
 [data-theme="dark"] .orc-renda-setup {
   border-color: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.28);
+  box-shadow: var(--elevacao-1);
 }
 
 [data-theme="dark"] .nav-bottom {
@@ -248,7 +244,7 @@ main {
     z-index: var(--z-nav);
     overflow-y: auto;
     overflow-x: hidden;
-    box-shadow: 2px 0 20px rgba(0, 0, 0, 0.06);
+    box-shadow: var(--elevacao-2);
   }
 
   /* ── Sidebar Brand ────────────────────────────── */
@@ -257,7 +253,7 @@ main {
     align-items: center;
     gap: 12px;
     padding: 22px 20px 20px;
-    background: linear-gradient(145deg, var(--color-primary-600) 0%, var(--color-primary-500) 50%, #0d9a52 100%);
+    background: var(--color-primary-600);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     position: relative;
     overflow: hidden;
@@ -334,9 +330,9 @@ main {
 [data-theme="dark"] .sidebar {
   background: var(--color-bg-dark-card);
   border-right-color: rgba(255, 255, 255, 0.06);
-  box-shadow: 2px 0 20px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--elevacao-2);
 }
 
 [data-theme="dark"] .sidebar-brand {
-  background: linear-gradient(145deg, #002d1a 0%, #003d22 50%, var(--color-primary-500) 100%);
+  background: #002d1a;
 }

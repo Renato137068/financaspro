@@ -6,7 +6,7 @@ const path = require('path');
 
 const root = path.join(__dirname, '..');
 const version = require(path.join(root, 'package.json')).version.replace(/\./g, '');
-const CACHE_NAME = 'financaspro-v' + version + '-p2';
+const CACHE_NAME = 'sobra-v' + version + '-p2';
 
 function walkDir(dir, prefix) {
   const out = [];
@@ -171,6 +171,7 @@ function buildUrls(targetDir) {
     '/manifest.json',
     '/privacidade.html',
     '/icons/logo.svg',
+    '/icons/logo-simbolo.svg',
     '/icons/android/icon-192.png',
     '/icons/android/icon-512.png',
     ...fontesCriticas(targetDir, distMode),
@@ -192,7 +193,7 @@ function buildUrls(targetDir) {
 }
 
 function renderSw(urls) {
-  return `// FinancasPro - Service Worker (PWA offline-first, stale-while-revalidate)
+  return `// Sobra - Service Worker (PWA offline-first, stale-while-revalidate)
 // Gerado por scripts/generate-sw-cache.cjs — não edite urlsParaCache manualmente
 
 const CACHE_NAME = '${CACHE_NAME}';

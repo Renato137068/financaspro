@@ -47,7 +47,7 @@ const DAILY_REMINDER = {
       return;
     }
 
-    if (this.notify('FinançasPro', 'Você ainda não registrou gastos hoje. Que tal um lançamento rápido?')) {
+    if (this.notify('Sobra', 'Você ainda não registrou gastos hoje. Que tal um lançamento rápido?')) {
       try { localStorage.setItem(this._lastKey, hoje); } catch (_e) { /* ignore */ }
     }
   }

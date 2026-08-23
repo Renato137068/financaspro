@@ -132,38 +132,48 @@ button i[data-lucide] {
 
 :root {
 
-  /* ── Paleta Primária (Sicredi Verde) ─────────────────────── */
-  --color-primary-50:  #e6f4ed;
-  --color-primary-100: #b3e3d1;
-  --color-primary-200: #80d2b5;
-  --color-primary-300: #4dc199;
-  --color-primary-400: #26b384;
-  --color-primary-500: #00723f;  /* Marca principal */
-  --color-primary-600: #005c33;
-  --color-primary-700: #004527;
-  --color-primary-800: #002f1a;
-  --color-primary-900: #00180d;
+  /* ── Paleta primária (verde Sobra) ────────────────────────────
+     O verde foi redesenhado a partir da promessa da marca, não de uma
+     referência de mercado. O tom antigo (#12694e) era da família de uma
+     cooperativa de crédito: o oposto do posicionamento, que é justamente
+     não parecer mais uma instituição financeira.
+     500 = Verde Marca · 400 = Verde Vivo (acento) · 700 = Verde Profundo
+     (fundo do ícone e das superfícies escuras).
+     Todos os pares em uso passam AA — ver scripts/check-contrast.cjs. */
+  --color-primary-50:  #edf6f2;
+  --color-primary-100: #d3e9df;
+  --color-primary-200: #a9d4c1;
+  --color-primary-300: #74b99c;
+  --color-primary-400: #2fa37b;  /* Verde Vivo — acento */
+  --color-primary-500: #12694e;  /* Verde Marca — principal */
+  --color-primary-600: #0f5741;
+  --color-primary-700: #0b3d2e;  /* Verde Profundo — ícone e fundo escuro */
+  --color-primary-800: #082c21;
+  --color-primary-900: #051a14;
 
   /* ── Semântica ───────────────────────────────────────────── */
-  --color-success:       #10b981;
-  --color-success-light: #34d399;
-  --color-success-dark:  #059669;
-  --color-success-bg:    rgba(16, 185, 129, 0.08);
+  /* Dessaturadas de propósito: dinheiro não é semáforo. O vermelho puro
+     transforma todo mês normal em emergência, e num app cuja voz é calma isso
+     contradiz o produto. Os tons -light servem ao tema escuro. */
+  --color-success:       #2f9c6d;
+  --color-success-light: #4fc79a;
+  --color-success-dark:  #16613f;
+  --color-success-bg:    rgba(47, 156, 109, 0.08);
 
-  --color-danger:       #ef4444;
-  --color-danger-light: #f87171;
-  --color-danger-dark:  #b91c1c;
-  --color-danger-bg:    rgba(239, 68, 68, 0.08);
+  --color-danger:       #c9573a;
+  --color-danger-light: #f08a6e;
+  --color-danger-dark:  #8f3a26;
+  --color-danger-bg:    rgba(201, 87, 58, 0.08);
 
-  --color-warning:       #f59e0b;
-  --color-warning-light: #fbbf24;
-  --color-warning-dark:  #d97706;
-  --color-warning-bg:    rgba(245, 158, 11, 0.08);
+  --color-warning:       #c98a1e;
+  --color-warning-light: #e9b44c;
+  --color-warning-dark:  #7d4f05;
+  --color-warning-bg:    rgba(201, 138, 30, 0.08);
 
-  --color-info:       #3b82f6;
-  --color-info-light: #60a5fa;
-  --color-info-dark:  #2563eb;
-  --color-info-bg:    rgba(59, 130, 246, 0.08);
+  --color-info:       #3c86a8;
+  --color-info-light: #6fb2d2;
+  --color-info-dark:  #235871;
+  --color-info-bg:    rgba(60, 134, 168, 0.08);
 
   /* ── Semântica acessível (texto e botões) ────────────────────
      Os tons vivos acima (--color-success, --color-warning, ...) existem para
@@ -177,10 +187,10 @@ button i[data-lucide] {
 
      Todos os valores são verificados por scripts/check-contrast.cjs no CI.
      ───────────────────────────────────────────────────────────── */
-  --color-success-on-light: #0b7e58;  /* 5,07:1 sobre branco */
-  --color-warning-on-light: #986206;  /* 5,14:1 sobre branco */
-  --color-danger-on-light:  #b91c1c;  /* 6,47:1 sobre branco */
-  --color-info-on-light:    #2563eb;  /* 5,17:1 sobre branco */
+  --color-success-on-light: #1c7a4f;  /* 5,32:1 sobre branco · 5,06:1 sobre a página */
+  --color-warning-on-light: #9a6206;  /* 5,09:1 sobre branco · 4,85:1 sobre a página */
+  --color-danger-on-light:  #b4472e;  /* 5,41:1 sobre branco · 5,15:1 sobre a página */
+  --color-info-on-light:    #2c6e8f;  /* 5,62:1 sobre branco · 5,35:1 sobre a página */
 
   /* Alias que alterna com o tema — é este que o CSS de componente deve usar. */
   --color-success-text: var(--color-success-on-light);
@@ -188,31 +198,35 @@ button i[data-lucide] {
   --color-danger-text:  var(--color-danger-on-light);
   --color-info-text:    var(--color-info-on-light);
 
-  /* ── Neutros ─────────────────────────────────────────────── */
+  /* ── Neutros ─────────────────────────────────────────────────
+     Uma família só, levemente quente. Os neutros anteriores eram o slate do
+     Tailwind, que é azulado, e conviviam na mesma tela com texto de tom verde
+     quente. A briga não é consciente, mas é o que fazia a interface parecer
+     montada com peças de dois sistemas. */
   --color-white:     #ffffff;
-  --color-gray-50:   #f8fafc;
-  --color-gray-100:  #f1f5f9;
-  --color-gray-200:  #e2e8f0;
-  --color-gray-300:  #cbd5e1;
-  --color-gray-400:  #94a3b8;
-  --color-gray-500:  #64748b;
-  --color-gray-600:  #475569;
-  --color-gray-700:  #334155;
-  --color-gray-800:  #1e293b;
-  --color-gray-900:  #0f172a;
+  --color-gray-50:   #fbfcfb;
+  --color-gray-100:  #f3f5f4;
+  --color-gray-200:  #e5e9e7;
+  --color-gray-300:  #cdd4d0;
+  --color-gray-400:  #98a39d;
+  --color-gray-500:  #6e7a74;
+  --color-gray-600:  #55605a;
+  --color-gray-700:  #3c4541;
+  --color-gray-800:  #242a27;
+  --color-gray-900:  #161a18;
   --color-black:     #000000;
 
   /* ── Backgrounds ─────────────────────────────────────────── */
-  --color-bg-page:      #f5f8f6;
+  --color-bg-page:      #f7faf8;
   --color-bg-card:      #ffffff;
-  --color-bg-primary:   rgba(0, 114, 63, 0.08);
-  --color-bg-dark-page: #0f172a;
-  --color-bg-dark-card: #1e293b;
-  --color-bg-dark-elevated: #243040;
+  --color-bg-primary:   rgba(18, 105, 78, 0.08);
+  --color-bg-dark-page: #101613;
+  --color-bg-dark-card: #19211d;
+  --color-bg-dark-elevated: #212b26;
 
   /* ── Texto ───────────────────────────────────────────────── */
-  --color-text-primary:   #1a2e23;
-  --color-text-secondary: #4a6355;
+  --color-text-primary:   #121915;
+  --color-text-secondary: #3f4f47;
   /* Escurecido de #5f7266 em 22/08/2026. O valor antigo passava sobre branco
      (5,1:1) e sobre o fundo da pagina (4,8:1) -- que era o que o
      check-contrast.cjs media -- mas falhava sobre as SUPERFICIES TINGIDAS onde o
@@ -222,30 +236,38 @@ button i[data-lucide] {
      pilha real de transparencias e o axe, no e2e/accessibility.spec.cjs; o
      check-contrast.cjs ganhou os pares tingidos para pelo menos parar de
      ignora-los em silencio. */
-  --color-text-muted:     #556759;  /* AA: 6.0:1 s/ branco, 5.3:1 s/ tinta, 5.7:1 s/ fundo da página */
+  --color-text-muted:     #55665c;  /* AA: 6,1:1 s/ branco · 5,4:1 s/ tinta · 5,8:1 s/ página */
   --color-text-inverse:   #ffffff;
 
   /* ── Borda ───────────────────────────────────────────────── */
-  --color-border:       #d4e5dc;
-  --color-border-light: #e8f2ec;
-  --color-border-focus: #00723f;
+  --color-border:       #dde5e1;
+  --color-border-light: #eaf0ed;
+  --color-border-focus: #12694e;
   /* Borda para impressão: no papel não há tema, e a borda esverdeada do app
      sai como um cinza sujo. Um neutro puro imprime previsível em qualquer
      impressora. Usado só dentro de @media print. */
   --color-border-print: #cccccc;
 
   /* ── Gradientes ──────────────────────────────────────────── */
-  --gradient-primary:     linear-gradient(135deg, #00723f 0%, #33a532 100%);
-  --gradient-primary-rev: linear-gradient(135deg, #33a532 0%, #00723f 100%);
-  --gradient-danger:      linear-gradient(135deg, #b91c1c 0%, #ef4444 100%);
-  --gradient-warning:     linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
-  --gradient-page:        linear-gradient(180deg, #f5f8f6 0%, #eef4f1 100%);
+  /* ── Gradientes: um só, e ele não mora aqui ───────────────────
+     O produto tinha 103 gradientes. Isso não é ênfase, é textura — e é o
+     traço estético que envelhece mais rápido, o que contradiz uma marca que
+     promete permanência. Sobrou UM, escrito à mão na superfície do saldo
+     (features/premium.css), mais o brilho do esqueleto de carregamento, onde
+     o gradiente É a animação.
+     Os tokens abaixo viraram cor chapada porque componentes antigos ainda os
+     citam pelo nome; nenhum deles produz gradiente. */
+  --gradient-primary:     var(--color-primary-500);
+  --gradient-primary-rev: var(--color-primary-500);
+  --gradient-danger:      var(--color-danger-on-light);
+  --gradient-warning:     var(--color-warning-on-light);
+  --gradient-page:        var(--color-bg-page);
 
   /* ── Opacidades de overlay ───────────────────────────────── */
-  --color-overlay-xs: rgba(0, 114, 63, 0.04);
-  --color-overlay-sm: rgba(0, 114, 63, 0.08);
-  --color-overlay-md: rgba(0, 114, 63, 0.15);
-  --color-overlay-lg: rgba(0, 114, 63, 0.25);
+  --color-overlay-xs: rgba(18, 105, 78, 0.04);
+  --color-overlay-sm: rgba(18, 105, 78, 0.08);
+  --color-overlay-md: rgba(18, 105, 78, 0.15);
+  --color-overlay-lg: rgba(18, 105, 78, 0.25);
 
   /* ── Espaçamento (base 4px / escala 2x) ─────────────────── */
   --space-0:  0px;
@@ -290,25 +312,54 @@ button i[data-lucide] {
   --letter-spacing-wider:  0.8px;
   --letter-spacing-widest: 1px;
 
-  /* ── Border-radius ───────────────────────────────────────── */
+  /* ── Raio: três valores, e só ─────────────────────────────────
+     A escala tinha sete degraus e o CSS usava doze valores literais — dois
+     jeitos diferentes de dizer "totalmente redondo" (99px e 999px) e um 30px
+     solitário. Ninguém nota conscientemente, mas é assim que uma interface
+     perde a sensação de ter sido feita pela mesma mão.
+       controle   — botão, campo, chip retangular, barra
+       superfície — cartão, modal, folha
+       pill       — chip redondo, avatar, indicador
+     Os nomes antigos continuam como apelidos para não quebrar componente
+     nenhum, mas todos caem num destes três. */
+  --radius-controle:   8px;
+  --radius-superficie: 16px;
+  --radius-pill:       9999px;
+
   --radius-none: 0px;
-  --radius-sm:   4px;
-  --radius-md:   8px;
-  --radius-lg:   12px;
-  --radius-xl:   16px;
-  --radius-2xl:  24px;
-  --radius-full: 9999px;
+  --radius-sm:   var(--radius-controle);
+  --radius-md:   var(--radius-controle);
+  --radius-lg:   var(--radius-superficie);
+  --radius-xl:   var(--radius-superficie);
+  --radius-2xl:  var(--radius-superficie);
+  --radius-full: var(--radius-pill);
 
   /* ── Sombras ─────────────────────────────────────────────── */
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.04);
-  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.05);
-  --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.10), 0 4px 10px rgba(0, 0, 0, 0.06);
-  --shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.13), 0 8px 18px rgba(0, 0, 0, 0.07);
-  --shadow-primary-sm: 0 4px 14px rgba(0, 114, 63, 0.22);
-  --shadow-primary:    0 8px 26px rgba(0, 114, 63, 0.30);
-  --shadow-primary-lg: 0 14px 36px rgba(0, 114, 63, 0.38);
-  --shadow-danger:     0 8px 24px rgba(239, 68, 68, 0.28);
+  /* ── Elevação: três níveis, e só ──────────────────────────────
+     Antes havia duas famílias concorrentes (--shadow-* e --shadow-*-premium)
+     somando mais de dez sombras para o mesmo trabalho, e ninguém sabia qual
+     usar num componente novo. Agora a pergunta tem resposta objetiva:
+       nível 0 — está na página. Sem sombra: a borda define a superfície.
+       nível 1 — flutua sobre o conteúdo (botão, menu, chip, cartão em hover).
+       nível 2 — cobre o conteúdo (modal, gaveta, folha).
+     Os nomes antigos continuam logo abaixo como apelidos, todos apontando
+     para estes três, para não sobrar nenhuma definição órfã. */
+  --elevacao-0: none;
+  --elevacao-1: 0 1px 2px rgba(18, 25, 21, 0.05), 0 2px 8px rgba(18, 25, 21, 0.07);
+  --elevacao-2: 0 2px 8px rgba(18, 25, 21, 0.08), 0 12px 32px rgba(18, 25, 21, 0.14);
+
+  --shadow-xs: var(--elevacao-1);
+  --shadow-sm: var(--elevacao-1);
+  --shadow-md: var(--elevacao-1);
+  --shadow-lg: var(--elevacao-2);
+  --shadow-xl: var(--elevacao-2);
+  /* Tint de marca: mesma geometria da escala, com a cor da marca. Existe só
+     para o botão primário e o destrutivo, onde a sombra colorida separa o
+     controle do fundo. Nunca em cartão. */
+  --shadow-primary-sm: 0 1px 2px rgba(18, 105, 78, 0.10), 0 2px 8px rgba(18, 105, 78, 0.16);
+  --shadow-primary:    var(--shadow-primary-sm);
+  --shadow-primary-lg: 0 2px 8px rgba(18, 105, 78, 0.14), 0 12px 32px rgba(18, 105, 78, 0.22);
+  --shadow-danger:     0 1px 2px rgba(201, 87, 58, 0.10), 0 2px 8px rgba(201, 87, 58, 0.18);
   --shadow-inset:      inset 0 2px 4px rgba(0, 0, 0, 0.06);
 
   /* ── Transições ──────────────────────────────────────────── */
@@ -337,13 +388,13 @@ button i[data-lucide] {
   --glass-light:      rgba(255, 255, 255, 0.82);
   --glass-medium:     rgba(255, 255, 255, 0.65);
   --glass-border:     rgba(255, 255, 255, 0.40);
-  --glass-shadow:     0 8px 32px rgba(16, 24, 40, 0.08), inset 0 1px 0 rgba(255,255,255,0.6);
+  --glass-shadow:     0 8px 32px rgba(18, 25, 21, 0.08), inset 0 1px 0 rgba(255,255,255,0.6);
 
   /* ── Gradientes premium ──────────────────────────────────── */
-  --gradient-green-hero:  linear-gradient(135deg, #005c33 0%, #00723f 45%, #10b981 100%);
-  --gradient-green-card:  linear-gradient(160deg, #f0fff8 0%, #ffffff 60%);
-  --gradient-red-card:    linear-gradient(160deg, #fff5f5 0%, #ffffff 60%);
-  --gradient-surface:     linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,252,250,0.95) 100%);
+  --gradient-green-hero:  var(--color-primary-600);
+  --gradient-green-card:  var(--color-primary-50);
+  --gradient-red-card:    var(--color-danger-bg);
+  --gradient-surface:     var(--color-bg-card);
 
   /* ── Elevações semânticas ────────────────────────────────── */
   --elevation-0: none;
@@ -371,33 +422,21 @@ button i[data-lucide] {
   --dur-enter:    360ms;
   --dur-exit:     200ms;
 
-  /* ── Fase 4: Sombras premium com tint de cor ────────────── */
-  --shadow-green-glow:   0 0 0 1px rgba(0,114,63,0.08),
-                         0 4px 16px rgba(0,114,63,0.18),
-                         0 12px 40px rgba(0,114,63,0.10);
-  --shadow-card-premium: 0 1px 2px rgba(0,0,0,0.04),
-                         0 4px 16px rgba(16,24,40,0.06),
-                         0 16px 48px rgba(16,24,40,0.04),
-                         inset 0 1px 0 rgba(255,255,255,0.80);
-  --shadow-card-hover:   0 1px 3px rgba(0,0,0,0.06),
-                         0 8px 28px rgba(16,24,40,0.10),
-                         0 28px 72px rgba(16,24,40,0.06);
-  --shadow-float:        0 8px 32px rgba(0,0,0,0.12),
-                         0 2px 8px rgba(0,0,0,0.06),
-                         inset 0 1px 0 rgba(255,255,255,0.70);
-  --shadow-btn-primary:  0 1px 0 rgba(255,255,255,0.15) inset,
-                         0 -1px 0 rgba(0,0,0,0.20) inset,
-                         0 4px 12px rgba(0,114,63,0.28),
-                         0 2px 4px rgba(0,0,0,0.08);
-  --shadow-btn-hover:    0 1px 0 rgba(255,255,255,0.15) inset,
-                         0 -1px 0 rgba(0,0,0,0.20) inset,
-                         0 8px 24px rgba(0,114,63,0.38),
-                         0 4px 8px rgba(0,0,0,0.10);
+  /* ── Apelidos da escala de elevação ──────────────────────────
+     Estes nomes vieram da fase "premium" e descreviam aparência, não função —
+     por isso duplicavam a escala acima. Ficam como apelidos até o último
+     componente trocar de nome; nenhum define sombra própria. */
+  --shadow-green-glow:   var(--elevacao-1);
+  --shadow-card-premium: var(--elevacao-0);
+  --shadow-card-hover:   var(--elevacao-1);
+  --shadow-float:        var(--elevacao-2);
+  --shadow-btn-primary:  var(--elevacao-1);
+  --shadow-btn-hover:    var(--elevacao-1);
 
   /* ── Aliases de compatibilidade (style.css legacy) ───────── */
   --primary:        var(--color-primary-500);
   --primary-dark:   var(--color-primary-600);
-  --primary-light:  #33a532;
+  --primary-light:  #2fa37b;
   --primary-bg:     var(--color-bg-primary);
   --success:        var(--color-success);
   --danger:         var(--color-danger);
@@ -464,7 +503,7 @@ button i[data-lucide] {
 .fp-btn--primary:hover:not(:disabled) {
   background: var(--color-primary-600);
   transform: translateY(-1px);
-  box-shadow: 0 12px 32px rgba(0, 114, 63, 0.35);
+  box-shadow: 0 12px 32px rgba(18, 105, 78, 0.35);
 }
 
 .fp-btn--primary:active:not(:disabled) {
@@ -571,7 +610,7 @@ button i[data-lucide] {
 .fp-input:focus {
   outline: none;
   border-color: var(--color-primary-500);
-  box-shadow: 0 0 0 3px rgba(0, 114, 63, 0.1);
+  box-shadow: 0 0 0 3px rgba(18, 105, 78, 0.1);
 }
 
 .fp-input::placeholder {
@@ -671,28 +710,28 @@ button i[data-lucide] {
   /* Backgrounds */
   --color-bg-page:      var(--color-bg-dark-page);
   --color-bg-card:      var(--color-bg-dark-card);
-  --color-bg-primary:   rgba(0, 114, 63, 0.12);
+  --color-bg-primary:   rgba(47, 163, 123, 0.14);
 
   /* Aliases legacy */
   --bg:     var(--color-bg-dark-page);
   --bg-card: var(--color-bg-dark-card);
 
   /* Texto */
-  --color-text-primary:   #f1f5f9;
-  --color-text-secondary: #94a3b8;
-  --color-text-muted:     #8a9bad;  /* AA: 5.1:1 sobre card escuro */
-  --text:        #f1f5f9;
-  --text-light:  #94a3b8;
-  --text-muted:  #8a9bad;
+  --color-text-primary:   #edf3f0;
+  --color-text-secondary: #a6b5ad;
+  --color-text-muted:     #96a79e;  /* AA: 6,5:1 sobre card escuro */
+  --text:        #edf3f0;
+  --text-light:  #a6b5ad;
+  --text-muted:  #96a79e;
 
   /* Borda */
-  --color-border:       #334155;
-  --color-border-light: #243040;
-  --border: #334155;
+  --color-border:       #2c3833;
+  --color-border-light: #212b26;
+  --border: #2c3833;
 
   /* Neutros remapeados */
-  --color-gray-100: #334155;
-  --color-gray-200: #475569;
+  --color-gray-100: #2c3833;
+  --color-gray-200: #3c4541;
 
   /* Sombras ajustadas */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.25);
@@ -713,9 +752,43 @@ button i[data-lucide] {
 
 [data-theme="dark"] .fp-btn--secondary {
   background: var(--color-gray-700);
-  color: var(--color-gray-100);
+  color: var(--color-text-primary);
 }
 
 [data-theme="dark"] .fp-btn--ghost:hover {
   background: var(--color-gray-700);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   NÚMEROS TABULARES — em toda superfície monetária
+   ══════════════════════════════════════════════════════════════
+   Num app de finanças toda coluna de valores precisa de tabular-nums, senão
+   os dígitos têm larguras diferentes, as vírgulas não alinham entre linhas e
+   o extrato fica visualmente torto — mais difícil de comparar sem que o leitor
+   saiba por quê. Estava aplicado só no painel (5 usos em dashboard.css);
+   extrato, metas, orçamento e faturas ficavam de fora.
+
+   Um seletor único cobre toda classe de valor, em vez de caso a caso. Regra
+   para componente novo: se o nome da classe termina em -valor, -saldo, -total
+   ou -montante, ela já está coberta.
+   ══════════════════════════════════════════════════════════════ */
+[class*="valor"],
+[class*="saldo"],
+[class*="-total"],
+[class*="montante"],
+[class$="-num"],
+.num-financeiro,
+.moeda,
+td[data-numero],
+time {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* Campo de digitação é a exceção: ali o alinhamento tabular atrapalha a
+   leitura enquanto o usuário digita, porque o cursor "pula". */
+input[class*="valor"],
+input[class*="saldo"] {
+  font-variant-numeric: normal;
+  font-feature-settings: normal;
 }

@@ -168,7 +168,7 @@ const INIT_METAS = {
         icone: icone
       });
       overlay.remove();
-      UTILS.mostrarToast('Meta criada!', 'success');
+      UTILS.mostrarToast('Meta criada', 'success');
       this.renderOrcamento();
       this.renderResumo();
     } catch (err) {
@@ -202,7 +202,7 @@ const INIT_METAS = {
           var valor = UTILS.parseMoeda(document.getElementById('meta-aporte-valor').value);
           METAS.registrarAporte(metaId, valor);
           ov.remove();
-          UTILS.mostrarToast('Aporte registrado!', 'success');
+          UTILS.mostrarToast('Aporte registrado', 'success');
           self.renderOrcamento();
           self.renderResumo();
         } catch (e) {

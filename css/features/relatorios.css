@@ -78,15 +78,15 @@
 .rel-cat-bar-wrap {
   height: 8px;
   background: var(--color-border-light);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   overflow: hidden;
 }
 
 .rel-cat-bar {
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, var(--color-primary-500), var(--color-success));
-  border-radius: 999px;
+  background: var(--color-primary-500);
+  border-radius: var(--radius-full);
 }
 
 .rel-cat-val {

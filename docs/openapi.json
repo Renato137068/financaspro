@@ -1,7 +1,7 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "FinançasPro API",
+    "title": "Sobra API",
     "version": "11.0.0",
     "description": "API SaaS de finanças pessoais. Corpos de request gerados a partir dos schemas Zod que a API valida em runtime."
   },

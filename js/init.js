@@ -45,7 +45,7 @@ function _modals(fn) {
 /* ── Extrato → INIT_EXTRATO ── */
 
 function getCatIcon(cat) { return _extrato('getCatIcon', cat) || ''; }
-function getCatCor(cat) { return _extrato('getCatCor', cat) || '#94a3b8'; }
+function getCatCor(cat) { return _extrato('getCatCor', cat) || '#98a39d'; }
 function getExtratoMesAno() { return _extrato('getExtratoMesAno'); }
 function navegarPeriodo(dir) { _extrato('navegarPeriodo', dir); }
 function atualizarPeriodoLabel() { _extrato('atualizarPeriodoLabel'); }

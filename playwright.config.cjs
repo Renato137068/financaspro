@@ -14,6 +14,12 @@ module.exports = defineConfig({
     viewport: { width: 360, height: 640 },
     locale: 'pt-BR',
     actionTimeout: 15000,
+    // Permite apontar para um Chromium ja instalado na maquina, quando a
+    // versao que o Playwright baixaria nao esta disponivel (CI restrito,
+    // ambiente sem rede). Sem a variavel, nada muda.
+    launchOptions: process.env.PW_CHROMIUM
+      ? { executablePath: process.env.PW_CHROMIUM }
+      : {},
   },
   webServer: {
     command: 'node scripts/e2e-serve.cjs',

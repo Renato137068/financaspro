@@ -19,7 +19,7 @@
 }
 
 .cp-kpi--warn .cp-kpi-val {
-  color: #dc2626;
+  color: var(--color-danger-on-light);
 }
 
 .cp-kpi-label {
@@ -87,12 +87,12 @@
 }
 
 .cp-cal-today {
-  background: rgba(0, 114, 63, 0.12);
+  background: rgba(18, 105, 78, 0.12);
   font-weight: 700;
 }
 
 .cp-cal-has-bill {
-  background: rgba(245, 158, 11, 0.15);
+  background: rgba(201, 138, 30, 0.15);
 }
 
 .cp-cal-dot {
@@ -123,7 +123,7 @@
 }
 
 .cp-item--hoje {
-  border-color: rgba(245, 158, 11, 0.45);
+  border-color: rgba(201, 138, 30, 0.45);
 }
 
 .cp-item-main {
@@ -139,7 +139,7 @@
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-lg);
-  background: rgba(0, 114, 63, 0.1);
+  background: rgba(18, 105, 78, 0.1);
   color: var(--color-primary);
   flex-shrink: 0;
 }
@@ -173,7 +173,7 @@
 }
 
 .cp-btn-danger {
-  color: #dc2626 !important;
+  color: var(--color-danger-on-light) !important;
 }
 
 .cp-empty {

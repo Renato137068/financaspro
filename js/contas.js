@@ -1,4 +1,4 @@
-// FinançasPro — Contas e Cartões
+// Sobra — Contas e Cartões
 // v11.0 — Depende de: config.js, dados.js, utils.js
 
 var CONTAS = {
@@ -494,7 +494,7 @@ var CONTAS = {
     this.fecharModal();
     this.renderLista();
     this.renderSelect('novo-conta');
-    UTILS.mostrarToast('Conta salva!', 'success');
+    UTILS.mostrarToast('Conta salva', 'success');
   },
 
   confirmarDeletar: function(id) {

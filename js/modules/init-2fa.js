@@ -102,7 +102,7 @@ const INIT_2FA = {
           var code = (document.getElementById('totp-enable-code') || {}).value || '';
           DADOS.totpApi('enable', { code: code.trim() }).then(function() {
             document.querySelector('.modal-overlay').remove();
-            UTILS.mostrarToast('2FA ativado com sucesso', 'success');
+            UTILS.mostrarToast('Verificação em duas etapas ativada', 'success');
             self._enabled = true;
             self.refreshUI();
           }).catch(function(err) {

@@ -47,14 +47,14 @@
     banner.setAttribute('role', 'status');
     banner.setAttribute('aria-live', 'polite');
     banner.style.cssText = 'position:fixed;bottom:88px;left:50%;transform:translateX(-50%);' +
-      'background:#00723F;color:white;padding:12px 16px;border-radius:12px;' +
+      'background:#12694E;color:white;padding:12px 16px;border-radius:12px;' +
       'box-shadow:0 8px 24px rgba(0,0,0,0.2);z-index:10000;display:flex;gap:10px;' +
       'align-items:center;font-size:14px;font-weight:500;max-width:90%;';
     banner.innerHTML = '<span>Nova versão disponível</span>';
 
     var btn = document.createElement('button');
     btn.textContent = 'Atualizar';
-    btn.style.cssText = 'background:white;color:#00723F;border:none;padding:6px 14px;' +
+    btn.style.cssText = 'background:white;color:#12694E;border:none;padding:6px 14px;' +
       'border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;';
     btn.addEventListener('click', function() {
       if (novoSW) novoSW.postMessage('SKIP_WAITING');

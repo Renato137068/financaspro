@@ -228,7 +228,7 @@ for (const p of ['/transactions']) {
 const doc = {
   openapi: '3.0.3',
   info: {
-    title: 'FinançasPro API',
+    title: 'Sobra API',
     version: '11.0.0',
     description: 'API SaaS de finanças pessoais. Corpos de request gerados a partir dos schemas Zod que a API valida em runtime.',
   },
@@ -259,7 +259,7 @@ writeFileSync(outFile, JSON.stringify(doc, null, 2));
 
 // ─── Viewer HTML autocontido (spec inline) ───────────────────────────────────
 const esc = (s) => String(s).replace(/[&<>"]/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
-const METHOD_COLORS = { get: '#0891b2', post: '#16a34a', patch: '#d97706', put: '#7c3aed', delete: '#dc2626' };
+const METHOD_COLORS = { get: '#0891b2', post: '#16a34a', patch: '#9a6206', put: '#7c3aed', delete: '#dc2626' };
 
 function fieldRows(schema) {
   if (!schema || !schema.properties) return '';
@@ -309,7 +309,7 @@ for (const [path, ops] of Object.entries(paths)) {
 const sections = (doc.tags || []).map((t) => byTag[t.name] ? `<section><h2>${esc(t.name)}</h2><p class="td">${esc(t.description || '')}</p>${byTag[t.name].join('')}</section>` : '').join('');
 
 const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>FinançasPro API — Referência</title><style>
+<title>Sobra API — Referência</title><style>
 :root{--bg:#f6f7fb;--card:#fff;--ink:#1a1d29;--mut:#5b6472;--line:#e6e8ef;--brand:#4f46e5}
 @media(prefers-color-scheme:dark){:root{--bg:#0e1017;--card:#171a24;--ink:#eef0f6;--mut:#9aa3b2;--line:#262a37}}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.5}

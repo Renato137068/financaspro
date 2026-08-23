@@ -55,7 +55,7 @@ var APP_BOOTSTRAP = {
       .catch(function(e) {
         console.error('[BOOT] Falha crítica na inicialização:', e && e.message || e);
         if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
-          UTILS.mostrarToast('Erro crítico ao inicializar. Recarregue a página.', 'error');
+          UTILS.mostrarToast('O app não conseguiu abrir. Recarregue a página — seus dados continuam salvos.', 'error');
         }
       });
   },

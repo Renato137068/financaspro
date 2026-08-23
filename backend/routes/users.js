@@ -80,7 +80,7 @@ router.post('/me/password', validateBody(changePasswordSchema), asyncHandler(asy
 // GET /api/v1/users/me/export — LGPD: portabilidade dos dados
 router.get('/me/export', asyncHandler(async (req, res) => {
   const data = await UserService.exportData(req.user.id);
-  res.setHeader('Content-Disposition', 'attachment; filename="financaspro-meus-dados.json"');
+  res.setHeader('Content-Disposition', 'attachment; filename="sobra-meus-dados.json"');
   res.json(data);
 }));
 

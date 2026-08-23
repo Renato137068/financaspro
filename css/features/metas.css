@@ -34,7 +34,7 @@
 }
 
 .meta-card--done {
-  border-color: rgba(16, 185, 129, 0.35);
+  border-color: rgba(47, 156, 109, 0.35);
 }
 
 .meta-card-header {
@@ -51,7 +51,7 @@
   width: 40px;
   height: 40px;
   border-radius: var(--radius-lg);
-  background: rgba(0, 114, 63, 0.1);
+  background: rgba(18, 105, 78, 0.1);
   color: var(--color-primary);
   flex-shrink: 0;
 }
@@ -107,7 +107,7 @@
 .meta-card-done-msg {
   margin: var(--space-2) 0 0;
   font-size: var(--text-sm);
-  color: var(--color-success-dark);
+  color: var(--color-success-text);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -121,7 +121,7 @@
 }
 
 .meta-btn-danger {
-  color: #dc2626 !important;
+  color: var(--color-danger-on-light) !important;
 }
 
 .meta-empty {

@@ -3,7 +3,7 @@ setlocal
 cd /d "%~dp0"
 set "PATH=C:\Program Files\nodejs;%PATH%"
 
-echo Iniciando FinancasPro...
+echo Iniciando Sobra...
 echo.
 echo Aplicativo, login e cadastro:
 echo http://localhost:4000

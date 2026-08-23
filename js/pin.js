@@ -213,7 +213,7 @@ function togglePinSeguranca() {
             });
             overlay.remove();
             if (typeof renderConfigTab === 'function') renderConfigTab();
-            UTILS.mostrarToast('PIN ativado!', 'success');
+            UTILS.mostrarToast('PIN ativado', 'success');
           });
         };
       }
@@ -316,7 +316,7 @@ function verificarPinAoAbrir() {
   document.documentElement.classList.add('pin-locked');
   var html = '<div style="display:flex;flex-direction:column;gap:16px;text-align:center">' +
     '<p class="pin-lock-icon" aria-hidden="true"><i data-lucide="lock" aria-hidden="true"></i></p>' +
-    '<p style="font-weight:700;font-size:17px">FinançasPro</p>' +
+    '<p style="font-weight:700;font-size:17px">Sobra</p>' +
     '<p style="font-size:13px;color:var(--text-secondary)">Digite seu PIN</p>' +
     '<div style="display:flex;gap:8px;justify-content:center">' +
     '<input type="password" id="unlock-1" maxlength="1" inputmode="numeric" style="width:48px;height:56px;text-align:center;font-size:24px;font-weight:700;border:2px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text-primary)">' +
@@ -384,7 +384,7 @@ function tentarDesbloquear() {
       lock.remove();
     }
       document.documentElement.classList.remove('pin-locked');
-      UTILS.mostrarToast('Bem-vindo de volta!', 'success');
+      UTILS.mostrarToast('Que bom te ver.', 'success');
     } else {
       var bloqAte = PIN_SECURITY.registrarFalha();
       var cfg = DADOS.getConfig();
@@ -402,7 +402,7 @@ function tentarDesbloquear() {
     }
   }).catch(function(e) {
     console.error('Erro ao verificar PIN:', e);
-    UTILS.mostrarToast('Erro de segurança. Tente novamente.', 'error');
+    UTILS.mostrarToast('Não foi possível confirmar seu PIN. Seus dados continuam guardados e intactos.', 'error');
   });
 }
 

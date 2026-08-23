@@ -1,4 +1,4 @@
-// FinançasPro — ProgressBar: barra de progresso com cor e status
+// Sobra — ProgressBar: barra de progresso com cor e status
 // v11.0 — sem dependências externas
 (function() {
   var UI = window.UI || {};

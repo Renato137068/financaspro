@@ -108,7 +108,7 @@ const INIT_CONFIG = {
     if (sessao && sessao.user && sessao.user.email) {
       modo = 'Conta conectada · backup em JSON disponível';
     }
-    el.textContent = 'FinançasPro v' + ver + ' · ' + modo;
+    el.textContent = 'Sobra v' + ver + ' · ' + modo;
   },
 
   _updateLembreteStatus: function() {
@@ -637,7 +637,7 @@ const INIT_CONFIG = {
     
     // Validar tipo de arquivo
     if (file.type !== 'application/json' && !file.name.endsWith('.json')) {
-      UTILS.mostrarToast('Arquivo deve ser JSON', 'error');
+      UTILS.mostrarToast('O backup precisa ser um arquivo .json', 'error');
       return;
     }
     
@@ -670,11 +670,11 @@ const INIT_CONFIG = {
         }
       } catch (err) {
         console.error('Erro ao parsear JSON:', err);
-        UTILS.mostrarToast('Arquivo JSON inválido ou corrompido', 'error');
+        UTILS.mostrarToast('Esse arquivo não parece ser um backup do app. Nada foi alterado.', 'error');
       }
     };
     reader.onerror = function() {
-      UTILS.mostrarToast('Erro ao ler arquivo', 'error');
+      UTILS.mostrarToast('Não foi possível ler esse arquivo. Nada foi alterado.', 'error');
     };
     reader.readAsText(file);
   },
@@ -756,13 +756,13 @@ const INIT_CONFIG = {
         if (msg.length > 0) {
           UTILS.mostrarToast('Importado: ' + msg.join(', '), 'success');
         } else {
-          UTILS.mostrarToast('Nenhum dado válido encontrado', 'warning');
+          UTILS.mostrarToast('Não encontrei nada para importar nesse arquivo', 'warning');
         }
       });
       
     } catch (err) {
       console.error('Erro ao importar:', err);
-      UTILS.mostrarToast('Erro ao importar dados', 'error');
+      UTILS.mostrarToast('Não foi possível importar esse arquivo. Nada foi alterado.', 'error');
     }
   },
 
@@ -800,14 +800,14 @@ const INIT_CONFIG = {
         var blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
         var link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = 'financaspro_backup_' + new Date().toISOString().split('T')[0] + '.json';
+        link.download = 'sobra_backup_' + new Date().toISOString().split('T')[0] + '.json';
         link.click();
 
         DADOS.salvarConfig({ ultimoExportoDados: new Date().toISOString() });
         UTILS.mostrarToast('Backup exportado' + ((anexos && anexos.length) ? ' (com anexos)' : ''), 'success');
       } catch (err) {
         console.error('Erro ao exportar:', err);
-        UTILS.mostrarToast('Erro ao exportar dados', 'error');
+        UTILS.mostrarToast('Não foi possível exportar. Seus dados continuam salvos aqui.', 'error');
       }
     };
 
@@ -973,7 +973,7 @@ const INIT_CONFIG = {
     INIT_CONFIG._updateDynamicValues();
     RENDER.init();
     INIT_CONFIG.voltarPerfil();
-    UTILS.mostrarToast('Perfil atualizado com sucesso!', 'success');
+    UTILS.mostrarToast('Perfil atualizado', 'success');
     return true;
   },
 
@@ -1028,7 +1028,7 @@ const INIT_CONFIG = {
           DADOS.salvarConfig({ rendaMensal: validacao.value });
           overlay.remove();
           RENDER.init();
-          UTILS.mostrarToast('Renda atualizada!', 'success');
+          UTILS.mostrarToast('Renda atualizada', 'success');
         };
       }
     }, 100);
@@ -1171,7 +1171,7 @@ const INIT_CONFIG = {
     // Re-renderizar lista
     INIT_CONFIG._renderizarListaBancos();
     INIT_CONFIG._updateDynamicValues();
-    UTILS.mostrarToast('Banco adicionado!', 'success');
+    UTILS.mostrarToast('Banco salvo', 'success');
   },
 
   /**
@@ -1185,7 +1185,7 @@ const INIT_CONFIG = {
       DADOS.salvarConfig({ bancos: bancos });
       INIT_CONFIG._renderizarListaBancos();
       INIT_CONFIG._updateDynamicValues();
-      UTILS.mostrarToast('Banco removido!', 'success');
+      UTILS.mostrarToast('Banco removido', 'success');
     });
   },
 
@@ -1230,7 +1230,7 @@ const INIT_CONFIG = {
     // Re-renderizar lista
     INIT_CONFIG._renderizarListaCartoes();
     INIT_CONFIG._updateDynamicValues();
-    UTILS.mostrarToast('Cartão adicionado!', 'success');
+    UTILS.mostrarToast('Cartão salvo', 'success');
   },
 
   /**
@@ -1244,7 +1244,7 @@ const INIT_CONFIG = {
       DADOS.salvarConfig({ cartoes: cartoes });
       INIT_CONFIG._renderizarListaCartoes();
       INIT_CONFIG._updateDynamicValues();
-      UTILS.mostrarToast('Cartão removido!', 'success');
+      UTILS.mostrarToast('Cartão removido', 'success');
     });
   },
 
@@ -1347,7 +1347,7 @@ const INIT_CONFIG = {
           if (!customCats[tipo]) customCats[tipo] = [];
           
           if (customCats[tipo].includes(validacao.value)) {
-            UTILS.mostrarToast('Categoria já existe', 'warning');
+            UTILS.mostrarToast('Já existe uma categoria com esse nome', 'warning');
             return;
           }
           
@@ -1356,7 +1356,7 @@ const INIT_CONFIG = {
           
           overlay.remove();
           INIT_CONFIG.abrirGerenciarCategorias(tipo); // Reabrir para atualizar lista
-          UTILS.mostrarToast('Categoria adicionada!', 'success');
+          UTILS.mostrarToast('Categoria salva', 'success');
         };
       }
     }, 100);
@@ -1379,7 +1379,7 @@ const INIT_CONFIG = {
       if (overlay) overlay.remove();
       INIT_CONFIG.abrirGerenciarCategorias(tipo);
       
-      UTILS.mostrarToast('Categoria removida!', 'success');
+      UTILS.mostrarToast('Categoria removida', 'success');
     });
   },
 
@@ -1491,7 +1491,7 @@ const INIT_CONFIG = {
 
     if (typeof DAILY_REMINDER === 'undefined' || !DAILY_REMINDER.isSupported()) {
       if (chk) chk.checked = false;
-      UTILS.mostrarToast('Notificações não suportadas neste dispositivo', 'warning');
+      UTILS.mostrarToast('Este aparelho não aceita notificações', 'warning');
       return;
     }
 
@@ -1501,7 +1501,7 @@ const INIT_CONFIG = {
         if (chk) chk.checked = false;
         DADOS.salvarConfig({ lembreteDiario: false });
         self._updateLembreteStatus();
-        UTILS.mostrarToast('Permissão de notificação negada', 'warning');
+        UTILS.mostrarToast('As notificações estão bloqueadas nas configurações do navegador', 'warning');
         return;
       }
       DADOS.salvarConfig({ lembreteDiario: true });
@@ -1519,7 +1519,7 @@ const INIT_CONFIG = {
         UTILS.mostrarToast('Limite de ' + UTILS.labelCategoria(parametros.categoria) +
           ' → R$ ' + parametros.novoLimite.toFixed(2), 'success');
       } catch (_e) {
-        UTILS.mostrarToast('Erro ao atualizar limite', 'error');
+        UTILS.mostrarToast('Não foi possível atualizar o limite. Tente de novo.', 'error');
       }
     }
 

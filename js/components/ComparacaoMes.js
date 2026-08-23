@@ -1,4 +1,4 @@
-// FinançasPro — ComparacaoMes: badge de variação vs mês anterior
+// Sobra — ComparacaoMes: badge de variação vs mês anterior
 // v11.0 — sem dependências externas
 // inverso=true para despesas (alta = ruim)
 (function() {

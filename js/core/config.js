@@ -3,7 +3,7 @@
  */
 
 const CONFIG = {
-  APP_NAME: 'FinançasPro',
+  APP_NAME: 'Sobra',
   VERSION: '11.0.0',
 
   STORAGE_TRANSACOES: 'fp-transacoes',
@@ -135,7 +135,7 @@ const CONFIG = {
     educacao: '#283593', lazer: '#7b1fa2', assinaturas: '#455a64', seguros: '#00897b',
     impostos: '#6d4c41', servicos_financeiros: '#3949ab', compras: '#8e24aa', vestuario: '#ad1457',
     viagem: '#0277bd', pet: '#5d4037', familia: '#43a047', doacoes: '#d81b60', beleza: '#ec407a',
-    salario: '#00723F', investimentos: '#1b5e20', vendas: '#2e7d32', reembolsos: '#546e7a',
+    salario: '#12694E', investimentos: '#1b5e20', vendas: '#2e7d32', reembolsos: '#546e7a',
     beneficios: '#616161', presentes: '#8d6e63', aluguel_recebido: '#2e7d32', premios: '#f9a825',
     outro: '#78909c', outros: '#78909c'
   },

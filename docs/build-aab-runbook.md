@@ -16,12 +16,12 @@ seguro** (gerenciador de senhas). Perder essa senha = perder o app na Play Store
 No terminal, na pasta do projeto:
 
 ```
-keytool -genkeypair -v -keystore financaspro-upload.jks -keyalg RSA -keysize 2048 -validity 10000 -alias financaspro
+keytool -genkeypair -v -keystore sobra-upload.jks -keyalg RSA -keysize 2048 -validity 10000 -alias financaspro
 ```
 
 - Ele vai pedir uma senha (crie e anote), confirmar, e alguns dados (nome, org, país).
   Pode responder o essencial; no fim confirme com `sim`/`yes`.
-- Isso cria o arquivo `financaspro-upload.jks` na pasta do projeto.
+- Isso cria o arquivo `sobra-upload.jks` na pasta do projeto.
 - **Nunca** faça commit desse arquivo (o `.gitignore` já protege `*.jks` e `keystore.properties`).
 
 ## Passo 2 — Apontar o build para a keystore
@@ -29,14 +29,14 @@ keytool -genkeypair -v -keystore financaspro-upload.jks -keyalg RSA -keysize 204
 Crie o arquivo `android\keystore.properties` com este conteúdo (troque as senhas):
 
 ```
-storeFile=../../financaspro-upload.jks
+storeFile=../../sobra-upload.jks
 storePassword=SUA_SENHA_DA_KEYSTORE
 keyAlias=financaspro
 keyPassword=SUA_SENHA_DA_KEYSTORE
 ```
 
 > Observação: `storeFile` é relativo a `android/app/`. Se preferir, use o caminho
-> absoluto, ex.: `storeFile=C:\\Users\\renat\\Downloads\\financaspro\\financaspro-upload.jks`.
+> absoluto, ex.: `storeFile=C:\\Users\\renat\\Downloads\\financaspro\\sobra-upload.jks`.
 
 ## Passo 3 — Build web + sync com o Android
 
@@ -82,7 +82,7 @@ Se der erro de JDK/SDK, confirme que o **Android Studio** está instalado e que 
 ---
 
 ## Lembretes de segurança
-- Faça **backup da keystore** (`financaspro-upload.jks`) e da senha. Sem ela você não
+- Faça **backup da keystore** (`sobra-upload.jks`) e da senha. Sem ela você não
   consegue publicar atualizações do mesmo app.
 - O app está em **modo local** no piloto: funciona offline, sem login. Avise os
   testers que os dados ficam no aparelho.

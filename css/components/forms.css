@@ -57,14 +57,14 @@
 .form-group select.error,
 .form-group textarea.error {
   border-color: var(--color-danger);
-  background: rgba(239, 68, 68, 0.05);
+  background: rgba(201, 87, 58, 0.05);
 }
 
 .form-group input.success,
 .form-group select.success,
 .form-group textarea.success {
   border-color: var(--color-success);
-  background: rgba(16, 185, 129, 0.05);
+  background: rgba(47, 156, 109, 0.05);
 }
 
 .form-error-message {
@@ -332,15 +332,15 @@ legend {
 
 .auto-sugerido {
   border-color: var(--color-primary-400) !important;
-  background: rgba(51, 165, 50, 0.06) !important;
+  background: rgba(47, 163, 123, 0.06) !important;
 }
 
 .sugestao-badge {
   margin-top: var(--space-3);
   padding: var(--space-2) var(--space-3);
-  background: linear-gradient(135deg, rgba(0, 114, 63, 0.12) 0%, rgba(51, 165, 50, 0.08) 100%);
+  background: rgba(18, 105, 78, 0.12);
   color: var(--color-primary-500);
-  border: 1.5px solid rgba(0, 114, 63, 0.2);
+  border: 1.5px solid rgba(18, 105, 78, 0.2);
   border-radius: var(--radius-md);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);

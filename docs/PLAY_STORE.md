@@ -1,6 +1,6 @@
 # Publicação na Google Play Store
 
-Este guia descreve como gerar o **AAB** (Android App Bundle) do FinançasPro a partir do projeto web + Capacitor.
+Este guia descreve como gerar o **AAB** (Android App Bundle) do Sobra a partir do projeto web + Capacitor.
 
 ## Pré-requisitos
 
@@ -71,7 +71,7 @@ O `.aab` fica em `android/app/build/outputs/bundle/release/`.
 
 | Item | Valor sugerido |
 |------|----------------|
-| Nome | FinançasPro |
+| Nome | Sobra |
 | Categoria | Finanças |
 | Classificação | PEGI 3 / Livre (sem conteúdo sensível) |
 | Política de privacidade | `https://SEU_DOMINIO/privacidade.html` (arquivo local: `privacidade.html`) |

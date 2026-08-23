@@ -910,7 +910,7 @@ const INIT_FORM = {
       if (!texto) return;
 
       if (typeof PIPELINE === 'undefined') {
-        UTILS.mostrarToast('Parser não disponível', 'error');
+        UTILS.mostrarToast('Não foi possível ler esse arquivo agora. Recarregue a página.', 'error');
         return;
       }
 
@@ -1237,7 +1237,7 @@ const INIT_FORM = {
     var gastoNovo = gastoAtual + val;
     var pctAtual = Math.round((gastoAtual / status.limite) * 100);
     var pctNovo = Math.round((gastoNovo / status.limite) * 100);
-    var cor = pctNovo > 100 ? '#ef4444' : pctNovo > 80 ? '#f59e0b' : '#10b981';
+    var cor = pctNovo > 100 ? '#c9573a' : pctNovo > 80 ? '#c98a1e' : '#2f9c6d';
     var nomeCategoria = cat.charAt(0).toUpperCase() + cat.slice(1);
 
     el.innerHTML = '<div class="orc-preview-card">' +
@@ -1475,7 +1475,7 @@ const INIT_FORM = {
         var val = el ? parseFloat(el.value || 0) : 0;
         if (val > 0) ORCAMENTO.definirLimite(cat, val);
       });
-      UTILS.mostrarToast('Orcamentos definidos com sucesso!', 'success');
+      UTILS.mostrarToast('Orçamentos definidos', 'success');
       RENDER.renderOrcamento();
     } catch (erro) {
       UTILS.mostrarToast(erro.message, 'error');

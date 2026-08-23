@@ -21,7 +21,7 @@
       plugins.StatusBar.setOverlaysWebView({ overlay: false }).catch(function() {});
     }
     if (plugins.StatusBar.setBackgroundColor) {
-      plugins.StatusBar.setBackgroundColor({ color: '#00723F' }).catch(function() {});
+      plugins.StatusBar.setBackgroundColor({ color: '#12694E' }).catch(function() {});
     }
     if (plugins.StatusBar.setStyle) {
       plugins.StatusBar.setStyle({ style: 'LIGHT' }).catch(function() {});

@@ -28,7 +28,7 @@ const INIT_BILLING = {
     if (status === 'success' && typeof BILLING !== 'undefined' && BILLING.sync) {
       BILLING.sync().then(function() {
         if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
-          UTILS.mostrarToast('Assinatura confirmada! Bem-vindo ao plano Pro.', 'success');
+          UTILS.mostrarToast('Pronto, você está no Pro.', 'success');
         }
         cleanUrl();
       }).catch(function() { cleanUrl(); });
@@ -75,9 +75,9 @@ const INIT_BILLING = {
       '<div class="modal-box billing-modal">' +
         '<button type="button" class="billing-close" data-action="billing-fechar" aria-label="Fechar">&times;</button>' +
         '<div class="billing-header">' +
-          '<span class="billing-badge"><i data-lucide="sparkles" aria-hidden="true"></i> FinançasPro Cloud</span>' +
-          '<h2 id="billing-title">Escolha seu plano</h2>' +
-          '<p class="billing-lead" id="billing-lead">' + UTILS.escapeHtml(contextMsg || 'Desbloqueie IA, OCR e sincronização na nuvem.') + '</p>' +
+          '<span class="billing-badge"><i data-lucide="sparkles" aria-hidden="true"></i> Sobra Cloud</span>' +
+          '<h2 id="billing-title">O Pro tira os limites</h2>' +
+          '<p class="billing-lead" id="billing-lead">' + UTILS.escapeHtml(contextMsg || 'Contas ilimitadas, relatórios do ano inteiro e backup automático. Cancela quando quiser.') + '</p>' +
         '</div>' +
         '<div class="billing-interval" role="group" aria-label="Periodicidade">' +
           '<button type="button" class="billing-interval-btn ativo" data-action="billing-interval" data-interval="monthly">Mensal</button>' +
@@ -253,7 +253,7 @@ const INIT_BILLING = {
 
     BILLING.checkoutOrSubscribe(tier, this._interval).then(function(result) {
       if (result && result.redirected) return;
-      UTILS.mostrarToast('Assinatura atualizada com sucesso!', 'success');
+      UTILS.mostrarToast('Assinatura atualizada', 'success');
       self._renderPlans(ov);
       self._renderFooter(ov);
       self.refreshPlanoCard();
@@ -290,7 +290,7 @@ const INIT_BILLING = {
   _doCancel: function(ov) {
     var self = this;
     BILLING.cancelSubscription().then(function() {
-      UTILS.mostrarToast('Assinatura será cancelada ao final do período.', 'info');
+      UTILS.mostrarToast('Cancelado. Você continua no Pro até o fim do período, e seus dados ficam aqui depois disso.', 'info');
       self._renderFooter(ov);
       self.refreshPlanoCard();
     }).catch(function(err) {
