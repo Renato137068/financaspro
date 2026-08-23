@@ -29,7 +29,7 @@
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-xl);
   padding: var(--space-8);
-  box-shadow: var(--shadow-card-premium);
+  box-shadow: var(--shadow-superficie);
   transition: transform var(--transition-normal), box-shadow var(--transition-normal);
 }
 
@@ -57,7 +57,7 @@
   background: var(--color-bg-primary);
   color: var(--color-primary-text);
   box-shadow: var(--shadow-sm);
-  font-size: 32px;
+  font-size: var(--font-size-3xl);
   margin-bottom: var(--space-4);
 }
 
@@ -75,7 +75,7 @@
 .auth-card h2 {
   margin: 0;
   color: var(--color-gray-800);
-  font-size: 28px;
+  font-size: var(--font-size-3xl);
   font-weight: var(--font-weight-bold);
   line-height: var(--line-height-tight);
   margin-bottom: var(--space-1);
@@ -298,7 +298,7 @@
   padding: 8px 12px;
   background: var(--color-gray-100);
   border-radius: var(--radius-md);
-  font-size: 12px;
+  font-size: var(--font-size-xs);
   word-break: break-all;
 }
 

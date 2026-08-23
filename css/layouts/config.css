@@ -1,11 +1,11 @@
 /**
- * layouts/config.css — Tela de configurações redesign premium
+ * layouts/config.css — Tela de configurações
  * Depende de: design-system.css
  */
 
-/* ── HEADER PREMIUM DO USUÁRIO ─────────────────────────────── */
+/* ── Cabeçalho do usuário ──────────────────────────────────── */
 
-.perfil-header-premium {
+.perfil-header {
   display: flex;
   align-items: center;
   gap: var(--space-5);
@@ -13,13 +13,13 @@
   border-radius: var(--radius-2xl);
   padding: var(--space-6);
   margin-bottom: var(--space-6);
-  box-shadow: var(--shadow-card-premium);
+  box-shadow: var(--shadow-superficie);
   border: 1px solid var(--color-border-light);
   position: relative;
   overflow: hidden;
 }
 
-.perfil-header-premium::before {
+.perfil-header::before {
   content: '';
   position: absolute;
   top: 0;
@@ -43,7 +43,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
+  font-size: var(--font-size-3xl);
   font-weight: var(--font-weight-bold);
   box-shadow: var(--elevacao-1);
   position: relative;
@@ -195,7 +195,7 @@
   color: var(--color-danger-text);
 }
 
-/* ── CARDS PREMIUM ────────────────────────────────────────── */
+/* ── Cartões ───────────────────────────────────────────────── */
 
 .perfil-cards-grid {
   display: grid;
@@ -203,7 +203,7 @@
   gap: var(--space-3);
 }
 
-.perfil-card-premium {
+.perfil-card {
   display: flex;
   align-items: center;
   gap: var(--space-4);
@@ -212,7 +212,7 @@
   padding: var(--space-5);
   cursor: pointer;
   transition: all var(--transition-smooth);
-  box-shadow: var(--shadow-card-premium);
+  box-shadow: var(--shadow-superficie);
   border: 1px solid var(--color-border-light);
   position: relative;
   overflow: hidden;
@@ -220,16 +220,16 @@
   color: inherit;
 }
 
-.perfil-card-premium.perfil-card-disabled {
+.perfil-card.perfil-card-disabled {
   opacity: 0.72;
   cursor: not-allowed;
 }
 
-.perfil-card-premium.perfil-card-disabled .perfil-switch {
+.perfil-card.perfil-card-disabled .perfil-switch {
   pointer-events: none;
 }
 
-.perfil-card-premium::before {
+.perfil-card::before {
   content: '';
   position: absolute;
   top: 0;
@@ -241,17 +241,17 @@
   transition: opacity var(--transition-fast);
 }
 
-.perfil-card-premium:hover {
+.perfil-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-card-hover);
   border-color: var(--color-primary-200);
 }
 
-.perfil-card-premium:hover::before {
+.perfil-card:hover::before {
   opacity: 1;
 }
 
-.perfil-card-premium:active {
+.perfil-card:active {
   transform: translateY(0);
 }
 
@@ -280,7 +280,7 @@
   transition: all var(--transition-fast);
 }
 
-.perfil-card-premium:hover .perfil-card-icon-wrapper {
+.perfil-card:hover .perfil-card-icon-wrapper {
   background: var(--color-primary-50);
   color: var(--color-primary-text);
 }
@@ -323,18 +323,18 @@
   transition: all var(--transition-fast);
 }
 
-.perfil-card-premium:hover .perfil-card-arrow {
+.perfil-card:hover .perfil-card-arrow {
   color: var(--color-primary-text);
   transform: translateX(4px);
 }
 
-.perfil-card-premium:focus-visible {
+.perfil-card:focus-visible {
   outline: 2px solid var(--color-primary-500);
   outline-offset: 2px;
   box-shadow: 0 0 0 4px rgba(18, 105, 78, 0.15);
 }
 
-/* ── SWITCH PREMIUM ──────────────────────────────────────── */
+/* ── Interruptor ────────────────────────────────────────────  */
 
 .perfil-switch {
   position: relative;
@@ -397,7 +397,7 @@
   box-shadow: 0 0 0 4px rgba(18, 105, 78, 0.15);
 }
 
-/* ── ESTATÍSTICAS PREMIUM ─────────────────────────────────── */
+/* ── Estatísticas ──────────────────────────────────────────── */
 
 .perfil-stats-grid {
   display: grid;
@@ -413,7 +413,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  box-shadow: var(--shadow-card-premium);
+  box-shadow: var(--shadow-superficie);
   border: 1px solid var(--color-border-light);
   transition: all var(--transition-smooth);
 }
@@ -600,7 +600,7 @@
   justify-content: center;
   background: var(--color-primary-50);
   border-radius: var(--radius-lg);
-  font-size: 20px;
+  font-size: var(--font-size-xl);
 }
 
 .banco-item-details {
@@ -657,7 +657,7 @@
 }
 
 .bancos-empty-icon {
-  font-size: 48px;
+  font-size: var(--font-size-display);
   margin-bottom: var(--space-4);
   opacity: 0.5;
 }
@@ -857,7 +857,7 @@
 /* ── REDUCED MOTION ───────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
-  .perfil-card-premium,
+  .perfil-card,
   .perfil-action-btn,
   .perfil-logout-btn,
   .perfil-danger-btn,
@@ -890,13 +890,13 @@
     display: none !important;
   }
   
-  .perfil-header-premium {
+  .perfil-header {
     break-inside: avoid;
     box-shadow: none;
     border: 1px solid var(--color-border-print);
   }
   
-  .perfil-card-premium {
+  .perfil-card {
     break-inside: avoid;
     box-shadow: none;
     border: 1px solid var(--color-border-print);
@@ -916,8 +916,8 @@
     color: black !important;
   }
   
-  .perfil-card-premium,
-  .perfil-header-premium,
+  .perfil-card,
+  .perfil-header,
   .perfil-stat-card {
     background: white !important;
     color: black !important;
@@ -933,7 +933,7 @@
 }
 
 @media (max-width: 767px) {
-  .perfil-header-premium {
+  .perfil-header {
     flex-direction: column;
     text-align: center;
     padding: var(--space-5);
@@ -970,7 +970,7 @@
 
 /* ── DARK MODE ─────────────────────────────────────────────── */
 
-[data-theme="dark"] .perfil-header-premium {
+[data-theme="dark"] .perfil-header {
   background: var(--color-bg-dark-card);
   border-color: var(--color-border);
 }
@@ -1005,12 +1005,12 @@
   color: var(--color-success-light);
 }
 
-[data-theme="dark"] .perfil-card-premium {
+[data-theme="dark"] .perfil-card {
   background: var(--color-bg-dark-card);
   border-color: var(--color-border);
 }
 
-[data-theme="dark"] .perfil-card-premium:hover {
+[data-theme="dark"] .perfil-card:hover {
   border-color: var(--color-primary-500);
 }
 
@@ -1019,7 +1019,7 @@
   color: var(--color-primary-400);
 }
 
-[data-theme="dark"] .perfil-card-premium:hover .perfil-card-icon-wrapper {
+[data-theme="dark"] .perfil-card:hover .perfil-card-icon-wrapper {
   background: rgba(18, 105, 78, 0.15);
   color: var(--color-primary-300);
 }
@@ -1036,7 +1036,7 @@
   color: var(--color-gray-400);
 }
 
-[data-theme="dark"] .perfil-card-premium:hover .perfil-card-arrow {
+[data-theme="dark"] .perfil-card:hover .perfil-card-arrow {
   color: var(--color-primary-400);
 }
 

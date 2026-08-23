@@ -1,5 +1,5 @@
 /**
- * layouts/dashboard.css — Dashboard premium v2
+ * layouts/dashboard.css — Dashboard v2
  * Depende de: design-system.css, components/cards.css
  */
 
@@ -57,13 +57,13 @@
 .card-saldo-principal.saldo-positivo {
   background: var(--color-bg-card);
   border: 2px solid var(--color-primary-200);
-  box-shadow: var(--shadow-card-premium);
+  box-shadow: var(--shadow-superficie);
 }
 
 .card-saldo-principal.saldo-negativo {
   background: var(--color-bg-card);
   border: 2px solid var(--color-danger);
-  box-shadow: var(--shadow-card-premium);
+  box-shadow: var(--shadow-superficie);
 }
 
 .card-saldo-principal:hover {

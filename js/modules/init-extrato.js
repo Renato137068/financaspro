@@ -355,7 +355,7 @@ const INIT_EXTRATO = {
    */
   setFiltroTipo: function(tipo) {
     this.state.filtroTipo = tipo;
-    document.querySelectorAll('.filtro-chip-premium').forEach(function(b) {
+    document.querySelectorAll('.filtro-chip').forEach(function(b) {
       var isActive = b.dataset.filtro === tipo;
       b.classList.toggle('ativo', isActive);
       b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
@@ -449,7 +449,7 @@ const INIT_EXTRATO = {
   },
 
   /**
-   * Renderiza resumo do extrato premium
+   * Renderiza o resumo do extrato
    */
   renderExtratoResumo: function(txs) {
     var rec = 0, desp = 0;
@@ -512,7 +512,7 @@ const INIT_EXTRATO = {
   },
 
   /**
-   * Renderiza lista de transações do extrato com agrupamento temporal premium
+   * Renderiza a lista de transações com agrupamento por data
    */
   renderExtratoLista: function(txs) {
     var container = document.getElementById('lista-transacoes');
@@ -656,13 +656,16 @@ const INIT_EXTRATO = {
     // senão os avatares de categoria ficam como círculos vazios.
     if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(container);
 
-    // Adicionar listeners de ações para grupos premium
+    // Listeners de ação nos grupos de transação
     container.addEventListener('click', function(e) {
-      var btnEdit = e.target.closest('.btn-editar') || e.target.closest('.btn-editar-premium');
-      var btnDel = e.target.closest('.btn-deletar') || e.target.closest('.btn-deletar-premium');
+      // As variantes "-premium" destes seletores nao existem em markup nenhum
+      // desde que o componente foi reescrito; eram um segundo caminho mantido
+      // por precaucao, e precaucao que nunca dispara e' so' codigo a manter.
+      var btnEdit = e.target.closest('.btn-editar');
+      var btnDel = e.target.closest('.btn-deletar');
       var btnAnexo = e.target.closest('.btn-anexo');
       var btnCarregarMais = e.target.closest('.btn-carregar-mais');
-      var txItem = e.target.closest('.ext-tx') || e.target.closest('.extrato-item-premium') || e.target.closest('.extrato-item');
+      var txItem = e.target.closest('.ext-tx') || e.target.closest('.extrato-item');
       
       if (btnAnexo) {
         e.stopPropagation();
@@ -685,7 +688,7 @@ const INIT_EXTRATO = {
   },
 
   /**
-   * Renderiza item individual de transação com design premium
+   * Renderiza um item de transação
    */
   _anexoBtnHtml: function(t) {
     if (!t.anexoCount || typeof INIT_ANEXOS === 'undefined') return '';
@@ -717,7 +720,7 @@ const INIT_EXTRATO = {
   },
 
   /**
-   * Renderiza estado vazio premium
+   * Renderiza o estado vazio
    */
   _renderEmptyState: function() {
     var totalReal = (typeof DADOS !== 'undefined' && DADOS.getTransacoes) ? DADOS.getTransacoes().length : 0;

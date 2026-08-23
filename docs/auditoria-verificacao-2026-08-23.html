@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Auditoria de verificação — FinançasPro — 23/08/2026</title>
+  <style>
+    :root{--ink:#10241c;--muted:#60736a;--line:#dbe7e0;--paper:#f7faf8;--card:#fff;--green:#0b3d2e;--mint:#dff4e9;--lime:#b9e86b;--amber:#f3b63f;--red:#d95d55;--blue:#3f79b7;--shadow:0 12px 32px rgba(11,61,46,.09)}
+    *{box-sizing:border-box} body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.6 Inter,Segoe UI,Arial,sans-serif} .wrap{max-width:1180px;margin:auto;padding:28px 22px 60px}
+    .hero{background:linear-gradient(135deg,#0b3d2e,#145c43 64%,#2c8963);color:#fff;border-radius:24px;padding:38px 42px;box-shadow:var(--shadow);position:relative;overflow:hidden}.hero:after{content:"";position:absolute;width:280px;height:280px;border:32px solid rgba(255,255,255,.08);border-radius:50%;right:-55px;top:-90px}.eyebrow{letter-spacing:.12em;text-transform:uppercase;font-size:12px;font-weight:700;color:#ccebd9}.hero h1{font-size:clamp(28px,4vw,48px);line-height:1.05;margin:12px 0 10px;max-width:720px}.hero p{max-width:760px;margin:0;color:#e6f4ec}.hero-grid{display:grid;grid-template-columns:1fr 190px;gap:26px;align-items:end}.score{position:relative;z-index:1;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.24);border-radius:20px;padding:20px;text-align:center}.score strong{display:block;font-size:64px;line-height:1;color:var(--lime)}.score span{color:#e6f4ec;font-weight:700}
+    h2{font-size:25px;margin:40px 0 14px} h3{font-size:18px;margin:0 0 8px} p{margin:8px 0}.meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}.pill{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;color:var(--muted);font-size:13px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:17px;padding:19px;box-shadow:0 5px 18px rgba(11,61,46,.04)}.metric{font-size:34px;font-weight:800;color:var(--green);line-height:1}.metric small{font-size:15px;color:var(--muted);font-weight:600}.bar{height:9px;background:#e9f0ec;border-radius:10px;overflow:hidden;margin:13px 0 8px}.bar i{height:100%;display:block;border-radius:10px;background:var(--green)}.card p,.small{font-size:13px;color:var(--muted)}
+    table{width:100%;border-collapse:separate;border-spacing:0;background:var(--card);border:1px solid var(--line);border-radius:17px;overflow:hidden;box-shadow:0 5px 18px rgba(11,61,46,.04)}th,td{text-align:left;padding:13px 15px;border-bottom:1px solid var(--line);vertical-align:top}th{background:#edf6f0;color:var(--green);font-size:12px;text-transform:uppercase;letter-spacing:.06em}tr:last-child td{border-bottom:0}.n{font-weight:800;font-size:20px;color:var(--green);white-space:nowrap}.status{font-weight:700}.ok{color:#1d8157}.warn{color:#a26408}.bad{color:#b13f3b}.info{color:#356da5}
+    .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}.box{background:#fff;border:1px solid var(--line);border-radius:17px;padding:20px}.box ul{margin:8px 0 0;padding-left:21px}.box li{margin:7px 0}.tag{display:inline-block;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:800;letter-spacing:.04em;margin-right:7px}.p0{background:#ffe4e1;color:#a72e2b}.p1{background:#fff0d0;color:#8d5a05}.p2{background:#e8f0fb;color:#315e8d}.done{background:#dbf4e7;color:#1c7650}
+    pre{white-space:pre-wrap;background:#12261e;color:#e8f4ec;border-radius:17px;padding:22px;overflow:auto;font:13px/1.58 Consolas,monospace;border:1px solid #244d3d}.callout{border-left:5px solid var(--amber);background:#fff8e8;padding:15px 18px;border-radius:0 12px 12px 0;margin:14px 0}.callout strong{color:#825407}.note{font-size:12px;color:var(--muted)}a{color:#176b4b;text-decoration:none;font-weight:650}a:hover{text-decoration:underline}.footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}.legend{display:flex;gap:18px;flex-wrap:wrap;margin:10px 0;color:var(--muted);font-size:13px}
+    @media(max-width:800px){.hero-grid,.cols{grid-template-columns:1fr}.grid{grid-template-columns:repeat(2,1fr)}.hero{padding:28px 24px}th,td{padding:10px 9px;font-size:13px}}
+    @media(max-width:480px){.wrap{padding:14px 11px 40px}.grid{grid-template-columns:1fr}.hero h1{font-size:31px}h2{font-size:22px;margin-top:30px}table{display:block;overflow-x:auto;white-space:normal}}
+  </style>
+</head>
+<body>
+<main class="wrap">
+  <section class="hero">
+    <div class="hero-grid">
+      <div>
+        <div class="eyebrow">Auditoria de verificação · rodada 23/08/2026</div>
+        <h1>FinançasPro: o que melhorou e o que ainda bloqueia a próxima entrega</h1>
+        <p>Revisão independente do estado atual do projeto, comparando os mesmos eixos da auditoria anterior: engenharia e sincronização, Play Store, monetização e enquadramento em dispositivos.</p>
+        <div class="meta"><span class="pill">Escala: 0–100</span><span class="pill">Base: código, artefatos e testes locais</span><span class="pill">Sem alteração no código-fonte</span></div>
+      </div>
+      <div class="score"><strong>65</strong><span>nota consolidada</span></div>
+    </div>
+  </section>
+
+  <h2>Resumo executivo</h2>
+  <div class="grid">
+    <article class="card"><div class="metric">62<small>/100</small></div><div class="bar"><i style="width:62%"></i></div><h3>Engenharia e sync</h3><p>Testes unitários fortes, mas o sync v2 ainda cobre essencialmente transações e há riscos de substituição destrutiva.</p></article>
+    <article class="card"><div class="metric">68<small>/100</small></div><div class="bar"><i style="width:68%"></i></div><h3>Play Store</h3><p>Ícone, splash e materiais de telefone/tablet evoluíram; AAB atual está desatualizado e faltam URL e evidências de Console.</p></article>
+    <article class="card"><div class="metric">58<small>/100</small></div><div class="bar"><i style="width:58%"></i></div><h3>Monetização</h3><p>Stripe está bem estruturado no backend, porém não há Google Play Billing e o bloqueio do modo local falha no E2E atual.</p></article>
+    <article class="card"><div class="metric">76<small>/100</small></div><div class="bar"><i style="width:76%"></i></div><h3>Dispositivos</h3><p>320 px, safe areas e capturas tablet foram tratados; ainda falta validar o AAB novo em aparelhos reais, rotação e teclado.</p></article>
+  </div>
+  <p class="note">Cálculo consolidado: engenharia 45% + Play Store 25% + monetização 15% + dispositivos 15% = 65/100.</p>
+
+  <h2>Veredito por eixo</h2>
+  <table>
+    <thead><tr><th>Eixo</th><th>Nota</th><th>O que foi confirmado</th><th>O que impede uma nota maior</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Engenharia / sincronização</strong></td><td class="n">62</td><td><span class="status ok">Melhorou:</span> 1.321 testes frontend e 453 backend aprovados; XSS e contraste passaram; existe sync engine v2 com cursor/outbox para transações.</td><td><span class="status bad">Crítico:</span> contas, configurações e recorrentes ainda passam por snapshot/legado; payload de sync aceita invariantes incompletas; claim de opId não é atômico; outbox/cursor usam localStorage cru; não há RLS nem evidência de backup/restore.</td></tr>
+      <tr><td><strong>Play Store</strong></td><td class="n">68</td><td><span class="status ok">Melhorou:</span> `com.financaspro.app`, target/compile SDK 36, min SDK 24, ícone e splash nativos regenerados, feature graphic e screenshots 1080×1920 / 1200×1920 / 2560×1600.</td><td><span class="status bad">Bloqueio de publicação:</span> AAB encontrado foi gerado em 10/07/2026; URL de privacidade continua placeholder; não há prova de upload, teste fechado, ficha preenchida ou aprovação no Play Console; o E2E atual mostra superfícies cloud visíveis no piloto local.</td></tr>
+      <tr><td><strong>Monetização</strong></td><td class="n">58</td><td><span class="status ok">Backend:</span> Checkout/Portal/Cancel, webhooks idempotentes, invoices e reconcile worker têm cobertura. <span class="status info">Piloto local:</span> a intenção documentada é não coletar dados, não mostrar assinatura e não ter anúncios.</td><td><span class="status bad">Atual:</span> o gate real de modo local falha e o billing modal abre quando forçado. <span class="status warn">Futuro cloud Android:</span> não há BillingClient, purchase token ou integração Play Billing/alternative billing; Stripe sozinho não é evidência de conformidade para distribuição pela Play.</td></tr>
+      <tr><td><strong>Enquadramento em dispositivos</strong></td><td class="n">76</td><td><span class="status ok">Melhorou:</span> teste de 320 px aprovado, viewport/safe areas, breakpoints 360–1440, navegação mobile e scripts de captura para telefone, tablet 7" e tablet 10".</td><td><span class="status warn">Ainda não comprovado:</span> instalação do AAB novo em hardware real, notch, teclado, rotação, retorno do background, desempenho e acessibilidade por toque. Os testes visuais de marca/elevation/radius ainda têm falhas ou estão desalinhados da implementação.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>O que mudou desde a auditoria anterior</h2>
+  <div class="cols">
+    <div class="box"><h3><span class="tag done">CONFIRMADO</span> Avanços</h3><ul>
+      <li>Marca voltou a ser <strong>FinançasPro</strong> no código e nos assets principais.</li>
+      <li>Ícone Android, splash e materiais da loja foram regenerados; os screenshots visualizados estão limpos e incluem tablet.</li>
+      <li>Foi criado fluxo de captura Playwright em dimensões de telefone, tablet 7" e tablet 10".</li>
+      <li>O layout de 320 px foi tratado e o teste correspondente passou.</li>
+      <li>Documentação de Data Safety e ficha da loja descreve o piloto local/offline sem conta, servidor, banco conectado ou anúncios.</li>
+      <li>Contraste WCAG AA passou com 31 pares; verificação XSS passou em 95 arquivos; débito CSS ficou dentro do teto registrado de 154 ocorrências.</li>
+    </ul></div>
+    <div class="box"><h3><span class="tag p0">ATENÇÃO</span> O estado observado hoje</h3><ul>
+      <li><strong>E2E completo: 16 aprovados, 10 falhos, 1 ignorado.</strong> Portanto, a rodada não está pronta para ser chamada de “verde”.</li>
+      <li>O seed offline esperado de R$ 5.000,00 aparece como R$ -0,00 ou R$ 0,04 em um teste de resumo.</li>
+      <li>Cards de plano, Open Finance, 2FA e logout aparecem no modo local no E2E; o billing modal também pode abrir.</li>
+      <li>O AAB existente é anterior às melhorias recentes e não pode ser usado como prova do build atual.</li>
+      <li>O relatório anterior de marca (62/100) é complementar; esta página é a verificação dos quatro eixos solicitados.</li>
+    </ul></div>
+  </div>
+
+  <h2>Portão de qualidade e evidências</h2>
+  <table>
+    <thead><tr><th>Verificação</th><th>Resultado</th><th>Leitura forense</th></tr></thead>
+    <tbody>
+      <tr><td>Frontend unit</td><td class="status ok">82 suites · 1.321 pass · 7 skip</td><td>Base unitária sólida; apareceu apenas colisão de nomes do Jest envolvendo `.aud/x/package.json`.</td></tr>
+      <tr><td>Backend unit</td><td class="status ok">26 suites · 453 pass</td><td>Billing, auth e serviços têm cobertura, mas não substitui PostgreSQL/Redis e concorrência reais.</td></tr>
+      <tr><td>E2E completo</td><td class="status bad">27 total · 16 pass · 10 fail · 1 skip</td><td>Gate vermelho: isolamento local, seed financeiro, timeouts e testes visuais precisam ser corrigidos ou explicitamente atualizados.</td></tr>
+      <tr><td>E2E smoke</td><td class="status ok">1 pass</td><td>Aplicação inicializa sem page error e hidrata o dashboard.</td></tr>
+      <tr><td>Contraste / XSS / CSS</td><td class="status ok">31 AA · 95 arquivos · teto 154</td><td>Checks automatizados passaram, mas o teto CSS ainda é débito monitorado, não qualidade final.</td></tr>
+      <tr><td>Release Android</td><td class="status warn">AAB stale</td><td>`android/app/build/outputs/bundle/release/app-release.aab` tem 5.049.777 bytes e data de 10/07/2026; gerar e verificar um novo artefato é obrigatório.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Play Store e monetização: enquadramento atual</h2>
+  <div class="callout"><strong>Conclusão prática:</strong> o piloto local pode ser lançado sem compras se o aplicativo realmente esconder todos os caminhos cloud/pagos no build distribuído. Para a futura versão cloud, não basta apontar para Stripe Checkout: é necessário implementar Google Play Billing ou aderir formalmente a um programa de cobrança alternativa/choice billing, com as APIs, inscrição e disclosures exigidos.</div>
+  <p>Há uma correção importante em relação a leituras anteriores: o Brasil aparece na documentação oficial do Google como país em que o usuário pode receber escolha de sistemas de cobrança para conteúdo/serviços digitais. Isso não dispensa inscrição, integração e requisitos do programa. O programa de promoções externas é uma questão diferente e não deve ser confundido com cobrança alternativa.</p>
+  <div class="legend"><span>Fontes oficiais:</span> <a href="https://support.google.com/googleplay/android-developer/answer/10281818?hl=en">Payments policy</a> · <a href="https://support.google.com/googleplay/android-developer/answer/13821247?hl=en">Alternative billing / user choice</a> · <a href="https://support.google.com/googleplay/answer/11174377?hl=en">Países elegíveis</a> · <a href="https://developer.android.com/google/play/billing/integrate?hl=en">Integrar Play Billing</a></div>
+
+  <h2>Roadmap pronto para enviar ao Cursor</h2>
+  <p>Copie o bloco abaixo inteiro. Ele foi escrito para obrigar o Cursor a reproduzir os problemas, corrigir por fases e só declarar conclusão com evidência.</p>
+  <pre>Você é o engenheiro responsável pelo FinançasPro em C:\Users\renat\Downloads\financaspro.
+
+OBJETIVO
+Levar a auditoria de verificação de 65/100 para uma entrega realmente publicável, sem perder dados existentes e sem trocar a identidade do produto. Trabalhe no repositório atual. Não invente resultados: reproduza, corrija, teste e mostre os comandos e arquivos envolvidos.
+
+REGRAS OBRIGATÓRIAS
+1. Antes de editar, leia package.json, docs/auditoria-verificacao-2026-08-23.html, js/core/dados.js, js/core/sync-engine.js, js/modules/init-config.js, android/app/build.gradle, docs/play-store-data-safety.md e docs/play-store-ficha.md.
+2. Preserve o nome FinançasPro, os dados locais, o contrato público existente e as mudanças do usuário. Não faça reset destrutivo, não apague .aud/ e não substitua dados por fixtures.
+3. Em cada fase: reproduza o problema; faça a menor alteração segura; escreva/atualize teste; execute o teste; registre resultado. Pare e explique se uma decisão de produto for necessária.
+4. Não considere documentação, mock ou screenshot sintético como prova de funcionamento. Diferencie “implementado”, “testado” e “validado em aparelho/Play Console”.
+
+FASE 0 — REPRODUÇÃO E BASELINE
+- Execute: npm run test:frontend:unit -- --runInBand --coverage=false
+- Execute: npm run test:backend:unit -- --runInBand --coverage=false
+- Execute: npm run test:e2e:smoke
+- Execute: npm run test:e2e
+- Corrija a colisão de descoberta do Jest causada por .aud/x/package.json sem apagar dados do usuário (configure rootDir/modulePathIgnorePatterns ou equivalente).
+- Gere uma tabela final com pass/fail/skip e o motivo de cada falha atual.
+
+FASE 1 — PILOTO LOCAL E ISOLAMENTO DE CLOUD
+- Em js/modules/init-config.js, index.html e no fluxo de abertura de modais, faça o modo local ser uma regra de segurança real, não apenas CSS/documentação.
+- Quando DADOS._apiAtiva() for falso, não renderize nem permita abrir plano/assinatura, Open Finance, 2FA cloud, exclusão cloud, logout cloud ou billing modal. Acessibilidade não pode reexibir o conteúdo.
+- Adicione testes E2E para cada seletor data-requer-nuvem e para tentativa de abertura por teclado/click programático.
+- Se o modo cloud for ativado, os controles devem voltar a funcionar com estado explícito e sem vazamento entre sessões.
+- Atualize docs/play-store-data-safety.md e docs/play-store-ficha.md somente depois de o comportamento real passar.
+
+FASE 2 — REGRESSÃO FINANCEIRA E QA VISUAL
+- Reproduza e corrija o seed de e2e/app.offline.spec.cjs: o resumo precisa exibir R$ 5.000,00, não R$ -0,00 nem R$ 0,04.
+- Verifique casas decimais, sinal, locale pt-BR, arredondamento, saldo e ordem de carregamento/hidratação.
+- Corrija os timeouts de troca de abas, elevation e valores monetários tabulares sem aumentar timeouts como solução paliativa.
+- Alinhe e2e/marca.spec.cjs ao contrato visual real: radius esperado, logo FinançasPro e implementação inline SVG. Se o teste estiver errado, explique a mudança e mantenha uma asserção semântica robusta.
+- Rode novamente todo o E2E; não avance com falhas P0/P1.
+
+FASE 3 — SYNC V2 COMPLETO E SEGURO
+- Estenda o protocolo idempotente para accounts, config/budgets e recurring transactions, ou documente e implemente uma estratégia de merge por entidade. Nunca substitua silenciosamente uma lista local inteira por snapshot remoto.
+- Troque UTILS.gerarId() nos novos registros sincronizáveis por UUID estável e inclua entidade, id, updatedAt/deletedAt e version quando aplicável.
+- Faça create/update/delete passarem pelo outbox v2; inclua retry/backoff, cursor e tombstones.
+- Valide no backend invariantes financeiras antes de aplicar: amount finito e permitido, descrição/data válidas, transferências com origem/destino coerentes e contas pertencentes ao usuário.
+- Torne o claim de opId atômico sob concorrência (unique constraint + transação/upsert ou equivalente), de modo que duas requisições simultâneas apliquem uma operação uma única vez.
+- Decida e implemente proteção de outbox/cursor em repouso coerente com DADOS; não deixe segredo/token em localStorage cru.
+- Adicione testes de merge destrutivo, duplicata, conflito, retry, concorrência e payload inválido; valide com PostgreSQL real quando o teste depender de constraint/transação.
+
+FASE 4 — MONETIZAÇÃO CORRETA POR PLATAFORMA
+- Mantenha o piloto local sem monetização visível até a Fase 1 estar verde.
+- Para Android cloud, escolha formalmente uma destas opções: Google Play Billing; ou programa elegível de cobrança alternativa/user choice com inscrição, APIs, disclosures e reconciliação de entitlement. Não use Stripe Checkout diretamente como único caminho dentro do Play sem cumprir o programa aplicável.
+- Se houver Stripe web, torne subscribe() idempotente também contra assinatura paga duplicada para o mesmo usuário e plano; adicione teste de corrida.
+- Centralize entitlement no backend, valide purchase token/webhook conforme a opção escolhida, trate cancelamento, grace period, refund e restauração de compra.
+- Atualize a ficha, Data Safety, política de privacidade e telas para refletirem exatamente o que a versão distribuída faz.
+
+FASE 5 — RELEASE E DISPOSITIVOS
+- Gere um novo AAB release depois das correções; confirme versionCode/versionName, assinatura, manifest, min/target SDK e que o artefato contém os ícones/splash atuais.
+- Instale o AAB em pelo menos um telefone Android e um tablet. Teste 320/360/390/600/1280 px, portrait/landscape, notch/safe area, teclado aberto, rotação, background/retorno, texto grande e toque.
+- Gere screenshots reais a partir do build candidato. Não publique os arquivos gerados por fallback/mock.
+- Substitua docs/PLAY_STORE.md e docs/play-store-ficha.md pelos URLs reais de privacidade/suporte, preencha Data Safety conforme o build e faça upload em teste interno/fechado no Play Console.
+- Registre evidências: caminho do AAB, SHA-256, versão, dispositivo, data, screenshots, resultado e eventuais bloqueios do Console.
+
+CRITÉRIOS DE ACEITE
+- npm run test:frontend:unit -- --runInBand --coverage=false: verde.
+- npm run test:backend:unit -- --runInBand --coverage=false: verde.
+- npm run test:e2e:smoke: verde.
+- npm run test:e2e: zero falhas, salvo testes explicitamente marcados como skipped com justificativa.
+- npm run security:xss e npm run check:contrast: verdes.
+- Nenhuma superfície paga/cloud visível no piloto local; nenhuma assinatura duplicada por corrida; nenhum snapshot substitui dados locais sem merge explícito.
+- Novo AAB instalado e exercitado em telefone e tablet; URLs da loja não podem conter SEU_DOMINIO nem placeholders.
+- Ao final, atualize o relatório com notas baseadas apenas nas evidências coletadas e liste o que ainda não foi validado.
+
+ENTREGA
+Não diga “concluído” apenas porque o código compila. Entregue: resumo das alterações, arquivos, testes executados com números, evidência do AAB e lista de pendências residuais.</pre>
+
+  <h2>Ordem recomendada de execução</h2>
+  <div class="grid">
+    <article class="card"><div class="metric">01</div><h3>Isolar o piloto</h3><p>Corrigir primeiro o vazamento de cloud/billing no modo local.</p></article>
+    <article class="card"><div class="metric">02</div><h3>Restaurar confiança financeira</h3><p>Resolver seed, valores e o gate E2E antes de novas features.</p></article>
+    <article class="card"><div class="metric">03</div><h3>Completar sync v2</h3><p>Remover substituições destrutivas e fechar invariantes/idempotência.</p></article>
+    <article class="card"><div class="metric">04</div><h3>Gerar release real</h3><p>Novo AAB, testes em telefone/tablet e Play Console com URLs reais.</p></article>
+  </div>
+
+  <div class="footer"><strong>Escopo e limites:</strong> esta auditoria foi feita sobre o código, documentação, assets e comandos executados no workspace em 23/08/2026. Não foi considerada validação concluída em aparelho físico, Play Console, produção, PostgreSQL/Redis reais ou conta de cobrança. A nota é de prontidão observada, não uma certificação de conformidade.</div>
+</main>
+</body>
+</html>

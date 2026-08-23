@@ -1,5 +1,5 @@
 /**
- * page-premium.css — Padrão visual unificado (Perfil → todas as abas)
+ * page.css — Padrão visual unificado (Perfil → todas as abas)
  * Seções, cards, ícones e cabeçalhos compactos
  */
 
@@ -57,8 +57,8 @@
   height: 24px;
 }
 
-.perfil-card-premium:hover .perfil-card-icon-wrapper,
-.kpi-card-premium:hover .kpi-icon,
+.perfil-card:hover .perfil-card-icon-wrapper,
+.kpi-card:hover .kpi-icon,
 .orc-kpi-card:hover .orc-kpi-card-icon {
   background: var(--color-primary-50);
   color: var(--color-primary-text);
@@ -143,7 +143,7 @@
 
 /* ── Card como botão (exportar, ações) ─────────────────────── */
 
-button.perfil-card-premium {
+button.perfil-card {
   width: 100%;
   text-align: left;
   font-family: inherit;
@@ -152,7 +152,7 @@ button.perfil-card-premium {
 
 /* ── Busca com ícone Lucide ────────────────────────────────── */
 
-.busca-icon-premium {
+.busca-icon {
   width: 20px;
   height: 20px;
   color: var(--color-text-muted);
@@ -173,13 +173,13 @@ button.perfil-card-premium {
   vertical-align: -2px;
 }
 
-.orc-toggle-btn-premium .toggle-icon,
-.orc-toggle-btn-premium .toggle-icon.expanded {
+.orc-toggle-btn .toggle-icon,
+.orc-toggle-btn .toggle-icon.expanded {
   width: 20px;
   height: 20px;
 }
 
-.orc-toggle-btn-premium .toggle-icon.expanded {
+.orc-toggle-btn .toggle-icon.expanded {
   transform: rotate(180deg);
 }
 

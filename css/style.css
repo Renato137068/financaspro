@@ -52,7 +52,7 @@
 /* ── Fase 8: IA Nativa ────────────────────────────────────── */
 @import './features/ia.css';
 
-/* ── Fase 4: Experiência Premium ─────────────────────────── */
+/* ── Fase 4: Experiência ─────────────────────────── */
 @import './features/contas-pagar.css';
 @import './features/metas.css';
 @import './features/assinaturas.css';
@@ -63,7 +63,7 @@
 @import './features/open-finance.css';
 @import './features/superficie.css';
 
-/* ── UI Polish — visual premium (overrides finais) ───────── */
+/* ── Acabamento visual (overrides finais) ────────────────── */
 
 :root {
   --surface-1:        rgba(255, 255, 255, 0.95);
@@ -102,7 +102,7 @@ main {
   padding: 20px 16px;
 }
 
-/* ── Cards com visual premium ──────────────────────────────── */
+/* ── Superfícies de cartão ─────────────────────────────────── */
 
 .formulario,
 .cfg-card,
@@ -127,7 +127,7 @@ main {
   box-shadow: var(--shadow-lift);
 }
 
-/* ── Nav bottom mobile premium ─────────────────────────────── */
+/* ── Navegação inferior no celular ─────────────────────────── */
 
 .nav-bottom {
   bottom: 10px;
@@ -155,23 +155,21 @@ main {
   background: rgba(18, 105, 78, 0.07);
 }
 
-.nav-emoji { font-size: 22px; }
+.nav-emoji { font-size: var(--font-size-xl); }
 
-/* ── Form inputs com visual premium ────────────────────────── */
+/* ── Campos de formulário ──────────────────────────────────── */
 
 .form-group input,
 .form-group select,
 .form-group textarea,
-.form-select,
-.extrato-busca {
+.form-select{
   border-radius: var(--radius-lg);
   background: var(--surface-1);
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .form-group input::placeholder,
-.form-group textarea::placeholder,
-.extrato-busca::placeholder {
+.form-group textarea::placeholder{
   color: #9aaea3;
 }
 
@@ -213,8 +211,7 @@ main {
 [data-theme="dark"] .form-group input,
 [data-theme="dark"] .form-group select,
 [data-theme="dark"] .form-group textarea,
-[data-theme="dark"] .form-select,
-[data-theme="dark"] .extrato-busca {
+[data-theme="dark"] .form-select{
   background: rgba(10, 20, 14, 0.85);
 }
 
@@ -276,7 +273,7 @@ main {
   }
 
   .sidebar-logo {
-    font-size: 28px;
+    font-size: var(--font-size-3xl);
     position: relative;
     z-index: 1;
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
@@ -285,7 +282,7 @@ main {
   .sidebar-title {
     color: var(--color-white);
     font-weight: 800;
-    font-size: 17px;
+    font-size: var(--font-size-base);
     letter-spacing: -0.3px;
     position: relative;
     z-index: 1;

@@ -113,7 +113,7 @@ async function esperarValoresEstaveis(page, tentativas) {
   var anterior = null;
   for (var i = 0; i < (tentativas || 12); i++) {
     var atual = await page.evaluate(function() {
-      return [].slice.call(document.querySelectorAll('.card-valor, .saldo-value-premium'))
+      return [].slice.call(document.querySelectorAll('.card-valor, .saldo-value'))
         .map(function(el) { return el.textContent.trim(); }).join('|');
     });
     if (atual && atual === anterior) return true;

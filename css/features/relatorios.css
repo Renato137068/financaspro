@@ -50,7 +50,7 @@
 .rel-kpi small {
   display: block;
   margin-top: 4px;
-  font-size: 11px;
+  font-size: var(--font-size-2xs);
   color: var(--color-text-muted);
 }
 

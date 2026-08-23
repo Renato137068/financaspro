@@ -284,7 +284,7 @@ const INIT_CONFIG = {
    * Configura navegação por teclado nos cards
    */
   _bindKeyboardNavigation: function() {
-    var cards = document.querySelectorAll('.perfil-card-premium[role="button"]');
+    var cards = document.querySelectorAll('.perfil-card[role="button"]');
     cards.forEach(function(card) {
       card.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' || e.key === ' ') {

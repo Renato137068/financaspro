@@ -26,14 +26,12 @@ textarea:focus-visible {
 
 .nav-btn,
 .sidebar-btn,
-.periodo-nav-premium,
-.btn-editar-premium,
-.btn-deletar-premium,
+.periodo-nav,
 .btn-editar,
 .btn-deletar,
 .btn-busca-avancada,
 .data-chip,
-.filtro-chip-premium,
+.filtro-chip,
 .ordenacao-btn,
 .cat-btn {
   min-width: var(--tap-target-min);
@@ -43,14 +41,8 @@ textarea:focus-visible {
 .extrato-busca-input {
   padding-right: 64px;
 }
-
-.extrato-item-premium,
 .ext-tx {
   min-height: 72px;
-}
-
-.extrato-item-premium {
-  border: 1px solid var(--color-border-light);
 }
 
 .extrato-item-actions,
@@ -63,17 +55,11 @@ textarea:focus-visible {
   .ext-tx-actions {
     opacity: 0.42;
   }
-
-  .extrato-item-premium:hover .extrato-item-actions,
-  .extrato-item-premium:focus-within .extrato-item-actions,
   .ext-tx:hover .ext-tx-actions,
   .ext-tx:focus-within .ext-tx-actions {
     opacity: 1;
   }
 }
-
-.btn-editar-premium,
-.btn-deletar-premium,
 .btn-editar,
 .btn-deletar {
   flex: 0 0 auto;
@@ -108,8 +94,6 @@ textarea:focus-visible {
   .cat-btn {
     padding: 12px 8px;
   }
-
-  .extrato-item-premium,
   .ext-tx {
     align-items: flex-start;
   }
@@ -152,10 +136,10 @@ textarea:focus-visible {
    distorceria o layout sem ganho de acessibilidade. */
 .alerta-dispensar,
 .alerta-btn,
-.filtro-chip-premium,
+.filtro-chip,
 .ordenacao-btn,
 .btn-busca-avancada,
-.periodo-nav-premium,
+.periodo-nav,
 .perfil-action-btn,
 .btn-remover-banco,
 .btn-small,
@@ -181,7 +165,7 @@ textarea:focus-visible {
   button:not(:has(> :not(i))),
   .btn-icone,
   .perfil-action-btn,
-  .periodo-nav-premium {
+  .periodo-nav {
     min-width: var(--tap-target-min);
   }
 
@@ -225,11 +209,17 @@ textarea:focus-visible {
   bottom:calc(env(safe-area-inset-bottom, 0px) + 74px);
   display:inline-flex; align-items:center; gap:8px;
   padding:6px 12px; border-radius:var(--radius-full);
-  font-size:12.5px; font-weight:600; line-height:1;
+  font-size:var(--font-size-xs); font-weight:600; line-height:1;
   background:rgba(255,255,255,.95); color:var(--color-text-primary);
   border:1px solid var(--color-border); box-shadow: var(--elevacao-1);
-  backdrop-filter:blur(6px); pointer-events:none; user-select:none;
-  opacity:.96; transition:opacity .25s ease;
+  backdrop-filter:blur(6px); user-select:none;
+  opacity:.96; transition:opacity .25s ease, box-shadow .18s ease;
+  /* Deixou de ser decoração: é o botão que explica onde os dados ficam. */
+  cursor:pointer; font-family:inherit; text-align:left;
+}
+.sync-indicator:hover{ opacity:1; box-shadow: var(--elevacao-2); }
+.sync-indicator:focus-visible{
+  outline:none; box-shadow: 0 0 0 3px var(--color-overlay-md), var(--elevacao-1);
 }
 @media (min-width:900px){ .sync-indicator{ bottom:18px; left:auto; right:18px; transform:none; } }
 .sync-indicator .sync-dot{ width:8px; height:8px; border-radius:50%; background:var(--color-text-muted); flex:0 0 auto; }
@@ -247,7 +237,7 @@ textarea:focus-visible {
 .toast-acao .toast-acao-texto{ flex:1 1 auto; }
 .toast-acao .toast-acao-btn{
   flex:0 0 auto; background:transparent; border:none; cursor:pointer;
-  color: var(--color-primary-text); font-weight:800; font-size:13px; text-transform:uppercase;
+  color: var(--color-primary-text); font-weight:800; font-size:var(--font-size-xs); text-transform:uppercase;
   letter-spacing:.04em; padding:6px 8px; border-radius:var(--radius-md);
 }
 .toast-acao .toast-acao-btn:hover{ background:rgba(0,168,98,.12); }

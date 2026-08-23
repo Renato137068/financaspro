@@ -84,7 +84,7 @@ main {
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* ── Fase 7 — Micro-interações premium ────────────────────── */
+/* ── Fase 7 — Micro-interações ────────────────────────────── */
 
 /* Ripple effect em botões */
 @keyframes ripple {
@@ -204,7 +204,7 @@ main {
   box-shadow: var(--shadow-lift, 0 14px 34px rgba(18, 25, 21, 0.12));
 }
 
-/* ── Input focus ring premium ─────────────────────────────── */
+/* ── Anel de foco dos campos ──────────────────────────────── */
 
 input:focus-visible,
 textarea:focus-visible,

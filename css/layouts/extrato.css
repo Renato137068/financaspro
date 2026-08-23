@@ -1,26 +1,25 @@
 /**
- * layouts/extrato.css — Extrato v3 Premium, listagem de transações, resumo de período
+ * layouts/extrato.css — Extrato v3, listagem de transações, resumo de período
  * Depende de: design-system.css, components/buttons.css
  */
 
-/* ── Header Premium ───────────────────────────────────────── */
+/* ── Cabeçalho ─────────────────────────────────────────────── */
 
-.extrato-header-premium {
+.extrato-header {
   padding: var(--space-4) var(--space-4) var(--space-6);
   background: var(--color-bg-card);
   border-bottom: 1px solid var(--color-border);
 }
 
-/* Navegação de período premium */
-.extrato-periodo-premium {
+/* Navegação de período */
+.extrato-periodo {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: var(--space-6);
 }
 
-
-.periodo-label-premium {
+.periodo-label {
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
@@ -29,7 +28,7 @@
 
 /* Card Principal de Saldo */
 
-.periodo-nav-premium {
+.periodo-nav {
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
@@ -45,23 +44,23 @@
   box-shadow: var(--shadow-sm);
 }
 
-.periodo-nav-premium:hover {
+.periodo-nav:hover {
   background: var(--color-bg-primary);
   border-color: var(--color-primary-500);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }
 
-.periodo-nav-premium:active {
+.periodo-nav:active {
   transform: translateY(0);
 }
 
-.periodo-nav-premium:disabled {
+.periodo-nav:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 
-.periodo-label-premium {
+.periodo-label {
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
@@ -75,7 +74,7 @@
   transition: all var(--transition-fast);
 }
 
-.periodo-label-premium:hover {
+.periodo-label:hover {
   background: var(--color-bg-card);
 }
 
@@ -89,14 +88,14 @@
   font-size: var(--font-size-base);
 }
 
-/* ── Card Principal de Saldo Premium ───────────────────────── */
+/* ── Card Principal de Saldo ───────────────────────── */
 
-.saldo-card-premium {
+.saldo-card {
   background: var(--color-bg-card);
   border-radius: var(--radius-2xl);
   padding: var(--space-6);
   margin-bottom: var(--space-5);
-  box-shadow: var(--shadow-card-premium);
+  box-shadow: var(--shadow-superficie);
   border: 2px solid var(--color-primary-200);
   position: relative;
   overflow: hidden;
@@ -143,7 +142,7 @@
   color: var(--color-text-muted);
 }
 
-.saldo-value-premium {
+.saldo-value {
   font-size: var(--font-size-4xl);
   font-weight: var(--font-weight-extrabold);
   color: var(--color-text-primary);
@@ -164,29 +163,29 @@
   font-weight: var(--font-weight-medium);
 }
 
-/* ── Cards KPIs Premium ─────────────────────────────────────── */
+/* ── Cards KPIs ─────────────────────────────────────── */
 
-.kpi-cards-premium {
+.kpi-cards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--space-3);
 }
 
-.kpi-card-premium {
+.kpi-card {
   background: var(--color-bg-card);
   border-radius: var(--radius-xl);
   padding: var(--space-4);
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  box-shadow: var(--shadow-card-premium);
+  box-shadow: var(--shadow-superficie);
   border: 1px solid var(--color-border-light);
   transition: all var(--transition-fast);
   position: relative;
   overflow: hidden;
 }
 
-.kpi-card-premium::before {
+.kpi-card::before {
   content: '';
   position: absolute;
   left: 0;
@@ -196,21 +195,21 @@
   background: var(--color-border-light);
 }
 
-.kpi-card-premium:hover {
+.kpi-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-card-hover);
   border-color: var(--color-primary-200);
 }
 
-.kpi-card-premium.receita::before {
+.kpi-card.receita::before {
   background: var(--color-primary-200);
 }
 
-.kpi-card-premium.despesa::before {
+.kpi-card.despesa::before {
   background: var(--color-danger-light);
 }
 
-.kpi-card-premium.movimentacoes::before {
+.kpi-card.movimentacoes::before {
   background: var(--color-primary-300);
 }
 
@@ -226,17 +225,17 @@
   background: var(--color-bg-primary);
 }
 
-.kpi-card-premium.receita .kpi-icon {
+.kpi-card.receita .kpi-icon {
   background: var(--color-bg-primary);
   color: var(--color-primary-text);
 }
 
-.kpi-card-premium.despesa .kpi-icon {
+.kpi-card.despesa .kpi-icon {
   background: var(--color-bg-primary);
   color: var(--color-danger-text);
 }
 
-.kpi-card-premium.movimentacoes .kpi-icon {
+.kpi-card.movimentacoes .kpi-icon {
   background: var(--color-bg-primary);
   color: var(--color-primary-text);
 }
@@ -263,22 +262,22 @@
   font-family: var(--font-family-display);
 }
 
-.kpi-card-premium.receita .kpi-value {
+.kpi-card.receita .kpi-value {
   color: var(--color-primary-text);
 }
 
-.kpi-card-premium.despesa .kpi-value {
+.kpi-card.despesa .kpi-value {
   color: var(--color-danger-text);
 }
 
-/* ── Busca Premium ─────────────────────────────────────────── */
+/* ── Busca ─────────────────────────────────────────── */
 
-.extrato-busca-premium {
+.extrato-busca {
   position: relative;
   margin-bottom: var(--space-4);
 }
 
-.busca-icon-premium {
+.busca-icon {
   position: absolute;
   left: var(--space-4);
   top: 50%;
@@ -325,7 +324,7 @@
   justify-content: center;
   cursor: pointer;
   transition: all var(--transition-fast);
-  font-size: 16px;
+  font-size: var(--font-size-base);
 }
 
 .btn-busca-avancada:hover {
@@ -459,19 +458,19 @@
   accent-color: var(--color-primary-500);
 }
 
-/* ── Filtros Premium ───────────────────────────────────────── */
+/* ── Filtros ───────────────────────────────────────── */
 
-.extrato-filtros-premium {
+.extrato-filtros {
   margin-bottom: var(--space-5);
 }
 
-.filtros-tipo-premium {
+.filtros-tipo {
   display: flex;
   gap: var(--space-2);
   margin-bottom: var(--space-4);
 }
 
-.filtro-chip-premium {
+.filtro-chip {
   padding: var(--space-2) var(--space-4);
   font-family: var(--font-family-sans);
   font-size: var(--font-size-sm);
@@ -484,18 +483,18 @@
   transition: all var(--transition-fast);
 }
 
-.filtro-chip-premium:hover {
+.filtro-chip:hover {
   background: var(--color-bg-primary);
   border-color: var(--color-primary-500);
 }
 
-.filtro-chip-premium.ativo {
+.filtro-chip.ativo {
   background: var(--color-primary-500);
   color: var(--color-text-inverse);
   border-color: var(--color-primary-500);
 }
 
-.filtros-categoria-premium {
+.filtros-categoria {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
@@ -595,34 +594,34 @@
   color: var(--color-danger-text);
 }
 
-/* ── Agrupamento Temporal Premium ───────────────────────────── */
+/* ── Agrupamento Temporal ───────────────────────────── */
 
-.extrato-grupo-premium {
+.extrato-grupo {
   margin-bottom: var(--space-6);
   animation: fadeInUp 0.4s ease-out;
 }
 
-.extrato-grupo-premium:nth-child(1) {
+.extrato-grupo:nth-child(1) {
   animation-delay: 0ms;
 }
 
-.extrato-grupo-premium:nth-child(2) {
+.extrato-grupo:nth-child(2) {
   animation-delay: 50ms;
 }
 
-.extrato-grupo-premium:nth-child(3) {
+.extrato-grupo:nth-child(3) {
   animation-delay: 100ms;
 }
 
-.extrato-grupo-premium:nth-child(4) {
+.extrato-grupo:nth-child(4) {
   animation-delay: 150ms;
 }
 
-.extrato-grupo-premium:nth-child(5) {
+.extrato-grupo:nth-child(5) {
   animation-delay: 200ms;
 }
 
-.extrato-grupo-header-premium {
+.extrato-grupo-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -670,7 +669,7 @@
   gap: var(--space-2);
 }
 
-/* ── Transação Premium ──────────────────────────────────────── */
+/* ── Transação ──────────────────────────────────────── */
 
 .ext-tx {
   display: flex;
@@ -682,7 +681,7 @@
   position: relative;
   background: var(--color-bg-card);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-card-premium);
+  box-shadow: var(--shadow-superficie);
   border: 1px solid var(--color-border-light);
 }
 
@@ -708,7 +707,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: var(--font-size-xl);
   flex-shrink: 0;
   background: var(--color-bg-primary);
   color: var(--color-primary-text);
@@ -765,7 +764,7 @@
   color: var(--color-danger-text);
 }
 
-/* Painel expandido premium */
+/* Painel expandido */
 .ext-tx-expanded {
   max-height: 0;
   overflow: hidden;
@@ -844,7 +843,7 @@
   transform: translateY(-1px);
 }
 
-/* Swipe mobile premium */
+/* Swipe no celular */
 .ext-tx.swiped::after {
   content: 'Excluir';
   position: absolute;
@@ -857,7 +856,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: var(--font-size-xs);
   font-weight: 700;
   letter-spacing: 0.02em;
   border-radius: 0 var(--radius-xl) var(--radius-xl) 0;
@@ -946,7 +945,7 @@
   border: none;
   padding: var(--space-2);
   cursor: pointer;
-  font-size: 18px;
+  font-size: var(--font-size-lg);
   border-radius: var(--radius-md);
   transition: all var(--transition-fast);
 }
@@ -961,7 +960,7 @@
   transform: scale(1.1);
 }
 
-/* ── Empty State Premium ───────────────────────────────────── */
+/* ── Empty State ───────────────────────────────────── */
 
 .empty-state {
   text-align: center;
@@ -970,7 +969,7 @@
 }
 
 .empty-state-icon {
-  font-size: 64px;
+  font-size: var(--font-size-display-2);
   margin-bottom: var(--space-4);
   opacity: 0.5;
 }
@@ -991,7 +990,7 @@
   line-height: var(--line-height-relaxed);
 }
 
-/* Loading state premium */
+/* Estado de carregamento */
 .loading-state {
   text-align: center;
   padding: var(--space-12) var(--space-6);
@@ -1093,7 +1092,7 @@
   100% { background-position: -200% 0; }
 }
 
-/* ── Botão Carregar Mais Premium ───────────────────────────── */
+/* ── Botão Carregar Mais ───────────────────────────── */
 
 .btn-carregar-mais {
   width: 100%;
@@ -1125,9 +1124,9 @@
   transform: translateY(0);
 }
 
-/* ── Export Bar Premium ─────────────────────────────────────── */
+/* ── Export Bar ─────────────────────────────────────── */
 
-.extrato-export-bar-premium {
+.extrato-export-bar {
   display: flex;
   gap: var(--space-3);
   margin-top: var(--space-6);
@@ -1135,7 +1134,7 @@
   border-top: 1px solid var(--color-border-light);
 }
 
-.btn-export-premium {
+.btn-export {
   flex: 1;
   padding: var(--space-3) var(--space-4);
   font-family: var(--font-family-sans);
@@ -1154,7 +1153,7 @@
   box-shadow: var(--shadow-sm);
 }
 
-.btn-export-premium:hover {
+.btn-export:hover {
   background: var(--color-bg-primary);
   border-color: var(--color-primary-500);
   color: var(--color-primary-text);
@@ -1162,30 +1161,30 @@
   box-shadow: var(--shadow-md);
 }
 
-.btn-export-premium:active {
+.btn-export:active {
   transform: translateY(0);
 }
 
-.btn-export-premium svg {
+.btn-export svg {
   transition: transform var(--transition-fast);
 }
 
-.btn-export-premium:hover svg {
+.btn-export:hover svg {
   transform: scale(1.1);
 }
 
-/* ── Mobile Responsive Premium ───────────────────────────────── */
+/* ── Mobile Responsive ───────────────────────────────── */
 
 @media (max-width: 768px) {
-  .kpi-cards-premium {
+  .kpi-cards {
     grid-template-columns: 1fr;
   }
 
-  .saldo-card-premium {
+  .saldo-card {
     padding: var(--space-5);
   }
 
-  .saldo-value-premium {
+  .saldo-value {
     font-size: var(--font-size-3xl);
   }
 
@@ -1196,10 +1195,10 @@
   .ext-tx-icon {
     width: 44px;
     height: 44px;
-    font-size: 20px;
+    font-size: var(--font-size-xl);
   }
 
-  .extrato-filtros-premium {
+  .extrato-filtros {
     position: sticky;
     top: 0;
     z-index: var(--z-sticky);
@@ -1207,11 +1206,11 @@
     padding: var(--space-3) 0;
   }
 
-  .extrato-export-bar-premium {
+  .extrato-export-bar {
     flex-direction: column;
   }
 
-  .btn-export-premium {
+  .btn-export {
     width: 100%;
   }
 }
@@ -1239,45 +1238,6 @@
   color: var(--color-danger-text);
 }
 
-/* ── Item de Transação Premium ────────────────────────────── */
-
-.extrato-item-premium {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  margin-bottom: var(--space-2);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  text-align: left;
-  border: none;
-  outline: none;
-  animation: fadeIn 0.3s ease-out;
-}
-
-.extrato-item-premium:hover {
-  background: var(--color-bg-primary);
-  transform: translateY(-2px);
-  box-shadow: var(--elevacao-2);
-}
-
-.extrato-item-premium:focus-visible {
-  outline: 2px solid var(--color-primary-500);
-  outline-offset: 2px;
-}
-
-.extrato-item-premium.receita {
-  border-left: 3px solid var(--color-success);
-}
-
-.extrato-item-premium.despesa {
-  border-left: 3px solid var(--color-danger);
-}
-
 .extrato-item-icon {
   width: 48px;
   height: 48px;
@@ -1285,7 +1245,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: var(--font-size-xl);
   flex-shrink: 0;
 }
 
@@ -1367,59 +1327,20 @@
   transition: opacity var(--transition-fast);
 }
 
-.extrato-item-premium:hover .extrato-item-actions {
-  opacity: 1;
-}
-
-.btn-editar-premium,
-.btn-deletar-premium {
-  width: 36px;
-  height: 36px;
-  border: none;
-  border-radius: var(--radius-md);
-  background: var(--color-bg-primary);
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--transition-fast);
-}
-
-.btn-editar-premium:hover {
-  background: var(--color-primary-100);
-  color: var(--color-primary-text);
-  transform: scale(1.1);
-}
-
-.btn-deletar-premium:hover {
-  background: var(--color-danger-bg);
-  color: var(--color-danger-text);
-  transform: scale(1.1);
-}
-
-/* ── Estado Vazio Premium ──────────────────────────────────── */
-
-.empty-state-premium {
-  text-align: center;
-  padding: var(--space-12) var(--space-4);
-  color: var(--color-text-muted);
-}
-
-.empty-icon-premium {
-  font-size: 64px;
+.empty-icon {
+  font-size: var(--font-size-display-2);
   margin-bottom: var(--space-4);
   opacity: 0.5;
 }
 
-.empty-title-premium {
+.empty-title {
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
   margin-bottom: var(--space-2);
 }
 
-.empty-text-premium {
+.empty-text {
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
   margin-bottom: var(--space-4);
@@ -1485,32 +1406,27 @@
 /* ── Mobile Responsivo ───────────────────────────────────── */
 
 @media (max-width: 768px) {
-  .extrato-header-premium {
+  .extrato-header {
     padding: var(--space-3) var(--space-3) var(--space-4);
   }
 
-  .kpi-cards-premium {
+  .kpi-cards {
     grid-template-columns: 1fr;
     gap: var(--space-2);
   }
 
-  .kpi-card-premium {
+  .kpi-card {
     padding: var(--space-3);
   }
 
-  .saldo-value-premium {
-    font-size: 28px;
-  }
-
-  .extrato-item-premium {
-    padding: var(--space-3);
-    gap: var(--space-2);
+  .saldo-value {
+    font-size: var(--font-size-3xl);
   }
 
   .extrato-item-icon {
     width: 40px;
     height: 40px;
-    font-size: 18px;
+    font-size: var(--font-size-lg);
   }
 
   .extrato-item-valor {
@@ -1522,22 +1438,12 @@
     opacity: 1;
   }
 
-  .btn-editar-premium,
-  .btn-deletar-premium {
-    width: 32px;
-    height: 32px;
-  }
-
-  .extrato-grupo-header-premium {
+  .extrato-grupo-header {
     padding: var(--space-2) var(--space-3);
   }
 
-  .empty-state-premium {
-    padding: var(--space-8) var(--space-3);
-  }
-
-  .empty-icon-premium {
-    font-size: 48px;
+  .empty-icon {
+    font-size: var(--font-size-display);
   }
 }
 

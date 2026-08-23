@@ -97,6 +97,38 @@ test('a elevação na tela cabe na escala de três níveis', async function({ pa
     .toBeLessThanOrEqual(4);
 });
 
+test('todo tamanho de fonte na tela vem da escala', async function({ page }) {
+  // O CSS tinha 30 tamanhos literais além dos nove degraus da escala — 13,5px,
+  // 12,5px, 15px, 17px, 22px, 26px e rem soltos. Isso não é excesso de zelo
+  // tipográfico: é o que faz a interface parecer montada por várias mãos.
+  //
+  // Os números-herói (saldo, valor de card, indicador) usam clamp() fluido de
+  // propósito, então caem em valores fracionários conforme a largura. Eles são
+  // a exceção declarada, e os extremos do clamp vêm da escala.
+  const ESCALA = [10, 12, 14, 16, 18, 20, 24, 30, 36, 44, 56];
+  const FLUIDOS = /saldo-valor|card-valor|indicador-valor|billing/;
+
+  const fora = await porAba(page, function(aba) {
+    const res = [];
+    const escala = [10, 12, 14, 16, 18, 20, 24, 30, 36, 44, 56];
+    for (const e of document.querySelectorAll('*')) {
+      const caixa = e.getBoundingClientRect();
+      if (!(caixa.width > 0 && caixa.height > 0)) continue;
+      if (e.childElementCount) continue;
+      if (!(e.textContent || '').trim()) continue;
+      const classe = String(e.className);
+      if (/saldo-valor|card-valor|indicador-valor|billing/.test(classe)) continue;
+      const px = parseFloat(getComputedStyle(e).fontSize);
+      if (escala.indexOf(Math.round(px * 100) / 100) !== -1) continue;
+      res.push(aba + ' → ' + e.tagName.toLowerCase() + '.' + classe.slice(0, 30) + ' = ' + px + 'px');
+    }
+    return res;
+  });
+  expect(fora, 'tamanhos fora da escala tipográfica').toEqual([]);
+  expect(ESCALA.length).toBe(11);
+  expect(FLUIDOS.test('saldo-valor')).toBe(true);
+});
+
 test('nenhuma tela estoura a largura em 320px', async function({ page }) {
   await page.setViewportSize({ width: 320, height: 720 });
   const estouros = await porAba(page, function(aba) {
@@ -106,6 +138,25 @@ test('nenhuma tela estoura a largura em 320px', async function({ page }) {
       : [];
   });
   expect(estouros).toEqual([]);
+});
+
+test('o selo de armazenamento explica onde os dados ficam', async function({ page }) {
+  // O diferencial do produto é funcionar sem servidor, e isso só era dito na
+  // ficha da loja e na primeira tela do onboarding — quem já usa o app nunca
+  // mais lia. O selo do rodapé, que já aparecia em todas as telas, passou a
+  // responder ao toque. É o lugar mais barato de colocar a promessa onde ela
+  // é vista, e por isso vale um teste: se ele voltar a ser decoração, reprova.
+  const selo = page.locator('#sync-indicator');
+  await expect(selo).toBeVisible();
+  expect(await selo.evaluate((e) => e.tagName)).toBe('BUTTON');
+  expect(await selo.getAttribute('aria-label')).toMatch(/onde ficam os seus dados/i);
+
+  await selo.click();
+  const modal = page.locator('.modal-overlay');
+  await expect(modal).toBeVisible();
+  const texto = await modal.innerText();
+  expect(texto).toMatch(/neste aparelho/i);
+  expect(texto).toMatch(/backup/i);   // a contrapartida honesta, não só a promessa
 });
 
 test('o cabeçalho mostra a marca e o nome do produto', async function({ page }) {

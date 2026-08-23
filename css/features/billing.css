@@ -21,7 +21,7 @@
   right: 14px;
   border: none;
   background: transparent;
-  font-size: 28px;
+  font-size: var(--font-size-3xl);
   line-height: 1;
   color: var(--color-text-secondary);
   cursor: pointer;
@@ -42,7 +42,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
+  font-size: var(--font-size-2xs);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -55,7 +55,7 @@
 
 .billing-header h2 {
   font-family: var(--font-family-display);
-  font-size: clamp(22px, 5vw, 28px);
+  font-size: clamp(var(--font-size-xl), 5vw, var(--font-size-3xl));
   margin: 0 0 var(--space-2);
   letter-spacing: -0.03em;
 }
@@ -99,7 +99,7 @@
 }
 
 .billing-save {
-  font-size: 10px;
+  font-size: var(--font-size-2xs);
   font-weight: 700;
   color: var(--color-primary-text);
   margin-left: 4px;
@@ -159,7 +159,7 @@
 .billing-plan-price {
   margin: 0;
   font-family: var(--font-family-display);
-  font-size: 24px;
+  font-size: var(--font-size-2xl);
   font-weight: 800;
   letter-spacing: -0.03em;
   color: var(--color-primary-text);
@@ -240,7 +240,7 @@
   color: var(--color-white);
 }
 
-.perfil-card-premium--plano-highlight {
+.perfil-card--plano-highlight {
   border-color: rgba(18, 105, 78, 0.25);
   background: rgba(18, 105, 78, 0.04);
 }

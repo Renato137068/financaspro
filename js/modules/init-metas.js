@@ -80,8 +80,8 @@ const INIT_METAS = {
         '<span>' + UTILS.formatarMoeda(meta.valorAtual) + '</span>' +
         '<span class="meta-card-alvo">de ' + UTILS.formatarMoeda(meta.valorAlvo) + '</span>' +
       '</div>' +
-      '<div class="orc-progress-premium meta-progress">' +
-        '<div class="orc-progress-fill-premium ' + barClass + '" style="width:' + prog.percentual + '%"></div>' +
+      '<div class="orc-progress meta-progress">' +
+        '<div class="orc-progress-fill ' + barClass + '" style="width:' + prog.percentual + '%"></div>' +
       '</div>' +
       (prog.concluida ? '<p class="meta-card-done-msg"><i data-lucide="check-circle" aria-hidden="true"></i> Meta concluída!</p>' : diagnostico) +
       actions +

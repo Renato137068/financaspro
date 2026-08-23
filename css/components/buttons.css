@@ -1,7 +1,7 @@
 /**
  * components/buttons.css — Sistema unificado de botões
  * Consolida: .btn-primario, .btn-secundario, .btn-danger-outline,
- *            .btn-empty-cta, .btn-ver-todos, .btn-export, .btn-pdf
+ *            .btn-empty-cta, .btn-ver-todos, .btn-pdf
  * Depende de: design-system.css
  */
 
@@ -147,30 +147,6 @@
   border-color: var(--color-primary-500);
 }
 
-/* ── Export (extrato) ─────────────────────────────────────── */
-
-.extrato-export-bar {
-  display: flex;
-  gap: var(--space-3);
-  margin: var(--space-4) 0 var(--space-1);
-}
-
-.btn-export {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  border: 1.5px solid;
-  font-family: var(--font-family-sans);
-}
-
 .btn-export-icon {
   font-size: var(--font-size-base);
   line-height: 1;
@@ -286,32 +262,6 @@
   background: var(--color-danger-bg);
   border-color: var(--color-danger);
   color: var(--color-danger-text);
-}
-
-/* ── Filtro chip (extrato/categorias) ────────────────────── */
-
-.filtro-chip {
-  padding: var(--space-1) var(--space-4);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-full);
-  background: var(--color-bg-card);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-  color: var(--color-text-secondary);
-  transition: all var(--transition-fast);
-  font-family: var(--font-family-sans);
-  white-space: nowrap;
-}
-
-.filtro-chip.ativo {
-  background: var(--color-primary-500);
-  color: var(--color-text-inverse);
-  border-color: var(--color-primary-500);
-}
-
-.filtro-chip:active {
-  transform: scale(0.95);
 }
 
 .filtro-cat-chip {

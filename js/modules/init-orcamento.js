@@ -251,15 +251,15 @@ const INIT_ORCAMENTO = {
     this._updateElement('orc-nec-gasto', UTILS.formatarMoeda(data.gastoNec));
     this._updateElement('orc-nec-limite', UTILS.formatarMoeda(data.limNec));
     this._updateElementStyle('orc-nec-bar', 'width', Math.min(data.pctNec, 100) + '%');
-    this._updateElementClass('orc-nec-bar', 'orc-progress-fill-premium ' + (data.pctNec >= 100 ? 'exceeded' : data.pctNec >= 80 ? 'attention' : 'healthy'));
+    this._updateElementClass('orc-nec-bar', 'orc-progress-fill ' + (data.pctNec >= 100 ? 'exceeded' : data.pctNec >= 80 ? 'attention' : 'healthy'));
     this._updateElement('orc-des-gasto', UTILS.formatarMoeda(data.gasDes));
     this._updateElement('orc-des-limite', UTILS.formatarMoeda(data.limDes));
     this._updateElementStyle('orc-des-bar', 'width', Math.min(data.pctDes, 100) + '%');
-    this._updateElementClass('orc-des-bar', 'orc-progress-fill-premium ' + (data.pctDes >= 100 ? 'exceeded' : data.pctDes >= 80 ? 'attention' : 'healthy'));
+    this._updateElementClass('orc-des-bar', 'orc-progress-fill ' + (data.pctDes >= 100 ? 'exceeded' : data.pctDes >= 80 ? 'attention' : 'healthy'));
     this._updateElement('orc-pou-gasto', UTILS.formatarMoeda(Math.max(0, data.poupancaReal)));
     this._updateElement('orc-pou-limite', UTILS.formatarMoeda(data.limPou));
     this._updateElementStyle('orc-pou-bar', 'width', Math.min(data.pctPou, 100) + '%');
-    this._updateElementClass('orc-pou-bar', 'orc-progress-fill-premium ' + (data.pctPou >= 100 ? 'otimo' : data.pctPou >= 50 ? 'healthy' : 'attention'));
+    this._updateElementClass('orc-pou-bar', 'orc-progress-fill ' + (data.pctPou >= 100 ? 'otimo' : data.pctPou >= 50 ? 'healthy' : 'attention'));
   },
 
   renderInsights: function(data) {

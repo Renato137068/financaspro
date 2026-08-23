@@ -82,7 +82,10 @@ const CONFIG = {
     secure: process.env.SMTP_SECURE === 'true',
     user:   process.env.SMTP_USER || null,
     pass:   process.env.SMTP_PASS || null,
-    from:   process.env.SMTP_FROM || 'FinançasPro <noreply@financaspro.com.br>',
+    // O domínio financaspro.com.br não está registrado. Enquanto não estiver,
+    // o remetente padrão aponta para um endereço que existe — um e-mail que
+    // volta é pior do que um e-mail que não sai. Em produção, defina SMTP_FROM.
+    from:   process.env.SMTP_FROM || 'FinançasPro <renato.soares1370@gmail.com>',
   },
 
   // Fase 10 — URL pública do app (usada em e-mails e portal Stripe)
@@ -102,7 +105,9 @@ const CONFIG = {
   requireRedis: env === 'production' || process.env.REQUIRE_REDIS === '1',
 
   /** E-mail de contato na política de privacidade */
-  privacyContactEmail: process.env.PRIVACY_CONTACT_EMAIL || 'privacidade@financaspro.com.br',
+  // Canal oficial de LGPD. A política de privacidade PROMETE resposta neste
+  // endereço, então ele precisa existir de verdade — não é um placeholder.
+  privacyContactEmail: process.env.PRIVACY_CONTACT_EMAIL || 'renato.soares1370@gmail.com',
 
   metrics: {
     token: process.env.METRICS_TOKEN || null,

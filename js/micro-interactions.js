@@ -1,5 +1,5 @@
 /**
- * micro-interactions.js — Microinterações premium
+ * micro-interactions.js — microinterações
  * Fase 2 UX — Depende de: (self-contained, roda após DOM pronto)
  */
 

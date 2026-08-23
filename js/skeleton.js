@@ -1,6 +1,6 @@
 /**
  * skeleton.js — Skeleton Loader Manager
- * Fase 7 UX Premium — Depende de: (nenhum, self-contained)
+ * Fase 7 UX — Depende de: (nenhum, self-contained)
  */
 
 var SKELETON = (function() {

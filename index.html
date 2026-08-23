@@ -350,7 +350,7 @@
   <!-- ABA 2: NOVO LANÇAMENTO (Redesenhada) -->
   <div id="aba-novo" class="aba">
     <h2 class="sr-only">Novo lançamento</h2>
-    <div class="perfil-header-premium perfil-header-compact">
+    <div class="perfil-header perfil-header-compact">
       <div class="perfil-card-icon-wrapper" aria-hidden="true"><i data-lucide="plus-circle"></i></div>
       <div class="perfil-info">
         <h2 class="perfil-nome">Novo lançamento</h2>
@@ -591,29 +591,29 @@
 
   <!-- ABA 3: EXTRATO -->
   <div id="aba-extrato" class="aba" role="region" aria-label="Extrato de transações">
-    <div class="perfil-header-premium perfil-header-compact">
+    <div class="perfil-header perfil-header-compact">
       <div class="perfil-card-icon-wrapper" aria-hidden="true"><i data-lucide="clipboard-list"></i></div>
       <div class="perfil-info">
         <h2 class="perfil-nome">Extrato</h2>
         <div class="perfil-meta"><span>Histórico, filtros e exportação</span></div>
       </div>
     </div>
-    <!-- Header Premium -->
-    <div class="extrato-header-premium">
+    <!-- Header -->
+    <div class="extrato-header">
       <!-- Seletor de período -->
-      <div class="extrato-periodo-premium" role="group" aria-label="Navegação por período">
-        <button class="periodo-nav-premium" id="periodo-prev" data-action="navegar-periodo" data-dir="-1" aria-label="Mês anterior">
+      <div class="extrato-periodo" role="group" aria-label="Navegação por período">
+        <button class="periodo-nav" id="periodo-prev" data-action="navegar-periodo" data-dir="-1" aria-label="Mês anterior">
           <i data-lucide="chevron-left" aria-hidden="true"></i>
         </button>
-        <button class="periodo-label-premium" id="periodo-label-btn" data-action="abrir-calendario" aria-live="polite" aria-atomic="true">Abril 2026</button>
+        <button class="periodo-label" id="periodo-label-btn" data-action="abrir-calendario" aria-live="polite" aria-atomic="true">Abril 2026</button>
         <input type="month" id="periodo-date-picker" class="periodo-date-picker" style="display:none" aria-label="Selecionar período">
-        <button class="periodo-nav-premium" id="periodo-next" data-action="navegar-periodo" data-dir="1" aria-label="Próximo mês">
+        <button class="periodo-nav" id="periodo-next" data-action="navegar-periodo" data-dir="1" aria-label="Próximo mês">
           <i data-lucide="chevron-right" aria-hidden="true"></i>
         </button>
       </div>
 
       <!-- Card Principal de Saldo -->
-      <div class="saldo-card-premium" role="status" aria-live="polite">
+      <div class="saldo-card" role="status" aria-live="polite">
         <div class="saldo-card-header">
           <span class="saldo-label">Saldo do período</span>
           <div class="saldo-trend" id="saldo-trend" aria-label="Tendência vs mês anterior">
@@ -622,29 +622,29 @@
             <span class="trend-label">vs mês anterior</span>
           </div>
         </div>
-        <div class="saldo-value-premium" id="saldo-valor" aria-label="Valor total do saldo">R$ 0,00</div>
+        <div class="saldo-value" id="saldo-valor" aria-label="Valor total do saldo">R$ 0,00</div>
         <div class="saldo-meta">
           <span class="saldo-period" id="saldo-period">1 a 30 de Abril</span>
         </div>
       </div>
 
       <!-- Cards Secundários -->
-      <div class="kpi-cards-premium" role="group" aria-label="Indicadores financeiros">
-        <div class="kpi-card-premium receita" role="status">
+      <div class="kpi-cards" role="group" aria-label="Indicadores financeiros">
+        <div class="kpi-card receita" role="status">
           <div class="kpi-icon" aria-hidden="true"><i data-lucide="arrow-down-left"></i></div>
           <div class="kpi-content">
             <span class="kpi-label">Entradas</span>
             <span class="kpi-value" id="kpi-entradas" aria-label="Total de entradas">R$ 0,00</span>
           </div>
         </div>
-        <div class="kpi-card-premium despesa" role="status">
+        <div class="kpi-card despesa" role="status">
           <div class="kpi-icon" aria-hidden="true"><i data-lucide="trending-down"></i></div>
           <div class="kpi-content">
             <span class="kpi-label">Saídas</span>
             <span class="kpi-value" id="kpi-saidas" aria-label="Total de saídas">R$ 0,00</span>
           </div>
         </div>
-        <div class="kpi-card-premium movimentacoes" role="status">
+        <div class="kpi-card movimentacoes" role="status">
           <div class="kpi-icon" aria-hidden="true"><i data-lucide="bar-chart"></i></div>
           <div class="kpi-content">
             <span class="kpi-label">Movimentações</span>
@@ -657,9 +657,9 @@
     <!-- Busca e filtros -->
     <div class="perfil-section">
       <h2 class="perfil-section-title">Filtros</h2>
-    <!-- Busca Premium -->
-    <div class="extrato-busca-premium">
-      <i data-lucide="search" class="busca-icon-premium" aria-hidden="true"></i>
+    <!-- Busca -->
+    <div class="extrato-busca">
+      <i data-lucide="search" class="busca-icon" aria-hidden="true"></i>
       <input type="text" id="extrato-busca" class="extrato-busca-input" placeholder="Buscar transações..." aria-label="Buscar transações por descrição ou categoria" autocomplete="off">
       <button class="btn-busca-avancada" id="btn-busca-avancada" data-action="abrir-busca-avancada" aria-label="Abrir busca avançada">
         <i data-lucide="settings" aria-hidden="true"></i>
@@ -689,14 +689,14 @@
       </div>
     </div>
 
-    <!-- Filtros Premium -->
-    <div class="extrato-filtros-premium" role="group" aria-label="Filtros de transações">
-      <div class="filtros-tipo-premium" role="group" aria-label="Filtro por tipo">
-        <button class="filtro-chip-premium ativo" data-filtro="todos" data-action="filtro-tipo" aria-pressed="true">Todas</button>
-        <button class="filtro-chip-premium" data-filtro="receita" data-action="filtro-tipo" aria-pressed="false">Receitas</button>
-        <button class="filtro-chip-premium" data-filtro="despesa" data-action="filtro-tipo" aria-pressed="false">Despesas</button>
+    <!-- Filtros -->
+    <div class="extrato-filtros" role="group" aria-label="Filtros de transações">
+      <div class="filtros-tipo" role="group" aria-label="Filtro por tipo">
+        <button class="filtro-chip ativo" data-filtro="todos" data-action="filtro-tipo" aria-pressed="true">Todas</button>
+        <button class="filtro-chip" data-filtro="receita" data-action="filtro-tipo" aria-pressed="false">Receitas</button>
+        <button class="filtro-chip" data-filtro="despesa" data-action="filtro-tipo" aria-pressed="false">Despesas</button>
       </div>
-      <div class="filtros-categoria-premium" id="filtros-categoria" role="group" aria-label="Filtro por categoria"></div>
+      <div class="filtros-categoria" id="filtros-categoria" role="group" aria-label="Filtro por categoria"></div>
       
       <!-- Ordenação -->
       <div class="ordenacao-container" role="group" aria-label="Ordenar por">
@@ -740,7 +740,7 @@
     <div class="perfil-section">
       <h2 class="perfil-section-title">Exportar</h2>
       <div class="perfil-cards-grid">
-        <button type="button" class="perfil-card-premium" data-action="exportar-excel" aria-label="Exportar extrato como planilha CSV">
+        <button type="button" class="perfil-card" data-action="exportar-excel" aria-label="Exportar extrato como planilha CSV">
           <div class="perfil-card-icon-wrapper"><i data-lucide="file-spreadsheet" aria-hidden="true"></i></div>
           <div class="perfil-card-content">
             <span class="perfil-card-title">Planilha (CSV)</span>
@@ -748,7 +748,7 @@
           </div>
           <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
         </button>
-        <button type="button" class="perfil-card-premium" data-action="exportar-pdf" aria-label="Exportar extrato como PDF">
+        <button type="button" class="perfil-card" data-action="exportar-pdf" aria-label="Exportar extrato como PDF">
           <div class="perfil-card-icon-wrapper"><i data-lucide="file-text" aria-hidden="true"></i></div>
           <div class="perfil-card-content">
             <span class="perfil-card-title">PDF</span>
@@ -764,7 +764,7 @@
   <div id="aba-orcamento" class="aba">
     <!-- Renda mensal (se não definida) -->
     <div class="orc-renda-setup" id="orc-renda-setup">
-      <div class="perfil-header-premium perfil-header-compact perfil-header-compact--flat">
+      <div class="perfil-header perfil-header-compact perfil-header-compact--flat">
         <div class="perfil-card-icon-wrapper" aria-hidden="true"><i data-lucide="target"></i></div>
         <div class="perfil-info">
           <p class="orc-renda-title">Qual sua renda mensal?</p>
@@ -779,18 +779,18 @@
       <button class="btn-primario" data-action="salvar-renda-orcamento">Definir Renda</button>
     </div>
 
-    <!-- Dashboard Premium -->
+    <!-- Dashboard -->
     <div id="orc-dashboard" style="display:none">
       <div id="orc-live-region" class="sr-only" aria-live="polite" aria-atomic="true"></div>
-      <div class="perfil-header-premium perfil-header-compact">
+      <div class="perfil-header perfil-header-compact">
         <div class="perfil-card-icon-wrapper" aria-hidden="true"><i data-lucide="target"></i></div>
         <div class="perfil-info">
           <h2 class="perfil-nome">Orçamento</h2>
           <div class="perfil-meta"><span>Planejamento 50/30/20 do mês</span></div>
         </div>
       </div>
-      <!-- Premium Header Estratégico -->
-      <div class="orc-premium-header">
+      <!-- Header Estratégico -->
+      <div class="orc-header">
         <!-- KPI Principal -->
         <div class="orc-kpi-main">
           <div class="orc-kpi-main-content">
@@ -843,7 +843,7 @@
         <div class="perfil-section">
           <h2 class="perfil-section-title">Ações</h2>
           <div class="perfil-cards-grid">
-            <button type="button" class="perfil-card-premium" data-action="editar-renda-orcamento" aria-label="Editar renda">
+            <button type="button" class="perfil-card" data-action="editar-renda-orcamento" aria-label="Editar renda">
               <div class="perfil-card-icon-wrapper"><i data-lucide="pencil" aria-hidden="true"></i></div>
               <div class="perfil-card-content">
                 <span class="perfil-card-title">Editar renda</span>
@@ -851,7 +851,7 @@
               </div>
               <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
             </button>
-            <button type="button" class="perfil-card-premium" data-action="editar-regra-503020" aria-label="Personalizar regra">
+            <button type="button" class="perfil-card" data-action="editar-regra-503020" aria-label="Personalizar regra">
               <div class="perfil-card-icon-wrapper"><i data-lucide="settings" aria-hidden="true"></i></div>
               <div class="perfil-card-content">
                 <span class="perfil-card-title">Personalizar</span>
@@ -863,9 +863,9 @@
         </div>
       </div>
 
-      <!-- Regra 50/30/20 Premium -->
-      <div class="orc-regra-premium">
-        <div class="orc-regra-card-premium necessidades" id="orc-necessidades">
+      <!-- Regra 50/30/20 -->
+      <div class="orc-regra">
+        <div class="orc-regra-card necessidades" id="orc-necessidades">
           <div class="orc-regra-card-header">
             <div class="orc-regra-card-left">
               <div class="orc-regra-card-icon-wrapper">
@@ -885,8 +885,8 @@
               <span class="orc-regra-card-gasto" id="orc-nec-gasto">R$ 0</span>
               <span class="orc-regra-card-limite">de <span id="orc-nec-limite">R$ 0</span></span>
             </div>
-            <div class="orc-progress-premium">
-              <div class="orc-progress-fill-premium" id="orc-nec-bar"></div>
+            <div class="orc-progress">
+              <div class="orc-progress-fill" id="orc-nec-bar"></div>
             </div>
             <div class="orc-regra-card-meta">
               <span class="orc-regra-card-percent" id="orc-nec-percent">0%</span>
@@ -898,7 +898,7 @@
           </div>
         </div>
 
-        <div class="orc-regra-card-premium desejos" id="orc-desejos">
+        <div class="orc-regra-card desejos" id="orc-desejos">
           <div class="orc-regra-card-header">
             <div class="orc-regra-card-left">
               <div class="orc-regra-card-icon-wrapper">
@@ -918,8 +918,8 @@
               <span class="orc-regra-card-gasto" id="orc-des-gasto">R$ 0</span>
               <span class="orc-regra-card-limite">de <span id="orc-des-limite">R$ 0</span></span>
             </div>
-            <div class="orc-progress-premium">
-              <div class="orc-progress-fill-premium" id="orc-des-bar"></div>
+            <div class="orc-progress">
+              <div class="orc-progress-fill" id="orc-des-bar"></div>
             </div>
             <div class="orc-regra-card-meta">
               <span class="orc-regra-card-percent" id="orc-des-percent">0%</span>
@@ -931,7 +931,7 @@
           </div>
         </div>
 
-        <div class="orc-regra-card-premium poupanca" id="orc-poupanca">
+        <div class="orc-regra-card poupanca" id="orc-poupanca">
           <div class="orc-regra-card-header">
             <div class="orc-regra-card-left">
               <div class="orc-regra-card-icon-wrapper">
@@ -951,8 +951,8 @@
               <span class="orc-regra-card-gasto" id="orc-pou-gasto">R$ 0</span>
               <span class="orc-regra-card-limite">meta <span id="orc-pou-limite">R$ 0</span></span>
             </div>
-            <div class="orc-progress-premium poupanca-bar">
-              <div class="orc-progress-fill-premium" id="orc-pou-bar"></div>
+            <div class="orc-progress poupanca-bar">
+              <div class="orc-progress-fill" id="orc-pou-bar"></div>
             </div>
             <div class="orc-regra-card-meta">
               <span class="orc-regra-card-percent" id="orc-pou-percent">0%</span>
@@ -966,18 +966,18 @@
       </div>
 
       <!-- Insights inteligentes -->
-      <div class="orc-insights-premium" id="orc-insights"></div>
+      <div class="orc-insights" id="orc-insights"></div>
 
-      <!-- Detalhamento por Categoria Premium -->
+      <!-- Detalhamento por Categoria -->
       <div class="orc-categorias-section perfil-section">
-        <div class="orc-secao-header-premium">
+        <div class="orc-secao-header">
           <h3 class="perfil-section-title">Detalhes por categoria</h3>
-          <button class="orc-toggle-btn-premium" id="orc-cat-toggle" data-action="toggle-detalhes-categorias" aria-expanded="false">
+          <button class="orc-toggle-btn" id="orc-cat-toggle" data-action="toggle-detalhes-categorias" aria-expanded="false">
             <span class="toggle-label">Expandir</span>
             <i data-lucide="chevron-down" class="toggle-icon" id="orc-cat-arrow" aria-hidden="true"></i>
           </button>
         </div>
-        <div class="orc-categorias-premium" id="orc-categorias" style="display:none">
+        <div class="orc-categorias" id="orc-categorias" style="display:none">
           <!-- Categorias Críticas -->
           <div class="orc-categoria-group" id="orc-group-critical" style="display:none">
             <div class="orc-group-header">
@@ -1010,9 +1010,9 @@
 
           <!-- Empty State para Categorias -->
           <div class="orc-categorias-empty" id="orc-categorias-empty" style="display:none">
-            <div class="orc-empty-icon-premium"><i data-lucide="bar-chart"></i></div>
-            <p class="orc-empty-title-premium">Nenhuma categoria configurada</p>
-            <p class="orc-empty-desc-premium">Configure seus orçamentos por categoria para começar seu planejamento financeiro.</p>
+            <div class="orc-empty-icon"><i data-lucide="bar-chart"></i></div>
+            <p class="orc-empty-title">Nenhuma categoria configurada</p>
+            <p class="orc-empty-desc">Configure seus orçamentos por categoria para começar seu planejamento financeiro.</p>
           </div>
         </div>
       </div>
@@ -1020,7 +1020,7 @@
 
     <!-- Metas financeiras (visível mesmo sem renda definida) -->
     <div class="metas-section perfil-section" id="metas-section">
-      <div class="orc-secao-header-premium">
+      <div class="orc-secao-header">
         <h3 class="perfil-section-title">Metas financeiras</h3>
         <button type="button" class="btn-secundario btn-sm" data-action="meta-nova">Nova meta</button>
       </div>
@@ -1029,7 +1029,7 @@
 
     <!-- Assinaturas -->
     <div class="assinaturas-section perfil-section" id="assinaturas-section">
-      <div class="orc-secao-header-premium">
+      <div class="orc-secao-header">
         <h3 class="perfil-section-title"><i data-lucide="tv" aria-hidden="true"></i> Assinaturas</h3>
         <button type="button" class="btn-secundario btn-sm" data-action="assinatura-nova">Nova assinatura</button>
       </div>
@@ -1038,7 +1038,7 @@
 
     <!-- Patrimônio líquido -->
     <div class="patrimonio-section perfil-section" id="patrimonio-section">
-      <div class="orc-secao-header-premium">
+      <div class="orc-secao-header">
         <h3 class="perfil-section-title"><i data-lucide="landmark" aria-hidden="true"></i> Patrimônio líquido</h3>
         <div class="pat-header-actions">
           <button type="button" class="btn-secundario btn-sm" data-action="patrimonio-ativo-nova">+ Ativo</button>
@@ -1049,11 +1049,11 @@
     </div>
   </div>
 
-  <!-- ABA 5: CONFIGURAÇÕES (PERFIL PREMIUM) -->
+  <!-- ABA 5: CONFIGURAÇÕES (PERFIL) -->
   <div id="aba-config" class="aba">
 
-    <!-- HEADER PREMIUM DO USUÁRIO -->
-    <div class="perfil-header-premium">
+    <!-- HEADER DO USUÁRIO -->
+    <div class="perfil-header">
       <div class="perfil-avatar-wrapper">
         <div class="perfil-avatar" id="perfil-avatar">U</div>
         <div class="perfil-avatar-badge perfil-avatar-badge--gratis" id="perfil-plan-badge">Grátis</div>
@@ -1095,7 +1095,7 @@
            DADOS._apiAtiva() -- uma fonte de verdade so, nao um segundo flag. -->
       <h2 class="perfil-section-title">Conta</h2>
       <div class="perfil-cards-grid">
-        <div class="perfil-card-premium" data-action="abrir-editar-perfil" role="button" aria-label="Editar dados pessoais">
+        <div class="perfil-card" data-action="abrir-editar-perfil" role="button" aria-label="Editar dados pessoais">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="user" aria-hidden="true"></i>
           </div>
@@ -1106,7 +1106,7 @@
           <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
         </div>
 
-        <div class="perfil-card-premium perfil-card-premium--plano-highlight" data-action="abrir-plano" data-requer-nuvem role="button" aria-label="Gerenciar plano e assinatura">
+        <div class="perfil-card perfil-card--plano-highlight" data-action="abrir-plano" data-requer-nuvem role="button" aria-label="Gerenciar plano e assinatura">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="sparkles" aria-hidden="true"></i>
           </div>
@@ -1117,7 +1117,7 @@
           <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
         </div>
 
-        <div class="perfil-card-premium" data-action="abrir-config-bancos" role="button" aria-label="Gerenciar bancos e cartões">
+        <div class="perfil-card" data-action="abrir-config-bancos" role="button" aria-label="Gerenciar bancos e cartões">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="landmark" aria-hidden="true"></i>
           </div>
@@ -1128,7 +1128,7 @@
           <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
         </div>
 
-        <div class="perfil-card-premium" data-action="abrir-open-finance" data-requer-nuvem role="button" aria-label="Conectar contas via Open Finance">
+        <div class="perfil-card" data-action="abrir-open-finance" data-requer-nuvem role="button" aria-label="Conectar contas via Open Finance">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="link" aria-hidden="true"></i>
           </div>
@@ -1145,7 +1145,7 @@
     <div class="perfil-section">
       <h2 class="perfil-section-title">Segurança</h2>
       <div class="perfil-cards-grid">
-        <div class="perfil-card-premium perfil-card-toggle">
+        <div class="perfil-card perfil-card-toggle">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="lock" aria-hidden="true"></i>
           </div>
@@ -1159,7 +1159,7 @@
           </label>
         </div>
 
-        <div class="perfil-card-premium perfil-card-toggle" id="perfil-2fa-card" data-requer-nuvem>
+        <div class="perfil-card perfil-card-toggle" id="perfil-2fa-card" data-requer-nuvem>
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="shield-check" aria-hidden="true"></i>
           </div>
@@ -1173,7 +1173,7 @@
           </label>
         </div>
 
-        <div class="perfil-card-premium perfil-card-toggle" id="perfil-crypto-card">
+        <div class="perfil-card perfil-card-toggle" id="perfil-crypto-card">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="shield" aria-hidden="true"></i>
           </div>
@@ -1198,7 +1198,7 @@
     <div class="perfil-section">
       <h2 class="perfil-section-title">Preferências</h2>
       <div class="perfil-cards-grid">
-        <div class="perfil-card-premium perfil-card-toggle">
+        <div class="perfil-card perfil-card-toggle">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="moon" aria-hidden="true"></i>
           </div>
@@ -1212,7 +1212,7 @@
           </label>
         </div>
 
-        <div class="perfil-card-premium perfil-card-toggle">
+        <div class="perfil-card perfil-card-toggle">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="bell" aria-hidden="true"></i>
           </div>
@@ -1226,7 +1226,7 @@
           </label>
         </div>
 
-        <div class="perfil-card-premium perfil-card-toggle">
+        <div class="perfil-card perfil-card-toggle">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="calendar" aria-hidden="true"></i>
           </div>
@@ -1240,7 +1240,7 @@
           </label>
         </div>
 
-        <button type="button" class="perfil-card-premium" id="btn-refazer-onboarding" aria-label="Refazer tour de boas-vindas">
+        <button type="button" class="perfil-card" id="btn-refazer-onboarding" aria-label="Refazer tour de boas-vindas">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="compass" aria-hidden="true"></i>
           </div>
@@ -1257,7 +1257,7 @@
     <div class="perfil-section">
       <h2 class="perfil-section-title">Categorias</h2>
       <div class="perfil-cards-grid">
-        <div class="perfil-card-premium" data-action="gerenciar-categorias" data-tipo="despesa" role="button" aria-label="Gerenciar categorias de despesa">
+        <div class="perfil-card" data-action="gerenciar-categorias" data-tipo="despesa" role="button" aria-label="Gerenciar categorias de despesa">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="folder" aria-hidden="true"></i>
           </div>
@@ -1268,7 +1268,7 @@
           <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
         </div>
 
-        <div class="perfil-card-premium" data-action="gerenciar-categorias" data-tipo="receita" role="button" aria-label="Gerenciar categorias de receita">
+        <div class="perfil-card" data-action="gerenciar-categorias" data-tipo="receita" role="button" aria-label="Gerenciar categorias de receita">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="folder-open" aria-hidden="true"></i>
           </div>
@@ -1285,7 +1285,7 @@
     <div class="perfil-section">
       <h2 class="perfil-section-title">Dados</h2>
       <div class="perfil-cards-grid">
-        <div class="perfil-card-premium" data-action="exportar-dados" role="button" aria-label="Exportar backup de dados">
+        <div class="perfil-card" data-action="exportar-dados" role="button" aria-label="Exportar backup de dados">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="download" aria-hidden="true"></i>
           </div>
@@ -1296,7 +1296,7 @@
           <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
         </div>
 
-        <div class="perfil-card-premium" data-action="abrir-import" role="button" aria-label="Importar dados de backup">
+        <div class="perfil-card" data-action="abrir-import" role="button" aria-label="Importar dados de backup">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="upload" aria-hidden="true"></i>
           </div>
@@ -1314,7 +1314,7 @@
     <div class="perfil-section">
       <h2 class="perfil-section-title">Sobre</h2>
       <div class="perfil-cards-grid">
-        <a class="perfil-card-premium" href="privacidade.html" aria-label="Política de privacidade">
+        <a class="perfil-card" href="privacidade.html" aria-label="Política de privacidade">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="shield" aria-hidden="true"></i>
           </div>
@@ -1325,7 +1325,7 @@
           <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
         </a>
 
-        <div class="perfil-card-premium" data-action="abrir-changelog" role="button" aria-label="Ver novidades e changelog">
+        <div class="perfil-card" data-action="abrir-changelog" role="button" aria-label="Ver novidades e changelog">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="file-text" aria-hidden="true"></i>
           </div>
@@ -1336,7 +1336,7 @@
           <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
         </div>
 
-        <div class="perfil-card-premium" data-action="abrir-feedback" role="button" aria-label="Enviar feedback">
+        <div class="perfil-card" data-action="abrir-feedback" role="button" aria-label="Enviar feedback">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="message-circle" aria-hidden="true"></i>
           </div>
@@ -1385,7 +1385,7 @@
 
   <!-- ABA 6: EDITAR PERFIL COMPLETO -->
   <div id="aba-editar-perfil" class="aba">
-    <div class="perfil-header-premium">
+    <div class="perfil-header">
       <div class="perfil-avatar-wrapper">
         <div class="perfil-avatar" id="editar-perfil-avatar">U</div>
       </div>
@@ -1462,7 +1462,7 @@
 
   <!-- ABA 7: GERENCIAR BANCOS E CARTÕES -->
   <div id="aba-gerenciar-bancos" class="aba">
-    <div class="perfil-header-premium">
+    <div class="perfil-header">
       <div class="perfil-avatar-wrapper">
         <div class="perfil-avatar" style="background: var(--color-primary-500);" aria-hidden="true"><i data-lucide="landmark"></i></div>
       </div>
@@ -1694,7 +1694,7 @@
 <script defer src="js/shortcuts.js"></script>
 <script defer src="js/sw-register.js"></script>
 <script defer src="js/capacitor-init.js"></script>
-<!-- Fase 7: UX Premium -->
+<!-- Fase 7: UX -->
 <script defer src="js/skeleton.js"></script>
 <script defer src="js/onboarding.js"></script>
 <script defer src="js/micro-interactions.js"></script>

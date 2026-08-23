@@ -80,13 +80,13 @@
 .card-saldo-principal.saldo-positivo {
   background: var(--color-bg-card);
   border: 2px solid var(--color-primary-200);
-  box-shadow: var(--shadow-card-premium);
+  box-shadow: var(--shadow-superficie);
 }
 
 .card-saldo-principal.saldo-negativo {
   background: var(--color-bg-card);
   border: 2px solid var(--color-danger);
-  box-shadow: var(--shadow-card-premium);
+  box-shadow: var(--shadow-superficie);
 }
 
 .saldo-emoji {
@@ -97,7 +97,7 @@
   justify-content: center;
   background: rgba(255, 255, 255, 0.18);
   border-radius: var(--radius-lg);
-  font-size: 24px;
+  font-size: var(--font-size-2xl);
   line-height: 1;
   color: var(--color-white);
 }
@@ -124,7 +124,7 @@
 }
 
 .card-saldo-principal .saldo-valor {
-  font-size: 26px;
+  font-size: var(--font-size-2xl);
   font-weight: var(--font-weight-extrabold);
   letter-spacing: var(--letter-spacing-tight);
   color: var(--color-white);
@@ -248,7 +248,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-size: 28px;
+  font-size: var(--font-size-3xl);
   line-height: 1;
 }
 
@@ -316,7 +316,7 @@
 .alerta-card:last-child { margin-bottom: 0; }
 
 .alerta-icon {
-  font-size: 22px;
+  font-size: var(--font-size-xl);
   line-height: 1;
   flex-shrink: 0;
   display: flex;
@@ -352,7 +352,7 @@
 }
 
 .empty-emoji {
-  font-size: 44px;
+  font-size: var(--font-size-display);
   margin-bottom: var(--space-3);
   line-height: 1;
   display: inline-flex;

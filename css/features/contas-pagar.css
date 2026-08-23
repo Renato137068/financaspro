@@ -69,7 +69,7 @@
 
 .cp-cal-dow {
   text-align: center;
-  font-size: 10px;
+  font-size: var(--font-size-2xs);
   font-weight: 700;
   color: var(--color-text-muted);
   padding: 4px 0;
@@ -82,7 +82,7 @@
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-md);
-  font-size: 12px;
+  font-size: var(--font-size-xs);
   position: relative;
 }
 
@@ -115,7 +115,7 @@
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-xl);
   padding: var(--space-4);
-  box-shadow: var(--shadow-card-premium);
+  box-shadow: var(--shadow-superficie);
 }
 
 .cp-item--vencida {

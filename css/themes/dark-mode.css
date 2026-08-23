@@ -161,18 +161,6 @@
   color: white;
 }
 
-[data-theme="dark"] .filtro-chip {
-  background: var(--color-bg-dark-card);
-  border-color: var(--color-border);
-  color: var(--color-text-secondary);
-}
-
-[data-theme="dark"] .filtro-chip.ativo {
-  background: var(--color-primary-500);
-  border-color: var(--color-primary-500);
-  color: white;
-}
-
 [data-theme="dark"] .filtro-cat-chip {
   background: var(--color-bg-dark-card);
   border-color: var(--color-border);
@@ -216,17 +204,6 @@
   color: var(--color-text-primary);
 }
 
-[data-theme="dark"] .extrato-busca {
-  background: rgba(10, 20, 14, 0.9);
-  border-color: var(--color-border);
-  color: var(--color-text-primary);
-}
-
-[data-theme="dark"] .extrato-busca:focus {
-  border-color: var(--primary-light);
-  box-shadow: 0 0 0 3px rgba(47, 163, 123, 0.15);
-}
-
 [data-theme="dark"] .auto-sugerido {
   background: rgba(47, 163, 123, 0.12) !important;
   border-color: var(--primary-light) !important;
@@ -263,17 +240,6 @@
   color: var(--color-danger-light);
   border-color: rgba(240, 138, 110, 0.2);
 }
-
-/* ═══════════════════════════════════════════════════════════
-   EXTRATO
-   ═══════════════════════════════════════════════════════════ */
-
-[data-theme="dark"] .periodo-nav {
-  border-color: var(--color-border);
-  color: var(--color-text-primary);
-}
-
-[data-theme="dark"] .periodo-nav:active { background: rgba(18, 105, 78, 0.2); }
 
 [data-theme="dark"] .resumo-item { background: var(--color-bg-dark-card); }
 
@@ -399,8 +365,6 @@
   border-color: var(--color-border);
   color: var(--color-text-primary);
 }
-
-[data-theme="dark"] .orc-progress  { background: rgba(255, 255, 255, 0.08); }
 [data-theme="dark"] .orc-cat-bar   { background: rgba(255, 255, 255, 0.08); }
 [data-theme="dark"] .orc-cat-icon  { background: rgba(255, 255, 255, 0.06); }
 [data-theme="dark"] .orc-regra-pct { background: rgba(255, 255, 255, 0.08); }

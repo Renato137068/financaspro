@@ -31,8 +31,7 @@
 
 /* ── Contain para seções de orçamento ───────────────────────*/
 
-.orc-regra-item,
-.orc-categorias {
+.orc-regra-item{
   contain: layout style;
 }
 

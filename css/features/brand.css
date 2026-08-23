@@ -37,7 +37,7 @@ header h1 .brand-mark { margin-right: 6px; }
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 11.5px;
+  font-size: var(--font-size-xs);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-muted);
   background: var(--color-primary-50);
@@ -66,7 +66,7 @@ header h1 .brand-mark { margin-right: 6px; }
 .setup-card-head i { color: var(--color-primary-text); }
 .setup-card-title {
   font-weight: var(--font-weight-bold);
-  font-size: 15px;
+  font-size: var(--font-size-sm);
   color: var(--color-text-primary);
 }
 .setup-card-count { margin-left: auto; font-size: var(--font-size-xs); color: var(--color-text-muted); }
@@ -88,7 +88,7 @@ header h1 .brand-mark { margin-right: 6px; }
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  font-size: 13.5px;
+  font-size: var(--font-size-sm);
   padding: 6px var(--space-2);
   border-radius: var(--radius-md);
   color: var(--color-text-muted);
@@ -104,7 +104,7 @@ header h1 .brand-mark { margin-right: 6px; }
 .setup-step.proximo i { color: var(--color-primary-text); }
 .setup-badge {
   margin-left: auto;
-  font-size: 11px;
+  font-size: var(--font-size-2xs);
   background: var(--color-primary-500);
   color: var(--color-white);
   border-radius: var(--radius-full);
@@ -136,7 +136,7 @@ header h1 .brand-mark { margin-right: 6px; }
   border: none;
   border-radius: var(--radius-md);
   padding: 9px 14px;
-  font-size: 13.5px;
+  font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
   cursor: pointer;
 }

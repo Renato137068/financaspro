@@ -11,7 +11,7 @@
  */
 
 /* ══════════════════════════════════════════════════════════════
-   KEYFRAMES — Biblioteca de animações premium
+   KEYFRAMES — biblioteca de animações
    ══════════════════════════════════════════════════════════════ */
 
 /* Shimmer sweep — luz varrendo a superfície */
@@ -79,7 +79,7 @@
   50%       { transform: translateY(-5px); }
 }
 
-/* Press feedback — toque premium */
+/* Resposta ao toque */
 @keyframes magneticPress {
   0%   { transform: scale(1);    }
   40%  { transform: scale(0.96); }
@@ -87,7 +87,7 @@
 }
 
 /* ══════════════════════════════════════════════════════════════
-   TIPOGRAFIA PREMIUM
+   TIPOGRAFIA DE DESTAQUE
    ══════════════════════════════════════════════════════════════ */
 
 /* Números financeiros — tabular-nums, tracking negativo */
@@ -115,7 +115,7 @@
 
 .card-saldo-principal .saldo-valor {
   font-family: var(--font-family-display);
-  font-size: clamp(22px, 6vw, 28px);
+  font-size: clamp(var(--font-size-xl), 6vw, var(--font-size-3xl));
   font-weight: 800;
   letter-spacing: -0.04em;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
@@ -124,7 +124,7 @@
 /* Display — indicadores (renda, dias etc.) */
 .indicador-valor {
   font-family: var(--font-family-display);
-  font-size: clamp(18px, 5vw, 22px);
+  font-size: clamp(var(--font-size-lg), 5vw, var(--font-size-xl));
   font-weight: 800;
   letter-spacing: -0.03em;
 }
@@ -132,7 +132,7 @@
 /* Valores nos cards receita/despesa */
 .card-valor {
   font-family: var(--font-family-display);
-  font-size: clamp(20px, 5.5vw, 24px);
+  font-size: clamp(var(--font-size-xl), 5.5vw, var(--font-size-2xl));
   font-weight: 800;
   letter-spacing: -0.035em;
 }
@@ -154,7 +154,7 @@ header h1,
 
 /* Títulos de seção — mais arejados */
 .secao-titulo {
-  font-size: 10px;
+  font-size: var(--font-size-2xs);
   letter-spacing: 0.12em;
 }
 
@@ -317,7 +317,7 @@ header > * {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   SIDEBAR BRAND — Premium
+   SIDEBAR BRAND
    ══════════════════════════════════════════════════════════════ */
 
 @media (min-width: 768px) {
@@ -381,7 +381,6 @@ header > * {
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus,
-.extrato-busca:focus,
 .fp-input:focus {
   border-color: var(--color-primary-500);
   box-shadow:
@@ -404,7 +403,7 @@ header > * {
    MOTION UTILITIES — Classes reutilizáveis
    ══════════════════════════════════════════════════════════════ */
 
-.premium-entrance {
+.entrada-suave {
   animation: cardEntrance 420ms var(--ease-decelerate) both;
 }
 
@@ -421,7 +420,7 @@ header > * {
   animation: softFloat 4s ease-in-out infinite;
 }
 
-/* Hover lift premium — para cards interativos */
+/* Elevação no hover — cartões interativos */
 .hover-lift {
   transition:
     transform  280ms var(--ease-decelerate),
@@ -466,7 +465,7 @@ header > * {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   DARK MODE — Overrides premium
+   TEMA ESCURO — overrides
    ══════════════════════════════════════════════════════════════ */
 
 [data-theme="dark"] .card-saldo-principal.saldo-positivo {

@@ -58,7 +58,7 @@ html.pin-locked body {
   height: 64px !important;
   border-radius: var(--radius-xl) !important;
   background: var(--color-success) !important;
-  font-size: 32px !important;
+  font-size: var(--font-size-3xl) !important;
   margin-bottom: 16px !important;
   animation: logoFloat 3s ease-in-out infinite !important;
 }
@@ -70,14 +70,14 @@ html.pin-locked body {
 
 .auth-card h2 {
   color: var(--color-gray-800) !important;
-  font-size: 28px !important;
+  font-size: var(--font-size-3xl) !important;
   font-weight: 700 !important;
   margin-bottom: 4px !important;
 }
 
 .auth-card > p {
   color: var(--color-gray-500) !important;
-  font-size: 15px !important;
+  font-size: var(--font-size-sm) !important;
   text-align: center !important;
   margin-bottom: 24px !important;
 }
@@ -95,7 +95,7 @@ html.pin-locked body {
   color: var(--color-gray-500) !important;
   border-radius: var(--radius-md) !important;
   font-weight: 600 !important;
-  font-size: 14px !important;
+  font-size: var(--font-size-sm) !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
@@ -112,7 +112,7 @@ html.pin-locked body {
   border-radius: var(--radius-xl) !important;
   background: var(--color-white) !important;
   color: var(--color-gray-800) !important;
-  font-size: 15px !important;
+  font-size: var(--font-size-sm) !important;
   font-weight: 500 !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   box-shadow: var(--elevacao-1);
@@ -133,7 +133,7 @@ html.pin-locked body {
   background: var(--color-primary-500) !important;
   border: none !important;
   border-radius: var(--radius-controle) !important;
-  font-size: 16px !important;
+  font-size: var(--font-size-base) !important;
   font-weight: 700 !important;
   box-shadow: var(--elevacao-2);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;

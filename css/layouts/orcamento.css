@@ -164,18 +164,22 @@
 
 .orc-renda-input button:active { transform: scale(0.96); }
 
-/* ── Premium Header Estratégico ─────────────────────────────── */
+/* ── Header Estratégico ─────────────────────────────── */
 
-.orc-premium-header {
+.orc-header {
   background: var(--color-bg-card);
   border-radius: var(--radius-2xl);
   padding: var(--space-6);
   margin: var(--space-5) 0;
-  box-shadow: var(--elevacao-2);
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
 }
+/* A elevação e a borda vêm da regra de superfície compartilhada em style.css,
+   que este cabeçalho não recebia enquanto se chamava .orc-header-premium. Com
+   o sufixo removido ele entrou na regra — e passou a seguir a convenção do
+   sistema: cartão é nível 1 com borda de 1px, não nível 2 sem borda. É a única
+   mudança visual desta renomeação, e é intencional. */
 
 /* KPI Principal */
 .orc-kpi-main {
@@ -195,7 +199,7 @@
 }
 
 .orc-kpi-label {
-  font-size: 14px;
+  font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--color-text-secondary);
   text-transform: uppercase;
@@ -203,7 +207,7 @@
 }
 
 .orc-kpi-value {
-  font-size: 36px;
+  font-size: var(--font-size-4xl);
   font-weight: 800;
   color: var(--color-text-primary);
   line-height: 1.1;
@@ -214,7 +218,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  font-size: 14px;
+  font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
 }
 
@@ -239,7 +243,7 @@
   height: 56px;
   background: var(--color-bg-primary);
   border-radius: var(--radius-xl);
-  font-size: 28px;
+  font-size: var(--font-size-3xl);
   color: var(--color-primary-text);
 }
 
@@ -273,7 +277,7 @@
 }
 
 .orc-kpi-card-icon {
-  font-size: 24px;
+  font-size: var(--font-size-2xl);
   width: 44px;
   height: 44px;
   display: flex;
@@ -293,7 +297,7 @@
 }
 
 .orc-kpi-card-label {
-  font-size: 12px;
+  font-size: var(--font-size-xs);
   font-weight: 600;
   color: var(--color-text-secondary);
   text-transform: uppercase;
@@ -301,7 +305,7 @@
 }
 
 .orc-kpi-card-value {
-  font-size: 18px;
+  font-size: var(--font-size-lg);
   font-weight: 700;
   color: var(--color-text-primary);
   white-space: nowrap;
@@ -324,7 +328,7 @@
   background: var(--color-bg-page);
   border: 1.5px solid var(--color-border);
   border-radius: var(--radius-xl);
-  font-size: 14px;
+  font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--color-text-primary);
   cursor: pointer;
@@ -348,58 +352,16 @@
   flex-shrink: 0;
 }
 
-/* ── Header com renda (legado) ─────────────────────────────── */
+/* O bloco ".orc-header (legado)" que ficava aqui foi removido em 23/08/2026.
+   Ele era uma segunda definicao da mesma classe, com sombra e margem
+   diferentes, e nunca chegava a valer porque o componente vivo usava
+   .orc-header-premium. Ao tirar o sufixo "premium" dos nomes de classe as
+   duas definicoes colidiram e a legada, por vir depois, passou a vencer —
+   um regressao que so a comparacao de estilos computados antes/depois
+   pegou. Seus filhos (.orc-header-info, -label, -valor, -btn) tambem sairam:
+   nenhum deles aparecia em markup. */
 
-.orc-header {
-  background: var(--color-bg-card);
-  border-radius: var(--radius-xl);
-  padding: var(--space-5) var(--space-6);
-  margin: var(--space-4) 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  box-shadow: var(--shadow-md);
-}
-
-.orc-header-info {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-.orc-header-label {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  font-weight: var(--font-weight-medium);
-}
-
-.orc-header-valor {
-  font-size: var(--font-size-2xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text-primary);
-}
-
-.orc-header-btn {
-  background: none;
-  border: 1.5px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--space-2) var(--space-4);
-  font-size: var(--font-size-sm);
-  color: var(--color-primary-text);
-  font-weight: var(--font-weight-semibold);
-  cursor: pointer;
-  transition: background var(--transition-fast);
-  font-family: var(--font-family-sans);
-}
-
-.orc-header-btn:hover {
-  background: var(--color-primary-500);
-  color: var(--color-text-inverse);
-}
-
-/* ── Regra 50/30/20 Premium Cards ─────────────────────────── */
-
-.orc-regra-premium {
+.orc-regra {
   display: grid;
   /* minmax(0,1fr) permite que as colunas encolham abaixo do min-content,
      evitando o overflow horizontal dos valores/badges no desktop. */
@@ -410,13 +372,13 @@
 
 /* Em containers estreitos, empilha para 1 coluna em vez de estourar. */
 @media (max-width: 720px) {
-  .orc-regra-premium {
+  .orc-regra {
     grid-template-columns: 1fr;
     gap: var(--space-4);
   }
 }
 
-.orc-regra-card-premium {
+.orc-regra-card {
   background: var(--color-bg-card);
   border-radius: var(--radius-2xl);
   padding: var(--space-5);
@@ -428,7 +390,7 @@
   gap: var(--space-4);
 }
 
-.orc-regra-card-premium:hover {
+.orc-regra-card:hover {
   transform: translateY(-4px);
   box-shadow: var(--elevacao-2);
 }
@@ -462,7 +424,7 @@
 }
 
 .orc-regra-card-icon {
-  font-size: 24px;
+  font-size: var(--font-size-2xl);
   filter: none;
 }
 
@@ -474,14 +436,14 @@
 }
 
 .orc-regra-card-nome {
-  font-size: 16px;
+  font-size: var(--font-size-base);
   font-weight: 700;
   color: var(--color-text-primary);
   letter-spacing: -0.3px;
 }
 
 .orc-regra-card-pct {
-  font-size: 13px;
+  font-size: var(--font-size-xs);
   font-weight: 600;
   color: var(--color-text-secondary);
 }
@@ -496,7 +458,7 @@
   align-items: center;
   padding: 6px 12px;
   border-radius: var(--radius-2xl);
-  font-size: 12px;
+  font-size: var(--font-size-xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -549,7 +511,7 @@
 }
 
 .orc-regra-card-gasto {
-  font-size: 28px;
+  font-size: var(--font-size-3xl);
   font-weight: 800;
   color: var(--color-text-primary);
   letter-spacing: -0.5px;
@@ -557,7 +519,7 @@
 }
 
 .orc-regra-card-limite {
-  font-size: 14px;
+  font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--color-text-secondary);
 }
@@ -567,8 +529,8 @@
   color: var(--color-text-primary);
 }
 
-/* Premium Progress Bars */
-.orc-progress-premium {
+/* Progress Bars */
+.orc-progress {
   height: 12px;
   background: var(--color-bg-page);
   border-radius: var(--radius-md);
@@ -577,7 +539,7 @@
   box-shadow: inset 0 2px 4px rgba(0,0,0,0.04);
 }
 
-.orc-progress-fill-premium {
+.orc-progress-fill {
   height: 100%;
   border-radius: var(--radius-md);
   transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
@@ -592,22 +554,22 @@
 }
 
 /* Progress bar colors based on status */
-.orc-progress-fill-premium.healthy {
+.orc-progress-fill.healthy {
   background: var(--color-success);
   box-shadow: var(--elevacao-1);
 }
 
-.orc-progress-fill-premium.attention {
+.orc-progress-fill.attention {
   background: var(--color-warning);
   box-shadow: var(--elevacao-1);
 }
 
-.orc-progress-fill-premium.critical {
+.orc-progress-fill.critical {
   background: var(--color-danger);
   box-shadow: var(--elevacao-1);
 }
 
-.orc-progress-fill-premium.exceeded {
+.orc-progress-fill.exceeded {
   background: var(--color-danger-on-light);
   box-shadow: var(--elevacao-1);
   animation: pulseBar 1.5s ease-in-out infinite;
@@ -618,7 +580,7 @@
   50% { opacity: 0.8; }
 }
 
-.orc-progress-fill-premium.otimo {
+.orc-progress-fill.otimo {
   background: var(--color-info-on-light);
   box-shadow: var(--elevacao-1);
 }
@@ -631,13 +593,13 @@
 }
 
 .orc-regra-card-percent {
-  font-size: 14px;
+  font-size: var(--font-size-sm);
   font-weight: 700;
   color: var(--color-text-primary);
 }
 
 .orc-regra-card-label {
-  font-size: 13px;
+  font-size: var(--font-size-xs);
   font-weight: 500;
   color: var(--color-text-secondary);
 }
@@ -649,21 +611,10 @@
 }
 
 .orc-regra-card-cats {
-  font-size: 12px;
+  font-size: var(--font-size-xs);
   font-weight: 500;
   color: var(--color-text-secondary);
   line-height: 1.5;
-}
-
-/* Category-specific colors removidos para seguir padrão limpo */
-
-/* ── Regra 50/30/20 cards (legado) ─────────────────────────── */
-
-.orc-regra {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  margin: var(--space-4) 0;
 }
 
 .orc-regra-item {
@@ -718,30 +669,9 @@
   color: var(--color-text-primary);
 }
 
-/* Progress bar 50/30/20 */
-.orc-progress {
-  height: 10px;
-  background: var(--color-bg-page);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  position: relative;
-}
+/* ── Insights ───────────────────────────────────────── */
 
-.orc-progress-fill {
-  height: 100%;
-  border-radius: var(--radius-md);
-  transition: width var(--transition-slow);
-  min-width: 2px;
-}
-
-.orc-progress-fill.ok       { background: var(--color-success); }
-.orc-progress-fill.alerta   { background: var(--color-warning); }
-.orc-progress-fill.excedido { background: var(--color-danger); }
-.orc-progress-fill.otimo    { background: var(--color-info-on-light); }
-
-/* ── Insights Premium ───────────────────────────────────────── */
-
-.orc-insights-premium {
+.orc-insights {
   margin: var(--space-5) 0;
   display: flex;
   flex-direction: column;
@@ -766,7 +696,7 @@
 }
 
 .orc-insight-icon {
-  font-size: 24px;
+  font-size: var(--font-size-2xl);
   flex-shrink: 0;
   margin-top: 2px;
   width: 40px;
@@ -780,7 +710,7 @@
 }
 
 .orc-insight-text {
-  font-size: 14px;
+  font-size: var(--font-size-sm);
   line-height: 1.6;
   color: var(--color-text-primary);
 }
@@ -792,13 +722,13 @@
 .orc-insight.negativo { border-left: 4px solid var(--color-danger); }
 .orc-insight.dica     { border-left: 4px solid var(--color-info-on-light); }
 
-/* ── Categorias Section Premium ───────────────────────────────── */
+/* ── Categorias Section ───────────────────────────────── */
 
 .orc-categorias-section {
   margin: var(--space-5) 0;
 }
 
-.orc-secao-header-premium {
+.orc-secao-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -810,15 +740,15 @@
   box-shadow: var(--elevacao-1);
 }
 
-.orc-secao-titulo-premium {
-  font-size: 16px;
+.orc-secao-titulo {
+  font-size: var(--font-size-base);
   font-weight: 700;
   color: var(--color-text-primary);
   margin: 0;
   letter-spacing: -0.3px;
 }
 
-.orc-toggle-btn-premium {
+.orc-toggle-btn {
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -826,7 +756,7 @@
   background: var(--color-bg-page);
   border: 1.5px solid var(--color-border);
   border-radius: var(--radius-md);
-  font-size: 13px;
+  font-size: var(--font-size-xs);
   font-weight: 600;
   color: var(--color-text-primary);
   cursor: pointer;
@@ -834,22 +764,22 @@
   font-family: var(--font-family-sans);
 }
 
-.orc-toggle-btn-premium:hover {
+.orc-toggle-btn:hover {
   background: var(--color-primary-500);
   border-color: var(--color-primary-500);
   color: var(--color-text-inverse);
   transform: translateY(-1px);
 }
 
-.orc-toggle-btn-premium .toggle-icon {
+.orc-toggle-btn .toggle-icon {
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.orc-toggle-btn-premium[aria-expanded="true"] .toggle-icon {
+.orc-toggle-btn[aria-expanded="true"] .toggle-icon {
   transform: rotate(180deg);
 }
 
-.orc-categorias-premium {
+.orc-categorias {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
@@ -886,14 +816,14 @@
 }
 
 .orc-group-icon {
-  font-size: 22px;
+  font-size: var(--font-size-xl);
   flex-shrink: 0;
   color: var(--color-primary-text);
 }
 
 .orc-group-title {
   flex: 1;
-  font-size: 15px;
+  font-size: var(--font-size-sm);
   font-weight: 700;
   color: var(--color-text-primary);
   letter-spacing: -0.2px;
@@ -908,7 +838,7 @@
   padding: 0 var(--space-2);
   background: var(--color-bg-card);
   border-radius: var(--radius-md);
-  font-size: 13px;
+  font-size: var(--font-size-xs);
   font-weight: 700;
   color: var(--color-text-secondary);
   border: 1px solid var(--color-border);
@@ -921,21 +851,6 @@
   background: var(--color-border);
 }
 
-/* Category Item Premium */
-.orc-cat-item-premium {
-  background: var(--color-bg-card);
-  padding: var(--space-4) var(--space-5);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
-  transition: background 0.2s ease;
-}
-
-.orc-cat-item-premium:hover {
-  background: var(--color-bg-page);
-}
-
 .orc-cat-item-left {
   display: flex;
   align-items: center;
@@ -944,7 +859,7 @@
   flex: 1;
 }
 
-.orc-cat-item-icon-premium {
+.orc-cat-item-icon {
   width: 42px;
   height: 42px;
   display: flex;
@@ -952,7 +867,7 @@
   justify-content: center;
   background: var(--color-bg-primary);
   border-radius: var(--radius-xl);
-  font-size: 20px;
+  font-size: var(--font-size-xl);
   flex-shrink: 0;
   color: var(--color-primary-text);
 }
@@ -965,14 +880,14 @@
 }
 
 .orc-cat-item-nome {
-  font-size: 15px;
+  font-size: var(--font-size-sm);
   font-weight: 700;
   color: var(--color-text-primary);
   letter-spacing: -0.2px;
 }
 
 .orc-cat-item-badge {
-  font-size: 11px;
+  font-size: var(--font-size-2xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -1001,19 +916,19 @@
 }
 
 .orc-cat-item-valor {
-  font-size: 16px;
+  font-size: var(--font-size-base);
   font-weight: 700;
   color: var(--color-text-primary);
   letter-spacing: -0.3px;
 }
 
 .orc-cat-item-meta {
-  font-size: 12px;
+  font-size: var(--font-size-xs);
   font-weight: 600;
   color: var(--color-text-secondary);
 }
 
-/* Empty State Premium */
+/* Empty State */
 .orc-categorias-empty {
   text-align: center;
   padding: var(--space-12) var(--space-6);
@@ -1022,36 +937,27 @@
   border: 2px dashed var(--color-border);
 }
 
-.orc-empty-icon-premium {
-  font-size: 64px;
+.orc-empty-icon {
+  font-size: var(--font-size-display-2);
   margin-bottom: var(--space-4);
   opacity: 0.6;
   filter: grayscale(0.3);
 }
 
-.orc-empty-title-premium {
-  font-size: 18px;
+.orc-empty-title {
+  font-size: var(--font-size-lg);
   font-weight: 700;
   color: var(--color-text-primary);
   margin-bottom: var(--space-2);
   letter-spacing: -0.3px;
 }
 
-.orc-empty-desc-premium {
-  font-size: 14px;
+.orc-empty-desc {
+  font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   line-height: 1.6;
   max-width: 400px;
   margin: 0 auto;
-}
-
-/* ── Insights (legado) ─────────────────────────────────────── */
-
-.orc-insights {
-  margin: var(--space-4) 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
 }
 
 .orc-insight {
@@ -1082,10 +988,6 @@
 .orc-insight.alerta   { border-left: 3px solid var(--color-warning); }
 .orc-insight.negativo { border-left: 3px solid var(--color-danger); }
 .orc-insight.dica     { border-left: 3px solid var(--color-info-on-light); }
-
-/* ── Categorias detalhadas ────────────────────────────────── */
-
-.orc-categorias { margin: var(--space-4) 0; }
 
 .orc-cat-header {
   display: flex;
@@ -1159,7 +1061,7 @@
 }
 
 .orc-cat-icon {
-  font-size: 18px;
+  font-size: var(--font-size-lg);
   width: 36px;
   height: 36px;
   display: flex;
@@ -1310,11 +1212,6 @@
   color: var(--color-text-secondary);
 }
 
-.orc-empty-icon {
-  font-size: 48px;
-  margin-bottom: var(--space-3);
-}
-
 .orc-empty p {
   font-size: var(--font-size-sm);
   line-height: var(--line-height-normal);
@@ -1323,8 +1220,8 @@
 /* ── Mobile Responsiveness ─────────────────────────────────── */
 
 @media (max-width: 768px) {
-  /* Premium Header */
-  .orc-premium-header {
+  /* Header */
+  .orc-header {
     padding: var(--space-4);
     border-radius: var(--radius-2xl);
   }
@@ -1343,7 +1240,7 @@
   }
 
   .orc-kpi-value {
-    font-size: 32px;
+    font-size: var(--font-size-3xl);
   }
 
   .orc-kpi-secondary {
@@ -1359,11 +1256,11 @@
   .orc-kpi-card-icon {
     width: 36px;
     height: 36px;
-    font-size: 18px;
+    font-size: var(--font-size-lg);
   }
 
   .orc-kpi-card-value {
-    font-size: 16px;
+    font-size: var(--font-size-base);
   }
 
   .orc-header-actions {
@@ -1376,13 +1273,13 @@
     justify-content: center;
   }
 
-  /* Premium Cards */
-  .orc-regra-premium {
+  /* Cards */
+  .orc-regra {
     grid-template-columns: 1fr;
     gap: var(--space-4);
   }
 
-  .orc-regra-card-premium {
+  .orc-regra-card {
     padding: var(--space-4);
     border-radius: var(--radius-xl);
   }
@@ -1398,7 +1295,7 @@
   }
 
   .orc-regra-card-gasto {
-    font-size: 24px;
+    font-size: var(--font-size-2xl);
   }
 
   /* Category Groups */
@@ -1406,13 +1303,13 @@
     margin: var(--space-4) 0;
   }
 
-  .orc-secao-header-premium {
+  .orc-secao-header {
     padding: var(--space-3) var(--space-4);
     border-radius: var(--radius-xl);
   }
 
-  .orc-secao-titulo-premium {
-    font-size: 15px;
+  .orc-secao-titulo {
+    font-size: var(--font-size-sm);
   }
 
   .orc-group-header {
@@ -1420,14 +1317,7 @@
   }
 
   .orc-group-title {
-    font-size: 14px;
-  }
-
-  .orc-cat-item-premium {
-    padding: var(--space-3) var(--space-4);
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--space-3);
+    font-size: var(--font-size-sm);
   }
 
   .orc-cat-item-right {
@@ -1436,7 +1326,7 @@
   }
 
   .orc-cat-item-valor {
-    font-size: 15px;
+    font-size: var(--font-size-sm);
   }
 
   /* Empty State */
@@ -1445,16 +1335,16 @@
     border-radius: var(--radius-xl);
   }
 
-  .orc-empty-icon-premium {
-    font-size: 48px;
+  .orc-empty-icon {
+    font-size: var(--font-size-display);
   }
 
-  .orc-empty-title-premium {
-    font-size: 16px;
+  .orc-empty-title {
+    font-size: var(--font-size-base);
   }
 
-  .orc-empty-desc-premium {
-    font-size: 13px;
+  .orc-empty-desc {
+    font-size: var(--font-size-xs);
   }
 
   /* Insights */
@@ -1466,11 +1356,11 @@
   .orc-insight-icon {
     width: 36px;
     height: 36px;
-    font-size: 20px;
+    font-size: var(--font-size-xl);
   }
 
   .orc-insight-text {
-    font-size: 13px;
+    font-size: var(--font-size-xs);
   }
 }
 
@@ -1481,29 +1371,29 @@
   }
 
   .orc-kpi-value {
-    font-size: 28px;
+    font-size: var(--font-size-3xl);
   }
 
   .orc-regra-card-gasto {
-    font-size: 22px;
+    font-size: var(--font-size-xl);
   }
 
-  .orc-secao-header-premium {
+  .orc-secao-header {
     flex-direction: column;
     align-items: flex-start;
     gap: var(--space-2);
   }
 
-  .orc-toggle-btn-premium {
+  .orc-toggle-btn {
     width: 100%;
     justify-content: center;
   }
 }
 
-/* ── Premium Microinteractions ───────────────────────────────── */
+/* ── Micro-interações ────────────────────────────────────────── */
 
 /* Fade in animation for cards */
-.orc-regra-card-premium,
+.orc-regra-card,
 .orc-categoria-group,
 .orc-insight {
   animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1512,19 +1402,18 @@
 
 /* Reduced motion support for accessibility */
 @media (prefers-reduced-motion: reduce) {
-  .orc-progress-fill-premium::after,
+  .orc-progress-fill::after,
   .status-exceeded,
-  .orc-regra-card-premium,
+  .orc-regra-card,
   .orc-categoria-group,
   .orc-insight {
     animation: none;
   }
 
   .orc-kpi-card,
-  .orc-regra-card-premium,
+  .orc-regra-card,
   .orc-action-btn,
-  .orc-toggle-btn-premium,
-  .orc-cat-item-premium {
+  .orc-toggle-btn{
     transition: none;
   }
 
@@ -1551,13 +1440,13 @@
 }
 
 .orc-edit-renda-icon {
-  font-size: 48px;
+  font-size: var(--font-size-display);
   line-height: 1;
   animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
 .orc-edit-renda-title {
-  font-size: 20px;
+  font-size: var(--font-size-xl);
   font-weight: 700;
   color: var(--color-text-primary);
   margin: 0;
@@ -1565,7 +1454,7 @@
 }
 
 .orc-edit-renda-subtitle {
-  font-size: 14px;
+  font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   margin: 0;
   line-height: 1.4;
@@ -1594,14 +1483,14 @@
 }
 
 .orc-renda-prefix {
-  font-size: 18px;
+  font-size: var(--font-size-lg);
   font-weight: 600;
   color: var(--color-text-secondary);
 }
 
 .orc-renda-input-field {
   flex: 1;
-  font-size: 18px;
+  font-size: var(--font-size-lg);
   font-weight: 600;
   color: var(--color-text-primary);
   background: transparent;
@@ -1632,13 +1521,13 @@
 }
 
 .orc-edit-regra-icon {
-  font-size: 48px;
+  font-size: var(--font-size-display);
   line-height: 1;
   animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
 .orc-edit-regra-title {
-  font-size: 20px;
+  font-size: var(--font-size-xl);
   font-weight: 700;
   color: var(--color-text-primary);
   margin: 0;
@@ -1646,7 +1535,7 @@
 }
 
 .orc-edit-regra-subtitle {
-  font-size: 14px;
+  font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   margin: 0;
   line-height: 1.4;
@@ -1668,13 +1557,13 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  font-size: 14px;
+  font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--color-text-primary);
 }
 
 .orc-regra-label-icon {
-  font-size: 20px;
+  font-size: var(--font-size-xl);
 }
 
 .orc-regra-label-text {
@@ -1699,7 +1588,7 @@
 
 .orc-regra-input-field {
   flex: 1;
-  font-size: 18px;
+  font-size: var(--font-size-lg);
   font-weight: 600;
   color: var(--color-text-primary);
   background: transparent;
@@ -1710,7 +1599,7 @@
 }
 
 .orc-regra-suffix {
-  font-size: 16px;
+  font-size: var(--font-size-base);
   font-weight: 600;
   color: var(--color-text-secondary);
 }
@@ -1727,13 +1616,13 @@
 }
 
 .orc-regra-total-label {
-  font-size: 14px;
+  font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--color-text-secondary);
 }
 
 .orc-regra-total-value {
-  font-size: 18px;
+  font-size: var(--font-size-lg);
   font-weight: 700;
   color: var(--color-success-text);
   transition: color var(--transition-fast);
@@ -1753,9 +1642,9 @@
   }
 }
 
-.orc-regra-card-premium:nth-child(1) { animation-delay: 0ms; }
-.orc-regra-card-premium:nth-child(2) { animation-delay: 100ms; }
-.orc-regra-card-premium:nth-child(3) { animation-delay: 200ms; }
+.orc-regra-card:nth-child(1) { animation-delay: 0ms; }
+.orc-regra-card:nth-child(2) { animation-delay: 100ms; }
+.orc-regra-card:nth-child(3) { animation-delay: 200ms; }
 
 @keyframes fadeInUp {
   from {
@@ -1770,24 +1659,22 @@
 
 /* Smooth scale on press */
 .orc-kpi-card:active,
-.orc-regra-card-premium:active,
-.orc-cat-item-premium:active {
+.orc-regra-card:active{
   transform: scale(0.98);
 }
 
 /* Focus visible for accessibility */
 .orc-action-btn:focus-visible,
-.orc-toggle-btn-premium:focus-visible {
+.orc-toggle-btn:focus-visible {
   outline: 2px solid var(--color-primary-500);
   outline-offset: 2px;
 }
 
 /* Smooth transitions for all interactive elements */
 .orc-kpi-card,
-.orc-regra-card-premium,
+.orc-regra-card,
 .orc-action-btn,
-.orc-toggle-btn-premium,
-.orc-cat-item-premium {
+.orc-toggle-btn{
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 

@@ -52,6 +52,47 @@
     return 'há ' + Math.floor(h / 24) + 'd';
   }
 
+  /**
+   * O que o selo explica quando alguém toca nele.
+   *
+   * O diferencial deste app é funcionar inteiro sem servidor, e até aqui isso
+   * só era dito na ficha da loja e na primeira tela do onboarding — quem já
+   * usa o app nunca mais lia. Este selo já estava no rodapé de todas as telas
+   * dizendo "Salvo neste dispositivo"; faltava poder perguntar o que aquilo
+   * significa. É o lugar mais barato de colocar a promessa onde ela é vista.
+   */
+  var EXPLICACAO = {
+    local: {
+      titulo: 'Onde ficam os seus dados',
+      corpo: 'Tudo o que você lança fica guardado neste aparelho. O app não pede '
+        + 'cadastro, não conecta ao seu banco e não envia nada para servidor nenhum.'
+        + '<br><br>Isso tem duas consequências: ninguém além de você vê seus lançamentos, '
+        + 'e <b>trocar de aparelho ou apagar o app leva os dados junto</b>. '
+        + 'Exporte um backup de vez em quando, em Perfil › Dados.',
+    },
+    nuvem: {
+      titulo: 'Onde ficam os seus dados',
+      corpo: 'Seus lançamentos ficam neste aparelho e também em cópia no servidor, '
+        + 'para você abrir a mesma conta em mais de um lugar.'
+        + '<br><br>Você pode exportar tudo ou apagar a conta inteira quando quiser, '
+        + 'em Perfil › Dados.',
+    },
+  };
+
+  function explicar(cls) {
+    var info = (cls === 'local') ? EXPLICACAO.local : EXPLICACAO.nuvem;
+    if (typeof fpAlert !== 'function') return;
+    // O título vai como `title` (o modal o coloca num h3 só para leitor de
+    // tela) e também visível aqui — por isso a versão visível é aria-hidden,
+    // senão o leitor anuncia duas vezes.
+    fpAlert(
+      '<p aria-hidden="true" style="font-weight:700;margin:0 0 10px;text-align:left">'
+      + info.titulo + '</p>'
+      + '<p style="margin:0;text-align:left">' + info.corpo + '</p>',
+      { trustedHtml: true, title: info.titulo }
+    );
+  }
+
   function classificar(st) {
     if (!st.api) return { cls: 'local', label: 'Salvo neste dispositivo' };
     if (st.conflicts && st.conflicts.length) {
@@ -75,12 +116,17 @@
     if (el && document.body.contains(el)) return el;
     el = document.getElementById('sync-indicator');
     if (!el) {
-      el = document.createElement('div');
+      // É um <button> de verdade, não uma div com onclick: precisa receber foco
+      // pelo teclado e ser anunciado como acionável pelo leitor de tela.
+      el = document.createElement('button');
+      el.type = 'button';
       el.id = 'sync-indicator';
       el.className = 'sync-indicator';
-      el.setAttribute('role', 'status');
       el.setAttribute('aria-live', 'polite');
       el.innerHTML = '<span class="sync-dot" aria-hidden="true"></span><span class="sync-text"></span>';
+      el.addEventListener('click', function() {
+        explicar(el.getAttribute('data-estado') || 'local');
+      });
       document.body.appendChild(el);
     }
     return el;
@@ -92,9 +138,11 @@
       var st = lerStatus();
       var info = classificar(st);
       node.className = 'sync-indicator sync-' + info.cls;
+      node.setAttribute('data-estado', info.cls);
       var txt = node.querySelector('.sync-text');
       if (txt) txt.textContent = info.label;
-      node.setAttribute('title', info.label);
+      node.setAttribute('title', info.label + ' — toque para entender');
+      node.setAttribute('aria-label', info.label + '. Toque para saber onde ficam os seus dados.');
     } catch (e) { /* nunca quebra o app */ }
   }
 

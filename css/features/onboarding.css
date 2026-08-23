@@ -1,6 +1,6 @@
 /**
  * onboarding.css — Tour de onboarding para novos usuários
- * Fase 7 UX Premium — Depende de: design-system.css
+ * Fase 7 UX — Depende de: design-system.css
  */
 
 /* ── Overlay principal ────────────────────────────────────── */
@@ -49,7 +49,7 @@
 /* ── Conteúdo tooltip ─────────────────────────────────────── */
 
 .onb-emoji {
-  font-size: 36px;
+  font-size: var(--font-size-4xl);
   text-align: center;
   display: flex;
   align-items: center;
@@ -220,7 +220,7 @@
   right: 50%;
   transform: translateX(50%);
   color: var(--color-primary-400);
-  font-size: 20px;
+  font-size: var(--font-size-xl);
   animation: pulse 1s ease-in-out infinite;
   pointer-events: none;
 }

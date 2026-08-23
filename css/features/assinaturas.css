@@ -40,7 +40,7 @@
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-xl);
   padding: var(--space-4);
-  box-shadow: var(--shadow-card-premium);
+  box-shadow: var(--shadow-superficie);
 }
 
 .sub-card--inactive {
