@@ -122,6 +122,11 @@ const CONFIG = {
     txListMaxLimit: 200,
     localTxWindowMonths: parseInt(process.env.LOCAL_TX_WINDOW_MONTHS, 10) || 24,
   },
+
+  playBilling: {
+    packageName: process.env.PLAY_PACKAGE_NAME || 'com.financaspro.mobile',
+    serviceAccountJson: process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON || null,
+  },
 };
 
 export default CONFIG;
