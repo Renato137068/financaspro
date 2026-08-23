@@ -1,4 +1,4 @@
-// Sobra — DonutChart: donut chart de despesas por categoria (SVG + legenda)
+// FinançasPro — DonutChart: donut chart de despesas por categoria (SVG + legenda)
 // v11.0 — Depende de: _base.js, LegendaChart.js
 // cats: [{ nome, valor, cor }] — já ordenadas desc
 (function() {

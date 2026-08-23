@@ -1,4 +1,4 @@
-// Sobra — Indicador: KPI card (ícone + valor + label)
+// FinançasPro — Indicador: KPI card (ícone + valor + label)
 // v11.0 — Depende de: ProgressBar.js (opcional, só quando barra fornecida)
 (function() {
   var UI = window.UI || {};

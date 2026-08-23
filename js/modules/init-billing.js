@@ -75,7 +75,7 @@ const INIT_BILLING = {
       '<div class="modal-box billing-modal">' +
         '<button type="button" class="billing-close" data-action="billing-fechar" aria-label="Fechar">&times;</button>' +
         '<div class="billing-header">' +
-          '<span class="billing-badge"><i data-lucide="sparkles" aria-hidden="true"></i> Sobra Cloud</span>' +
+          '<span class="billing-badge"><i data-lucide="sparkles" aria-hidden="true"></i> FinançasPro Cloud</span>' +
           '<h2 id="billing-title">O Pro tira os limites</h2>' +
           '<p class="billing-lead" id="billing-lead">' + UTILS.escapeHtml(contextMsg || 'Contas ilimitadas, relatórios do ano inteiro e backup automático. Cancela quando quiser.') + '</p>' +
         '</div>' +

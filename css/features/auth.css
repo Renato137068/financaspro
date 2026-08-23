@@ -55,7 +55,7 @@
   height: 64px;
   border-radius: var(--radius-xl);
   background: var(--color-bg-primary);
-  color: var(--color-primary-600);
+  color: var(--color-primary-text);
   box-shadow: var(--shadow-sm);
   font-size: 32px;
   margin-bottom: var(--space-4);
@@ -65,7 +65,7 @@
 
 .auth-kicker {
   margin: 0 0 2px;
-  color: var(--color-primary-500);
+  color: var(--color-primary-text);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-extrabold);
   letter-spacing: var(--letter-spacing-wide);
@@ -118,7 +118,7 @@
 
 .auth-tab.ativo {
   background: white;
-  color: var(--color-primary-600);
+  color: var(--color-primary-text);
   box-shadow: var(--shadow-sm);
   font-weight: var(--font-weight-bold);
 }

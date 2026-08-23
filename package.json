@@ -1,7 +1,7 @@
 {
-  "name": "sobra-v11",
+  "name": "financaspro-v11",
   "version": "11.0.0",
-  "description": "Sobra — SaaS de Finanças Pessoais",
+  "description": "FinançasPro — SaaS de Finanças Pessoais",
   "type": "module",
   "main": "index.html",
   "scripts": {

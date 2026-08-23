@@ -1,8 +1,8 @@
-# Ficha da Play Store — Sobra (pronto para copiar)
+# Ficha da Play Store — FinançasPro (pronto para copiar)
 
 ## Identidade
-- **Nome do app** (máx. 30 caracteres): `Sobra`
-  - Alternativas: `Sobra: Controle` · `Sobra Finanças`
+- **Nome do app** (máx. 30 caracteres): `FinançasPro`
+  - Alternativas: `FinançasPro: Controle` · `FinançasPro Finanças`
 - **Categoria**: Finanças
 - **Tags**: finanças pessoais, controle de gastos, orçamento, metas
 - **E-mail de contato**: (o e-mail do desenvolvedor — o mesmo da política de privacidade)
@@ -29,7 +29,7 @@ Seu dinheiro, no seu aparelho. Sem cadastro, sem banco conectado, sem anúncios.
 
 ## Descrição completa (máx. 4000 caracteres)
 ```
-Todo app de finanças pede acesso ao seu banco. O Sobra não pede nem seu e-mail.
+Todo app de finanças pede acesso ao seu banco. O FinançasPro não pede nem seu e-mail.
 
 Ele funciona inteiro no seu aparelho: sem cadastro, sem conectar conta bancária e
 sem internet. Você registra receitas e despesas em segundos e vê a única coisa que

@@ -247,7 +247,7 @@ textarea:focus-visible {
 .toast-acao .toast-acao-texto{ flex:1 1 auto; }
 .toast-acao .toast-acao-btn{
   flex:0 0 auto; background:transparent; border:none; cursor:pointer;
-  color:var(--color-primary-500); font-weight:800; font-size:13px; text-transform:uppercase;
+  color: var(--color-primary-text); font-weight:800; font-size:13px; text-transform:uppercase;
   letter-spacing:.04em; padding:6px 8px; border-radius:var(--radius-md);
 }
 .toast-acao .toast-acao-btn:hover{ background:rgba(0,168,98,.12); }

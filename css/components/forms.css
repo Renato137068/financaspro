@@ -176,7 +176,7 @@ legend {
 
 .rec-chip:hover {
   border-color: var(--color-primary-500);
-  color: var(--color-primary-500);
+  color: var(--color-primary-text);
 }
 
 .rec-chip.ativo {
@@ -215,7 +215,7 @@ legend {
 .parcela-valor {
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-bold);
-  color: var(--color-primary-500);
+  color: var(--color-primary-text);
 }
 
 /* ── Extras toggle ────────────────────────────────────────── */
@@ -241,7 +241,7 @@ legend {
 
 .btn-extras:hover {
   border-color: var(--color-primary-500);
-  color: var(--color-primary-500);
+  color: var(--color-primary-text);
 }
 
 .extras-arrow {
@@ -324,7 +324,7 @@ legend {
 }
 
 .quick-chip strong {
-  color: var(--color-primary-500);
+  color: var(--color-primary-text);
   font-weight: var(--font-weight-bold);
 }
 
@@ -339,7 +339,7 @@ legend {
   margin-top: var(--space-3);
   padding: var(--space-2) var(--space-3);
   background: rgba(18, 105, 78, 0.12);
-  color: var(--color-primary-500);
+  color: var(--color-primary-text);
   border: 1.5px solid rgba(18, 105, 78, 0.2);
   border-radius: var(--radius-md);
   font-size: var(--font-size-sm);

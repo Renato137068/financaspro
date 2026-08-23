@@ -420,7 +420,7 @@ describe('raiz estática em desenvolvimento', () => {
     '/backend/config.js',
     '/prisma/schema.prisma',
     '/scripts/harden-csp.cjs',
-    '/sobra-upload.jks',
+    '/financaspro-upload.jks',
   ];
 
   test.each(proibidos)('não serve %s como arquivo estático', async (caminho) => {

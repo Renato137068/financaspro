@@ -471,7 +471,7 @@ const LIFECYCLE_BOOT = {
         });
       }
 
-      console.log('[APP] Sobra pronto');
+      console.log('[APP] FinançasPro pronto');
     }, { depends: ['app-ready'], critical: false });
   }
 };

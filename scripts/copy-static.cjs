@@ -52,6 +52,9 @@ fs.copyFileSync(path.join(root, 'manifest.json'), path.join(dist, 'manifest.json
 if (fs.existsSync(path.join(root, 'privacidade.html'))) {
   fs.copyFileSync(path.join(root, 'privacidade.html'), path.join(dist, 'privacidade.html'));
 }
+if (fs.existsSync(path.join(root, 'celular.html'))) {
+  fs.copyFileSync(path.join(root, 'celular.html'), path.join(dist, 'celular.html'));
+}
 
 copyScreenshots();
 

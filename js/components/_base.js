@@ -1,4 +1,4 @@
-// Sobra — UI Components Base
+// FinançasPro — UI Components Base
 // v11.0 — Carregado antes de todos os outros componentes em js/components/
 // Centraliza fallbacks de UTILS/CONFIG para uso interno do namespace UI
 (function() {

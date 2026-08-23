@@ -1,4 +1,4 @@
-name: CI - Sobra
+name: CI - FinançasPro
 
 on:
   push:

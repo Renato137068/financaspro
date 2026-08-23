@@ -186,7 +186,10 @@
 }
 
 [data-theme="dark"] .filtro-cat-chip.ativo .cat-count { background: var(--color-primary-500); }
-[data-theme="dark"] .cat-count { background: var(--color-text-primary); }
+/* O contador de categoria usava a COR DE TEXTO como fundo: no tema escuro
+   isso pinta um selo claro, e o texto dentro dele — que também alterna e
+   vira claro — some. Fundo é fundo: sai da rampa de superfície. */
+[data-theme="dark"] .cat-count { background: var(--color-bg-dark-elevated); }
 
 /* ═══════════════════════════════════════════════════════════
    FORMULÁRIOS
@@ -404,7 +407,7 @@
 
 [data-theme="dark"] .orc-header-btn {
   border-color: var(--color-border);
-  color: var(--color-primary-500);
+  color: var(--color-primary-text);
 }
 
 [data-theme="dark"] .orc-header-btn:hover {
@@ -676,6 +679,6 @@
 
 /* Indicador de sincronização — variante escura (auditoria #4) */
 [data-theme="dark"] .sync-indicator{
-  background:rgba(20,28,24,.95); color:var(--color-primary-50); border-color:#22302a;
+  background:rgba(20,28,24,.95); color: var(--color-text-primary); border-color:#22302a;
   box-shadow: var(--elevacao-1);
 }

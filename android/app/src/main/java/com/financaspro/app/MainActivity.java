@@ -1,4 +1,4 @@
-package br.com.sobra.app;
+package com.financaspro.app;
 
 import com.getcapacitor.BridgeActivity;
 

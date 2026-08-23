@@ -1,4 +1,4 @@
-# Design System — Sobra
+# Design System — FinançasPro
 
 Referência de uso dos tokens visuais. A fonte da verdade é
 `css/design-system.css`; este documento explica **quando** usar cada coisa e

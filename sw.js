@@ -1,7 +1,7 @@
-// Sobra - Service Worker (PWA offline-first, stale-while-revalidate)
+// FinançasPro - Service Worker (PWA offline-first, stale-while-revalidate)
 // Gerado por scripts/generate-sw-cache.cjs — não edite urlsParaCache manualmente
 
-const CACHE_NAME = 'sobra-v1100-p2';
+const CACHE_NAME = 'financaspro-v1100-p2';
 const urlsParaCache = [
   "/",
   "/css/base.css",
@@ -47,7 +47,6 @@ const urlsParaCache = [
   "/fonts/inter-latin-700-normal.woff2",
   "/fonts/plus-jakarta-sans-latin-700-normal.woff2",
   "/icons/android/icon-192.png",
-  "/icons/android/icon-512.png",
   "/icons/logo-simbolo.svg",
   "/icons/logo.svg",
   "/index.html",

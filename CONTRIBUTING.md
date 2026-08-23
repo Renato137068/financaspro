@@ -1,4 +1,4 @@
-# Contribuindo com o Sobra
+# Contribuindo com o FinançasPro
 
 Este documento descreve como o código deste repositório é escrito, testado e
 aceito. Ele existe para que decisões repetidas não precisem ser rediscutidas a

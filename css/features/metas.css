@@ -121,7 +121,7 @@
 }
 
 .meta-btn-danger {
-  color: var(--color-danger-on-light) !important;
+  color: var(--color-danger-text) !important;
 }
 
 .meta-empty {

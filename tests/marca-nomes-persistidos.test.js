@@ -2,7 +2,7 @@
  * marca-nomes-persistidos.test.js — trava as chaves e o passphrase que NÃO podem
  * acompanhar o nome do produto.
  *
- * Quando o produto foi renomeado de FinançasPro para Sobra, uma substituição
+ * Quando o produto foi renomeado de FinançasPro para FinançasPro, uma substituição
  * global trocou também o passphrase legado de `local-crypto.js`. Isso teria
  * tornado ilegível todo dado gravado no formato 'enc1' — falha silenciosa, sem
  * erro no console, descoberta só quando o usuário reabrisse o app. Este teste
@@ -38,10 +38,16 @@ describe('identificadores persistidos são imutáveis', function() {
 });
 
 describe('o nome do produto está unificado', function() {
-  test('nenhum arquivo de interface ainda diz o nome antigo', function() {
+  test('a interface escreve o nome de UMA forma só', function() {
+    // O nome não tinha forma fixa: o código dizia "FinançasPro" e os textos
+    // diziam "Finanças Pro". Duas grafias é o começo de duas marcas — e foi
+    // uma das notas mais baixas da auditoria. A forma canônica é sem espaço.
     const alvos = ['index.html', 'privacidade.html', 'manifest.json', 'js/core/config.js'];
     for (const alvo of alvos) {
-      expect(ler(alvo)).not.toMatch(/Finan[çc]as\s?Pro/);
+      const fonte = ler(alvo);
+      expect(fonte).toMatch(/FinançasPro/);
+      expect(fonte).not.toMatch(/Finanças Pro/);
+      expect(fonte).not.toMatch(/FinancasPro/);
     }
   });
 

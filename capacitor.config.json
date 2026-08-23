@@ -1,6 +1,6 @@
 {
-  "appId": "br.com.sobra.app",
-  "appName": "Sobra",
+  "appId": "com.financaspro.app",
+  "appName": "FinançasPro",
   "webDir": "dist",
   "server": {
     "androidScheme": "https",

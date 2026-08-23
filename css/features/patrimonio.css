@@ -98,13 +98,13 @@
   justify-content: center;
   border-radius: var(--radius-lg);
   background: rgba(18, 105, 78, 0.12);
-  color: var(--color-primary-500);
+  color: var(--color-primary-text);
   flex-shrink: 0;
 }
 
 .pat-item-icon--divida {
   background: rgba(220, 38, 38, 0.1);
-  color: var(--color-danger-on-light);
+  color: var(--color-danger-text);
 }
 
 .pat-item-title {
@@ -125,11 +125,11 @@
 }
 
 .pat-item-valor--positivo {
-  color: var(--color-primary-500);
+  color: var(--color-primary-text);
 }
 
 .pat-item-valor--negativo {
-  color: var(--color-danger-on-light);
+  color: var(--color-danger-text);
 }
 
 .pat-item-actions {
@@ -139,7 +139,7 @@
 }
 
 .pat-btn-danger {
-  color: var(--color-danger-on-light) !important;
+  color: var(--color-danger-text) !important;
 }
 
 .pat-empty {

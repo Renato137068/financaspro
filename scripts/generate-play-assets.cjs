@@ -38,7 +38,7 @@ function mockScreenSvg(opts) {
       '<text x="600" y="660" fill="#98a39d" font-size="20" font-family="Segoe UI,Arial,sans-serif">Despesas</text>' +
       '<text x="600" y="710" fill="#dc2626" font-size="36" font-weight="700" font-family="Segoe UI,Arial,sans-serif">' + esc(opts.expense || 'R$ 5.260') + '</text>' +
       (opts.extra || '') +
-      '<text x="540" y="1820" text-anchor="middle" fill="#98a39d" font-family="Segoe UI,Arial,sans-serif" font-size="24">Sobra v11</text>' +
+      '<text x="540" y="1820" text-anchor="middle" fill="#98a39d" font-family="Segoe UI,Arial,sans-serif" font-size="24">FinançasPro v11</text>' +
     '</svg>'
   );
 }

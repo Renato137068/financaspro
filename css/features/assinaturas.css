@@ -61,7 +61,7 @@
   justify-content: center;
   border-radius: var(--radius-lg);
   background: rgba(99, 102, 241, 0.12);
-  color: var(--color-info-on-light);
+  color: var(--color-info-text);
   flex-shrink: 0;
 }
 
@@ -94,7 +94,7 @@
 }
 
 .sub-btn-danger {
-  color: var(--color-danger-on-light) !important;
+  color: var(--color-danger-text) !important;
 }
 
 .sub-sugestoes {

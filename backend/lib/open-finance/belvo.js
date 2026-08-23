@@ -42,7 +42,7 @@ export async function createBelvoWidgetToken(userId) {
       stale_in: '300d',
       external_id: userId,
       widget: {
-        purpose: 'Controle financeiro pessoal e importação de transações no Sobra.',
+        purpose: 'Controle financeiro pessoal e importação de transações no FinançasPro.',
         openfinance_feature: 'consent_link_creation',
         locale: 'pt',
         country_codes: ['BR'],

@@ -235,7 +235,7 @@ const INIT_MODALS = {
             setTimeout(function() {
               overlay.remove();
               UTILS.mostrarToast('Feedback salvo. Você também pode enviar por e-mail.', 'success');
-              var mail = 'mailto:?subject=' + encodeURIComponent('Feedback Sobra') +
+              var mail = 'mailto:?subject=' + encodeURIComponent('Feedback FinançasPro') +
                 '&body=' + encodeURIComponent(corpo);
               try { window.open(mail, '_blank'); } catch (_e) { /* ignore */ }
             }, 800);

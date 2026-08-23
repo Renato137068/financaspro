@@ -1,11 +1,11 @@
 /**
- * design-system.css — Sobra Design Tokens v2.0
+ * design-system.css — FinançasPro Design Tokens v2.0
  * Fonte única de verdade para tokens visuais.
  * Todos os módulos CSS dependem exclusivamente deste arquivo.
  */
 
 /* ============================================================
-   DESIGN SYSTEM - Sobra
+   DESIGN SYSTEM - FinançasPro
    ============================================================ */
 
 /* Lucide Icons SVG Styling */
@@ -132,7 +132,7 @@ button i[data-lucide] {
 
 :root {
 
-  /* ── Paleta primária (verde Sobra) ────────────────────────────
+  /* ── Paleta primária (verde FinançasPro) ────────────────────────────
      O verde foi redesenhado a partir da promessa da marca, não de uma
      referência de mercado. O tom antigo (#12694e) era da família de uma
      cooperativa de crédito: o oposto do posicionamento, que é justamente
@@ -197,6 +197,19 @@ button i[data-lucide] {
   --color-warning-text: var(--color-warning-on-light);
   --color-danger-text:  var(--color-danger-on-light);
   --color-info-text:    var(--color-info-on-light);
+
+  /* A cor da MARCA usada como texto também precisa alternar. Faltava este
+     alias, e por isso 135 regras escreviam `color: var(--color-primary-600)`
+     — um verde escuro, correto sobre branco e ilegível sobre o card escuro:
+     1,93:1 no valor de entradas do extrato. O axe não reprovou; quem encontrou
+     foi uma varredura que compõe o fundo real de cada elemento (e2e/marca). */
+  --color-primary-text: var(--color-primary-600);
+
+  /* Superfícies que continuam CLARAS nos dois temas (chip de categoria, selo
+     de contagem). Como o fundo não vira escuro, o texto também não pode virar
+     claro — estes dois tokens ficam fixos de propósito. */
+  --color-sobre-tinta-clara: var(--color-primary-700);
+  --color-apoio-sobre-tinta-clara: #55665c;
 
   /* ── Neutros ─────────────────────────────────────────────────
      Uma família só, levemente quente. Os neutros anteriores eram o slate do
@@ -523,7 +536,7 @@ button i[data-lucide] {
 /* Outline */
 .fp-btn--outline {
   background: transparent;
-  color: var(--color-primary-500);
+  color: var(--color-primary-text);
   border: 2px solid var(--color-primary-500);
 }
 
@@ -717,6 +730,13 @@ button i[data-lucide] {
   --bg-card: var(--color-bg-dark-card);
 
   /* Texto */
+  --color-primary-text:    var(--color-primary-300);
+
+  /* Tintas claras viram tintas escuras: são superfície, não cor de marca. */
+  --color-primary-50:  #16221d;
+  --color-primary-100: #1e2f28;
+  --color-primary-200: #2a4238;
+
   --color-text-primary:   #edf3f0;
   --color-text-secondary: #a6b5ad;
   --color-text-muted:     #96a79e;  /* AA: 6,5:1 sobre card escuro */
@@ -733,10 +753,12 @@ button i[data-lucide] {
   --color-gray-100: #2c3833;
   --color-gray-200: #3c4541;
 
-  /* Sombras ajustadas */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.25);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.35);
+  /* Elevação no escuro: mesma geometria da escala clara, com mais opacidade
+     porque sombra sobre fundo escuro precisa disso para existir. O que NÃO
+     pode é redefinir --shadow-sm/md/lg com valores próprios: isso ressuscita
+     a segunda família de sombras que a escala veio eliminar. */
+  --elevacao-1: 0 1px 2px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.32);
+  --elevacao-2: 0 2px 8px rgba(0, 0, 0, 0.34), 0 12px 32px rgba(0, 0, 0, 0.44);
 }
 
 [data-theme="dark"] .fp-card {
@@ -768,19 +790,37 @@ button i[data-lucide] {
    saiba por quê. Estava aplicado só no painel (5 usos em dashboard.css);
    extrato, metas, orçamento e faturas ficavam de fora.
 
-   Um seletor único cobre toda classe de valor, em vez de caso a caso. Regra
-   para componente novo: se o nome da classe termina em -valor, -saldo, -total
-   ou -montante, ela já está coberta.
+   A primeira versão desta regra cobria -valor, -saldo, -total e -montante, e
+   a sonda de auditoria mostrou que isso deixava de fora metade do vocabulário
+   real do projeto: kpi-value, orc-kpi-card-value, cp-kpi-val, sub-kpi-val e
+   ext-grupo-subtotal continuavam com dígitos de largura variável. O erro foi
+   escrever o seletor a partir do que eu imaginava que as classes se chamavam,
+   em vez de ler a árvore renderizada.
+
+   Agora a lista cobre val/value/total/kpi/preco além das anteriores — e há um
+   teste e2e que varre o DOM real procurando texto no formato R$ 0,00 sem
+   tabular-nums. É o teste, não o seletor, que garante a cobertura: nome de
+   classe novo continua entrando sem avisar, mas passa a reprovar no CI.
    ══════════════════════════════════════════════════════════════ */
 [class*="valor"],
+[class*="valores"],
+[class*="value"],
+[class*="-val"],
 [class*="saldo"],
-[class*="-total"],
+[class*="total"],
 [class*="montante"],
+[class*="kpi"],
+[class*="preco"],
 [class$="-num"],
 .num-financeiro,
 .moeda,
 td[data-numero],
-time {
+time,
+/* Dois casos onde o valor mora num elemento sem classe própria: o chip de
+   lançamento rápido e o resumo do patrimônio. Ficam nomeados aqui em vez de
+   ganharem classe nova, para o seletor continuar sendo a única fonte. */
+.quick-chip strong,
+.pat-hero-breakdown span {
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1;
 }

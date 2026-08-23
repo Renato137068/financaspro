@@ -1,4 +1,4 @@
-// Sobra — Contas e Cartões
+// FinançasPro — Contas e Cartões
 // v11.0 — Depende de: config.js, dados.js, utils.js
 
 var CONTAS = {

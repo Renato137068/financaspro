@@ -225,7 +225,7 @@
 .secao-link {
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-semibold);
-  color: var(--color-primary-500);
+  color: var(--color-primary-text);
   background: none;
   border: none;
   cursor: pointer;
@@ -235,7 +235,7 @@
   font-family: var(--font-family-sans);
 }
 
-.secao-link:hover { color: var(--color-primary-600); }
+.secao-link:hover { color: var(--color-primary-text); }
 
 /* ── Toggle Collapsible ─────────────────────────────────────── */
 

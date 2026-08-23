@@ -172,6 +172,6 @@ describe('service worker — estratégia de rede', () => {
 
   test('versão do cache muda junto com a versão do pacote', () => {
     const versao = require(path.join(root, 'package.json')).version.replace(/\./g, '');
-    expect(sw).toContain(`sobra-v${versao}`);
+    expect(sw).toContain(`financaspro-v${versao}`);
   });
 });

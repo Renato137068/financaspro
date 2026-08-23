@@ -1042,7 +1042,7 @@ const INIT_EXTRATO = {
     var csv = '\uFEFF'; // BOM
     
     // Header informativo
-    csv += 'Extrato Sobra\n';
+    csv += 'Extrato FinançasPro\n';
     csv += 'Período: ' + mesNome + ' de ' + info.ano + '\n';
     csv += 'Gerado em: ' + new Date().toLocaleDateString('pt-BR') + ' às ' + new Date().toLocaleTimeString('pt-BR') + '\n';
     csv += '\n';
@@ -1107,7 +1107,7 @@ const INIT_EXTRATO = {
     var nomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
     var mesNome = nomes[info.mes - 1];
 
-    var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Extrato Sobra - ' + mesNome + ' ' + info.ano + '</title>';
+    var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Extrato FinançasPro - ' + mesNome + ' ' + info.ano + '</title>';
     html += '<style>';
     html += '@page { margin: 20mm; size: A4; }';
     html += 'body { font-family: "Segoe UI", Arial, sans-serif; margin: 0; padding: 20px; color: #242a27; }';
@@ -1138,7 +1138,7 @@ const INIT_EXTRATO = {
     
     // Header
     html += '<div class="header">';
-    html += '<h1>Sobra</h1>';
+    html += '<h1>FinançasPro</h1>';
     html += '<p>Extrato de ' + mesNome + ' de ' + info.ano + '</p>';
     html += '<p>Gerado em ' + new Date().toLocaleDateString('pt-BR') + ' às ' + new Date().toLocaleTimeString('pt-BR') + '</p>';
     html += '</div>';
@@ -1172,7 +1172,7 @@ const INIT_EXTRATO = {
     
     // Footer
     html += '<div class="footer">';
-    html += '<p>Sobra - Controle suas finanças com simplicidade</p>';
+    html += '<p>FinançasPro - Controle suas finanças com simplicidade</p>';
     html += '<p>Total de ' + txs.length + ' transações neste período</p>';
     html += '</div>';
     

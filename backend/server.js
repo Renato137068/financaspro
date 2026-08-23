@@ -25,7 +25,7 @@ async function start() {
     await startWorkers();
 
     const server = app.listen(CONFIG.port, () => {
-      logger.info({ port: CONFIG.port, env: CONFIG.env }, 'Sobra API iniciada');
+      logger.info({ port: CONFIG.port, env: CONFIG.env }, 'FinançasPro API iniciada');
     });
 
     server.on('connection', () => activeConnections.inc());

@@ -1,4 +1,4 @@
-// Sobra — BarChart6M: gráfico de barras dos últimos 6 meses (SVG)
+// FinançasPro — BarChart6M: gráfico de barras dos últimos 6 meses (SVG)
 // v11.0 — Depende de: _base.js
 // dados: [{ mes: string, receitas: number, despesas: number }]
 (function() {

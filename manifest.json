@@ -1,6 +1,6 @@
 {
-  "name": "Sobra — Seu dinheiro, no seu aparelho.",
-  "short_name": "Sobra",
+  "name": "FinançasPro — Seu dinheiro, no seu aparelho.",
+  "short_name": "FinançasPro",
   "description": "Seu dinheiro, no seu aparelho. Controle de gastos que funciona sem cadastro, sem banco conectado e sem internet.",
   "start_url": "/",
   "scope": "/",
@@ -92,7 +92,7 @@
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Resumo financeiro do Sobra"
+      "label": "Resumo financeiro do FinançasPro"
     },
     {
       "src": "screenshots/extrato-1080x1920.png",

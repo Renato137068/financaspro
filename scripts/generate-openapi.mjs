@@ -228,7 +228,7 @@ for (const p of ['/transactions']) {
 const doc = {
   openapi: '3.0.3',
   info: {
-    title: 'Sobra API',
+    title: 'FinançasPro API',
     version: '11.0.0',
     description: 'API SaaS de finanças pessoais. Corpos de request gerados a partir dos schemas Zod que a API valida em runtime.',
   },
@@ -309,7 +309,7 @@ for (const [path, ops] of Object.entries(paths)) {
 const sections = (doc.tags || []).map((t) => byTag[t.name] ? `<section><h2>${esc(t.name)}</h2><p class="td">${esc(t.description || '')}</p>${byTag[t.name].join('')}</section>` : '').join('');
 
 const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Sobra API — Referência</title><style>
+<title>FinançasPro API — Referência</title><style>
 :root{--bg:#f6f7fb;--card:#fff;--ink:#1a1d29;--mut:#5b6472;--line:#e6e8ef;--brand:#4f46e5}
 @media(prefers-color-scheme:dark){:root{--bg:#0e1017;--card:#171a24;--ink:#eef0f6;--mut:#9aa3b2;--line:#262a37}}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.5}

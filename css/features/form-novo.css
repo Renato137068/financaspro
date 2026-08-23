@@ -151,7 +151,7 @@
 .ia-confidence-badge.alta {
   border-color: rgba(47, 156, 109, 0.3);
   background: rgba(47, 156, 109, 0.12);
-  color: var(--color-success-on-light);
+  color: var(--color-success-text);
   box-shadow: var(--elevacao-1);
 }
 
@@ -183,7 +183,7 @@
   height: 52px;
   border-radius: var(--radius-xl);
   background: rgba(18, 105, 78, 0.12);
-  color: var(--color-primary-700);
+  color: var(--color-primary-text);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-extrabold);
   box-shadow: var(--elevacao-1);
@@ -229,7 +229,7 @@
 
 .ia-save-preview.aplicada {
   background: rgba(47, 156, 109, 0.1);
-  color: var(--color-success-on-light);
+  color: var(--color-success-text);
   border-color: rgba(47, 156, 109, 0.2);
   box-shadow: var(--elevacao-1);
 }
@@ -305,7 +305,7 @@
   border: 1px solid rgba(18, 105, 78, 0.16);
   border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.94);
-  color: var(--color-primary-700);
+  color: var(--color-primary-text);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
   opacity: 0;
@@ -512,8 +512,8 @@
   transition: color var(--transition-fast);
 }
 
-.cat-btn:hover .cat-nome { color: var(--color-primary-500); }
-.cat-btn.ativo .cat-nome  { color: var(--color-primary-500); font-weight: var(--font-weight-bold); }
+.cat-btn:hover .cat-nome { color: var(--color-primary-text); }
+.cat-btn.ativo .cat-nome  { color: var(--color-primary-text); font-weight: var(--font-weight-bold); }
 
 /* ── Data chips ───────────────────────────────────────────── */
 
@@ -541,7 +541,7 @@
 
 .data-chip:hover {
   border-color: var(--color-primary-500);
-  color: var(--color-primary-500);
+  color: var(--color-primary-text);
   transform: translateY(-2px);
   box-shadow: var(--shadow-primary-sm);
 }
@@ -631,7 +631,7 @@
 
 .quick-amount:hover {
   border-color: var(--color-primary-500);
-  color: var(--color-primary-600);
+  color: var(--color-primary-text);
   background: var(--color-bg-primary);
   transform: translateY(-2px);
   box-shadow: var(--shadow-primary-sm);
@@ -701,9 +701,11 @@
 .payment-chip {
   min-height: 30px;
   padding: 6px 11px;
-  border: 1px solid rgba(18, 105, 78, 0.14);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.74);
+  /* Era rgba(255,255,255,.74) fixo: no tema escuro virava um cinza claro com
+     texto claro por cima (1,23:1). A superfície precisa alternar junto. */
+  background: var(--color-bg-card);
   color: var(--color-text-secondary);
   cursor: pointer;
   font-size: var(--font-size-xs);
@@ -714,7 +716,7 @@
 .payment-chip.ativo {
   background: rgba(18, 105, 78, 0.10);
   border-color: rgba(18, 105, 78, 0.30);
-  color: var(--color-primary-700);
+  color: var(--color-primary-text);
 }
 
 .autocomplete-list {

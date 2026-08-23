@@ -2,7 +2,7 @@
  * tokens-de-cor-por-funcao.test.js — impede que um tom fixo de tema claro
  * seja usado como cor de TEXTO.
  *
- * Origem: ao aplicar a paleta Sobra, o valor do cartão de receitas ficou com
+ * Origem: ao aplicar a paleta FinançasPro, o valor do cartão de receitas ficou com
  * `color: var(--color-success-dark)`. Esse token é um verde escuro pensado
  * para fundo claro; no tema escuro ele caiu para 2,2:1 contra o card (o axe
  * reprovou no e2e). O par certo é o alias `--color-success-text`, que aponta
@@ -61,6 +61,27 @@ describe('tokens de cor usados pela função certa', function() {
     expect(ocorrencias(/(^|[;{\s])color:\s*var\(--color-gray-(100|200)\)/m)
       .filter((linha) => /dark-mode\.css/.test(linha) || /design-system/.test(linha)))
       .toEqual([]);
+  });
+
+  test('nenhuma regra usa um tom -on-light como cor de texto', function() {
+    // Os tokens -on-light são o tom escurecido PARA FUNDO CLARO. Como texto no
+    // tema escuro eles caem para ~2,6:1. O alias -text é quem alterna.
+    expect(ocorrencias(/(^|[;{\s])color:\s*var\(--color-(success|danger|warning|info)-on-light\)/m))
+      .toEqual([]);
+  });
+
+  test('nenhuma regra usa um tom escuro da marca como cor de texto', function() {
+    // Mesmo problema, agora com a cor da marca: 135 regras escreviam
+    // color: var(--color-primary-600), que dá 1,93:1 sobre o card escuro.
+    // O alias --color-primary-text aponta para o 600 no claro e para o 300 no
+    // escuro. Este padrão casa também sem espaço depois dos dois-pontos — foi
+    // assim que uma regra escapou da primeira varredura.
+    expect(ocorrencias(/(^|[;{\s])color:\s*var\(--color-primary-(500|600|700|800|900)\)/m))
+      .toEqual([]);
+  });
+
+  test('nenhuma regra usa uma tinta clara da rampa como cor de texto', function() {
+    expect(ocorrencias(/(^|[;{\s])color:\s*var\(--color-primary-(50|100|200)\)/m)).toEqual([]);
   });
 
   test('a escala de elevação tem exatamente três níveis', function() {

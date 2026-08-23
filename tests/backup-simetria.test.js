@@ -149,7 +149,7 @@ describe('backup — um único formato', () => {
     // Quem cria um link de download com nome de backup está gerando um
     // formato. Deve haver exatamente um.
     // A busca é por NOME DE PRODUTO qualquer, não pelo nome atual: quando o app
-    // foi renomeado de FinançasPro para Sobra este teste quebrou por citar a
+    // foi renomeado de FinançasPro para FinançasPro este teste quebrou por citar a
     // marca antiga, e um teste de arquitetura não deveria depender do nome
     // comercial. Agora ele casa com qualquer prefixo seguido de _backup_.
     const geradores = arquivos.filter(f => {

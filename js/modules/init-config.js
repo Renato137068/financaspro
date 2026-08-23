@@ -108,7 +108,7 @@ const INIT_CONFIG = {
     if (sessao && sessao.user && sessao.user.email) {
       modo = 'Conta conectada · backup em JSON disponível';
     }
-    el.textContent = 'Sobra v' + ver + ' · ' + modo;
+    el.textContent = 'FinançasPro v' + ver + ' · ' + modo;
   },
 
   _updateLembreteStatus: function() {
@@ -800,7 +800,7 @@ const INIT_CONFIG = {
         var blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
         var link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = 'sobra_backup_' + new Date().toISOString().split('T')[0] + '.json';
+        link.download = 'financaspro_backup_' + new Date().toISOString().split('T')[0] + '.json';
         link.click();
 
         DADOS.salvarConfig({ ultimoExportoDados: new Date().toISOString() });

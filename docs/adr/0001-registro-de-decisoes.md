@@ -5,7 +5,7 @@
 
 ## Contexto
 
-O Sobra acumulou decisões estruturais cujo motivo não está em lugar
+O FinançasPro acumulou decisões estruturais cujo motivo não está em lugar
 nenhum: por que o frontend usa globais em vez de módulos, por que existem duas
 configurações de Jest, por que o precache do service worker é seletivo, por que
 `no-undef` é aviso e não erro.

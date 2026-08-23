@@ -1,6 +1,6 @@
 # Retenção de dados
 
-Este documento descreve por quanto tempo o Sobra guarda cada tipo de
+Este documento descreve por quanto tempo o FinançasPro guarda cada tipo de
 dado, por quê, e o que acontece quando alguém pede para sair.
 
 A política vive em código, não aqui: **`backend/lib/retention.js`** é a fonte

@@ -1,4 +1,4 @@
-// Sobra — LegendaChart: legenda lateral de gráficos
+// FinançasPro — LegendaChart: legenda lateral de gráficos
 // v11.0 — Depende de: _base.js
 // cats: [{ nome, valor, cor }]
 (function() {

@@ -1,4 +1,4 @@
-// Sobra — CardOrcamento: item de orçamento com barra de progresso
+// FinançasPro — CardOrcamento: item de orçamento com barra de progresso
 // v11.0 — Depende de: _base.js, ProgressBar.js
 (function() {
   var UI = window.UI || {};

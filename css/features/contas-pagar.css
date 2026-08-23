@@ -19,7 +19,7 @@
 }
 
 .cp-kpi--warn .cp-kpi-val {
-  color: var(--color-danger-on-light);
+  color: var(--color-danger-text);
 }
 
 .cp-kpi-label {
@@ -173,7 +173,7 @@
 }
 
 .cp-btn-danger {
-  color: var(--color-danger-on-light) !important;
+  color: var(--color-danger-text) !important;
 }
 
 .cp-empty {

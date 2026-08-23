@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FinançasPro — preview celular</title>
+  <style>
+    :root {
+      --bezel: #1a1a1a;
+      --screen: #0b3d2e;
+      --desk: #e8f0ec;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      font-family: system-ui, sans-serif;
+      background:
+        radial-gradient(ellipse at 30% 20%, #d4ebe0 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, #c5ddd2 0%, transparent 45%),
+        var(--desk);
+      color: #1a2e26;
+    }
+    .wrap {
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      padding: 24px 16px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #3d5a4d;
+    }
+    .phone {
+      position: relative;
+      width: min(390px, 100%);
+      aspect-ratio: 390 / 844;
+      max-height: min(844px, 92vh);
+      background: var(--bezel);
+      border-radius: 42px;
+      padding: 12px;
+      box-shadow:
+        0 0 0 2px #333,
+        0 24px 60px rgba(0, 0, 0, 0.28),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    }
+    .notch {
+      position: absolute;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 110px;
+      height: 28px;
+      background: #000;
+      border-radius: 20px;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .screen {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      border-radius: 32px;
+      background: var(--screen);
+      display: block;
+    }
+    .hint {
+      margin: 0;
+      font-size: 13px;
+      color: #5a7266;
+      text-align: center;
+      max-width: 360px;
+      line-height: 1.45;
+    }
+    .hint code {
+      font-size: 12px;
+      background: rgba(0, 0, 0, 0.06);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Preview celular</h1>
+    <div class="phone" aria-label="Simulação de telefone">
+      <div class="notch" aria-hidden="true"></div>
+      <iframe class="screen" src="./index.html" title="FinançasPro" allow="clipboard-read; clipboard-write"></iframe>
+    </div>
+    <p class="hint">
+      Preferência: use <code>iniciar-celular.bat</code> para janela nativa 390×844.
+      Este frame é o fallback no navegador.
+    </p>
+  </div>
+</body>
+</html>

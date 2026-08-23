@@ -70,7 +70,7 @@
 .btn-secundario {
   background: var(--color-bg-card);
   border: 2px solid var(--color-primary-500);
-  color: var(--color-primary-500);
+  color: var(--color-primary-text);
 }
 
 .btn-secundario:active {
@@ -107,7 +107,7 @@
   display: inline-block;
   padding: var(--space-3) var(--space-5);
   background: var(--color-bg-primary);
-  color: var(--color-primary-500);
+  color: var(--color-primary-text);
   border: 1px solid var(--color-primary-500);
   border-radius: var(--radius-md);
   font-size: var(--font-size-sm);
@@ -132,7 +132,7 @@
   background: none;
   border: 1px dashed var(--color-border);
   border-radius: var(--radius-md);
-  color: var(--color-primary-500);
+  color: var(--color-primary-text);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
   cursor: pointer;
@@ -218,7 +218,7 @@
 .btn-pdf-mini:active {
   background: var(--color-bg-primary);
   border-color: var(--color-primary-500);
-  color: var(--color-primary-500);
+  color: var(--color-primary-text);
 }
 
 /* ── PDF button grande (seção) ────────────────────────────── */
@@ -333,7 +333,7 @@
 .filtro-cat-chip.ativo {
   background: var(--color-bg-primary);
   border-color: var(--color-primary-500);
-  color: var(--color-primary-600);
+  color: var(--color-primary-text);
 }
 
 .filtro-cat-chip:active {
@@ -407,5 +407,5 @@
 /* Variante destrutiva discreta com hover suave em vermelho */
 .btn-ghost.meta-btn-danger:hover:not(:disabled) {
   background: var(--color-danger-bg);
-  color: var(--color-danger-on-light);
+  color: var(--color-danger-text);
 }

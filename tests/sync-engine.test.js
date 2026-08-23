@@ -29,7 +29,7 @@ function loadEngine(deps) {
   // SYNC_MERGE entra pelo contexto (deps.SYNC_MERGE), já carregado via require.
   //
   // Antes o arquivo era TAMBÉM executado aqui dentro do vm, e o `var
-  // SYNC_MERGE` dessa execução sobrescrevia a instância injetada. Sobravam
+  // SYNC_MERGE` dessa execução sobrescrevia a instância injetada. FinançasProvam
   // duas cópias instrumentadas do mesmo caminho absoluto: a do vm, usada de
   // fato, e a do require, nunca chamada. O provider v8 mesclava as duas e
   // reportava sync-merge.js com 66% de linhas e 54% de funções — quando os

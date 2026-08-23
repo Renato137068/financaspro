@@ -6,7 +6,7 @@ const path = require('path');
 
 const root = path.join(__dirname, '..');
 const version = require(path.join(root, 'package.json')).version.replace(/\./g, '');
-const CACHE_NAME = 'sobra-v' + version + '-p2';
+const CACHE_NAME = 'financaspro-v' + version + '-p2';
 
 function walkDir(dir, prefix) {
   const out = [];
@@ -88,7 +88,19 @@ function walkDistAssets(distDir) {
  * apenas se algum ícone do subset não resolver. Precacheá-lo anulava toda a
  * economia do subset de 26 KB.
  */
-const PRECACHE_BLOCKLIST = [/\/js\/vendor\/lucide-full\.min\.js$/];
+const PRECACHE_BLOCKLIST = [
+  /\/js\/vendor\/lucide-full\.min\.js$/,
+  // Ícones grandes de instalação. O sistema operacional busca estes quando o
+  // usuário adiciona o app à tela inicial — não são necessários para a
+  // primeira pintura, e juntos passavam de 70 KB. O de 192 continua no
+  // precache porque é o que aparece na aba e na barra de tarefas.
+  /\/icons\/(android\/)?icon-512\.png$/,
+  /\/icons\/android\/icon-maskable-512\.png$/,
+  /\/icons\/android\/icon-mono-512\.png$/,
+  /\/icons\/android\/icon-notificacao-96\.png$/,
+  /\/icons\/splash\//,
+  /\/icons\/apple-touch-icon\.png$/,
+];
 
 /**
  * Fontes que entram no precache: só as da primeira pintura, mais o CSS que as
@@ -173,7 +185,6 @@ function buildUrls(targetDir) {
     '/icons/logo.svg',
     '/icons/logo-simbolo.svg',
     '/icons/android/icon-192.png',
-    '/icons/android/icon-512.png',
     ...fontesCriticas(targetDir, distMode),
   ];
 
@@ -193,7 +204,7 @@ function buildUrls(targetDir) {
 }
 
 function renderSw(urls) {
-  return `// Sobra - Service Worker (PWA offline-first, stale-while-revalidate)
+  return `// FinançasPro - Service Worker (PWA offline-first, stale-while-revalidate)
 // Gerado por scripts/generate-sw-cache.cjs — não edite urlsParaCache manualmente
 
 const CACHE_NAME = '${CACHE_NAME}';

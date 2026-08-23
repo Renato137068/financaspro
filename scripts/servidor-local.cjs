@@ -123,7 +123,7 @@ function ouvir(porta, tentativas = 12) {
     const url = `http://localhost:${porta}`;
     console.log('');
     console.log('  ┌───────────────────────────────────────────────┐');
-    console.log(`  │  Sobra rodando em ${url}${' '.repeat(Math.max(0, 22 - url.length))}│`);
+    console.log(`  │  FinançasPro rodando em ${url}${' '.repeat(Math.max(0, 22 - url.length))}│`);
     console.log('  └───────────────────────────────────────────────┘');
     console.log('');
     console.log(`  Servindo: ${usarDist ? 'dist/ (build de produção)' : 'código-fonte'}`);

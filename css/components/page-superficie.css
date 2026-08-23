@@ -46,7 +46,7 @@
   justify-content: center;
   background: var(--color-bg-page);
   border-radius: var(--radius-lg);
-  color: var(--color-primary-600);
+  color: var(--color-primary-text);
   flex-shrink: 0;
   transition: background var(--transition-fast), color var(--transition-fast);
 }
@@ -61,7 +61,7 @@
 .kpi-card-premium:hover .kpi-icon,
 .orc-kpi-card:hover .orc-kpi-card-icon {
   background: var(--color-primary-50);
-  color: var(--color-primary-700);
+  color: var(--color-primary-text);
 }
 
 .perfil-card-arrow,
@@ -92,7 +92,7 @@
   width: 28px;
   height: 28px;
   margin-right: 8px;
-  color: var(--color-primary-600);
+  color: var(--color-primary-text);
   flex-shrink: 0;
 }
 
@@ -110,7 +110,7 @@
 .pin-lock-icon svg {
   width: 36px;
   height: 36px;
-  color: var(--color-primary-600);
+  color: var(--color-primary-text);
 }
 
 /* ── Títulos de seção unificados ───────────────────────────── */

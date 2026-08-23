@@ -27,7 +27,7 @@ const logger = pino({
     paths: ['req.headers.authorization', 'body.password', 'body.passwordHash', 'body.refreshToken'],
     censor: '[REDACTED]',
   },
-  base: { service: 'sobra-api', env: CONFIG.env },
+  base: { service: 'financaspro-api', env: CONFIG.env },
 });
 
 export default logger;

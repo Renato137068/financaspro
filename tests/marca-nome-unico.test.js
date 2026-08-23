@@ -1,21 +1,20 @@
 /**
- * marca-nome-unico.test.js — o nome antigo não pode reaparecer no código vivo.
+ * marca-nome-unico.test.js — o nome do produto tem UMA grafia só.
  *
- * Depois da renomeação para Sobra, dois cabeçalhos de CSS ficaram para trás
- * (design-system.css e style.css) porque aqueles arquivos foram restaurados de
- * um backup posterior à substituição. Não quebrava nada, mas é exatamente o
- * tipo de resíduo que faz uma marca parecer meio trocada — e ninguém procura
- * por ele de novo depois do dia da troca.
+ * A auditoria de marca encontrou o nome escrito de duas maneiras: o código
+ * dizia "FinançasPro" e vários textos diziam "Finanças Pro". Parece detalhe,
+ * mas duas grafias são o começo de duas marcas — ninguém procura na loja por
+ * um nome que não sabe escrever, e o registro no INPI protege uma forma, não
+ * as duas. A forma canônica é sem espaço: FinançasPro.
  *
- * A pasta docs/ está de fora de propósito: os relatórios datados são registro
- * histórico e devem continuar dizendo o nome que o produto tinha na época.
+ * A pasta docs/ fica de fora: os relatórios datados são registro histórico.
  */
 const fs = require('fs');
 const path = require('path');
 
 const raiz = path.join(__dirname, '..');
-const PULAR = new Set(['node_modules', '.git', 'dist', 'docs', 'android', '_to_delete',
-  'test-results', 'playwright-report', 'screenshots', 'coverage']);
+const PULAR = new Set(['node_modules', '.git', 'dist', 'docs', '_to_delete', '.aud',
+  'test-results', 'playwright-report', 'screenshots', 'coverage', 'android']);
 const EXTENSOES = ['.js', '.cjs', '.mjs', '.css', '.html', '.json'];
 
 function varrer(dir) {
@@ -29,30 +28,41 @@ function varrer(dir) {
   return saida;
 }
 
-describe('o nome antigo não sobreviveu em nenhum arquivo vivo', function() {
-  const arquivos = varrer(raiz).filter((p) => !p.endsWith('package-lock.json'));
+// Os dois arquivos que DEFINEM a regra precisam escrever as grafias erradas
+// para poder proibi-las — senão o teste se acusa a si mesmo.
+const GUARDIOES = ['marca-nome-unico.test.js', 'marca-nomes-persistidos.test.js'];
 
+const ARQUIVOS = varrer(raiz)
+  .filter((p) => !p.endsWith('package-lock.json'))
+  .filter((p) => !GUARDIOES.includes(path.basename(p)));
+
+describe('a grafia do nome é única', function() {
   test('varreu uma quantidade plausível de arquivos', function() {
-    expect(arquivos.length).toBeGreaterThan(100);
+    expect(ARQUIVOS.length).toBeGreaterThan(100);
   });
 
-  test('nenhum arquivo exibe o nome antigo', function() {
+  test.each([
+    ['com espaço', /Finanças Pro/],
+    ['sem cedilha', /FinancasPro/],
+    ['tudo minúsculo no texto', /\bfinançaspro\b/],
+  ])('nenhum arquivo escreve o nome %s', function(_rotulo, padrao) {
     const achados = [];
-    for (const arquivo of arquivos) {
+    for (const arquivo of ARQUIVOS) {
       const fonte = fs.readFileSync(arquivo, 'utf8');
-      // O nome como MARCA. As chaves de armazenamento (financaspro_ckey_salt,
-      // o passphrase legado) usam a forma minúscula colada e são intocáveis —
-      // ver tests/marca-nomes-persistidos.test.js.
       fonte.split('\n').forEach((linha, i) => {
-        // Um comentário que EXPLICA a renomeação precisa poder citar o nome
-        // antigo — é o único jeito de o próximo leitor entender por que certas
-        // chaves de armazenamento não acompanharam a marca.
-        const explicaATroca = /renomead|renomea[çc][ãa]o|nome antigo|marca antiga/i.test(linha);
-        if (/Finan[çc]as\s?Pro/.test(linha) && !explicaATroca) {
+        // Comentários que explicam a grafia precisam poder citá-la.
+        if (/grafia|escrit[oa] de duas|forma can[ôo]nica|nome antigo/i.test(linha)) return;
+        if (padrao.test(linha)) {
           achados.push(`${path.relative(raiz, arquivo)}:${i + 1} → ${linha.trim().slice(0, 70)}`);
         }
       });
     }
     expect(achados).toEqual([]);
+  });
+
+  test('o nome canônico aparece nos pontos de marca', function() {
+    for (const alvo of ['index.html', 'manifest.json', 'js/core/config.js']) {
+      expect(fs.readFileSync(path.join(raiz, alvo), 'utf8')).toMatch(/FinançasPro/);
+    }
   });
 });

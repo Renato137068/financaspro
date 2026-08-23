@@ -3,7 +3,7 @@
  */
 
 const CONFIG = {
-  APP_NAME: 'Sobra',
+  APP_NAME: 'FinançasPro',
   VERSION: '11.0.0',
 
   STORAGE_TRANSACOES: 'fp-transacoes',

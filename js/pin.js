@@ -316,7 +316,7 @@ function verificarPinAoAbrir() {
   document.documentElement.classList.add('pin-locked');
   var html = '<div style="display:flex;flex-direction:column;gap:16px;text-align:center">' +
     '<p class="pin-lock-icon" aria-hidden="true"><i data-lucide="lock" aria-hidden="true"></i></p>' +
-    '<p style="font-weight:700;font-size:17px">Sobra</p>' +
+    '<p style="font-weight:700;font-size:17px">FinançasPro</p>' +
     '<p style="font-size:13px;color:var(--text-secondary)">Digite seu PIN</p>' +
     '<div style="display:flex;gap:8px;justify-content:center">' +
     '<input type="password" id="unlock-1" maxlength="1" inputmode="numeric" style="width:48px;height:56px;text-align:center;font-size:24px;font-weight:700;border:2px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text-primary)">' +

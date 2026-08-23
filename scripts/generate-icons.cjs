@@ -107,6 +107,18 @@ async function main() {
     .toFile(notifOut);
   console.log('✓', path.relative(root, notifOut));
 
+  // ── Recursos NATIVOS do Android ──────────────────────────────────────────
+  // Sem isto, tudo acima serve só ao PWA: o APK continua saindo com o ícone
+  // padrão do Capacitor (um X azul sobre branco) e com a splash em branco.
+  // A auditoria de marca olhou icons/android/ e deu o ícone como resolvido —
+  // a pasta certa era esta, e ninguém tinha olhado.
+  const resDir = path.join(root, 'android', 'app', 'src', 'main', 'res');
+  if (fs.existsSync(resDir)) {
+    await gerarAndroidNativo(sharp, resDir, selo, simbolo);
+  } else {
+    console.log('· android/app/src/main/res ausente — pulando recursos nativos');
+  }
+
   const splashDir = path.join(root, 'icons', 'splash');
   fs.mkdirSync(splashDir, { recursive: true });
   await sharp(selo).resize(288, 288).png().toFile(path.join(splashDir, 'splash-icon.png'));
@@ -117,6 +129,86 @@ async function main() {
   await sharp(selo).resize(512, 512).png().toFile(path.join(root, 'icons', 'icon-512.png'));
   await sharp(selo).resize(180, 180).png().toFile(path.join(root, 'icons', 'apple-touch-icon.png'));
   console.log('✓ icons/icon-192.png, icons/icon-512.png, icons/apple-touch-icon.png');
+}
+
+/** Densidades do Android e o lado do ícone legado em cada uma. */
+const DENSIDADES = { mdpi: 48, hdpi: 72, xhdpi: 96, xxhdpi: 144, xxxhdpi: 192 };
+
+/**
+ * Fração da largura do canvas adaptativo ocupada pelo símbolo.
+ *
+ * O canvas adaptativo tem 108dp e o launcher recorta os 72dp centrais; o
+ * conteúdo que não pode ser cortado precisa caber num círculo de 66dp. O
+ * símbolo tem proporção 32:30, então a 46dp de largura sua diagonal fica em
+ * ~63dp — dentro do círculo com folga.
+ */
+const OCUPACAO_ADAPTATIVO = 46 / 108;
+
+/** Fração da menor dimensão da splash ocupada pelo símbolo. */
+const OCUPACAO_SPLASH = 0.26;
+
+async function compor(sharp, largura, altura, fundo, arte, ocupacaoLargura, dyRelativo) {
+  const alvo = Math.round(Math.min(largura, altura) * ocupacaoLargura);
+  const png = await sharp(arte).resize({ width: alvo }).png().toBuffer();
+  const meta = await sharp(png).metadata();
+  return sharp({ create: { width: largura, height: altura, channels: 4, background: fundo } })
+    .composite([{
+      input: png,
+      left: Math.round((largura - meta.width) / 2),
+      top: Math.round((altura - meta.height) / 2 + altura * (dyRelativo || 0)),
+    }])
+    .png()
+    .toBuffer();
+}
+
+async function gerarAndroidNativo(sharp, resDir, selo, simbolo) {
+  // 1) Ícone legado e redondo, por densidade.
+  for (const [densidade, lado] of Object.entries(DENSIDADES)) {
+    const dir = path.join(resDir, 'mipmap-' + densidade);
+    if (!fs.existsSync(dir)) continue;
+
+    await sharp(selo).resize(lado, lado).png().toFile(path.join(dir, 'ic_launcher.png'));
+
+    // O redondo é recortado em círculo pelo próprio launcher em alguns temas,
+    // então o fundo precisa preencher o quadrado inteiro — nada de moldura.
+    const redondo = await compor(sharp, lado, lado, FUNDO, simbolo, 0.62, AJUSTE_OPTICO);
+    fs.writeFileSync(path.join(dir, 'ic_launcher_round.png'), redondo);
+
+    // 2) Camada de frente do ícone adaptativo: fundo TRANSPARENTE (a cor vem
+    //    de @color/ic_launcher_background) e símbolo dentro da zona segura.
+    const canvas = Math.round(lado * 108 / 48);
+    const frente = await compor(
+      sharp, canvas, canvas, { r: 0, g: 0, b: 0, alpha: 0 },
+      simbolo, OCUPACAO_ADAPTATIVO, 0
+    );
+    fs.writeFileSync(path.join(dir, 'ic_launcher_foreground.png'), frente);
+    console.log('✓ mipmap-' + densidade + ' (legado, redondo e adaptativo)');
+  }
+
+  // 3) A cor de fundo do ícone adaptativo é um recurso XML, não um PNG.
+  const corDir = path.join(resDir, 'values');
+  if (fs.existsSync(corDir)) {
+    fs.writeFileSync(
+      path.join(corDir, 'ic_launcher_background.xml'),
+      '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n'
+      + '    <color name="ic_launcher_background">#0B3D2E</color>\n</resources>\n'
+    );
+    console.log('✓ values/ic_launcher_background.xml → #0B3D2E');
+  }
+
+  // 4) Splash: fundo da marca com o símbolo ao centro, em toda densidade e
+  //    orientação. A cor em capacitor.config.json só pinta a barra em volta —
+  //    a imagem é quem aparece.
+  const splashes = fs.readdirSync(resDir)
+    .filter((d) => d === 'drawable' || d.startsWith('drawable-land') || d.startsWith('drawable-port'));
+  for (const dir of splashes) {
+    const arquivo = path.join(resDir, dir, 'splash.png');
+    if (!fs.existsSync(arquivo)) continue;
+    const meta = await sharp(arquivo).metadata();
+    const png = await compor(sharp, meta.width, meta.height, FUNDO, simbolo, OCUPACAO_SPLASH, 0);
+    fs.writeFileSync(arquivo, png);
+  }
+  console.log('✓ ' + splashes.length + ' splash(es) regeneradas na cor da marca');
 }
 
 main().catch(function(err) {
