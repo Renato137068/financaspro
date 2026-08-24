@@ -47,28 +47,35 @@ const INIT_FORM = {
 
   /**
    * 1. MÁSCARA DE VALOR (R$ brasileiro)
+   * Inteiros e milhares em reais: 6000 e 6.000 → R$ 6.000,00 (não centavos).
    */
   setupMascaraValor: function() {
     var input = UTILS.obterElemento('novo-valor');
     if (!input) return;
+
+    var preview = document.getElementById('valor-preview');
+    if (!preview && input.parentElement) {
+      preview = document.createElement('p');
+      preview.id = 'valor-preview';
+      preview.className = 'campo-moeda-preview';
+      preview.hidden = true;
+      preview.setAttribute('aria-live', 'polite');
+      var erro = document.getElementById('valor-error');
+      if (erro && erro.parentElement) {
+        erro.parentElement.insertBefore(preview, erro);
+      } else {
+        input.parentElement.insertAdjacentElement('afterend', preview);
+      }
+    }
 
     var atualizarValor = UTILS.debounce(function() {
       INIT_FORM.atualizarParcelaPreview();
       INIT_FORM.atualizarOrcamentoPreview();
     }, 100);
 
-    input.addEventListener('input', function() {
-      var raw = this.value.replace(/\D/g, '');
-      if (raw === '') { 
-        this.value = ''; 
-        INIT_FORM.atualizarParcelaPreview(); 
-        INIT_FORM.atualizarOrcamentoPreview(); 
-        return; 
-      }
-      var num = parseInt(raw, 10);
-      var formatted = (num / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      this.value = formatted;
-      atualizarValor();
+    UTILS.bindCampoMoeda(input, {
+      previewEl: preview,
+      onChange: function() { atualizarValor(); }
     });
 
     input.addEventListener('keydown', function(e) {
@@ -1121,9 +1128,7 @@ const INIT_FORM = {
   obterValorNumerico: function() {
     var input = document.getElementById('novo-valor');
     if (!input || !input.value) return 0;
-    var clean = input.value.replace(/\./g, '').replace(',', '.');
-    var val = parseFloat(clean);
-    return isNaN(val) ? 0 : val;
+    return UTILS.parseMoeda(input.value);
   },
 
   obterDescricoesAnteriores: function() {
@@ -1194,9 +1199,8 @@ const INIT_FORM = {
     // Preencher valor
     var valInput = document.getElementById('novo-valor');
     if (valInput) {
-      var cents = Math.round(parseFloat(data.val) * 100);
-      var formatted = (cents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      valInput.value = formatted;
+      valInput.value = UTILS.formatarCampoMoeda(data.val);
+      valInput.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
     // Preencher descrição
@@ -1511,10 +1515,11 @@ const INIT_FORM = {
     });
 
     customNomes.forEach(function(nome) {
+      var nomeSafe = UTILS.escapeHtml(nome);
       var isAtivo = currentCat === nome ? ' ativo' : '';
-      html += '<button type="button" class="cat-btn' + isAtivo + '" data-cat="' + nome + '" data-tipo="' + tipo + '">' +
+      html += '<button type="button" class="cat-btn' + isAtivo + '" data-cat="' + nomeSafe + '" data-tipo="' + tipo + '">' +
         '<span class="cat-emoji"><i data-lucide="sparkles" aria-hidden="true"></i></span>' +
-        '<span class="cat-nome">' + nome + '</span>' +
+        '<span class="cat-nome">' + nomeSafe + '</span>' +
         '</button>';
     });
 
