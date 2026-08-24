@@ -158,7 +158,7 @@
 .ia-confidence-badge.media {
   border-color: rgba(217, 119, 6, 0.3);
   background: rgba(201, 138, 30, 0.12);
-  color: #92400e;
+  color: var(--color-warning-text);
   box-shadow: var(--elevacao-1);
 }
 

@@ -649,3 +649,100 @@ describe('a11y — contraste do valor-hero (aba Lançamentos)', () => {
     }
   });
 });
+
+describe('a11y — badges de confiança IA (aba Lançamentos)', () => {
+  const AA = 4.5;
+  const formNovo = fs.readFileSync(path.join(root, 'css', 'features', 'form-novo.css'), 'utf8');
+  const ds = fs.readFileSync(path.join(root, 'css', 'design-system.css'), 'utf8');
+  const dark = fs.readFileSync(path.join(root, 'css', 'themes', 'dark-mode.css'), 'utf8');
+
+  function lerTokens(css, seletor) {
+    const re = new RegExp(`${seletor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([\\s\\S]*?)\\n\\}`);
+    const m = css.match(re);
+    if (!m) return {};
+    const out = {};
+    for (const [, nome, valor] of m[1].matchAll(/--([a-z0-9-]+):\s*([^;]+);/g)) {
+      out[nome] = valor.trim();
+    }
+    return out;
+  }
+
+  function resolver(tokens, valor, profundidade) {
+    if (profundidade > 10) return null;
+    const m = String(valor).match(/^var\(--([a-z0-9-]+)\)$/);
+    if (!m) return valor;
+    const alvo = tokens[m[1]];
+    return alvo === undefined ? null : resolver(tokens, alvo, profundidade + 1);
+  }
+
+  function paraRgb(cor) {
+    if (!cor) return null;
+    const hex = String(cor).trim();
+    let m = hex.match(/^#([0-9a-f]{6})$/i);
+    if (m) {
+      const n = parseInt(m[1], 16);
+      return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    }
+    return null;
+  }
+
+  function luminancia([r, g, b]) {
+    const canal = (c) => {
+      const s = c / 255;
+      return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+    };
+    return 0.2126 * canal(r) + 0.7152 * canal(g) + 0.0722 * canal(b);
+  }
+
+  function razao(a, b) {
+    const la = luminancia(a);
+    const lb = luminancia(b);
+    return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+  }
+
+  function corBadge(nivel) {
+    const re = new RegExp('\\.ia-confidence-badge\\.' + nivel + '\\s*\\{([^}]*)\\}');
+    const m = formNovo.match(re);
+    if (!m) return null;
+    const cm = m[1].match(/(?:^|[^-])color:\s*([^;]+);/);
+    return cm ? cm[1].trim() : null;
+  }
+
+  test('os três badges usam tokens semânticos (sem hex fixo)', () => {
+    expect(corBadge('alta')).toMatch(/var\(--color-success-text\)/);
+    expect(corBadge('media')).toMatch(/var\(--color-warning-text\)/);
+    expect(corBadge('baixa')).toMatch(/var\(--color-danger-text\)/);
+    expect(corBadge('media')).not.toMatch(/#92400e/i);
+  });
+
+  test('claro e escuro: texto dos badges ≥ 4,5:1 sobre o card', () => {
+    const tokensClaro = lerTokens(ds, ':root');
+    const tokensEscuro = { ...tokensClaro };
+    const dsDark = ds.match(/\[data-theme="dark"\]\s*\{([\s\S]*?)\n\}/);
+    if (dsDark) {
+      for (const [, nome, valor] of dsDark[1].matchAll(/--([a-z0-9-]+):\s*([^;]+);/g)) {
+        tokensEscuro[nome] = valor.trim();
+      }
+    }
+    // dark-mode.css remapeia *-text para *-light
+    const darkRemap = dark.match(/\[data-theme="dark"\]\s*\{([\s\S]*?)\n\}/);
+    if (darkRemap) {
+      for (const [, nome, valor] of darkRemap[1].matchAll(/--([a-z0-9-]+):\s*([^;]+);/g)) {
+        tokensEscuro[nome] = valor.trim();
+      }
+    }
+
+    const bgClaro = paraRgb(resolver(tokensClaro, 'var(--color-bg-card)', 0));
+    const bgEscuro = paraRgb(resolver(tokensEscuro, 'var(--color-bg-dark-card)', 0));
+
+    for (const nivel of ['alta', 'media', 'baixa']) {
+      const decl = corBadge(nivel);
+      const fgClaro = paraRgb(resolver(tokensClaro, decl, 0));
+      const fgEscuro = paraRgb(resolver(tokensEscuro, decl, 0));
+      expect(fgClaro).toBeTruthy();
+      expect(fgEscuro).toBeTruthy();
+      expect(razao(fgClaro, bgClaro)).toBeGreaterThanOrEqual(AA);
+      expect(razao(fgEscuro, bgEscuro)).toBeGreaterThanOrEqual(AA);
+    }
+  });
+});
