@@ -225,10 +225,7 @@
       emojiEl.innerHTML = positivo ? '<i data-lucide="trending-up" aria-hidden="true"></i>' : '<i data-lucide="trending-down" aria-hidden="true"></i>';
       el.appendChild(emojiEl);
 
-      // Re-renderizar ícones Lucide dinâmicos
-      if (typeof renderLucideIcons === 'function') {
-        renderLucideIcons(el);
-      }
+      // Re-renderizar ícones Lucide dinâmicos
 
       var info = this.create('div', { class: 'saldo-info' });
       var lbl  = this.create('div', { class: 'saldo-label' });
@@ -359,10 +356,7 @@
       }
 
       _clearEl(el);
-      el.appendChild(container);
-      if (typeof renderLucideIcons === 'function') {
-        renderLucideIcons(el);
-      }
+      el.appendChild(container);
     } catch (e) {
       _reportarErroRender('indicadores', e, el);
     }
@@ -382,10 +376,7 @@
       var ctx = this._ctx;
       var tx  = ctx.tx;
       if (!tx) {
-        el.innerHTML = UI.EmptyState.html({ lucide: 'trending-up', titulo: 'Registre transações para ver a evolução dos seus gastos ao longo dos meses.', aba: 'novo' });
-        if (typeof renderLucideIcons === 'function') {
-          renderLucideIcons(el);
-        }
+        el.innerHTML = UI.EmptyState.html({ lucide: 'trending-up', titulo: 'Registre transações para ver a evolução dos seus gastos ao longo dos meses.', aba: 'novo' });
         return;
       }
 
@@ -398,10 +389,7 @@
 
       var temDados = dados.some(function(d) { return d.receitas > 0 || d.despesas > 0; });
       if (!temDados) {
-        el.innerHTML = UI.EmptyState.html({ lucide: 'trending-up', titulo: 'Registre transações para ver a evolução dos seus gastos ao longo dos meses.', aba: 'novo' });
-        if (typeof renderLucideIcons === 'function') {
-          renderLucideIcons(el);
-        }
+        el.innerHTML = UI.EmptyState.html({ lucide: 'trending-up', titulo: 'Registre transações para ver a evolução dos seus gastos ao longo dos meses.', aba: 'novo' });
         return;
       }
 
@@ -426,10 +414,7 @@
       var ctx = this._ctx;
       var tx  = ctx.tx;
       if (!tx || !tx.obterResumoPorCategoria) {
-        el.innerHTML = UI.EmptyState.html({ lucide: 'pie-chart', titulo: 'Registre despesas para ver a distribuição por categoria.', aba: 'novo' });
-        if (typeof renderLucideIcons === 'function') {
-          renderLucideIcons(el);
-        }
+        el.innerHTML = UI.EmptyState.html({ lucide: 'pie-chart', titulo: 'Registre despesas para ver a distribuição por categoria.', aba: 'novo' });
         return;
       }
 
@@ -446,10 +431,7 @@
       });
 
       if (cats.length === 0) {
-        el.innerHTML = UI.EmptyState.html({ lucide: 'pie-chart', titulo: 'Registre despesas para ver a distribuição por categoria.', aba: 'novo' });
-        if (typeof renderLucideIcons === 'function') {
-          renderLucideIcons(el);
-        }
+        el.innerHTML = UI.EmptyState.html({ lucide: 'pie-chart', titulo: 'Registre despesas para ver a distribuição por categoria.', aba: 'novo' });
         return;
       }
 
@@ -470,20 +452,14 @@
       var ctx = this._ctx;
       var orc = ctx.orc;
       if (!orc) {
-        _setChildren(el, [UI.EmptyState.render({ lucide: 'bar-chart', titulo: 'Defina limites mensais para acompanhar seus gastos por categoria.', aba: 'orcamento' })]);
-        if (typeof renderLucideIcons === 'function') {
-          renderLucideIcons(el);
-        }
+        _setChildren(el, [UI.EmptyState.render({ lucide: 'bar-chart', titulo: 'Defina limites mensais para acompanhar seus gastos por categoria.', aba: 'orcamento' })]);
         return;
       }
 
       var status = orc.obterStatusTodos(ctx.mes, ctx.ano);
 
       if (status.length === 0) {
-        _setChildren(el, [UI.EmptyState.render({ lucide: 'bar-chart', titulo: 'Defina limites mensais para acompanhar seus gastos por categoria.', aba: 'orcamento' })]);
-        if (typeof renderLucideIcons === 'function') {
-          renderLucideIcons(el);
-        }
+        _setChildren(el, [UI.EmptyState.render({ lucide: 'bar-chart', titulo: 'Defina limites mensais para acompanhar seus gastos por categoria.', aba: 'orcamento' })]);
         return;
       }
 
@@ -515,10 +491,7 @@
       }
 
       if (transacoes.length === 0) {
-        _setChildren(el, [UI.EmptyState.render({ lucide: 'clock', titulo: 'Nenhuma transação registrada ainda. Comece adicionando sua primeira!', aba: 'novo' })]);
-        if (typeof renderLucideIcons === 'function') {
-          renderLucideIcons(el);
-        }
+        _setChildren(el, [UI.EmptyState.render({ lucide: 'clock', titulo: 'Nenhuma transação registrada ainda. Comece adicionando sua primeira!', aba: 'novo' })]);
         return;
       }
 
