@@ -41,6 +41,11 @@ const INIT_FORM = {
         if (typeof fn === 'function') fn();
       } catch (e) {
         console.warn('Setup falhou:', fn.name, e);
+        try {
+          if (typeof OBS !== 'undefined' && OBS && typeof OBS.captureError === 'function') {
+            OBS.captureError(e, { contexto: 'form-setup:' + (fn.name || 'anon') });
+          }
+        } catch (_obs) { /* observabilidade nunca pode quebrar o setup */ }
       }
     });
   },
