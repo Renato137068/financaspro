@@ -107,6 +107,26 @@
     _cachedElements = {};
   };
 
+  /**
+   * P2.1: resumo mensal memoizado no ciclo de render (this._ctx.resumoCache).
+   * Evita refiltrar TRANSACOES.obterResumoMes para o mesmo ano-mes.
+   */
+  DashboardRenderer._resumoMes = function(mes, ano) {
+    var ctx = this._ctx;
+    var vazio = { saldo: 0, receitas: 0, despesas: 0 };
+    if (!ctx) return vazio;
+    if (!ctx.resumoCache) ctx.resumoCache = {};
+    var key = ano + '-' + mes;
+    if (Object.prototype.hasOwnProperty.call(ctx.resumoCache, key)) {
+      return ctx.resumoCache[key];
+    }
+    var resumo = (ctx.tx && typeof ctx.tx.obterResumoMes === 'function')
+      ? ctx.tx.obterResumoMes(mes, ano)
+      : vazio;
+    ctx.resumoCache[key] = resumo;
+    return resumo;
+  };
+
   DashboardRenderer.shouldRender = function() {
     if (typeof APP_STORE !== 'undefined') {
       var aba = APP_STORE.get('ui.abaAtiva');
@@ -129,9 +149,12 @@
     var tx     = _dadosTransacoes();
     var orc    = _dadosOrcamento();
     var config = (typeof DADOS !== 'undefined' && DADOS.getConfig) ? DADOS.getConfig() : {};
-    var resumo = tx ? tx.obterResumoMes(mes, ano) : { saldo: 0, receitas: 0, despesas: 0 };
 
-    this._ctx = { agora: agora, mes: mes, ano: ano, tx: tx, orc: orc, config: config, resumo: resumo };
+    this._ctx = {
+      agora: agora, mes: mes, ano: ano, tx: tx, orc: orc, config: config,
+      resumoCache: {}
+    };
+    this._ctx.resumo = this._resumoMes(mes, ano);
 
     this.renderGreeting();
     this.renderCardSaldo();
@@ -225,7 +248,7 @@
       emojiEl.innerHTML = positivo ? '<i data-lucide="trending-up" aria-hidden="true"></i>' : '<i data-lucide="trending-down" aria-hidden="true"></i>';
       el.appendChild(emojiEl);
 
-      // Re-renderizar ícones Lucide dinâmicos
+      // Re-renderizar ícones Lucide dinâmicos
 
       var info = this.create('div', { class: 'saldo-info' });
       var lbl  = this.create('div', { class: 'saldo-label' });
@@ -272,7 +295,7 @@
       var anoAnt  = ctx.mes === 1 ? ctx.ano - 1 : ctx.ano;
 
       var atual    = ctx.resumo;
-      var anterior = tx.obterResumoMes(mesAnt, anoAnt);
+      var anterior = this._resumoMes(mesAnt, anoAnt);
 
       var elRec  = this.getEl('comp-receitas');
       var elDesp = this.getEl('comp-despesas');
@@ -356,7 +379,7 @@
       }
 
       _clearEl(el);
-      el.appendChild(container);
+      el.appendChild(container);
     } catch (e) {
       _reportarErroRender('indicadores', e, el);
     }
@@ -376,20 +399,20 @@
       var ctx = this._ctx;
       var tx  = ctx.tx;
       if (!tx) {
-        el.innerHTML = UI.EmptyState.html({ lucide: 'trending-up', titulo: 'Registre transações para ver a evolução dos seus gastos ao longo dos meses.', aba: 'novo' });
+        el.innerHTML = UI.EmptyState.html({ lucide: 'trending-up', titulo: 'Registre transações para ver a evolução dos seus gastos ao longo dos meses.', aba: 'novo' });
         return;
       }
 
       var dados = [];
       for (var i = 5; i >= 0; i--) {
         var d      = new Date(ctx.ano, ctx.mes - 1 - i, 1);
-        var resumo = tx.obterResumoMes(d.getMonth() + 1, d.getFullYear());
+        var resumo = this._resumoMes(d.getMonth() + 1, d.getFullYear());
         dados.push({ mes: NOMES_MESES[d.getMonth()], receitas: resumo.receitas, despesas: resumo.despesas });
       }
 
       var temDados = dados.some(function(d) { return d.receitas > 0 || d.despesas > 0; });
       if (!temDados) {
-        el.innerHTML = UI.EmptyState.html({ lucide: 'trending-up', titulo: 'Registre transações para ver a evolução dos seus gastos ao longo dos meses.', aba: 'novo' });
+        el.innerHTML = UI.EmptyState.html({ lucide: 'trending-up', titulo: 'Registre transações para ver a evolução dos seus gastos ao longo dos meses.', aba: 'novo' });
         return;
       }
 
@@ -414,7 +437,7 @@
       var ctx = this._ctx;
       var tx  = ctx.tx;
       if (!tx || !tx.obterResumoPorCategoria) {
-        el.innerHTML = UI.EmptyState.html({ lucide: 'pie-chart', titulo: 'Registre despesas para ver a distribuição por categoria.', aba: 'novo' });
+        el.innerHTML = UI.EmptyState.html({ lucide: 'pie-chart', titulo: 'Registre despesas para ver a distribuição por categoria.', aba: 'novo' });
         return;
       }
 
@@ -431,7 +454,7 @@
       });
 
       if (cats.length === 0) {
-        el.innerHTML = UI.EmptyState.html({ lucide: 'pie-chart', titulo: 'Registre despesas para ver a distribuição por categoria.', aba: 'novo' });
+        el.innerHTML = UI.EmptyState.html({ lucide: 'pie-chart', titulo: 'Registre despesas para ver a distribuição por categoria.', aba: 'novo' });
         return;
       }
 
@@ -452,14 +475,14 @@
       var ctx = this._ctx;
       var orc = ctx.orc;
       if (!orc) {
-        _setChildren(el, [UI.EmptyState.render({ lucide: 'bar-chart', titulo: 'Defina limites mensais para acompanhar seus gastos por categoria.', aba: 'orcamento' })]);
+        _setChildren(el, [UI.EmptyState.render({ lucide: 'bar-chart', titulo: 'Defina limites mensais para acompanhar seus gastos por categoria.', aba: 'orcamento' })]);
         return;
       }
 
       var status = orc.obterStatusTodos(ctx.mes, ctx.ano);
 
       if (status.length === 0) {
-        _setChildren(el, [UI.EmptyState.render({ lucide: 'bar-chart', titulo: 'Defina limites mensais para acompanhar seus gastos por categoria.', aba: 'orcamento' })]);
+        _setChildren(el, [UI.EmptyState.render({ lucide: 'bar-chart', titulo: 'Defina limites mensais para acompanhar seus gastos por categoria.', aba: 'orcamento' })]);
         return;
       }
 
@@ -491,7 +514,7 @@
       }
 
       if (transacoes.length === 0) {
-        _setChildren(el, [UI.EmptyState.render({ lucide: 'clock', titulo: 'Nenhuma transação registrada ainda. Comece adicionando sua primeira!', aba: 'novo' })]);
+        _setChildren(el, [UI.EmptyState.render({ lucide: 'clock', titulo: 'Nenhuma transação registrada ainda. Comece adicionando sua primeira!', aba: 'novo' })]);
         return;
       }
 
