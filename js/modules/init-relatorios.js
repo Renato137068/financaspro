@@ -62,3 +62,13 @@ const INIT_RELATORIOS = {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = INIT_RELATORIOS;
 }
+
+/* P2.5: ordem 50 — último (como no render() original) */
+(function() {
+  if (typeof RENDER_DASHBOARD === 'undefined' || !RENDER_DASHBOARD.onRender) return;
+  if (INIT_RELATORIOS._dashboardHooked) return;
+  INIT_RELATORIOS._dashboardHooked = true;
+  RENDER_DASHBOARD.onRender(function() {
+    if (INIT_RELATORIOS.render) INIT_RELATORIOS.render();
+  }, 50);
+})();

@@ -125,9 +125,11 @@ const INIT_METAS = {
         '<label class="form-label" for="meta-titulo">Nome da meta</label>' +
         '<input type="text" id="meta-titulo" class="form-input" placeholder="Ex: Viagem, Reserva de emergência" maxlength="60">' +
         '<label class="form-label" for="meta-valor">Valor alvo (R$)</label>' +
-        '<input type="text" id="meta-valor" class="form-input" placeholder="0,00" inputmode="numeric">' +
+        '<input type="text" id="meta-valor" class="form-input campo-moeda" placeholder="0,00" inputmode="decimal" autocomplete="off">' +
+        '<p class="campo-moeda-preview" id="meta-valor-preview" hidden></p>' +
         '<label class="form-label" for="meta-atual">Já guardado (opcional)</label>' +
-        '<input type="text" id="meta-atual" class="form-input" placeholder="0,00" inputmode="numeric">' +
+        '<input type="text" id="meta-atual" class="form-input campo-moeda" placeholder="0,00" inputmode="decimal" autocomplete="off">' +
+        '<p class="campo-moeda-preview" id="meta-atual-preview" hidden></p>' +
         '<label class="form-label" for="meta-prazo">Prazo (opcional)</label>' +
         '<input type="date" id="meta-prazo" class="form-input">' +
         '<label class="form-label" for="meta-icone">Ícone</label>' +
@@ -143,15 +145,26 @@ const INIT_METAS = {
 
     var self = this;
     if (typeof INIT_MODALS !== 'undefined' && INIT_MODALS.fpAlert) {
-      INIT_MODALS.fpAlert(html, { trustedHtml: true, title: 'Nova meta financeira' });
+      INIT_MODALS.fpAlert(html, {
+        trustedHtml: true,
+        title: 'Nova meta financeira',
+        okLabel: 'Criar meta',
+        onOk: function(ov) {
+          try {
+            self._salvarNova(ov);
+            return false; // _salvarNova já remove o overlay
+          } catch (err) {
+            UTILS.mostrarToast(err.message || 'Erro ao criar meta', 'error');
+            return false;
+          }
+        }
+      });
       setTimeout(function() {
-        var ov = document.querySelector('.modal-overlay');
-        if (!ov) return;
-        var ok = ov.querySelector('.modal-btn');
-        if (!ok) return;
-        ok.textContent = 'Criar meta';
-        ok.onclick = function() { self._salvarNova(ov); };
-      }, 80);
+        if (typeof UTILS !== 'undefined' && UTILS.bindCampoMoeda) {
+          UTILS.bindCampoMoeda(document.getElementById('meta-valor'), { previewId: 'meta-valor-preview' });
+          UTILS.bindCampoMoeda(document.getElementById('meta-atual'), { previewId: 'meta-atual-preview' });
+        }
+      }, 0);
     }
   },
 
@@ -184,32 +197,34 @@ const INIT_METAS = {
       '<p style="margin-bottom:12px">Aporte em <strong>' + UTILS.escapeHtml(this._tituloMeta(meta)) + '</strong></p>' +
       '<p style="font-size:13px;color:var(--text-muted);margin-bottom:12px">Faltam ' + UTILS.formatarMoeda(prog.restante) + '</p>' +
       '<label class="form-label" for="meta-aporte-valor">Valor do aporte (R$)</label>' +
-      '<input type="text" id="meta-aporte-valor" class="form-input" placeholder="0,00" inputmode="numeric">';
+      '<input type="text" id="meta-aporte-valor" class="form-input campo-moeda" placeholder="0,00" inputmode="decimal" autocomplete="off">' +
+      '<p class="campo-moeda-preview" id="meta-aporte-preview" hidden></p>';
 
     var self = this;
-    INIT_MODALS.fpAlert(html, { trustedHtml: true, title: 'Registrar aporte' });
-    setTimeout(function() {
-      var ov = document.querySelector('.modal-overlay');
-      if (!ov) return;
-      var ok = ov.querySelector('.modal-btn');
-      if (!ok) return;
-      ok.textContent = 'Confirmar';
-      ok.onclick = function() {
+    INIT_MODALS.fpAlert(html, {
+      trustedHtml: true,
+      title: 'Registrar aporte',
+      okLabel: 'Confirmar',
+      onOk: function(ov) {
         try {
-          // UTILS.parseMoeda centraliza o formato brasileiro. Repetir o
-          // replace aqui foi como o bug de parsing nasceu nos módulos que
-          // esqueceram de fazê-lo.
           var valor = UTILS.parseMoeda(document.getElementById('meta-aporte-valor').value);
           METAS.registrarAporte(metaId, valor);
           ov.remove();
           UTILS.mostrarToast('Aporte registrado', 'success');
           self.renderOrcamento();
           self.renderResumo();
+          return false;
         } catch (e) {
           UTILS.mostrarToast(e.message || 'Erro', 'error');
+          return false;
         }
-      };
-    }, 80);
+      }
+    });
+    setTimeout(function() {
+      if (UTILS.bindCampoMoeda) {
+        UTILS.bindCampoMoeda(document.getElementById('meta-aporte-valor'), { previewId: 'meta-aporte-preview' });
+      }
+    }, 0);
   },
 
   confirmarExcluir: function(metaId) {
@@ -235,3 +250,13 @@ const INIT_METAS = {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = INIT_METAS;
 }
+
+/* P2.5: dashboard notifica inscritos — ordem 10 (metas primeiro) */
+(function() {
+  if (typeof RENDER_DASHBOARD === 'undefined' || !RENDER_DASHBOARD.onRender) return;
+  if (INIT_METAS._dashboardHooked) return;
+  INIT_METAS._dashboardHooked = true;
+  RENDER_DASHBOARD.onRender(function() {
+    if (INIT_METAS.renderResumo) INIT_METAS.renderResumo();
+  }, 10);
+})();

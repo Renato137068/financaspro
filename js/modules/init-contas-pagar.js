@@ -129,18 +129,22 @@ const INIT_CONTAS_PAGAR = {
 
     wrap.innerHTML = html;
     if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(wrap);
+    if (sec) sec.style.display = pendentes.length > 0 ? '' : 'none';
   },
 
   renderResumo: function() {
     var el = document.getElementById('dashboard-contas-resumo');
+    var sec = document.getElementById('secao-contas-pagar');
     if (!el || typeof CONTAS_PAGAR === 'undefined') return;
     var urgentes = CONTAS_PAGAR.listarPendentes()
       .sort(function(a, b) { return a.vencimento.localeCompare(b.vencimento); })
       .slice(0, 3);
     if (urgentes.length === 0) {
-      el.innerHTML = '<p class="cp-resumo-empty">Nenhuma conta pendente. <button type="button" class="secao-link" data-action="conta-nova">Adicionar</button></p>';
+      el.innerHTML = '';
+      if (sec) sec.style.display = 'none';
       return;
     }
+    if (sec) sec.style.display = '';
     el.innerHTML = urgentes.map(function(c) {
       var sit = CONTAS_PAGAR.situacao(c);
       return '<div class="cp-resumo-item cp-item--' + sit + '">' +
@@ -169,7 +173,8 @@ const INIT_CONTAS_PAGAR = {
         '<label class="form-label" for="conta-desc">Descrição</label>' +
         '<input type="text" id="conta-desc" class="form-input" placeholder="Ex: Aluguel, Internet" maxlength="80">' +
         '<label class="form-label" for="conta-valor">Valor (R$)</label>' +
-        '<input type="text" id="conta-valor" class="form-input" placeholder="0,00" inputmode="numeric">' +
+        '<input type="text" id="conta-valor" class="form-input campo-moeda" placeholder="0,00" inputmode="decimal" autocomplete="off">' +
+        '<p class="campo-moeda-preview" id="conta-valor-preview" hidden></p>' +
         '<label class="form-label" for="conta-venc">Vencimento</label>' +
         '<input type="date" id="conta-venc" class="form-input" value="' + defaultDate + '">' +
         '<label class="form-label" for="conta-cat">Categoria</label>' +
@@ -178,15 +183,25 @@ const INIT_CONTAS_PAGAR = {
       '</div>';
 
     var self = this;
-    INIT_MODALS.fpAlert(html, { trustedHtml: true, title: 'Nova conta a pagar' });
+    INIT_MODALS.fpAlert(html, {
+      trustedHtml: true,
+      title: 'Nova conta a pagar',
+      okLabel: 'Salvar',
+      onOk: function(ov) {
+        try {
+          self._salvarNova(ov);
+          return false;
+        } catch (e) {
+          UTILS.mostrarToast(e.message || 'Erro ao salvar', 'error');
+          return false;
+        }
+      }
+    });
     setTimeout(function() {
-      var ov = document.querySelector('.modal-overlay');
-      if (!ov) return;
-      var ok = ov.querySelector('.modal-btn');
-      if (!ok) return;
-      ok.textContent = 'Salvar';
-      ok.onclick = function() { self._salvarNova(ov); };
-    }, 80);
+      if (UTILS.bindCampoMoeda) {
+        UTILS.bindCampoMoeda(document.getElementById('conta-valor'), { previewId: 'conta-valor-preview' });
+      }
+    }, 0);
   },
 
   _salvarNova: function(overlay) {
@@ -248,3 +263,14 @@ const INIT_CONTAS_PAGAR = {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = INIT_CONTAS_PAGAR;
 }
+
+/* P2.5: ordem 20 — após metas */
+(function() {
+  if (typeof RENDER_DASHBOARD === 'undefined' || !RENDER_DASHBOARD.onRender) return;
+  if (INIT_CONTAS_PAGAR._dashboardHooked) return;
+  INIT_CONTAS_PAGAR._dashboardHooked = true;
+  RENDER_DASHBOARD.onRender(function() {
+    INIT_CONTAS_PAGAR.render();
+    INIT_CONTAS_PAGAR.renderResumo();
+  }, 20);
+})();

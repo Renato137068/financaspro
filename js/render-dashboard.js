@@ -141,6 +141,26 @@
   // MÉTODO PRINCIPAL
   // ============================================================
 
+  // ============================================================
+  // HOOKS DE PÓS-RENDER (P2.5) — módulos INIT_* se inscrevem via onRender
+  // ============================================================
+
+  var _onRenderFns = [];
+
+  /**
+   * Inscreve callback chamado ao final de cada render() do dashboard.
+   * @param {Function} fn
+   * @param {number} [ordem] — menor roda antes (padrão: ordem de inscrição)
+   */
+  DashboardRenderer.onRender = function(fn, ordem) {
+    if (typeof fn !== 'function') return;
+    _onRenderFns.push({
+      fn: fn,
+      ordem: typeof ordem === 'number' ? ordem : (_onRenderFns.length + 1) * 10
+    });
+    _onRenderFns.sort(function(a, b) { return a.ordem - b.ordem; });
+  };
+
   DashboardRenderer.render = function() {
     /* Leituras de dados em bloco — evita chamadas duplicadas nos sub-renderers */
     var agora  = new Date();
@@ -166,21 +186,13 @@
     this.renderChartCategorias();
     this.renderOrcamento();
     this.renderUltimasTransacoes();
-    if (typeof INIT_METAS !== 'undefined' && INIT_METAS.renderResumo) {
-      INIT_METAS.renderResumo();
-    }
-    if (typeof INIT_CONTAS_PAGAR !== 'undefined') {
-      INIT_CONTAS_PAGAR.render();
-      INIT_CONTAS_PAGAR.renderResumo();
-    }
-    if (typeof INIT_ASSINATURAS !== 'undefined') {
-      INIT_ASSINATURAS.renderResumo();
-    }
-    if (typeof INIT_PATRIMONIO !== 'undefined') {
-      INIT_PATRIMONIO.renderResumo();
-    }
-    if (typeof INIT_RELATORIOS !== 'undefined' && INIT_RELATORIOS.render) {
-      INIT_RELATORIOS.render();
+
+    for (var hi = 0; hi < _onRenderFns.length; hi++) {
+      try {
+        _onRenderFns[hi].fn();
+      } catch (e) {
+        _reportarErroRender('onRender:' + hi, e, null);
+      }
     }
 
     this._ctx = null;

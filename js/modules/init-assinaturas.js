@@ -109,20 +109,31 @@ const INIT_ASSINATURAS = {
         '<label class="form-label" for="sub-nome">Nome</label>' +
         '<input type="text" id="sub-nome" class="form-input" placeholder="Netflix, Spotify..." value="' + UTILS.escapeHtml(preset.nome || '') + '">' +
         '<label class="form-label" for="sub-valor">Valor mensal (R$)</label>' +
-        '<input type="text" id="sub-valor" class="form-input" placeholder="0,00" inputmode="numeric" value="' + (preset.valor ? String(preset.valor).replace('.', ',') : '') + '">' +
+        '<input type="text" id="sub-valor" class="form-input campo-moeda" placeholder="0,00" inputmode="decimal" autocomplete="off" value="' + (preset.valor ? String(preset.valor).replace('.', ',') : '') + '">' +
+        '<p class="campo-moeda-preview" id="sub-valor-preview" hidden></p>' +
         '<label class="form-label" for="sub-dia">Dia da cobrança</label>' +
         '<input type="number" id="sub-dia" class="form-input" min="1" max="31" value="' + (preset.dia || new Date().getDate()) + '">' +
       '</div>';
     var self = this;
-    INIT_MODALS.fpAlert(html, { trustedHtml: true, title: 'Nova assinatura' });
+    INIT_MODALS.fpAlert(html, {
+      trustedHtml: true,
+      title: 'Nova assinatura',
+      okLabel: 'Salvar',
+      onOk: function(ov) {
+        try {
+          self._salvarNova(ov);
+          return false;
+        } catch (e) {
+          UTILS.mostrarToast(e.message || 'Erro', 'error');
+          return false;
+        }
+      }
+    });
     setTimeout(function() {
-      var ov = document.querySelector('.modal-overlay');
-      if (!ov) return;
-      var ok = ov.querySelector('.modal-btn');
-      if (!ok) return;
-      ok.textContent = 'Salvar';
-      ok.onclick = function() { self._salvarNova(ov); };
-    }, 80);
+      if (UTILS.bindCampoMoeda) {
+        UTILS.bindCampoMoeda(document.getElementById('sub-valor'), { previewId: 'sub-valor-preview' });
+      }
+    }, 0);
   },
 
   _salvarNova: function(overlay) {
@@ -171,3 +182,13 @@ const INIT_ASSINATURAS = {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = INIT_ASSINATURAS;
 }
+
+/* P2.5: ordem 30 — após contas a pagar */
+(function() {
+  if (typeof RENDER_DASHBOARD === 'undefined' || !RENDER_DASHBOARD.onRender) return;
+  if (INIT_ASSINATURAS._dashboardHooked) return;
+  INIT_ASSINATURAS._dashboardHooked = true;
+  RENDER_DASHBOARD.onRender(function() {
+    if (INIT_ASSINATURAS.renderResumo) INIT_ASSINATURAS.renderResumo();
+  }, 30);
+})();

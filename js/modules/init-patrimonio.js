@@ -180,21 +180,32 @@ const INIT_PATRIMONIO = {
         '<label class="form-label" for="pat-ativo-tipo">Tipo</label>' +
         '<select id="pat-ativo-tipo" class="form-input">' + this._optionsAtivo(preset.tipo || 'corrente') + '</select>' +
         '<label class="form-label" for="pat-ativo-valor">Saldo atual (R$)</label>' +
-        '<input type="text" id="pat-ativo-valor" class="form-input" placeholder="0,00" inputmode="numeric" value="' +
+        '<input type="text" id="pat-ativo-valor" class="form-input campo-moeda" placeholder="0,00" inputmode="decimal" autocomplete="off" value="' +
           (preset.valor !== undefined ? String(preset.valor).replace('.', ',') : '') + '">' +
+        '<p class="campo-moeda-preview" id="pat-ativo-preview" hidden></p>' +
         '<input type="hidden" id="pat-ativo-conta-id" value="' + UTILS.escapeHtml(preset.contaId || '') + '">' +
       '</div>';
 
     var self = this;
-    INIT_MODALS.fpAlert(html, { trustedHtml: true, title: editId ? 'Editar ativo' : 'Novo ativo' });
+    INIT_MODALS.fpAlert(html, {
+      trustedHtml: true,
+      title: editId ? 'Editar ativo' : 'Novo ativo',
+      okLabel: 'Salvar',
+      onOk: function(ov) {
+        try {
+          self._salvarAtivo(ov, editId);
+          return false;
+        } catch (e) {
+          UTILS.mostrarToast(e.message || 'Erro', 'error');
+          return false;
+        }
+      }
+    });
     setTimeout(function() {
-      var ov = document.querySelector('.modal-overlay');
-      if (!ov) return;
-      var ok = ov.querySelector('.modal-btn');
-      if (!ok) return;
-      ok.textContent = 'Salvar';
-      ok.onclick = function() { self._salvarAtivo(ov, editId); };
-    }, 80);
+      if (UTILS.bindCampoMoeda) {
+        UTILS.bindCampoMoeda(document.getElementById('pat-ativo-valor'), { previewId: 'pat-ativo-preview' });
+      }
+    }, 0);
   },
 
   _salvarAtivo: function(overlay, editId) {
@@ -235,20 +246,31 @@ const INIT_PATRIMONIO = {
         '<label class="form-label" for="pat-div-tipo">Tipo</label>' +
         '<select id="pat-div-tipo" class="form-input">' + this._optionsDivida(preset.tipo || 'emprestimo') + '</select>' +
         '<label class="form-label" for="pat-div-valor">Saldo devedor (R$)</label>' +
-        '<input type="text" id="pat-div-valor" class="form-input" placeholder="0,00" inputmode="numeric" value="' +
+        '<input type="text" id="pat-div-valor" class="form-input campo-moeda" placeholder="0,00" inputmode="decimal" autocomplete="off" value="' +
           (preset.valor !== undefined ? String(preset.valor).replace('.', ',') : '') + '">' +
+        '<p class="campo-moeda-preview" id="pat-div-preview" hidden></p>' +
       '</div>';
 
     var self = this;
-    INIT_MODALS.fpAlert(html, { trustedHtml: true, title: editId ? 'Editar dívida' : 'Nova dívida' });
+    INIT_MODALS.fpAlert(html, {
+      trustedHtml: true,
+      title: editId ? 'Editar dívida' : 'Nova dívida',
+      okLabel: 'Salvar',
+      onOk: function(ov) {
+        try {
+          self._salvarDivida(ov, editId);
+          return false;
+        } catch (e) {
+          UTILS.mostrarToast(e.message || 'Erro', 'error');
+          return false;
+        }
+      }
+    });
     setTimeout(function() {
-      var ov = document.querySelector('.modal-overlay');
-      if (!ov) return;
-      var ok = ov.querySelector('.modal-btn');
-      if (!ok) return;
-      ok.textContent = 'Salvar';
-      ok.onclick = function() { self._salvarDivida(ov, editId); };
-    }, 80);
+      if (UTILS.bindCampoMoeda) {
+        UTILS.bindCampoMoeda(document.getElementById('pat-div-valor'), { previewId: 'pat-div-preview' });
+      }
+    }, 0);
   },
 
   _salvarDivida: function(overlay, editId) {
@@ -303,3 +325,13 @@ const INIT_PATRIMONIO = {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = INIT_PATRIMONIO;
 }
+
+/* P2.5: ordem 40 — após assinaturas */
+(function() {
+  if (typeof RENDER_DASHBOARD === 'undefined' || !RENDER_DASHBOARD.onRender) return;
+  if (INIT_PATRIMONIO._dashboardHooked) return;
+  INIT_PATRIMONIO._dashboardHooked = true;
+  RENDER_DASHBOARD.onRender(function() {
+    if (INIT_PATRIMONIO.renderResumo) INIT_PATRIMONIO.renderResumo();
+  }, 40);
+})();
