@@ -92,9 +92,8 @@ const INIT_FORM = {
   setupCategoriaGrid: function() {
     var grid = UTILS.obterElemento('categoria-grid');
     if (!grid) return;
-    // Categoria fica oculta, atuando por trás (IA define automaticamente)
-    grid.style.display = 'none';
-    if (grid.parentElement) grid.parentElement.style.display = 'none';
+    // Grid começa oculto — a IA preenche; P1.2 expõe via "Alterar categoria"
+    INIT_FORM.esconderGridCategoria();
 
     grid.addEventListener('click', function(e) {
       var btn = e.target.closest('.cat-btn');
@@ -106,6 +105,7 @@ const INIT_FORM = {
       var cat = btn.dataset.cat;
       var tipo = btn.dataset.tipo;
       var catEl = UTILS.obterElemento('novo-categoria');
+      var sugestaoAnterior = (INIT_FORM._iaSuggestion && INIT_FORM._iaSuggestion.categoria) || '';
       catEl.value = cat;
       catEl._manualSet = true; // Impede override pelo PIPELINE
       UTILS.obterElemento('novo-tipo').value = tipo;
@@ -117,7 +117,41 @@ const INIT_FORM = {
       if (grupoParcelas) {
         grupoParcelas.style.display = tipo === 'receita' ? 'none' : '';
       }
+
+      // Correção manual vs sugestão da IA → aprendizado
+      var desc = (document.getElementById('novo-descricao') || {}).value || '';
+      if (sugestaoAnterior && cat && cat !== sugestaoAnterior &&
+          typeof APRENDIZADO !== 'undefined' && APRENDIZADO.registrarCorrecao) {
+        APRENDIZADO.registrarCorrecao(desc, sugestaoAnterior, cat);
+        INIT_FORM.mostrarFeedbackAprendizado('Categoria atualizada. Vou melhorar as próximas sugestões.');
+      }
+
+      INIT_FORM.esconderGridCategoria();
+      var savePrev = document.getElementById('ia-save-preview');
+      if (savePrev) {
+        savePrev.textContent = 'Categoria final: ' + (typeof UTILS.labelCategoria === 'function'
+          ? UTILS.labelCategoria(cat) : cat);
+      }
     });
+  },
+
+  mostrarGridCategoria: function() {
+    var grid = document.getElementById('categoria-grid');
+    if (!grid) return;
+    grid.style.display = '';
+    if (grid.parentElement) grid.parentElement.style.display = '';
+    var fieldset = grid.closest('fieldset') || grid.parentElement;
+    if (fieldset) {
+      var firstBtn = grid.querySelector('.cat-btn');
+      if (firstBtn && typeof firstBtn.focus === 'function') firstBtn.focus();
+    }
+  },
+
+  esconderGridCategoria: function() {
+    var grid = document.getElementById('categoria-grid');
+    if (!grid) return;
+    grid.style.display = 'none';
+    if (grid.parentElement) grid.parentElement.style.display = 'none';
   },
 
   setupTipoToggle: function() {
@@ -537,28 +571,39 @@ const INIT_FORM = {
     }
 
     if (actions) {
+      var altHtml = '';
       if (confianca === 'baixa') {
         var alternativas = (sugestao.contexto && sugestao.contexto.alternativas) || [];
-        actions.innerHTML = '<span class="ia-action-hint">Escolha uma categoria para me ensinar</span>' +
+        altHtml = '<span class="ia-action-hint">Escolha uma categoria para me ensinar</span>' +
           alternativas.slice(0, 3).map(function(alt) {
             return '<button type="button" class="ia-alt-btn" data-cat="' + UTILS.escapeHtml(alt.categoria) + '" data-tipo="' + UTILS.escapeHtml(alt.tipo || 'despesa') + '">' +
               UTILS.escapeHtml(UTILS.labelCategoria(alt.categoria)) + '</button>';
           }).join('');
-        actions.querySelectorAll('.ia-alt-btn').forEach(function(btn) {
-          btn.addEventListener('click', function() {
-            var confirmada = {
-              categoria: this.dataset.cat,
-              tipo: this.dataset.tipo || 'despesa',
-              confianca: 'alta',
-              confirmada: true,
-              contexto: { razoes: ['Categoria ensinada manualmente', 'Aprendizado ativo'] }
-            };
-            INIT_FORM.aplicarSugestaoCategoria(confirmada);
-            INIT_FORM.mostrarFeedbackAprendizado('Entendido. Vou melhorar as próximas sugestões.');
-          });
+      }
+      // Sempre disponível: override manual em qualquer nível de confiança (P1.2)
+      actions.innerHTML = altHtml +
+        '<button type="button" class="ia-alterar-cat-btn" id="ia-alterar-categoria">' +
+        'Alterar categoria</button>';
+
+      actions.querySelectorAll('.ia-alt-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var confirmada = {
+            categoria: this.dataset.cat,
+            tipo: this.dataset.tipo || 'despesa',
+            confianca: 'alta',
+            confirmada: true,
+            contexto: { razoes: ['Categoria ensinada manualmente', 'Aprendizado ativo'] }
+          };
+          INIT_FORM.aplicarSugestaoCategoria(confirmada);
+          INIT_FORM.mostrarFeedbackAprendizado('Entendido. Vou melhorar as próximas sugestões.');
         });
-      } else {
-        actions.innerHTML = '';
+      });
+
+      var alterarBtn = document.getElementById('ia-alterar-categoria');
+      if (alterarBtn) {
+        alterarBtn.addEventListener('click', function() {
+          INIT_FORM.mostrarGridCategoria();
+        });
       }
     }
 

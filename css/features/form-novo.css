@@ -267,6 +267,34 @@
 
 .ia-action-list {
   display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  align-items: center;
+}
+
+.ia-alterar-cat-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 8px 14px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-2xl);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.ia-alterar-cat-btn:hover,
+.ia-alterar-cat-btn:focus-visible {
+  color: var(--color-primary-text);
+  border-color: var(--color-primary-400);
+  outline: none;
+}
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
