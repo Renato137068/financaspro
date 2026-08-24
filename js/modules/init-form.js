@@ -779,7 +779,7 @@ const INIT_FORM = {
   },
 
   /**
-   * 8. AUTOCOMPLETE
+   * 8. AUTOCOMPLETE — combobox ARIA (teclado + leitor de tela)
    */
   setupAutocomplete: function() {
     var input = document.getElementById('novo-descricao');
@@ -788,14 +788,83 @@ const INIT_FORM = {
 
     INIT_FORM._autocompleteCache = {};
     INIT_FORM._lastSearchText = '';
+    INIT_FORM._autoActiveIndex = -1;
+
+    function fecharLista() {
+      list.innerHTML = '';
+      list.style.display = 'none';
+      list.hidden = true;
+      input.setAttribute('aria-expanded', 'false');
+      input.removeAttribute('aria-activedescendant');
+      INIT_FORM._autoActiveIndex = -1;
+    }
+
+    function selecionarItem(el) {
+      if (!el) return;
+      var desc = el.getAttribute('data-desc') || el.dataset.desc || '';
+      input.value = desc;
+      fecharLista();
+      // Evita reabrir a lista no mesmo ciclo; outros listeners de input (IA) seguem.
+      INIT_FORM._autoSkipRender = true;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      INIT_FORM._autoSkipRender = false;
+    }
+
+    function marcarAtivo(idx) {
+      var items = list.querySelectorAll('[role="option"]');
+      if (!items.length) return;
+      if (idx < 0) idx = items.length - 1;
+      if (idx >= items.length) idx = 0;
+      INIT_FORM._autoActiveIndex = idx;
+      for (var i = 0; i < items.length; i++) {
+        var on = i === idx;
+        items[i].classList.toggle('ativo', on);
+        items[i].setAttribute('aria-selected', on ? 'true' : 'false');
+      }
+      input.setAttribute('aria-activedescendant', items[idx].id);
+      if (items[idx].scrollIntoView) {
+        items[idx].scrollIntoView({ block: 'nearest' });
+      }
+    }
+
+    function renderLista(filtradas) {
+      list.innerHTML = '';
+      if (!filtradas.length) {
+        fecharLista();
+        return;
+      }
+      filtradas.forEach(function(sug, i) {
+        var el = document.createElement('div');
+        el.className = 'autocomplete-item autocomplete-rich-item';
+        el.id = 'autocomplete-opt-' + i;
+        el.setAttribute('role', 'option');
+        el.setAttribute('aria-selected', 'false');
+        el.setAttribute('data-desc', sug.descricao);
+        el.innerHTML =
+          '<div class="auto-title">' + UTILS.escapeHtml(sug.descricao) + '</div>' +
+          '<div class="auto-meta">Último lançamento: ' + UTILS.formatarMoeda(sug.valor || 0) +
+          (sug.cartao ? ' · ' + UTILS.escapeHtml(sug.cartao) : '') +
+          (sug.banco ? ' · ' + UTILS.escapeHtml(sug.banco) : '') +
+          (sug.recorrente ? ' · Recorrente mensal' : '') + '</div>';
+        // mousedown + preventDefault: o blur do input não fecha antes do clique
+        el.addEventListener('mousedown', function(e) {
+          e.preventDefault();
+          selecionarItem(el);
+        });
+        list.appendChild(el);
+      });
+      list.style.display = 'block';
+      list.hidden = false;
+      input.setAttribute('aria-expanded', 'true');
+      INIT_FORM._autoActiveIndex = -1;
+      input.removeAttribute('aria-activedescendant');
+    }
 
     input.addEventListener('input', function() {
       var texto = this.value.trim().toLowerCase();
-      list.innerHTML = '';
-      if (texto.length < 2) { list.style.display = 'none'; return; }
+      if (texto.length < 2) { fecharLista(); return; }
 
       var descricoes = INIT_FORM.obterSugestoesDescricao();
-
       var cacheKey = texto.substring(0, 3);
       if (!INIT_FORM._autocompleteCache[cacheKey]) {
         INIT_FORM._autocompleteCache[cacheKey] = descricoes;
@@ -805,31 +874,35 @@ const INIT_FORM = {
         return item.descricao.toLowerCase().indexOf(texto) > -1;
       }).slice(0, 5);
 
-      if (filtradas.length === 0) { list.style.display = 'none'; return; }
+      renderLista(filtradas);
+    });
 
-      filtradas.forEach(function(sug) {
-        var el = document.createElement('div');
-        el.className = 'autocomplete-item autocomplete-rich-item';
-        el.dataset.desc = sug.descricao;
-        el.innerHTML =
-          '<div class="auto-title">' + UTILS.escapeHtml(sug.descricao) + '</div>' +
-          '<div class="auto-meta">Último lançamento: ' + UTILS.formatarMoeda(sug.valor || 0) +
-          (sug.cartao ? ' · ' + UTILS.escapeHtml(sug.cartao) : '') +
-          (sug.banco ? ' · ' + UTILS.escapeHtml(sug.banco) : '') +
-          (sug.recorrente ? ' · Recorrente mensal' : '') + '</div>';
-        el.addEventListener('mousedown', function(e) {
+    input.addEventListener('keydown', function(e) {
+      var aberta = input.getAttribute('aria-expanded') === 'true';
+      var items = list.querySelectorAll('[role="option"]');
+      if (e.key === 'ArrowDown') {
+        if (!aberta || !items.length) return;
+        e.preventDefault();
+        marcarAtivo(INIT_FORM._autoActiveIndex + 1);
+      } else if (e.key === 'ArrowUp') {
+        if (!aberta || !items.length) return;
+        e.preventDefault();
+        marcarAtivo(INIT_FORM._autoActiveIndex < 0 ? items.length - 1 : INIT_FORM._autoActiveIndex - 1);
+      } else if (e.key === 'Enter') {
+        if (aberta && INIT_FORM._autoActiveIndex >= 0 && items[INIT_FORM._autoActiveIndex]) {
           e.preventDefault();
-          input.value = el.dataset.desc;
-          list.style.display = 'none';
-          input.dispatchEvent(new Event('input', { bubbles: true }));
-        });
-        list.appendChild(el);
-      });
-      list.style.display = 'block';
+          selecionarItem(items[INIT_FORM._autoActiveIndex]);
+        }
+      } else if (e.key === 'Escape') {
+        if (aberta) {
+          e.preventDefault();
+          fecharLista();
+        }
+      }
     });
 
     input.addEventListener('blur', function() {
-      setTimeout(function() { list.style.display = 'none'; }, 150);
+      setTimeout(function() { fecharLista(); }, 150);
     });
   },
 

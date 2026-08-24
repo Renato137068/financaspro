@@ -183,7 +183,8 @@
       <div class="sk-tx-item"><div class="skeleton sk-tx-icon"></div><div class="sk-tx-body"><div class="skeleton sk-tx-line"></div><div class="skeleton sk-tx-line-short"></div></div><div class="skeleton sk-tx-val"></div></div>
     </div>
     <div id="dashboard-greeting" class="dashboard-greeting"></div>
-    <div id="card-saldo-principal" class="card-saldo-principal" role="status"></div>
+    <div id="card-saldo-principal" class="card-saldo-principal"></div>
+    <span class="sr-only" aria-live="polite" id="saldo-anuncio"></span>
     <div id="dashboard-alertas" class="dashboard-alertas"></div>
     <section class="cards-container" aria-label="Resumo de receitas e despesas">
       <div class="card receita">
@@ -199,19 +200,7 @@
     </section>
     <div id="dashboard-indicadores" class="dashboard-indicadores"></div>
 
-    <!-- INSIGHTS
-         insights.js existia e nunca aparecia: procurava #insights-container,
-         que não estava no HTML, e caía no fallback #orc-insights — ou seja, a
-         análise só era vista por quem abrisse a aba de orçamento. -->
-    <div id="insights-container" class="insights-container" aria-live="polite"></div>
-
-    <!-- PREVISÃO MINI (Fase 8) -->
-    <div id="previsao-mini" class="previsao-mini" aria-live="polite"></div>
-
-    <!-- DISPONÍVEL PARA GASTAR
-         As duas perguntas que o dashboard não respondia: quanto sobra de
-         verdade, e quanto já tem dono. Um saldo de R$ 3.000 parece folga
-         quando R$ 2.400 já estão prometidos ao cartão. -->
+    <!-- Acima da dobra: disponível, orçamento e últimas transações -->
     <section class="dashboard-section disponivel-section" id="secao-disponivel" style="display:none">
       <div class="disponivel-principal">
         <span class="disponivel-label">Disponível para gastar</span>
@@ -224,10 +213,30 @@
       </div>
     </section>
 
-    <!-- CARTÕES DE CRÉDITO
-         Limite, fatura atual e próxima. A compra no crédito não sai da conta no
-         dia: entra numa fatura. É essa distinção que faz o "disponível para
-         gastar" contar a história certa para quem usa cartão. -->
+    <section class="dashboard-section perfil-section" id="secao-orcamento-resumo">
+      <div class="secao-header">
+        <h2 class="secao-titulo">Limites de orçamento</h2>
+        <button class="secao-link" type="button" data-mudar-aba="orcamento">Gerenciar <i data-lucide="chevron-right" aria-hidden="true"></i></button>
+      </div>
+      <div id="resumo-orcamentos"></div>
+    </section>
+
+    <section class="dashboard-section perfil-section" id="secao-ultimas-transacoes">
+      <div class="secao-header">
+        <h2 class="secao-titulo">Últimas transações</h2>
+        <button class="secao-link" type="button" data-mudar-aba="extrato">Ver todas <i data-lucide="chevron-right" aria-hidden="true"></i></button>
+      </div>
+      <div id="resumo-list"></div>
+    </section>
+
+    <button class="btn-primario" data-action="mudar-aba" data-aba="novo" style="margin-top:16px;">
+      <i data-lucide="plus" aria-hidden="true"></i> Registrar Transação
+    </button>
+
+    <!-- Abaixo da dobra: insights, detalhes colapsáveis e módulos condicionais -->
+    <div id="insights-container" class="insights-container dashboard-mais" aria-live="polite"></div>
+    <div id="previsao-mini" class="previsao-mini dashboard-mais" aria-live="polite"></div>
+
     <section class="dashboard-section perfil-section" id="secao-cartoes" style="display:none">
       <div class="secao-header">
         <h2 class="secao-titulo"><i data-lucide="credit-card" aria-hidden="true"></i> Cartões</h2>
@@ -236,9 +245,6 @@
       <div id="cartoes-lista" class="cartoes-lista"></div>
     </section>
 
-    <!-- MINHAS CONTAS (saldo por conta)
-         Responde "quanto eu tenho, e onde". O app registrava a conta de cada
-         lançamento desde sempre e nunca somava nada por conta. -->
     <section class="dashboard-section perfil-section" id="secao-contas-saldos" style="display:none">
       <div class="secao-header">
         <h2 class="secao-titulo"><i data-lucide="landmark" aria-hidden="true"></i> Minhas contas</h2>
@@ -251,8 +257,7 @@
       <div id="contas-saldos-lista" class="contas-saldos-lista"></div>
     </section>
 
-    <!-- CONTAS A PAGAR -->
-    <section class="dashboard-section perfil-section" id="secao-contas-pagar">
+    <section class="dashboard-section perfil-section dashboard-mais" id="secao-contas-pagar" style="display:none">
       <div class="secao-header">
         <h2 class="secao-titulo"><i data-lucide="calendar-clock" aria-hidden="true"></i> Contas a pagar</h2>
         <button type="button" class="btn-secundario btn-sm" data-action="conta-nova">Nova conta</button>
@@ -261,8 +266,7 @@
       <div id="contas-pagar-panel" class="cp-panel"></div>
     </section>
 
-    <!-- RELATÓRIO MENSAL -->
-    <section class="dashboard-section" id="secao-relatorios">
+    <section class="dashboard-section dashboard-mais" id="secao-relatorios">
       <button class="dashboard-section-toggle" id="btn-relatorios" data-action="toggle-relatorios" aria-expanded="false" aria-controls="relatorios-panel">
         <span aria-hidden="true"><i data-lucide="file-bar-chart"></i></span> Relatório do mês
         <span class="toggle-arrow" id="relatorios-arrow" aria-hidden="true"><i data-lucide="chevron-down"></i></span>
@@ -270,12 +274,11 @@
       <div id="relatorios-panel" class="rel-panel" style="display:none"></div>
     </section>
 
-    <!-- GRÁFICOS (colapsável) -->
-    <button class="dashboard-section-toggle" id="btn-graficos" data-action="toggle-graficos" aria-expanded="false" aria-controls="graficos-panel">
+    <button class="dashboard-section-toggle dashboard-mais" id="btn-graficos" data-action="toggle-graficos" aria-expanded="false" aria-controls="graficos-panel">
       <span aria-hidden="true"><i data-lucide="bar-chart"></i></span> Análise detalhada
       <span class="toggle-arrow" id="graficos-arrow" aria-hidden="true"><i data-lucide="chevron-down"></i></span>
     </button>
-    <div id="graficos-panel" style="display:none">
+    <div id="graficos-panel" class="dashboard-mais" style="display:none">
       <section class="dashboard-section">
         <h2 class="secao-titulo">Evolução (6 meses)</h2>
         <div id="chart-evolucao" class="chart-container"></div>
@@ -285,16 +288,8 @@
         <div id="chart-categorias" class="chart-container"></div>
       </section>
     </div>
-    <section class="dashboard-section perfil-section">
-      <div class="secao-header">
-        <h2 class="secao-titulo">Limites de orçamento</h2>
-        <button class="secao-link" type="button" data-mudar-aba="orcamento">Gerenciar <i data-lucide="chevron-right" aria-hidden="true"></i></button>
-      </div>
-      <div id="resumo-orcamentos"></div>
-    </section>
 
-    <!-- PREVISÃO FINANCEIRA (Fase 8) -->
-    <section class="dashboard-section" id="secao-previsao">
+    <section class="dashboard-section dashboard-mais" id="secao-previsao">
       <button class="dashboard-section-toggle" id="btn-previsao" data-action="toggle-previsao" aria-expanded="false" aria-controls="previsao-painel">
         <span aria-hidden="true"><i data-lucide="sparkles"></i></span> Previsão &amp; Saúde Financeira
         <span class="toggle-arrow" id="previsao-arrow" aria-hidden="true"><i data-lucide="chevron-down"></i></span>
@@ -302,7 +297,6 @@
       <div id="previsao-painel" style="display:none"></div>
     </section>
 
-    <!-- ALERTAS PAINEL (Fase 8) -->
     <section class="dashboard-section" id="secao-alertas-painel" style="display:none">
       <div class="secao-header">
         <h2 class="secao-titulo"><span aria-hidden="true"><i data-lucide="bell"></i></span> Todos os Alertas</h2>
@@ -334,17 +328,6 @@
       </div>
       <div id="dashboard-patrimonio-resumo"></div>
     </section>
-
-    <section class="dashboard-section perfil-section">
-      <div class="secao-header">
-        <h2 class="secao-titulo">Últimas transações</h2>
-        <button class="secao-link" type="button" data-mudar-aba="extrato">Ver todas <i data-lucide="chevron-right" aria-hidden="true"></i></button>
-      </div>
-      <div id="resumo-list"></div>
-    </section>
-    <button class="btn-primario" data-action="mudar-aba" data-aba="novo" style="margin-top:16px;">
-      <i data-lucide="plus" aria-hidden="true"></i> Registrar Transação
-    </button>
   </div>
 
   <!-- ABA 2: NOVO LANÇAMENTO (Redesenhada) -->
@@ -418,8 +401,10 @@
         <label for="novo-descricao"><i data-lucide="file-text"></i> Descrição</label>
         <div class="autocomplete-wrapper">
           <input type="text" id="novo-descricao" placeholder="Ex: Supermercado, Salário, Uber..."
-                 autocomplete="off" data-autosave="descricao" aria-describedby="desc-error">
-          <div id="autocomplete-list" class="autocomplete-list"></div>
+                 autocomplete="off" data-autosave="descricao" aria-describedby="desc-error"
+                 role="combobox" aria-autocomplete="list" aria-expanded="false"
+                 aria-controls="autocomplete-list" aria-haspopup="listbox">
+          <div id="autocomplete-list" class="autocomplete-list" role="listbox" hidden></div>
         </div>
         <div id="desc-error" class="form-error-message"></div>
       </div>
@@ -1540,8 +1525,9 @@
 
         <div class="form-group">
           <label for="cartao-limite">Limite (opcional)</label>
-          <input type="number" id="cartao-limite" placeholder="0,00" step="0.01" min="0">
-          <div class="form-hint">Limite do cartão em reais</div>
+          <input type="text" id="cartao-limite" class="campo-moeda" placeholder="Ex: 8.000 ou 8000" inputmode="decimal" autocomplete="off" aria-describedby="cartao-limite-preview cartao-limite-hint">
+          <p class="campo-moeda-preview" id="cartao-limite-preview" hidden></p>
+          <div class="form-hint" id="cartao-limite-hint">Limite do cartão em reais (aceita 8000, 8.000 ou 8.000,00)</div>
         </div>
 
         <!-- Fechamento e vencimento são o que transforma o cartão de rótulo em
@@ -1670,8 +1656,12 @@
 <script defer src="js/config-user.js"></script>
 <script defer src="js/pin.js"></script>
 <script defer src="js/billing.js"></script>
+<script defer src="js/play-billing.js"></script>
+<script defer src="js/fp-native-billing-bridge.js"></script>
 <script defer src="js/open-finance.js"></script>
 <script defer src="js/authController.js"></script>
+<!-- Onboarding antes do bootstrap: garante ONBOARDING no post-init (dev e prod) -->
+<script defer src="js/onboarding.js"></script>
 <!-- Bootstrap (orquestrador leve) -->
 <script defer src="js/app-bootstrap.js"></script>
 <!-- Modules: UI iniciados pelo LIFECYCLE -->
@@ -1696,7 +1686,6 @@
 <script defer src="js/capacitor-init.js"></script>
 <!-- Fase 7: UX -->
 <script defer src="js/skeleton.js"></script>
-<script defer src="js/onboarding.js"></script>
 <script defer src="js/micro-interactions.js"></script>
 <script defer src="js/utilities/sync-indicator.js"></script>
 <!-- jsPDF e SheetJS carregados sob demanda -->
