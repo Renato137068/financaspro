@@ -52,7 +52,9 @@ describe('P2.3 — erros de setup observáveis', function() {
     // O bloco extraído usa this.setupX — precisa estar no objeto
     // Reescreve o array fns para apontar aos stubs nomeados acima via this.
     var ctx = vm.createContext(sandbox);
-    vm.runInContext(code, ctx);
+    vm.runInContext(code, ctx, {
+      filename: path.join(__dirname, 'form-setup-obs.sandbox.js')
+    });
 
     expect(function() {
       ctx.INIT_FORM.setupFormNovo();
