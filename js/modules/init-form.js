@@ -1244,6 +1244,23 @@ const INIT_FORM = {
         return;
       }
 
+      // P2.4: descrição opcional — se vazia, deriva do rótulo da categoria (não bloqueia)
+      var descEl = document.getElementById('novo-descricao');
+      var descError = document.getElementById('desc-error');
+      descricao = (descricao || '').trim();
+      if (!descricao) {
+        var rotulo = (typeof UTILS !== 'undefined' && UTILS.labelCategoria)
+          ? UTILS.labelCategoria(categoria)
+          : categoria;
+        descricao = rotulo || 'Lançamento';
+        if (descEl) descEl.value = descricao;
+        if (descError) {
+          descError.textContent = 'Sem descrição: usei “' + descricao + '” (categoria).';
+        }
+      } else if (descError) {
+        descError.textContent = '';
+      }
+
       INIT_FORM.processarTransacao(tipo, valor, categoria, data, descricao, banco, cartao, nota);
     } catch (erro) {
       UTILS.mostrarToast(erro.message, 'error');
