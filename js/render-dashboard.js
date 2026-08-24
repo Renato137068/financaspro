@@ -298,12 +298,14 @@
         diasRestantes < 5 ? 'alerta' : 'neutro'
       ));
 
-      if (renda > 0) {
-        var economia = renda - resumo.despesas;
+      // Base: receitas REAIS do mês (não a renda configurada). Quem tem renda
+      // variável ou lança valores diferentes do config veria um número enganoso.
+      if (resumo.receitas > 0 || resumo.despesas > 0) {
+        var economia = resumo.receitas - resumo.despesas;
         container.appendChild(UI.Indicador.render(
           economia >= 0 ? 'trending-up' : 'trending-down',
           this.money(Math.abs(economia)),
-          economia >= 0 ? 'Economia prevista' : 'Déficit estimado',
+          economia >= 0 ? 'Economia do mês' : 'Déficit do mês',
           economia >= 0 ? 'positivo' : 'negativo'
         ));
       }
