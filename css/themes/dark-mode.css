@@ -66,6 +66,20 @@
   background: var(--color-danger-dark);
 }
 
+/* Frente clara só com fundo escuro do cartão (tema escuro). */
+[data-theme="dark"] .card-saldo-principal .saldo-valor {
+  color: var(--color-white);
+}
+
+[data-theme="dark"] .card-saldo-principal .saldo-label {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+[data-theme="dark"] .card-saldo-principal .saldo-emoji {
+  background: rgba(255, 255, 255, 0.18);
+  color: var(--color-white);
+}
+
 [data-theme="dark"] .alerta-card {
   background: #2a2210;
   border-color: var(--color-warning-text);
@@ -440,21 +454,26 @@
    FORM NOVO — Aba de lançamento
    ═══════════════════════════════════════════════════════════ */
 
-[data-theme="dark"] .valor-hero {
-  background: rgba(18, 105, 78, 0.08);
+/* Fundo OPACO: rgba translúcido não vencia a cascata contra
+   form-novo.css (.valor-hero { background: var(--color-bg-card) })
+   e deixava o cartão branco com texto claro (contraste ~1,1:1). */
+[data-theme="dark"] .valor-hero,
+[data-theme="dark"] .valor-hero.tipo-despesa,
+[data-theme="dark"] .valor-hero.tipo-receita {
+  background: var(--color-bg-dark-card);
 }
 
 [data-theme="dark"] .valor-hero.tipo-despesa {
-  background: rgba(201, 87, 58, 0.06);
-  border-color: rgba(201, 87, 58, 0.12);
+  border-color: rgba(201, 87, 58, 0.35);
 }
 
 [data-theme="dark"] .valor-hero.tipo-receita {
-  background: rgba(47, 156, 109, 0.06);
-  border-color: rgba(47, 156, 109, 0.12);
+  border-color: rgba(47, 156, 109, 0.35);
 }
 
 [data-theme="dark"] .valor-input { color: var(--color-text-primary); }
+
+[data-theme="dark"] .valor-prefix { color: var(--color-text-secondary); }
 
 [data-theme="dark"] .cat-btn {
   background: var(--color-bg-dark-card);

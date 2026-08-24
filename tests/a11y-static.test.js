@@ -281,3 +281,371 @@ describe('a11y — tokens de cor', () => {
     expect(infracoes).toEqual([]);
   });
 });
+
+/**
+ * Contraste do cartão-herói `#card-saldo-principal .saldo-valor`.
+ *
+ * A regressão: fundo decorativo saiu (card claro) e a frente ficou branca —
+ * 1,05:1. O bug passou porque nenhum teste media a razão computada deste par.
+ */
+describe('a11y — contraste do cartão de saldo', () => {
+  const AA = 4.5;
+
+  function lerTokens(css, seletor) {
+    const re = new RegExp(`${seletor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([\\s\\S]*?)\\n\\}`);
+    const m = css.match(re);
+    if (!m) return {};
+    const out = {};
+    for (const [, nome, valor] of m[1].matchAll(/--([a-z0-9-]+):\s*([^;]+);/g)) {
+      out[nome] = valor.trim();
+    }
+    return out;
+  }
+
+  function resolver(tokens, valor, profundidade) {
+    if (profundidade > 10) return null;
+    const m = String(valor).match(/^var\(--([a-z0-9-]+)\)$/);
+    if (!m) return valor;
+    const alvo = tokens[m[1]];
+    return alvo === undefined ? null : resolver(tokens, alvo, profundidade + 1);
+  }
+
+  function paraRgb(cor) {
+    if (!cor) return null;
+    const hex = String(cor).trim();
+    let m = hex.match(/^#([0-9a-f]{6})$/i);
+    if (m) {
+      const n = parseInt(m[1], 16);
+      return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    }
+    m = hex.match(/^#([0-9a-f]{3})$/i);
+    if (m) {
+      const [r, g, b] = m[1].split('');
+      return [parseInt(r + r, 16), parseInt(g + g, 16), parseInt(b + b, 16)];
+    }
+    m = hex.match(/^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)\s*(?:[,/]\s*([\d.]+)\s*)?\)$/i);
+    if (m) {
+      return [
+        Math.round(parseFloat(m[1])),
+        Math.round(parseFloat(m[2])),
+        Math.round(parseFloat(m[3])),
+      ];
+    }
+    return null;
+  }
+
+  function luminancia([r, g, b]) {
+    const canal = (c) => {
+      const s = c / 255;
+      return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+    };
+    return 0.2126 * canal(r) + 0.7152 * canal(g) + 0.0722 * canal(b);
+  }
+
+  function razao(a, b) {
+    const la = luminancia(a);
+    const lb = luminancia(b);
+    return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+  }
+
+  /** Extrai `color:` de um bloco seletor específico (primeira ocorrência). */
+  function corDoSeletor(css, seletor) {
+    const esc = seletor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(esc + '\\s*\\{([^}]*)\\}');
+    const m = css.match(re);
+    if (!m) return null;
+    const cm = m[1].match(/color:\s*([^;]+);/);
+    return cm ? cm[1].trim() : null;
+  }
+
+  function fundoDoSeletor(css, seletor) {
+    const esc = seletor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(esc + '\\s*\\{([^}]*)\\}');
+    const m = css.match(re);
+    if (!m) return null;
+    const bm = m[1].match(/background(?:-color)?:\s*([^;]+);/);
+    return bm ? bm[1].trim() : null;
+  }
+
+  const ds = fs.readFileSync(path.join(root, 'css', 'design-system.css'), 'utf8');
+  const cards = fs.readFileSync(path.join(root, 'css', 'components', 'cards.css'), 'utf8');
+  const dark = fs.readFileSync(path.join(root, 'css', 'themes', 'dark-mode.css'), 'utf8');
+  const dash = fs.readFileSync(path.join(root, 'css', 'layouts', 'dashboard.css'), 'utf8');
+  const superf = fs.readFileSync(path.join(root, 'css', 'features', 'superficie.css'), 'utf8');
+
+  test('tema claro: .saldo-valor ≥ 4,5:1 sobre o fundo do cartão', () => {
+    const tokens = lerTokens(ds, ':root');
+    const corDecl = corDoSeletor(cards, '.card-saldo-principal .saldo-valor');
+    const fundoDecl =
+      fundoDoSeletor(cards, '.card-saldo-principal.saldo-positivo') ||
+      'var(--color-bg-card)';
+
+    expect(corDecl).toBeTruthy();
+    expect(corDecl).toMatch(/text-primary/);
+    expect(corDecl).not.toMatch(/color-white|#fff/i);
+
+    const fgResolved = paraRgb(resolver(tokens, corDecl, 0));
+    const bgResolved = paraRgb(resolver(tokens, fundoDecl, 0));
+
+    expect(fgResolved).toBeTruthy();
+    expect(bgResolved).toBeTruthy();
+    expect(razao(fgResolved, bgResolved)).toBeGreaterThanOrEqual(AA);
+  });
+
+  test('tema escuro: .saldo-valor branco ≥ 4,5:1 sobre fundo escuro do cartão', () => {
+    const tokens = {
+      ...lerTokens(ds, ':root'),
+      ...lerTokens(ds, '\\[data-theme="dark"\\]'),
+      ...lerTokens(dark, '\\[data-theme="dark"\\]'),
+    };
+    // dark-mode.css redefine alguns tokens no bloco [data-theme="dark"]
+    const darkBlock = dark.match(/\[data-theme="dark"\]\s*\{([\s\S]*?)\n\}/);
+    if (darkBlock) {
+      for (const [, nome, valor] of darkBlock[1].matchAll(/--([a-z0-9-]+):\s*([^;]+);/g)) {
+        tokens[nome] = valor.trim();
+      }
+    }
+
+    const corDecl = corDoSeletor(dark, '[data-theme="dark"] .card-saldo-principal .saldo-valor');
+    expect(corDecl).toBeTruthy();
+    expect(corDecl).toMatch(/color-white|#fff/i);
+
+    const fg = paraRgb(resolver(tokens, corDecl, 0) || '#ffffff');
+    // Fundo positivo escuro: primary-700 (dark-mode) — sólido, mensurável
+    const bg = paraRgb(resolver(tokens, 'var(--color-primary-700)', 0));
+    expect(fg).toBeTruthy();
+    expect(bg).toBeTruthy();
+    expect(razao(fg, bg)).toBeGreaterThanOrEqual(AA);
+  });
+
+  test('tema claro não declara branco no herói fora de dark-mode', () => {
+    // dashboard/superficie não podem reintroduzir color: white no cartão.
+    const claros = [cards, dash, superf];
+    const infracoes = [];
+    for (const src of claros) {
+      // Remove blocos [data-theme="dark"] antes de varrer
+      const semDark = src.replace(/\[data-theme="dark"\][^{]*\{[^}]*\}/g, '');
+      if (/card-saldo-principal[^}]*color:\s*(var\(--color-white\)|#fff|rgba\(\s*255)/i.test(semDark)) {
+        infracoes.push('branco no cartão-herói (tema claro)');
+      }
+    }
+    expect(infracoes).toEqual([]);
+  });
+});
+
+describe('a11y — anúncio do saldo (sem re-leitura a cada render)', () => {
+  const dashJs = fs.readFileSync(path.join(root, 'js', 'render-dashboard.js'), 'utf8');
+
+  test('o cartão herói não usa role="status"', () => {
+    const m = html.match(/id="card-saldo-principal"[^>]*/);
+    expect(m).toBeTruthy();
+    expect(m[0]).not.toMatch(/role="status"/);
+  });
+
+  test('existe região aria-live dedicada ao saldo', () => {
+    const m = html.match(/<span[^>]*id="saldo-anuncio"[^>]*>/);
+    expect(m).toBeTruthy();
+    expect(m[0]).toMatch(/aria-live="polite"/);
+    expect(m[0]).toMatch(/class="[^"]*sr-only/);
+  });
+
+  test('renderCardSaldo anuncia só quando o valor muda', () => {
+    expect(dashJs).toMatch(/_ultimoSaldoAnunciado/);
+    expect(dashJs).toMatch(/saldo !== _ultimoSaldoAnunciado/);
+    expect(dashJs).toMatch(/getElementById\('saldo-anuncio'\)/);
+  });
+});
+
+describe('a11y — densidade da aba Resumo', () => {
+  function pos(id) {
+    return html.indexOf('id="' + id + '"');
+  }
+
+  test('blocos principais vêm antes dos colapsáveis pesados', () => {
+    expect(pos('dashboard-indicadores')).toBeGreaterThan(-1);
+    expect(pos('secao-orcamento-resumo')).toBeGreaterThan(pos('dashboard-indicadores'));
+    expect(pos('secao-ultimas-transacoes')).toBeGreaterThan(pos('secao-orcamento-resumo'));
+    expect(pos('secao-relatorios')).toBeGreaterThan(pos('secao-ultimas-transacoes'));
+    expect(pos('graficos-panel')).toBeGreaterThan(pos('secao-relatorios'));
+    expect(pos('secao-previsao')).toBeGreaterThan(pos('graficos-panel'));
+  });
+
+  test('seções colapsáveis iniciam fechadas', () => {
+    expect(html).toMatch(/id="btn-graficos"[^>]*aria-expanded="false"/);
+    expect(html).toMatch(/id="btn-previsao"[^>]*aria-expanded="false"/);
+    expect(html).toMatch(/id="btn-relatorios"[^>]*aria-expanded="false"/);
+    expect(html).toMatch(/id="graficos-panel"[^>]*style="display:none"/);
+    expect(html).toMatch(/id="previsao-painel"[^>]*style="display:none"/);
+    expect(html).toMatch(/id="relatorios-panel"[^>]*style="display:none"/);
+  });
+
+  test('módulos condicionais permanecem ocultos até ter dados', () => {
+    for (var id of ['secao-cartoes', 'secao-contas-saldos', 'secao-contas-pagar',
+      'secao-metas-resumo', 'secao-assinaturas-resumo', 'secao-patrimonio-resumo']) {
+      var m = html.match(new RegExp('id="' + id + '"[^>]*'));
+      expect(m).toBeTruthy();
+      expect(m[0]).toMatch(/display:\s*none/);
+    }
+  });
+});
+
+/**
+ * Contraste do herói de valor na aba Lançamentos (#valor-hero / #novo-valor).
+ *
+ * Regressão: dark-mode pintava .valor-hero com rgba translúcido; a cascata
+ * deixava o cartão claro e o texto (#edf3f0) ficava ~1,1:1 — invisível.
+ */
+describe('a11y — contraste do valor-hero (aba Lançamentos)', () => {
+  const AA = 4.5;
+
+  function lerTokens(css, seletor) {
+    const re = new RegExp(`${seletor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([\\s\\S]*?)\\n\\}`);
+    const m = css.match(re);
+    if (!m) return {};
+    const out = {};
+    for (const [, nome, valor] of m[1].matchAll(/--([a-z0-9-]+):\s*([^;]+);/g)) {
+      out[nome] = valor.trim();
+    }
+    return out;
+  }
+
+  function resolver(tokens, valor, profundidade) {
+    if (profundidade > 10) return null;
+    const m = String(valor).match(/^var\(--([a-z0-9-]+)\)$/);
+    if (!m) return valor;
+    const alvo = tokens[m[1]];
+    return alvo === undefined ? null : resolver(tokens, alvo, profundidade + 1);
+  }
+
+  function paraRgb(cor) {
+    if (!cor) return null;
+    const hex = String(cor).trim();
+    let m = hex.match(/^#([0-9a-f]{6})$/i);
+    if (m) {
+      const n = parseInt(m[1], 16);
+      return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    }
+    m = hex.match(/^#([0-9a-f]{3})$/i);
+    if (m) {
+      const [r, g, b] = m[1].split('');
+      return [parseInt(r + r, 16), parseInt(g + g, 16), parseInt(b + b, 16)];
+    }
+    return null;
+  }
+
+  function luminancia([r, g, b]) {
+    const canal = (c) => {
+      const s = c / 255;
+      return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+    };
+    return 0.2126 * canal(r) + 0.7152 * canal(g) + 0.0722 * canal(b);
+  }
+
+  function razao(a, b) {
+    const la = luminancia(a);
+    const lb = luminancia(b);
+    return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+  }
+
+  function fundoDoSeletor(css, seletor) {
+    const esc = seletor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(esc + '\\s*\\{([^}]*)\\}');
+    const m = css.match(re);
+    if (!m) return null;
+    const bm = m[1].match(/background(?:-color)?:\s*([^;]+);/);
+    return bm ? bm[1].trim() : null;
+  }
+
+  function corDoSeletor(css, seletor) {
+    const esc = seletor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(esc + '\\s*\\{([^}]*)\\}');
+    const m = css.match(re);
+    if (!m) return null;
+    const cm = m[1].match(/color:\s*([^;]+);/);
+    return cm ? cm[1].trim() : null;
+  }
+
+  const ds = fs.readFileSync(path.join(root, 'css', 'design-system.css'), 'utf8');
+  const formNovo = fs.readFileSync(path.join(root, 'css', 'features', 'form-novo.css'), 'utf8');
+  const dark = fs.readFileSync(path.join(root, 'css', 'themes', 'dark-mode.css'), 'utf8');
+
+  test('tema claro: .valor-input ≥ 4,5:1 sobre .valor-hero (e variantes)', () => {
+    const tokens = lerTokens(ds, ':root');
+    const fgDecl = corDoSeletor(formNovo, '.valor-input');
+    expect(fgDecl).toBeTruthy();
+
+    const variantes = ['.valor-hero', '.valor-hero.tipo-despesa', '.valor-hero.tipo-receita'];
+    for (const sel of variantes) {
+      const bgDecl = fundoDoSeletor(formNovo, sel);
+      expect(bgDecl).toBeTruthy();
+      expect(bgDecl).not.toMatch(/rgba?\(/i);
+
+      const fg = paraRgb(resolver(tokens, fgDecl, 0));
+      const bg = paraRgb(resolver(tokens, bgDecl, 0));
+      expect(fg).toBeTruthy();
+      expect(bg).toBeTruthy();
+      expect(razao(fg, bg)).toBeGreaterThanOrEqual(AA);
+    }
+  });
+
+  test('tema escuro: fundo do .valor-hero é opaco escuro (≥ 4,5:1 com o texto)', () => {
+    const tokens = { ...lerTokens(ds, ':root') };
+    // Remapeamento de tokens no design-system (texto claro, etc.)
+    const dsDark = ds.match(/\[data-theme="dark"\]\s*\{([\s\S]*?)\n\}/);
+    if (dsDark) {
+      for (const [, nome, valor] of dsDark[1].matchAll(/--([a-z0-9-]+):\s*([^;]+);/g)) {
+        tokens[nome] = valor.trim();
+      }
+    }
+
+    const fgDecl =
+      corDoSeletor(dark, '[data-theme="dark"] .valor-input') ||
+      corDoSeletor(formNovo, '.valor-input');
+    expect(fgDecl).toBeTruthy();
+
+    // Grupo compartilhado declara o fundo opaco para as três variantes
+    const grupo = dark.match(
+      /\[data-theme="dark"\]\s*\.valor-hero(?:,[^{]+)?\{([^}]*)\}/
+    );
+    expect(grupo).toBeTruthy();
+    const bm = grupo[1].match(/background(?:-color)?:\s*([^;]+);/);
+    const bgDecl = bm ? bm[1].trim() : null;
+    expect(bgDecl).toBeTruthy();
+    expect(bgDecl).not.toMatch(/rgba?\(/i);
+    expect(bgDecl).toMatch(/color-bg-dark-card|color-bg-card/);
+
+    const fg = paraRgb(resolver(tokens, fgDecl, 0));
+    const bg = paraRgb(resolver(tokens, bgDecl, 0));
+    expect(fg).toBeTruthy();
+    expect(bg).toBeTruthy();
+    expect(razao(fg, bg)).toBeGreaterThanOrEqual(AA);
+
+    // Variantes só mudam borda — fundo continua o do grupo
+    for (const sel of [
+      '[data-theme="dark"] .valor-hero.tipo-despesa',
+      '[data-theme="dark"] .valor-hero.tipo-receita',
+    ]) {
+      const bloco = dark.match(new RegExp(
+        sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*\\{([^}]*)\\}'
+      ));
+      expect(bloco).toBeTruthy();
+      // Se redefinir background, tem que ser opaco e escuro
+      const bgVar = bloco[1].match(/background(?:-color)?:\s*([^;]+);/);
+      if (bgVar) {
+        expect(bgVar[1].trim()).not.toMatch(/rgba?\(/i);
+        const bg2 = paraRgb(resolver(tokens, bgVar[1].trim(), 0));
+        expect(razao(fg, bg2)).toBeGreaterThanOrEqual(AA);
+      }
+    }
+  });
+
+  test('tema escuro não reintroduz rgba translúcido como fundo do valor-hero', () => {
+    const blocos = dark.match(/\[data-theme="dark"\][^{]*\.valor-hero[^{]*\{[^}]*\}/g) || [];
+    expect(blocos.length).toBeGreaterThan(0);
+    for (const bloco of blocos) {
+      if (/background(?:-color)?:/.test(bloco)) {
+        expect(bloco).not.toMatch(/background(?:-color)?:\s*rgba?\(/i);
+      }
+    }
+  });
+});
