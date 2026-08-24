@@ -69,11 +69,17 @@ describe('P2.1 — escapeHtml em categorias custom', function() {
     });
     grid.innerHTML = html;
 
+    // Nenhum nó HTML injetado a partir do nome
     expect(grid.querySelector('img')).toBeNull();
-    expect(grid.innerHTML).toContain('&lt;img');
+    expect(grid.querySelectorAll('.cat-btn')).toHaveLength(3);
+
+    var primeiro = grid.querySelector('.cat-btn');
+    expect(primeiro.querySelector('.cat-nome').textContent).toBe('<img src=x onerror=alert(1)>');
+    expect(primeiro.getAttribute('data-cat')).toBe('<img src=x onerror=alert(1)>');
+
+    // Aspas no nome não quebram o atributo (não há botão extra / markup solto)
+    expect(grid.innerHTML).toContain('data-cat="A&quot;B"');
     expect(grid.innerHTML).toContain('Cafe &amp; Cia');
-    expect(grid.querySelector('[data-cat]').getAttribute('data-cat')).not.toContain('<');
-    expect(grid.querySelector('.cat-nome').textContent).toContain('<img');
   });
 
   test('fonte de init-form.js aplica escapeHtml no forEach de custom', function() {
