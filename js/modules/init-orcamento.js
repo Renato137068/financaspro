@@ -46,6 +46,7 @@ const INIT_ORCAMENTO = {
     DADOS.salvarConfig({ renda: val });
     UTILS.mostrarToast('Renda definida', 'success');
     this.renderDashboard();
+    this._announce('Renda mensal atualizada para ' + UTILS.formatarMoeda(val));
     if (typeof INIT_CONFIG !== 'undefined' && INIT_CONFIG.refreshPerfil) INIT_CONFIG.refreshPerfil();
   },
 
@@ -80,6 +81,7 @@ const INIT_ORCAMENTO = {
           DADOS.salvarConfig({ renda: val });
           overlay.remove();
           self.renderDashboard();
+          self._announce('Renda mensal atualizada para ' + UTILS.formatarMoeda(val));
           if (typeof INIT_CONFIG !== 'undefined' && INIT_CONFIG.refreshPerfil) INIT_CONFIG.refreshPerfil();
           UTILS.mostrarToast('Renda atualizada', 'success');
           if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(overlay);
@@ -174,6 +176,30 @@ const INIT_ORCAMENTO = {
     if (el) el.className = className;
   },
 
+  /** Anúncio discreto para leitores de tela (#orc-live-region). */
+  _announce: function(msg) {
+    var el = document.getElementById('orc-live-region');
+    if (!el || !msg) return;
+    el.textContent = '';
+    setTimeout(function() { el.textContent = msg; }, 30);
+  },
+
+  /** Barras 50/30/20 com role=progressbar e ARIA. */
+  _setProgressBar: function(id, pct, labelBase) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var capped = Math.min(Math.max(0, pct), 100);
+    el.style.width = capped + '%';
+    var track = el.parentElement;
+    if (track && track.classList.contains('orc-progress')) {
+      track.setAttribute('role', 'progressbar');
+      track.setAttribute('aria-valuemin', '0');
+      track.setAttribute('aria-valuemax', '100');
+      track.setAttribute('aria-valuenow', String(Math.round(capped)));
+      track.setAttribute('aria-label', (labelBase || 'Progresso') + ': ' + Math.round(pct) + '%');
+    }
+  },
+
   calculateBudgetData: function() {
     var config = DADOS.getConfig();
     var renda = config.renda || 0;
@@ -195,7 +221,7 @@ const INIT_ORCAMENTO = {
         if (cls === 'necessidades') gastoNec += t.valor;
         else gasDes += t.valor;
         catGastos[t.categoria] = (catGastos[t.categoria] || 0) + t.valor;
-      } else {
+      } else if (t.tipo === CONFIG.TIPO_RECEITA) {
         totalReceitas += t.valor;
       }
     });
@@ -203,14 +229,74 @@ const INIT_ORCAMENTO = {
     var limNec = renda * (pNec / 100);
     var limDes = renda * (pDes / 100);
     var limPou = renda * (pPou / 100);
+    var realizado = gastoNec + gasDes;
+    /* Saldo do orçamento = o que sobra da renda planejada após despesas.
+       Economia do mês usa o mesmo número (rótulo do card secundário). */
+    var saldoDisponivel = renda - realizado;
     return {
       renda: renda, pNec: pNec, pDes: pDes, pPou: pPou,
       gastoNec: gastoNec, gasDes: gasDes, poupancaReal: poupancaReal,
       limNec: limNec, limDes: limDes, limPou: limPou,
+      realizado: realizado, saldoDisponivel: saldoDisponivel,
       pctNec: limNec > 0 ? Math.round((gastoNec / limNec) * 100) : 0,
       pctDes: limDes > 0 ? Math.round((gasDes / limDes) * 100) : 0,
       pctPou: limPou > 0 ? Math.round((Math.max(0, poupancaReal) / limPou) * 100) : 0,
-      catGastos: catGastos
+      catGastos: catGastos,
+      mes: mes, ano: ano
+    };
+  },
+
+  /**
+   * P0 — Header Estratégico: liga os 7 IDs órfãos aos dados reais.
+   */
+  _renderHeader: function(data) {
+    var realizado = data.realizado != null ? data.realizado : (data.gastoNec + data.gasDes);
+    var saldo = data.saldoDisponivel != null ? data.saldoDisponivel : (data.renda - realizado);
+    var pctRestante = data.renda > 0 ? Math.round((saldo / data.renda) * 100) : 0;
+
+    this._updateElement('orc-total-planejado', UTILS.formatarMoeda(data.renda));
+    this._updateElement('orc-total-realizado', UTILS.formatarMoeda(realizado));
+    this._updateElement('orc-saldo-disponivel', UTILS.formatarMoeda(saldo));
+    this._updateElement('orc-economia-mes', UTILS.formatarMoeda(saldo));
+    this._updateElement('orc-percent-restante', pctRestante + '% restante');
+
+    var criticas = 0;
+    if (typeof ORCAMENTO !== 'undefined' && typeof ORCAMENTO.categoriasEmRisco === 'function') {
+      try {
+        criticas = ORCAMENTO.categoriasEmRisco(new Date()).length;
+      } catch (_e) { criticas = 0; }
+    }
+    this._updateElement('orc-categorias-criticas', String(criticas));
+
+    // Tendência vs mês anterior (mesmo renda × despesas do mês -1)
+    var dAnt = new Date(data.ano, data.mes - 2, 1);
+    var txsAnt = TRANSACOES.obter({ mes: dAnt.getMonth() + 1, ano: dAnt.getFullYear() });
+    var despAnt = 0;
+    txsAnt.forEach(function(t) {
+      if (t.tipo === CONFIG.TIPO_DESPESA) despAnt += t.valor;
+    });
+    var saldoAnt = data.renda - despAnt;
+    var delta = saldo - saldoAnt;
+    var trendTxt;
+    if (despAnt === 0 && realizado === 0) {
+      trendTxt = 'vs mês anterior';
+    } else if (Math.abs(saldoAnt) < 0.005) {
+      trendTxt = delta >= 0 ? 'melhor que o mês anterior' : 'pior que o mês anterior';
+    } else {
+      var pctDelta = Math.round((delta / Math.abs(saldoAnt)) * 100);
+      trendTxt = (pctDelta >= 0 ? '+' : '') + pctDelta + '% vs mês anterior';
+    }
+    this._updateElement('orc-tendencia', trendTxt);
+
+    var indicator = document.getElementById('orc-trend-indicator');
+    if (indicator) {
+      var iconName = delta >= 0 ? 'trending-up' : 'trending-down';
+      indicator.innerHTML = '<span class="trend-icon">' + this._lucideHtml(iconName) + '</span>';
+      if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(indicator);
+    }
+
+    this._ultimoHeader = {
+      saldo: saldo, realizado: realizado, renda: data.renda, criticas: criticas
     };
   },
 
@@ -234,12 +320,15 @@ const INIT_ORCAMENTO = {
       this._updateElement('orc-nec-pct', data.pNec + '%');
       this._updateElement('orc-des-pct', data.pDes + '%');
       this._updateElement('orc-pou-pct', data.pPou + '%');
+      this._renderHeader(data);
       this._renderCards(data);
       this.renderInsights(data);
       this.renderCategorias(data.catGastos, data.renda);
-      this.renderHistorico(data.renda);
       if (typeof INIT_METAS !== 'undefined' && INIT_METAS.renderOrcamento) {
         INIT_METAS.renderOrcamento();
+      }
+      if (this._ultimoHeader && this._ultimoHeader.criticas > 0) {
+        this._announce(this._ultimoHeader.criticas + ' categoria(s) em risco no orçamento');
       }
     } catch (error) {
       console.error('Erro ao renderizar orçamento:', error);
@@ -250,15 +339,17 @@ const INIT_ORCAMENTO = {
   _renderCards: function(data) {
     this._updateElement('orc-nec-gasto', UTILS.formatarMoeda(data.gastoNec));
     this._updateElement('orc-nec-limite', UTILS.formatarMoeda(data.limNec));
-    this._updateElementStyle('orc-nec-bar', 'width', Math.min(data.pctNec, 100) + '%');
+    this._setProgressBar('orc-nec-bar', data.pctNec, 'Necessidades');
     this._updateElementClass('orc-nec-bar', 'orc-progress-fill ' + (data.pctNec >= 100 ? 'exceeded' : data.pctNec >= 80 ? 'attention' : 'healthy'));
+
     this._updateElement('orc-des-gasto', UTILS.formatarMoeda(data.gasDes));
     this._updateElement('orc-des-limite', UTILS.formatarMoeda(data.limDes));
-    this._updateElementStyle('orc-des-bar', 'width', Math.min(data.pctDes, 100) + '%');
+    this._setProgressBar('orc-des-bar', data.pctDes, 'Desejos');
     this._updateElementClass('orc-des-bar', 'orc-progress-fill ' + (data.pctDes >= 100 ? 'exceeded' : data.pctDes >= 80 ? 'attention' : 'healthy'));
+
     this._updateElement('orc-pou-gasto', UTILS.formatarMoeda(Math.max(0, data.poupancaReal)));
     this._updateElement('orc-pou-limite', UTILS.formatarMoeda(data.limPou));
-    this._updateElementStyle('orc-pou-bar', 'width', Math.min(data.pctPou, 100) + '%');
+    this._setProgressBar('orc-pou-bar', data.pctPou, 'Poupança');
     this._updateElementClass('orc-pou-bar', 'orc-progress-fill ' + (data.pctPou >= 100 ? 'otimo' : data.pctPou >= 50 ? 'healthy' : 'attention'));
   },
 
@@ -286,7 +377,16 @@ const INIT_ORCAMENTO = {
     if (maiorCat) {
       // Só mostra "% da renda" se a renda foi informada (evita divisão por zero → "Infinity%").
       var pctTxt = data.renda > 0 ? ' (' + Math.round((maiorVal / data.renda) * 100) + '% da renda)' : '';
-      dicas.push({ lucide: self._catLucideName(maiorCat), texto: maiorCat + ' é seu maior gasto: ' + UTILS.formatarMoeda(maiorVal) + pctTxt + '.', tipo: 'info' });
+      var maiorLabel = (typeof CONFIG !== 'undefined' && CONFIG.getCatLabel)
+        ? CONFIG.getCatLabel(maiorCat)
+        : (typeof UTILS !== 'undefined' && UTILS.labelCategoria)
+          ? UTILS.labelCategoria(maiorCat)
+          : maiorCat;
+      dicas.push({
+        lucide: self._catLucideName(maiorCat),
+        texto: UTILS.escapeHtml(maiorLabel) + ' é seu maior gasto: ' + UTILS.formatarMoeda(maiorVal) + pctTxt + '.',
+        tipo: 'info'
+      });
     }
     // Projeção só após alguns dias de dados e com renda informada — no começo do
     // mês a regra de três estoura e a mensagem fica alarmante/enganosa.
@@ -322,63 +422,112 @@ const INIT_ORCAMENTO = {
     if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(el);
   },
 
-  renderCategorias: function(catGastos, renda) {
-    var el = document.getElementById('orc-categorias');
-    if (!el) return;
+  _catItemHtml: function(cat, val, renda, extraMsg) {
     var self = this;
-    var cats = Object.keys(catGastos).sort(function(a, b) { return catGastos[b] - catGastos[a]; });
-    if (cats.length === 0) {
-      el.innerHTML = '<p style="text-align:center;color:var(--text-secondary);padding:18px 16px;font-size:13px;line-height:1.5">Sem despesas este mês ainda.<br>Registre uma transação para ver para onde vai seu dinheiro.</p>';
-      return;
-    }
-    var maxVal = catGastos[cats[0]];
-    el.innerHTML = cats.map(function(cat) {
-      var val = catGastos[cat];
-      var pct = Math.round((val / renda) * 100);
-      var barW = maxVal > 0 ? Math.round((val / maxVal) * 100) : 0;
-      var icon = self._getCatIcon(cat);
-      var cor = self._getCatCor(cat);
-      var cls503020 = self.classificarCategoria503020(cat);
-      var label = CONFIG.getCatLabel ? CONFIG.getCatLabel(cat) : cat;
-      return '<div class="orc-cat-item"><div class="orc-cat-row"><div class="orc-cat-left">' +
-        '<span class="orc-cat-icon" style="background:' + cor + '20;color:' + cor + '">' + icon + '</span>' +
-        '<div class="orc-cat-info"><span class="orc-cat-nome">' + UTILS.escapeHtml(label) + '</span>' +
-        '<span class="orc-cat-badge ' + cls503020 + '">' + (cls503020 === 'necessidades' ? 'Necessidade' : 'Desejo') + '</span></div></div>' +
-        '<div class="orc-cat-right"><span class="orc-cat-valor">' + UTILS.formatarMoeda(val) + '</span>' +
-        '<span class="orc-cat-pct">' + pct + '%</span></div></div>' +
-        '<div class="orc-cat-bar"><div class="orc-cat-bar-fill" style="width:' + barW + '%;background:' + cor + '"></div></div></div>';
-    }).join('');
-    if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(el);
+    var pct = renda > 0 ? Math.round((val / renda) * 100) : 0;
+    var icon = self._getCatIcon(cat);
+    var cor = self._getCatCor(cat);
+    var cls503020 = self.classificarCategoria503020(cat);
+    var label = (typeof CONFIG !== 'undefined' && CONFIG.getCatLabel) ? CONFIG.getCatLabel(cat) : cat;
+    var barW = Math.min(100, pct);
+    var msg = extraMsg
+      ? '<div class="orc-cat-risco">' + UTILS.escapeHtml(extraMsg) + '</div>'
+      : '';
+    return '<div class="orc-cat-item"><div class="orc-cat-row"><div class="orc-cat-left">' +
+      '<span class="orc-cat-icon" style="background:' + cor + '20;color:' + cor + '">' + icon + '</span>' +
+      '<div class="orc-cat-info"><span class="orc-cat-nome">' + UTILS.escapeHtml(label) + '</span>' +
+      '<span class="orc-cat-badge ' + cls503020 + '">' + (cls503020 === 'necessidades' ? 'Necessidade' : 'Desejo') + '</span></div></div>' +
+      '<div class="orc-cat-right"><span class="orc-cat-valor">' + UTILS.formatarMoeda(val) + '</span>' +
+      '<span class="orc-cat-pct">' + pct + '%</span></div></div>' +
+      '<div class="orc-cat-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + barW + '" aria-label="' + UTILS.escapeHtml(label) + ': ' + pct + '% da renda">' +
+      '<div class="orc-cat-bar-fill" style="width:' + barW + '%;background:' + cor + '"></div></div>' +
+      msg + '</div>';
   },
 
-  renderHistorico: function(renda) {
-    var el = document.getElementById('orc-historico');
-    if (!el) return;
+  /**
+   * P1.1-A + P2.2: preenche grupos críticos / atenção / saudáveis sem
+   * sobrescrever a estrutura do #orc-categorias.
+   */
+  renderCategorias: function(catGastos, renda) {
+    var container = document.getElementById('orc-categorias');
+    if (!container) return;
+
+    var criticalList = document.getElementById('orc-critical-list');
+    var attentionList = document.getElementById('orc-attention-list');
+    var healthyList = document.getElementById('orc-healthy-list');
+    var emptyEl = document.getElementById('orc-categorias-empty');
+    var groupCritical = document.getElementById('orc-group-critical');
+    var groupAttention = document.getElementById('orc-group-attention');
+    var groupHealthy = document.getElementById('orc-group-healthy');
+    if (!criticalList || !attentionList || !healthyList) return;
+
     var agora = new Date();
-    var meses = [];
-    var nomesMes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-    for (var i = 2; i >= 0; i--) {
-      var d = new Date(agora.getFullYear(), agora.getMonth() - i, 1);
-      var txs = TRANSACOES.obter({ mes: d.getMonth() + 1, ano: d.getFullYear() });
-      var rec = 0, desp = 0;
-      txs.forEach(function(t) {
-        if (t.tipo === CONFIG.TIPO_RECEITA) rec += t.valor; else desp += t.valor;
-      });
-      meses.push({ label: nomesMes[d.getMonth()], rec: rec, desp: desp, saldo: rec - desp });
+    var mes = agora.getMonth() + 1;
+    var ano = agora.getFullYear();
+    var self = this;
+
+    var cats = {};
+    Object.keys(catGastos || {}).forEach(function(c) { cats[c] = true; });
+    if (typeof ORCAMENTO !== 'undefined' && ORCAMENTO.obterTodos) {
+      Object.keys(ORCAMENTO.obterTodos() || {}).forEach(function(c) { cats[c] = true; });
     }
-    var maxVal = 1;
-    meses.forEach(function(m) { if (m.rec > maxVal) maxVal = m.rec; if (m.desp > maxVal) maxVal = m.desp; });
-    el.innerHTML = '<div class="orc-hist-chart">' + meses.map(function(m) {
-      var hRec = Math.max(4, Math.round((m.rec / maxVal) * 100));
-      var hDesp = Math.max(4, Math.round((m.desp / maxVal) * 100));
-      return '<div class="orc-hist-mes"><div class="orc-hist-bars">' +
-        '<div class="orc-hist-bar receita" style="height:' + hRec + 'px" title="Receita: ' + UTILS.formatarMoeda(m.rec) + '"></div>' +
-        '<div class="orc-hist-bar despesa" style="height:' + hDesp + 'px" title="Despesa: ' + UTILS.formatarMoeda(m.desp) + '"></div></div>' +
-        '<span class="orc-hist-label">' + m.label + '</span>' +
-        '<span class="orc-hist-saldo ' + (m.saldo >= 0 ? 'positivo' : 'negativo') + '">' + (m.saldo >= 0 ? '+' : '-') + UTILS.formatarMoeda(Math.abs(m.saldo)) + '</span></div>';
-    }).join('') + '</div><div class="orc-hist-legenda">' +
-      '<span class="orc-leg-item"><span class="orc-leg-dot receita"></span> Receita</span>' +
-      '<span class="orc-leg-item"><span class="orc-leg-dot despesa"></span> Despesa</span></div>';
+    var keys = Object.keys(cats);
+
+    var critical = [], attention = [], healthy = [];
+
+    keys.forEach(function(cat) {
+      var val = (catGastos && catGastos[cat]) || 0;
+      var status = null;
+      var proj = null;
+      if (typeof ORCAMENTO !== 'undefined') {
+        if (ORCAMENTO.obterStatus) {
+          try { status = ORCAMENTO.obterStatus(cat, mes, ano); } catch (_e) { status = null; }
+        }
+        if (ORCAMENTO.projetarCategoria) {
+          try { proj = ORCAMENTO.projetarCategoria(cat, agora); } catch (_e2) { proj = null; }
+        }
+      }
+
+      var grupo = 'healthy';
+      if (status && status.status === 'excedido') grupo = 'critical';
+      else if (proj && (proj.risco === 'estourado' || proj.risco === 'vai-estourar')) grupo = 'critical';
+      else if (status && status.status === 'alerta') grupo = 'attention';
+      else if (status && status.percentual >= 70 && status.percentual < 100) grupo = 'attention';
+
+      var riscoMsg = '';
+      if (grupo === 'critical' && typeof ORCAMENTO !== 'undefined' && ORCAMENTO.mensagemRisco) {
+        try { riscoMsg = ORCAMENTO.mensagemRisco(cat, agora) || ''; } catch (_e3) { riscoMsg = ''; }
+      }
+
+      var item = { cat: cat, val: val, msg: riscoMsg };
+      if (grupo === 'critical') critical.push(item);
+      else if (grupo === 'attention') attention.push(item);
+      else if (val > 0 || (status && status.limite)) healthy.push(item);
+    });
+
+    function fill(listEl, items) {
+      listEl.innerHTML = items
+        .sort(function(a, b) { return b.val - a.val; })
+        .map(function(it) { return self._catItemHtml(it.cat, it.val, renda, it.msg); })
+        .join('');
+    }
+
+    fill(criticalList, critical);
+    fill(attentionList, attention);
+    fill(healthyList, healthy);
+
+    this._updateElement('orc-critical-count', String(critical.length));
+    this._updateElement('orc-attention-count', String(attention.length));
+    this._updateElement('orc-healthy-count', String(healthy.length));
+
+    if (groupCritical) groupCritical.style.display = critical.length ? '' : 'none';
+    if (groupAttention) groupAttention.style.display = attention.length ? '' : 'none';
+    if (groupHealthy) groupHealthy.style.display = healthy.length ? '' : 'none';
+
+    var algum = critical.length + attention.length + healthy.length;
+    if (emptyEl) emptyEl.style.display = algum === 0 ? '' : 'none';
+
+    if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(container);
   }
 };
 

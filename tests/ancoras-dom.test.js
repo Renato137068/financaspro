@@ -72,10 +72,6 @@ const OPCIONAIS = {
   'form-config':   'formulário legado de config; a aba atual usa outro fluxo',
   'form-orcamentos': 'formulário legado de orçamento; o atual é montado por JS',
   'contas-lista':  'UI de contas bancárias ainda não construída (Fase 3 — saldo por conta)',
-  'orc-historico': 'histórico de orçamento não exposto na UI atual',
-  'cfg-stat-tx':   'estatísticas de config não expostas na UI atual',
-  'cfg-stat-dias': 'estatísticas de config não expostas na UI atual',
-  'cfg-stat-cat':  'estatísticas de config não expostas na UI atual',
   'smart-description-suggestions': 'sugestões de descrição não expostas na UI atual',
   'sugestao-badge': 'selo de confiança da sugestão não exposto na UI atual',
 };
