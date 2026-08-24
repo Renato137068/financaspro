@@ -746,3 +746,207 @@ describe('a11y — badges de confiança IA (aba Lançamentos)', () => {
     }
   });
 });
+
+/**
+ * Contraste da aba Extrato — linhas .ext-tx e cartões .kpi-card.
+ * Regressão: no dark as superfícies ficavam claras com texto clareado (~1–2,5:1).
+ */
+describe('a11y — contraste do extrato (lista e KPIs)', () => {
+  const AA = 4.5;
+  const extrato = fs.readFileSync(path.join(root, 'css', 'layouts', 'extrato.css'), 'utf8');
+  const ds = fs.readFileSync(path.join(root, 'css', 'design-system.css'), 'utf8');
+  const dark = fs.readFileSync(path.join(root, 'css', 'themes', 'dark-mode.css'), 'utf8');
+
+  function lerTokens(css, seletor) {
+    const re = new RegExp(`${seletor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([\\s\\S]*?)\\n\\}`);
+    const m = css.match(re);
+    if (!m) return {};
+    const out = {};
+    for (const [, nome, valor] of m[1].matchAll(/--([a-z0-9-]+):\s*([^;]+);/g)) {
+      out[nome] = valor.trim();
+    }
+    return out;
+  }
+
+  function resolver(tokens, valor, profundidade) {
+    if (profundidade > 10) return null;
+    const m = String(valor).match(/^var\(--([a-z0-9-]+)\)$/);
+    if (!m) return valor;
+    const alvo = tokens[m[1]];
+    return alvo === undefined ? null : resolver(tokens, alvo, profundidade + 1);
+  }
+
+  function paraRgb(cor) {
+    if (!cor) return null;
+    const hex = String(cor).trim();
+    let m = hex.match(/^#([0-9a-f]{6})$/i);
+    if (m) {
+      const n = parseInt(m[1], 16);
+      return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    }
+    return null;
+  }
+
+  function luminancia([r, g, b]) {
+    const canal = (c) => {
+      const s = c / 255;
+      return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+    };
+    return 0.2126 * canal(r) + 0.7152 * canal(g) + 0.0722 * canal(b);
+  }
+
+  function razao(a, b) {
+    const la = luminancia(a);
+    const lb = luminancia(b);
+    return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+  }
+
+  function fundoDoSeletor(css, seletor) {
+    const esc = seletor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(esc + '\\s*\\{([^}]*)\\}');
+    const m = css.match(re);
+    if (!m) return null;
+    const bm = m[1].match(/background(?:-color)?:\s*([^;]+);/);
+    return bm ? bm[1].trim() : null;
+  }
+
+  function corDoSeletor(css, seletor) {
+    const esc = seletor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(esc + '\\s*\\{([^}]*)\\}');
+    const m = css.match(re);
+    if (!m) return null;
+    const cm = m[1].match(/(?:^|[\s;])color:\s*([^;]+);/);
+    return cm ? cm[1].trim() : null;
+  }
+
+  function tokensEscuro() {
+    const tokens = { ...lerTokens(ds, ':root') };
+    const dsDark = ds.match(/\[data-theme="dark"\]\s*\{([\s\S]*?)\n\}/);
+    if (dsDark) {
+      for (const [, nome, valor] of dsDark[1].matchAll(/--([a-z0-9-]+):\s*([^;]+);/g)) {
+        tokens[nome] = valor.trim();
+      }
+    }
+    const darkSemantic = dark.match(/\[data-theme="dark"\]\s*\{([\s\S]*?)\n\}/);
+    if (darkSemantic) {
+      for (const [, nome, valor] of darkSemantic[1].matchAll(/--([a-z0-9-]+):\s*([^;]+);/g)) {
+        tokens[nome] = valor.trim();
+      }
+    }
+    return tokens;
+  }
+
+  test('tema claro: descrição, valor e KPI ≥ 4,5:1 sobre o fundo do cartão', () => {
+    const tokens = lerTokens(ds, ':root');
+    const bgDecl = fundoDoSeletor(extrato, '.ext-tx');
+    expect(bgDecl).toBeTruthy();
+    const bg = paraRgb(resolver(tokens, bgDecl, 0));
+    expect(bg).toBeTruthy();
+
+    const pares = [
+      corDoSeletor(extrato, '.ext-tx-desc'),
+      corDoSeletor(extrato, '.ext-tx-meta'),
+      corDoSeletor(extrato, '.ext-tx-valor.receita'),
+      corDoSeletor(extrato, '.ext-tx-valor.despesa'),
+      corDoSeletor(extrato, '.kpi-value'),
+    ];
+    for (const fgDecl of pares) {
+      expect(fgDecl).toBeTruthy();
+      const fg = paraRgb(resolver(tokens, fgDecl, 0));
+      expect(fg).toBeTruthy();
+      expect(razao(fg, bg)).toBeGreaterThanOrEqual(AA);
+    }
+  });
+
+  test('tema escuro: .ext-tx e .kpi-card têm fundo opaco escuro', () => {
+    const bloco = dark.match(
+      /\[data-theme="dark"\]\s*\.ext-tx,[\s\S]*?\.saldo-card\s*\{([^}]*)\}/
+    );
+    expect(bloco).toBeTruthy();
+    const bgDecl = (bloco[1].match(/background(?:-color)?:\s*([^;]+);/) || [])[1];
+    expect(bgDecl).toBeTruthy();
+    expect(bgDecl).not.toMatch(/rgba?\(/i);
+    expect(bgDecl).toMatch(/color-bg-dark-card/);
+  });
+
+  test('tema escuro: texto do extrato ≥ 4,5:1 sobre fundo opaco', () => {
+    const tokens = tokensEscuro();
+    const bloco = dark.match(
+      /\[data-theme="dark"\]\s*\.ext-tx,[\s\S]*?\.saldo-card\s*\{([^}]*)\}/
+    );
+    expect(bloco).toBeTruthy();
+    const bgDecl = (bloco[1].match(/background(?:-color)?:\s*([^;]+);/) || [])[1];
+    expect(bgDecl).toBeTruthy();
+    const bg = paraRgb(resolver(tokens, bgDecl, 0));
+    expect(bg).toBeTruthy();
+
+    const pares = [
+      corDoSeletor(extrato, '.ext-tx-desc'),
+      corDoSeletor(extrato, '.ext-tx-meta'),
+      corDoSeletor(extrato, '.ext-tx-valor.receita'),
+      corDoSeletor(extrato, '.ext-tx-valor.despesa'),
+      corDoSeletor(extrato, '.kpi-value'),
+      corDoSeletor(extrato, '.kpi-card.receita .kpi-value'),
+      corDoSeletor(extrato, '.kpi-card.despesa .kpi-value'),
+    ];
+    for (const fgDecl of pares) {
+      expect(fgDecl).toBeTruthy();
+      const fg = paraRgb(resolver(tokens, fgDecl, 0));
+      expect(fg).toBeTruthy();
+      expect(razao(fg, bg)).toBeGreaterThanOrEqual(AA);
+    }
+  });
+});
+
+/**
+ * P0.3 — registro anti-regressão: superfícies com texto devem escurecer no dark.
+ * Documenta os elementos-chave de cada aba auditada (Resumo, Lançamentos, Extrato).
+ */
+describe('a11y — padrão sistêmico de contraste no tema escuro', () => {
+  const dark = fs.readFileSync(path.join(root, 'css', 'themes', 'dark-mode.css'), 'utf8');
+
+  const superficiesAuditadas = [
+    { aba: 'resumo', seletor: '.card-saldo-principal', obrigatorio: false },
+    { aba: 'resumo', seletor: '.resumo-item', obrigatorio: true },
+    { aba: 'lancamentos', seletor: '.valor-hero', obrigatorio: true },
+    { aba: 'extrato', seletor: '.saldo-card', obrigatorio: true },
+    { aba: 'extrato', seletor: '.kpi-card', obrigatorio: true },
+    { aba: 'extrato', seletor: '.ext-tx', obrigatorio: true },
+  ];
+
+  function temFundoOpacoEscuro(seletor) {
+    const esc = seletor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(
+      '\\[data-theme="dark"\\][^{]*' + esc + '[^{]*\\{[^}]*background(?:-color)?:\\s*([^;]+);',
+      'g'
+    );
+    const blocos = dark.match(re) || [];
+    if (blocos.length === 0) return false;
+    return blocos.some(function(bloco) {
+      const bm = bloco.match(/background(?:-color)?:\s*([^;]+);/);
+      if (!bm) return false;
+      const val = bm[1].trim();
+      return !/^rgba?\(/i.test(val) && /color-bg-dark-card|#0[a-f0-9]{5}|#1[0-9a-f]{5}/i.test(val);
+    });
+  }
+
+  test('cada superfície auditada tem override opaco em dark-mode.css', () => {
+    for (const item of superficiesAuditadas) {
+      if (!item.obrigatorio) continue;
+      expect(temFundoOpacoEscuro(item.seletor)).toBe(true);
+    }
+  });
+
+  test('documentação: lista de superfícies-chave por aba', () => {
+    const porAba = {};
+    superficiesAuditadas.forEach(function(item) {
+      if (!porAba[item.aba]) porAba[item.aba] = [];
+      porAba[item.aba].push(item.seletor);
+    });
+    expect(porAba.resumo).toEqual(expect.arrayContaining(['.resumo-item']));
+    expect(porAba.lancamentos).toEqual(expect.arrayContaining(['.valor-hero']));
+    expect(porAba.extrato).toEqual(
+      expect.arrayContaining(['.ext-tx', '.kpi-card', '.saldo-card'])
+    );
+  });
+});

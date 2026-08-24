@@ -29,6 +29,11 @@ const INIT_EXTRATO = {
   },
   listenerAttached: false,
   filtrosCategoriasListener: false,
+  listaTransacoesListener: false,
+  /** Lista filtrada do render atual — usada pelo handler delegado (carregar mais). */
+  _listaTxsAtual: null,
+  _gruposOrdenadosAtual: null,
+  _ultimoResumoAnunciado: null,
 
   /**
    * Inicializa sistema de extrato
@@ -180,6 +185,47 @@ const INIT_EXTRATO = {
   },
 
   /**
+   * P0.1: delegação de clique na lista — ligada uma única vez no container
+   * persistente (#lista-transacoes), evitando handlers acumulados a cada render.
+   */
+  _bindListaTransacoesClick: function() {
+    if (this.listaTransacoesListener) return;
+    var container = document.getElementById('lista-transacoes');
+    if (!container) return;
+    this.listaTransacoesListener = true;
+    container.addEventListener('click', function(e) {
+      var btnEdit = e.target.closest('.btn-editar');
+      var btnDel = e.target.closest('.btn-deletar');
+      var btnAnexo = e.target.closest('.btn-anexo');
+      var btnCarregarMais = e.target.closest('.btn-carregar-mais');
+      var txItem = e.target.closest('.ext-tx') || e.target.closest('.extrato-item');
+
+      if (btnAnexo) {
+        e.stopPropagation();
+      } else if (btnEdit) {
+        e.stopPropagation();
+        INIT_EXTRATO.editarTransacao(btnEdit.dataset.id);
+      } else if (btnDel) {
+        e.stopPropagation();
+        INIT_EXTRATO.deletarTransacao(btnDel.dataset.id);
+      } else if (btnCarregarMais) {
+        e.stopPropagation();
+        INIT_EXTRATO._carregarMais(INIT_EXTRATO._listaTxsAtual);
+      } else if (txItem && !btnEdit && !btnDel && !btnAnexo && !e.target.closest('.tx-checkbox')) {
+        INIT_EXTRATO.editarTransacao(txItem.dataset.id);
+      }
+    });
+    container.addEventListener('keydown', function(e) {
+      var txItem = e.target.closest('.ext-tx');
+      if (!txItem || e.target.closest('.tx-checkbox')) return;
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        INIT_EXTRATO.editarTransacao(txItem.dataset.id);
+      }
+    });
+  },
+
+  /**
    * Limpa todos os filtros aplicados
    */
   limparFiltros: function() {
@@ -285,27 +331,23 @@ const INIT_EXTRATO = {
    */
   deletarSelecionados: function() {
     if (this.state.selecionados.length === 0) return;
-    
-    if (!confirm('Deseja realmente deletar ' + this.state.selecionados.length + ' transação(ões)?')) {
-      return;
-    }
-    
+
     var self = this;
-    var deletadas = 0;
-    
-    this.state.selecionados.forEach(function(txId) {
-      var tx = TRANSACOES.obterPorId(txId);
-      if (tx) {
-        TRANSACOES.deletar(txId);
-        deletadas++;
-      }
+    var qtd = this.state.selecionados.length;
+    INIT_MODALS.confirm('Deseja realmente deletar ' + qtd + ' transação(ões)?', function() {
+      var deletadas = 0;
+      self.state.selecionados.forEach(function(txId) {
+        var tx = TRANSACOES.obterPorId(txId);
+        if (tx) {
+          TRANSACOES.deletar(txId);
+          deletadas++;
+        }
+      });
+      self.state.selecionados = [];
+      self._atualizarBarraAcoesMassa();
+      self.filtrarExtrato();
+      UTILS.mostrarToast(deletadas + ' transação(ões) deletada(s)', 'success');
     });
-    
-    this.state.selecionados = [];
-    this._atualizarBarraAcoesMassa();
-    this.filtrarExtrato();
-    
-    UTILS.mostrarToast(deletadas + ' transação(ões) deletada(s)', 'success');
   },
 
   /**
@@ -455,7 +497,7 @@ const INIT_EXTRATO = {
     var rec = 0, desp = 0;
     txs.forEach(function(t) {
       if (t.tipo === CONFIG.TIPO_RECEITA) rec += t.valor;
-      else desp += t.valor;
+      else if (t.tipo === CONFIG.TIPO_DESPESA) desp += t.valor;
     });
     var saldo = rec - desp;
 
@@ -474,7 +516,7 @@ const INIT_EXTRATO = {
     var saldoAnterior = 0;
     txsAnterior.forEach(function(t) {
       if (t.tipo === CONFIG.TIPO_RECEITA) saldoAnterior += t.valor;
-      else saldoAnterior -= t.valor;
+      else if (t.tipo === CONFIG.TIPO_DESPESA) saldoAnterior -= t.valor;
     });
 
     var trendValue = 0;
@@ -509,6 +551,19 @@ const INIT_EXTRATO = {
     if (kpiEntradas) kpiEntradas.textContent = UTILS.formatarMoeda(rec);
     if (kpiSaidas) kpiSaidas.textContent = UTILS.formatarMoeda(desp);
     if (kpiMovimentacoes) kpiMovimentacoes.textContent = txs.length;
+
+    var anuncio = document.getElementById('extrato-resumo-anuncio');
+    if (anuncio) {
+      var periodoTxt = periodEl ? periodEl.textContent : '';
+      var resumoTxt = periodoTxt + ': saldo ' + UTILS.formatarMoeda(saldo) +
+        ', entradas ' + UTILS.formatarMoeda(rec) +
+        ', saídas ' + UTILS.formatarMoeda(desp) +
+        ', ' + txs.length + ' movimentações';
+      if (resumoTxt !== this._ultimoResumoAnunciado) {
+        this._ultimoResumoAnunciado = resumoTxt;
+        anuncio.textContent = resumoTxt;
+      }
+    }
   },
 
   /**
@@ -571,120 +626,99 @@ const INIT_EXTRATO = {
   },
 
   /**
-   * Renderiza grupos de transações com saldo progressivo
+   * Ordena grupos temporais (HOJE, ONTEM, ESTA SEMANA, depois meses).
    */
-  _renderGrupos: function(grupos, txs) {
-    var container = document.getElementById('lista-transacoes');
-    if (!container) return;
-
+  _ordenarGrupos: function(grupos) {
     var ordemGrupos = ['HOJE', 'ONTEM', 'ESTA SEMANA'];
     var gruposOrdenados = {};
-
-    // Adicionar grupos fixos na ordem correta
     ordemGrupos.forEach(function(g) {
       if (grupos[g]) gruposOrdenados[g] = grupos[g];
     });
-
-    // Adicionar grupos restantes ordenados por data (mais recente primeiro)
-    var gruposRestantes = Object.keys(grupos).filter(function(g) {
+    Object.keys(grupos).filter(function(g) {
       return ordemGrupos.indexOf(g) === -1;
     }).sort(function(a, b) {
       return new Date(b) - new Date(a);
-    });
-
-    gruposRestantes.forEach(function(g) {
+    }).forEach(function(g) {
       gruposOrdenados[g] = grupos[g];
     });
+    return gruposOrdenados;
+  },
 
+  /**
+   * Gera HTML de grupos a partir de um offset global (paginação).
+   * @returns {{ html: string, rendered: number }}
+   */
+  _renderGruposHtml: function(gruposOrdenados, startItem, maxItems) {
     var html = '';
+    var skipped = 0;
+    var rendered = 0;
     var grupoKeys = Object.keys(gruposOrdenados);
-    var itensRenderizados = 0;
-    var pageSize = this.state.virtualScroll.pageSize;
-    
-    // Calcular saldo inicial (total de transações antes do período atual)
-    var saldoAcumulado = 0;
-    var info = this.getExtratoMesAno();
-    var todasTxs = TRANSACOES.obter({});
-    todasTxs.forEach(function(t) {
-      var dataTx = new Date(t.data + 'T00:00:00');
-      if (dataTx < new Date(info.ano, info.mes - 1, 1)) {
-        saldoAcumulado += t.tipo === CONFIG.TIPO_RECEITA ? t.valor : -t.valor;
-      }
-    });
+    var self = this;
 
     for (var i = 0; i < grupoKeys.length; i++) {
+      if (rendered >= maxItems) break;
       var grupo = grupoKeys[i];
       var grupoTxs = gruposOrdenados[grupo];
 
-      // Calcular subtotal do grupo
       var subtotal = 0;
       grupoTxs.forEach(function(t) {
         subtotal += t.tipo === CONFIG.TIPO_RECEITA ? t.valor : -t.valor;
       });
 
-      html += '<div class="ext-grupo">';
+      var itemsHtml = '';
+      for (var j = 0; j < grupoTxs.length; j++) {
+        if (skipped < startItem) {
+          skipped++;
+          continue;
+        }
+        if (rendered >= maxItems) break;
+        itemsHtml += self._renderTransacaoItem(grupoTxs[j]);
+        rendered++;
+      }
+
+      if (!itemsHtml) continue;
+
+      html += '<div class="ext-grupo" role="group" aria-label="' + UTILS.escapeHtml(grupo) + '">';
       html += '<div class="ext-grupo-header">';
       html += '<span class="ext-grupo-data">' + grupo + '</span>';
       html += '<span class="ext-grupo-subtotal ' + (subtotal >= 0 ? 'positivo' : 'negativo') + '">' +
         (subtotal >= 0 ? '+' : '') + UTILS.formatarMoeda(subtotal) + '</span>';
       html += '</div>';
-      html += '<div class="ext-grupo-list">';
-
-      // Renderizar itens do grupo (respeitando paginação)
-      var itensParaRenderizar = grupoTxs.slice(0, pageSize - itensRenderizados);
-      itensParaRenderizar.forEach(function(t) {
-        saldoAcumulado += t.tipo === CONFIG.TIPO_RECEITA ? t.valor : -t.valor;
-        html += this._renderTransacaoItem(t, saldoAcumulado);
-        itensRenderizados++;
-      }.bind(this));
-
-      html += '</div>';
-      html += '</div>';
-
-      // Parar se atingiu o limite da página
-      if (itensRenderizados >= pageSize) break;
+      html += '<div class="ext-grupo-list" role="list">';
+      html += itemsHtml;
+      html += '</div></div>';
     }
 
-    // Adicionar botão "carregar mais" se houver mais itens
-    if (itensRenderizados < txs.length) {
-      html += '<button class="btn-carregar-mais" id="btn-carregar-mais">Carregar mais (' + (txs.length - itensRenderizados) + ')</button>';
+    return { html: html, rendered: rendered };
+  },
+
+  /**
+   * Renderiza grupos de transações (primeira página ou re-render completo).
+   */
+  _renderGrupos: function(grupos, txs) {
+    var container = document.getElementById('lista-transacoes');
+    if (!container) return;
+
+    this._listaTxsAtual = txs;
+    this._bindListaTransacoesClick();
+
+    var gruposOrdenados = this._ordenarGrupos(grupos);
+    this._gruposOrdenadosAtual = gruposOrdenados;
+
+    var pageSize = this.state.virtualScroll.pageSize;
+    var startItem = this.state.virtualScroll.currentPage * pageSize;
+    var slice = this._renderGruposHtml(gruposOrdenados, startItem, pageSize);
+    var html = slice.html;
+    var totalShown = startItem + slice.rendered;
+
+    if (totalShown < txs.length) {
+      html += '<button type="button" class="btn-carregar-mais" id="btn-carregar-mais">Carregar mais (' +
+        (txs.length - totalShown) + ')</button>';
     }
 
     container.innerHTML = html;
 
-    // Renderiza os ícones Lucide recém-inseridos (categorias, anexos),
-    // senão os avatares de categoria ficam como círculos vazios.
     if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(container);
-
-    // Listeners de ação nos grupos de transação
-    container.addEventListener('click', function(e) {
-      // As variantes "-premium" destes seletores nao existem em markup nenhum
-      // desde que o componente foi reescrito; eram um segundo caminho mantido
-      // por precaucao, e precaucao que nunca dispara e' so' codigo a manter.
-      var btnEdit = e.target.closest('.btn-editar');
-      var btnDel = e.target.closest('.btn-deletar');
-      var btnAnexo = e.target.closest('.btn-anexo');
-      var btnCarregarMais = e.target.closest('.btn-carregar-mais');
-      var txItem = e.target.closest('.ext-tx') || e.target.closest('.extrato-item');
-      
-      if (btnAnexo) {
-        e.stopPropagation();
-      } else if (btnEdit) {
-        e.stopPropagation();
-        var editId = btnEdit.dataset.id;
-        INIT_EXTRATO.editarTransacao(editId);
-      } else if (btnDel) {
-        e.stopPropagation();
-        var deleteId = btnDel.dataset.id;
-        INIT_EXTRATO.deletarTransacao(deleteId);
-      } else if (btnCarregarMais) {
-        e.stopPropagation();
-        INIT_EXTRATO._carregarMais(txs);
-      } else if (txItem && !btnEdit && !btnDel && !btnAnexo && !e.target.closest('.tx-checkbox')) {
-        var itemId = txItem.dataset.id;
-        INIT_EXTRATO.editarTransacao(itemId);
-      }
-    });
   },
 
   /**
@@ -695,15 +729,17 @@ const INIT_EXTRATO = {
     return INIT_ANEXOS.botaoVerHtml(t.id, t.anexoCount);
   },
 
-  _renderTransacaoItem: function(t, saldoAcumulado) {
+  _renderTransacaoItem: function(t) {
     var data = new Date(t.data + 'T00:00:00');
     var dataStr = data.toLocaleDateString('pt-BR');
     var catIcon = INIT_EXTRATO.getCatIcon(t.categoria);
     var catCor = INIT_EXTRATO.getCatCor(t.categoria);
     var isChecked = this.state.selecionados.indexOf(String(t.id)) > -1 ? 'checked' : '';
-    
-    return '<div class="ext-tx" role="listitem" tabindex="0" data-id="' + UTILS.escapeHtml(String(t.id)) + '" aria-label="Transação: ' + UTILS.escapeHtml(t.descricao || t.categoria) + '">' +
-      '<input type="checkbox" class="tx-checkbox" data-tx-id="' + UTILS.escapeHtml(String(t.id)) + '" ' + isChecked + ' aria-label="Selecionar transação">' +
+    var desc = t.descricao || t.categoria;
+
+    return '<div class="ext-tx" role="listitem" tabindex="0" data-id="' + UTILS.escapeHtml(String(t.id)) + '" aria-label="Transação: ' + UTILS.escapeHtml(desc) + '">' +
+      '<input type="checkbox" class="tx-checkbox" data-tx-id="' + UTILS.escapeHtml(String(t.id)) + '" ' + isChecked +
+        ' aria-label="Selecionar: ' + UTILS.escapeHtml(desc) + '">' +
       '<div class="ext-tx-icon" style="background: ' + catCor + '20; color: ' + catCor + '">' + catIcon + '</div>' +
       '<div class="ext-tx-info">' +
         '<div class="ext-tx-desc">' + UTILS.escapeHtml(t.descricao || t.categoria) + '</div>' +
@@ -755,78 +791,6 @@ const INIT_EXTRATO = {
   },
 
   /**
-   * Renderiza uma página específica de transações
-   */
-  _renderPage: function(txs, pageNumber) {
-    var container = document.getElementById('lista-transacoes');
-    if (!container) return;
-
-    var pageSize = this.state.virtualScroll.pageSize;
-    var startIndex = pageNumber * pageSize;
-    var endIndex = Math.min(startIndex + pageSize, txs.length);
-    var pageItems = txs.slice(startIndex, endIndex);
-
-    var html = '';
-    pageItems.forEach(function(t) {
-      var data = new Date(t.data + 'T00:00:00');
-      var dataStr = data.toLocaleDateString('pt-BR');
-      var catIcon = INIT_EXTRATO.getCatIcon(t.categoria);
-      var catCor = INIT_EXTRATO.getCatCor(t.categoria);
-      
-      html += '<div class="extrato-item ' + UTILS.escapeHtml(t.tipo) + '" role="listitem" tabindex="0" data-id="' + UTILS.escapeHtml(String(t.id)) + '" aria-label="Transação: ' + UTILS.escapeHtml(t.descricao || t.categoria) + '">' +
-        '<div class="extrato-data">' + dataStr + '</div>' +
-        '<div class="extrato-desc">' +
-          '<div class="extrato-categoria" style="color:' + catCor + '" aria-hidden="true">' + catIcon + ' ' + UTILS.escapeHtml(t.categoria) + '</div>' +
-          '<div class="extrato-nome">' + UTILS.escapeHtml(t.descricao || '') + '</div>' +
-        '</div>' +
-        '<div class="extrato-valor ' + UTILS.escapeHtml(t.tipo) + '">' +
-          (t.tipo === CONFIG.TIPO_RECEITA ? '+' : '-') + UTILS.formatarMoeda(t.valor) +
-        '</div>' +
-        '<div class="extrato-actions">' +
-          INIT_EXTRATO._anexoBtnHtml(t) +
-          '<button type="button" class="btn-editar" data-id="' + UTILS.escapeHtml(String(t.id)) + '" title="Editar transação" aria-label="Editar transação"><i data-lucide="pencil" aria-hidden="true"></i></button>' +
-          '<button type="button" class="btn-deletar" data-id="' + UTILS.escapeHtml(String(t.id)) + '" title="Deletar transação" aria-label="Deletar transação"><i data-lucide="trash-2" aria-hidden="true"></i></button>' +
-        '</div>' +
-      '</div>';
-    });
-
-    // Adicionar botão "carregar mais" se houver mais itens
-    if (endIndex < txs.length) {
-      html += '<button class="btn-carregar-mais" id="btn-carregar-mais">Carregar mais (' + (txs.length - endIndex) + ')</button>';
-    }
-
-    container.innerHTML = html;
-    if (typeof renderLucideIcons === 'function') renderLucideIcons(container);
-
-    // Adicionar listeners de ações
-    container.addEventListener('click', function(e) {
-      var btnEdit = e.target.closest('.btn-editar');
-      var btnDel = e.target.closest('.btn-deletar');
-      var btnAnexo = e.target.closest('.btn-anexo');
-      var btnCarregarMais = e.target.closest('.btn-carregar-mais');
-      var txItem = e.target.closest('.ext-tx') || e.target.closest('.extrato-item');
-      
-      if (btnAnexo) {
-        e.stopPropagation();
-      } else if (btnEdit) {
-        e.stopPropagation();
-        var editId = btnEdit.dataset.id;
-        INIT_EXTRATO.editarTransacao(editId);
-      } else if (btnDel) {
-        e.stopPropagation();
-        var deleteId = btnDel.dataset.id;
-        INIT_EXTRATO.deletarTransacao(deleteId);
-      } else if (btnCarregarMais) {
-        e.stopPropagation();
-        INIT_EXTRATO._carregarMais(txs);
-      } else if (txItem && !btnEdit && !btnDel && !btnAnexo && !e.target.closest('.tx-checkbox')) {
-        var itemId = txItem.dataset.id;
-        INIT_EXTRATO.editarTransacao(itemId);
-      }
-    });
-  },
-
-  /**
    * Carrega mais itens na lista (virtual scrolling)
    */
   _carregarMais: function(txs) {
@@ -834,46 +798,23 @@ const INIT_EXTRATO = {
     var container = document.getElementById('lista-transacoes');
     if (!container) return;
 
-    // Remover botão "carregar mais"
     var btnCarregarMais = document.getElementById('btn-carregar-mais');
     if (btnCarregarMais) btnCarregarMais.remove();
 
-    // Renderizar próxima página e adicionar ao container
     var pageSize = this.state.virtualScroll.pageSize;
-    var startIndex = this.state.virtualScroll.currentPage * pageSize;
-    var endIndex = Math.min(startIndex + pageSize, txs.length);
-    var pageItems = txs.slice(startIndex, endIndex);
+    var startItem = this.state.virtualScroll.currentPage * pageSize;
+    var gruposOrdenados = this._gruposOrdenadosAtual || {};
+    var slice = this._renderGruposHtml(gruposOrdenados, startItem, pageSize);
+    var html = slice.html;
+    var totalShown = startItem + slice.rendered;
 
-    var html = '';
-    pageItems.forEach(function(t) {
-      var data = new Date(t.data + 'T00:00:00');
-      var dataStr = data.toLocaleDateString('pt-BR');
-      var catIcon = INIT_EXTRATO.getCatIcon(t.categoria);
-      var catCor = INIT_EXTRATO.getCatCor(t.categoria);
-      
-      html += '<div class="extrato-item ' + UTILS.escapeHtml(t.tipo) + '" role="listitem" tabindex="0" data-id="' + UTILS.escapeHtml(String(t.id)) + '" aria-label="Transação: ' + UTILS.escapeHtml(t.descricao || t.categoria) + '">' +
-        '<div class="extrato-data">' + dataStr + '</div>' +
-        '<div class="extrato-desc">' +
-          '<div class="extrato-categoria" style="color:' + catCor + '" aria-hidden="true">' + catIcon + ' ' + UTILS.escapeHtml(t.categoria) + '</div>' +
-          '<div class="extrato-nome">' + UTILS.escapeHtml(t.descricao || '') + '</div>' +
-        '</div>' +
-        '<div class="extrato-valor ' + UTILS.escapeHtml(t.tipo) + '">' +
-          (t.tipo === CONFIG.TIPO_RECEITA ? '+' : '-') + UTILS.formatarMoeda(t.valor) +
-        '</div>' +
-        '<div class="extrato-actions">' +
-          INIT_EXTRATO._anexoBtnHtml(t) +
-          '<button type="button" class="btn-editar" data-id="' + UTILS.escapeHtml(String(t.id)) + '" title="Editar transação" aria-label="Editar transação"><i data-lucide="pencil" aria-hidden="true"></i></button>' +
-          '<button type="button" class="btn-deletar" data-id="' + UTILS.escapeHtml(String(t.id)) + '" title="Deletar transação" aria-label="Deletar transação"><i data-lucide="trash-2" aria-hidden="true"></i></button>' +
-        '</div>' +
-      '</div>';
-    });
-
-    // Adicionar botão "carregar mais" se houver mais itens
-    if (endIndex < txs.length) {
-      html += '<button class="btn-carregar-mais" id="btn-carregar-mais">Carregar mais (' + (txs.length - endIndex) + ')</button>';
+    if (totalShown < txs.length) {
+      html += '<button type="button" class="btn-carregar-mais" id="btn-carregar-mais">Carregar mais (' +
+        (txs.length - totalShown) + ')</button>';
     }
 
     container.insertAdjacentHTML('beforeend', html);
+    if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(container);
   },
 
   /**
@@ -1018,6 +959,15 @@ const INIT_EXTRATO = {
   },
 
   /**
+   * Neutraliza fórmulas CSV (= + - @ tab CR) prefixando apóstrofo.
+   */
+  _neutralizarCsvCelula: function(val) {
+    var s = String(val == null ? '' : val);
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+    return s.replace(/"/g, '""');
+  },
+
+  /**
    * Exporta extrato para Excel (CSV melhorado)
    */
   exportarExcel: function() {
@@ -1068,8 +1018,8 @@ const INIT_EXTRATO = {
       saldoAcumulado += valor;
       
       var tipoStr = t.tipo === CONFIG.TIPO_RECEITA ? 'Receita' : 'Despesa';
-      var descricao = (t.descricao || '').replace(/"/g, '""'); // Escapar aspas
-      var categoria = t.categoria.replace(/"/g, '""');
+      var descricao = this._neutralizarCsvCelula(t.descricao || '');
+      var categoria = this._neutralizarCsvCelula(t.categoria);
       
       csv += data + ',"' + descricao + '","' + categoria + '",' + tipoStr + ',' + valor.toFixed(2) + ',' + saldoAcumulado.toFixed(2) + '\n';
     });

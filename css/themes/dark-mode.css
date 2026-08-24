@@ -263,10 +263,17 @@
   box-shadow: var(--elevacao-2);
 }
 
+/* P0.2: superfícies opacas no escuro — mesmo padrão Resumo/Lançamentos */
+[data-theme="dark"] .ext-tx,
+[data-theme="dark"] .kpi-card,
+[data-theme="dark"] .saldo-card {
+  background: var(--color-bg-dark-card);
+}
+
 [data-theme="dark"] .ext-tx             { border-bottom-color: var(--color-border); }
-[data-theme="dark"] .ext-tx:hover       { background: rgba(18, 105, 78, 0.04); }
-[data-theme="dark"] .ext-tx:active      { background: rgba(18, 105, 78, 0.15); }
-[data-theme="dark"] .ext-tx.aberto      { background: rgba(18, 105, 78, 0.08); }
+[data-theme="dark"] .ext-tx:hover       { background: rgba(18, 105, 78, 0.12); }
+[data-theme="dark"] .ext-tx:active      { background: rgba(18, 105, 78, 0.2); }
+[data-theme="dark"] .ext-tx.aberto      { background: rgba(18, 105, 78, 0.15); }
 [data-theme="dark"] .ext-tx-expanded    { background: #0a1510; }
 [data-theme="dark"] .ext-tx-actions-bar { border-top-color: var(--color-border); }
 

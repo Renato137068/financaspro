@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auditoria — Aba Extrato</title>
+<style>
+  :root{
+    --bg:#f6f7fb; --card:#ffffff; --ink:#1a1d29; --muted:#5b6472; --line:#e6e8ef;
+    --brand:#12694e; --brand2:#2f9c6d;
+    --good:#16a34a; --ok:#0891b2; --warn:#d97706; --bad:#dc2626;
+    --shadow:0 1px 3px rgba(20,25,50,.06),0 8px 24px rgba(20,25,50,.06);
+    --radius:16px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0e1017; --card:#171a24; --ink:#eef0f6; --muted:#9aa3b2; --line:#262a37;
+      --shadow:0 1px 3px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0e1017; --card:#171a24; --ink:#eef0f6; --muted:#9aa3b2; --line:#262a37;
+    --shadow:0 1px 3px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding:32px 20px 90px}
+  a{color:var(--brand2)}
+  code{background:rgba(127,127,127,.14);padding:1px 6px;border-radius:6px;font-size:.86em;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  header.hero{background:linear-gradient(135deg,var(--brand),var(--brand2));
+    color:#fff;border-radius:var(--radius);padding:34px 32px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  header.hero h1{margin:0 0 6px;font-size:27px;letter-spacing:-.4px}
+  header.hero p.sub{margin:0;opacity:.93;font-size:15px;max-width:660px}
+  .hero-meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;font-size:12.5px}
+  .hero-meta span{background:rgba(255,255,255,.16);padding:4px 11px;border-radius:20px}
+  .final{display:flex;align-items:center;gap:24px;margin-top:26px;flex-wrap:wrap}
+  .final .txt strong{font-size:16px;display:block;margin-bottom:3px}
+  .final .txt span{font-size:14px;opacity:.92;max-width:560px;display:block}
+  .ring{flex:none}
+  section{margin-top:34px}
+  h2{font-size:20px;letter-spacing:-.3px;margin:0 0 4px;display:flex;align-items:center;gap:9px}
+  h2 .n{width:26px;height:26px;border-radius:8px;background:var(--brand);color:#fff;font-size:14px;
+    display:inline-flex;align-items:center;justify-content:center;flex:none}
+  .lead{color:var(--muted);font-size:14.5px;margin:0 0 18px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:22px 24px;box-shadow:var(--shadow)}
+  .crit{border:1px solid rgba(220,38,38,.35);background:linear-gradient(180deg,rgba(220,38,38,.08),rgba(220,38,38,.02));
+    border-radius:var(--radius);padding:22px 24px;box-shadow:var(--shadow);margin-bottom:14px}
+  .crit .tag{display:inline-block;background:var(--bad);color:#fff;font-size:11.5px;font-weight:700;letter-spacing:.4px;padding:3px 10px;border-radius:20px;text-transform:uppercase}
+  .crit h3{margin:12px 0 8px;font-size:18px}
+  .crit p{margin:6px 0;font-size:14.5px}
+  .evi{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px}
+  @media(max-width:640px){.evi{grid-template-columns:1fr}}
+  .evi div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:13.5px}
+  .evi b{display:block;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}
+  .swatch{display:inline-flex;align-items:center;gap:8px}
+  .chip{width:34px;height:16px;border-radius:4px;border:1px solid var(--line);vertical-align:middle}
+  .dims{display:grid;gap:12px}
+  .dim{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 18px;box-shadow:var(--shadow)}
+  .dim .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px}
+  .dim .name{font-weight:650;font-size:15px}
+  .dim .score{font-weight:800;font-size:15px;font-variant-numeric:tabular-nums}
+  .bar{height:9px;border-radius:6px;background:rgba(127,127,127,.16);overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:6px}
+  .dim p{margin:10px 0 0;font-size:13.7px;color:var(--muted)}
+  .dim .files{margin-top:8px;font-size:12.5px;color:var(--muted)}
+  .pill{font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;color:#fff;text-transform:uppercase;letter-spacing:.3px}
+  .rm{display:grid;gap:14px}
+  .phase{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow)}
+  .phase h3{margin:0 0 4px;font-size:16px;display:flex;align-items:center;gap:10px}
+  .phase .goal{color:var(--muted);font-size:13.5px;margin:0 0 12px}
+  .task{border-top:1px solid var(--line);padding:12px 0}
+  .task:first-of-type{border-top:0}
+  .task .h{display:flex;gap:10px;align-items:baseline;justify-content:space-between;flex-wrap:wrap}
+  .task .t{font-weight:600;font-size:14.5px}
+  .task p{margin:6px 0 0;font-size:13.4px;color:var(--muted)}
+  .task code{font-size:12px}
+  .eff{font-size:11.5px;color:var(--muted);white-space:nowrap}
+  table.sum{width:100%;border-collapse:collapse;font-size:13.6px;margin-top:6px}
+  table.sum th,table.sum td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
+  table.sum th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.3px}
+  table.sum td.s{font-weight:800;font-variant-numeric:tabular-nums;text-align:right}
+  .foot{margin-top:40px;color:var(--muted);font-size:12.5px;text-align:center}
+  ul.tight{margin:8px 0 0;padding-left:20px}
+  ul.tight li{margin:4px 0;font-size:13.6px;color:var(--muted)}
+  .callout{margin-top:14px;border-left:3px solid var(--brand2);background:rgba(47,156,109,.07);padding:12px 16px;border-radius:0 10px 10px 0;font-size:13.6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <h1>Auditoria completa — Aba <em>Extrato</em></h1>
+    <p class="sub">Análise focada no histórico de transações (<code>#aba-extrato</code>): filtros, busca, ordenação,
+    agrupamento por período, seleção em massa, exportação CSV/PDF, acessibilidade, contraste, integridade de eventos e
+    performance. Notas de 0 a 100 por dimensão, com evidência empírica coletada no app em execução.</p>
+    <div class="hero-meta">
+      <span>FinançasPro v11.0</span>
+      <span>24 ago 2026</span>
+      <span>Escopo: somente Extrato</span>
+      <span>12 dimensões</span>
+      <span>Método: estático + runtime (contraste e eventos medidos)</span>
+    </div>
+    <div class="final">
+      <div class="ring">
+        <svg width="118" height="118" viewBox="0 0 120 120" aria-label="Nota geral 58 de 100">
+          <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="12"/>
+          <circle cx="60" cy="60" r="52" fill="none" stroke="#fff" stroke-width="12"
+            stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="137.2" transform="rotate(-90 60 60)"/>
+          <text x="60" y="58" text-anchor="middle" fill="#fff" font-size="34" font-weight="800">58</text>
+          <text x="60" y="79" text-anchor="middle" fill="rgba(255,255,255,.85)" font-size="12">/ 100</text>
+        </svg>
+      </div>
+      <div class="txt">
+        <strong>Abaixo do esperado — funcionalidade rica, mas 2 bloqueadores</strong>
+        <span>O Extrato tem recursos maduros (filtros persistentes, busca, agrupamento por período, export CSV/PDF).
+        Mas carrega <b>dois bloqueadores</b>: cada clique numa transação é executado <b>várias vezes</b> (listeners que
+        se acumulam a cada filtro) e, no <b>tema escuro</b>, a lista inteira e os KPIs ficam ilegíveis. É a nota mais
+        baixa das três abas auditadas — a base de engenharia é boa, mas estes dois defeitos atingem o uso diário.</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- CRÍTICOS -->
+  <section>
+    <h2><span class="n">!</span> Achados críticos</h2>
+    <p class="lead">Ambos verificados no navegador com o app rodando.</p>
+
+    <div class="crit">
+      <span class="tag">P0 · Correção (todos os temas)</span>
+      <h3>Cada clique numa transação dispara a ação várias vezes</h3>
+      <p>Toda renderização da lista (<code>_renderGrupos</code>) adiciona um novo
+      <code>addEventListener('click', …)</code> ao mesmo container <code>#lista-transacoes</code>, sem remover o
+      anterior. Como o container não é recriado (só o <code>innerHTML</code> muda), os handlers <b>se acumulam</b>.
+      A lista re-renderiza a cada filtro, busca, ordenação ou navegação de período.</p>
+      <div class="evi">
+        <div><b>Teste empírico</b> 3 re-renders → 1 clique disparou <code>editarTransacao</code> <b>3×</b></div>
+        <div><b>Impacto</b> deletar abre N modais / apaga N vezes; “carregar mais” carrega N páginas; edição reabre N vezes</div>
+        <div><b>Progressão</b> piora com o uso — quanto mais a pessoa filtra, mais vezes cada clique é executado</div>
+        <div><b>Origem</b> falta o guard que já existe para os chips de categoria (<code>filtrosCategoriasListener</code>)</div>
+      </div>
+      <p style="margin-top:14px"><b>Correção.</b> Vincular o listener de clique da lista <u>uma única vez</u> (delegação
+      no container, com um guard igual ao <code>filtrosCategoriasListener</code>), ou religar em elemento recriado.
+      Vale para <code>init-extrato.js:660</code> e para a cópia em <code>_renderPage</code> (<code>:802</code>).</p>
+    </div>
+
+    <div class="crit">
+      <span class="tag">P0 · Contraste (tema escuro)</span>
+      <h3>No tema escuro, a lista de transações e os KPIs ficam ilegíveis</h3>
+      <p>As linhas de transação (<code>.ext-tx</code>) e os cartões de KPI (<code>.kpi-card</code>) permanecem com
+      fundo <b>branco</b> no tema escuro, enquanto o texto assume a cor clara. É o <b>mesmo padrão</b> dos P0 já
+      corrigidos no Resumo e em Lançamentos — a frente foi tematizada, o fundo não.</p>
+      <div class="evi">
+        <div><b>Descrição da transação</b> texto #edf3f0 sobre .ext-tx branco → <b>1,12:1</b> <span style="color:var(--bad);font-weight:700">reprova</span></div>
+        <div><b>Valor da transação</b> <b>2,29:1</b> · <b>Categoria/data</b> 2,52:1 <span style="color:var(--bad)">reprova</span></div>
+        <div><b>Valores dos KPIs</b> (Entradas/Saídas) <b>2,29:1</b> <span style="color:var(--bad)">reprova</span></div>
+        <div><b>Tema claro</b> tudo passa (6,1 a 17,9:1) — só o dark quebra</div>
+      </div>
+      <div class="callout"><b>Padrão sistêmico (3ª ocorrência).</b> É a terceira aba com o mesmo defeito: o tema escuro
+      depende de overrides de fundo por componente em <code>dark-mode.css</code>, e vários foram esquecidos
+      (<code>.ext-tx</code> e <code>.kpi-card</code> aqui; <code>.valor-hero</code> em Lançamentos; cartão de saldo no
+      Resumo). Vale uma varredura única: garantir que <u>toda</u> superfície com texto tenha fundo escuro no dark, e um
+      teste de contraste que percorra os elementos-chave de cada aba.</div>
+      <p style="margin-top:12px"><b>Correção.</b> Adicionar <code>[data-theme="dark"] .ext-tx</code> e
+      <code>[data-theme="dark"] .kpi-card { background: var(--color-bg-dark-card); }</code> (opaco), como já foi feito
+      para o cartão de saldo e o <code>.valor-hero</code>.</p>
+    </div>
+  </section>
+
+  <!-- NOTAS -->
+  <section>
+    <h2><span class="n">1</span> Notas por dimensão</h2>
+    <p class="lead">0 a 100. Barras: <span style="color:var(--good)">verde ≥80</span>, <span style="color:var(--warn)">âmbar 60–79</span>, <span style="color:var(--bad)">vermelho &lt;60</span>.</p>
+    <div class="dims" id="dims"></div>
+  </section>
+
+  <!-- PLACAR -->
+  <section>
+    <h2><span class="n">2</span> Placar consolidado</h2>
+    <div class="card">
+      <table class="sum">
+        <thead><tr><th>Dimensão</th><th>Peso</th><th style="text-align:right">Nota</th></tr></thead>
+        <tbody id="sumbody"></tbody>
+        <tfoot><tr><td style="font-weight:700">Nota geral (ponderada)</td><td></td><td class="s" style="font-size:16px">58</td></tr></tfoot>
+      </table>
+      <p style="font-size:12.8px;color:var(--muted);margin:14px 0 0">
+        Os dois bloqueadores pesam nas dimensões de maior peso (integridade de eventos, contraste, acessibilidade),
+        o que puxa a média para baixo. Corrigidos, a aba volta com folga para a faixa de 75+.
+      </p>
+    </div>
+  </section>
+
+  <!-- ROADMAP -->
+  <section>
+    <h2><span class="n">3</span> Roadmap de melhorias</h2>
+    <p class="lead">Priorizado por impacto × esforço.</p>
+    <div class="rm">
+
+      <div class="phase">
+        <h3><span class="pill" style="background:var(--bad)">P0 · agora</span> Os dois bloqueadores</h3>
+        <p class="goal">Meta: cliques executam uma vez só, e a lista é legível nos dois temas.</p>
+        <div class="task">
+          <div class="h"><span class="t">Vincular o listener de clique da lista uma única vez</span><span class="eff">~1 h · baixo</span></div>
+          <p>Guard igual ao <code>filtrosCategoriasListener</code> (ou delegação global no container que persiste). <code>init-extrato.js:660</code> e <code>:802</code>.</p>
+        </div>
+        <div class="task">
+          <div class="h"><span class="t">Fundo escuro opaco em <code>.ext-tx</code> e <code>.kpi-card</code></span><span class="eff">~30 min · trivial</span></div>
+          <p><code>[data-theme="dark"] .ext-tx, .kpi-card { background: var(--color-bg-dark-card); }</code>. Conferir também <code>.ext-grupo</code>/subtotais.</p>
+        </div>
+        <div class="task">
+          <div class="h"><span class="t">Varredura de contraste no dark + teste</span><span class="eff">~2 h · médio</span></div>
+          <p>Auditar todas as superfícies com texto (padrão recorrente em 3 abas) e estender <code>tests/a11y-static.test.js</code> para cobrir a lista e os KPIs do extrato.</p>
+        </div>
+      </div>
+
+      <div class="phase">
+        <h3><span class="pill" style="background:var(--warn)">P1 · próxima sprint</span> Consistência e acessibilidade</h3>
+        <p class="goal">Meta: “carregar mais” consistente e lista navegável por teclado/leitor.</p>
+        <div class="task">
+          <div class="h"><span class="t">Unificar os dois caminhos de renderização</span><span class="eff">~4 h · médio</span></div>
+          <p>O render inicial usa cards agrupados (<code>.ext-tx</code>) mas “Carregar mais” anexa linhas planas (<code>.extrato-item</code>), com layout diferente e sem grupo. Usar o mesmo template. Remover <code>_renderPage</code> (código morto, nunca chamado). <code>init-extrato.js:576-877</code>.</p>
+        </div>
+        <div class="task">
+          <div class="h"><span class="t">Teclado + semântica da lista</span><span class="eff">~3 h · médio</span></div>
+          <p>A linha (<code>.ext-tx</code>) é <code>tabindex="0"</code> mas só edita por clique de mouse — adicionar Enter/Espaço. O <code>role="list"</code> é quebrado pelos wrappers <code>.ext-grupo</code> entre a lista e os <code>listitem</code>. Checkbox tem <code>aria-label</code> genérico igual para todas as linhas. Vários <code>role="status"</code>/<code>aria-live</code> re-anunciam a cada filtro (ruído).</p>
+        </div>
+        <div class="task">
+          <div class="h"><span class="t">Padronizar confirmação de exclusão</span><span class="eff">~30 min · baixo</span></div>
+          <p><code>deletarSelecionados</code> usa <code>confirm()</code> nativo; <code>deletarTransacao</code> usa <code>INIT_MODALS.confirm</code>. Unificar no modal do app (acessível e no estilo). <code>init-extrato.js:289</code>.</p>
+        </div>
+      </div>
+
+      <div class="phase">
+        <h3><span class="pill" style="background:var(--ok)">P2 · contínuo</span> Segurança, performance e limpeza</h3>
+        <p class="goal">Meta: export seguro e menos trabalho desperdiçado.</p>
+        <div class="task">
+          <div class="h"><span class="t">Neutralizar injeção de fórmula no CSV</span><span class="eff">~30 min · baixo</span></div>
+          <p>Descrições/categorias começando com <code>= + - @</code> viram fórmula no Excel. Prefixar esses campos com apóstrofo ao exportar. <code>init-extrato.js:1071-1074</code>.</p>
+        </div>
+        <div class="task">
+          <div class="h"><span class="t">Remover a computação de saldo acumulado não usada</span><span class="eff">~30 min · baixo</span></div>
+          <p><code>_renderGrupos</code> varre <b>todas</b> as transações a cada render para calcular <code>saldoAcumulado</code>, que é passado ao item mas <b>nunca exibido</b>. Ou mostrar o saldo corrido (feature), ou remover o cálculo. <code>init-extrato.js:604-637, 698</code>.</p>
+        </div>
+        <div class="task">
+          <div class="h"><span class="t">Reduzir acoplamento de <code>editarTransacao</code></span><span class="eff">~2 h · médio</span></div>
+          <p>Manipula IDs internos do formulário (<code>novo-valor</code> etc.) diretamente; expor um método em INIT_FORM (ex.: <code>preencherParaEdicao(tx)</code>). <code>init-extrato.js:974-1006</code>.</p>
+        </div>
+        <div class="task">
+          <div class="h"><span class="t">Rever o “else” dos totais</span><span class="eff">~20 min · baixo</span></div>
+          <p>Em <code>renderExtratoResumo</code>, <code>else desp += t.valor</code> soma como saída tudo que não é receita — se houver tipo de transferência, infla as saídas. Espelhar o tratamento explícito já usado no export. <code>init-extrato.js:456-459</code>.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FORTES -->
+  <section>
+    <h2><span class="n">4</span> O que já está bom (manter)</h2>
+    <div class="card">
+      <ul class="tight">
+        <li><b>Escape consistente</b> — <code>UTILS.escapeHtml</code> em descrição/categoria em todos os templates; cores de categoria vêm de mapa fixo (sem XSS).</li>
+        <li><b>Filtros persistentes</b> (tipo e ordenação salvos no localStorage) e <b>busca com debounce</b> (300ms).</li>
+        <li><b>Agrupamento por período</b> (Hoje/Ontem/Esta semana/mês) com subtotais por grupo — leitura muito clara.</li>
+        <li><b>Atalhos de teclado</b> — <code>f</code> foca a busca, <code>Alt+←/→</code> navega período, <code>Esc</code> limpa filtros.</li>
+        <li><b>Export CSV</b> com BOM (Excel reconhece UTF-8), aspas escapadas e resumo/totais; <b>export PDF</b> estilizado.</li>
+        <li><b>Skeleton loading</b> e <b>empty states</b> com duas variantes (sem dados vs. sem resultado do filtro).</li>
+        <li><b>Navegação de período</b> com tendência vs. mês anterior e ocultação do “próximo” no mês atual.</li>
+        <li><b>Contraste do tema claro</b> — todos os elementos medidos passam AA (6,1 a 17,9:1).</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- METODOLOGIA -->
+  <section>
+    <h2><span class="n">5</span> Metodologia & conceitos aplicados</h2>
+    <div class="card">
+      <ul class="tight">
+        <li><b>Integridade de eventos:</b> teste empírico de acúmulo de listeners (re-render 3× + 1 clique, contagem de execuções).</li>
+        <li><b>Acessibilidade:</b> WCAG 2.1 — contraste (1.4.3), teclado (2.1.1), semântica de lista/estado (1.3.1, 4.1.2), ruído de <code>aria-live</code>.</li>
+        <li><b>Contraste medido:</b> <code>getComputedStyle</code> + razão WCAG, compondo fundos, em claro e escuro, em estado estável.</li>
+        <li><b>Correção financeira:</b> saldo, KPIs, saldo acumulado e totais do export.</li>
+        <li><b>Segurança:</b> XSS no render e injeção de fórmula (CSV) no export.</li>
+        <li><b>Arquitetura/manutenção:</b> caminhos de render duplicados, código morto, acoplamento.</li>
+        <li><b>Performance:</b> re-scan de transações por render e trabalho desperdiçado.</li>
+      </ul>
+      <p style="font-size:12.5px;color:var(--muted);margin-bottom:0">Escopo estritamente limitado à aba Extrato
+      (<code>#aba-extrato</code>, <code>js/modules/init-extrato.js</code>, <code>css/layouts/extrato.css</code>).</p>
+    </div>
+  </section>
+
+  <p class="foot">FinançasPro · Auditoria da aba Extrato · 24 ago 2026 · notas 0–100 · evidência coletada em runtime</p>
+</div>
+
+<script>
+  var dims = [
+    {name:"Contraste & legibilidade (tema escuro)", score:28, weight:"alto",
+     note:"Lista de transações e KPIs ficam ilegíveis no dark (descrição 1,12:1, valor 2,29:1). Cards mantêm fundo branco. Tema claro passa folgado.",
+     files:"dark-mode.css · .ext-tx · .kpi-card"},
+    {name:"Integridade de eventos / correção", score:40, weight:"alto",
+     note:"Listeners de clique se acumulam a cada re-render: 3 filtros → 1 clique executa 3×. Deletar/editar/carregar-mais disparam múltiplas vezes.",
+     files:"init-extrato.js:660, 802"},
+    {name:"Correção financeira", score:82, weight:"alto",
+     note:"Saldo, tendência, KPIs e totais do export corretos. Ponto fraco: 'else' conta como saída tudo que não é receita (infla se houver transferência).",
+     files:"init-extrato.js:456-459, 1032-1078"},
+    {name:"Acessibilidade — teclado / leitor", score:55, weight:"alto",
+     note:"role=list quebrado pelos grupos; linha focável mas só edita por mouse; checkbox com aria-label genérico; muitos aria-live re-anunciam a cada filtro. Bons aria-pressed nos filtros.",
+     files:"init-extrato.js:705 · index.html:712"},
+    {name:"Theming / dark mode", score:45, weight:"alto",
+     note:"Mesmo defeito recorrente (3ª aba): fundos de .ext-tx e .kpi-card não escurecem. dark-mode.css cobre borda/hover, esquece o fundo.",
+     files:"dark-mode.css:260-271"},
+    {name:"Exportação (CSV / PDF)", score:78, weight:"médio",
+     note:"CSV com BOM, aspas escapadas, resumo e saldo acumulado; PDF estilizado para impressão. Falta anti-injeção de fórmula; PDF via document.write.",
+     files:"init-extrato.js:1023-1194"},
+    {name:"UX / fluxo", score:76, weight:"médio",
+     note:"Filtros, busca, ordenação, agrupamento, tendência, seleção em massa. Inconsistência: 'Carregar mais' muda o layout dos itens.",
+     files:"index.html:586-745 · init-extrato.js:832-877"},
+    {name:"Segurança de front-end", score:68, weight:"médio",
+     note:"escapeHtml universal no render (sem XSS). Falha: injeção de fórmula no CSV não é neutralizada (descrições com = + - @).",
+     files:"init-extrato.js:1071-1074"},
+    {name:"Performance", score:66, weight:"médio",
+     note:"Cada filtro re-varre TODAS as transações para um saldo acumulado que nem é exibido; listeners acumulados também degradam.",
+     files:"init-extrato.js:604-637"},
+    {name:"Robustez / tratamento de erros", score:65, weight:"médio",
+     note:"try/catch em filtros salvos; empty states cuidados. Usa confirm() nativo em massa (inconsistente com o modal do app).",
+     files:"init-extrato.js:47-74, 289"},
+    {name:"Manutenibilidade / duplicação", score:55, weight:"médio",
+     note:"Markup do item repetido em 3 lugares (_renderTransacaoItem/_renderPage/_carregarMais); _renderPage é código morto; saldoAcumulado calculado e não usado.",
+     files:"init-extrato.js:698-877"},
+    {name:"Arquitetura / acoplamento", score:58, weight:"médio",
+     note:"Dois sistemas de render paralelos e inconsistentes; editarTransacao manipula IDs internos do formulário diretamente.",
+     files:"init-extrato.js:517-535, 974-1006"}
+  ];
+  function color(s){ var cs=getComputedStyle(document.documentElement);
+    return s>=80?cs.getPropertyValue('--good'):s>=60?cs.getPropertyValue('--warn'):cs.getPropertyValue('--bad'); }
+  var host=document.getElementById('dims');
+  dims.slice().sort(function(a,b){return a.score-b.score;}).forEach(function(d){
+    var el=document.createElement('div'); el.className='dim';
+    el.innerHTML='<div class="top"><span class="name">'+d.name+'</span><span class="score" style="color:'+color(d.score)+'">'+d.score+'</span></div>'+
+      '<div class="bar"><i style="width:'+d.score+'%;background:'+color(d.score)+'"></i></div>'+
+      '<p>'+d.note+'</p><div class="files">'+d.files+'</div>';
+    host.appendChild(el);
+  });
+  var body=document.getElementById('sumbody');
+  dims.forEach(function(d){
+    var tr=document.createElement('tr');
+    tr.innerHTML='<td>'+d.name+'</td><td style="color:var(--muted)">'+d.weight+'</td><td class="s" style="color:'+color(d.score)+'">'+d.score+'</td>';
+    body.appendChild(tr);
+  });
+</script>
+</body>
+</html>
