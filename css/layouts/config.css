@@ -153,7 +153,8 @@
   border-radius: var(--radius-lg);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
-  color: var(--color-success-text);
+  /* P2.3: hex local (≥ 5,5:1 sobre o fundo tintado). Dark sobrescreve com -light. */
+  color: #16613f;
   transition: all var(--transition-fast);
 }
 
@@ -489,7 +490,8 @@
   background: var(--color-danger-bg);
   border: 2px solid var(--color-danger);
   border-radius: var(--radius-xl);
-  color: var(--color-danger-text);
+  /* P2.3: hex local (≥ 5,5:1 sobre o fundo tintado). Dark sobrescreve com -light. */
+  color: #8f3a26;
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
   cursor: pointer;
@@ -1086,4 +1088,89 @@
 [data-theme="dark"] .perfil-danger-btn:hover {
   background: var(--color-danger-on-light);
   color: var(--color-text-inverse);
+}
+
+/* ── Modais de categorias / listas vazias (P2.4) ──────────── */
+
+.perfil-modal-toolbar {
+  margin-bottom: 16px;
+}
+
+.perfil-modal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.perfil-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.perfil-modal-label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: var(--font-weight-medium);
+}
+
+.perfil-modal-input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+}
+
+.perfil-modal-item {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.perfil-modal-item-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.perfil-modal-item-icon {
+  font-size: 18px;
+}
+
+.perfil-modal-item-title {
+  font-weight: var(--font-weight-medium);
+}
+
+.perfil-modal-btn-primary {
+  padding: 8px 16px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.perfil-modal-btn-danger {
+  padding: 4px 8px;
+  background: var(--danger);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.perfil-modal-empty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 20px;
+}
+
+.bancos-empty-hint {
+  font-size: var(--font-size-sm);
+  margin-top: 8px;
 }

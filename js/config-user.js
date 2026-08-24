@@ -53,13 +53,22 @@ var CONFIG_USER = {
   },
 
   limparDados: function() {
-    fpConfirm('Tem certeza? Todos os seus dados serao apagados permanentemente.', function() {
-      DADOS.limparTodos();
-      TRANSACOES.init();
-      ORCAMENTO.init();
-      UTILS.mostrarToast('Tudo apagado. Não sobrou nada neste aparelho.', 'warning');
-      setTimeout(function() { location.reload(); }, 1500);
-    });
+    var confirmar = (typeof INIT_MODALS !== 'undefined' && INIT_MODALS.fpConfirm)
+      ? INIT_MODALS.fpConfirm.bind(INIT_MODALS)
+      : (typeof fpConfirm === 'function' ? fpConfirm : function(msg, ok) { if (window.confirm(msg)) ok(); });
+
+    confirmar(
+      'Tem certeza? Todos os seus dados neste aparelho serão apagados permanentemente. Não há como desfazer.',
+      function() {
+        confirmar('Confirma o apagamento definitivo de todos os dados locais?', function() {
+          DADOS.limparTodos();
+          TRANSACOES.init();
+          ORCAMENTO.init();
+          UTILS.mostrarToast('Tudo apagado. Não sobrou nada neste aparelho.', 'warning');
+          setTimeout(function() { location.reload(); }, 1500);
+        });
+      }
+    );
   },
 
   /**

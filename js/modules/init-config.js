@@ -85,7 +85,6 @@ const INIT_CONFIG = {
     var pinStatus = document.getElementById('perfil-pin-status');
     if (pinStatus) pinStatus.textContent = config.pinAtivo ? 'PIN ativo' : 'PIN desativado';
     this._refreshCryptoToggle();
-    if (this.renderConfigStats) this.renderConfigStats();
     this._updateAppFooter();
     this._updateLembreteStatus();
     if (typeof INIT_BILLING !== 'undefined' && INIT_BILLING.refreshPlanoCard) {
@@ -195,6 +194,12 @@ const INIT_CONFIG = {
         INIT_CONFIG.adicionarCartao(nome, bandeira, limite, fechamento, vencimento);
       });
     }
+
+    if (typeof UTILS !== 'undefined' && UTILS.bindCampoMoeda) {
+      UTILS.bindCampoMoeda(document.getElementById('cartao-limite'), {
+        previewId: 'cartao-limite-preview'
+      });
+    }
     
     // Event delegation para botões de remover
     document.addEventListener('click', function(e) {
@@ -230,12 +235,28 @@ const INIT_CONFIG = {
       avatar.textContent = nomeAvatar.charAt(0).toUpperCase();
     }
     
-    // Atualizar data de último acesso
+    // Último acesso real (não a hora atual inventada)
     var lastAccessEl = document.getElementById('perfil-last-access');
     if (lastAccessEl) {
-      var now = new Date();
-      var timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-      lastAccessEl.textContent = 'Hoje às ' + timeStr;
+      var prev = config.ultimoAcessoApp;
+      if (prev) {
+        var d = new Date(prev);
+        if (!isNaN(d.getTime())) {
+          lastAccessEl.textContent = 'Último acesso: ' +
+            d.toLocaleDateString('pt-BR') + ' às ' +
+            d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        } else {
+          lastAccessEl.textContent = 'Sessão neste aparelho';
+        }
+      } else {
+        lastAccessEl.textContent = 'Primeiro acesso neste aparelho';
+      }
+      if (!this._acessoRegistrado) {
+        this._acessoRegistrado = true;
+        try {
+          DADOS.salvarConfig({ ultimoAcessoApp: new Date().toISOString() });
+        } catch (_e) { /* noop */ }
+      }
     }
     
     // Atualizar badge de plano
@@ -281,17 +302,20 @@ const INIT_CONFIG = {
   },
 
   /**
-   * Configura navegação por teclado nos cards
+   * P2.2: teclado delegado no container — cobre cards presentes no init e
+   * os que aparecem depois (modais). BUTTON/A nativos já tratam Enter/Espaço.
    */
   _bindKeyboardNavigation: function() {
-    var cards = document.querySelectorAll('.perfil-card[role="button"]');
-    cards.forEach(function(card) {
-      card.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          card.click();
-        }
-      });
+    if (this._perfilKeyNavBound) return;
+    this._perfilKeyNavBound = true;
+    var root = document.getElementById('aba-config') || document;
+    root.addEventListener('keydown', function(e) {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      var card = e.target.closest('.perfil-card[role="button"]');
+      if (!card || !root.contains(card)) return;
+      if (card.tagName === 'BUTTON' || card.tagName === 'A') return;
+      e.preventDefault();
+      card.click();
     });
   },
 
@@ -526,13 +550,70 @@ const INIT_CONFIG = {
     'pinHash', 'pinSalt', 'pinAlgoritmo', 'pinAtivo', 'pinTentativas', 'pinBloqueadoAte'
   ],
 
+  /**
+   * Preferências que a importação PODE tocar. Tudo fora da lista é ignorado
+   * (ex.: apiBaseUrl, flags de infra/plano forjadas, syncV2Enabled).
+   * `plano` permanece aqui — o aviso de override sensível já cobre a troca.
+   */
+  _IMPORT_CONFIG_ALLOWED: [
+    'nome', 'email', 'telefone', 'nascimento', 'endereco', 'cidade',
+    'moeda', 'tema', 'alertaOrcamento', 'lembreteDiario',
+    'categoriasCustom', 'bancos', 'cartoes',
+    'renda', 'rendaMensal', 'regra503020',
+    'ultimoExportoDados', 'ultimoAcessoApp',
+    'metas', 'contasPagar', 'assinaturas', 'patrimonio', 'openFinance',
+    'onboardingConcluido', 'feedbacks',
+    'saldosIniciais', 'faturasPagas', 'recorrentesProcessadas',
+    'plano'
+  ],
+
+  /** P1.1: config serializada no backup sem hash/salt/estado do PIN. */
+  _configParaExportacao: function() {
+    var cfg = Object.assign({}, DADOS.getConfig());
+    this._IMPORT_CONFIG_BLOCKED.forEach(function(key) {
+      delete cfg[key];
+    });
+    return cfg;
+  },
+
   _mergeImportedConfig: function(imported) {
     var current = DADOS.getConfig();
-    var merged = Object.assign({}, current, imported);
+    var merged = Object.assign({}, current);
+    var allowed = this._IMPORT_CONFIG_ALLOWED;
+    var src = imported && typeof imported === 'object' ? imported : {};
+    for (var i = 0; i < allowed.length; i++) {
+      var key = allowed[i];
+      if (Object.prototype.hasOwnProperty.call(src, key)) {
+        merged[key] = src[key];
+      }
+    }
     this._IMPORT_CONFIG_BLOCKED.forEach(function(key) {
       merged[key] = current[key];
     });
     return merged;
+  },
+
+  /** Outbox: só restaura array de operações com shape esperado. */
+  _validarOutbox: function(outbox) {
+    if (!Array.isArray(outbox)) return null;
+    var ok = [];
+    for (var i = 0; i < outbox.length; i++) {
+      var op = outbox[i];
+      if (!op || typeof op !== 'object') continue;
+      if (typeof op.opId !== 'string' || !op.opId) continue;
+      if (typeof op.entity !== 'string' || !op.entity) continue;
+      if (op.id == null || op.id === '') continue;
+      if (op.op !== 'upsert' && op.op !== 'delete') continue;
+      ok.push(op);
+    }
+    return ok;
+  },
+
+  /** Cursor de sync: string ou number não vazio. */
+  _validarSyncCursor: function(cursor) {
+    if (cursor == null || cursor === '') return null;
+    if (typeof cursor === 'string' || typeof cursor === 'number') return cursor;
+    return null;
   },
 
   _importTemOverridesSensiveis: function(data) {
@@ -726,13 +807,15 @@ const INIT_CONFIG = {
         });
       }
 
-      // Restaurar outbox e cursor de sync (operações pendentes)
+      // Restaurar outbox e cursor só se o formato for válido (P1.2)
       if (typeof SYNC_ENGINE !== 'undefined') {
-        if (data.outbox && Array.isArray(data.outbox)) {
-          SYNC_ENGINE.saveOutbox(data.outbox);
+        var outboxOk = INIT_CONFIG._validarOutbox(data.outbox);
+        if (outboxOk) {
+          SYNC_ENGINE.saveOutbox(outboxOk);
         }
-        if (data.sync_cursor) {
-          SYNC_ENGINE.setCursor(data.sync_cursor);
+        var cursorOk = INIT_CONFIG._validarSyncCursor(data.sync_cursor);
+        if (cursorOk != null) {
+          SYNC_ENGINE.setCursor(cursorOk);
         }
       }
 
@@ -782,7 +865,7 @@ const INIT_CONFIG = {
           // conta inexistente e a coluna de banco no extrato fica em branco —
           // o backup parece completo e não é.
           contas: DADOS.getContas(),
-          config: DADOS.getConfig(),
+          config: self._configParaExportacao(),
           orcamentos: self.getOrcamentosData(),
           anexos: anexos || [],
           outbox: (typeof SYNC_ENGINE !== 'undefined' && SYNC_ENGINE.loadOutbox)
@@ -999,15 +1082,12 @@ const INIT_CONFIG = {
       
       var valorInput = document.getElementById('renda-valor');
       var okBtn = overlay.querySelector('.modal-btn');
-      
-      // Máscara de moeda
-      valorInput.addEventListener('input', function() {
-        var raw = this.value.replace(/\D/g, '');
-        if (raw === '') { this.value = ''; return; }
-        var num = parseInt(raw, 10);
-        var formatted = (num / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        this.value = formatted;
-      });
+
+      if (valorInput && UTILS.bindCampoMoeda) {
+        // Remove prefixo R$ do valor pré-preenchido para o parser
+        valorInput.value = String(valorInput.value || '').replace(/[R$\s]/gi, '').trim();
+        UTILS.bindCampoMoeda(valorInput);
+      }
       
       if (okBtn) {
         okBtn.textContent = 'Salvar';
@@ -1075,7 +1155,7 @@ const INIT_CONFIG = {
       listaEl.innerHTML = '<div class="bancos-empty">' +
         '<div class="bancos-empty-icon" aria-hidden="true"><i data-lucide="landmark"></i></div>' +
         '<p>Nenhum banco cadastrado</p>' +
-        '<p style="font-size:var(--font-size-sm);margin-top:8px;">Adicione seu primeiro banco acima</p>' +
+        '<p class="bancos-empty-hint">Adicione seu primeiro banco acima</p>' +
         '</div>';
       if (typeof renderLucideIcons === 'function') renderLucideIcons(listaEl);
       return;
@@ -1121,7 +1201,7 @@ const INIT_CONFIG = {
       listaEl.innerHTML = '<div class="bancos-empty">' +
         '<div class="bancos-empty-icon" aria-hidden="true"><i data-lucide="credit-card"></i></div>' +
         '<p>Nenhum cartão cadastrado</p>' +
-        '<p style="font-size:var(--font-size-sm);margin-top:8px;">Adicione seu primeiro cartão acima</p>' +
+        '<p class="bancos-empty-hint">Adicione seu primeiro cartão acima</p>' +
         '</div>';
       if (typeof renderLucideIcons === 'function') renderLucideIcons(listaEl);
       return;
@@ -1212,7 +1292,7 @@ const INIT_CONFIG = {
     cartoes.push({
       nome: validacao.value,
       bandeira: bandeira,
-      limite: limite ? parseFloat(limite) : null,
+      limite: limite ? UTILS.parseMoeda(limite) : null,
       fechamento: dia(fechamento),
       vencimento: dia(vencimento)
     });
@@ -1257,25 +1337,25 @@ const INIT_CONFIG = {
     var cats = customCats[tipo] || [];
     
     var html = '<h3><i data-lucide="tag" aria-hidden="true"></i> Gerenciar Categorias - ' + (tipo === 'receita' ? 'Receitas' : 'Despesas') + '</h3>' +
-      '<div style="margin-bottom:16px;">' +
-      '<button type="button" id="add-cat-btn" style="padding:8px 16px;background:var(--primary);color:white;border:none;border-radius:var(--radius-sm);cursor:pointer;"><i data-lucide="plus" aria-hidden="true"></i> Adicionar Categoria</button>' +
+      '<div class="perfil-modal-toolbar">' +
+      '<button type="button" id="add-cat-btn" class="perfil-modal-btn-primary"><i data-lucide="plus" aria-hidden="true"></i> Adicionar Categoria</button>' +
       '</div>' +
-      '<div id="cats-list" style="display:flex;flex-direction:column;gap:8px;">';
+      '<div id="cats-list" class="perfil-modal-list">';
     
     cats.forEach(function(cat, index) {
-      html += '<div class="cat-item" data-index="' + index + '" style="padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);display:flex;justify-content:space-between;align-items:center;">' +
-        '<div style="display:flex;align-items:center;gap:8px;">' +
-          '<span style="font-size:18px;" aria-hidden="true"><i data-lucide="sparkles"></i></span>' +
+      html += '<div class="cat-item perfil-modal-item" data-index="' + index + '">' +
+        '<div class="perfil-modal-item-main">' +
+          '<span class="perfil-modal-item-icon" aria-hidden="true"><i data-lucide="sparkles"></i></span>' +
           '<div>' +
-            '<div style="font-weight:500;">' + UTILS.escapeHtml(cat) + '</div>' +
+            '<div class="perfil-modal-item-title">' + UTILS.escapeHtml(cat) + '</div>' +
           '</div>' +
         '</div>' +
-        '<button type="button" class="btn-remover-cat" data-index="' + index + '" style="padding:4px 8px;background:var(--danger);color:white;border:none;border-radius:4px;cursor:pointer;">Remover</button>' +
+        '<button type="button" class="btn-remover-cat perfil-modal-btn-danger" data-index="' + index + '">Remover</button>' +
       '</div>';
     });
     
     if (cats.length === 0) {
-      html += '<div style="text-align:center;color:var(--text-muted);padding:20px;">Nenhuma categoria personalizada</div>';
+      html += '<div class="perfil-modal-empty">Nenhuma categoria personalizada</div>';
     }
     
     html += '</div>';
@@ -1316,10 +1396,10 @@ const INIT_CONFIG = {
    */
   adicionarCategoria: function(tipo) {
     var html = '<h3><i data-lucide="plus" aria-hidden="true"></i> Adicionar Categoria</h3>' +
-      '<div style="display:flex;flex-direction:column;gap:12px;">' +
+      '<div class="perfil-modal-form">' +
       '<div>' +
-      '<label style="display:block;margin-bottom:4px;font-weight:500;">Nome da Categoria</label>' +
-      '<input type="text" id="cat-nome" placeholder="Ex: Streaming" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm);" maxlength="30">' +
+      '<label class="perfil-modal-label" for="cat-nome">Nome da Categoria</label>' +
+      '<input type="text" id="cat-nome" class="perfil-modal-input" placeholder="Ex: Streaming" maxlength="30">' +
       '</div>' +
       '</div>';
     
@@ -1381,42 +1461,6 @@ const INIT_CONFIG = {
       
       UTILS.mostrarToast('Categoria removida', 'success');
     });
-  },
-
-  renderConfigStats: function() {
-    var txAll = DADOS.getTransacoes();
-    var txEl = document.getElementById('cfg-stat-tx');
-    if (txEl) txEl.textContent = txAll.length;
-
-    var diasEl = document.getElementById('cfg-stat-dias');
-    if (diasEl) {
-      if (txAll.length > 0) {
-        var datas = txAll.map(function(t) { return new Date(t.dataCriacao || t.data).getTime(); });
-        var primeira = Math.min.apply(null, datas);
-        var dias = Math.floor((Date.now() - primeira) / 86400000) + 1;
-        diasEl.textContent = dias;
-      } else {
-        diasEl.textContent = '0';
-      }
-    }
-
-    var catEl = document.getElementById('cfg-stat-cat');
-    if (catEl) {
-      if (txAll.length > 0) {
-        var contagem = {};
-        txAll.forEach(function(t) {
-          if (t.tipo === 'despesa') {
-            contagem[t.categoria] = (contagem[t.categoria] || 0) + 1;
-          }
-        });
-        var top = Object.keys(contagem).sort(function(a, b) { return contagem[b] - contagem[a]; })[0];
-        var icon = (typeof INIT_EXTRATO !== 'undefined' && INIT_EXTRATO.getCatIcon)
-          ? INIT_EXTRATO.getCatIcon(top) : '';
-        catEl.textContent = top ? (icon + ' ' + top.charAt(0).toUpperCase() + top.slice(1)) : '—';
-      } else {
-        catEl.textContent = '—';
-      }
-    }
   },
 
   toggleAlertaOrcamento: function() {

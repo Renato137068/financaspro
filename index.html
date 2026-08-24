@@ -590,7 +590,7 @@
         <button class="periodo-nav" id="periodo-prev" data-action="navegar-periodo" data-dir="-1" aria-label="Mês anterior">
           <i data-lucide="chevron-left" aria-hidden="true"></i>
         </button>
-        <button class="periodo-label" id="periodo-label-btn" data-action="abrir-calendario" aria-live="polite" aria-atomic="true">Abril 2026</button>
+        <button class="periodo-label" id="periodo-label-btn" data-action="abrir-calendario">Abril 2026</button>
         <input type="month" id="periodo-date-picker" class="periodo-date-picker" style="display:none" aria-label="Selecionar período">
         <button class="periodo-nav" id="periodo-next" data-action="navegar-periodo" data-dir="1" aria-label="Próximo mês">
           <i data-lucide="chevron-right" aria-hidden="true"></i>
@@ -598,7 +598,8 @@
       </div>
 
       <!-- Card Principal de Saldo -->
-      <div class="saldo-card" role="status" aria-live="polite">
+      <span class="sr-only" id="extrato-resumo-anuncio" aria-live="polite" aria-atomic="true"></span>
+      <div class="saldo-card">
         <div class="saldo-card-header">
           <span class="saldo-label">Saldo do período</span>
           <div class="saldo-trend" id="saldo-trend" aria-label="Tendência vs mês anterior">
@@ -615,21 +616,21 @@
 
       <!-- Cards Secundários -->
       <div class="kpi-cards" role="group" aria-label="Indicadores financeiros">
-        <div class="kpi-card receita" role="status">
+        <div class="kpi-card receita">
           <div class="kpi-icon" aria-hidden="true"><i data-lucide="arrow-down-left"></i></div>
           <div class="kpi-content">
             <span class="kpi-label">Entradas</span>
             <span class="kpi-value" id="kpi-entradas" aria-label="Total de entradas">R$ 0,00</span>
           </div>
         </div>
-        <div class="kpi-card despesa" role="status">
+        <div class="kpi-card despesa">
           <div class="kpi-icon" aria-hidden="true"><i data-lucide="trending-down"></i></div>
           <div class="kpi-content">
             <span class="kpi-label">Saídas</span>
             <span class="kpi-value" id="kpi-saidas" aria-label="Total de saídas">R$ 0,00</span>
           </div>
         </div>
-        <div class="kpi-card movimentacoes" role="status">
+        <div class="kpi-card movimentacoes">
           <div class="kpi-icon" aria-hidden="true"><i data-lucide="bar-chart"></i></div>
           <div class="kpi-content">
             <span class="kpi-label">Movimentações</span>
@@ -709,7 +710,7 @@
     <!-- Lista de transações -->
     <div class="perfil-section">
       <h2 class="perfil-section-title">Transações</h2>
-    <div id="lista-transacoes" role="list" aria-live="polite" aria-atomic="false"></div>
+    <div id="lista-transacoes"></div>
 
     <!-- Barra de ações em massa (oculta por padrão) -->
     <div class="acoes-massa-bar" id="acoes-massa-bar" style="display:none">
@@ -1080,7 +1081,7 @@
            DADOS._apiAtiva() -- uma fonte de verdade so, nao um segundo flag. -->
       <h2 class="perfil-section-title">Conta</h2>
       <div class="perfil-cards-grid">
-        <div class="perfil-card" data-action="abrir-editar-perfil" role="button" aria-label="Editar dados pessoais">
+        <button type="button" class="perfil-card" data-action="abrir-editar-perfil" aria-label="Editar dados pessoais">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="user" aria-hidden="true"></i>
           </div>
@@ -1089,9 +1090,9 @@
             <span class="perfil-card-subtitle">Nome, email e informações de contato</span>
           </div>
           <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
-        </div>
+        </button>
 
-        <div class="perfil-card perfil-card--plano-highlight" data-action="abrir-plano" data-requer-nuvem role="button" aria-label="Gerenciar plano e assinatura">
+        <button type="button" class="perfil-card perfil-card--plano-highlight" data-action="abrir-plano" data-requer-nuvem aria-label="Gerenciar plano e assinatura">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="sparkles" aria-hidden="true"></i>
           </div>
@@ -1100,9 +1101,9 @@
             <span class="perfil-card-subtitle" id="perfil-plano-subtitle">Gratuito · uso local</span>
           </div>
           <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
-        </div>
+        </button>
 
-        <div class="perfil-card" data-action="abrir-config-bancos" role="button" aria-label="Gerenciar bancos e cartões">
+        <button type="button" class="perfil-card" data-action="abrir-config-bancos" aria-label="Gerenciar bancos e cartões">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="landmark" aria-hidden="true"></i>
           </div>
@@ -1111,9 +1112,9 @@
             <span class="perfil-card-subtitle" id="perfil-bancos-display">Nenhum cadastrado</span>
           </div>
           <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
-        </div>
+        </button>
 
-        <div class="perfil-card" data-action="abrir-open-finance" data-requer-nuvem role="button" aria-label="Conectar contas via Open Finance">
+        <button type="button" class="perfil-card" data-action="abrir-open-finance" data-requer-nuvem aria-label="Conectar contas via Open Finance">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="link" aria-hidden="true"></i>
           </div>
@@ -1122,7 +1123,7 @@
             <span class="perfil-card-subtitle" id="perfil-open-finance-status">Nenhuma conta conectada</span>
           </div>
           <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
-        </div>
+        </button>
       </div>
     </div>
 
@@ -1242,7 +1243,7 @@
     <div class="perfil-section">
       <h2 class="perfil-section-title">Categorias</h2>
       <div class="perfil-cards-grid">
-        <div class="perfil-card" data-action="gerenciar-categorias" data-tipo="despesa" role="button" aria-label="Gerenciar categorias de despesa">
+        <button type="button" class="perfil-card" data-action="gerenciar-categorias" data-tipo="despesa" aria-label="Gerenciar categorias de despesa">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="folder" aria-hidden="true"></i>
           </div>
@@ -1251,9 +1252,9 @@
             <span class="perfil-card-subtitle" id="perfil-cats-despesa">7 categorias</span>
           </div>
           <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
-        </div>
+        </button>
 
-        <div class="perfil-card" data-action="gerenciar-categorias" data-tipo="receita" role="button" aria-label="Gerenciar categorias de receita">
+        <button type="button" class="perfil-card" data-action="gerenciar-categorias" data-tipo="receita" aria-label="Gerenciar categorias de receita">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="folder-open" aria-hidden="true"></i>
           </div>
@@ -1262,7 +1263,7 @@
             <span class="perfil-card-subtitle" id="perfil-cats-receita">5 categorias</span>
           </div>
           <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
-        </div>
+        </button>
       </div>
     </div>
 
@@ -1270,7 +1271,7 @@
     <div class="perfil-section">
       <h2 class="perfil-section-title">Dados</h2>
       <div class="perfil-cards-grid">
-        <div class="perfil-card" data-action="exportar-dados" role="button" aria-label="Exportar backup de dados">
+        <button type="button" class="perfil-card" data-action="exportar-dados" aria-label="Exportar backup de dados">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="download" aria-hidden="true"></i>
           </div>
@@ -1279,9 +1280,9 @@
             <span class="perfil-card-subtitle" id="perfil-ultimo-backup">Nunca exportado</span>
           </div>
           <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
-        </div>
+        </button>
 
-        <div class="perfil-card" data-action="abrir-import" role="button" aria-label="Importar dados de backup">
+        <button type="button" class="perfil-card" data-action="abrir-import" aria-label="Importar dados de backup">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="upload" aria-hidden="true"></i>
           </div>
@@ -1290,7 +1291,7 @@
             <span class="perfil-card-subtitle">Restaurar backup JSON</span>
           </div>
           <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
-        </div>
+        </button>
       </div>
       <input type="file" id="import-file" accept=".json" style="display:none" aria-hidden="true">
     </div>
@@ -1310,7 +1311,7 @@
           <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
         </a>
 
-        <div class="perfil-card" data-action="abrir-changelog" role="button" aria-label="Ver novidades e changelog">
+        <button type="button" class="perfil-card" data-action="abrir-changelog" aria-label="Ver novidades e changelog">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="file-text" aria-hidden="true"></i>
           </div>
@@ -1319,9 +1320,9 @@
             <span class="perfil-card-subtitle" id="perfil-changelog-version">v11.0.0 — PWA e Android</span>
           </div>
           <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
-        </div>
+        </button>
 
-        <div class="perfil-card" data-action="abrir-feedback" role="button" aria-label="Enviar feedback">
+        <button type="button" class="perfil-card" data-action="abrir-feedback" aria-label="Enviar feedback">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="message-circle" aria-hidden="true"></i>
           </div>
@@ -1330,7 +1331,7 @@
             <span class="perfil-card-subtitle">Sugestões, bugs, elogios</span>
           </div>
           <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
-        </div>
+        </button>
       </div>
     </div>
 

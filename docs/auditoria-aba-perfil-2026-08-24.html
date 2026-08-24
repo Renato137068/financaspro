@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auditoria — Aba Perfil</title>
+<style>
+  :root{
+    --bg:#f6f7fb; --card:#ffffff; --ink:#1a1d29; --muted:#5b6472; --line:#e6e8ef;
+    --brand:#12694e; --brand2:#2f9c6d;
+    --good:#16a34a; --ok:#0891b2; --warn:#d97706; --bad:#dc2626;
+    --shadow:0 1px 3px rgba(20,25,50,.06),0 8px 24px rgba(20,25,50,.06);
+    --radius:16px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0e1017; --card:#171a24; --ink:#eef0f6; --muted:#9aa3b2; --line:#262a37;
+      --shadow:0 1px 3px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0e1017; --card:#171a24; --ink:#eef0f6; --muted:#9aa3b2; --line:#262a37;
+    --shadow:0 1px 3px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding:32px 20px 90px}
+  a{color:var(--brand2)}
+  code{background:rgba(127,127,127,.14);padding:1px 6px;border-radius:6px;font-size:.86em;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  header.hero{background:linear-gradient(135deg,var(--brand),var(--brand2));
+    color:#fff;border-radius:var(--radius);padding:34px 32px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  header.hero h1{margin:0 0 6px;font-size:27px;letter-spacing:-.4px}
+  header.hero p.sub{margin:0;opacity:.93;font-size:15px;max-width:660px}
+  .hero-meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;font-size:12.5px}
+  .hero-meta span{background:rgba(255,255,255,.16);padding:4px 11px;border-radius:20px}
+  .final{display:flex;align-items:center;gap:24px;margin-top:26px;flex-wrap:wrap}
+  .final .txt strong{font-size:16px;display:block;margin-bottom:3px}
+  .final .txt span{font-size:14px;opacity:.92;max-width:560px;display:block}
+  .ring{flex:none}
+  section{margin-top:34px}
+  h2{font-size:20px;letter-spacing:-.3px;margin:0 0 4px;display:flex;align-items:center;gap:9px}
+  h2 .n{width:26px;height:26px;border-radius:8px;background:var(--brand);color:#fff;font-size:14px;
+    display:inline-flex;align-items:center;justify-content:center;flex:none}
+  .lead{color:var(--muted);font-size:14.5px;margin:0 0 18px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:22px 24px;box-shadow:var(--shadow)}
+  .note{border:1px solid rgba(217,119,6,.4);background:linear-gradient(180deg,rgba(217,119,6,.09),rgba(217,119,6,.02));
+    border-radius:var(--radius);padding:22px 24px;box-shadow:var(--shadow);margin-bottom:14px}
+  .note.good{border-color:rgba(22,163,74,.4);background:linear-gradient(180deg,rgba(22,163,74,.09),rgba(22,163,74,.02))}
+  .note .tag{display:inline-block;background:var(--warn);color:#fff;font-size:11.5px;font-weight:700;letter-spacing:.4px;padding:3px 10px;border-radius:20px;text-transform:uppercase}
+  .note.good .tag{background:var(--good)}
+  .note h3{margin:12px 0 8px;font-size:18px}
+  .note p{margin:6px 0;font-size:14.5px}
+  .evi{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px}
+  @media(max-width:640px){.evi{grid-template-columns:1fr}}
+  .evi div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:13.5px}
+  .evi b{display:block;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}
+  .dims{display:grid;gap:12px}
+  .dim{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 18px;box-shadow:var(--shadow)}
+  .dim .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px}
+  .dim .name{font-weight:650;font-size:15px}
+  .dim .score{font-weight:800;font-size:15px;font-variant-numeric:tabular-nums}
+  .bar{height:9px;border-radius:6px;background:rgba(127,127,127,.16);overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:6px}
+  .dim p{margin:10px 0 0;font-size:13.7px;color:var(--muted)}
+  .dim .files{margin-top:8px;font-size:12.5px;color:var(--muted)}
+  .pill{font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;color:#fff;text-transform:uppercase;letter-spacing:.3px}
+  .rm{display:grid;gap:14px}
+  .phase{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow)}
+  .phase h3{margin:0 0 4px;font-size:16px;display:flex;align-items:center;gap:10px}
+  .phase .goal{color:var(--muted);font-size:13.5px;margin:0 0 12px}
+  .task{border-top:1px solid var(--line);padding:12px 0}
+  .task:first-of-type{border-top:0}
+  .task .h{display:flex;gap:10px;align-items:baseline;justify-content:space-between;flex-wrap:wrap}
+  .task .t{font-weight:600;font-size:14.5px}
+  .task p{margin:6px 0 0;font-size:13.4px;color:var(--muted)}
+  .task code{font-size:12px}
+  .eff{font-size:11.5px;color:var(--muted);white-space:nowrap}
+  table.sum{width:100%;border-collapse:collapse;font-size:13.6px;margin-top:6px}
+  table.sum th,table.sum td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
+  table.sum th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.3px}
+  table.sum td.s{font-weight:800;font-variant-numeric:tabular-nums;text-align:right}
+  .foot{margin-top:40px;color:var(--muted);font-size:12.5px;text-align:center}
+  ul.tight{margin:8px 0 0;padding-left:20px}
+  ul.tight li{margin:4px 0;font-size:13.6px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <h1>Auditoria completa — Aba <em>Perfil</em></h1>
+    <p class="sub">Análise focada no hub de perfil e configurações (<code>#aba-config</code>): conta, segurança
+    (PIN/2FA/cifragem), preferências, categorias, backup/importação, zona de perigo e conformidade. Notas de 0 a 100
+    por dimensão, com evidência empírica coletada no app em execução.</p>
+    <div class="hero-meta">
+      <span>FinançasPro v11.0</span>
+      <span>24 ago 2026</span>
+      <span>Escopo: somente Perfil</span>
+      <span>12 dimensões</span>
+      <span>Método: estático + runtime (contraste medido em claro e escuro)</span>
+    </div>
+    <div class="final">
+      <div class="ring">
+        <svg width="118" height="118" viewBox="0 0 120 120" aria-label="Nota geral 79 de 100">
+          <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="12"/>
+          <circle cx="60" cy="60" r="52" fill="none" stroke="#fff" stroke-width="12"
+            stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="68.6" transform="rotate(-90 60 60)"/>
+          <text x="60" y="58" text-anchor="middle" fill="#fff" font-size="34" font-weight="800">79</text>
+          <text x="60" y="79" text-anchor="middle" fill="rgba(255,255,255,.85)" font-size="12">/ 100</text>
+        </svg>
+      </div>
+      <div class="txt">
+        <strong>Boa — a aba mais madura das quatro auditadas, sem bloqueadores</strong>
+        <span>É o hub de configurações, e mostra maturidade: dark mode funciona (quebra o padrão das outras abas),
+        importação com validação de schema, exclusão de conta com dupla confirmação e a camada de conformidade da
+        Play Store (esconde nuvem/assinatura no build local). Os pontos a melhorar são de <b>privacidade do backup</b>
+        e de <b>endurecimento da importação</b> — nenhum é bloqueador.</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- DESTAQUE POSITIVO -->
+  <section>
+    <h2><span class="n">✓</span> Sem bloqueador — e o dark mode funciona aqui</h2>
+    <div class="note good">
+      <span class="tag">Verificado</span>
+      <h3>Ao contrário de Resumo/Lançamentos/Extrato, esta aba passa o contraste nos dois temas</h3>
+      <p>Medido no navegador: todos os elementos-chave (títulos, subtítulos, hints, badge de plano, botões) passam
+      WCAG AA em tema claro e escuro. Os cartões <code>.perfil-card</code> escurecem corretamente no dark
+      (fundo <code>rgb(25,33,29)</code>).</p>
+      <div class="evi">
+        <div><b>Cartões (dark)</b> fundo opaco escuro — sem o bug de fundo branco das outras abas</div>
+        <div><b>Contrastes</b> 6,1 a 17,9:1 (claro) · 6,5 a 14,6:1 (escuro) — 0 reprovações</div>
+        <div><b>Margem fina (claro)</b> botão de perigo 4,68:1 e indicador de segurança 4,66:1 — passam, mas por pouco</div>
+        <div><b>Recomendação</b> subir esses dois um pouco para folga além do mínimo</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ACHADOS DE SEGURANÇA -->
+  <section>
+    <h2><span class="n">!</span> Principais achados (segurança de dados)</h2>
+
+    <div class="note">
+      <span class="tag">P1 · Privacidade</span>
+      <h3>O backup exportado é texto puro e inclui o hash/salt do PIN</h3>
+      <p><code>exportarDados</code> grava <code>config: DADOS.getConfig()</code> num JSON sem cifragem — mesmo com
+      “Cifrar dados no dispositivo” ligado. Esse arquivo carrega <b>todo o histórico financeiro</b> e ainda
+      <code>pinHash</code>/<code>pinSalt</code> em claro. Como esses campos do PIN são <u>bloqueados na importação</u>
+      (não têm utilidade no backup), exportá-los só aumenta o dado sensível que vaza se o arquivo for compartilhado.</p>
+      <div class="evi">
+        <div><b>Onde</b> <code>init-config.js:778-812</code> (exportarDados)</div>
+        <div><b>Correção</b> remover pinHash/pinSalt do objeto exportado; opcionalmente oferecer backup cifrado com passphrase</div>
+      </div>
+    </div>
+
+    <div class="note">
+      <span class="tag">P1 · Endurecer importação</span>
+      <h3>A importação faz merge de qualquer chave de config do arquivo</h3>
+      <p><code>_mergeImportedConfig</code> faz <code>Object.assign({}, atual, importado)</code> e só reprotege as chaves
+      de PIN. Qualquer outra chave presente no <code>config</code> do arquivo sobrescreve a atual — inclusive coisas
+      sensíveis como <code>apiBaseUrl</code>, flags de plano/feature, e o <code>outbox</code>/<code>sync_cursor</code>
+      são restaurados direto do arquivo. Um backup forjado (engenharia social) poderia redirecionar a sincronização ou
+      injetar operações pendentes. O aviso de confirmação só dispara para plano/PIN.</p>
+      <div class="evi">
+        <div><b>Onde</b> <code>init-config.js:535-551, 735-743</code></div>
+        <div><b>Correção</b> importar só uma <u>whitelist</u> de chaves de preferência; ignorar apiBaseUrl/flags; validar outbox/cursor antes de restaurar</div>
+      </div>
+    </div>
+
+    <div class="note">
+      <span class="tag">P2 · Consistência destrutiva</span>
+      <h3>“Apagar todos os dados” tem confirmação única; excluir conta tem dupla</h3>
+      <p><code>excluirConta</code> pede <b>duas</b> confirmações (bom). Já <code>limparDados</code> — que apaga tudo
+      localmente de forma irreversível e recarrega — pede só <b>uma</b>. Ações igualmente destrutivas deveriam ter
+      atrito equivalente (dupla confirmação ou “digite APAGAR”).</p>
+      <div class="evi">
+        <div><b>Onde</b> <code>config-user.js:55</code> (limparDados) vs <code>init-navigation.js:245</code> (excluirConta)</div>
+        <div><b>Correção</b> alinhar o atrito das duas ações destrutivas</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NOTAS -->
+  <section>
+    <h2><span class="n">1</span> Notas por dimensão</h2>
+    <p class="lead">0 a 100. Barras: <span style="color:var(--good)">verde ≥80</span>, <span style="color:var(--warn)">âmbar 60–79</span>, <span style="color:var(--bad)">vermelho &lt;60</span>.</p>
+    <div class="dims" id="dims"></div>
+  </section>
+
+  <!-- PLACAR -->
+  <section>
+    <h2><span class="n">2</span> Placar consolidado</h2>
+    <div class="card">
+      <table class="sum">
+        <thead><tr><th>Dimensão</th><th>Peso</th><th style="text-align:right">Nota</th></tr></thead>
+        <tbody id="sumbody"></tbody>
+        <tfoot><tr><td style="font-weight:700">Nota geral (ponderada)</td><td></td><td class="s" style="font-size:16px">79</td></tr></tfoot>
+      </table>
+      <p style="font-size:12.8px;color:var(--muted);margin:14px 0 0">
+        A maior nota das quatro abas auditadas. As melhorias são incrementais — endurecer o backup/importação e
+        pequenos ajustes de acessibilidade e manutenção. Nenhuma é bloqueadora.
+      </p>
+    </div>
+  </section>
+
+  <!-- ROADMAP -->
+  <section>
+    <h2><span class="n">3</span> Roadmap de melhorias</h2>
+    <p class="lead">Priorizado por impacto × esforço. Sem P0 — a aba está saudável.</p>
+    <div class="rm">
+
+      <div class="phase">
+        <h3><span class="pill" style="background:var(--warn)">P1 · próxima sprint</span> Endurecer backup e importação</h3>
+        <p class="goal">Meta: o backup não vaza segredos e a importação não vira vetor de ataque.</p>
+        <div class="task">
+          <div class="h"><span class="t">Não exportar pinHash/pinSalt</span><span class="eff">~30 min · baixo</span></div>
+          <p>Remover os campos de PIN do objeto exportado (já são bloqueados na importação). <code>init-config.js:791</code>.</p>
+        </div>
+        <div class="task">
+          <div class="h"><span class="t">Backup cifrado opcional</span><span class="eff">~1 dia · médio</span></div>
+          <p>Oferecer exportar com passphrase (AES-GCM, reaproveitando LOCAL_CRYPTO) para quem quer guardar o histórico com segurança.</p>
+        </div>
+        <div class="task">
+          <div class="h"><span class="t">Whitelist de chaves na importação</span><span class="eff">~3 h · médio</span></div>
+          <p>Importar só chaves de preferência conhecidas; ignorar <code>apiBaseUrl</code>/flags; validar <code>outbox</code>/<code>sync_cursor</code> antes de restaurar. <code>init-config.js:535-551, 735-743</code>.</p>
+        </div>
+      </div>
+
+      <div class="phase">
+        <h3><span class="pill" style="background:var(--ok)">P2 · contínuo</span> Acessibilidade, consistência e manutenção</h3>
+        <p class="goal">Meta: semântica uniforme e menos dívida.</p>
+        <div class="task">
+          <div class="h"><span class="t">Alinhar atrito das ações destrutivas</span><span class="eff">~30 min · baixo</span></div>
+          <p>Dar dupla confirmação (ou “digite APAGAR”) ao <code>limparDados</code>, como já existe no excluir conta.</p>
+        </div>
+        <div class="task">
+          <div class="h"><span class="t">Uniformizar a semântica dos cartões</span><span class="eff">~2 h · baixo</span></div>
+          <p>Cartões navegáveis são um mix de <code>&lt;div role="button"&gt;</code>, <code>&lt;button&gt;</code> e <code>&lt;a&gt;</code>. Preferir <code>&lt;button&gt;</code>/<code>&lt;a&gt;</code> nativos; hoje a navegação por teclado é ligada só nos cards presentes no init (novos, em modais, ficam de fora). <code>init-config.js:292-302</code>.</p>
+        </div>
+        <div class="task">
+          <div class="h"><span class="t">Elevar os contrastes de margem fina</span><span class="eff">~20 min · baixo</span></div>
+          <p>Botão de perigo (4,68:1) e indicador de segurança (4,66:1) passam por pouco no claro — dar folga acima de 4,5:1.</p>
+        </div>
+        <div class="task">
+          <div class="h"><span class="t">Extrair estilos inline dos modais</span><span class="eff">~2 h · baixo</span></div>
+          <p>Modais de categorias/bancos montam muito <code>style="…"</code> inline no HTML — mover para classes CSS facilita tema e manutenção. <code>init-config.js:1262-1327</code>.</p>
+        </div>
+        <div class="task">
+          <div class="h"><span class="t">Revisar “último acesso” e possíveis no-ops</span><span class="eff">~1 h · baixo</span></div>
+          <p>O “último acesso” sempre mostra “Hoje às HH:MM” (hora atual, não acesso real). Verificar também <code>renderConfigStats</code> (referencia <code>#cfg-stat-*</code> que podem não existir na aba). <code>init-config.js:240-245, 1389</code>.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FORTES -->
+  <section>
+    <h2><span class="n">4</span> O que já está bom (manter)</h2>
+    <div class="card">
+      <ul class="tight">
+        <li><b>Dark mode correto</b> — os cartões escurecem; contraste passa nos dois temas (as outras três abas falhavam no dark).</li>
+        <li><b>Importação defensiva</b> — valida schema antes de aplicar, bloqueia campos de PIN, limita tamanho (5MB), deduplica transações e confirma quando há override sensível.</li>
+        <li><b>Exclusão de conta com dupla confirmação</b> e caminho in-app (exigência da Play Store) via <code>DELETE /users/me</code>.</li>
+        <li><b>Conformidade Play Store</b> — <code>aplicarVisibilidadeNuvem</code> esconde login/assinatura/Open Finance/2FA no build local, coerente com a declaração de Data safety. Fonte única (<code>DADOS._apiAtiva()</code>).</li>
+        <li><b>Cifragem honesta</b> — o rótulo diz de onde vem a chave e não promete proteção que o desenho não dá; reverte o switch e preserva dados em caso de falha.</li>
+        <li><b>Validação de entrada</b> por whitelist em nome, email, telefone, categorias, bancos.</li>
+        <li><b>escapeHtml</b> nos nomes de categoria renderizados nos modais.</li>
+        <li><b>Backup unificado</b> — inclui contas, orçamentos, anexos, outbox e cursor de sync (restauração completa).</li>
+        <li><b>Navegação por teclado</b> nos cartões <code>role="button"</code> (Enter/Espaço) e mensagens de erro que dizem que “nada foi alterado”.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- METODOLOGIA -->
+  <section>
+    <h2><span class="n">5</span> Metodologia & conceitos aplicados</h2>
+    <div class="card">
+      <ul class="tight">
+        <li><b>Segurança de dados:</b> superfície de backup (dados em repouso, vazamento de segredos) e importação (merge de config, sync poisoning).</li>
+        <li><b>Privacidade / conformidade:</b> Play Store Data safety, exclusão de conta, cifragem at-rest.</li>
+        <li><b>Acessibilidade:</b> WCAG 2.1 — contraste (1.4.3), teclado (2.1.1), nome/estado (4.1.2), semântica de controles.</li>
+        <li><b>Contraste medido:</b> <code>getComputedStyle</code> + razão WCAG, em claro e escuro, em estado estável.</li>
+        <li><b>Robustez:</b> reversão em falha, validação de entrada, mensagens honestas.</li>
+        <li><b>Manutenibilidade:</b> estilos inline, semântica de markup, código potencialmente morto.</li>
+      </ul>
+      <p style="font-size:12.5px;color:var(--muted);margin-bottom:0">Escopo estritamente limitado à aba Perfil
+      (<code>#aba-config</code>, <code>js/modules/init-config.js</code>, <code>js/config-user.js</code>, handlers em
+      <code>init-navigation.js</code>).</p>
+    </div>
+  </section>
+
+  <p class="foot">FinançasPro · Auditoria da aba Perfil · 24 ago 2026 · notas 0–100 · evidência coletada em runtime</p>
+</div>
+
+<script>
+  var dims = [
+    {name:"Theming / dark mode", score:88, weight:"alto",
+     note:"Cartões escurecem corretamente; contraste passa nos dois temas. Quebra (para o bem) o padrão de bug das outras abas.",
+     files:"dark-mode.css · .perfil-card"},
+    {name:"Contraste & legibilidade", score:86, weight:"alto",
+     note:"Todos os elementos passam AA em claro e escuro. Margem fina no claro: botão de perigo 4,68 e indicador de segurança 4,66.",
+     files:"perfil-*.css"},
+    {name:"Privacidade / conformidade", score:84, weight:"alto",
+     note:"Gating de nuvem para o Data safety da Play Store (fonte única), link de privacidade, exclusão de conta in-app. Muito cuidado aqui.",
+     files:"init-config.js:58-71 · index.html:1339-1361"},
+    {name:"UX / fluxo", score:82, weight:"médio",
+     note:"Hub de settings rico e organizado; cópia honesta da cifragem; estados de lembrete refletem permissão real do sistema.",
+     files:"index.html:1039-1370"},
+    {name:"Robustez / tratamento de erros", score:82, weight:"médio",
+     note:"try/catch amplo; reverte o switch de cifragem em falha sem perder dados; mensagens que garantem 'nada foi alterado'.",
+     files:"init-config.js:1462-1482, 641-686"},
+    {name:"Correção / consistência", score:80, weight:"médio",
+     note:"Validações por whitelist, PIN bloqueado na importação, dedup de transações, backup unificado (contas/orçamentos/anexos/sync).",
+     files:"init-config.js:489-542, 778-825"},
+    {name:"Validação de entrada", score:80, weight:"médio",
+     note:"Nome, email, telefone, categorias e bancos validados por regex/whitelist antes de salvar.",
+     files:"init-config.js:307-487"},
+    {name:"Arquitetura / modularização", score:78, weight:"médio",
+     note:"Responsabilidades separadas; refreshPerfil orquestra sub-módulos. Arquivo grande (1554 linhas); alguns no-ops possíveis.",
+     files:"init-config.js:22-100"},
+    {name:"Acessibilidade — teclado / semântica", score:74, weight:"alto",
+     note:"aria-labels, switches acessíveis, Enter/Espaço nos cards role=button. Mix de div[role=button]/button/a; binding de teclado só no init.",
+     files:"index.html:1084-1334 · init-config.js:292-302"},
+    {name:"Zona de perigo (destrutivo)", score:72, weight:"médio",
+     note:"Excluir conta tem dupla confirmação (ótimo). Apagar tudo localmente (irreversível + reload) tem só uma — atrito desigual.",
+     files:"config-user.js:55 · init-navigation.js:245"},
+    {name:"Manutenibilidade", score:70, weight:"médio",
+     note:"Muitos estilos inline nos modais; markup de cartão inconsistente; 'último acesso' é só a hora atual; possível código morto.",
+     files:"init-config.js:1262-1327, 1389"},
+    {name:"Segurança de dados (backup/import)", score:66, weight:"alto",
+     note:"Defensivo, mas o backup é texto puro e inclui pinHash/pinSalt; a importação faz merge de qualquer chave de config (apiBaseUrl/flags/outbox).",
+     files:"init-config.js:778-812, 535-551"}
+  ];
+  function color(s){ var cs=getComputedStyle(document.documentElement);
+    return s>=80?cs.getPropertyValue('--good'):s>=60?cs.getPropertyValue('--warn'):cs.getPropertyValue('--bad'); }
+  var host=document.getElementById('dims');
+  dims.slice().sort(function(a,b){return a.score-b.score;}).forEach(function(d){
+    var el=document.createElement('div'); el.className='dim';
+    el.innerHTML='<div class="top"><span class="name">'+d.name+'</span><span class="score" style="color:'+color(d.score)+'">'+d.score+'</span></div>'+
+      '<div class="bar"><i style="width:'+d.score+'%;background:'+color(d.score)+'"></i></div>'+
+      '<p>'+d.note+'</p><div class="files">'+d.files+'</div>';
+    host.appendChild(el);
+  });
+  var body=document.getElementById('sumbody');
+  dims.forEach(function(d){
+    var tr=document.createElement('tr');
+    tr.innerHTML='<td>'+d.name+'</td><td style="color:var(--muted)">'+d.weight+'</td><td class="s" style="color:'+color(d.score)+'">'+d.score+'</td>';
+    body.appendChild(tr);
+  });
+</script>
+</body>
+</html>
