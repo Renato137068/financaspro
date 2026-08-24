@@ -22,6 +22,21 @@
   
   // Cache de elementos DOM para evitar consultas repetidas
   var _cachedElements = {};
+  var _lastFingerprint = null;
+  var _ultimoSaldoAnunciado = null;
+
+  function _fingerprintDados() {
+    if (typeof APP_STORE === 'undefined') return null;
+    var d = APP_STORE.get('dados') || {};
+    var ui = APP_STORE.get('ui') || {};
+    return [
+      d.transacoesVer || 0,
+      d.configVer || 0,
+      d.contasVer || 0,
+      d.orcamentosVer || 0,
+      ui.abaAtiva || 'resumo'
+    ].join(':');
+  }
 
   function _nomeExibicao(nome) {
     if (!nome || nome === 'Usuario') return 'Usuário';
@@ -55,6 +70,26 @@
     nodes.forEach(function(n) { if (n) el.appendChild(n); });
   }
 
+  /**
+   * P2.3: catch de sub-renderer deixa rastro (console + OBS) e, se houver
+   * container próprio, um estado discreto em vez de seção vazia/quebrada.
+   */
+  var MSG_SECAO_FALHOU = 'Não foi possível carregar esta seção';
+
+  function _reportarErroRender(nome, e, el) {
+    console.error('Erro ao renderizar ' + nome + ':', e);
+    try {
+      if (typeof OBS !== 'undefined' && OBS && typeof OBS.captureError === 'function') {
+        OBS.captureError(e, { contexto: 'render:' + nome });
+      }
+    } catch (_obs) { /* observabilidade nunca pode quebrar o render */ }
+    if (el) {
+      try {
+        el.textContent = MSG_SECAO_FALHOU;
+      } catch (_ui) { /* noop */ }
+    }
+  }
+
   // ============================================================
   // CONTROLE DE RENDERIZAÇÃO
   // ============================================================
@@ -73,10 +108,13 @@
   };
 
   DashboardRenderer.shouldRender = function() {
-    // Só renderiza quando a aba resumo/dashboard está visível
-    if (typeof APP_STORE === 'undefined') return true;
-    var aba = APP_STORE.get('ui.abaAtiva');
-    return !aba || aba === 'resumo';
+    if (typeof APP_STORE !== 'undefined') {
+      var aba = APP_STORE.get('ui.abaAtiva');
+      if (aba && aba !== 'resumo') return false;
+    }
+    var fp = _fingerprintDados();
+    if (fp && fp === _lastFingerprint) return false;
+    return true;
   };
 
   // ============================================================
@@ -135,6 +173,8 @@
 
     var abaResumo = document.getElementById('aba-resumo');
     if (abaResumo) abaResumo.setAttribute('data-dashboard-ready', '1');
+
+    _lastFingerprint = _fingerprintDados();
   };
 
   // ============================================================
@@ -166,7 +206,7 @@
       _clearEl(el);
       el.appendChild(container);
     } catch (e) {
-      console.error('Erro ao renderizar greeting:', e);
+      _reportarErroRender('greeting', e, el);
     }
   };
 
@@ -192,7 +232,7 @@
 
       var info = this.create('div', { class: 'saldo-info' });
       var lbl  = this.create('div', { class: 'saldo-label' });
-      lbl.textContent = 'Saldo do mês';
+      lbl.textContent = 'Saldo do mês (realizado)';
       info.appendChild(lbl);
 
       var val = this.create('div', { class: 'saldo-valor' });
@@ -200,8 +240,16 @@
       info.appendChild(val);
 
       el.appendChild(info);
+
+      // Anuncia só quando o valor numérico muda — o cartão visual atualiza
+      // sempre, mas o leitor de tela não precisa reler a cada re-render.
+      var anuncio = document.getElementById('saldo-anuncio');
+      if (anuncio && saldo !== _ultimoSaldoAnunciado) {
+        _ultimoSaldoAnunciado = saldo;
+        anuncio.textContent = 'Saldo do mês (realizado): ' + this.money(saldo);
+      }
     } catch (e) {
-      console.error('Erro ao renderizar card de saldo:', e);
+      _reportarErroRender('cardSaldo', e, el);
     }
   };
 
@@ -213,7 +261,7 @@
       if (elRec)  elRec.textContent  = this.money(resumo.receitas  || 0);
       if (elDesp) elDesp.textContent = this.money(resumo.despesas  || 0);
     } catch (e) {
-      console.error('Erro ao renderizar resumo:', e);
+      _reportarErroRender('resumo', e, elRec || elDesp);
     }
   };
 
@@ -235,7 +283,7 @@
       if (elRec)  elRec.innerHTML  = UI.ComparacaoMes.html(atual.receitas,  anterior.receitas);
       if (elDesp) elDesp.innerHTML = UI.ComparacaoMes.html(atual.despesas, anterior.despesas, true);
     } catch (e) {
-      console.error('Erro ao renderizar comparação mês anterior:', e);
+      _reportarErroRender('comparacaoMesAnterior', e, elRec || elDesp);
     }
   };
 
@@ -262,7 +310,7 @@
       var card = UI.AlertaCard.render(excedidos, avisos);
       if (card) el.appendChild(card);
     } catch (e) {
-      console.error('Erro ao renderizar alertas:', e);
+      _reportarErroRender('alertas', e, el);
     }
   };
 
@@ -316,7 +364,7 @@
         renderLucideIcons(el);
       }
     } catch (e) {
-      console.error('Erro ao renderizar indicadores:', e);
+      _reportarErroRender('indicadores', e, el);
     }
   };
 
@@ -360,7 +408,7 @@
       _clearEl(el);
       el.appendChild(UI.BarChart6M.render(dados));
     } catch (e) {
-      console.error('Erro ao renderizar gráfico de evolução:', e);
+      _reportarErroRender('chartEvolucao', e, el);
     }
   };
 
@@ -410,7 +458,7 @@
       _clearEl(el);
       el.appendChild(UI.DonutChart.render(cats, totalDesp));
     } catch (e) {
-      console.error('Erro ao renderizar gráfico de categorias:', e);
+      _reportarErroRender('chartCategorias', e, el);
     }
   };
 
@@ -447,7 +495,7 @@
       _clearEl(el);
       el.appendChild(lista);
     } catch (e) {
-      console.error('Erro ao renderizar orçamento:', e);
+      _reportarErroRender('orcamento', e, el);
     }
   };
 
@@ -485,7 +533,7 @@
       _clearEl(el);
       el.appendChild(frag);
     } catch (e) {
-      console.error('Erro ao renderizar últimas transações:', e);
+      _reportarErroRender('ultimasTransacoes', e, el);
     }
   };
 
