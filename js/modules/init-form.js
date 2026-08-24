@@ -861,6 +861,7 @@ const INIT_FORM = {
     }
 
     input.addEventListener('input', function() {
+      if (INIT_FORM._autoSkipRender) return;
       var texto = this.value.trim().toLowerCase();
       if (texto.length < 2) { fecharLista(); return; }
 
