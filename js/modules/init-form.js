@@ -907,20 +907,24 @@ const INIT_FORM = {
 
     input.addEventListener('input', function() {
       if (INIT_FORM._autoSkipRender) return;
-      var texto = this.value.trim().toLowerCase();
-      if (texto.length < 2) { fecharLista(); return; }
+      var self = this;
+      clearTimeout(INIT_FORM._autoDebounceTimer);
+      INIT_FORM._autoDebounceTimer = setTimeout(function() {
+        var texto = self.value.trim().toLowerCase();
+        if (texto.length < 2) { fecharLista(); return; }
 
-      var descricoes = INIT_FORM.obterSugestoesDescricao();
-      var cacheKey = texto.substring(0, 3);
-      if (!INIT_FORM._autocompleteCache[cacheKey]) {
-        INIT_FORM._autocompleteCache[cacheKey] = descricoes;
-      }
+        var descricoes = INIT_FORM.obterSugestoesDescricao();
+        var cacheKey = texto.substring(0, 3);
+        if (!INIT_FORM._autocompleteCache[cacheKey]) {
+          INIT_FORM._autocompleteCache[cacheKey] = descricoes;
+        }
 
-      var filtradas = INIT_FORM._autocompleteCache[cacheKey].filter(function(item) {
-        return item.descricao.toLowerCase().indexOf(texto) > -1;
-      }).slice(0, 5);
+        var filtradas = INIT_FORM._autocompleteCache[cacheKey].filter(function(item) {
+          return item.descricao.toLowerCase().indexOf(texto) > -1;
+        }).slice(0, 5);
 
-      renderLista(filtradas);
+        renderLista(filtradas);
+      }, 180);
     });
 
     input.addEventListener('keydown', function(e) {
@@ -1251,26 +1255,36 @@ const INIT_FORM = {
   },
 
   obterDescricoesAnteriores: function() {
-    var txs = TRANSACOES.obter({});
-    var map = {};
-    txs.forEach(function(t) {
-      if (t.descricao && t.descricao.trim()) {
-        map[t.descricao.trim()] = (map[t.descricao.trim()] || 0) + 1;
-      }
-    });
-    var arr = Object.keys(map).map(function(k) { return { desc: k, count: map[k] }; });
-    arr.sort(function(a, b) { return b.count - a.count; });
-    return arr.map(function(a) { return a.desc; });
+    return INIT_FORM._agregarDescricoes().descricoes;
   },
 
   obterSugestoesDescricao: function() {
-    var txs = TRANSACOES.obter({}) || [];
-    var map = {};
+    return INIT_FORM._agregarDescricoes().sugestoes;
+  },
+
+  obterTransacoesFrequentes: function() {
+    return INIT_FORM._agregarDescricoes().frequentes;
+  },
+
+  /**
+   * P2.2: uma única varredura de TRANSACOES para sugestões/frequentes/descrições.
+   * Cache invalidado em _finalizarTransacao.
+   */
+  _agregarDescricoes: function() {
+    if (INIT_FORM._aggCache) return INIT_FORM._aggCache;
+
+    var txs = (typeof TRANSACOES !== 'undefined' && TRANSACOES.obter)
+      ? (TRANSACOES.obter({}) || [])
+      : [];
+    var mapSug = {};
+    var mapFreq = {};
+
     txs.forEach(function(t) {
-      if (!t.descricao || !t.descricao.trim()) return;
-      var key = t.descricao.trim();
-      if (!map[key]) {
-        map[key] = {
+      if (!t.descricao || !String(t.descricao).trim()) return;
+      var key = String(t.descricao).trim();
+
+      if (!mapSug[key]) {
+        mapSug[key] = {
           descricao: key,
           categoria: t.categoria,
           tipo: t.tipo,
@@ -1281,37 +1295,46 @@ const INIT_FORM = {
           meses: {}
         };
       }
-      map[key].count++;
-      map[key].valor = t.valor;
-      map[key].banco = t.banco || map[key].banco;
-      map[key].cartao = t.cartao || map[key].cartao;
-      if (t.data) map[key].meses[String(t.data).slice(0, 7)] = true;
+      mapSug[key].count++;
+      mapSug[key].valor = t.valor;
+      mapSug[key].banco = t.banco || mapSug[key].banco;
+      mapSug[key].cartao = t.cartao || mapSug[key].cartao;
+      if (t.data) mapSug[key].meses[String(t.data).slice(0, 7)] = true;
+
+      var freqKey = key + '|' + t.categoria + '|' + t.tipo;
+      if (!mapFreq[freqKey]) {
+        mapFreq[freqKey] = {
+          descricao: key,
+          categoria: t.categoria,
+          tipo: t.tipo,
+          valor: t.valor,
+          count: 0
+        };
+      }
+      mapFreq[freqKey].count++;
+      mapFreq[freqKey].valor = t.valor;
     });
 
-    return Object.keys(map).map(function(k) {
-      var item = map[k];
+    var sugestoes = Object.keys(mapSug).map(function(k) {
+      var item = mapSug[k];
       item.recorrente = Object.keys(item.meses || {}).length >= 2;
       return item;
-    }).sort(function(a, b) {
-      return b.count - a.count;
-    });
+    }).sort(function(a, b) { return b.count - a.count; });
+
+    var frequentes = Object.keys(mapFreq).map(function(k) { return mapFreq[k]; });
+    frequentes.sort(function(a, b) { return b.count - a.count; });
+
+    INIT_FORM._aggCache = {
+      sugestoes: sugestoes,
+      frequentes: frequentes.slice(0, 4),
+      descricoes: sugestoes.map(function(s) { return s.descricao; })
+    };
+    return INIT_FORM._aggCache;
   },
 
-  obterTransacoesFrequentes: function() {
-    var txs = TRANSACOES.obter({});
-    var map = {};
-    txs.forEach(function(t) {
-      if (!t.descricao) return;
-      var key = t.descricao + '|' + t.categoria + '|' + t.tipo;
-      if (!map[key]) {
-        map[key] = { descricao: t.descricao, categoria: t.categoria, tipo: t.tipo, valor: t.valor, count: 0 };
-      }
-      map[key].count++;
-      map[key].valor = t.valor; // último valor usado
-    });
-    var arr = Object.values(map);
-    arr.sort(function(a, b) { return b.count - a.count; });
-    return arr.slice(0, 4);
+  invalidarCacheSugestoes: function() {
+    INIT_FORM._autocompleteCache = {};
+    INIT_FORM._aggCache = null;
   },
 
   preencherFormRapido: function(data) {
@@ -1466,6 +1489,7 @@ const INIT_FORM = {
   },
 
   _finalizarTransacao: function() {
+    INIT_FORM.invalidarCacheSugestoes();
     RENDER.init();
     if (typeof INSIGHTS !== 'undefined') {
       setTimeout(function() { INSIGHTS.mostrar(); }, 100);

@@ -40,6 +40,7 @@ describe('P1.1 — navegação por teclado (runtime)', function() {
   var INIT_FORM;
 
   beforeAll(function() {
+    jest.useFakeTimers();
     var sandbox = {
       window: window,
       document: document,
@@ -106,6 +107,7 @@ describe('P1.1 — navegação por teclado (runtime)', function() {
 
     input.value = 'Su';
     input.dispatchEvent(new Event('input', { bubbles: true }));
+    jest.advanceTimersByTime(200);
 
     expect(input.getAttribute('aria-expanded')).toBe('true');
     expect(list.querySelectorAll('[role="option"]').length).toBeGreaterThan(0);
@@ -121,6 +123,7 @@ describe('P1.1 — navegação por teclado (runtime)', function() {
 
     input.value = 'Ub';
     input.dispatchEvent(new Event('input', { bubbles: true }));
+    jest.advanceTimersByTime(200);
     expect(input.getAttribute('aria-expanded')).toBe('true');
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     expect(input.getAttribute('aria-expanded')).toBe('false');
