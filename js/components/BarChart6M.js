@@ -4,6 +4,19 @@
 (function() {
   var UI = window.UI || {};
 
+  function _buildResumoTabela(dados) {
+    var moeda = UI._utils.moeda;
+    var esc = UI._utils.esc;
+    var rows = dados.map(function(d) {
+      return '<tr><td>' + esc(d.mes) + '</td><td>' + esc(moeda(d.receitas)) +
+        '</td><td>' + esc(moeda(d.despesas)) + '</td></tr>';
+    }).join('');
+    return '<table class="sr-only">' +
+      '<caption>Evolução financeira dos últimos 6 meses</caption>' +
+      '<thead><tr><th scope="col">Mês</th><th scope="col">Receitas</th><th scope="col">Despesas</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody></table>';
+  }
+
   function _buildSVG(dados) {
     var moeda = UI._utils.moeda;
 
@@ -13,7 +26,7 @@
 
     var w = 340, h = 180, padding = 30, barW = 18, gap = 6;
     var chartH = h - padding - 20;
-    var svg = '<svg viewBox="0 0 ' + w + ' ' + h + '" class="chart-svg" role="img" aria-label="Gráfico de evolução financeira">';
+    var svg = '<svg viewBox="0 0 ' + w + ' ' + h + '" class="chart-svg" aria-hidden="true" focusable="false">';
 
     for (var g = 0; g <= 4; g++) {
       var gy = padding + (chartH / 4) * g;
@@ -54,13 +67,13 @@
     render: function(dados) {
       var el = document.createElement('div');
       el.className = 'chart-6m-container';
-      el.innerHTML = _buildSVG(dados);
+      el.innerHTML = _buildSVG(dados) + _buildResumoTabela(dados);
       return el;
     },
 
-    // html(dados) → string SVG — para uso explícito com innerHTML
+    // html(dados) → string SVG + tabela acessível
     html: function(dados) {
-      return _buildSVG(dados);
+      return _buildSVG(dados) + _buildResumoTabela(dados);
     }
   };
 

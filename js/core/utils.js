@@ -204,8 +204,79 @@ var UTILS = {
     if (typeof input === 'number') return (isNaN(input) || !isFinite(input)) ? NaN : input;
     var str = String(input == null ? '' : input).trim();
     if (!str) return NaN;
-    if (!/^-?[\d.,]+$/.test(str)) return NaN;
+    // Aceita prefixo R$ (já removido em parseMoeda); aqui só rejeita texto livre.
+    var limpo = str.replace(/[R$\s]/gi, '');
+    if (!/^-?[\d.,]+$/.test(limpo)) return NaN;
     return this.parseMoeda(str);
+  },
+
+  /**
+   * Liga um input de valor monetário: digita livre (6000, 6.000, 6.000,00, R$…)
+   * e mostra prévia do que será salvo. No blur, formata em pt-BR com 2 casas.
+   *
+   * Substitui a máscara "centavos a cada dígito" (6000 → 60,00), que contradizia
+   * a expectativa do usuário brasileiro de inteiros em reais.
+   *
+   * @param {HTMLInputElement|null} input
+   * @param {{ previewId?: string, previewEl?: HTMLElement|null, onChange?: Function }} [opts]
+   */
+  bindCampoMoeda: function(input, opts) {
+    if (!input || input._fpMoedaBound) return;
+    opts = opts || {};
+    input._fpMoedaBound = true;
+    input.setAttribute('inputmode', input.getAttribute('inputmode') || 'decimal');
+    input.setAttribute('autocomplete', 'off');
+
+    var preview = opts.previewEl || null;
+    if (!preview && opts.previewId) {
+      preview = document.getElementById(opts.previewId);
+    }
+
+    var atualizar = function() {
+      var raw = String(input.value || '').trim();
+      var valor = UTILS.parseMoeda(raw);
+      if (preview) {
+        if (!raw) {
+          preview.hidden = true;
+          preview.textContent = '';
+        } else if (!/[\d]/.test(raw)) {
+          preview.hidden = false;
+          preview.textContent = 'Valor inválido';
+          preview.classList.add('campo-moeda-preview--erro');
+        } else {
+          preview.hidden = false;
+          preview.classList.remove('campo-moeda-preview--erro');
+          preview.textContent = 'Você está salvando ' + UTILS.formatarMoeda(valor);
+        }
+      }
+      if (typeof opts.onChange === 'function') opts.onChange(valor, raw);
+    };
+
+    input.addEventListener('input', atualizar);
+    input.addEventListener('blur', function() {
+      var raw = String(input.value || '').trim();
+      if (!raw) {
+        atualizar();
+        return;
+      }
+      var valor = UTILS.parseMoeda(raw);
+      input.value = valor.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+      atualizar();
+    });
+
+    if (input.value) atualizar();
+  },
+
+  /**
+   * Formata um número já parseado para exibição no campo (pt-BR, 2 casas).
+   */
+  formatarCampoMoeda: function(valor) {
+    var n = typeof valor === 'number' ? valor : this.parseMoeda(valor);
+    if (!isFinite(n)) n = 0;
+    return n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   },
 
   /**

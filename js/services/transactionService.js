@@ -26,7 +26,12 @@ var TRANSACTION_SERVICE = (function() {
 
   function toNumber(value) {
     if (typeof value === 'number') return value;
-    if (typeof value === 'string') return parseFloat(value.replace(',', '.'));
+    if (typeof value === 'string') {
+      // Preferir parser BR do app quando disponível (evita parseFloat('8.000') → 8).
+      if (typeof UTILS !== 'undefined' && UTILS.parseMoeda) return UTILS.parseMoeda(value);
+      // Fallback sem UTILS: vírgula decimal simples (API costuma mandar number).
+      return parseFloat(String(value).trim().replace(',', '.'));
+    }
     return NaN;
   }
 

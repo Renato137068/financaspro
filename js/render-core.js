@@ -110,8 +110,14 @@ const RENDER_CORE = {
       
       renderer.lastRender = Date.now();
       renderer.renderCount++;
-      
-      if (duration > 16) { // Mais que 1 frame (60fps)
+
+      // Dashboard completo (gráficos + módulos) costuma levar 30–150 ms no
+      // primeiro paint — avisar só em re-renders ou quando exceder limite alto.
+      var warnAt = 16;
+      if (name === 'dashboard') {
+        warnAt = renderer.renderCount <= 1 ? 180 : 100;
+      }
+      if (duration > warnAt) {
         console.warn('[RENDER_CORE] Render lento:', name, duration.toFixed(2) + 'ms');
       }
       

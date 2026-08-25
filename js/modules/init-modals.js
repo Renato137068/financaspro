@@ -55,8 +55,11 @@ const INIT_MODALS = {
     var title = options.title || 'Aviso';
     var titleHtml = '<h3 id="modal-title" class="sr-only">' +
       (typeof UTILS !== 'undefined' ? UTILS.escapeHtml(title) : title) + '</h3>';
+    var okLabel = options.okLabel || 'OK';
     ov.innerHTML = '<div class="modal-box">' + titleHtml + body +
-      '<div class="modal-actions"><button class="modal-btn btn-principal" type="button">OK</button></div></div>';
+      '<div class="modal-actions"><button class="modal-btn btn-principal" type="button">' +
+      (typeof UTILS !== 'undefined' ? UTILS.escapeHtml(okLabel) : okLabel) +
+      '</button></div></div>';
     
     document.body.appendChild(ov);
     
@@ -65,31 +68,58 @@ const INIT_MODALS = {
     
     // Initialize focus trap if available
     var focusTrap = null;
-    if (FocusTrap) {
+    if (typeof FocusTrap !== 'undefined' && FocusTrap) {
       focusTrap = new FocusTrap(ov);
       focusTrap.activate();
     }
-    
-    // Event listeners
-    btn.addEventListener('click', function() { 
-      if (focusTrap) focusTrap.deactivate();
-      ov.remove(); 
-    });
+
+    // Fechar SEMPRE desativa o trap. Módulos legados fazem `ok.onclick = save`
+    // e depois `overlay.remove()` — se o close default usasse addEventListener,
+    // ele rodava ANTES do onclick, apagava o DOM e o save lia campos null.
+    // Usar a propriedade onclick permite que o handler externo a substitua.
+    var fechar = function() {
+      if (focusTrap) {
+        focusTrap.deactivate();
+        focusTrap = null;
+      }
+      if (ov.parentNode) ov.remove();
+    };
+    ov._fpClose = fechar;
+    var removeNativo = ov.remove.bind(ov);
+    ov.remove = function() {
+      if (focusTrap) {
+        focusTrap.deactivate();
+        focusTrap = null;
+      }
+      removeNativo();
+    };
+
+    var aoConfirmar = function() {
+      if (typeof options.onOk === 'function') {
+        try {
+          if (options.onOk(ov) === false) return;
+        } catch (err) {
+          console.error('[INIT_MODALS] onOk falhou:', err);
+          return;
+        }
+      }
+      fechar();
+    };
+
+    btn.onclick = aoConfirmar;
     ov.addEventListener('click', function(e) { 
-      if (e.target === ov) { 
-        if (focusTrap) focusTrap.deactivate();
-        ov.remove(); 
-      } 
+      if (e.target === ov) fechar();
     });
     
     // Keyboard support
     document.addEventListener('keydown', function h(e) {
       if (e.key === 'Escape') { 
-        if (focusTrap) focusTrap.deactivate();
-        ov.remove(); 
+        fechar();
         document.removeEventListener('keydown', h); 
       }
     });
+
+    return ov;
   },
 
   /**

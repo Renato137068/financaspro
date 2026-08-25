@@ -204,6 +204,9 @@ var CONTAS = {
   },
 
   salvar: function(dados) {
+    if (typeof DADOS.upsertConta === 'function') {
+      return DADOS.upsertConta(dados);
+    }
     var lista = DADOS.getContas();
     if (dados.id) {
       for (var i = 0; i < lista.length; i++) {
@@ -215,13 +218,15 @@ var CONTAS = {
     }
     DADOS.salvarContas(lista);
     this._cache = lista;
-    if (typeof DADOS._pushContasApi === 'function') {
-      DADOS._pushContasApi(dados);
-    }
     return dados;
   },
 
   deletar: function(id) {
+    if (typeof DADOS.deletarConta === 'function') {
+      DADOS.deletarConta(id);
+      this._cache = DADOS.getContas();
+      return;
+    }
     var lista = DADOS.getContas().filter(function(c) { return c.id !== id; });
     DADOS.salvarContas(lista);
     this._cache = lista;

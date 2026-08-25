@@ -27,7 +27,13 @@ var ORCAMENTO = {
         definidoEm: new Date().toISOString()
       };
     }
-    this._salvarOrcamentos();
+    if (typeof DADOS !== 'undefined' && typeof DADOS.upsertOrcamento === 'function') {
+      var entry = DADOS.upsertOrcamento(categoria, this._cache[categoria].limite);
+      this._cache[categoria] = Object.assign({}, this._cache[categoria], entry);
+    } else {
+      this._salvarOrcamentos();
+    }
+    if (typeof APP_STATE !== 'undefined') APP_STATE.setState({ config: DADOS.getConfig() });
     return this._cache[categoria];
   },
 
@@ -46,10 +52,16 @@ var ORCAMENTO = {
   },
 
   deletarLimite: function(categoria) {
-    this._cache = typeof BUDGET_SERVICE !== 'undefined'
-      ? BUDGET_SERVICE.removeBudget(this._cache, categoria)
-      : (delete this._cache[categoria], this._cache);
-    this._salvarOrcamentos();
+    if (typeof DADOS !== 'undefined' && typeof DADOS.deletarOrcamento === 'function') {
+      DADOS.deletarOrcamento(categoria);
+      delete this._cache[categoria];
+    } else {
+      this._cache = typeof BUDGET_SERVICE !== 'undefined'
+        ? BUDGET_SERVICE.removeBudget(this._cache, categoria)
+        : (delete this._cache[categoria], this._cache);
+      this._salvarOrcamentos();
+    }
+    if (typeof APP_STATE !== 'undefined') APP_STATE.setState({ config: DADOS.getConfig() });
   },
 
   calcularGastoMes: function(categoria, mes, ano) {

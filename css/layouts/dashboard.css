@@ -117,13 +117,8 @@
   line-height: 1.1;
 }
 
-.card-saldo-principal .saldo-valor {
-  color: var(--color-white);
-}
-
-.card-saldo-principal .saldo-label {
-  color: rgba(255, 255, 255, 0.88);
-}
+/* Cores do cartão-herói: fonte única em css/components/cards.css
+   (+ override escuro em css/themes/dark-mode.css). */
 
 /* ── Cards Receita / Despesa ───────────────────────────────── */
 

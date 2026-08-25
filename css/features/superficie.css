@@ -102,17 +102,10 @@
   letter-spacing: -0.02em;
 }
 
-/* Hero — saldo principal */
-.card-saldo-principal.saldo-positivo .saldo-label,
-.card-saldo-principal.saldo-negativo .saldo-label {
-  color: rgba(255, 255, 255, 0.88);
-}
-
-.card-saldo-principal.saldo-positivo .saldo-valor,
-.card-saldo-principal.saldo-negativo .saldo-valor {
-  color: var(--color-white);
-}
-
+/* Hero — saldo principal
+   Tipografia de destaque fica aqui; COR do texto vem de cards.css
+   (claro) e dark-mode.css (escuro). Sem isto a cascata reintroduzia
+   branco sobre card claro depois que o fundo decorativo saiu. */
 .card-saldo-principal .saldo-valor {
   font-family: var(--font-family-display);
   font-size: clamp(var(--font-size-xl), 6vw, var(--font-size-3xl));
@@ -177,20 +170,18 @@ header h1,
 }
 
 .card-saldo-principal.saldo-positivo {
-  /* O ÚNICO gradiente de marca do produto inteiro.
-     Ele é raro de propósito: gradiente que aparece em toda parte deixa de
-     enfatizar e vira textura de fundo. Aqui ele marca a única superfície que
-     a tela existe para mostrar. A outra exceção é o brilho do esqueleto de
-     carregamento, onde o gradiente É a animação. */
-  background: linear-gradient(160deg,
-    var(--color-primary-700) 0%, var(--color-primary-500) 100%);
+  /* Alinhado ao card claro de cards.css/dashboard.css — o gradiente de marca
+     voltava a forçar fundo escuro e, com texto escuro no claro, quebrava o
+     contraste OU (com texto branco legado) o inverso. Fundo claro + tipografia
+     escura é a superfície do tema claro. */
+  background: var(--color-bg-card);
+  border: 2px solid var(--color-primary-200);
   box-shadow: var(--elevacao-1);
 }
 
 .card-saldo-principal.saldo-negativo {
-  /* Saldo negativo não é emergência: é um fato. Cor chapada e dessaturada,
-     sem alarme — a voz calma da marca vale para a cor também. */
-  background: var(--color-danger-dark);
+  background: var(--color-bg-card);
+  border: 2px solid var(--color-danger);
   box-shadow: var(--elevacao-1);
 }
 

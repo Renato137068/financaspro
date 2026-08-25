@@ -93,7 +93,7 @@ function atualizarDashboard() {
 /* ── Config / Perfil → INIT_CONFIG ── */
 
 function renderConfigTab() { _config('refreshPerfil'); }
-function renderConfigStats() { _config('renderConfigStats'); }
+function renderConfigStats() { /* removido — #cfg-stat-* não existem na UI */ }
 function abrirEditarPerfil() { _config('abrirEditarPerfil'); }
 function abrirEditarRenda() { _config('abrirEditarRenda'); }
 function abrirConfigBancos() { _config('abrirConfigBancos'); }

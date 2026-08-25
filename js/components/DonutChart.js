@@ -4,13 +4,26 @@
 (function() {
   var UI = window.UI || {};
 
+  function _buildResumoTabela(cats, totalDesp) {
+    var u = UI._utils;
+    var rows = cats.map(function(c) {
+      var pct = totalDesp > 0 ? Math.round((c.valor / totalDesp) * 100) : 0;
+      return '<tr><td>' + u.esc(u.label(c.nome)) + '</td><td>' + u.esc(u.moeda(c.valor)) +
+        '</td><td>' + pct + '%</td></tr>';
+    }).join('');
+    return '<table class="sr-only">' +
+      '<caption>Despesas por categoria</caption>' +
+      '<thead><tr><th scope="col">Categoria</th><th scope="col">Valor</th><th scope="col">Percentual</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody></table>';
+  }
+
   UI.DonutChart = {
     // render(cats, totalDesp) → HTMLElement div.donut-container
     render: function(cats, totalDesp) {
       var u = UI._utils;
 
       var size = 160, cx = 80, cy = 80, r = 60, innerR = 38;
-      var svgStr = '<svg viewBox="0 0 ' + size + ' ' + size + '" class="donut-svg" role="img" aria-label="Gráfico de despesas por categoria">';
+      var svgStr = '<svg viewBox="0 0 ' + size + ' ' + size + '" class="donut-svg" aria-hidden="true" focusable="false">';
 
       var startAngle = -90;
       for (var i = 0; i < cats.length; i++) {
@@ -47,7 +60,7 @@
 
       var container = document.createElement('div');
       container.className = 'donut-container';
-      container.innerHTML = svgStr;
+      container.innerHTML = svgStr + _buildResumoTabela(cats, totalDesp);
       container.appendChild(UI.LegendaChart.render(cats, totalDesp));
 
       return container;

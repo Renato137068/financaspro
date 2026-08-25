@@ -1,6 +1,9 @@
 /**
  * onboarding.js — Tour guiado para novos usuários
  * Fase 2 UX — Depende de: dados.js, utils.js
+ *
+ * O tour NUNCA abre automaticamente: só após clique explícito em
+ * "Iniciar tour" (convite ou Perfil → Tour de boas-vindas).
  */
 
 var ONBOARDING = (function() {
@@ -10,12 +13,13 @@ var ONBOARDING = (function() {
   var _ativo   = false;
   var _passos  = [];
   var _delayTimer = null;
+  var _interagiu = false;
+  var _acaoPendente = null;
+  var _inviteEl = null;
 
   /* ── Monta passos dinamicamente ────────────────────────── */
 
   function _getPassos() {
-    // Config ilegível não pode impedir o tour de abrir; ele só começa sem
-    // saber a renda, o que é exatamente o estado de quem nunca a informou.
     var renda = UTILS.tentar('onboarding.lerRenda', function() {
       var cfg = (typeof DADOS !== 'undefined' && DADOS.getConfig) ? DADOS.getConfig() : {};
       return Number(cfg.renda) || 0;
@@ -62,9 +66,6 @@ var ONBOARDING = (function() {
         if (list && list.length > 0) return true;
       }
     } catch (e) {
-      // Na dúvida, assume que NÃO há lançamentos: mostrar o tour a quem já usa
-      // o app incomoda; escondê-lo de quem está começando deixa a pessoa sem
-      // saber por onde ir.
       UTILS.tentar('onboarding.temLancamentos', function() { throw e; });
     }
     return false;
@@ -86,9 +87,6 @@ var ONBOARDING = (function() {
   }
 
   function _concluir() {
-    // Falhar aqui faz o tour reaparecer a cada abertura. Não é assunto para
-    // um toast — mas precisa deixar rastro, senão vira um relato de "o tour
-    // não para de aparecer" sem nenhuma pista.
     UTILS.tentar('onboarding.concluir', function() {
       if (typeof DADOS !== 'undefined' && DADOS.salvarConfig) {
         DADOS.salvarConfig({ onboardingConcluido: true });
@@ -107,7 +105,56 @@ var ONBOARDING = (function() {
     }
   }
 
-  /* ── DOM ──────────────────────────────────────────────── */
+  /* ── Convite não bloqueante (substitui auto-tour) ─────── */
+
+  function _fecharConvite(marcarConcluido) {
+    if (_inviteEl && _inviteEl.parentNode) {
+      _inviteEl.parentNode.removeChild(_inviteEl);
+    }
+    _inviteEl = null;
+    if (marcarConcluido) _concluir();
+  }
+
+  function _mostrarConvite() {
+    if (_ativo || _inviteEl || _marcado() || _interagiu || _authBloqueando()) return;
+
+    _inviteEl = document.createElement('div');
+    _inviteEl.id = 'onboarding-invite';
+    _inviteEl.className = 'onboarding-invite';
+    _inviteEl.setAttribute('role', 'region');
+    _inviteEl.setAttribute('aria-label', 'Convite para tour de boas-vindas');
+    _inviteEl.innerHTML =
+      '<div class="onboarding-invite-inner">' +
+        '<span class="onboarding-invite-text">' +
+          '<i data-lucide="compass" aria-hidden="true"></i> ' +
+          'Primeira vez aqui? Veja um tour rápido de 30 segundos.' +
+        '</span>' +
+        '<div class="onboarding-invite-actions">' +
+          '<button type="button" class="onb-btn-skip" id="onb-invite-dismiss">Agora não</button>' +
+          '<button type="button" class="onb-btn-next ripple-host" id="onb-invite-start">' +
+            '<i data-lucide="play" aria-hidden="true"></i> Iniciar tour' +
+          '</button>' +
+        '</div>' +
+      '</div>';
+
+    document.body.appendChild(_inviteEl);
+
+    document.getElementById('onb-invite-start').addEventListener('click', function() {
+      _fecharConvite(false);
+      abrirTourExplicito();
+    });
+    document.getElementById('onb-invite-dismiss').addEventListener('click', function() {
+      _fecharConvite(true);
+    });
+
+    if (typeof renderLucideIconsNow === 'function') {
+      renderLucideIconsNow();
+    } else if (typeof renderLucideIcons === 'function') {
+      renderLucideIcons(_inviteEl);
+    }
+  }
+
+  /* ── DOM do tour ──────────────────────────────────────── */
 
   function _criarOverlay() {
     _overlay = document.createElement('div');
@@ -219,14 +266,13 @@ var ONBOARDING = (function() {
 
     if (p.rendaStep) {
       var inp = document.getElementById('onb-renda-val');
-      var val = inp ? parseFloat((inp.value || '').replace(',', '.')) : 0;
+      var val = inp && typeof UTILS !== 'undefined' && UTILS.parseMoeda
+        ? UTILS.parseMoeda(inp.value)
+        : (inp ? parseFloat(String(inp.value || '').replace(',', '.')) : 0);
       if (val && val > 0) {
-        // Este é diferente dos demais: o usuário ACABOU de digitar a renda.
-        // Perdê-la em silêncio significa que ele segue o tour inteiro achando
-        // que informou, e o orçamento 50/30/20 nasce sem base nenhuma.
         UTILS.tentar('onboarding.salvarRenda', function() {
           if (typeof DADOS !== 'undefined' && DADOS.salvarConfig) {
-            DADOS.salvarConfig({ renda: val });
+            DADOS.salvarConfig({ renda: val, rendaMensal: val });
           }
         }, { avisar: 'Não foi possível salvar sua renda. Tente novamente nas configurações.' });
       }
@@ -249,6 +295,7 @@ var ONBOARDING = (function() {
 
   function _abrirTour() {
     if (_ativo) return;
+    _fecharConvite(false);
     _ativo  = true;
     _passo  = 0;
     _passos = _getPassos();
@@ -256,26 +303,65 @@ var ONBOARDING = (function() {
     _renderPasso('forward');
   }
 
+  function _cancelarAgendamento() {
+    if (_delayTimer) {
+      clearTimeout(_delayTimer);
+      _delayTimer = null;
+    }
+  }
+
+  /**
+   * Sinaliza que o usuário já escolheu um caminho (ex.: "Registrar Transação").
+   * Fecha convite/tour agendado; se o tour já estiver aberto, guarda a ação
+   * para retomar ao pular/"Agora não".
+   */
+  function registrarInteracao(acao) {
+    _interagiu = true;
+    _cancelarAgendamento();
+    _fecharConvite(false);
+    if (acao && acao.aba) {
+      _acaoPendente = { aba: acao.aba };
+    }
+    return !_ativo;
+  }
+
   /* ── API pública ───────────────────────────────────────── */
 
+  /** Exibe convite não bloqueante — o tour só abre com clique explícito. */
   function iniciar() {
-    if (_ativo || _marcado()) return;
+    if (_ativo || _marcado() || _interagiu) return;
     if (_temUsoPrevio()) {
       _concluir();
       return;
     }
     if (_authBloqueando()) return;
 
-    if (_delayTimer) clearTimeout(_delayTimer);
+    _cancelarAgendamento();
     _delayTimer = setTimeout(function() {
       _delayTimer = null;
-      if (_marcado() || _authBloqueando()) return;
-      _abrirTour();
+      if (_marcado() || _authBloqueando() || _interagiu || _ativo) return;
+      _mostrarConvite();
     }, 2800);
+  }
+
+  /** Abre o tour imediatamente — só para ações explícitas do usuário. */
+  function abrirTourExplicito() {
+    _cancelarAgendamento();
+    _fecharConvite(false);
+    if (_marcado() && !_ativo) {
+      UTILS.tentar('onboarding.reabrir', function() {
+        if (typeof DADOS !== 'undefined' && DADOS.salvarConfig) {
+          DADOS.salvarConfig({ onboardingConcluido: false });
+        }
+      });
+    }
+    _abrirTour();
   }
 
   function reiniciar() {
     encerrar(true);
+    _interagiu = false;
+    _acaoPendente = null;
     UTILS.tentar('onboarding.reiniciar', function() {
       if (typeof DADOS !== 'undefined' && DADOS.salvarConfig) {
         DADOS.salvarConfig({ onboardingConcluido: false });
@@ -290,6 +376,7 @@ var ONBOARDING = (function() {
       _delayTimer = null;
     }
 
+    _fecharConvite(false);
     _concluir();
     document.removeEventListener('keydown', _onKeydown);
 
@@ -304,17 +391,40 @@ var ONBOARDING = (function() {
       }, 230);
     }
 
+    var pendente = _acaoPendente;
+    _acaoPendente = null;
+
     if (!silent) {
       UTILS.tentar('onboarding.encerrar', function() {
         var fn = (typeof INIT_NAVIGATION !== 'undefined' && INIT_NAVIGATION.mudarAba)
           ? INIT_NAVIGATION.mudarAba.bind(INIT_NAVIGATION)
           : (typeof mudarAba !== 'undefined' ? mudarAba : null);
-        if (fn) fn('resumo');
+        if (fn && pendente && pendente.aba) fn(pendente.aba);
       });
     }
 
     _ativo = false;
+
+    if (silent) {
+      _interagiu = false;
+      _acaoPendente = null;
+    }
   }
 
-  return { iniciar: iniciar, encerrar: encerrar, reiniciar: reiniciar };
+  return {
+    iniciar: iniciar,
+    encerrar: encerrar,
+    reiniciar: reiniciar,
+    abrirTourExplicito: abrirTourExplicito,
+    registrarInteracao: registrarInteracao,
+    /** @private testes */
+    _estado: function() {
+      return {
+        ativo: _ativo,
+        interagiu: _interagiu,
+        pendente: _acaoPendente,
+        convite: !!_inviteEl
+      };
+    }
+  };
 })();

@@ -51,6 +51,9 @@ const INIT_NAVIGATION = {
       var muda = e.target.closest('[data-mudar-aba]');
       if (muda) {
         var aba = muda.dataset.mudarAba;
+        if (typeof ONBOARDING !== 'undefined' && ONBOARDING.registrarInteracao) {
+          ONBOARDING.registrarInteracao({ aba: aba });
+        }
         if (aba && typeof mudarAba === 'function') {
           try {
             mudarAba(aba);
@@ -94,9 +97,54 @@ const INIT_NAVIGATION = {
       console.warn('[INIT_NAVIGATION] Função não disponível:', fnName);
     };
 
+    // Ações com listener próprio nos módulos (INIT_METAS, INIT_ASSINATURAS…).
+    // Sem esta lista o dispatcher global emitia "Ação desconhecida" no console
+    // mesmo com o formulário abrindo — falso negativo que a auditoria tratou
+    // como falha de roteamento.
+    var acoesDeModulo = {
+      'meta-nova': true,
+      'meta-aporte': true,
+      'meta-excluir': true,
+      'assinatura-nova': true,
+      'assinatura-toggle': true,
+      'assinatura-excluir': true,
+      'assinatura-importar': true,
+      'patrimonio-ativo-nova': true,
+      'patrimonio-divida-nova': true,
+      'patrimonio-ativo-editar': true,
+      'patrimonio-divida-editar': true,
+      'patrimonio-ativo-excluir': true,
+      'patrimonio-divida-excluir': true,
+      'patrimonio-importar-conta': true,
+      'conta-nova': true,
+      'conta-pagar': true,
+      'conta-excluir': true,
+      'conta-mes-prev': true,
+      'conta-mes-next': true,
+      'anexo-ver': true,
+      'anexo-remover-salvo': true,
+      'anexo-remover-pendente': true,
+      'anexo-abrir': true,
+      'billing-fechar': true,
+      'billing-interval': true,
+      'billing-assinar': true,
+      'billing-login': true,
+      'billing-restaurar': true,
+      'billing-portal': true,
+      'billing-cancelar': true,
+      'of-fechar': true,
+      'of-conectar-sandbox': true,
+      'of-conectar-belvo': true,
+      'of-sync': true,
+      'of-desconectar': true
+    };
+
     var actions = {
       'mudar-aba': function() {
         var aba = target.dataset.aba;
+        if (typeof ONBOARDING !== 'undefined' && ONBOARDING.registrarInteracao) {
+          ONBOARDING.registrarInteracao({ aba: aba });
+        }
         if (aba && typeof mudarAba === 'function') mudarAba(aba);
       },
       'abrir-entrada-rapida': function() { safeCall('abrirEntradaRapida'); },
@@ -153,11 +201,13 @@ const INIT_NAVIGATION = {
       'abrir-changelog': function() { safeCall('abrirChangelog'); },
       'abrir-feedback': function() { safeCall('abrirFeedback'); },
       'abrir-plano': function() {
+        if (typeof DADOS !== 'undefined' && DADOS._apiAtiva && !DADOS._apiAtiva()) return;
         if (typeof INIT_BILLING !== 'undefined' && INIT_BILLING.abrirPaywall) {
           INIT_BILLING.abrirPaywall();
         }
       },
       'abrir-open-finance': function() {
+        if (typeof DADOS !== 'undefined' && DADOS._apiAtiva && !DADOS._apiAtiva()) return;
         if (typeof INIT_OPEN_FINANCE !== 'undefined' && INIT_OPEN_FINANCE.abrir) {
           INIT_OPEN_FINANCE.abrir();
         }
@@ -172,6 +222,8 @@ const INIT_NAVIGATION = {
 
     if (actions[action]) {
       actions[action]();
+    } else if (acoesDeModulo[action]) {
+      return;
     } else {
       console.warn('[INIT_NAVIGATION] Ação desconhecida:', action);
     }

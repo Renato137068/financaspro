@@ -33,6 +33,11 @@ describe('parsing de dinheiro — comportamento', () => {
     ['1.500,00', 1500],
     ['0,01', 0.01],
     ['10.000', 10000],
+    ['6000', 6000],
+    ['6.000', 6000],
+    ['6000,00', 6000],
+    ['6.000,00', 6000],
+    ['R$ 6.000,00', 6000],
     ['-250,50', -250.5],
   ])('formato brasileiro %s → %s', (entrada, esperado) => {
     expect(U().parseMoeda(entrada)).toBeCloseTo(esperado, 2);
