@@ -423,3 +423,15 @@ legend {
   height: 1em;
   flex-shrink: 0;
 }
+
+/* ── Prévia de valor monetário ─────────────────────────────── */
+.campo-moeda-preview {
+  margin: 6px 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.campo-moeda-preview--erro {
+  color: var(--color-danger-text);
+}

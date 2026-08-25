@@ -104,7 +104,7 @@
 
 .of-sync-result {
   font-size: var(--text-sm);
-  color: var(--color-success, #2e7d32);
+  color: var(--color-success-text);
   margin-top: var(--space-2);
 }
 

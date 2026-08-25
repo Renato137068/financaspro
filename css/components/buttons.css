@@ -153,25 +153,26 @@
 }
 
 .btn-export-excel {
-  background: #f0fdf4;
-  border-color: #16a34a;
-  color: #15803d;
+  background: var(--color-primary-50);
+  border-color: var(--color-success);
+  color: var(--color-success-dark);
 }
 
 .btn-export-excel:active {
-  background: #dcfce7;
+  background: var(--color-primary-100);
   transform: scale(0.97);
 }
 
 .btn-export-pdf {
-  background: #fff7ed;
+  background: var(--color-warning-bg);
   border-color: var(--color-warning-on-light);
-  color: #c2410c;
+  color: var(--color-warning-dark);
 }
 
 .btn-export-pdf:active {
-  background: #ffedd5;
+  background: var(--color-warning-bg);
   transform: scale(0.97);
+  filter: brightness(0.97);
 }
 
 /* ── PDF mini ─────────────────────────────────────────────── */

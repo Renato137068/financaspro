@@ -1,9 +1,7 @@
 {
   "_comentario": "Teto de valores literais no CSS. Só pode DIMINUIR. Regenerado por scripts/check-css-tokens.cjs --update",
-  "hex": 36,
-  "fontes": 0,
-  "total": 36,
-  "atualizadoEm": "2026-08-23",
-  "_nota_2026_08_23": "352 -> 154 na implementacao da marca (cores 233 -> 36).",
-  "_nota_2026_08_23b": "154 -> 36 ao terminar a escala tipografica: 153 tamanhos literais colapsados nos tokens, incluindo 30 valores fora de escala (13,5px, 12,5px, 15px, 17px, 22px, 26px e rem soltos). A escala ganhou dois degraus de display (44 e 56px) para os numeros grandes, que antes usavam 44/48/64px avulsos. Os clamp() dos numeros-heroi continuam fluidos, mas com os extremos vindo da escala."
+  "hex": 22,
+  "fontes": 1,
+  "total": 23,
+  "atualizadoEm": "2026-08-25"
 }

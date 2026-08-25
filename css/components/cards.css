@@ -95,11 +95,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.18);
+  background: var(--color-bg-primary);
   border-radius: var(--radius-lg);
   font-size: var(--font-size-2xl);
   line-height: 1;
-  color: var(--color-white);
+  color: var(--color-primary-text);
 }
 
 .card-saldo-principal .saldo-emoji i[data-lucide],
@@ -119,15 +119,17 @@
   margin-bottom: 2px;
 }
 
+/* Tema claro: cartão é superfície clara — frente escura (WCAG AA).
+   Branco fica só no tema escuro (css/themes/dark-mode.css). */
 .card-saldo-principal .saldo-label {
-  color: rgba(255, 255, 255, 0.88);
+  color: var(--color-text-muted);
 }
 
 .card-saldo-principal .saldo-valor {
   font-size: var(--font-size-2xl);
   font-weight: var(--font-weight-extrabold);
   letter-spacing: var(--letter-spacing-tight);
-  color: var(--color-white);
+  color: var(--color-text-primary);
 }
 
 .saldo-positivo:not(.card-saldo-principal) .saldo-valor,
@@ -338,7 +340,7 @@
 .alerta-linha { margin-bottom: var(--space-1); }
 .alerta-linha:last-child { margin-bottom: 0; }
 .alerta-danger  { color: var(--color-danger-text); }
-.alerta-warning { color: #92400e; }
+.alerta-warning { color: var(--color-warning-text); }
 
 /* ── Empty state ─────────────────────────────────────────── */
 
