@@ -5,11 +5,123 @@
  */
 
 const INIT_FORM = {
+  _submitBusy: false,
+  _persistUnsub: null,
+
   /**
    * Inicializa sistema de formulário
    */
   init: function() {
     this.setupFormNovo();
+    this._ligarPersistStatus();
+  },
+
+  _ligarPersistStatus: function() {
+    if (typeof PERSIST_QUEUE === 'undefined' || !PERSIST_QUEUE.onChange) return;
+    if (this._persistUnsub) return;
+    var self = this;
+    this._persistUnsub = PERSIST_QUEUE.onChange(function(snap) {
+      self._renderPersistStatus(snap);
+    });
+    this._renderPersistStatus(PERSIST_QUEUE.getSnapshot());
+  },
+
+  _renderPersistStatus: function(snap) {
+    var el = document.getElementById('persist-status');
+    var retryBtn = document.getElementById('persist-retry-btn');
+    var progressEl = document.getElementById('persist-progress');
+    if (!snap) return;
+
+    var texto = '';
+    var estado = 'idle';
+    if (snap.saving > 0) {
+      texto = 'Salvando ' + snap.saving + ' lançamento(s)…';
+      estado = 'saving';
+    } else if (snap.pending > 0) {
+      texto = snap.pending + ' lançamento(s) pendente(s) na fila';
+      estado = 'pending';
+    } else if (snap.failed > 0) {
+      texto = snap.failed + ' lançamento(s) falharam — toque em Tentar de novo';
+      estado = 'failed';
+    } else if (snap.saved > 0) {
+      texto = 'Salvo';
+      estado = 'saved';
+    }
+
+    if (el) {
+      el.setAttribute('data-persist-state', estado);
+      el.textContent = texto;
+    }
+    if (retryBtn) {
+      retryBtn.style.display = snap.failed > 0 ? '' : 'none';
+      retryBtn.disabled = snap.saving > 0 || snap.pending > 0;
+    }
+    if (progressEl) {
+      var totalWork = snap.pending + snap.saving + snap.failed + snap.saved;
+      var done = snap.saved;
+      if (totalWork > 1 && (snap.pending + snap.saving + snap.failed) > 0) {
+        progressEl.style.display = '';
+        progressEl.setAttribute('aria-valuenow', String(done));
+        progressEl.setAttribute('aria-valuemax', String(totalWork));
+        progressEl.textContent = done + ' / ' + totalWork;
+      } else if (estado === 'idle' || estado === 'saved') {
+        progressEl.style.display = 'none';
+      }
+    }
+
+    var btn = document.querySelector('.btn-registrar');
+    if (btn && !btn.dataset.manualLock) {
+      if (snap.saving > 0) {
+        btn.disabled = true;
+        if (!btn.dataset.persistLabel) btn.dataset.persistLabel = btn.innerHTML;
+        btn.innerHTML = 'Salvando…';
+      } else if (btn.dataset.persistLabel && snap.failed === 0) {
+        btn.innerHTML = btn.dataset.persistLabel;
+        delete btn.dataset.persistLabel;
+        btn.disabled = false;
+      } else if (snap.failed > 0) {
+        btn.disabled = false;
+        if (btn.dataset.persistLabel) {
+          btn.innerHTML = btn.dataset.persistLabel;
+          delete btn.dataset.persistLabel;
+        }
+      }
+    }
+
+    if (el && texto && (estado === 'saved' || estado === 'failed' || estado === 'pending')) {
+      if (el.dataset.lastAnnounced !== texto) {
+        el.dataset.lastAnnounced = texto;
+        if (typeof ariaLive !== 'undefined' && typeof ariaLive.announce === 'function') {
+          try { ariaLive.announce(texto); } catch (e) { /* noop */ }
+        }
+      }
+    }
+  },
+
+  _setRegistrarBusy: function(busy, label) {
+    var btn = document.querySelector('.btn-registrar');
+    if (!btn) return;
+    if (busy) {
+      btn.dataset.manualLock = '1';
+      if (!btn.dataset.persistLabel) btn.dataset.persistLabel = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = label || 'Salvando…';
+    } else {
+      delete btn.dataset.manualLock;
+      if (btn.dataset.persistLabel) {
+        btn.innerHTML = btn.dataset.persistLabel;
+        delete btn.dataset.persistLabel;
+      }
+      btn.disabled = false;
+    }
+  },
+
+  retryPersistFailed: function() {
+    if (typeof PERSIST_QUEUE === 'undefined') return;
+    var n = PERSIST_QUEUE.retryFailed();
+    if (n && typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+      UTILS.mostrarToast('Retentando ' + n + ' lançamento(s)…', 'info');
+    }
   },
 
   /**
@@ -33,7 +145,8 @@ const INIT_FORM = {
       this.setupAutocomplete,
       this.setupFormSubmit,
       this.setupParcelaPreview,
-      this.setupFormProgress
+      this.setupFormProgress,
+      this.setupPersistRetry
     ];
 
     fns.forEach(function(fn) {
@@ -47,6 +160,15 @@ const INIT_FORM = {
           }
         } catch (_obs) { /* observabilidade nunca pode quebrar o setup */ }
       }
+    });
+  },
+
+  setupPersistRetry: function() {
+    var btn = document.getElementById('persist-retry-btn');
+    if (!btn || btn.dataset.bound) return;
+    btn.dataset.bound = '1';
+    btn.addEventListener('click', function() {
+      INIT_FORM.retryPersistFailed();
     });
   },
 
@@ -1194,6 +1316,11 @@ const INIT_FORM = {
 
   handleFormSubmit: function(e) {
     try {
+      if (INIT_FORM._submitBusy) {
+        UTILS.mostrarToast('Aguarde gravar o lançamento atual…', 'warning');
+        return;
+      }
+
       var tipo = document.getElementById('novo-tipo').value || CONFIG.TIPO_DESPESA;
       var valor = INIT_FORM.obterValorNumerico();
       var categoria = document.getElementById('novo-categoria').value;
@@ -1209,11 +1336,18 @@ const INIT_FORM = {
         sugestaoOriginal = INIT_FORM.obterSugestaoContextual(descricao);
       }
 
-      // Alta confiança aplica automaticamente; média só entra após confirmação.
+      // Alta confiança / confirmação: só aplica categoria se o tipo da sugestão
+      // bater com o tipo escolhido no toggle. Nunca troca Receita↔Despesa em
+      // silêncio (auditoria personas — UX).
       var sugestaoConfirmada = INIT_FORM._iaConfirmed === true;
       if (sugestaoOriginal && (sugestaoOriginal.confianca === 'alta' || sugestaoConfirmada)) {
-        tipo = sugestaoOriginal.tipo || tipo;
-        categoria = sugestaoOriginal.categoria || categoria;
+        var tipoSug = sugestaoOriginal.tipo || tipo;
+        if (tipoSug === tipo) {
+          categoria = sugestaoOriginal.categoria || categoria;
+        } else if (sugestaoConfirmada) {
+          tipo = tipoSug;
+          categoria = sugestaoOriginal.categoria || categoria;
+        }
       }
       if (typeof CONFIG !== 'undefined' && typeof CONFIG.normalizeCategoriaFinal === 'function') {
         categoria = CONFIG.normalizeCategoriaFinal(categoria, tipo);
@@ -1264,6 +1398,8 @@ const INIT_FORM = {
       INIT_FORM.processarTransacao(tipo, valor, categoria, data, descricao, banco, cartao, nota);
     } catch (erro) {
       UTILS.mostrarToast(erro.message, 'error');
+      INIT_FORM._submitBusy = false;
+      INIT_FORM._setRegistrarBusy(false);
     }
   },
 
@@ -1431,52 +1567,74 @@ const INIT_FORM = {
     var chkParcelado = document.getElementById('chk-parcelado');
     var chkRecorrente = document.getElementById('chk-recorrente');
     var descFinal = descricao || nota;
-    var txId = null;
 
     if (editId) {
-      TRANSACOES.atualizar(editId, {
-        tipo: tipo,
-        valor: valor,
-        categoria: categoria,
-        data: data,
-        descricao: descFinal,
-        banco: banco,
-        cartao: cartao
-      });
-      if (typeof INIT_ANEXOS !== 'undefined') INIT_ANEXOS.salvarPendentes(editId);
-      delete form.dataset.editId;
-      var btnReg = document.querySelector('.btn-registrar');
-      if (btnReg) btnReg.textContent = 'Registrar';
-      if (typeof APRENDIZADO !== 'undefined') {
-        APRENDIZADO.registrar(descricao, categoria, tipo, banco, cartao, valor);
+      INIT_FORM._submitBusy = true;
+      INIT_FORM._setRegistrarBusy(true, 'Salvando…');
+      try {
+        TRANSACOES.atualizar(editId, {
+          tipo: tipo,
+          valor: valor,
+          categoria: categoria,
+          data: data,
+          descricao: descFinal,
+          banco: banco,
+          cartao: cartao
+        });
+        var discoEdit = (typeof DADOS !== 'undefined' && DADOS.aguardarDisco)
+          ? DADOS.aguardarDisco()
+          : Promise.resolve(true);
+        return discoEdit.then(function() {
+          if (typeof INIT_ANEXOS !== 'undefined') INIT_ANEXOS.salvarPendentes(editId);
+          delete form.dataset.editId;
+          var btnReg = document.querySelector('.btn-registrar');
+          if (btnReg) btnReg.textContent = 'Registrar';
+          if (typeof APRENDIZADO !== 'undefined') {
+            APRENDIZADO.registrar(descricao, categoria, tipo, banco, cartao, valor);
+          }
+          INIT_FORM.mostrarSucesso('Transação atualizada!');
+          INIT_FORM._finalizarTransacao();
+        }).catch(function(err) {
+          UTILS.mostrarToast((err && err.message) || 'Falha ao salvar', 'error');
+        }).then(function() {
+          INIT_FORM._submitBusy = false;
+          INIT_FORM._setRegistrarBusy(false);
+        });
+      } catch (errEdit) {
+        INIT_FORM._submitBusy = false;
+        INIT_FORM._setRegistrarBusy(false);
+        UTILS.mostrarToast(errEdit.message || 'Falha ao salvar', 'error');
+        return Promise.reject(errEdit);
       }
-      INIT_FORM.mostrarSucesso('Transação atualizada!');
-      INIT_FORM._finalizarTransacao();
-      return;
     }
 
-    // PARCELAMENTO
-    // Os dois cálculos abaixo são delegados a UTILS de propósito: dividir por N
-    // e arredondar cada parcela fazia R$ 100 em 3x somar R$ 99,99, e somar mês
-    // com setMonth transbordava 31/01 para 03/03 (pulando fevereiro). Ambos os
-    // erros são silenciosos — só aparecem no extrato do usuário.
+    INIT_FORM._submitBusy = true;
+    INIT_FORM._setRegistrarBusy(true, 'Salvando…');
+
+    var chain = Promise.resolve();
+    var sucessoMsg = 'Registrado!';
+    var firstTxId = null;
+    var valorAprendizado = valor;
+
+    // PARCELAMENTO — cada parcela na fila, mesma série com clientKeys distintos
     if (chkParcelado && chkParcelado.checked && tipo === 'despesa') {
       var nParcelas = parseInt(document.getElementById('num-parcelas').value, 10) || 2;
       var valoresParcelas = UTILS.dividirEmParcelas(valor, nParcelas);
-      for (var p = 0; p < valoresParcelas.length; p++) {
+      valorAprendizado = valoresParcelas.length ? valoresParcelas[0] : 0;
+      sucessoMsg = nParcelas + ' parcelas de ' + UTILS.formatarMoeda(valorAprendizado) + ' registradas!';
+      valoresParcelas.forEach(function(vp, p) {
         var dataParcela = UTILS.addMesesClamp(data, p) || data;
         var descParcela = descFinal + ' (' + (p + 1) + '/' + nParcelas + ')';
-        var txParcela = TRANSACOES.criar(tipo, valoresParcelas[p], categoria, dataParcela, descParcela, banco, cartao);
-        if (p === 0) txId = txParcela.id;
-      }
-      // A primeira parcela pode ter um centavo a mais que as demais; é ela que
-      // o usuário vê primeiro na fatura, então é ela que anunciamos.
-      var valorParcela = valoresParcelas.length ? valoresParcelas[0] : 0;
-      if (typeof APRENDIZADO !== 'undefined') {
-        APRENDIZADO.registrar(descricao, categoria, tipo, banco, cartao, valorParcela);
-        INIT_FORM.mostrarFeedbackAprendizado('Aprendizado atualizado com sucesso.');
-      }
-      INIT_FORM.mostrarSucesso(nParcelas + ' parcelas de ' + UTILS.formatarMoeda(valorParcela) + ' registradas!');
+        chain = chain.then(function() {
+          return INIT_FORM._enfileirarLancamento({
+            tipo: tipo, valor: vp, categoria: categoria,
+            data: dataParcela, descricao: descParcela, banco: banco, cartao: cartao
+          }).then(function(item) {
+            if (p === 0) firstTxId = item.txId;
+            return item;
+          });
+        });
+      });
     }
     // RECORRÊNCIA
     else if (chkRecorrente && chkRecorrente.checked) {
@@ -1487,27 +1645,73 @@ const INIT_FORM = {
         descricao: descFinal, frequencia: freq, dataInicio: data, ativo: true
       };
       DADOS.salvarRecorrente(recData);
-      var txRec = TRANSACOES.criar(tipo, valor, categoria, data, descFinal + ' (recorrente)', banco, cartao);
-      txId = txRec.id;
-      if (typeof APRENDIZADO !== 'undefined') {
-        APRENDIZADO.registrar(descricao, categoria, tipo, banco, cartao, valor);
-        INIT_FORM.mostrarFeedbackAprendizado('Recorrência aprendida para próximas sugestões.');
-      }
-      INIT_FORM.mostrarSucesso('Recorrência ' + freq + ' criada!');
+      sucessoMsg = 'Recorrência ' + freq + ' criada!';
+      chain = chain.then(function() {
+        return INIT_FORM._enfileirarLancamento({
+          tipo: tipo, valor: valor, categoria: categoria,
+          data: data, descricao: descFinal + ' (recorrente)', banco: banco, cartao: cartao
+        }).then(function(item) {
+          firstTxId = item.txId;
+          return item;
+        });
+      });
     }
     // NORMAL
     else {
-      var tx = TRANSACOES.criar(tipo, valor, categoria, data, descFinal, banco, cartao);
-      txId = tx.id;
-      if (typeof APRENDIZADO !== 'undefined') {
-        APRENDIZADO.registrar(descricao, categoria, tipo, banco, cartao, valor);
-        INIT_FORM.mostrarFeedbackAprendizado('Aprendizado atualizado com sucesso.');
-      }
-      INIT_FORM.mostrarSucesso('Registrado!');
+      chain = chain.then(function() {
+        return INIT_FORM._enfileirarLancamento({
+          tipo: tipo, valor: valor, categoria: categoria,
+          data: data, descricao: descFinal, banco: banco, cartao: cartao
+        }).then(function(item) {
+          firstTxId = item.txId;
+          return item;
+        });
+      });
     }
 
-    if (txId && typeof INIT_ANEXOS !== 'undefined') INIT_ANEXOS.salvarPendentes(txId);
-    INIT_FORM._finalizarTransacao();
+    return chain.then(function() {
+      if (typeof APRENDIZADO !== 'undefined') {
+        APRENDIZADO.registrar(descricao, categoria, tipo, banco, cartao, valorAprendizado);
+        INIT_FORM.mostrarFeedbackAprendizado('Aprendizado atualizado com sucesso.');
+      }
+      if (firstTxId && typeof INIT_ANEXOS !== 'undefined') INIT_ANEXOS.salvarPendentes(firstTxId);
+      INIT_FORM.mostrarSucesso(sucessoMsg);
+      INIT_FORM._finalizarTransacao();
+    }).catch(function(err) {
+      UTILS.mostrarToast((err && err.message) || 'Falha ao salvar lançamento', 'error');
+      if (typeof ariaLive !== 'undefined' && ariaLive.announce) {
+        try { ariaLive.announce('Falha ao salvar lançamento'); } catch (e) { /* noop */ }
+      }
+    }).then(function() {
+      INIT_FORM._submitBusy = false;
+      INIT_FORM._setRegistrarBusy(false);
+      if (typeof PERSIST_QUEUE !== 'undefined') {
+        INIT_FORM._renderPersistStatus(PERSIST_QUEUE.getSnapshot());
+      }
+    });
+  },
+
+  /**
+   * Enfileira um lançamento e só resolve após confirmação no storage.
+   */
+  _enfileirarLancamento: function(payload) {
+    if (typeof PERSIST_QUEUE !== 'undefined' && PERSIST_QUEUE.enqueueLancamento) {
+      return PERSIST_QUEUE.enqueueLancamento(payload);
+    }
+    // Fallback sem fila (testes unitários antigos): cria + aguarda disco.
+    var clientKey = (typeof UTILS !== 'undefined' && UTILS.gerarUuid)
+      ? UTILS.gerarUuid()
+      : ('ck-' + Date.now());
+    var tx = TRANSACOES.criar(
+      payload.tipo, payload.valor, payload.categoria, payload.data,
+      payload.descricao, payload.banco, payload.cartao, { clientKey: clientKey }
+    );
+    var wait = (typeof DADOS !== 'undefined' && DADOS.aguardarDisco)
+      ? DADOS.aguardarDisco()
+      : Promise.resolve(true);
+    return wait.then(function() {
+      return { clientKey: clientKey, status: 'saved', txId: tx.id, payload: payload };
+    });
   },
 
   _finalizarTransacao: function() {

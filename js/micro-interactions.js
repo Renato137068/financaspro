@@ -230,22 +230,9 @@ var MICRO = (function() {
   /* ── Botão registrar: estado de loading ─────────────────── */
 
   function setupButtonLoading() {
-    var form = document.getElementById('form-transacao');
-    if (!form) return;
-
-    form.addEventListener('submit', function() {
-      var btn = form.querySelector('.btn-registrar');
-      if (!btn || btn.dataset.loading) return;
-      var textoOriginal = btn.innerHTML;
-      btn.dataset.loading = '1';
-      btn.innerHTML = '⏳ Salvando…';
-      btn.disabled = true;
-      setTimeout(function() {
-        btn.innerHTML = textoOriginal;
-        btn.disabled  = false;
-        delete btn.dataset.loading;
-      }, 1600);
-    });
+    // O estado Salvando/Salvo/Falhou é controlado por INIT_FORM + PERSIST_QUEUE.
+    // Um timer cosmético de 1,6s reabilitava o botão antes da gravação real —
+    // exatamente o ritmo que a auditoria anual usou para perder lançamentos.
   }
 
   /* ── Quick amounts (valores rápidos) ────────────────────── */

@@ -93,7 +93,8 @@ var TRANSACOES = {
    * @returns {Transacao}
    * @throws {Error} se inválida
    */
-  criar: function(tipo, valor, categoria, data, descricao, banco, cartao) {
+  criar: function(tipo, valor, categoria, data, descricao, banco, cartao, opts) {
+    opts = opts || {};
     descricao = this._sanitizarDescricao(descricao);
     if (typeof CONFIG !== 'undefined' && typeof CONFIG.normalizeCategoriaFinal === 'function') {
       categoria = CONFIG.normalizeCategoriaFinal(categoria, tipo);
@@ -106,7 +107,8 @@ var TRANSACOES = {
         data: data,
         descricao: descricao,
         banco: banco,
-        cartao: cartao
+        cartao: cartao,
+        id: opts.id
       }, { idFactory: UTILS.gerarId })
       : (function() {
         var validacao = UTILS.validarTransacao({
@@ -114,7 +116,7 @@ var TRANSACOES = {
         });
         if (!validacao.valido) throw new Error(validacao.erro);
         return {
-          id: UTILS.gerarId(),
+          id: opts.id || UTILS.gerarId(),
           tipo: tipo,
           valor: parseFloat(valor),
           categoria: categoria,
@@ -125,6 +127,7 @@ var TRANSACOES = {
           dataCriacao: new Date().toISOString()
         };
       })();
+    if (opts.clientKey) transacao.clientKey = opts.clientKey;
     DADOS.salvarTransacao(transacao);
     this._cache = DADOS.getTransacoes();
     if (typeof APP_STATE !== 'undefined') APP_STATE.setState({ transacoes: this._cache });

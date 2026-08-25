@@ -46,6 +46,7 @@
   <script defer src="js/utilities/local-crypto.js"></script>
   <script defer src="js/utilities/focus-trap.js"></script>
   <script defer src="js/utilities/aria-live.js"></script>
+  <script defer src="js/utilities/finance-reconciler.js"></script>
   <!-- pin-guard NAO usa defer: precisa rodar antes do primeiro paint p/ evitar leak visual -->
   <script src="js/pin-guard.js"></script>
   <script defer src="js/vendor/lucide.min.js"></script>
@@ -552,6 +553,15 @@
       <!-- BARRA DE PROGRESSO DO FORMULÁRIO -->
       <div class="form-progress-container" aria-hidden="true">
         <div id="form-progress-bar"></div>
+      </div>
+
+      <!-- Status de persistência (fila local) -->
+      <div id="persist-status-wrap" class="persist-status-wrap" style="margin:8px 0 4px">
+        <div id="persist-status" class="persist-status" role="status" aria-live="polite" aria-atomic="true" data-persist-state="idle"></div>
+        <div id="persist-progress" class="persist-progress" role="progressbar" aria-valuemin="0" aria-valuenow="0" aria-valuemax="0" style="display:none"></div>
+        <button type="button" id="persist-retry-btn" class="btn-secundario" style="display:none;margin-top:6px">
+          Tentar de novo os pendentes
+        </button>
       </div>
 
       <!-- BOTÃO REGISTRAR -->
@@ -1598,6 +1608,7 @@
 <script defer src="js/core/sync-merge.js"></script>
 <script defer src="js/core/finance-contract.js"></script>
 <script defer src="js/core/sync-engine.js"></script>
+<script defer src="js/core/persist-queue.js"></script>
 <script defer src="js/core/dados.js"></script>
 <script defer src="js/core/store.js"></script>
 <script defer src="js/core/lifecycle.js"></script>

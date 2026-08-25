@@ -71,6 +71,13 @@ var DADOS = {
   /** Cache em memória para leitura síncrona com crypto at-rest */
   _plainCache: {},
 
+  /**
+   * Cadeia serial de escritas no disco. Sem isso, cifragem at-rest assíncrona
+   * permite last-writer-wins invertido: um encrypt antigo sobrescreve o novo
+   * e o lançamento some no reload (achado P0 da auditoria anual).
+   */
+  _diskWriteChain: Promise.resolve(),
+
   /** Aviso de cota é uma vez por sessão — repetido, vira ruído ignorável. */
   _avisouCota: false,
 
@@ -177,14 +184,31 @@ var DADOS = {
   },
 
   /**
-   * Grava no localStorage. Devolve true se gravou.
-   *
-   * O caminho criptografado engolia o erro de cota com um console.error: a
-   * gravação falhava, o cache em memória seguia com o valor novo e o app
-   * parecia funcionar até o próximo reload — quando o lançamento simplesmente
-   * não estava mais lá. Perder dado financeiro em silêncio é o pior desfecho
-   * possível aqui; qualquer aviso é melhor.
+   * Grava no localStorage. Devolve true se gravou de forma síncrona no
+   * caminho claro. Com cifragem at-rest, atualiza o cache imediato e enfileira
+   * a escrita no disco (serial) — use DADOS.aguardarDisco() antes de anunciar
+   * sucesso. Perder dado financeiro em silêncio é o pior desfecho possível.
    */
+  /**
+   * Enfileira uma escrita de disco. Sempre serial — nunca paralelo.
+   * @returns {Promise}
+   */
+  _enqueueDiskWrite: function(job) {
+    var self = this;
+    this._diskWriteChain = this._diskWriteChain.then(job, job);
+    return this._diskWriteChain;
+  },
+
+  /**
+   * Espera todas as escritas pendentes no disco (cifração incluída).
+   * Use antes de anunciar "Salvo" ou de confiar num reload.
+   * @returns {Promise<boolean>}
+   */
+  aguardarDisco: function() {
+    var chain = this._diskWriteChain || Promise.resolve();
+    return chain.then(function() { return true; }, function() { return false; });
+  },
+
   _storageSetRaw: function(key, value) {
     var self = this;
 
@@ -200,19 +224,22 @@ var DADOS = {
 
     if (typeof LOCAL_CRYPTO !== 'undefined' && LOCAL_CRYPTO.isEnabled()) {
       this._plainCache[key] = value;
-      LOCAL_CRYPTO.wrapStorageValue(key, value).then(function(stored) {
-        try {
-          localStorage.setItem(key, stored);
-          self.verificarCota();
-        } catch (e) {
-          if (self._ehErroDeCota(e)) {
-            // O cache em memória tem um valor que o disco não tem. Removê-lo
-            // seria pior (a UI perderia o dado na hora); o que não pode é o
-            // usuário seguir digitando achando que está tudo salvo.
-            avisarCotaEsgotada();
+      // Captura `value` neste tick; a cadeia serial evita overwrite invertido.
+      var snapshot = value;
+      this._enqueueDiskWrite(function() {
+        return LOCAL_CRYPTO.wrapStorageValue(key, snapshot).then(function(stored) {
+          try {
+            localStorage.setItem(key, stored);
+            self.verificarCota();
+            return true;
+          } catch (e) {
+            if (self._ehErroDeCota(e)) {
+              avisarCotaEsgotada();
+            }
+            console.error('Erro ao persistir storage criptografado:', e);
+            throw e;
           }
-          console.error('Erro ao persistir storage criptografado:', e);
-        }
+        });
       });
       return true;
     }
@@ -477,7 +504,13 @@ var DADOS = {
 
     if (Array.isArray(snapshot.accounts)) {
       var contasPt = snapshot.accounts.map(this._contaEnToPt.bind(this));
-      this._storageSetRaw(CONFIG.STORAGE_CONTAS, JSON.stringify(contasPt));
+      if (typeof SYNC_MERGE !== 'undefined') {
+        var localContas = this.getContas();
+        var mergedContas = SYNC_MERGE.mergeDelta(localContas, [], contasPt);
+        this._storageSetRaw(CONFIG.STORAGE_CONTAS, JSON.stringify(mergedContas));
+      } else {
+        this._storageSetRaw(CONFIG.STORAGE_CONTAS, JSON.stringify(contasPt));
+      }
     }
     var cfg = this.getConfig();
     if (snapshot.config && typeof snapshot.config === 'object') {
@@ -487,7 +520,32 @@ var DADOS = {
       var mapRec = (typeof FINANCE_CONTRACT !== 'undefined')
         ? function(r) { return FINANCE_CONTRACT.recorrenteEnToPt(r); }
         : function(r) { return r; };
-      cfg.recorrentes = snapshot.recurringTransactions.map(mapRec);
+      var recPt = snapshot.recurringTransactions.map(mapRec);
+      if (typeof SYNC_MERGE !== 'undefined') {
+        var localRec = Array.isArray(cfg.recorrentes) ? cfg.recorrentes : [];
+        cfg.recorrentes = SYNC_MERGE.mergeDelta(localRec, [], recPt);
+      } else {
+        cfg.recorrentes = recPt;
+      }
+    }
+    if (Array.isArray(snapshot.budgets)) {
+      var mapBud = (typeof FINANCE_CONTRACT !== 'undefined')
+        ? function(b) { return FINANCE_CONTRACT.budgetEnToPt(b); }
+        : function(b) { return b; };
+      var budPt = snapshot.budgets.map(mapBud);
+      if (typeof SYNC_MERGE !== 'undefined' && typeof SYNC_ENGINE !== 'undefined') {
+        var localOrc = SYNC_ENGINE._orcamentosToArray(cfg.orcamentos || {});
+        var mergedOrc = SYNC_MERGE.mergeDelta(localOrc, [], budPt);
+        cfg.orcamentos = SYNC_ENGINE._arrayToOrcamentos(mergedOrc);
+      } else {
+        var orc = {};
+        budPt.forEach(function(b) {
+          if (b && b.categoria) {
+            orc[b.categoria] = { limite: b.limite, definidoEm: b.definidoEm, id: b.id };
+          }
+        });
+        cfg.orcamentos = orc;
+      }
     }
     this._storageSetRaw(CONFIG.STORAGE_CONFIG, JSON.stringify(cfg));
 
@@ -983,6 +1041,20 @@ var DADOS = {
   salvarTransacao: function(transacao) {
     var transacoes = this.getTransacoesRaw();
     var syncV2 = this._syncV2Ativo();
+
+    // Idempotência local: mesmo clientKey → mesma transação (anti-duplicata).
+    if (transacao.clientKey) {
+      var byKey = transacoes.findIndex(function(t) {
+        return t && t.clientKey === transacao.clientKey && !t.deletedAt;
+      });
+      if (byKey >= 0) {
+        var kept = transacoes[byKey];
+        // Atualiza campos mutáveis mantendo o id original.
+        transacao.id = kept.id;
+        transacao.dataCriacao = kept.dataCriacao || transacao.dataCriacao;
+      }
+    }
+
     transacao.id = transacao.id || (syncV2 && UTILS.gerarUuid ? UTILS.gerarUuid() : UTILS.gerarId());
     transacao.dataCriacao = transacao.dataCriacao || new Date().toISOString();
     transacao.updatedAt = new Date().toISOString();
@@ -1055,14 +1127,15 @@ var DADOS = {
    * @param {Partial<ConfigUser>} config
    * @returns {ConfigUser} config completo após merge
    */
-  salvarConfig: function(config) {
+  salvarConfig: function(config, opts) {
+    opts = opts || {};
     var atual = this.getConfig();
     var merged = Object.assign({}, atual, config);
     this._storageSetRaw(CONFIG.STORAGE_CONFIG, JSON.stringify(merged));
     if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
       APP_STORE.dispatch(ACTIONS.CONFIG_SALVAR, merged);
     }
-    this._pushConfigApi(merged);
+    if (!opts.skipPush) this._pushConfigApi(merged);
     return merged;
   },
 
@@ -1083,13 +1156,19 @@ var DADOS = {
   },
 
   salvarRecorrente: function(recData) {
+    var syncV2 = this._syncV2Ativo();
     var config = this.getConfig();
     if (!Array.isArray(config.recorrentes)) config.recorrentes = [];
-    recData.id = recData.id || UTILS.gerarId();
-    recData.dataCriacao = new Date().toISOString();
+    recData.id = recData.id || (syncV2 && UTILS.gerarUuid ? UTILS.gerarUuid() : UTILS.gerarId());
+    recData.dataCriacao = recData.dataCriacao || new Date().toISOString();
+    recData.updatedAt = new Date().toISOString();
     config.recorrentes.push(recData);
-    this.salvarConfig(config);
-    this._pushRecorrenteApi(recData);
+    this.salvarConfig(config, { skipPush: syncV2 });
+    if (syncV2 && typeof SYNC_ENGINE !== 'undefined') {
+      SYNC_ENGINE.enqueueRecurring('upsert', recData);
+    } else {
+      this._pushRecorrenteApi(recData);
+    }
     return recData;
   },
 
@@ -1141,6 +1220,12 @@ var DADOS = {
   },
 
   getContas: function() {
+    return this.getContasRaw().filter(function(c) {
+      return c && c.ativo !== false && !c.deletedAt;
+    });
+  },
+
+  getContasRaw: function() {
     try {
       var data = this._storageGetRaw(CONFIG.STORAGE_CONTAS);
       if (!data) return [];
@@ -1152,13 +1237,118 @@ var DADOS = {
     }
   },
 
+  upsertConta: function(conta) {
+    var syncV2 = this._syncV2Ativo();
+    if (!conta.id) {
+      conta.id = (syncV2 && UTILS.gerarUuid) ? UTILS.gerarUuid() : UTILS.gerarId();
+    }
+    conta.updatedAt = new Date().toISOString();
+    conta.ativo = conta.ativo !== false;
+    var lista = this.getContasRaw();
+    var idx = -1;
+    for (var i = 0; i < lista.length; i++) {
+      if (lista[i].id === conta.id) { idx = i; break; }
+    }
+    if (idx >= 0) lista[idx] = Object.assign({}, lista[idx], conta);
+    else lista.push(conta);
+    this._storageSetRaw(CONFIG.STORAGE_CONTAS, JSON.stringify(lista));
+    if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
+      APP_STORE.dispatch(ACTIONS.CONTAS_SALVAR, lista);
+    }
+    if (syncV2 && typeof SYNC_ENGINE !== 'undefined') {
+      SYNC_ENGINE.enqueueAccount('upsert', conta);
+    } else if (this._apiAtiva()) {
+      this._pushContasApi(conta);
+    }
+    return conta;
+  },
+
+  deletarConta: function(id) {
+    var syncV2 = this._syncV2Ativo();
+    var lista = this.getContasRaw();
+    var alvo = null;
+    for (var i = 0; i < lista.length; i++) {
+      if (lista[i].id === id) { alvo = lista[i]; break; }
+    }
+    if (!alvo) return false;
+    var tomb = Object.assign({}, alvo, {
+      ativo: false,
+      updatedAt: new Date().toISOString(),
+    });
+    var restante = lista.filter(function(c) { return c.id !== id; });
+    this._storageSetRaw(CONFIG.STORAGE_CONTAS, JSON.stringify(restante));
+    if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
+      APP_STORE.dispatch(ACTIONS.CONTAS_SALVAR, restante);
+    }
+    if (syncV2 && typeof SYNC_ENGINE !== 'undefined') {
+      SYNC_ENGINE.enqueueAccount('delete', tomb);
+    } else if (this._apiAtiva()) {
+      this._apiFetch('/api/v1/accounts/' + encodeURIComponent(id), { method: 'DELETE' }).catch(function() {});
+    }
+    return true;
+  },
+
+  upsertOrcamento: function(categoria, limite, periodo) {
+    var syncV2 = this._syncV2Ativo();
+    periodo = periodo || 'mensal';
+    var config = this.getConfig();
+    if (!config.orcamentos) config.orcamentos = {};
+    var entry = config.orcamentos[categoria] || {};
+    if (!entry.id) {
+      entry.id = (syncV2 && UTILS.gerarUuid) ? UTILS.gerarUuid() : UTILS.gerarId();
+    }
+    entry.limite = Number(limite);
+    entry.definidoEm = entry.definidoEm || new Date().toISOString();
+    entry.updatedAt = new Date().toISOString();
+    entry.periodo = periodo;
+    config.orcamentos[categoria] = entry;
+    this.salvarConfig(config, { skipPush: syncV2 });
+
+    var record = {
+      id: entry.id,
+      categoria: categoria,
+      limite: entry.limite,
+      periodo: periodo,
+      definidoEm: entry.definidoEm,
+      updatedAt: entry.updatedAt,
+    };
+    if (syncV2 && typeof SYNC_ENGINE !== 'undefined') {
+      SYNC_ENGINE.enqueueBudget('upsert', record);
+    } else if (this._apiAtiva()) {
+      this._pushOrcamentoApi(categoria, limite);
+    }
+    return entry;
+  },
+
+  deletarOrcamento: function(categoria) {
+    var syncV2 = this._syncV2Ativo();
+    var config = this.getConfig();
+    if (!config.orcamentos || !config.orcamentos[categoria]) return false;
+    var entry = config.orcamentos[categoria];
+    var tomb = {
+      id: entry.id || ((syncV2 && UTILS.gerarUuid) ? UTILS.gerarUuid() : UTILS.gerarId()),
+      categoria: categoria,
+      limite: entry.limite,
+      periodo: entry.periodo || 'mensal',
+      definidoEm: entry.definidoEm,
+      updatedAt: new Date().toISOString(),
+      ativo: false,
+    };
+    delete config.orcamentos[categoria];
+    this.salvarConfig(config, { skipPush: syncV2 });
+    if (syncV2 && typeof SYNC_ENGINE !== 'undefined') {
+      SYNC_ENGINE.enqueueBudget('delete', tomb);
+    }
+    return true;
+  },
+
   salvarContas: function(contas) {
     var lista = Array.isArray(contas) ? contas : [];
     this._storageSetRaw(CONFIG.STORAGE_CONTAS, JSON.stringify(lista));
     if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
       APP_STORE.dispatch(ACTIONS.CONTAS_SALVAR, lista);
     }
-    if (lista.length > 0) {
+    if (lista.length > 0 && !this._syncV2Ativo()) {
       this._pushContasApi(lista[lista.length - 1]);
     }
     return lista;

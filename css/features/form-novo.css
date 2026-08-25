@@ -295,11 +295,6 @@
   border-color: var(--color-primary-400);
   outline: none;
 }
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 14px;
-}
 
 .ia-action-hint {
   width: 100%;
