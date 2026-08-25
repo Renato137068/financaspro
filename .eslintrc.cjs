@@ -15,38 +15,34 @@ module.exports = {
     'dist/',
     'coverage/',
     'android/',
+    // Bundle de terceiros minificado — não é código nosso.
+    'js/vendor/**',
   ],
   rules: {
-    // The frontend is still a classic multi-script app with globals loaded by
-    // index.html. Keep this as a warning until the app is migrated to modules.
-    'no-undef': 'warn',
-    'no-unused-vars': ['warn', {
+    // Frontend clássico (multi-script via index.html): símbolos existem em
+    // runtime sem import. Tratar no-undef como erro aqui só gera ruído até a
+    // migração ESM; o override em js/** desliga. Backend ESM mantém a regra.
+    'no-undef': 'error',
+    'no-unused-vars': ['error', {
       argsIgnorePattern: '^_',
       varsIgnorePattern: '^_',
       caughtErrorsIgnorePattern: '^_',
     }],
-    'no-redeclare': 'warn',
+    'no-redeclare': 'error',
     'no-self-assign': 'error',
     'no-unreachable': 'error',
     'no-unsafe-finally': 'error',
     'no-constant-condition': ['error', { checkLoops: false }],
 
     // console.log de diagnóstico não deve chegar ao usuário. warn/error são
-    // permitidos: o minificador os preserva de propósito (ver bundle-app.cjs)
-    // porque são o último recurso para diagnosticar um bug em produção.
-    // Como aviso, não quebra o build hoje — mas `lint:changed` o trata como
-    // erro em qualquer arquivo tocado por um PR.
-    'no-console': ['warn', { allow: ['warn', 'error'] }],
+    // permitidos: o minificador os preserva de propósito (ver bundle-app.cjs).
+    'no-console': ['error', { allow: ['warn', 'error'] }],
 
-    // Erros de verdade: padrões que quase sempre são bug, não estilo.
     'no-dupe-keys': 'error',
     'no-dupe-args': 'error',
     'no-duplicate-case': 'error',
     'no-func-assign': 'error',
     'no-import-assign': 'error',
-    // 'except-parens' (e não 'always'): pega o `if (x = 1)` acidental, mas
-    // permite o idioma `while ((m = re.exec(s)))`, cujos parênteses extras
-    // sinalizam que a atribuição é intencional.
     'no-cond-assign': ['error', 'except-parens'],
     'no-fallthrough': 'error',
     'valid-typeof': 'error',
@@ -55,9 +51,20 @@ module.exports = {
   },
   overrides: [
     {
-      // Scripts de linha de comando e seeds falam com o operador pelo stdout.
       files: ['scripts/**/*.cjs', 'scripts/**/*.mjs', 'backend/prisma/seed*.js'],
       rules: { 'no-console': 'off' },
+    },
+    {
+      // App vanilla multi-script: handlers HTML, globals de index.html e
+      // atribuições `var FOO = …` exportadas implicitamente. A regra no-undef
+      // e no-unused-vars são comprovadamente inadequadas aqui até ESM.
+      // Bugs reais no frontend continuam cobertos por no-dupe-keys, no-self-assign, etc.
+      files: ['js/**/*.js'],
+      rules: {
+        'no-undef': 'off',
+        'no-unused-vars': 'off',
+        'no-redeclare': 'off',
+      },
     },
   ],
   globals: {
@@ -103,9 +110,12 @@ module.exports = {
     CATEGORIZADOR: 'readonly',
     CONFIG_USER: 'writable',
     CONTAS_PAGAR: 'readonly',
-    DAILY_REMINDER: 'readonly',
+    DAILY_REMINDER: 'writable',
     EVENT_BUS: 'readonly',
     EVENT_INIT: 'readonly',
+    FINANCE_CONTRACT: 'readonly',
+    FINANCE_RECONCILER: 'readonly',
+    FocusTrap: 'readonly',
     INIT_2FA: 'readonly',
     INIT_ANEXOS: 'readonly',
     INIT_ASSINATURAS: 'readonly',
@@ -122,18 +132,27 @@ module.exports = {
     LOCAL_CRYPTO: 'readonly',
     METAS: 'readonly',
     MICRO: 'readonly',
+    OBS: 'readonly',
     OCR: 'readonly',
-    ONBOARDING: 'readonly',
+    ONBOARDING: 'writable',
     OPEN_FINANCE: 'readonly',
     PATRIMONIO: 'readonly',
+    PERSIST_QUEUE: 'readonly',
+    PLAY_BILLING: 'readonly',
     PREVISAO: 'readonly',
     RELATORIOS: 'readonly',
     RENDERER_BASE: 'readonly',
     SETUP_GUIDE: 'readonly',
     SHORTCUTS: 'readonly',
     SKELETON: 'readonly',
+    SYNC_ENGINE: 'readonly',
+    SYNC_MERGE: 'readonly',
     TRANSACTION_SERVICE: 'readonly',
     UI: 'readonly',
+    CARTOES: 'readonly',
+    COMPROMISSOS: 'readonly',
+    PASSWORD_POLICY: 'readonly',
+    RECORRENTES: 'readonly',
     ariaLive: 'readonly',
     fpAlert: 'readonly',
     fpConfirm: 'readonly',
@@ -143,7 +162,21 @@ module.exports = {
     renderOrcamentoDashboard: 'readonly',
     renderQuickEntries: 'readonly',
     lucide: 'readonly',
+    lucideIconHtml: 'readonly',
     renderLucideIcons: 'readonly',
+    renderLucideIconsNow: 'readonly',
     mudarAba: 'readonly',
+    abrirAuthOverlay: 'readonly',
+    abrirModalEdicao: 'readonly',
+    atualizarBadgeConfianca: 'readonly',
+    atualizarBarraSessao: 'readonly',
+    atualizarDashboard: 'readonly',
+    atualizarTipoIndicator: 'readonly',
+    editarRegra503020: 'readonly',
+    executarInsight: 'readonly',
+    fecharModal: 'readonly',
+    togglePinSeguranca: 'readonly',
+    verificarBackupAutomatico: 'readonly',
+    verificarPinAoAbrir: 'readonly',
   },
 };

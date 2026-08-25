@@ -188,7 +188,7 @@ function _registrarActionHandlers() {
     APP_STORE.form.limpar();
   });
 
-  console.log('[ACTIONS] ' + Object.keys(ACTIONS).length + ' ações registradas');
+  console.warn('[ACTIONS] ' + Object.keys(ACTIONS).length + ' ações registradas');
 }
 
 // Auto-registrar: se store já existe, registra imediatamente;

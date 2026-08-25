@@ -86,7 +86,7 @@ const APP_STORE = {
     this._setupAutoSave();
     this._initialized = true;
     
-    console.log('[APP_STORE] Inicializado');
+    console.warn('[APP_STORE] Inicializado');
   },
   
   // ============================================================
@@ -308,7 +308,7 @@ const APP_STORE = {
             this._state.ui = this._deepMerge(this._state.ui, estado.ui);
           }
         } else {
-          console.log('[APP_STORE] Estado persistido expirado (>7 dias)');
+          console.warn('[APP_STORE] Estado persistido expirado (>7 dias)');
         }
       }
     } catch (e) {

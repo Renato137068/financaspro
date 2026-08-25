@@ -3,7 +3,7 @@
 // Saldo derivado do ledger — Account.balance é apenas saldo INICIAL.
 // Movimentações vêm exclusivamente de Transaction (incl. transferências).
 import prisma from '../../lib/db.js';
-import { fromCents, sumCents, toCents } from '../../lib/money.js';
+import { fromCents, toCents } from '../../lib/money.js';
 
 function openingCents(account) {
   return toCents(Number(account.balance ?? 0));

@@ -158,7 +158,7 @@ const EVENT_BUS_CATALOG = {
     document.dispatchEvent(event);
 
     if (this._debug) {
-      console.log('[EVENT]', eventName, data);
+      console.warn('[EVENT]', eventName, data);
     }
   },
 

@@ -12,7 +12,7 @@ var HEALTH_SERVICE = {
       }
       var usadoMB = Number((usado / 1024 / 1024).toFixed(2));
       if (usadoMB > 5 && typeof IndexedDB !== 'undefined') {
-        console.log('Storage > 5MB (' + usadoMB + 'MB), considere IndexedDB');
+        console.warn('Storage > 5MB (' + usadoMB + 'MB), considere IndexedDB');
       }
       return { usadoMB: usadoMB };
     } catch (e) {

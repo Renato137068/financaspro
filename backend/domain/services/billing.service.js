@@ -334,7 +334,6 @@ export const BillingService = {
       cancelAtPeriodEnd:  !!stripeSub.cancel_at_period_end,
     };
 
-    const existing = await BillingRepository.findSubscription(orgId);
     await BillingRepository.upsertSubscription(orgId, data);
 
     logger.info({ orgId, planTier }, 'Checkout Stripe concluído');

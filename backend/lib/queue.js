@@ -1,5 +1,5 @@
 // backend/lib/queue.js — BullMQ factory de filas e helpers
-import { Queue, QueueEvents } from 'bullmq';
+import { Queue } from 'bullmq';
 import redis from './redis.js';
 import logger from './logger.js';
 

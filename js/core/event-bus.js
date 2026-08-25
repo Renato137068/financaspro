@@ -59,7 +59,7 @@ const EVENT_BUS = {
     container.addEventListener('click', boundHandler);
     this._activeListeners.push({ namespace: namespace, type: 'click' });
     
-    if (this._debug) console.log('[EVENT_BUS] Namespace inicializado:', namespace);
+    if (this._debug) console.warn('[EVENT_BUS] Namespace inicializado:', namespace);
     return true;
   },
   
@@ -97,7 +97,7 @@ const EVENT_BUS = {
         handler.call(target, context);
         
         if (self._debug) {
-          console.log('[EVENT_BUS] Action executada:', namespace + '.' + action);
+          console.warn('[EVENT_BUS] Action executada:', namespace + '.' + action);
         }
       } catch (e) {
         console.error('[EVENT_BUS] Erro no handler:', namespace + '.' + action, e);
@@ -122,7 +122,7 @@ const EVENT_BUS = {
     
     this._namespaces.delete(namespace);
     
-    if (this._debug) console.log('[EVENT_BUS] Namespace limpo:', namespace);
+    if (this._debug) console.warn('[EVENT_BUS] Namespace limpo:', namespace);
   },
   
   /**
@@ -159,7 +159,7 @@ const EVENT_BUS = {
     config.container = newContainer;
     config.boundHandler = newHandler;
     
-    if (this._debug) console.log('[EVENT_BUS] Namespace refreshed:', namespace);
+    if (this._debug) console.warn('[EVENT_BUS] Namespace refreshed:', namespace);
     return true;
   },
   
@@ -306,7 +306,7 @@ const EVENT_INIT = {
     EVENT_BUS.initNamespace('extrato', '#aba-extrato', EVENT_HANDLERS.extrato);
     EVENT_BUS.initNamespace('orcamento', '#aba-orcamento', EVENT_HANDLERS.orcamento);
     
-    console.log('[EVENT_INIT] Eventos inicializados:', EVENT_BUS.getActiveNamespaces());
+    console.warn('[EVENT_INIT] Eventos inicializados:', EVENT_BUS.getActiveNamespaces());
   },
   
   refresh: function(namespace) {

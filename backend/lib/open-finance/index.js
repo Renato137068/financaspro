@@ -1,7 +1,7 @@
 // backend/lib/open-finance/index.js — registry de provedores Open Finance
 import CONFIG from '../../config.js';
 import { SANDBOX_PROVIDER, fetchSandboxTransactions } from './sandbox.js';
-import { BELVO_PROVIDER, fetchBelvoTransactions, isBelvoConfigured } from './belvo.js';
+import { BELVO_PROVIDER, fetchBelvoTransactions } from './belvo.js';
 
 const providers = {
   [SANDBOX_PROVIDER]: { fetchTransactions: fetchSandboxTransactions },

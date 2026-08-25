@@ -248,7 +248,15 @@ var PERSIST_QUEUE = (function() {
     if (existente) {
       item.status = 'pending';
       item.error = null;
-      item.payload = item.payload;
+      item.payload = {
+        tipo: payload.tipo,
+        valor: payload.valor,
+        categoria: payload.categoria,
+        data: payload.data,
+        descricao: payload.descricao || '',
+        banco: payload.banco || '',
+        cartao: payload.cartao || ''
+      };
       item.updatedAt = agora();
     } else {
       items.push(item);

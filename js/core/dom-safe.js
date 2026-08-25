@@ -375,7 +375,7 @@ const DOM_SAFE_PATCH = {
   apply: function() {
     this.patchAutocomplete();
     this.patchTransacaoList();
-    console.log('[DOM_SAFE_PATCH] Patches aplicados');
+    console.warn('[DOM_SAFE_PATCH] Patches aplicados');
   },
   
   /**

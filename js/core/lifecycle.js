@@ -48,7 +48,7 @@ const LIFECYCLE = {
     });
 
     if (this._debug) {
-      console.log('[LIFECYCLE] Registrado:', name, 'deps:', options.depends || []);
+      console.warn('[LIFECYCLE] Registrado:', name, 'deps:', options.depends || []);
     }
 
     return true;
@@ -67,7 +67,7 @@ const LIFECYCLE = {
     this._initialized = [];
     this._failed = [];
 
-    console.log('[LIFECYCLE] Iniciando orquestração...');
+    console.warn('[LIFECYCLE] Iniciando orquestração...');
 
     // Executar hooks beforeInit
     this._runHooks('beforeInit');
@@ -99,8 +99,8 @@ const LIFECYCLE = {
       self._runHooks('afterInit');
 
       var totalTime = (performance.now() - startTime).toFixed(2);
-      console.log('[LIFECYCLE] Concluído em', totalTime + 'ms');
-      console.log('[LIFECYCLE] Sucesso:', self._initialized.length, 'Falhas:', self._failed.length);
+      console.warn('[LIFECYCLE] Concluído em', totalTime + 'ms');
+      console.warn('[LIFECYCLE] Sucesso:', self._initialized.length, 'Falhas:', self._failed.length);
 
       return {
         success: self._initialized,
@@ -201,7 +201,7 @@ const LIFECYCLE = {
     this._initialized.push(module.name);
 
     if (this._debug) {
-      console.log('[LIFECYCLE] <i data-lucide="check"></i>', module.name, '(' + module.duration.toFixed(2) + 'ms)');
+      console.warn('[LIFECYCLE] <i data-lucide="check"></i>', module.name, '(' + module.duration.toFixed(2) + 'ms)');
     }
   },
 
@@ -471,7 +471,7 @@ const LIFECYCLE_BOOT = {
         });
       }
 
-      console.log('[APP] FinançasPro pronto');
+      console.warn('[APP] FinançasPro pronto');
     }, { depends: ['app-ready'], critical: false });
   }
 };

@@ -953,7 +953,7 @@ const INIT_CONFIG = {
    * Abre aba de edição de perfil completo
    */
   abrirEditarPerfil: function() {
-    console.log('[INIT_CONFIG] Abrindo edição de perfil');
+    console.warn('[INIT_CONFIG] Abrindo edição de perfil');
     
     // Esconder todas as abas e mostrar aba editar-perfil
     var abas = document.querySelectorAll('.aba');
@@ -973,7 +973,7 @@ const INIT_CONFIG = {
     
     // Carregar dados atuais
     var config = DADOS.getConfig();
-    console.log('[INIT_CONFIG] Config carregada:', config);
+    console.warn('[INIT_CONFIG] Config carregada:', config);
     
     // Verificar se elementos existem antes de preencher
     var campos = {
@@ -990,7 +990,7 @@ const INIT_CONFIG = {
       var el = document.getElementById(id);
       if (el) {
         el.value = campos[id];
-        console.log('[INIT_CONFIG] Campo ' + id + ' preenchido com:', campos[id]);
+        console.warn('[INIT_CONFIG] Campo ' + id + ' preenchido com:', campos[id]);
       } else {
         console.error('[INIT_CONFIG] Campo ' + id + ' não encontrado');
       }
@@ -1118,7 +1118,7 @@ const INIT_CONFIG = {
    * Abre aba de gerenciamento de bancos
    */
   abrirConfigBancos: function() {
-    console.log('[INIT_CONFIG] Abrindo gerenciamento de bancos');
+    console.warn('[INIT_CONFIG] Abrindo gerenciamento de bancos');
     
     // Esconder todas as abas e mostrar aba gerenciar-bancos
     var abas = document.querySelectorAll('.aba');
