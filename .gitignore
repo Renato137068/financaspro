@@ -21,3 +21,6 @@ android/keystore.properties
 .fuse_hidden*
 test-results/
 _pilot_*
+
+# snapshots/backup locais da auditoria (tarballs pesados — nunca versionar)
+.aud/
