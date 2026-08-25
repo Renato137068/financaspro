@@ -85,6 +85,87 @@ var OBS = (function() {
     } catch (e) { /* noop */ }
   }
 
+  /** Métricas de performance (cold start, LCP, INP, CLS, re-renders). */
+  var perfBuffer = [];
+  var renderCount = 0;
+  var bootTs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+
+  function recordPerf(name, value, extra) {
+    var entry = { name: name, value: value, ts: nowIso(), extra: extra || {} };
+    perfBuffer.push(entry);
+    if (perfBuffer.length > MAX_BUFFER) perfBuffer.shift();
+    push('perf', entry);
+    return entry;
+  }
+
+  function markRender() {
+    renderCount++;
+    recordPerf('re-render', renderCount);
+  }
+
+  function startPerf() {
+    try {
+      if (typeof performance === 'undefined') return;
+      if (typeof PerformanceObserver === 'function') {
+        try {
+          var poLcp = new PerformanceObserver(function(list) {
+            var entries = list.getEntries();
+            var last = entries[entries.length - 1];
+            if (last) recordPerf('LCP', Math.round(last.startTime));
+          });
+          poLcp.observe({ type: 'largest-contentful-paint', buffered: true });
+        } catch (e1) { /* browser sem LCP */ }
+
+        try {
+          var poCls = new PerformanceObserver(function(list) {
+            var score = 0;
+            list.getEntries().forEach(function(e) {
+              if (!e.hadRecentInput) score += e.value;
+            });
+            recordPerf('CLS', Number(score.toFixed(4)));
+          });
+          poCls.observe({ type: 'layout-shift', buffered: true });
+        } catch (e2) { /* browser sem CLS */ }
+
+        try {
+          var poInp = new PerformanceObserver(function(list) {
+            list.getEntries().forEach(function(e) {
+              recordPerf('INP', Math.round(e.duration || e.processingStart || 0));
+            });
+          });
+          poInp.observe({ type: 'event', buffered: true, durationThreshold: 16 });
+        } catch (e3) {
+          try {
+            var poFid = new PerformanceObserver(function(list) {
+              list.getEntries().forEach(function(e) {
+                recordPerf('INP', Math.round(e.processingStart - e.startTime));
+              });
+            });
+            poFid.observe({ type: 'first-input', buffered: true });
+          } catch (e4) { /* noop */ }
+        }
+      }
+
+      if (typeof document !== 'undefined') {
+        if (document.readyState === 'complete') {
+          recordPerf('cold-start', Math.round(
+            (typeof performance.now === 'function' ? performance.now() : Date.now()) - bootTs
+          ));
+        } else {
+          window.addEventListener('load', function() {
+            recordPerf('cold-start', Math.round(
+              (typeof performance.now === 'function' ? performance.now() : Date.now()) - bootTs
+            ));
+          });
+        }
+      }
+    } catch (e) { /* perf nunca quebra o app */ }
+  }
+
+  function getPerf() {
+    return { metrics: perfBuffer.slice(), renderCount: renderCount };
+  }
+
   function start() {
     if (started) return;
     started = true;
@@ -95,6 +176,7 @@ var OBS = (function() {
       window.addEventListener('unhandledrejection', function(ev) {
         captureError(ev.reason || 'unhandledrejection', { type: 'unhandledrejection' });
       });
+      startPerf();
     } catch (e) { /* ambiente sem window */ }
   }
 
@@ -102,7 +184,10 @@ var OBS = (function() {
     start: start,
     captureError: captureError,
     track: track,
-    getBuffer: function() { return buffer.slice(); }
+    getBuffer: function() { return buffer.slice(); },
+    recordPerf: recordPerf,
+    markRender: markRender,
+    getPerf: getPerf
   };
 })();
 

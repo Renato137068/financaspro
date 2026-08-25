@@ -1,7 +1,10 @@
 const { defineConfig } = require('vite');
 
 module.exports = defineConfig({
-  // Vanilla JS app: index.html loads the browser scripts directly.
+  // Vanilla JS app: index.html loads classic <script defer> (no type=module).
+  // Vite warns those tags aren't Rollup entries — expected. Production packaging
+  // is scripts/bundle-app.cjs → app.bundle.js; orphan check is check-dist-orphans.
+  // Heavy features use LAZY_CHUNKS to keep the cold-start path lean.
   root: '.',
   base: '/',
 
