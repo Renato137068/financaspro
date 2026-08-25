@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auditoria FinançasPro — Roadmap de Melhoria</title>
+<style>
+  :root{
+    --bg:#0d1117; --bg2:#161b22; --bg3:#1c2333; --line:#2a3441;
+    --tx:#e6edf3; --tx2:#9aa7b4; --tx3:#6b7683;
+    --brand:#3b82f6; --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444; --info:#38bdf8; --purple:#a78bfa;
+    --shadow:0 8px 30px rgba(0,0,0,.35);
+    font-synthesis:none;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:linear-gradient(180deg,#0b0f16,#0d1117 40%);color:var(--tx);font-family:'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:32px 20px 80px}
+  header.hero{text-align:center;padding:36px 20px 28px;border-bottom:1px solid var(--line);margin-bottom:32px}
+  .kicker{letter-spacing:.22em;text-transform:uppercase;font-size:12px;color:var(--tx3);font-weight:600}
+  h1{font-size:34px;font-weight:800;margin:8px 0 6px;background:linear-gradient(90deg,#fff,#9db6ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{color:var(--tx2);font-size:15px;max-width:640px;margin:6px auto 0}
+  .scorebig{display:inline-flex;flex-direction:column;align-items:center;margin-top:26px;padding:22px 40px;border:1px solid var(--line);border-radius:20px;background:radial-gradient(circle at 50% 0%,rgba(59,130,246,.14),transparent 70%),var(--bg2);box-shadow:var(--shadow)}
+  .scorebig .n{font-size:66px;font-weight:800;line-height:1;color:var(--brand)}
+  .scorebig .l{font-size:13px;color:var(--tx2);margin-top:6px;letter-spacing:.05em}
+  .grade{display:inline-block;margin-top:10px;padding:4px 14px;border-radius:999px;font-size:13px;font-weight:700;background:rgba(34,197,94,.15);color:#6ee7a0;border:1px solid rgba(34,197,94,.3)}
+  h2{font-size:22px;font-weight:750;margin:44px 0 6px;display:flex;align-items:center;gap:10px}
+  h2 .dot{width:9px;height:9px;border-radius:50%;background:var(--brand)}
+  .lead{color:var(--tx2);font-size:14px;margin-bottom:18px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:18px 0}
+  .stat{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+  .stat .v{font-size:26px;font-weight:800}
+  .stat .k{font-size:12px;color:var(--tx2);margin-top:2px}
+  table{width:100%;border-collapse:collapse;background:var(--bg2);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin:8px 0 6px}
+  th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);font-size:14px;vertical-align:middle}
+  th{background:var(--bg3);font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--tx2)}
+  tr:last-child td{border-bottom:none}
+  .bar{height:8px;border-radius:6px;background:#20293a;overflow:hidden;min-width:120px}
+  .bar > i{display:block;height:100%;border-radius:6px}
+  .num{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .area{display:grid;grid-template-columns:1fr;gap:0;margin:14px 0}
+  .block{background:var(--bg2);border:1px solid var(--line);border-left-width:4px;border-radius:12px;padding:16px 18px;margin:12px 0}
+  .block h3{font-size:16px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .block h3 .sc{font-size:14px;font-weight:800;padding:2px 10px;border-radius:8px;background:#20293a}
+  .block ul{margin:8px 0 0 2px;list-style:none}
+  .block li{position:relative;padding-left:22px;margin:5px 0;font-size:13.5px;color:var(--tx2)}
+  .block li.plus::before{content:"▲";color:var(--ok);position:absolute;left:0;font-size:10px;top:4px}
+  .block li.minus::before{content:"▼";color:var(--bad);position:absolute;left:0;font-size:10px;top:4px}
+  code{background:#0b1220;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12.5px;color:#a9c7ff;font-family:'Cascadia Code',Consolas,monospace}
+  .road{border:1px solid var(--line);border-radius:14px;overflow:hidden;margin:14px 0}
+  .road .row{display:grid;grid-template-columns:88px 1fr;gap:0;border-bottom:1px solid var(--line)}
+  .road .row:last-child{border-bottom:none}
+  .road .tag{display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff}
+  .p0 .tag{background:linear-gradient(160deg,#ef4444,#b91c1c)}
+  .p1 .tag{background:linear-gradient(160deg,#f59e0b,#b45309)}
+  .p2 .tag{background:linear-gradient(160deg,#3b82f6,#1d4ed8)}
+  .road .body{padding:14px 16px;background:var(--bg2)}
+  .road .body h4{font-size:15px;margin-bottom:3px}
+  .road .body p{font-size:13.5px;color:var(--tx2)}
+  .road .body .meta{margin-top:8px;font-size:12px;color:var(--tx3);display:flex;flex-wrap:wrap;gap:8px}
+  .chip{background:#0b1220;border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:11.5px;color:var(--tx2)}
+  .callout{background:linear-gradient(180deg,rgba(59,130,246,.08),transparent);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:20px 0}
+  footer{margin-top:50px;padding-top:20px;border-top:1px solid var(--line);color:var(--tx3);font-size:12.5px;text-align:center}
+  .qw{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:10px 0}
+  .qw div{background:var(--bg2);border:1px solid var(--line);border-radius:11px;padding:12px 14px;font-size:13px}
+  .qw b{color:var(--tx);display:block;margin-bottom:2px}
+  @media(max-width:560px){h1{font-size:26px}.scorebig .n{font-size:52px}.road .row{grid-template-columns:64px 1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div class="kicker">Auditoria Técnica Completa · 24 ago 2026</div>
+  <h1>FinançasPro v11.0</h1>
+  <p class="sub">Revisão de arquitetura, segurança, testes, CSS/UX, build e higiene de repositório sobre ~73 mil linhas (27,7k JS frontend · 8k backend · 14,4k CSS · 23,5k testes).</p>
+  <div class="scorebig">
+    <div class="n">81</div>
+    <div class="l">NOTA GLOBAL / 100</div>
+    <div class="grade">Muito Bom — pronto para produção com ressalvas</div>
+  </div>
+</header>
+
+<h2><span class="dot"></span>Como foi medido</h2>
+<p class="lead">Notas apoiadas em ferramentas objetivas rodadas no repositório, não em impressão. Sinais coletados nesta auditoria:</p>
+<div class="cards">
+  <div class="stat"><div class="v" style="color:var(--ok)">462 ✓</div><div class="k">testes unitários passando (27 suites, 5,2s)</div></div>
+  <div class="stat"><div class="v" style="color:var(--ok)">0</div><div class="k">vulnerabilidades <code>npm audit</code> (prod)</div></div>
+  <div class="stat"><div class="v" style="color:var(--ok)">0</div><div class="k">sinks XSS sem escape (99 arquivos)</div></div>
+  <div class="stat"><div class="v" style="color:var(--ok)">31 / 31</div><div class="k">pares de cor dentro do WCAG AA</div></div>
+  <div class="stat"><div class="v" style="color:var(--warn)">40 &gt; 36</div><div class="k">débito de CSS literal acima do teto (gate falhando)</div></div>
+  <div class="stat"><div class="v" style="color:var(--warn)">~2% / 10%</div><div class="k">cobertura da camada de UI (linhas/funções)</div></div>
+  <div class="stat"><div class="v" style="color:var(--tx2)">98</div><div class="k">marcadores TODO/FIXME/deprecated</div></div>
+  <div class="stat"><div class="v" style="color:var(--tx2)">9</div><div class="k">specs E2E (Playwright)</div></div>
+</div>
+
+<h2><span class="dot"></span>Placar por dimensão</h2>
+<table>
+  <thead><tr><th>Dimensão</th><th style="width:38%">Nota</th><th>Peso</th></tr></thead>
+  <tbody>
+    <tr><td>Segurança — Backend</td><td><div style="display:flex;gap:10px;align-items:center"><span class="num" style="color:var(--ok)">92</span><span class="bar"><i style="width:92%;background:var(--ok)"></i></span></div></td><td>3×</td></tr>
+    <tr><td>DevOps · Build · Infra</td><td><div style="display:flex;gap:10px;align-items:center"><span class="num" style="color:var(--ok)">86</span><span class="bar"><i style="width:86%;background:var(--ok)"></i></span></div></td><td>1×</td></tr>
+    <tr><td>Segurança — Frontend</td><td><div style="display:flex;gap:10px;align-items:center"><span class="num" style="color:#8fd694">85</span><span class="bar"><i style="width:85%;background:#8fd694"></i></span></div></td><td>2×</td></tr>
+    <tr><td>Observabilidade</td><td><div style="display:flex;gap:10px;align-items:center"><span class="num" style="color:#8fd694">85</span><span class="bar"><i style="width:85%;background:#8fd694"></i></span></div></td><td>1×</td></tr>
+    <tr><td>Documentação</td><td><div style="display:flex;gap:10px;align-items:center"><span class="num" style="color:#8fd694">84</span><span class="bar"><i style="width:84%;background:#8fd694"></i></span></div></td><td>1×</td></tr>
+    <tr><td>Arquitetura &amp; Organização</td><td><div style="display:flex;gap:10px;align-items:center"><span class="num" style="color:#c8d64a">82</span><span class="bar"><i style="width:82%;background:#c8d64a"></i></span></div></td><td>2×</td></tr>
+    <tr><td>CSS · Design System</td><td><div style="display:flex;gap:10px;align-items:center"><span class="num" style="color:#c8d64a">80</span><span class="bar"><i style="width:80%;background:#c8d64a"></i></span></div></td><td>1×</td></tr>
+    <tr><td>Acessibilidade</td><td><div style="display:flex;gap:10px;align-items:center"><span class="num" style="color:var(--warn)">78</span><span class="bar"><i style="width:78%;background:var(--warn)"></i></span></div></td><td>1×</td></tr>
+    <tr><td>Qualidade de Código</td><td><div style="display:flex;gap:10px;align-items:center"><span class="num" style="color:var(--warn)">76</span><span class="bar"><i style="width:76%;background:var(--warn)"></i></span></div></td><td>2×</td></tr>
+    <tr><td>Testes &amp; Cobertura</td><td><div style="display:flex;gap:10px;align-items:center"><span class="num" style="color:var(--warn)">68</span><span class="bar"><i style="width:68%;background:var(--warn)"></i></span></div></td><td>2×</td></tr>
+    <tr><td>Higiene do Repositório</td><td><div style="display:flex;gap:10px;align-items:center"><span class="num" style="color:var(--bad)">65</span><span class="bar"><i style="width:65%;background:var(--bad)"></i></span></div></td><td>1×</td></tr>
+  </tbody>
+</table>
+<p class="lead" style="margin-top:6px">Média ponderada = <b style="color:var(--tx)">80,9 → 81/100</b>. Segurança e infra puxam para cima; testes de UI e higiene de repositório são os pesos que seguram a nota.</p>
+
+<h2><span class="dot"></span>Análise detalhada</h2>
+
+<div class="block" style="border-left-color:var(--ok)">
+  <h3>Segurança — Backend <span class="sc" style="color:var(--ok)">92</span></h3>
+  <p class="lead" style="margin:0">O ponto mais forte do projeto. Engenharia de autenticação de nível profissional.</p>
+  <ul>
+    <li class="plus">PBKDF2-SHA256 <b>600k iterações</b>, assíncrono, com re-hash transparente de hashes legados (100k) no login.</li>
+    <li class="plus">Comparação <code>timingSafeEqual</code> + "burn" de tempo em e-mail inexistente — fecha o oráculo de enumeração de contas.</li>
+    <li class="plus">Rotação de refresh token com <b>detecção de reuso</b> que revoga toda a família de sessões (defesa contra roubo).</li>
+    <li class="plus">Lockout de login distribuído (Redis com fallback em memória), Zod em toda borda, Helmet, CSRF guard, rate limit global.</li>
+    <li class="plus">Config <b>fail-closed</b> em produção: segredos ausentes derrubam o boot; static serving por allowlist evita vazar <code>.env</code>/<code>backend/</code>.</li>
+    <li class="minus">Remetente SMTP e contato de LGPD ainda caem em Gmail pessoal por padrão (documentado nos comentários) — precisa domínio próprio antes do go-live público.</li>
+  </ul>
+</div>
+
+<div class="block" style="border-left-color:#8fd694">
+  <h3>Segurança — Frontend <span class="sc" style="color:#8fd694">85</span></h3>
+  <ul>
+    <li class="plus">CSP no <code>index.html</code>, <b>zero</b> <code>onclick=</code> inline, verificador automático de sinks XSS passando em 99 arquivos.</li>
+    <li class="plus">Criptografia at-rest no <code>localStorage</code> (<code>LOCAL_CRYPTO</code>) e PIN com hash/salt/lockout.</li>
+    <li class="minus">135 usos de <code>innerHTML</code>: hoje todos escapados, mas é uma superfície larga que depende de disciplina contínua — migrar para helpers <code>dom-safe</code> reduz o risco estrutural.</li>
+  </ul>
+</div>
+
+<div class="block" style="border-left-color:#c8d64a">
+  <h3>Arquitetura &amp; Organização <span class="sc" style="color:#c8d64a">82</span></h3>
+  <ul>
+    <li class="plus">Camadas claras: backend em <code>domain/services</code> + <code>repositories</code> (rotas são adaptadores HTTP puros); frontend em tiers com <code>core/</code>, <code>modules/</code>, contratos PT↔EN.</li>
+    <li class="plus">Offline-first coeso: outbox durável com backoff, cursor de pull incremental, cadeia serial de escrita em disco que evita last-writer-wins invertido.</li>
+    <li class="minus">14 módulos frontend passam de 500 linhas; <code>init-form.js</code> (74KB), <code>init-config.js</code> (57KB) e <code>dados.js</code> (49KB) concentram responsabilidade demais.</li>
+    <li class="minus">101 <code>&lt;script&gt;</code> soltos no HTML de dev (o build do Vite empacota) — acopla ordem de carregamento a namespaces globais em vez de ES Modules.</li>
+  </ul>
+</div>
+
+<div class="block" style="border-left-color:var(--warn)">
+  <h3>Testes &amp; Cobertura <span class="sc" style="color:var(--warn)">68</span></h3>
+  <ul>
+    <li class="plus">462 testes unitários, pisos altíssimos onde importa (auth 92%, billing/jwt/rbac 95%) e 9 specs E2E (offline, auth-cloud, persistência anual, a11y).</li>
+    <li class="minus"><b>Maior lacuna do projeto:</b> a camada de UI do frontend tem piso de ~2% linhas / ~10% funções. O grosso dos 27,7k linhas de JS não tem teste unitário — o próprio time documenta isso honestamente na config.</li>
+    <li class="minus">Regressões de render/estado (as dores recorrentes das auditorias por aba) não têm rede de segurança automatizada.</li>
+  </ul>
+</div>
+
+<div class="block" style="border-left-color:var(--warn)">
+  <h3>Qualidade de Código <span class="sc" style="color:var(--warn)">76</span></h3>
+  <ul>
+    <li class="plus">Código consistente, guards defensivos, comentários que explicam o <i>porquê</i> (não o óbvio). Zero <code>eval</code>/<code>new Function</code>.</li>
+    <li class="minus">98 marcadores <code>TODO/FIXME/deprecated</code> — concentrados em <code>init-extrato.js</code> (9), <code>init-config.js</code> (6), <code>render-core.js</code> (5).</li>
+    <li class="minus">21 <code>console.log/debug</code> em produção (ex.: <code>core/lifecycle.js</code>, <code>core/event-bus.js</code>) — deveriam passar por um logger com nível.</li>
+    <li class="minus">ESLint não executou neste ambiente (dependência <code>brace-expansion</code> corrompida no <code>node_modules</code>) — o gate de lint pode estar passando "verde" sem rodar. Verificar em CI limpo.</li>
+  </ul>
+</div>
+
+<div class="block" style="border-left-color:#c8d64a">
+  <h3>CSS · Design System <span class="sc" style="color:#c8d64a">80</span></h3>
+  <ul>
+    <li class="plus">Design system tokenizado (<code>design-system.css</code>), temas, camadas (base/components/layouts/features/utilities), CSS crítico inline. Grande evolução recente (352→36 valores literais).</li>
+    <li class="minus"><b>Gate falhando agora:</b> o débito de CSS literal subiu para <b>40 contra teto de 36</b> nas mudanças não-commitadas (<code>forms.css</code>, <code>cards.css</code> e outros). O <code>check:css</code> quebra o <code>test:ci</code>.</li>
+  </ul>
+</div>
+
+<div class="block" style="border-left-color:var(--warn)">
+  <h3>Acessibilidade <span class="sc" style="color:var(--warn)">78</span></h3>
+  <ul>
+    <li class="plus">31 pares de contraste dentro do WCAG AA (verificados por script + spec E2E dedicado).</li>
+    <li class="minus">Padrão sistêmico já registrado: superfícies que não escurecem no dark (saldo/valor-hero/ext-tx/kpi-card) reapareceram em várias abas — sinal de que o tema escuro precisa de um teste de regressão visual, não só de contraste.</li>
+  </ul>
+</div>
+
+<div class="block" style="border-left-color:var(--bad)">
+  <h3>Higiene do Repositório <span class="sc" style="color:var(--bad)">65</span></h3>
+  <ul>
+    <li class="plus">Keystore <code>.jks</code> e <code>.env</code> corretamente <b>fora</b> do controle de versão (verificado).</li>
+    <li class="minus">Artefatos pesados no diretório de trabalho: <code>.aud/*.tgz</code> (~12MB de snapshots), <code>.fuse_hidden…</code> (77KB, HTML órfão de editor), <code>debug.log</code>, <code>_pilot_check.txt</code>, <code>_pilot_check</code>.</li>
+    <li class="minus">Diff enorme não-commitado (~70 arquivos) misturando código, screenshots binários e configs — dificulta review e bisect. Fatiar em commits temáticos.</li>
+  </ul>
+</div>
+
+<h2><span class="dot"></span>Roadmap de melhoria priorizado</h2>
+<p class="lead">Ordenado por retorno sobre esforço. P0 destrava o CI e o go-live; P1 sobe a qualidade estrutural; P2 é dívida de longo prazo.</p>
+
+<div class="road">
+  <div class="row p0"><div class="tag">P0</div><div class="body">
+    <h4>Consertar o gate de débito de CSS (CI vermelho)</h4>
+    <p>O <code>check:css</code> falha (40 &gt; 36) e derruba o <code>test:ci</code>. Tokenizar os hex literais novos em <code>css/components/forms.css</code> e <code>cards.css</code>, ou justificar e regenerar o teto com <code>--update</code> no mesmo commit.</p>
+    <div class="meta"><span class="chip">Esforço: baixo (~1h)</span><span class="chip">Destrava: pipeline</span><span class="chip">css/components/*</span></div>
+  </div></div>
+
+  <div class="row p0"><div class="tag">P0</div><div class="body">
+    <h4>Restaurar o ESLint no ambiente/CI</h4>
+    <p><code>brace-expansion</code> corrompido impede o lint de rodar localmente. Reinstalar dependências limpo (<code>npm ci</code>) e confirmar que <code>lint:strict --max-warnings 0</code> realmente executa no CI — um gate que não roda é pior que ausência de gate.</p>
+    <div class="meta"><span class="chip">Esforço: baixo</span><span class="chip">Risco: gate fantasma</span></div>
+  </div></div>
+
+  <div class="row p0"><div class="tag">P0</div><div class="body">
+    <h4>Produtizar remetente de e-mail e contato de LGPD antes do público</h4>
+    <p>Trocar os defaults de <code>SMTP_FROM</code> e <code>PRIVACY_CONTACT_EMAIL</code> (hoje Gmail pessoal) por domínio próprio. A política de privacidade promete resposta nesse endereço.</p>
+    <div class="meta"><span class="chip">Esforço: médio (depende do domínio)</span><span class="chip">backend/config.js</span></div>
+  </div></div>
+
+  <div class="row p1"><div class="tag">P1</div><div class="body">
+    <h4>Rede de testes para a camada de UI do frontend</h4>
+    <p>Maior alavanca de qualidade. Migrar 3–4 módulos de render/estado de cada vez para ES Modules testáveis e cobrir os fluxos das auditorias por aba (Resumo, Extrato, Orçamento). Meta realista: sair de ~2% para ~40% de linhas em 2 sprints, subindo o piso a cada módulo.</p>
+    <div class="meta"><span class="chip">Esforço: alto</span><span class="chip">Impacto: previne regressões recorrentes</span><span class="chip">render-*.js, modules/*</span></div>
+  </div></div>
+
+  <div class="row p1"><div class="tag">P1</div><div class="body">
+    <h4>Teste de regressão visual do tema escuro</h4>
+    <p>O bug "superfície não escurece" já apareceu 3+ vezes. Um snapshot Playwright por aba em dark cobre o que o contraste isolado não pega.</p>
+    <div class="meta"><span class="chip">Esforço: médio</span><span class="chip">e2e/ (visual)</span></div>
+  </div></div>
+
+  <div class="row p1"><div class="tag">P1</div><div class="body">
+    <h4>Limpar o diretório de trabalho e ampliar o .gitignore</h4>
+    <p>Remover <code>.aud/*.tgz</code>, <code>.fuse_hidden…</code>, <code>debug.log</code>, <code>_pilot_check*</code> do working tree e garantir que estão ignorados. Fatiar o diff gigante em commits temáticos (código × screenshots × config).</p>
+    <div class="meta"><span class="chip">Esforço: baixo</span><span class="chip">Ganho: review &amp; bisect</span></div>
+  </div></div>
+
+  <div class="row p2"><div class="tag">P2</div><div class="body">
+    <h4>Quebrar os módulos gigantes</h4>
+    <p><code>init-form.js</code> (74KB), <code>init-config.js</code> (57KB) e <code>dados.js</code> (49KB) por responsabilidade. Reduz superfície de conflito e melhora testabilidade — casa com o item P1 de testes.</p>
+    <div class="meta"><span class="chip">Esforço: alto</span><span class="chip">Refatoração incremental</span></div>
+  </div></div>
+
+  <div class="row p2"><div class="tag">P2</div><div class="body">
+    <h4>Zerar a dívida de TODO e os console.log</h4>
+    <p>Triar os 98 marcadores (converter em issues os reais, apagar os obsoletos) e trocar os 21 <code>console.log</code> por um logger com nível silenciável em produção.</p>
+    <div class="meta"><span class="chip">Esforço: médio</span><span class="chip">init-extrato.js, core/*</span></div>
+  </div></div>
+
+  <div class="row p2"><div class="tag">P2</div><div class="body">
+    <h4>Endurecer a superfície de innerHTML</h4>
+    <p>Migrar progressivamente os 135 <code>innerHTML</code> para os helpers de <code>dom-safe.js</code>/templates, tornando o escape estrutural em vez de dependente de disciplina.</p>
+    <div class="meta"><span class="chip">Esforço: alto</span><span class="chip">Defesa em profundidade</span></div>
+  </div></div>
+</div>
+
+<h2><span class="dot"></span>Ganhos rápidos (&lt; 1 dia, alto retorno)</h2>
+<div class="qw">
+  <div><b>Tokenizar 4 cores</b> — volta o CI ao verde.</div>
+  <div><b>npm ci limpo</b> — ressuscita o ESLint.</div>
+  <div><b>Ampliar .gitignore</b> — some com 12MB de lixo.</div>
+  <div><b>Remover console.log de core/</b> — 13 ocorrências em 3 arquivos.</div>
+  <div><b>2 vars de e-mail</b> — desbloqueia go-live de LGPD.</div>
+  <div><b>Fatiar o diff atual</b> — review possível de novo.</div>
+</div>
+
+<div class="callout">
+  <h2 style="margin:0 0 6px"><span class="dot"></span>Veredito</h2>
+  <p style="color:var(--tx2);font-size:14.5px">FinançasPro é um projeto <b>maduro e bem construído</b> — o backend de autenticação e a infraestrutura (build, observabilidade, offline-first) estariam confortáveis em muitos produtos comerciais. A nota <b>81</b> não é limitada por bugs graves, e sim por <b>duas dívidas conhecidas</b>: a ausência de testes na camada de UI (que deixa as regressões de render sem rede) e a higiene de repositório/CI (gates falhando ou não executando). Fechar os três P0 — tudo trabalho de horas — já leva o projeto de "muito bom com ressalvas" para "pronto para produção" com folga. O P1 de testes de UI é o que sustenta a nota acima de 90 no médio prazo.</p>
+</div>
+
+<footer>
+  Auditoria gerada em 24 ago 2026 · baseada em execução real de <code>npm test</code> (462 ✓), <code>npm audit</code>, <code>check-xss-sinks</code>, <code>check-contrast</code>, <code>check-css-tokens</code> e leitura dos módulos críticos de <code>backend/</code> e <code>js/core/</code>.
+</footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>FinançasPro — avaliação com 10 personas e ciclo de 6 meses</title>
+  <style>
+    :root{--ink:#10231a;--muted:#607269;--line:#d9e6df;--paper:#fff;--canvas:#f4f7f5;--green:#087443;--deep:#063b27;--green-soft:#e1f3e9;--red:#b42318;--red-soft:#fff0ee;--amber:#8a5a00;--amber-soft:#fff6dc;--blue:#175cd3;--blue-soft:#edf4ff;--shadow:0 8px 26px rgba(16,35,26,.07)}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--canvas);color:var(--ink);font:16px/1.6 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}a{color:var(--green);text-decoration:none}a:hover{text-decoration:underline}.wrap{max-width:1160px;margin:auto;padding:0 24px}.hero{background:linear-gradient(135deg,#063b27,#0b5a3b);color:#fff;padding:54px 0 48px}.eyebrow{margin:0 0 12px;color:#b9e8ca;font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}.hero h1{max-width:900px;margin:0;font-size:clamp(34px,5vw,60px);line-height:1.04;letter-spacing:-.02em}.hero p{max-width:850px;margin:18px 0 0;color:#e1f4e8;font-size:18px}.meta{display:flex;gap:18px;flex-wrap:wrap;margin-top:26px;color:#b9e8ca;font-size:13px}.scoreline{display:flex;align-items:center;gap:16px;margin-top:28px}.score{font-size:68px;font-weight:900;line-height:1}.scoreline strong{font-size:18px}.scoreline span{color:#cdeed8}.notice{margin:26px 0;padding:17px 19px;border-left:4px solid var(--green);background:var(--green-soft)}.notice.warn{border-color:var(--amber);background:var(--amber-soft)}.notice.critical{border-color:var(--red);background:var(--red-soft)}main{padding-bottom:36px}section{padding:40px 0;border-bottom:1px solid var(--line)}h2{margin:0 0 8px;font-size:30px;line-height:1.15}h3{margin:22px 0 8px;font-size:20px;line-height:1.25}.lede{max-width:850px;margin:0;color:var(--muted)}.toc{margin:28px 0;padding:20px 24px;background:var(--paper);border:1px solid var(--line);box-shadow:var(--shadow)}.toc ol{columns:2;margin:8px 0 0;padding-left:22px}@media(max-width:640px){.toc ol{columns:1}}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:22px}@media(max-width:820px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.grid{grid-template-columns:1fr}}.card{background:var(--paper);border:1px solid var(--line);box-shadow:var(--shadow);padding:18px}.card p{margin:6px 0 0;color:var(--muted);font-size:14px}.tag{display:inline-block;padding:3px 8px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}.p0{background:var(--red);color:#fff}.p1{background:#f3ce60;color:#4d3500}.p2{background:#b9e4c8;color:#174a31}.ok{background:#b9e4c8;color:#174a31}.info{background:#cfe1ff;color:#174a31}.num{font-size:34px;font-weight:900;color:var(--green);line-height:1}.bar{height:8px;margin-top:12px;background:#e7efea;overflow:hidden}.bar i{display:block;height:100%;background:var(--green)}table{width:100%;border-collapse:collapse;background:var(--paper);border:1px solid var(--line);font-size:14px;margin-top:18px}th,td{padding:12px 14px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}th{background:#edf4f0;color:#43574c;font-size:12px;letter-spacing:.05em;text-transform:uppercase}tr:last-child td{border-bottom:0}td.note{width:80px;text-align:center;font-size:21px;font-weight:900;color:var(--green);white-space:nowrap}.columns{display:grid;grid-template-columns:1fr 1fr;gap:24px}@media(max-width:760px){.columns{grid-template-columns:1fr}}ul,ol{padding-left:22px}li{margin:7px 0}.muted{color:var(--muted)}.finding{padding:18px 0;border-bottom:1px solid var(--line)}.finding:last-child{border-bottom:0}.finding h3{margin:7px 0}.finding p{margin:6px 0;color:var(--muted)}code{padding:2px 5px;background:#edf2ef;border:1px solid var(--line);font:13px ui-monospace,SFMono-Regular,Consolas,monospace}.phase{margin:14px 0;padding:17px 19px;background:var(--paper);border-left:5px solid var(--green);box-shadow:var(--shadow)}.phase h3{margin:0 0 7px}.phase ul{margin-bottom:0}.check{color:var(--green);font-weight:800}.bad{color:var(--red);font-weight:800}.small{font-size:13px}.pillrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.kpi{font-size:26px;font-weight:900;line-height:1;color:var(--green)}.delta{font-size:12px;font-weight:800;color:#166534}.old{color:var(--muted);font-weight:600;text-decoration:line-through;margin-right:5px}.status{font-weight:800}.status.done{color:var(--green)}.status.open{color:var(--amber)}footer{padding:32px 0 54px;color:var(--muted);font-size:13px}@media print{body{background:#fff}.hero{padding:24px 0}.card,.toc,.phase{box-shadow:none}section{break-inside:avoid}a{color:inherit;text-decoration:underline}}
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <p class="eyebrow">Avaliação independente de produto · atualização 24/08/2026</p>
+      <h1>FinançasPro sob 10 perfis, durante 6 meses</h1>
+      <p>Teste exploratório da interface local com dados sintéticos de março a agosto de 2026, complementado pelos testes automatizados presentes no repositório. O objetivo foi verificar valor real para perfis diferentes, cobertura funcional, consistência dos números, recuperação de erros e prontidão para evolução.</p>
+      <div class="scoreline"><span class="score">89</span><div><strong>Nota geral / 100</strong><br><span><span class="old">73</span><span class="delta">+16 pontos</span> — os bloqueadores de persistência, dinheiro, onboarding e release foram corrigidos; integrações externas continuam fora desta validação.</span></div></div>
+      <div class="meta"><span>Versão observada: 11.0.0</span><span>Ambiente: localhost, modo offline/local</span><span>Escala: 0 = crítico · 100 = referência</span><span>Revalidação: Cursor · 24/08/2026</span></div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="notice"><strong>Resultado da revalidação:</strong> os quatro bloqueadores originais foram fechados. Metas, assinaturas, patrimônio e contas a pagar persistiram após reload; o CTA principal abriu “Novo lançamento”; os formatos monetários críticos foram corrigidos; build e smoke E2E passaram.</div>
+    <div class="notice warn"><strong>Limite da avaliação:</strong> os fluxos locais foram exercitados de ponta a ponta com dados sintéticos. Login cloud, Postgres/Redis reais, Belvo/Open Finance em ambiente externo, Stripe/Play Billing e permissões nativas não foram submetidos a serviços reais nesta rodada.</div>
+
+    <nav class="toc" aria-label="Índice">
+      <strong>Índice</strong>
+      <ol>
+        <li><a href="#executivo">Resumo executivo</a></li>
+        <li><a href="#evolucao">Evolução das notas</a></li>
+        <li><a href="#personas">10 personas</a></li>
+        <li><a href="#notas">Notas por dimensão</a></li>
+        <li><a href="#evidencias">Evidências e cobertura</a></li>
+        <li><a href="#achados">Achados priorizados</a></li>
+        <li><a href="#roadmap">Roadmap</a></li>
+        <li><a href="#aceite">Critérios de aceite</a></li>
+      </ol>
+    </nav>
+
+    <section id="executivo">
+      <h2>Resumo executivo</h2>
+      <p class="lede">O núcleo do app e os módulos avançados agora fecham o ciclo de uso: abrir, preencher, salvar, recarregar e encontrar o registro. A jornada principal também ficou mais direta, com o CTA de lançamento funcionando tanto no servidor de desenvolvimento quanto no build de produção. A nota ainda não chega a 100 porque cloud, Open Finance, billing real e testes com usuários reais não fizeram parte desta rodada.</p>
+      <div class="grid">
+        <article class="card"><span class="tag ok">Ponto forte</span><h3>Primeiro valor</h3><p>O lançamento por linguagem natural interpreta “Supermercado 189,90 ontem nubank”, sugere categoria e atualiza o saldo após registrar.</p></article>
+        <article class="card"><span class="tag ok">Corrigido</span><h3>Módulos avançados</h3><p>Meta, assinatura, patrimônio e conta a pagar foram criados na UI e encontrados novamente após reload.</p></article>
+        <article class="card"><span class="tag ok">Release verde</span><h3>Build e E2E</h3><p>Build de produção aprovado; smoke com dist, desenvolvimento, persistência e viewport mobile passou em 5/5 cenários.</p></article>
+      </div>
+    </section>
+
+    <section id="evolucao">
+      <h2>Evolução das notas</h2>
+      <p class="lede">Comparação entre a auditoria inicial de 23/08 e a revalidação de 24/08. A variação só foi aplicada quando houve evidência em teste automatizado ou uso real no navegador.</p>
+      <table>
+        <thead><tr><th>Dimensão</th><th>Antes</th><th>Agora</th><th>Variação</th><th>Justificativa</th></tr></thead>
+        <tbody>
+          <tr><td>Fluxo principal</td><td class="note"><span class="old">82</span></td><td class="note">92</td><td class="delta">+10</td><td>CTA principal abre “Novo lançamento” e prévia de R$ 6.000,00 foi confirmada.</td></tr>
+          <tr><td>Confiabilidade avançada</td><td class="note"><span class="old">61</span></td><td class="note">91</td><td class="delta">+30</td><td>Meta, assinatura, patrimônio e conta a pagar sobreviveram a recarregamento no navegador.</td></tr>
+          <tr><td>UX e clareza</td><td class="note"><span class="old">78</span></td><td class="note">88</td><td class="delta">+10</td><td>Tour deixou de bloquear o CTA e os valores exibem a confirmação do que será salvo.</td></tr>
+          <tr><td>Mobile e acessibilidade</td><td class="note"><span class="old">84</span></td><td class="note">88</td><td class="delta">+4</td><td>Smoke 390 × 844 passou sem overflow horizontal crítico; testes estáticos de a11y continuam verdes.</td></tr>
+          <tr><td>Backend e segurança</td><td class="note"><span class="old">88</span></td><td class="note">90</td><td class="delta">+2</td><td>462 testes backend passaram; a evolução é incremental porque a maior parte já estava coberta.</td></tr>
+          <tr><td>Release e operação</td><td class="note"><span class="old">64</span></td><td class="note">93</td><td class="delta">+29</td><td>Build concluiu cópia, service worker e checagem de órfãos; 5 testes E2E passaram em dev e produção.</td></tr>
+          <tr><td><strong>Nota geral</strong></td><td class="note"><span class="old">73</span></td><td class="note">89</td><td class="delta">+16</td><td>Média ponderada pela confiabilidade financeira, caminho principal e capacidade de release.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="personas">
+      <h2>10 personas testadas</h2>
+      <p class="lede">Cada perfil recebeu uma meta de uso, atravessou as telas relevantes e foi pontuado pelo resultado observado. A nota da persona mede adequação do produto ao trabalho proposto, não apenas estética.</p>
+      <table>
+        <thead><tr><th>Perfil</th><th>Objetivo no ciclo de 6 meses</th><th>O que foi exercitado</th><th>Resultado</th><th>Nota</th></tr></thead>
+        <tbody>
+          <tr><td><strong>1. Usuário leigo</strong></td><td>Registrar a primeira despesa sem conhecer categorias.</td><td>CTA, tour inicial, frase natural, categoria automática, saldo.</td><td>Primeiro clique abre o formulário; tour não bloqueia a ação e a prévia monetária é clara.</td><td class="note">88 <span class="delta">(+16)</span></td></tr>
+          <tr><td><strong>2. Estudante</strong></td><td>Consultar gastos por mês e encontrar transporte.</td><td>Extrato, período anterior, busca e filtros Receita/Despesa.</td><td>Fluxo mensal continua claro e funcional; sem regressão observada.</td><td class="note">84 <span class="delta">(+2)</span></td></tr>
+          <tr><td><strong>3. CLT organizado</strong></td><td>Comparar salário, aluguel e poupança ao longo do semestre.</td><td>12 lançamentos de março a agosto, dashboard, relatório e comparação.</td><td>Saldo, KPIs, extrato e projeções estão protegidos por invariantes de centavos.</td><td class="note">85 <span class="delta">(+5)</span></td></tr>
+          <tr><td><strong>4. Família com contas fixas</strong></td><td>Controlar internet e despesas recorrentes.</td><td>Nova conta, vencimento, categoria e recorrência mensal.</td><td>Conta criada, exibida em “Contas a pagar” e mantida após reload.</td><td class="note">86 <span class="delta">(+26)</span></td></tr>
+          <tr><td><strong>5. Freelancer</strong></td><td>Registrar receitas irregulares e entender tendência.</td><td>Receitas, meses retroativos, previsão e saúde financeira.</td><td>Previsão e saúde continuam disponíveis; integração cloud real ainda não foi submetida.</td><td class="note">80 <span class="delta">(+6)</span></td></tr>
+          <tr><td><strong>6. Investidor iniciante</strong></td><td>Construir reserva e acompanhar patrimônio.</td><td>Meta, ativo, dívida, orçamento 50/30/20.</td><td>Meta e ativo aparecem no dashboard e permanecem após recarregar a aplicação.</td><td class="note">88 <span class="delta">(+33)</span></td></tr>
+          <tr><td><strong>7. Usuário endividado</strong></td><td>Separar gastos, contas e dívidas.</td><td>Cartão, limites, patrimônio e contas a pagar.</td><td>Entrada “8.000” é interpretada como R$ 8.000,00; conta e patrimônio têm persistência validada.</td><td class="note">84 <span class="delta">(+26)</span></td></tr>
+          <tr><td><strong>8. Usuário mobile</strong></td><td>Consultar o app em tela de 390 × 844 px.</td><td>Layout responsivo, navegação inferior, dashboard e lançamentos.</td><td>Smoke dedicado passou sem overflow horizontal crítico e com dashboard hidratado.</td><td class="note">87 <span class="delta">(+3)</span></td></tr>
+          <tr><td><strong>9. Usuário avançado</strong></td><td>Auditar, exportar e revisar seis meses.</td><td>Relatórios, análise detalhada, filtros, CSV, PDF e backup JSON.</td><td>Exportações e regras financeiras continuam cobertas; release agora é reproduzível.</td><td class="note">85 <span class="delta">(+6)</span></td></tr>
+          <tr><td><strong>10. Perfil privacidade</strong></td><td>Manter dados no dispositivo e recuperar identidade.</td><td>Perfil, edição de nome, backup, política, modo local.</td><td>Persistência local e backup continuam funcionando; cloud real permanece fora do escopo.</td><td class="note">82 <span class="delta">(+2)</span></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="notas">
+      <h2>Notas por dimensão</h2>
+      <p class="lede">A nota geral é uma média ponderada: confiabilidade do dado e entrega do caminho principal pesam mais do que amplitude declarada de funcionalidades.</p>
+      <div class="grid">
+        <article class="card"><div class="num">92 <span class="delta">(+10)</span></div><h3>Fluxo principal</h3><div class="bar"><i style="width:92%"></i></div><p>CTA, lançamento natural/manual, dashboard, extrato e período funcionam.</p></article>
+        <article class="card"><div class="num">91 <span class="delta">(+30)</span></div><h3>Confiabilidade avançada</h3><div class="bar"><i style="width:91%"></i></div><p>Metas, assinaturas, patrimônio e contas a pagar persistem na UI.</p></article>
+        <article class="card"><div class="num">88 <span class="delta">(+10)</span></div><h3>UX e clareza</h3><div class="bar"><i style="width:88%"></i></div><p>Tour não bloqueante, preview monetário e feedback de salvamento mais claros.</p></article>
+        <article class="card"><div class="num">88 <span class="delta">(+4)</span></div><h3>Mobile e acessibilidade</h3><div class="bar"><i style="width:88%"></i></div><p>Smoke mobile, skip link, landmarks, labels e navegação inferior aprovados.</p></article>
+        <article class="card"><div class="num">90 <span class="delta">(+2)</span></div><h3>Backend e segurança</h3><div class="bar"><i style="width:90%"></i></div><p>Contratos, RBAC, CSRF, sessões, sync e billing seguem cobertos.</p></article>
+        <article class="card"><div class="num">93 <span class="delta">(+29)</span></div><h3>Release e operação</h3><div class="bar"><i style="width:93%"></i></div><p>Build, service worker, checagem de órfãos e E2E dev/dist passaram.</p></article>
+      </div>
+    </section>
+
+    <section id="evidencias">
+      <h2>Evidências executadas</h2>
+      <table>
+        <thead><tr><th>Verificação</th><th>Resultado</th><th>Leitura</th></tr></thead>
+        <tbody>
+          <tr><td>Exploração UI local</td><td class="check">10 personas · março–agosto</td><td>Dados sintéticos, navegador controlado e fluxo visual.</td></tr>
+          <tr><td>Frontend unitário</td><td class="check">91 suítes · 1.373 passaram · 7 skipped</td><td>Regras, parser, sync, orçamento, metas, persistência e onboarding protegidos.</td></tr>
+          <tr><td>Backend unitário</td><td class="check">27 suítes · 462 passaram</td><td>Auth, rotas, RBAC, sync, billing, Open Finance, retenção e workers.</td></tr>
+          <tr><td>Build de produção</td><td class="check">Aprovado</td><td>Vite, cópia de estáticos, geração do SW, CSP e checagem de órfãos concluíram; 0 órfãos. Permanecem warnings de scripts clássicos não bundlados.</td></tr>
+          <tr><td>Smoke E2E</td><td class="check">5/5 aprovados</td><td>Inclui dist e desenvolvimento, CTA do onboarding, boot, persistência após reload e viewport 390 × 844.</td></tr>
+          <tr><td>Console durante exploração</td><td class="check">Sem pageerror</td><td>CTA real no servidor de desenvolvimento abriu o formulário sem iniciar tour e sem erros no console.</td></tr>
+          <tr><td>Exportação</td><td class="check">CSV, PDF e backup confirmados</td><td>Toasts de sucesso visíveis; o backup foi gerado localmente.</td></tr>
+          <tr><td>Mobile 390 × 844</td><td class="check">Aprovado</td><td>Teste E2E dedicado passou sem overflow horizontal crítico.</td></tr>
+        </tbody>
+      </table>
+      <div class="notice"><strong>Nota de escopo:</strong> a suíte financeira atual fecha valores em centavos e protege a consistência entre saldo, extrato, orçamento, fatura e comprometido. Ainda falta repetir essa prova com dados cloud sincronizados e integrações externas reais.</div>
+    </section>
+
+    <section id="achados">
+      <h2>Achados priorizados</h2>
+      <article class="finding"><span class="tag ok">Fechado</span><h3>Persistência dos módulos avançados</h3><p>Meta financeira, assinatura, ativo e conta a pagar agora completam o ciclo visual. Os testes e a validação no navegador confirmaram criação, exibição e recuperação após reload.</p><p class="small muted">Evidência: <code>tests/modulos-avancados-persistencia.test.js</code> e fluxo manual local.</p></article>
+      <article class="finding"><span class="tag ok">Fechado</span><h3>Máscara monetária ambígua</h3><p>O parser e o preview agora tratam <code>6000</code>, <code>6.000</code>, <code>6000,00</code> e <code>6.000,00</code> como R$ 6.000,00; <code>8.000</code> vale R$ 8.000,00.</p><p class="small muted">Evidência: <code>tests/entrada-monetaria-ui.test.js</code> e prévia real de R$ 6.000,00.</p></article>
+      <article class="finding"><span class="tag ok">Fechado</span><h3>Onboarding interceptava o primeiro CTA</h3><p>O primeiro clique em “Registrar Transação” abre o formulário; o tour virou convite não bloqueante e só inicia por ação explícita.</p><p class="small muted">Evidência: E2E separado para dev e dist, ambos aprovados.</p></article>
+      <article class="finding"><span class="tag ok">Fechado</span><h3>Build e E2E como gates</h3><p>O pipeline produz <code>dist</code>, service worker e estáticos sem erro. O smoke cobre o build e o servidor de desenvolvimento, incluindo pageerror, reload e mobile.</p><p class="small muted">Evidência: <code>npm run build</code> e <code>npm run test:e2e:smoke</code>.</p></article>
+      <article class="finding"><span class="tag p1">P1</span><h3>Performance ainda merece medição dedicada</h3><p>O dashboard ganhou fingerprint para evitar renders redundantes e limiar de alerta mais útil, mas ainda faltam métricas formais de LCP/INP/CLS e orçamento de performance em CI.</p><p class="small muted">Próximo critério: medir cold start, re-render e interação em desktop/mobile com limites publicados.</p></article>
+      <article class="finding"><span class="tag p2">P2</span><h3>Integrações externas ainda não foram exercitadas</h3><p>O código e os testes cobrem adapters, billing e autenticação; esta rodada não validou contas reais, provedores Open Finance, Stripe ou Play Billing contra serviços externos.</p></article>
+    </section>
+
+    <section id="roadmap">
+      <h2>Roadmap de melhorias</h2>
+      <p class="lede">Ordem sugerida para transformar a boa base em produto confiável para uso diário.</p>
+      <div class="phase"><span class="tag ok">Concluído · P0</span><h3>Persistência e roteamento dos módulos avançados</h3><ul><li>Handlers das ações avançadas foram ligados aos modais e callbacks de persistência.</li><li>Meta, assinatura, patrimônio e conta a pagar foram validados com reload.</li><li>Testes de UI/unitários protegem o ciclo abrir → preencher → salvar → recarregar.</li></ul></div>
+      <div class="phase"><span class="tag ok">Concluído · P0</span><h3>Dinheiro correto e preview</h3><ul><li>Parser centralizado para formatos brasileiros e inteiros digitados em reais.</li><li>Preview “Você está salvando R$ X” validado na interface.</li><li>Casos de milhar, decimal, zero e centavos cobertos em unidade e UI.</li></ul></div>
+      <div class="phase"><span class="tag ok">Concluído · P1</span><h3>Jornada de onboarding sem bloqueio</h3><ul><li>O tour passou a ser convite não bloqueante.</li><li>O CTA escolhido continua sua ação no primeiro clique.</li><li>E2E comprova paridade entre servidor de desenvolvimento e build de produção.</li></ul></div>
+      <div class="phase"><span class="tag ok">Concluído · P1</span><h3>Build, service worker e E2E repetíveis</h3><ul><li>Build idempotente conclui cópia de estáticos, geração do SW, CSP e checagem de órfãos.</li><li>Smoke cobre dist, fonte, pageerror, persistência e viewport mobile.</li></ul></div>
+      <div class="phase"><span class="tag p1">Próximo · P1</span><h3>Medir e reduzir custo de renderização</h3><ul><li>Publicar baseline de cold start, re-render, LCP, INP e CLS.</li><li>Transformar o orçamento de performance em gate de CI, sem esconder regressões atrás de limiares.</li><li>Revisar os warnings de scripts clássicos não bundlados no build.</li></ul></div>
+      <div class="phase"><span class="tag p2">Próximo · P2</span><h3>Validar cloud, Open Finance e billing em ambiente controlado</h3><ul><li>Subir Postgres/Redis efêmeros no CI.</li><li>Executar login, sync, conflito, recuperação, Belvo sandbox, Stripe test mode e Play Billing sandbox.</li><li>Documentar o que é local, o que sincroniza e como o usuário recupera os dados.</li></ul></div>
+    </section>
+
+    <section id="aceite">
+      <h2>Critérios de aceite para a próxima versão</h2>
+      <div class="columns">
+        <div><h3>Produto</h3><ul><li class="status done">Concluído:</li><li>As 10 personas repetem seu fluxo sem ação desconhecida no console.</li><li>Meta, assinatura, conta e patrimônio sobrevivem a reload.</li><li>Qualquer valor digitado em formato comum é convertido sem perda.</li><li>KPIs e extrato compartilham invariantes financeiras de centavos.</li></ul></div>
+        <div><h3>Engenharia</h3><ul><li class="status done">Concluído:</li><li>Frontend unitário e backend unitário continuam verdes.</li><li>Build limpo produz dist, SW e estáticos sem erro.</li><li>Smoke E2E passa em dev, produção e 390 px.</li><li class="status open">Aberto:</li><li>Integrações externas precisam de sandbox e evidência arquivada.</li></ul></div>
+      </div>
+      <h3>Conclusão</h3>
+      <p class="lede">A recomendação é avançar para o próximo ciclo de performance e integrações. O FinançasPro agora entrega valor real no controle diário, comprova persistência dos módulos avançados e possui gates de build/E2E verdes. A nota 89/100 reflete uma base pronta para beta controlado, ainda sem equivaler à validação de serviços externos ou usuários reais.</p>
+    </section>
+  </main>
+  <footer class="wrap">Relatório inicial produzido em 23/08/2026 e revalidado em 24/08/2026 com dados sintéticos, navegador controlado, testes automatizados e inspeção de build. Não substitui pentest, revisão LGPD, teste com usuários reais ou validação de integrações em produção.</footer>
+</body>
+</html>

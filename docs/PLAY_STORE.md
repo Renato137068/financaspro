@@ -74,7 +74,7 @@ O `.aab` fica em `android/app/build/outputs/bundle/release/`.
 | Nome | FinançasPro |
 | Categoria | Finanças |
 | Classificação | PEGI 3 / Livre (sem conteúdo sensível) |
-| Política de privacidade | `https://SEU_DOMINIO/privacidade.html` (arquivo local: `privacidade.html`) |
+| Política de privacidade | Publicar `privacidade.html` em URL HTTPS estável (ex.: GitHub Pages, site próprio) e informar o link exato no Play Console |
 | Ícone 512×512 | `icons/android/icon-512.png` |
 | Feature graphic | 1024×500 (criar no Figma/Canva) |
 | Screenshots | Mín. 2 por tipo de dispositivo (phone 1080×1920) |

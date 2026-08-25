@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auditoria — Aba Lançamentos</title>
+<style>
+  :root{
+    --bg:#f6f7fb; --card:#ffffff; --ink:#1a1d29; --muted:#5b6472; --line:#e6e8ef;
+    --brand:#12694e; --brand2:#2f9c6d;
+    --good:#16a34a; --ok:#0891b2; --warn:#d97706; --bad:#dc2626;
+    --shadow:0 1px 3px rgba(20,25,50,.06),0 8px 24px rgba(20,25,50,.06);
+    --radius:16px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0e1017; --card:#171a24; --ink:#eef0f6; --muted:#9aa3b2; --line:#262a37;
+      --shadow:0 1px 3px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0e1017; --card:#171a24; --ink:#eef0f6; --muted:#9aa3b2; --line:#262a37;
+    --shadow:0 1px 3px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding:32px 20px 90px}
+  a{color:var(--brand2)}
+  code{background:rgba(127,127,127,.14);padding:1px 6px;border-radius:6px;font-size:.86em;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  header.hero{background:linear-gradient(135deg,var(--brand),var(--brand2));
+    color:#fff;border-radius:var(--radius);padding:34px 32px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  header.hero h1{margin:0 0 6px;font-size:27px;letter-spacing:-.4px}
+  header.hero p.sub{margin:0;opacity:.93;font-size:15px;max-width:660px}
+  .hero-meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;font-size:12.5px}
+  .hero-meta span{background:rgba(255,255,255,.16);padding:4px 11px;border-radius:20px}
+  .final{display:flex;align-items:center;gap:24px;margin-top:26px;flex-wrap:wrap}
+  .final .txt strong{font-size:16px;display:block;margin-bottom:3px}
+  .final .txt span{font-size:14px;opacity:.92;max-width:560px;display:block}
+  .ring{flex:none}
+  section{margin-top:34px}
+  h2{font-size:20px;letter-spacing:-.3px;margin:0 0 4px;display:flex;align-items:center;gap:9px}
+  h2 .n{width:26px;height:26px;border-radius:8px;background:var(--brand);color:#fff;font-size:14px;
+    display:inline-flex;align-items:center;justify-content:center;flex:none}
+  .lead{color:var(--muted);font-size:14.5px;margin:0 0 18px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:22px 24px;box-shadow:var(--shadow)}
+  .crit{border:1px solid rgba(220,38,38,.35);background:linear-gradient(180deg,rgba(220,38,38,.08),rgba(220,38,38,.02));
+    border-radius:var(--radius);padding:22px 24px;box-shadow:var(--shadow)}
+  .crit.warn{border-color:rgba(217,119,6,.4);background:linear-gradient(180deg,rgba(217,119,6,.09),rgba(217,119,6,.02))}
+  .crit .tag{display:inline-block;background:var(--bad);color:#fff;font-size:11.5px;font-weight:700;letter-spacing:.4px;padding:3px 10px;border-radius:20px;text-transform:uppercase}
+  .crit.warn .tag{background:var(--warn)}
+  .crit h3{margin:12px 0 8px;font-size:18px}
+  .crit p{margin:6px 0;font-size:14.5px}
+  .evi{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px}
+  @media(max-width:640px){.evi{grid-template-columns:1fr}}
+  .evi div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:13.5px}
+  .evi b{display:block;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}
+  .swatch{display:inline-flex;align-items:center;gap:8px}
+  .chip{width:34px;height:16px;border-radius:4px;border:1px solid var(--line);vertical-align:middle}
+  .dims{display:grid;gap:12px}
+  .dim{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 18px;box-shadow:var(--shadow)}
+  .dim .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px}
+  .dim .name{font-weight:650;font-size:15px}
+  .dim .score{font-weight:800;font-size:15px;font-variant-numeric:tabular-nums}
+  .bar{height:9px;border-radius:6px;background:rgba(127,127,127,.16);overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:6px}
+  .dim p{margin:10px 0 0;font-size:13.7px;color:var(--muted)}
+  .dim .files{margin-top:8px;font-size:12.5px;color:var(--muted)}
+  .pill{font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;color:#fff;text-transform:uppercase;letter-spacing:.3px}
+  .rm{display:grid;gap:14px}
+  .phase{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow)}
+  .phase h3{margin:0 0 4px;font-size:16px;display:flex;align-items:center;gap:10px}
+  .phase .goal{color:var(--muted);font-size:13.5px;margin:0 0 12px}
+  .task{border-top:1px solid var(--line);padding:12px 0}
+  .task:first-of-type{border-top:0}
+  .task .h{display:flex;gap:10px;align-items:baseline;justify-content:space-between;flex-wrap:wrap}
+  .task .t{font-weight:600;font-size:14.5px}
+  .task p{margin:6px 0 0;font-size:13.4px;color:var(--muted)}
+  .task code{font-size:12px}
+  .eff{font-size:11.5px;color:var(--muted);white-space:nowrap}
+  table.sum{width:100%;border-collapse:collapse;font-size:13.6px;margin-top:6px}
+  table.sum th,table.sum td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
+  table.sum th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.3px}
+  table.sum td.s{font-weight:800;font-variant-numeric:tabular-nums;text-align:right}
+  .foot{margin-top:40px;color:var(--muted);font-size:12.5px;text-align:center}
+  ul.tight{margin:8px 0 0;padding-left:20px}
+  ul.tight li{margin:4px 0;font-size:13.6px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <h1>Auditoria completa — Aba <em>Lançamentos</em></h1>
+    <p class="sub">Análise focada no formulário de novo lançamento (<code>#aba-novo</code>): entrada de valor,
+    categorização por IA, entrada rápida em linguagem natural, parcelamento/recorrência, acessibilidade, contraste,
+    segurança e performance. Notas de 0 a 100 por dimensão, com evidência empírica coletada no app em execução.</p>
+    <div class="hero-meta">
+      <span>FinançasPro v11.0</span>
+      <span>24 ago 2026</span>
+      <span>Escopo: somente Lançamentos</span>
+      <span>12 dimensões</span>
+      <span>Método: estático + runtime (contraste medido em tema claro e escuro)</span>
+    </div>
+    <div class="final">
+      <div class="ring">
+        <svg width="118" height="118" viewBox="0 0 120 120" aria-label="Nota geral 65 de 100">
+          <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="12"/>
+          <circle cx="60" cy="60" r="52" fill="none" stroke="#fff" stroke-width="12"
+            stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="114.3" transform="rotate(-90 60 60)"/>
+          <text x="60" y="58" text-anchor="middle" fill="#fff" font-size="34" font-weight="800">65</text>
+          <text x="60" y="79" text-anchor="middle" fill="rgba(255,255,255,.85)" font-size="12">/ 100</text>
+        </svg>
+      </div>
+      <div class="txt">
+        <strong>Regular — motor de entrada rico, com 1 bloqueador no tema escuro</strong>
+        <span>O formulário é ambicioso e bem-feito na lógica financeira (máscara de moeda, parcelamento e
+        recorrência com arredondamento correto) e traz uma IA de categorização sofisticada. Mas repete o padrão
+        do Resumo: no <b>tema escuro</b>, o campo de <b>valor</b> — o mais importante do formulário — fica
+        praticamente invisível (contraste 1,12:1). Além disso, o autocomplete e o seletor de categoria têm lacunas
+        de acessibilidade e de controle do usuário.</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- CRÍTICO -->
+  <section>
+    <h2><span class="n">!</span> Achado crítico (tema escuro)</h2>
+    <p class="lead">Verificado no navegador com o app rodando, <code>data-theme="dark"</code>, em estado estável (após a transição de 280ms).</p>
+    <div class="crit">
+      <span class="tag">P0 · Bloqueador (dark)</span>
+      <h3>No tema escuro, o campo de valor é texto quase branco sobre cartão branco — ilegível</h3>
+      <p>O cartão <code>#valor-hero</code> que envolve o campo de valor permanece com fundo
+      <b>branco</b> no tema escuro, enquanto o texto digitado assume a cor clara do tema
+      (<code>#edf3f0</code>). O usuário não enxerga o valor que está digitando.</p>
+      <div class="evi">
+        <div><b>Cor do texto (valor)</b><span class="swatch"><span class="chip" style="background:#edf3f0"></span> rgb(237, 243, 240)</span></div>
+        <div><b>Fundo do #valor-hero (dark)</b><span class="swatch"><span class="chip" style="background:#ffffff"></span> rgb(255, 255, 255)</span></div>
+        <div><b>Contraste medido (steady state)</b> 1,12 : 1 &nbsp;→&nbsp; <span style="color:var(--bad);font-weight:700">reprova WCAG</span></div>
+        <div><b>Tema claro</b> 17,86 : 1 &nbsp;→&nbsp; <span style="color:var(--good);font-weight:700">OK</span> (só o dark quebra)</div>
+      </div>
+      <p style="margin-top:14px"><b>Mesmo padrão do P0 do Resumo.</b> A frente foi tematizada (o texto clareia no dark),
+      mas o fundo não escureceu de fato. Existe até uma regra
+      <code>[data-theme="dark"] .valor-hero.tipo-despesa</code> em
+      <code>css/themes/dark-mode.css:461</code>, porém com fundo <u>translúcido</u> (<code>rgba(201,87,58,.06)</code>)
+      que não vence a cascata — o cartão continua pintando branco. É a mesma classe de regressão de tema que a duplicação de regras já causou no cartão de saldo.</p>
+      <p><b>Correção sugerida.</b> Dar ao <code>.valor-hero</code> (e às variantes <code>.tipo-despesa</code>/<code>.tipo-receita</code>)
+      um fundo <b>opaco escuro</b> no tema escuro (ex.: <code>var(--color-bg-dark-card)</code>) com especificidade que vença,
+      no lugar do <code>rgba</code> translúcido atual. Mesma receita aplicada no cartão de saldo.</p>
+      <p><b>Teste de regressão.</b> Estender o teste de contraste (criado na auditoria do Resumo) em
+      <code>tests/a11y-static.test.js</code> para cobrir <code>#novo-valor</code> sobre <code>#valor-hero</code> nos dois temas.</p>
+    </div>
+  </section>
+
+  <!-- SEGUNDO ACHADO -->
+  <section>
+    <h2><span class="n">2</span> Acessibilidade & controle do usuário</h2>
+    <div class="crit warn">
+      <span class="tag">P1 · Alto</span>
+      <h3>Autocomplete sem teclado e categoria só por IA</h3>
+      <p><b>Autocomplete de descrição não é operável por teclado.</b> A lista (<code>#autocomplete-list</code>) é um
+      <code>&lt;div&gt;</code> de <code>&lt;div&gt;</code>s que só respondem a <code>mousedown</code>; o campo não tem
+      <code>role="combobox"</code>, <code>aria-expanded</code>, <code>aria-autocomplete</code> nem
+      <code>aria-activedescendant</code>, e não há navegação por setas. Confirmado em runtime: todos esses atributos
+      retornam <code>null</code>. Quem usa teclado ou leitor de tela não consegue selecionar uma sugestão.</p>
+      <p style="margin-top:10px"><b>Seletor de categoria fica 100% oculto.</b> O grid/fieldset “Categoria” é escondido por
+      <code>display:none</code> em <code>init-form.js:96-97</code> — a categorização depende inteiramente da IA. Em
+      <b>alta confiança</b> a categoria é aplicada automaticamente e <u>não há UI visível para corrigi-la</u> (os botões
+      de alternativa só aparecem em baixa confiança). Se a IA acertar o tipo mas errar a categoria, o usuário só percebe
+      e conserta depois de salvar, no Extrato.</p>
+    </div>
+  </section>
+
+  <!-- NOTAS -->
+  <section>
+    <h2><span class="n">3</span> Notas por dimensão</h2>
+    <p class="lead">0 a 100. Barras: <span style="color:var(--good)">verde ≥80</span>, <span style="color:var(--warn)">âmbar 60–79</span>, <span style="color:var(--bad)">vermelho &lt;60</span>.</p>
+    <div class="dims" id="dims"></div>
+  </section>
+
+  <!-- PLACAR -->
+  <section>
+    <h2><span class="n">4</span> Placar consolidado</h2>
+    <div class="card">
+      <table class="sum">
+        <thead><tr><th>Dimensão</th><th>Peso</th><th style="text-align:right">Nota</th></tr></thead>
+        <tbody id="sumbody"></tbody>
+        <tfoot><tr><td style="font-weight:700">Nota geral (ponderada)</td><td></td><td class="s" style="font-size:16px">65</td></tr></tfoot>
+      </table>
+      <p style="font-size:12.8px;color:var(--muted);margin:14px 0 0">
+        Legibilidade/contraste, acessibilidade e correção financeira pesam mais — são o que decide se a pessoa
+        consegue lançar, e lançar certo. O bloqueador do tema escuro não afunda a média (atinge só usuários em dark),
+        mas é impeditivo para quem usa esse tema.
+      </p>
+    </div>
+  </section>
+
+  <!-- ROADMAP -->
+  <section>
+    <h2><span class="n">5</span> Roadmap de melhorias</h2>
+    <p class="lead">Priorizado por impacto × esforço. P0 antes de publicar para usuários de tema escuro; P1 na próxima sprint; P2 polimento.</p>
+    <div class="rm">
+
+      <div class="phase">
+        <h3><span class="pill" style="background:var(--bad)">P0 · agora</span> Legibilidade do valor no tema escuro</h3>
+        <p class="goal">Meta: o campo mais importante do formulário precisa ser lido no dark.</p>
+        <div class="task">
+          <div class="h"><span class="t">Fundo opaco escuro no <code>.valor-hero</code> (dark)</span><span class="eff">~30 min · trivial</span></div>
+          <p>Trocar o <code>rgba(...)</code> translúcido de <code>css/themes/dark-mode.css:457-468</code> por um fundo opaco (<code>var(--color-bg-dark-card)</code>) que vença a cascata, para as três variantes do hero.</p>
+        </div>
+        <div class="task">
+          <div class="h"><span class="t">Teste de contraste do campo de valor</span><span class="eff">~30 min · baixo</span></div>
+          <p>Estender <code>tests/a11y-static.test.js</code>: <code>#novo-valor</code> ≥ 4,5:1 sobre <code>#valor-hero</code> em claro e escuro.</p>
+        </div>
+      </div>
+
+      <div class="phase">
+        <h3><span class="pill" style="background:var(--warn)">P1 · próxima sprint</span> Acessibilidade e controle</h3>
+        <p class="goal">Meta: qualquer pessoa consegue selecionar sugestão e corrigir a categoria.</p>
+        <div class="task">
+          <div class="h"><span class="t">Tornar o autocomplete um combobox acessível</span><span class="eff">~4 h · médio</span></div>
+          <p>Padrão ARIA combobox: <code>role="combobox"</code>+<code>aria-expanded</code>+<code>aria-controls</code> no input; <code>role="listbox"</code>/<code>option</code> na lista; navegação por ↑/↓/Enter/Esc e <code>aria-activedescendant</code>. Substituir <code>mousedown</code>-only. <code>init-form.js:784-834</code>.</p>
+        </div>
+        <div class="task">
+          <div class="h"><span class="t">Dar um caminho visível para trocar a categoria</span><span class="eff">~4 h · médio</span></div>
+          <p>Mesmo com IA em alta confiança, expor um controle (“Alterar categoria”) que revele o grid oculto, para o usuário corrigir antes de salvar — não só em baixa confiança. <code>init-form.js:92-121, 539-563</code>.</p>
+        </div>
+        <div class="task">
+          <div class="h"><span class="t">Badge “média confiança” theme-aware</span><span class="eff">~20 min · baixo</span></div>
+          <p><code>css/features/form-novo.css:161</code> usa <code>color:#92400e</code> fixo → 2,32:1 no dark (reprova). Trocar por token (<code>--color-warning-text</code>) com override no dark.</p>
+        </div>
+      </div>
+
+      <div class="phase">
+        <h3><span class="pill" style="background:var(--ok)">P2 · contínuo</span> Segurança, performance e robustez</h3>
+        <p class="goal">Meta: endurecer e enxugar o motor de entrada.</p>
+        <div class="task">
+          <div class="h"><span class="t">Escapar nomes de categoria custom no render</span><span class="eff">~30 min · baixo</span></div>
+          <p><code>renderCategoriasBtns</code> (<code>init-form.js:1517-1523</code>) injeta <code>nome</code> custom no <code>innerHTML</code> sem <code>escapeHtml</code> (<code>data-cat</code> e <code>.cat-nome</code>). Hoje a validação de entrada bloqueia <code>&lt;&gt;</code>, mas import/sync/restore de config não passam por ela — escapar no render é defesa em profundidade.</p>
+        </div>
+        <div class="task">
+          <div class="h"><span class="t">Debounce + reuso nas varreduras de sugestão</span><span class="eff">~3 h · médio</span></div>
+          <p>Autocomplete roda a cada tecla; <code>obterSugestoesDescricao</code>/<code>obterTransacoesFrequentes</code>/<code>obterDescricoesAnteriores</code> varrem <code>TRANSACOES.obter({})</code> inteiro, cada uma. Debounce no input e uma agregação única compartilhada. Invalidar <code>_autocompleteCache</code> após novo lançamento (hoje fica stale).</p>
+        </div>
+        <div class="task">
+          <div class="h"><span class="t">Erros de setup observáveis</span><span class="eff">~1 h · baixo</span></div>
+          <p><code>setupFormNovo</code> engole falhas com <code>console.warn</code> (bom p/ não quebrar), mas some sem sinal. Encaminhar para <code>OBS.captureError</code>.</p>
+        </div>
+        <div class="task">
+          <div class="h"><span class="t">Validação de descrição no submit</span><span class="eff">~30 min · baixo</span></div>
+          <p><code>handleFormSubmit</code> valida valor e data, mas não a descrição; a categoria oculta nunca é validada. Definir a regra desejada (descrição opcional? recomendada?) e refletir na UI.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- PONTOS FORTES -->
+  <section>
+    <h2><span class="n">6</span> O que já está bom (manter)</h2>
+    <div class="card">
+      <ul class="tight">
+        <li><b>Máscara de moeda BR</b> robusta (<code>bindCampoMoeda</code>/<code>parseMoeda</code>) — a regressão da vírgula que quebrava “Uber 32,90” já tem testes.</li>
+        <li><b>Parcelamento e recorrência corretos</b> — <code>dividirEmParcelas</code> evita R$ 100 em 3x virar 99,99; <code>addMesesClamp</code> evita 31/01 pular fevereiro. Preview mostra o número que será gravado.</li>
+        <li><b>IA de categorização sofisticada</b> — múltiplas fontes ponderadas (regras, aprendizado, histórico, recorrência, mesmo banco/cartão/valor/dia), com níveis de confiança e alternativas.</li>
+        <li><b>Escape consistente</b> — <code>UTILS.escapeHtml</code> em praticamente todos os <code>innerHTML</code> com dado do usuário (autocomplete, chips, feedback, selects).</li>
+        <li><b>Preview de impacto no orçamento</b> em tempo real ao digitar valor/categoria.</li>
+        <li><b>prefers-reduced-motion</b> respeitado no overlay de sucesso (esconde confete).</li>
+        <li><b>Estados ARIA nos controles</b> — <code>aria-pressed</code> nos toggles de tipo e data, <code>aria-label</code> nos valores rápidos, <code>fieldset/legend</code>.</li>
+        <li><b>Modo contínuo, edição, anexos e feedback de aprendizado</b> — fluxo de entrada maduro e produtivo.</li>
+        <li><b>Contraste do tema claro</b> — todos os elementos medidos passam AA (5,4 a 17,9:1).</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- METODOLOGIA -->
+  <section>
+    <h2><span class="n">7</span> Metodologia & conceitos aplicados</h2>
+    <div class="card">
+      <ul class="tight">
+        <li><b>Acessibilidade:</b> WCAG 2.1 — contraste (1.4.3), teclado (2.1.1), nome/estado (4.1.2), padrão ARIA combobox.</li>
+        <li><b>Contraste medido:</b> <code>getComputedStyle</code> + luminância/razão WCAG, compondo fundos translúcidos, em claro e escuro, em estado estável.</li>
+        <li><b>Correção financeira:</b> arredondamento de parcelas, overflow de mês, aritmética de moeda.</li>
+        <li><b>Segurança de front-end:</b> superfície de XSS via <code>innerHTML</code> e vias de ingestão de dados.</li>
+        <li><b>Performance:</b> varreduras repetidas, debounce, invalidação de cache.</li>
+        <li><b>UX / controle:</b> discoverability do seletor de categoria, correção de sugestão, fluxo de entrada.</li>
+        <li><b>Robustez:</b> isolamento de erros e observabilidade.</li>
+        <li><b>Arquitetura:</b> modularização do setup, coesão dos sub-sistemas do formulário.</li>
+      </ul>
+      <p style="font-size:12.5px;color:var(--muted);margin-bottom:0">Escopo estritamente limitado à aba Lançamentos
+      (<code>#aba-novo</code>, <code>js/modules/init-form.js</code>, <code>js/pipeline.js</code>, <code>css/features/form-novo.css</code>).</p>
+    </div>
+  </section>
+
+  <p class="foot">FinançasPro · Auditoria da aba Lançamentos · 24 ago 2026 · notas 0–100 · evidência coletada em runtime</p>
+</div>
+
+<script>
+  var dims = [
+    {name:"Contraste & legibilidade (tema escuro)", score:30, weight:"alto",
+     note:"O campo de valor — o mais importante do form — fica quase branco sobre cartão branco no dark (1,12:1). Tema claro passa folgado (17,9:1).",
+     files:"dark-mode.css:457 · form-novo.css:26 · #valor-hero"},
+    {name:"Correção financeira", score:90, weight:"alto",
+     note:"Máscara de moeda, parcelas sem drift de centavo e datas sem overflow de mês. Preview mostra o valor real que será gravado.",
+     files:"init-form.js:327-346, 1294-1316"},
+    {name:"Microinterações & consistência visual", score:82, weight:"baixo",
+     note:"Overlay de sucesso, barra de progresso, chips animados, foco no hero. Respeita reduced-motion.",
+     files:"init-form.js:1369-1408 · form-novo.css"},
+    {name:"Arquitetura / modularização", score:80, weight:"médio",
+     note:"Setup em lista de funções isoladas com try/catch; responsabilidades separadas. Arquivo grande (1558 linhas) começa a pedir divisão.",
+     files:"init-form.js:18-46"},
+    {name:"UX / fluxo de entrada", score:78, weight:"médio",
+     note:"Entrada rápida em linguagem natural, quick-chips de frequentes, valores rápidos, preview de orçamento, modo contínuo. Rico e produtivo.",
+     files:"index.html:352-393 · init-form.js:908-968"},
+    {name:"Segurança de front-end (XSS)", score:74, weight:"alto",
+     note:"escapeHtml quase universal. Falha pontual: nomes de categoria custom vão ao innerHTML sem escape; hoje barrado pela validação de entrada, não pelo render.",
+     files:"init-form.js:1517-1523"},
+    {name:"Performance", score:70, weight:"médio",
+     note:"Varreduras completas de transações repetidas por 3 funções; autocomplete sem debounce; cache por prefixo de 3 chars que fica stale após novo lançamento.",
+     files:"init-form.js:784-834, 1147-1196"},
+    {name:"Robustez / tratamento de erros", score:68, weight:"médio",
+     note:"Cada setup isolado em try/catch (não quebra a tela), mas falhas somem em console.warn sem telemetria. Submit não valida descrição.",
+     files:"init-form.js:39-45, 1067-1123"},
+    {name:"Controle do usuário / categorização", score:60, weight:"médio",
+     note:"Categoria depende 100% da IA; grid manual oculto. Em alta confiança não há UI visível para corrigir a categoria antes de salvar.",
+     files:"init-form.js:92-121, 539-563"},
+    {name:"Manutenibilidade / duplicação", score:65, weight:"médio",
+     note:"Três agregações quase idênticas sobre transações; regras de tema do hero espalhadas entre form-novo.css e dark-mode.css (origem do P0).",
+     files:"init-form.js:1134-1196 · css do hero"},
+    {name:"Theming / dark mode", score:55, weight:"alto",
+     note:"Bug do hero + badge de confiança com cor fixa (#92400e, 2,32:1 no dark). O dark tem cobertura, mas com pontos cegos nos elementos-chave do form.",
+     files:"dark-mode.css:457 · form-novo.css:161"},
+    {name:"Acessibilidade — teclado / leitor de tela", score:52, weight:"alto",
+     note:"Autocomplete inoperável por teclado (div+mousedown, sem roles combobox/listbox). Bons aria-pressed nos toggles, mas a sugestão de descrição exclui teclado.",
+     files:"init-form.js:784-834 · index.html:399-408"}
+  ];
+  function color(s){ var cs=getComputedStyle(document.documentElement);
+    return s>=80?cs.getPropertyValue('--good'):s>=60?cs.getPropertyValue('--warn'):cs.getPropertyValue('--bad'); }
+  var host=document.getElementById('dims');
+  dims.slice().sort(function(a,b){return a.score-b.score;}).forEach(function(d){
+    var el=document.createElement('div'); el.className='dim';
+    el.innerHTML='<div class="top"><span class="name">'+d.name+'</span><span class="score" style="color:'+color(d.score)+'">'+d.score+'</span></div>'+
+      '<div class="bar"><i style="width:'+d.score+'%;background:'+color(d.score)+'"></i></div>'+
+      '<p>'+d.note+'</p><div class="files">'+d.files+'</div>';
+    host.appendChild(el);
+  });
+  var body=document.getElementById('sumbody');
+  dims.forEach(function(d){
+    var tr=document.createElement('tr');
+    tr.innerHTML='<td>'+d.name+'</td><td style="color:var(--muted)">'+d.weight+'</td><td class="s" style="color:'+color(d.score)+'">'+d.score+'</td>';
+    body.appendChild(tr);
+  });
+</script>
+</body>
+</html>

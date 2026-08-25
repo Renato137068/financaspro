@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auditoria — Aba Orçamento</title>
+<style>
+  :root{
+    --bg:#f6f7fb; --card:#ffffff; --ink:#1a1d29; --muted:#5b6472; --line:#e6e8ef;
+    --brand:#12694e; --brand2:#2f9c6d;
+    --good:#16a34a; --ok:#0891b2; --warn:#d97706; --bad:#dc2626;
+    --shadow:0 1px 3px rgba(20,25,50,.06),0 8px 24px rgba(20,25,50,.06);
+    --radius:16px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0e1017; --card:#171a24; --ink:#eef0f6; --muted:#9aa3b2; --line:#262a37;
+      --shadow:0 1px 3px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0e1017; --card:#171a24; --ink:#eef0f6; --muted:#9aa3b2; --line:#262a37;
+    --shadow:0 1px 3px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding:32px 20px 90px}
+  a{color:var(--brand2)}
+  code{background:rgba(127,127,127,.14);padding:1px 6px;border-radius:6px;font-size:.86em;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  header.hero{background:linear-gradient(135deg,var(--brand),var(--brand2));
+    color:#fff;border-radius:var(--radius);padding:34px 32px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  header.hero h1{margin:0 0 6px;font-size:27px;letter-spacing:-.4px}
+  header.hero p.sub{margin:0;opacity:.93;font-size:15px;max-width:660px}
+  .hero-meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;font-size:12.5px}
+  .hero-meta span{background:rgba(255,255,255,.16);padding:4px 11px;border-radius:20px}
+  .final{display:flex;align-items:center;gap:24px;margin-top:26px;flex-wrap:wrap}
+  .final .txt strong{font-size:16px;display:block;margin-bottom:3px}
+  .final .txt span{font-size:14px;opacity:.92;max-width:560px;display:block}
+  .ring{flex:none}
+  section{margin-top:34px}
+  h2{font-size:20px;letter-spacing:-.3px;margin:0 0 4px;display:flex;align-items:center;gap:9px}
+  h2 .n{width:26px;height:26px;border-radius:8px;background:var(--brand);color:#fff;font-size:14px;
+    display:inline-flex;align-items:center;justify-content:center;flex:none}
+  .lead{color:var(--muted);font-size:14.5px;margin:0 0 18px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:22px 24px;box-shadow:var(--shadow)}
+  .crit{border:1px solid rgba(220,38,38,.35);background:linear-gradient(180deg,rgba(220,38,38,.08),rgba(220,38,38,.02));
+    border-radius:var(--radius);padding:22px 24px;box-shadow:var(--shadow);margin-bottom:14px}
+  .crit.warn{border-color:rgba(217,119,6,.4);background:linear-gradient(180deg,rgba(217,119,6,.09),rgba(217,119,6,.02))}
+  .crit .tag{display:inline-block;background:var(--bad);color:#fff;font-size:11.5px;font-weight:700;letter-spacing:.4px;padding:3px 10px;border-radius:20px;text-transform:uppercase}
+  .crit.warn .tag{background:var(--warn)}
+  .crit h3{margin:12px 0 8px;font-size:18px}
+  .crit p{margin:6px 0;font-size:14.5px}
+  .evi{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px}
+  @media(max-width:640px){.evi{grid-template-columns:1fr}}
+  .evi div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:13.5px}
+  .evi b{display:block;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}
+  table.cmp{width:100%;border-collapse:collapse;font-size:13.4px;margin:6px 0}
+  table.cmp th,table.cmp td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left}
+  table.cmp th{color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.3px}
+  .dims{display:grid;gap:12px}
+  .dim{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 18px;box-shadow:var(--shadow)}
+  .dim .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px}
+  .dim .name{font-weight:650;font-size:15px}
+  .dim .score{font-weight:800;font-size:15px;font-variant-numeric:tabular-nums}
+  .bar{height:9px;border-radius:6px;background:rgba(127,127,127,.16);overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:6px}
+  .dim p{margin:10px 0 0;font-size:13.7px;color:var(--muted)}
+  .dim .files{margin-top:8px;font-size:12.5px;color:var(--muted)}
+  .pill{font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;color:#fff;text-transform:uppercase;letter-spacing:.3px}
+  .rm{display:grid;gap:14px}
+  .phase{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow)}
+  .phase h3{margin:0 0 4px;font-size:16px;display:flex;align-items:center;gap:10px}
+  .phase .goal{color:var(--muted);font-size:13.5px;margin:0 0 12px}
+  .task{border-top:1px solid var(--line);padding:12px 0}
+  .task:first-of-type{border-top:0}
+  .task .h{display:flex;gap:10px;align-items:baseline;justify-content:space-between;flex-wrap:wrap}
+  .task .t{font-weight:600;font-size:14.5px}
+  .task p{margin:6px 0 0;font-size:13.4px;color:var(--muted)}
+  .task code{font-size:12px}
+  .eff{font-size:11.5px;color:var(--muted);white-space:nowrap}
+  table.sum{width:100%;border-collapse:collapse;font-size:13.6px;margin-top:6px}
+  table.sum th,table.sum td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
+  table.sum th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.3px}
+  table.sum td.s{font-weight:800;font-variant-numeric:tabular-nums;text-align:right}
+  .foot{margin-top:40px;color:var(--muted);font-size:12.5px;text-align:center}
+  ul.tight{margin:8px 0 0;padding-left:20px}
+  ul.tight li{margin:4px 0;font-size:13.6px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <h1>Auditoria completa — Aba <em>Orçamento</em></h1>
+    <p class="sub">Análise focada no planejamento 50/30/20 (<code>#aba-orcamento</code>): header estratégico, cartões
+    de necessidades/desejos/poupança, insights, detalhamento por categoria, edição de renda e regra. Notas de 0 a 100
+    por dimensão, com evidência empírica coletada no app em execução.</p>
+    <div class="hero-meta">
+      <span>FinançasPro v11.0</span>
+      <span>24 ago 2026</span>
+      <span>Escopo: somente Orçamento</span>
+      <span>12 dimensões</span>
+      <span>Método: estático + runtime (dados e contraste medidos)</span>
+    </div>
+    <div class="final">
+      <div class="ring">
+        <svg width="118" height="118" viewBox="0 0 120 120" aria-label="Nota geral 68 de 100">
+          <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="12"/>
+          <circle cx="60" cy="60" r="52" fill="none" stroke="#fff" stroke-width="12"
+            stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="104.5" transform="rotate(-90 60 60)"/>
+          <text x="60" y="58" text-anchor="middle" fill="#fff" font-size="34" font-weight="800">68</text>
+          <text x="60" y="79" text-anchor="middle" fill="rgba(255,255,255,.85)" font-size="12">/ 100</text>
+        </svg>
+      </div>
+      <div class="txt">
+        <strong>Motor excelente, vitrine quebrada</strong>
+        <span>A lógica por trás do orçamento é das melhores do app (aritmética em centavos, projeção honesta com teto
+        diário, insights acionáveis). Mas o bloco mais visível da tela — o <b>Header Estratégico</b> — está
+        <b>congelado em zero</b>: nenhum JS o preenche. O usuário vê “Total planejado R$ 0,00” no topo enquanto os
+        cartões logo abaixo mostram R$ 2.400 gastos. Além disso há HTML e código mortos.</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- CRÍTICO -->
+  <section>
+    <h2><span class="n">!</span> Achado crítico (funcional)</h2>
+    <p class="lead">Verificado no navegador: renda R$ 5.000 e R$ 2.800 em despesas lançadas.</p>
+    <div class="crit">
+      <span class="tag">P0 · Header estratégico morto</span>
+      <h3>O topo do orçamento nunca é preenchido — mostra zeros mesmo com dados reais</h3>
+      <p>Os 7 elementos do “Header Estratégico” (<code>#orc-saldo-disponivel</code>, <code>#orc-percent-restante</code>,
+      <code>#orc-tendencia</code>, <code>#orc-total-planejado</code>, <code>#orc-total-realizado</code>,
+      <code>#orc-categorias-criticas</code>, <code>#orc-economia-mes</code>) <b>não são atualizados por nenhum JS</b>
+      — buscas em todo o código dão zero referências. Eles ficam no placeholder do HTML para sempre.</p>
+      <table class="cmp">
+        <thead><tr><th>Campo (topo da tela)</th><th>Mostra</th><th>Deveria (com os dados do teste)</th></tr></thead>
+        <tbody>
+          <tr><td>Saldo disponível</td><td>R$ 0,00</td><td>~R$ 2.200</td></tr>
+          <tr><td>Total planejado</td><td>R$ 0,00</td><td>R$ 5.000</td></tr>
+          <tr><td>Total realizado</td><td>R$ 0,00</td><td>R$ 2.800</td></tr>
+          <tr><td>Economia do mês</td><td>R$ 0,00</td><td>R$ 2.200</td></tr>
+          <tr><td>Críticas</td><td>0</td><td>(conforme categorias)</td></tr>
+        </tbody>
+      </table>
+      <p><b>Por que é grave.</b> Não é só cosmético: para um app de orçamento, o KPI de topo mostrar sempre zero
+      enquanto os cartões de baixo mostram gasto real é uma <b>contradição que destrói a confiança</b> no número.
+      Os cartões 50/30/20 <u>funcionam</u> (o teste confirmou Necessidades R$ 2.400 de R$ 2.500) — a lógica existe,
+      só não está ligada ao header.</p>
+      <div class="evi">
+        <div><b>Causa</b> <code>renderDashboard</code> preenche nec/des/pou, insights e categorias, mas nunca os IDs do header</div>
+        <div><b>Correção</b> em <code>renderDashboard</code>/<code>_renderCards</code>, calcular e escrever os 7 campos (dados já existem em <code>calculateBudgetData</code>)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HTML/CÓDIGO MORTO -->
+  <section>
+    <h2><span class="n">2</span> HTML e código mortos (a tela promete o que o JS não entrega)</h2>
+    <div class="crit warn">
+      <span class="tag">P1 · Inconsistência HTML ↔ JS</span>
+      <h3>Categorias agrupadas e histórico existem no HTML mas nunca são usados</h3>
+      <p><b>Grupos de categoria.</b> O HTML define “Categorias Críticas / Requer Atenção / Saudáveis”
+      (<code>#orc-group-critical/attention/healthy</code> com contadores e empty state). Mas
+      <code>renderCategorias</code> <u>sobrescreve todo o <code>#orc-categorias</code></u> com uma lista plana
+      (<code>.orc-cat-item</code>) — os grupos nunca aparecem. Confirmado em runtime: <code>#orc-critical-list</code>
+      fica vazio; o container só tem itens planos.</p>
+      <p><b>Histórico.</b> <code>renderHistorico</code> roda a cada render mas mira <code>#orc-historico</code>, que
+      <b>não existe</b> no HTML — retorna na hora, sem efeito. Código morto.</p>
+      <p><b>Região viva órfã.</b> <code>#orc-live-region</code> (<code>aria-live</code>) existe no HTML mas nada
+      escreve nela — as mudanças de orçamento não são anunciadas a leitores de tela.</p>
+      <div class="evi">
+        <div><b>Onde</b> <code>init-orcamento.js:325-352</code> (renderCategorias), <code>:354-382</code> (renderHistorico)</div>
+        <div><b>Correção</b> decidir: implementar o agrupamento/histórico OU remover o HTML/JS morto; ligar o live-region aos updates</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NOTAS -->
+  <section>
+    <h2><span class="n">3</span> Notas por dimensão</h2>
+    <p class="lead">0 a 100. Barras: <span style="color:var(--good)">verde ≥80</span>, <span style="color:var(--warn)">âmbar 60–79</span>, <span style="color:var(--bad)">vermelho &lt;60</span>.</p>
+    <div class="dims" id="dims"></div>
+  </section>
+
+  <!-- PLACAR -->
+  <section>
+    <h2><span class="n">4</span> Placar consolidado</h2>
+    <div class="card">
+      <table class="sum">
+        <thead><tr><th>Dimensão</th><th>Peso</th><th style="text-align:right">Nota</th></tr></thead>
+        <tbody id="sumbody"></tbody>
+        <tfoot><tr><td style="font-weight:700">Nota geral (ponderada)</td><td></td><td class="s" style="font-size:16px">68</td></tr></tfoot>
+      </table>
+      <p style="font-size:12.8px;color:var(--muted);margin:14px 0 0">
+        Nota puxada para baixo pelo header morto e pela inconsistência HTML↔JS — mas segurada pela qualidade rara do
+        motor financeiro. Ligar o header (algumas horas) sobe a aba para a faixa de 80+.
+      </p>
+    </div>
+  </section>
+
+  <!-- ROADMAP -->
+  <section>
+    <h2><span class="n">5</span> Roadmap de melhorias</h2>
+    <p class="lead">Priorizado por impacto × esforço.</p>
+    <div class="rm">
+
+      <div class="phase">
+        <h3><span class="pill" style="background:var(--bad)">P0 · agora</span> Ligar o header estratégico</h3>
+        <p class="goal">Meta: o topo do orçamento reflete os dados reais.</p>
+        <div class="task">
+          <div class="h"><span class="t">Preencher os 7 KPIs do header</span><span class="eff">~3 h · médio</span></div>
+          <p>Em <code>renderDashboard</code>, calcular e escrever: total planejado (renda), realizado (despesas do mês), saldo disponível/economia (renda − despesas), % restante, tendência vs mês anterior, nº de categorias críticas. Os números já saem de <code>calculateBudgetData</code>; falta só o <code>_updateElement</code> de cada. <code>init-orcamento.js:217-263</code>.</p>
+        </div>
+        <div class="task">
+          <div class="h"><span class="t">Teste de fumaça do header</span><span class="eff">~1 h · baixo</span></div>
+          <p>Com renda + despesas semeadas, garantir que os 7 IDs saem do “R$ 0,00”. Impede a regressão silenciosa que deixou isso passar.</p>
+        </div>
+      </div>
+
+      <div class="phase">
+        <h3><span class="pill" style="background:var(--warn)">P1 · próxima sprint</span> Resolver o HTML/código morto</h3>
+        <p class="goal">Meta: o que está na tela é o que o código entrega.</p>
+        <div class="task">
+          <div class="h"><span class="t">Grupos de categoria: implementar ou remover</span><span class="eff">~4 h · médio</span></div>
+          <p>Ou <code>renderCategorias</code> passa a preencher <code>#orc-critical/attention/healthy-list</code> (usando o status de <code>ORCAMENTO.obterStatus</code>/<code>projetarCategoria</code>), ou remover a estrutura agrupada do HTML e ficar com a lista plana. <code>init-orcamento.js:325-352</code>.</p>
+        </div>
+        <div class="task">
+          <div class="h"><span class="t">Remover <code>renderHistorico</code> morto (ou reintroduzir o elemento)</span><span class="eff">~30 min · baixo</span></div>
+          <p><code>#orc-historico</code> não existe no HTML. Remover a função (e a chamada) ou readicionar o container se o histórico for desejado. <code>init-orcamento.js:240, 354-382</code>.</p>
+        </div>
+        <div class="task">
+          <div class="h"><span class="t">Ligar o <code>#orc-live-region</code></span><span class="eff">~1 h · baixo</span></div>
+          <p>Anunciar mudanças relevantes (renda atualizada, estouro de grupo) na região viva já existente, para leitores de tela.</p>
+        </div>
+        <div class="task">
+          <div class="h"><span class="t">Barras de progresso acessíveis</span><span class="eff">~2 h · médio</span></div>
+          <p>As barras 50/30/20 (<code>.orc-progress</code>) e de categoria são <code>div</code>s decorativas. Adicionar <code>role="progressbar"</code> + <code>aria-valuenow/min/max</code> e um rótulo textual do percentual.</p>
+        </div>
+      </div>
+
+      <div class="phase">
+        <h3><span class="pill" style="background:var(--ok)">P2 · contínuo</span> Segurança e polimento</h3>
+        <p class="goal">Meta: endurecer detalhes e corrigir rótulos.</p>
+        <div class="task">
+          <div class="h"><span class="t">Escapar (e rotular) o “maior gasto”</span><span class="eff">~20 min · baixo</span></div>
+          <p>Em <code>renderInsights</code>, <code>maiorCat</code> é a chave crua da categoria, inserida sem <code>escapeHtml</code> e sem passar por <code>getCatLabel</code> — mostra o slug e é o único ponto não escapado do insight. Escapar e usar o label. <code>init-orcamento.js:282-289</code>.</p>
+        </div>
+        <div class="task">
+          <div class="h"><span class="t">Reaproveitar as projeções por categoria do data layer</span><span class="eff">~3 h · médio</span></div>
+          <p><code>orcamento.js</code> tem <code>projetarCategoria</code>/<code>categoriasEmRisco</code> com teto diário — excelente e subutilizado na UI. Usar para alimentar os grupos “críticas/atenção” do P1.</p>
+        </div>
+        <div class="task">
+          <div class="h"><span class="t">Extrair estilos inline dos modais de renda/regra</span><span class="eff">~1 h · baixo</span></div>
+          <p><code>editarRenda</code>/<code>editarRegra503020</code> montam bastante markup com estilo inline; mover para classes.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FORTES -->
+  <section>
+    <h2><span class="n">6</span> O que já está bom (manter)</h2>
+    <div class="card">
+      <ul class="tight">
+        <li><b>Motor financeiro exemplar</b> — <code>orcamento.js</code> soma em centavos inteiros (sem drift de float), com comentários explicando o porquê.</li>
+        <li><b>Projeção honesta</b> — <code>projetarCategoria</code> espera até o dia 3 para não dar alarme falso, é linear de propósito e devolve um <b>teto diário sugerido</b> (“R$ 10/dia” em vez de “segure os gastos”).</li>
+        <li><b>Insights acionáveis</b> — estouro por grupo e por categoria, meta de poupança, maior gasto, projeção do mês; some quando não há nada útil a dizer (não vira ruído).</li>
+        <li><b>Cartões 50/30/20 funcionam</b> — gasto/limite/percentual/estado corretos (confirmado em runtime).</li>
+        <li><b>Contraste OK nos dois temas</b> — passa AA no claro e no escuro (14–16:1); sem o bug de tema das abas Resumo/Lançamentos/Extrato.</li>
+        <li><b>Regra 50/30/20 personalizável</b> com validação de soma = 100% e feedback ao vivo do total.</li>
+        <li><b>Robustez</b> — <code>renderDashboard</code> em try/catch; <code>categoriasEmRisco</code> isolado para não derrubar a aba.</li>
+        <li><b>escapeHtml</b> nos rótulos de categoria da lista e nas mensagens de risco.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- METODOLOGIA -->
+  <section>
+    <h2><span class="n">7</span> Metodologia & conceitos aplicados</h2>
+    <div class="card">
+      <ul class="tight">
+        <li><b>Correção funcional / wiring:</b> conferência de que cada elemento da tela é realmente alimentado pelo JS (busca de referências + teste em runtime com dados semeados).</li>
+        <li><b>Consistência HTML↔JS:</b> HTML que promete estrutura que o JS ignora ou sobrescreve; código morto.</li>
+        <li><b>Correção financeira:</b> aritmética em centavos, projeção, classificação 50/30/20.</li>
+        <li><b>Acessibilidade:</b> WCAG 2.1 — contraste (1.4.3), progressbar (4.1.2), região viva (4.1.3).</li>
+        <li><b>Contraste medido:</b> <code>getComputedStyle</code> + razão WCAG em claro e escuro, estado estável.</li>
+        <li><b>Segurança de front-end:</b> XSS via <code>innerHTML</code> (ponto não escapado).</li>
+        <li><b>Manutenibilidade:</b> estilos inline, código morto, subutilização do data layer.</li>
+      </ul>
+      <p style="font-size:12.5px;color:var(--muted);margin-bottom:0">Escopo estritamente limitado à aba Orçamento
+      (<code>#aba-orcamento</code>, <code>js/orcamento.js</code>, <code>js/modules/init-orcamento.js</code>).
+      As seções Metas/Assinaturas/Patrimônio embutidas na aba têm módulos próprios e não entraram neste escopo.</p>
+    </div>
+  </section>
+
+  <p class="foot">FinançasPro · Auditoria da aba Orçamento · 24 ago 2026 · notas 0–100 · evidência coletada em runtime</p>
+</div>
+
+<script>
+  var dims = [
+    {name:"Correção funcional / wiring da UI", score:35, weight:"alto",
+     note:"O Header Estratégico (7 KPIs no topo) nunca é preenchido — mostra zeros com dados reais. Bloco mais visível da tela, morto.",
+     files:"init-orcamento.js:217-263"},
+    {name:"Consistência HTML ↔ JS", score:40, weight:"alto",
+     note:"HTML promete categorias agrupadas (críticas/atenção/saudáveis) e histórico que o JS não entrega; renderCategorias sobrescreve a estrutura com lista plana.",
+     files:"index.html:957-1004 · init-orcamento.js:325-382"},
+    {name:"Manutenibilidade / código morto", score:45, weight:"médio",
+     note:"renderHistorico mira #orc-historico inexistente; grupos de categoria e #orc-live-region órfãos; estilos inline nos modais.",
+     files:"init-orcamento.js:354-382"},
+    {name:"Acessibilidade", score:62, weight:"alto",
+     note:"Toggle com aria-expanded ok, mas barras de progresso sem role/aria-valuenow e região viva (orc-live-region) nunca usada.",
+     files:"index.html:770, 874 · init-orcamento.js"},
+    {name:"Arquitetura", score:72, weight:"médio",
+     note:"Boa separação data (orcamento.js) x UI (init-orcamento.js). A UI tem ramos mortos e subutiliza o data layer (projetarCategoria).",
+     files:"orcamento.js · init-orcamento.js"},
+    {name:"Segurança de front-end (XSS)", score:74, weight:"médio",
+     note:"Quase tudo escapado; maiorCat (chave crua da categoria) entra no innerHTML sem escape. Mitigado pela validação de nomes, mas é o ponto fraco.",
+     files:"init-orcamento.js:282-289"},
+    {name:"Robustez / tratamento de erros", score:78, weight:"médio",
+     note:"renderDashboard em try/catch com toast; categoriasEmRisco isolado; divisão por zero evitada quando renda=0.",
+     files:"init-orcamento.js:244-247, 304-316"},
+    {name:"UX / produto", score:80, weight:"médio",
+     note:"Insights realmente acionáveis (teto diário, projeção), regra personalizável. Prejudicado pelo header contraditório (zeros no topo, gasto real abaixo).",
+     files:"init-orcamento.js:265-323"},
+    {name:"i18n / formatação", score:82, weight:"baixo",
+     note:"pt-BR, moeda R$, percentuais. Falha pontual: o 'maior gasto' mostra o slug cru da categoria, não o label.",
+     files:"init-orcamento.js:289"},
+    {name:"Theming / dark mode", score:88, weight:"médio",
+     note:"Cartões e KPIs escurecem corretamente; sem o bug de fundo branco das outras abas.",
+     files:"dark-mode.css · orcamento css"},
+    {name:"Contraste & legibilidade", score:88, weight:"alto",
+     note:"Todos os elementos medidos passam AA em claro e escuro (14–16:1 no dark).",
+     files:"runtime"},
+    {name:"Correção financeira (data layer)", score:92, weight:"alto",
+     note:"Centavos inteiros, status/percentual consistentes, projeção linear honesta com teto diário. Das melhores lógicas do app.",
+     files:"orcamento.js:67-224"}
+  ];
+  function color(s){ var cs=getComputedStyle(document.documentElement);
+    return s>=80?cs.getPropertyValue('--good'):s>=60?cs.getPropertyValue('--warn'):cs.getPropertyValue('--bad'); }
+  var host=document.getElementById('dims');
+  dims.slice().sort(function(a,b){return a.score-b.score;}).forEach(function(d){
+    var el=document.createElement('div'); el.className='dim';
+    el.innerHTML='<div class="top"><span class="name">'+d.name+'</span><span class="score" style="color:'+color(d.score)+'">'+d.score+'</span></div>'+
+      '<div class="bar"><i style="width:'+d.score+'%;background:'+color(d.score)+'"></i></div>'+
+      '<p>'+d.note+'</p><div class="files">'+d.files+'</div>';
+    host.appendChild(el);
+  });
+  var body=document.getElementById('sumbody');
+  dims.forEach(function(d){
+    var tr=document.createElement('tr');
+    tr.innerHTML='<td>'+d.name+'</td><td style="color:var(--muted)">'+d.weight+'</td><td class="s" style="color:'+color(d.score)+'">'+d.score+'</td>';
+    body.appendChild(tr);
+  });
+</script>
+</body>
+</html>
