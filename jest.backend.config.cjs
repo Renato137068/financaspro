@@ -11,6 +11,8 @@ module.exports = {
   setupFiles: ['<rootDir>/tests/backend/setup-backend.js'],
   transform: {},
   testMatch: ['<rootDir>/tests/backend/**/*.test.js'],
+  modulePathIgnorePatterns: ['<rootDir>/.aud/'],
+  watchPathIgnorePatterns: ['<rootDir>/.aud/'],
 
   coverageProvider: 'v8',
   coverageDirectory: 'coverage/backend',

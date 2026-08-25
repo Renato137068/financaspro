@@ -10,9 +10,38 @@ const distDir = path.join(root, 'dist');
 const DEFAULT_PORT = 4321;
 
 function ensureBuild() {
-  if (!fs.existsSync(path.join(distDir, 'index.html'))) {
-    console.log('[e2e] Build ausente — executando npm run build…');
+  // Artefato já pronto: smoke e CI podem apontar para dist/ sem rebuild implícito.
+  if (process.env.E2E_SKIP_BUILD === '1' || process.env.E2E_SKIP_BUILD === 'true') {
+    var skipIndex = path.join(distDir, 'index.html');
+    var skipBundle = path.join(distDir, 'js', 'app.bundle.js');
+    if (!fs.existsSync(skipIndex) || !fs.existsSync(skipBundle)) {
+      throw new Error('[e2e] E2E_SKIP_BUILD=1 mas dist/ está incompleto (falta index.html ou app.bundle.js)');
+    }
+    console.log('[e2e] Usando dist/ existente (E2E_SKIP_BUILD=1)');
+    return;
+  }
+
+  var distIndex = path.join(distDir, 'index.html');
+  var appBundle = path.join(distDir, 'js', 'app.bundle.js');
+  var srcIndex = path.join(root, 'index.html');
+  var srcBundleScript = path.join(root, 'scripts', 'bundle-app.cjs');
+
+  function mtime(p) {
+    try { return fs.statSync(p).mtimeMs; } catch (e) { return 0; }
+  }
+
+  var needsBuild = !fs.existsSync(distIndex)
+    || !fs.existsSync(appBundle)
+    || mtime(distIndex) < mtime(srcIndex)
+    || mtime(appBundle) < mtime(srcBundleScript);
+
+  if (needsBuild) {
+    console.log('[e2e] Build ausente ou desatualizado — executando npm run build…');
     execSync('npm run build', { cwd: root, stdio: 'inherit' });
+  }
+
+  if (!fs.existsSync(distIndex) || !fs.existsSync(appBundle)) {
+    throw new Error('[e2e] Build não produziu dist/index.html + js/app.bundle.js');
   }
 }
 

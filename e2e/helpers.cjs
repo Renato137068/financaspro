@@ -9,6 +9,10 @@ async function seedOfflineStorage(page) {
   var m = String(now.getMonth() + 1).padStart(2, '0');
 
   await page.addInitScript(function(payload) {
+    // Não sobrescrever em reload — senão o smoke "criar → reload → persistir"
+    // apaga o que o teste acabou de gravar.
+    if (localStorage.getItem('fp-transacoes')) return;
+
     localStorage.setItem('fp-config', JSON.stringify({
       nome: 'Teste E2E',
       moeda: 'BRL',

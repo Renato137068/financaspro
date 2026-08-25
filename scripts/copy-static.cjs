@@ -8,10 +8,30 @@ const { patchCspMeta, buildCspConnectSrc } = require('./csp-connect-src.cjs');
 const root = path.join(__dirname, '..');
 const dist = path.join(root, 'dist');
 
+/** Cópia atômica: evita EBUSY/EPERM em Windows quando o destino está aberto. */
+function copyFileSafe(src, dest) {
+  if (!fs.existsSync(src)) return;
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  var tmp = dest + '.tmp-' + process.pid + '-' + Date.now();
+  try {
+    fs.copyFileSync(src, tmp);
+    try {
+      fs.renameSync(tmp, dest);
+    } catch (err) {
+      // Destino travado: sobrescreve in-place e remove o temp.
+      fs.copyFileSync(tmp, dest);
+      try { fs.unlinkSync(tmp); } catch (_) { /* ignore */ }
+    }
+  } catch (err) {
+    try { if (fs.existsSync(tmp)) fs.unlinkSync(tmp); } catch (_) { /* ignore */ }
+    throw err;
+  }
+}
+
 function copyRecursive(src, dest) {
   if (!fs.existsSync(src)) return;
   fs.mkdirSync(dest, { recursive: true });
-  fs.cpSync(src, dest, { recursive: true });
+  fs.cpSync(src, dest, { recursive: true, force: true });
 }
 
 function copyScreenshots() {
@@ -30,13 +50,16 @@ function copyScreenshots() {
 
   patterns.forEach(function(name) {
     var src = path.join(playDir, name);
-    if (!fs.existsSync(src)) return;
+    if (!fs.existsSync(src)) {
+      console.warn('[copy-static] screenshot ausente (ok se ainda não gerado):', name);
+      return;
+    }
     var shortName = name.replace('screenshot-', '');
-    fs.copyFileSync(src, path.join(destDir, shortName));
-    fs.copyFileSync(src, path.join(rootDir, shortName));
+    copyFileSafe(src, path.join(destDir, shortName));
+    copyFileSafe(src, path.join(rootDir, shortName));
     if (name.indexOf('resumo') !== -1 || name.indexOf('placeholder') !== -1) {
-      fs.copyFileSync(src, path.join(destDir, 'phone-1080x1920.png'));
-      fs.copyFileSync(src, path.join(rootDir, 'phone-1080x1920.png'));
+      copyFileSafe(src, path.join(destDir, 'phone-1080x1920.png'));
+      copyFileSafe(src, path.join(rootDir, 'phone-1080x1920.png'));
     }
   });
 }
@@ -47,13 +70,13 @@ copyRecursive(path.join(root, 'icons'), path.join(dist, 'icons'));
 // fonts/ NÃO é copiado: o Vite já emite as woff2 em dist/assets com hash no
 // nome, referenciadas pelo CSS bundlado. Copiar a pasta crua acrescentaria
 // 154 KB de arquivos que nada referencia.
-fs.copyFileSync(path.join(root, 'sw.js'), path.join(dist, 'sw.js'));
-fs.copyFileSync(path.join(root, 'manifest.json'), path.join(dist, 'manifest.json'));
+copyFileSafe(path.join(root, 'sw.js'), path.join(dist, 'sw.js'));
+copyFileSafe(path.join(root, 'manifest.json'), path.join(dist, 'manifest.json'));
 if (fs.existsSync(path.join(root, 'privacidade.html'))) {
-  fs.copyFileSync(path.join(root, 'privacidade.html'), path.join(dist, 'privacidade.html'));
+  copyFileSafe(path.join(root, 'privacidade.html'), path.join(dist, 'privacidade.html'));
 }
 if (fs.existsSync(path.join(root, 'celular.html'))) {
-  fs.copyFileSync(path.join(root, 'celular.html'), path.join(dist, 'celular.html'));
+  copyFileSafe(path.join(root, 'celular.html'), path.join(dist, 'celular.html'));
 }
 
 copyScreenshots();

@@ -14,6 +14,8 @@ module.exports = {
   setupFiles: ['<rootDir>/tests/setup-globals.js'],
   transform: {},
   testMatch: ['<rootDir>/tests/*.test.js'],
+  modulePathIgnorePatterns: ['<rootDir>/.aud/'],
+  watchPathIgnorePatterns: ['<rootDir>/.aud/'],
 
   coverageProvider: 'v8',
   coverageDirectory: 'coverage/frontend',

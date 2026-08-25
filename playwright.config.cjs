@@ -21,10 +21,18 @@ module.exports = defineConfig({
       ? { executablePath: process.env.PW_CHROMIUM }
       : {},
   },
-  webServer: {
-    command: 'node scripts/e2e-serve.cjs',
-    port: 4321,
-    timeout: 120000,
-    reuseExistingServer: !process.env.CI,
-  },
+  webServer: [
+    {
+      command: 'node scripts/e2e-serve.cjs',
+      port: 4321,
+      timeout: 120000,
+      reuseExistingServer: !process.env.CI,
+    },
+    {
+      command: 'node scripts/e2e-serve-source.cjs',
+      port: 4322,
+      timeout: 120000,
+      reuseExistingServer: !process.env.CI,
+    },
+  ],
 });

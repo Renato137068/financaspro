@@ -1,7 +1,7 @@
 // FinançasPro - Service Worker (PWA offline-first, stale-while-revalidate)
 // Gerado por scripts/generate-sw-cache.cjs — não edite urlsParaCache manualmente
 
-const CACHE_NAME = 'financaspro-v1100-p2';
+const CACHE_NAME = 'financaspro-v1110-p2';
 const urlsParaCache = [
   "/",
   "/css/base.css",
@@ -89,12 +89,14 @@ const urlsParaCache = [
   "/js/core/lazy-load.js",
   "/js/core/lifecycle.js",
   "/js/core/password-policy.js",
+  "/js/core/persist-queue.js",
   "/js/core/setup-guide.js",
   "/js/core/store.js",
   "/js/core/sync-engine.js",
   "/js/core/sync-merge.js",
   "/js/core/utils.js",
   "/js/core/validations.js",
+  "/js/fp-native-billing-bridge.js",
   "/js/init.js",
   "/js/insights.js",
   "/js/lucide-init.js",
@@ -124,6 +126,7 @@ const urlsParaCache = [
   "/js/pin-guard.js",
   "/js/pin.js",
   "/js/pipeline.js",
+  "/js/play-billing.js",
   "/js/previsao.js",
   "/js/recorrentes.js",
   "/js/relatorios.js",
@@ -141,6 +144,7 @@ const urlsParaCache = [
   "/js/transacoes.js",
   "/js/utilities/aria-live.js",
   "/js/utilities/daily-reminder.js",
+  "/js/utilities/finance-reconciler.js",
   "/js/utilities/focus-trap.js",
   "/js/utilities/local-crypto.js",
   "/js/utilities/observability.js",

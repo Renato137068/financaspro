@@ -22,7 +22,9 @@ const DEFAULTS = {
   transaction: { recurring: false, tags: [], deletedAt: null },
   session: { revokedAt: null },
   account: { currency: 'BRL', balance: 0, active: true },
-  budget: { period: 'monthly' },
+  budget: { period: 'monthly', active: true },
+  recurringTransaction: { active: true },
+  syncOp: { resultJson: null },
 };
 
 /** Campos DateTime que o Prisma preenche sozinho. */
@@ -152,8 +154,14 @@ function createModel(name, store) {
     },
 
     async create({ data }) {
+      const payload = structuredClone(data);
+      if (payload.id && rows().some((r) => r.id === payload.id)) {
+        const err = new Error('prisma-fake: unique constraint');
+        err.code = 'P2002';
+        throw err;
+      }
       const record = applyTimestamps(
-        { id: randomUUID(), ...DEFAULTS[name], ...structuredClone(data) },
+        { id: payload.id || randomUUID(), ...DEFAULTS[name], ...payload },
         { isCreate: true },
       );
       rows().push(record);

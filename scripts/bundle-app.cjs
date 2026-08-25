@@ -47,6 +47,8 @@ const LAZY_CHUNKS = {
   // O teste tests/lazy-chunks.test.js trava a existência do gatilho.
   conta: [
     'js/billing.js',
+    'js/play-billing.js',
+    'js/fp-native-billing-bridge.js',
     'js/modules/init-billing.js',
     'js/modules/init-2fa.js',
     'js/open-finance.js',

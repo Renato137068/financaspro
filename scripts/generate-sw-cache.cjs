@@ -307,7 +307,15 @@ function writeFor(targetDir) {
   const urls = buildUrls(targetDir);
   const content = renderSw(urls);
   const out = targetDir === root ? path.join(root, 'sw.js') : path.join(targetDir, 'sw.js');
-  fs.writeFileSync(out, content);
+  const tmp = out + '.tmp-' + process.pid;
+  fs.writeFileSync(tmp, content);
+  try {
+    fs.renameSync(tmp, out);
+  } catch (err) {
+    // Windows: destino aberto por outro processo — sobrescreve in-place.
+    fs.writeFileSync(out, content);
+    try { fs.unlinkSync(tmp); } catch (_) { /* ignore */ }
+  }
   console.log('[generate-sw-cache]', out, '—', urls.length, 'URLs,', CACHE_NAME);
 }
 
