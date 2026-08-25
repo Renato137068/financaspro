@@ -39,6 +39,11 @@ test('todo valor monetário na tela usa números tabulares', async function({ pa
     for (const e of document.querySelectorAll('*')) {
       const caixa = e.getBoundingClientRect();
       if (!(caixa.width > 0 && caixa.height > 0)) continue;
+      // Conteúdo só para leitor de tela (.sr-only) é recortado para 1×1px e
+      // nunca é desenhado. Números tabulares são uma regra de alinhamento
+      // visual — não se aplicam ao que o olho não vê. Sem isto, uma legenda
+      // de acessibilidade com "R$ …" reprova um teste puramente visual.
+      if (caixa.width <= 1 || caixa.height <= 1) continue;
       if (e.childElementCount) continue;
       const texto = (e.textContent || '').trim();
       if (texto.length > 40 || !/R\$\s?[\d.]+,\d{2}/.test(texto)) continue;
