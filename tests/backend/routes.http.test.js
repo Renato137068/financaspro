@@ -287,7 +287,6 @@ describe('isolamento horizontal', () => {
   });
 
   test('accountId de outro usuário é rejeitado', async () => {
-    const authA = comoUsuario({ id: UUID_A });
     const ACC_A = '33333333-3333-4333-8333-333333333333';
     prisma.account.create({
       data: { id: ACC_A, userId: UUID_A, name: 'Conta A', type: 'checking' },

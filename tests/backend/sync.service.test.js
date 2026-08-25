@@ -168,7 +168,6 @@ describe('SyncService.pullDelta', () => {
 
 describe('SyncService — contas e recorrentes', () => {
   const AC = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
-  const REC = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 
   beforeEach(() => prisma.__reset());
 

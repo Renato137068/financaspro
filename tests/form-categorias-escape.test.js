@@ -4,10 +4,8 @@
  */
 const fs = require('fs');
 const path = require('path');
-const vm = require('vm');
 
 describe('P2.1 — escapeHtml em categorias custom', function() {
-  var INIT_FORM;
   var sandbox;
 
   beforeAll(function() {

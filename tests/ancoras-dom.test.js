@@ -138,7 +138,7 @@ describe('varredura de getElementById em js/', () => {
   });
 
   test('todo opcional tem motivo escrito', () => {
-    Object.entries(OPCIONAIS).forEach(([id, motivo]) => {
+    Object.entries(OPCIONAIS).forEach(([_id, motivo]) => {
       expect(typeof motivo).toBe('string');
       expect(motivo.length).toBeGreaterThan(15);
     });

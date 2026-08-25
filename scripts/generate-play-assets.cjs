@@ -140,7 +140,6 @@ async function main() {
   for (var i = 0; i < screens.length; i++) {
     var s = screens[i];
     var dest = await renderPhoneScreenshot(sharp, s.file, s.svg);
-    var manifestName = s.file.replace('screenshot-', '').replace('-1080x1920', '');
     fs.copyFileSync(dest, path.join(screenshotsDir, s.file.replace('screenshot-', '')));
     if (i === 0) {
       fs.copyFileSync(dest, path.join(screenshotsDir, 'phone-1080x1920.png'));

@@ -2,7 +2,7 @@
  * cursor-pagination.test.js — codificação e filtros de cursor.
  */
 import {
-  encodeCursor, decodeCursor, cursorWhereDateDesc, cursorWhereUpdatedAsc,
+  encodeCursor, decodeCursor, cursorWhereUpdatedAsc,
 } from '../../backend/lib/cursor-pagination.js';
 
 describe('cursor-pagination', () => {

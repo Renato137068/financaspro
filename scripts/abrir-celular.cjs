@@ -10,7 +10,7 @@
  *   node scripts/abrir-celular.cjs --dist
  *   node scripts/abrir-celular.cjs --url http://localhost:3000
  */
-const { spawn, execFileSync } = require('child_process');
+const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
@@ -62,7 +62,7 @@ function candidatosNavegador() {
 }
 
 function portaLivre(inicio = 3000) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const s = require('net').createServer();
     s.unref();
     s.on('error', () => resolve(portaLivre(inicio + 1)));

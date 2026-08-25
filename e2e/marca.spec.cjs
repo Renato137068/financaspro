@@ -15,7 +15,6 @@ const { test, expect } = require('@playwright/test');
 const { prepareOfflinePage } = require('./helpers.cjs');
 
 const ABAS = ['resumo', 'novo', 'extrato', 'orcamento', 'config'];
-const MOEDA = /R\$\s?[\d.]+,\d{2}/;
 
 test.beforeEach(async function({ page }) {
   await prepareOfflinePage(page);

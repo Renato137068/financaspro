@@ -20,6 +20,7 @@ async function auditar(page, nomeAba) {
         return '  • [' + v.impact + '] ' + v.id + ': ' + v.help + ' (' + v.nodes.length + ' nó/nós)\n    ' + v.helpUrl;
       })
       .join('\n');
+    // eslint-disable-next-line no-console -- diagnóstico intencional quando há violação WCAG
     console.log('\nViolações de acessibilidade em "' + nomeAba + '":\n' + resumo + '\n');
   }
   expect(bloqueantes, 'Violações WCAG serious/critical em "' + nomeAba + '"').toEqual([]);

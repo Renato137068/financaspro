@@ -10,7 +10,6 @@ const configUser = fs.readFileSync(path.join(root, 'js', 'config-user.js'), 'utf
 const initConfig = fs.readFileSync(path.join(root, 'js', 'modules', 'init-config.js'), 'utf8');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const css = fs.readFileSync(path.join(root, 'css', 'layouts', 'config.css'), 'utf8');
-const ds = fs.readFileSync(path.join(root, 'css', 'design-system.css'), 'utf8');
 
 describe('P2.1 — atrito de limparDados', function() {
   test('limparDados exige dupla confirmação', function() {
@@ -39,25 +38,6 @@ describe('P2.2 — cartões nativos e teclado delegado', function() {
 
 describe('P2.3 — contraste folgado no tema claro', function() {
   const AA_FOLGA = 5.5;
-
-  function lerTokens(cssText, seletor) {
-    const re = new RegExp(`${seletor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([\\s\\S]*?)\\n\\}`);
-    const m = cssText.match(re);
-    if (!m) return {};
-    const out = {};
-    for (const [, nome, valor] of m[1].matchAll(/--([a-z0-9-]+):\s*([^;]+);/g)) {
-      out[nome] = valor.trim();
-    }
-    return out;
-  }
-
-  function resolver(tokens, valor, profundidade) {
-    if (profundidade > 10) return null;
-    const m = String(valor).match(/^var\(--([a-z0-9-]+)\)$/);
-    if (!m) return valor;
-    const alvo = tokens[m[1]];
-    return alvo === undefined ? null : resolver(tokens, alvo, profundidade + 1);
-  }
 
   function paraRgb(cor) {
     if (!cor) return null;

@@ -57,12 +57,10 @@ describe('SYNC_ENGINE — Fase 1', () => {
   let storage;
   let transacoes;
   let engine;
-  let fetchCalls;
 
   beforeEach(() => {
     storage = mockStorage();
     transacoes = [];
-    fetchCalls = 0;
     const DADOS = {
       getTransacoesRaw: () => transacoes.slice(),
       getTransacoes: () => transacoes.filter((t) => !t.deletedAt),

@@ -2,7 +2,6 @@
  * finance.contract.test.js — contrato backend (Fase 2).
  */
 import {
-  isUuid,
   normalizeAccountId,
   assertTransferPayload,
   serializeTransaction,
