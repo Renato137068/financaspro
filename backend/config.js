@@ -82,10 +82,11 @@ const CONFIG = {
     secure: process.env.SMTP_SECURE === 'true',
     user:   process.env.SMTP_USER || null,
     pass:   process.env.SMTP_PASS || null,
-    // O domínio financaspro.com.br não está registrado. Enquanto não estiver,
-    // o remetente padrão aponta para um endereço que existe — um e-mail que
-    // volta é pior do que um e-mail que não sai. Em produção, defina SMTP_FROM.
-    from:   process.env.SMTP_FROM || 'FinançasPro <renato.soares1370@gmail.com>',
+    // Produção: SMTP_FROM obrigatório (fail-closed). Em dev mantém fallback
+    // local até o domínio oficial ser definido pelo operador.
+    from: isProd
+      ? required('SMTP_FROM')
+      : (process.env.SMTP_FROM || 'FinançasPro <dev@localhost>'),
   },
 
   // Fase 10 — URL pública do app (usada em e-mails e portal Stripe)
@@ -104,10 +105,10 @@ const CONFIG = {
   /** Em produção, Redis é obrigatório para rate limit distribuído e workers. */
   requireRedis: env === 'production' || process.env.REQUIRE_REDIS === '1',
 
-  /** E-mail de contato na política de privacidade */
-  // Canal oficial de LGPD. A política de privacidade PROMETE resposta neste
-  // endereço, então ele precisa existir de verdade — não é um placeholder.
-  privacyContactEmail: process.env.PRIVACY_CONTACT_EMAIL || 'renato.soares1370@gmail.com',
+  /** E-mail de contato LGPD — obrigatório em produção (política promete resposta). */
+  privacyContactEmail: isProd
+    ? required('PRIVACY_CONTACT_EMAIL')
+    : (process.env.PRIVACY_CONTACT_EMAIL || 'dev-privacy@localhost'),
 
   metrics: {
     token: process.env.METRICS_TOKEN || null,

@@ -174,24 +174,22 @@ describe('security guardrails', () => {
     expect(audit).toContain('snapshotTransaction');
   });
 
-  test('o canal de LGPD da política é um endereço que existe', () => {
-    // A política promete resposta neste endereço: é o canal oficial de
-    // exercício de direitos da LGPD. Prometer um canal que não recebe e-mail é
-    // descumprir a própria política. O domínio financaspro.com.br não está
-    // registrado, então aqui vale o endereço real do responsável — e este
-    // teste garante que ele bate com o que o backend usa como padrão.
-    const privacidade = fs.readFileSync(path.join(root, 'privacidade.html'), 'utf8');
+  test('produção exige SMTP_FROM e PRIVACY_CONTACT_EMAIL (fail-closed)', () => {
     const config = fs.readFileSync(path.join(root, 'backend/config.js'), 'utf8');
+    expect(config).toContain("required('SMTP_FROM')");
+    expect(config).toContain("required('PRIVACY_CONTACT_EMAIL')");
+    // Sem Gmail pessoal como default de produção.
+    expect(config).not.toMatch(/SMTP_FROM\|\|[^\n]*gmail\.com/);
+    expect(config).not.toMatch(/PRIVACY_CONTACT_EMAIL\|\|[^\n]*gmail\.com/);
+  });
 
+  test('política de privacidade não promete domínio não registrado', () => {
+    const privacidade = fs.readFileSync(path.join(root, 'privacidade.html'), 'utf8');
     expect(privacidade).not.toContain('[coloque aqui');
     const emails = [...privacidade.matchAll(/[\w.+-]+@[\w-]+\.[\w.-]+/g)].map((m) => m[0]);
     expect(emails.length).toBeGreaterThan(0);
-
     for (const email of new Set(emails)) {
-      // nenhum endereço em domínio não registrado
       expect(email).not.toMatch(/@financaspro\.com/);
-      // e o backend precisa oferecer o mesmo canal
-      expect(config).toContain(email);
     }
   });
 
