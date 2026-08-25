@@ -55,8 +55,11 @@ var SYNC_ENGINE = {
     if (cursor) this._writeJson(key, cursor);
   },
 
-  pendingIds: function() {
+  pendingIds: function(entity) {
     var fila = this.loadOutbox();
+    if (entity) {
+      return fila.filter(function(m) { return m.entity === entity; }).map(function(m) { return m.id; });
+    }
     return fila.map(function(m) { return m.id; });
   },
 
@@ -73,20 +76,15 @@ var SYNC_ENGINE = {
     return new Date().toISOString();
   },
 
-  /**
-   * Enfileira mutação de transação.
-   * @param {'upsert'|'delete'} op
-   * @param {Object} tx registro PT local
-   */
-  enqueueTransaction: function(op, tx) {
-    if (!tx || !tx.id) return this.loadOutbox();
+  _enqueue: function(entity, op, record, payload) {
+    if (!record || !record.id) return this.loadOutbox();
     var mut = {
       opId: this._gerarOpId(),
-      entity: 'transaction',
-      id: tx.id,
+      entity: entity,
+      id: record.id,
       op: op,
-      clientUpdatedAt: tx.updatedAt || tx.dataCriacao || this._nowIso(),
-      payload: op === 'upsert' ? this._txToPayload(tx) : undefined,
+      clientUpdatedAt: record.updatedAt || record.dataCriacao || this._nowIso(),
+      payload: op === 'upsert' ? payload : undefined,
       attempts: 0,
       enqueuedAt: this._nowIso(),
     };
@@ -94,6 +92,48 @@ var SYNC_ENGINE = {
     this.saveOutbox(fila);
     this.scheduleFlush();
     return fila;
+  },
+
+  /**
+   * Enfileira mutação de transação.
+   * @param {'upsert'|'delete'} op
+   * @param {Object} tx registro PT local
+   */
+  enqueueTransaction: function(op, tx) {
+    return this._enqueue('transaction', op, tx, op === 'upsert' ? this._txToPayload(tx) : undefined);
+  },
+
+  enqueueAccount: function(op, conta) {
+    var payload;
+    if (op === 'upsert') {
+      payload = (typeof FINANCE_CONTRACT !== 'undefined')
+        ? FINANCE_CONTRACT.contaPtToEn(conta)
+        : conta;
+      if (payload && conta.ativo === false) payload.active = false;
+    }
+    return this._enqueue('account', op, conta, payload);
+  },
+
+  enqueueRecurring: function(op, rec) {
+    var payload;
+    if (op === 'upsert') {
+      payload = (typeof FINANCE_CONTRACT !== 'undefined')
+        ? FINANCE_CONTRACT.recorrentePtToEn(rec)
+        : rec;
+      if (payload && rec.ativo === false) payload.active = false;
+    }
+    return this._enqueue('recurring', op, rec, payload);
+  },
+
+  enqueueBudget: function(op, budget) {
+    var payload;
+    if (op === 'upsert') {
+      payload = (typeof FINANCE_CONTRACT !== 'undefined')
+        ? FINANCE_CONTRACT.budgetPtToEn(budget)
+        : budget;
+      if (payload && budget.ativo === false) payload.active = false;
+    }
+    return this._enqueue('budget', op, budget, payload);
   },
 
   _txToPayload: function(tx) {
@@ -127,12 +167,76 @@ var SYNC_ENGINE = {
       return pt;
     }
     if (typeof DADOS !== 'undefined' && DADOS._txEnToPt) {
-      var pt = DADOS._txEnToPt(tx);
-      pt.updatedAt = tx.updatedAt || pt.dataCriacao;
-      pt.deletedAt = tx.deletedAt || null;
-      return pt;
+      var pt2 = DADOS._txEnToPt(tx);
+      pt2.updatedAt = tx.updatedAt || pt2.dataCriacao;
+      pt2.deletedAt = tx.deletedAt || null;
+      return pt2;
     }
     return tx;
+  },
+
+  _contaEnToPt: function(ac) {
+    if (typeof FINANCE_CONTRACT !== 'undefined') {
+      var pt = FINANCE_CONTRACT.contaEnToPt(ac);
+      pt.updatedAt = ac.updatedAt || pt.dataCriacao;
+      if (ac.active === false) pt.deletedAt = ac.updatedAt || pt.updatedAt;
+      return pt;
+    }
+    return ac;
+  },
+
+  _recEnToPt: function(rec) {
+    if (typeof FINANCE_CONTRACT !== 'undefined') {
+      var pt = FINANCE_CONTRACT.recorrenteEnToPt(rec);
+      pt.updatedAt = rec.updatedAt || pt.dataCriacao;
+      if (rec.active === false) pt.deletedAt = rec.updatedAt || pt.updatedAt;
+      return pt;
+    }
+    return rec;
+  },
+
+  _budgetEnToPt: function(budget) {
+    if (typeof FINANCE_CONTRACT !== 'undefined') {
+      var pt = FINANCE_CONTRACT.budgetEnToPt(budget);
+      pt.updatedAt = budget.updatedAt || pt.definidoEm;
+      if (budget.active === false) pt.deletedAt = budget.updatedAt || pt.updatedAt;
+      return pt;
+    }
+    return budget;
+  },
+
+  _orcamentosToArray: function(orc) {
+    var out = [];
+    if (!orc || typeof orc !== 'object') return out;
+    Object.keys(orc).forEach(function(cat) {
+      var entry = orc[cat];
+      if (!entry) return;
+      out.push({
+        id: entry.id,
+        categoria: cat,
+        limite: entry.limite,
+        periodo: entry.periodo || 'mensal',
+        definidoEm: entry.definidoEm,
+        updatedAt: entry.updatedAt || entry.definidoEm,
+        ativo: entry.ativo !== false,
+      });
+    });
+    return out;
+  },
+
+  _arrayToOrcamentos: function(list) {
+    var orc = {};
+    (list || []).forEach(function(b) {
+      if (!b || !b.categoria || b.deletedAt || b.ativo === false) return;
+      orc[b.categoria] = {
+        limite: b.limite,
+        definidoEm: b.definidoEm || b.updatedAt,
+        id: b.id,
+        periodo: b.periodo || 'mensal',
+        updatedAt: b.updatedAt || b.definidoEm,
+      };
+    });
+    return orc;
   },
 
   scheduleFlush: function(delayMs) {
@@ -249,6 +353,9 @@ var SYNC_ENGINE = {
       var data = resp && resp.data ? resp.data : {};
       var delta = Array.isArray(data.transactions) ? data.transactions : [];
       var merged = self._applyDeltaToLocal(delta);
+      self._applyAccountsDelta(Array.isArray(data.accounts) ? data.accounts : []);
+      self._applyRecurringDelta(Array.isArray(data.recurringTransactions) ? data.recurringTransactions : []);
+      self._applyBudgetsDelta(Array.isArray(data.budgets) ? data.budgets : []);
       if (data.cursor) self.setCursor(data.cursor);
       return { ok: true, delta: delta.length, merged: merged };
     });
@@ -257,11 +364,53 @@ var SYNC_ENGINE = {
   _applyDeltaToLocal: function(deltaEn) {
     if (typeof DADOS === 'undefined') return 0;
     var local = DADOS.getTransacoesRaw ? DADOS.getTransacoesRaw() : DADOS.getTransacoes();
-    var pending = this.pendingIds();
+    var pending = this.pendingIds('transaction');
     var deltaPt = deltaEn.map(this._txEnToPt.bind(this));
     var merged = SYNC_MERGE.mergeDelta(local, pending, deltaPt);
     DADOS._storageSetTransacoes(merged);
     return merged.length;
+  },
+
+  _applyAccountsDelta: function(deltaEn) {
+    if (typeof DADOS === 'undefined' || !DADOS.getContasRaw) return 0;
+    var local = DADOS.getContasRaw();
+    var pending = this.pendingIds('account');
+    var deltaPt = deltaEn.map(this._contaEnToPt.bind(this));
+    var merged = SYNC_MERGE.mergeDelta(local, pending, deltaPt);
+    var visiveis = merged.filter(function(c) { return !c.deletedAt && c.ativo !== false; });
+    DADOS._storageSetRaw(
+      (typeof CONFIG !== 'undefined' && CONFIG.STORAGE_CONTAS) || 'fp-contas',
+      JSON.stringify(visiveis),
+    );
+    return visiveis.length;
+  },
+
+  _applyRecurringDelta: function(deltaEn) {
+    if (typeof DADOS === 'undefined') return 0;
+    var config = DADOS.getConfig();
+    var local = Array.isArray(config.recorrentes) ? config.recorrentes : [];
+    var pending = this.pendingIds('recurring');
+    var deltaPt = deltaEn.map(this._recEnToPt.bind(this));
+    var merged = SYNC_MERGE.mergeDelta(local, pending, deltaPt);
+    var visiveis = merged.filter(function(r) { return !r.deletedAt && r.ativo !== false; });
+    config.recorrentes = visiveis;
+    DADOS.salvarConfig(config, { skipPush: true });
+    return visiveis.length;
+  },
+
+  _applyBudgetsDelta: function(deltaEn) {
+    if (typeof DADOS === 'undefined') return 0;
+    var config = DADOS.getConfig();
+    var local = this._orcamentosToArray(config.orcamentos || {});
+    var pending = this.pendingIds('budget');
+    var deltaPt = deltaEn.map(this._budgetEnToPt.bind(this));
+    var merged = SYNC_MERGE.mergeDelta(local, pending, deltaPt);
+    config.orcamentos = this._arrayToOrcamentos(merged);
+    DADOS.salvarConfig(config, { skipPush: true });
+    if (typeof ORCAMENTO !== 'undefined' && ORCAMENTO._carregarOrcamentos) {
+      ORCAMENTO._carregarOrcamentos();
+    }
+    return Object.keys(config.orcamentos).length;
   },
 
   /**
@@ -304,6 +453,9 @@ var SYNC_ENGINE = {
         var delta = Array.isArray(data.transactions) ? data.transactions : [];
         total += delta.length;
         self._applyDeltaToLocal(delta);
+        self._applyAccountsDelta(Array.isArray(data.accounts) ? data.accounts : []);
+        self._applyRecurringDelta(Array.isArray(data.recurringTransactions) ? data.recurringTransactions : []);
+        self._applyBudgetsDelta(Array.isArray(data.budgets) ? data.budgets : []);
         if (data.hasMore && data.nextCursor) {
           return nextPage(data.nextCursor);
         }

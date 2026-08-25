@@ -69,6 +69,10 @@ describe('SYNC_ENGINE — Fase 1', () => {
       _storageSetTransacoes: (list) => { transacoes = list.slice(); storage.setItem(CONFIG.STORAGE_TRANSACOES, JSON.stringify(transacoes)); },
       _txPtToEn: (tx) => ({ type: tx.tipo, amount: tx.valor, description: tx.descricao, category: tx.categoria, date: tx.data + 'T00:00:00.000Z' }),
       _txEnToPt: (tx) => ({ id: tx.id, tipo: tx.type, valor: Number(tx.amount), descricao: tx.description, categoria: tx.category, data: tx.date.slice(0, 10), updatedAt: tx.updatedAt, deletedAt: tx.deletedAt }),
+      getConfig: () => ({ recorrentes: [] }),
+      salvarConfig: (cfg) => cfg,
+      _storageSetRaw: (k, v) => storage.setItem(k, v),
+      getContasRaw: () => [],
     };
     engine = loadEngine({
       CONFIG, SYNC_MERGE: SM, UTILS: { gerarUuid: () => UUID },

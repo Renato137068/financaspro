@@ -16,32 +16,61 @@ const pullQuerySchema = z.object({
   cursor: z.string().max(256).optional(),
 });
 
+const txPayloadSchema = z.object({
+  type: z.enum(['receita', 'despesa', 'transferencia']).optional(),
+  amount: z.number().optional(),
+  description: z.string().optional(),
+  category: z.string().optional(),
+  subcategory: z.string().optional(),
+  date: z.string().datetime().optional(),
+  accountId: z.string().uuid().optional().nullable(),
+  targetAccountId: z.string().uuid().optional().nullable(),
+  tags: z.array(z.string()).optional(),
+  notes: z.string().optional().nullable(),
+  recurring: z.boolean().optional(),
+});
+
+const accountPayloadSchema = z.object({
+  name: z.string().optional(),
+  type: z.enum(['checking', 'savings', 'credit', 'investment']).optional(),
+  balance: z.number().optional(),
+  currency: z.string().optional(),
+  institution: z.string().optional().nullable(),
+  active: z.boolean().optional(),
+});
+
+const recurringPayloadSchema = z.object({
+  type: z.enum(['receita', 'despesa', 'transferencia']).optional(),
+  amount: z.number().optional(),
+  description: z.string().optional(),
+  category: z.string().optional().nullable(),
+  frequency: z.enum(['daily', 'weekly', 'monthly', 'yearly']).optional(),
+  startDate: z.string().datetime().optional(),
+  endDate: z.string().datetime().optional().nullable(),
+  nextDue: z.string().datetime().optional(),
+  active: z.boolean().optional(),
+});
+
+const budgetPayloadSchema = z.object({
+  category: z.string().optional(),
+  limit: z.number().optional(),
+  period: z.enum(['monthly', 'weekly', 'yearly']).optional(),
+  active: z.boolean().optional(),
+});
+
 const mutationSchema = z.object({
   opId: z.string().min(1).max(80),
-  entity: z.enum(['transaction']).default('transaction'),
+  entity: z.enum(['transaction', 'account', 'recurring', 'budget']).default('transaction'),
   op: z.enum(['upsert', 'delete']),
   id: z.string().uuid(),
   clientUpdatedAt: z.string().datetime(),
-  payload: z.object({
-    type: z.enum(['receita', 'despesa', 'transferencia']).optional(),
-    amount: z.number().optional(),
-    description: z.string().optional(),
-    category: z.string().optional(),
-    subcategory: z.string().optional(),
-    date: z.string().datetime().optional(),
-    accountId: z.string().uuid().optional().nullable(),
-    targetAccountId: z.string().uuid().optional().nullable(),
-    tags: z.array(z.string()).optional(),
-    notes: z.string().optional().nullable(),
-    recurring: z.boolean().optional(),
-  }).optional(),
+  payload: z.union([txPayloadSchema, accountPayloadSchema, recurringPayloadSchema, budgetPayloadSchema]).optional(),
 });
 
 const pushBodySchema = z.object({
   mutations: z.array(mutationSchema).max(100),
 });
 
-// GET /api/v1/sync?since=ISO — delta incremental de transações
 router.get(
   '/',
   requirePermission('transactions:read'),
@@ -55,7 +84,6 @@ router.get(
   }),
 );
 
-// POST /api/v1/sync — aplica mutações idempotentes (opId)
 router.post(
   '/',
   requirePermission('transactions:write'),

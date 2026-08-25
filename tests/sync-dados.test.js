@@ -34,15 +34,10 @@ function loadDados() {
       verificarStorageDisponivel: () => ({ disponivel: true }),
     },
     APP_STORE: { dispatch: (a) => dispatchLog.push(a), hydrateFromDados: () => {} },
-    ACTIONS: { TRANSACAO_CRIAR: 't/c', TRANSACAO_EDITAR: 't/e', TRANSACAO_DELETAR: 't/d', SYNC_PENDENTE: 's/p' },
+    ACTIONS: { TRANSACAO_CRIAR: 't/c', TRANSACAO_EDITAR: 't/e', TRANSACAO_DELETAR: 't/d', SYNC_PENDENTE: 's/p', CONFIG_SALVAR: 'c/s' },
     module: { exports: {} },
   });
 
-  // SYNC_MERGE entra como objeto já carregado, em vez de ser executado de novo
-  // dentro deste vm. Cada execução extra do mesmo arquivo cria outra cópia
-  // instrumentada do mesmo caminho absoluto; o provider v8 mescla todas e o
-  // relatório passa a mostrar como "sem cobertura" o que só não foi exercitado
-  // NAQUELA cópia. Uma instância compartilhada mede o módulo, não o arranjo.
   ctx.SYNC_MERGE = require('../js/core/sync-merge.js');
 
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'js', 'core', 'sync-engine.js'), 'utf8'), ctx, {
@@ -54,7 +49,7 @@ function loadDados() {
   const D = ctx.DADOS;
   D._apiBaseUrl = () => 'http://localhost:4000';
   ctx.SYNC_ENGINE._storage = mockLs;
-  return { D, storage, SYNC_ENGINE: ctx.SYNC_ENGINE };
+  return { D, storage: mockLs, SYNC_ENGINE: ctx.SYNC_ENGINE };
 }
 
 describe('DADOS — merge seguro (Fase 1)', () => {
@@ -82,5 +77,45 @@ describe('DADOS — merge seguro (Fase 1)', () => {
     D.deletarTransacao('3f2504e0-4f89-41d3-9a0c-0305e82c3301');
     expect(D.getTransacoes()).toHaveLength(0);
     expect(D.getTransacoesRaw().some((t) => t.deletedAt)).toBe(true);
+  });
+
+  test('snapshot remoto não substitui contas locais inteiras', () => {
+    const { D } = loadDados();
+    D._apiBaseUrl = () => '';
+    D.upsertConta({
+      id: '3f2504e0-4f89-41d3-9a0c-0305e82c3302',
+      nome: 'Poupança local',
+      tipo: 'poupanca',
+      saldo: 100,
+      moeda: 'BRL',
+      ativo: true,
+      updatedAt: '2026-07-01T00:00:00.000Z',
+    });
+
+    D._mergeSnapshotLocal({
+      accounts: [{
+        id: 'remote-conta-1',
+        name: 'Conta remota',
+        type: 'checking',
+        balance: 500,
+        currency: 'BRL',
+        active: true,
+        updatedAt: '2026-07-09T12:00:00.000Z',
+      }],
+    });
+
+    const contas = D.getContas();
+    expect(contas.some((c) => c.nome === 'Poupança local')).toBe(true);
+    expect(contas.some((c) => c.nome === 'Conta remota')).toBe(true);
+  });
+
+  test('upsertOrcamento enfileira no outbox sync v2', () => {
+    const { D, storage } = loadDados();
+    D.upsertOrcamento('alimentacao', 500);
+    const cfg = D.getConfig();
+    expect(cfg.orcamentos.alimentacao.limite).toBe(500);
+    expect(cfg.orcamentos.alimentacao.id).toBeTruthy();
+    const outbox = JSON.parse(storage.getItem('fp-outbox') || '[]');
+    expect(outbox.some((m) => m.entity === 'budget' && m.op === 'upsert')).toBe(true);
   });
 });

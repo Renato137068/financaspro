@@ -140,6 +140,7 @@ var FINANCE_CONTRACT = {
       banco: ac.institution || '',
       ativo: ac.active !== false,
       dataCriacao: ac.createdAt || new Date().toISOString(),
+      updatedAt: ac.updatedAt || ac.createdAt || new Date().toISOString(),
       _apiId: ac.id,
     };
   },
@@ -179,7 +180,34 @@ var FINANCE_CONTRACT = {
       proximoVencimento: rec.nextDue ? String(rec.nextDue).substring(0, 10) : '',
       ativo: rec.active !== false,
       dataCriacao: rec.createdAt || new Date().toISOString(),
+      updatedAt: rec.updatedAt || rec.createdAt || new Date().toISOString(),
       _apiId: rec.id,
+    };
+  },
+
+  budgetPtToEn: function(budget) {
+    if (!budget || typeof budget !== 'object') return budget;
+    var periodo = budget.periodo || budget.period || 'mensal';
+    var periodEn = periodo === 'mensal' || periodo === 'monthly' ? 'monthly' : periodo;
+    return {
+      category: budget.categoria || budget.category,
+      limit: budget.limite != null ? Number(budget.limite) : Number(budget.limit),
+      period: periodEn,
+      active: budget.ativo !== false && budget.active !== false,
+    };
+  },
+
+  budgetEnToPt: function(budget) {
+    if (!budget || typeof budget !== 'object') return budget;
+    return {
+      id: budget.id,
+      categoria: budget.category,
+      limite: budget.limit != null ? Number(budget.limit) : 0,
+      periodo: budget.period === 'monthly' ? 'mensal' : (budget.period || 'mensal'),
+      definidoEm: budget.createdAt || new Date().toISOString(),
+      updatedAt: budget.updatedAt || budget.createdAt || new Date().toISOString(),
+      ativo: budget.active !== false,
+      _apiId: budget.id,
     };
   },
 };
