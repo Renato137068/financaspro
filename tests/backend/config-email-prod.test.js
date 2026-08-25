@@ -70,7 +70,7 @@ describe('config e-mail / LGPD', () => {
       DATABASE_URL: 'postgresql://u:p@localhost:5432/db',
       JWT_ACCESS_SECRET: 'prod-access-secret-min-32-chars!!',
       JWT_REFRESH_SECRET: 'prod-refresh-secret-min-32-chars!',
-      SMTP_FROM: 'FinancasPro <noreply@example.com>',
+      SMTP_FROM: 'FinançasPro <noreply@example.com>',
     });
     expect(r.status).not.toBe(0);
     expect((r.stderr || '') + (r.stdout || '')).toMatch(/PRIVACY_CONTACT_EMAIL/);

@@ -21,6 +21,9 @@ async function carregarCom({ corsOrigin, isProd = false }) {
     process.env.DATABASE_URL = 'postgresql://x:y@localhost:5432/z';
     process.env.JWT_ACCESS_SECRET = 'a'.repeat(32);
     process.env.JWT_REFRESH_SECRET = 'b'.repeat(32);
+    // config.js exige estes em produção (fail-closed); sem eles o import lança.
+    process.env.SMTP_FROM = 'FinançasPro <no-reply@example.com>';
+    process.env.PRIVACY_CONTACT_EMAIL = 'privacidade@example.com';
   }
   ({ csrfGuard, origemDaRequisicao, autenticadoPorCookie } = await import('../../backend/middleware/csrf.js'));
 }
@@ -46,6 +49,8 @@ const COOKIE_SESSAO = 'fp_access_token=abc123';
 
 afterAll(() => {
   delete process.env.CORS_ORIGIN;
+  delete process.env.SMTP_FROM;
+  delete process.env.PRIVACY_CONTACT_EMAIL;
   process.env.NODE_ENV = 'test';
 });
 

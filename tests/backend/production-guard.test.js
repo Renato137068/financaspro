@@ -4,8 +4,14 @@
 import { jest } from '@jest/globals';
 
 describe('assertProductionReady', () => {
+  // Base mínima para o config.js carregar em produção: além de DATABASE_URL, o
+  // config agora exige SMTP_FROM e PRIVACY_CONTACT_EMAIL (fail-closed). Sem eles
+  // o import do config lança antes do guard rodar. Não são o alvo deste teste —
+  // o guard valida CORS/JWT/Redis — então entram como baseline fixo.
   const prodBase = {
     DATABASE_URL: 'postgresql://test:test@localhost:5432/test',
+    SMTP_FROM: 'FinançasPro <no-reply@example.com>',
+    PRIVACY_CONTACT_EMAIL: 'privacidade@example.com',
   };
 
   // Segredos de fixture precisam ter o tamanho real de um segredo de produção
@@ -29,6 +35,8 @@ describe('assertProductionReady', () => {
     delete process.env.JWT_ACCESS_SECRET;
     delete process.env.JWT_REFRESH_SECRET;
     delete process.env.REDIS_URL;
+    delete process.env.SMTP_FROM;
+    delete process.env.PRIVACY_CONTACT_EMAIL;
   });
 
   test('não falha fora de produção', async () => {
