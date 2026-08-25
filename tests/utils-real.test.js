@@ -129,6 +129,21 @@ describe('UTILS.formatarMoeda', function() {
   });
 });
 
+describe('UTILS.formatarCampoMoeda', function() {
+  test('número é formatado em pt-BR com 2 casas', function() {
+    expect(global.UTILS.formatarCampoMoeda(1234.5)).toBe('1.234,50');
+  });
+  test('string monetária é parseada antes de formatar', function() {
+    expect(global.UTILS.formatarCampoMoeda('1.234,56')).toBe('1.234,56');
+  });
+  test('entrada não numérica vira 0,00', function() {
+    expect(global.UTILS.formatarCampoMoeda('abc')).toBe('0,00');
+  });
+  test('valor não finito é tratado como zero', function() {
+    expect(global.UTILS.formatarCampoMoeda(Infinity)).toBe('0,00');
+  });
+});
+
 describe('UTILS.formatarData / formatarDataHora / relativa', function() {
   test('ISO YYYY-MM-DD vira DD/MM/YYYY sem bug de timezone', function() {
     expect(global.UTILS.formatarData('2026-07-01')).toBe('01/07/2026');
