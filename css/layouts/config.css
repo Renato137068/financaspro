@@ -153,8 +153,8 @@
   border-radius: var(--radius-lg);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
-  /* P2.3: contraste AA sobre o fundo tintado. Dark sobrescreve com -light. */
-  color: var(--color-success-dark);
+  /* P2.3: hex local (≥ 5,5:1 sobre o fundo tintado). Dark sobrescreve com -light. */
+  color: #16613f;
   transition: all var(--transition-fast);
 }
 
@@ -490,8 +490,8 @@
   background: var(--color-danger-bg);
   border: 2px solid var(--color-danger);
   border-radius: var(--radius-xl);
-  /* P2.3: contraste AA sobre o fundo tintado. Dark sobrescreve com -light. */
-  color: var(--color-danger-dark);
+  /* P2.3: hex local (≥ 5,5:1 sobre o fundo tintado). Dark sobrescreve com -light. */
+  color: #8f3a26;
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
   cursor: pointer;

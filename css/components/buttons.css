@@ -155,7 +155,7 @@
 .btn-export-excel {
   background: var(--color-primary-50);
   border-color: var(--color-success);
-  color: var(--color-success-dark);
+  color: var(--color-success-text);
 }
 
 .btn-export-excel:active {
@@ -166,7 +166,7 @@
 .btn-export-pdf {
   background: var(--color-warning-bg);
   border-color: var(--color-warning-on-light);
-  color: var(--color-warning-dark);
+  color: var(--color-warning-text);
 }
 
 .btn-export-pdf:active {

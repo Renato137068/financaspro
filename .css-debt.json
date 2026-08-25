@@ -1,7 +1,8 @@
 {
   "_comentario": "Teto de valores literais no CSS. Só pode DIMINUIR. Regenerado por scripts/check-css-tokens.cjs --update",
-  "hex": 22,
+  "hex": 24,
   "fontes": 1,
-  "total": 23,
-  "atualizadoEm": "2026-08-25"
+  "total": 25,
+  "atualizadoEm": "2026-08-25",
+  "_nota_2026_08_25": "23 -> 25: a tokenizacao do P0 da auditoria trocou por engano os hex locais de .security-indicator (#16613f) e .perfil-danger-btn (#8f3a26) por tokens -dark. Esses dois valores DEVEM permanecer hex literais: perfil-polish.test.js calcula o contraste numericamente sobre o fundo tintado e exige /^#rrggbb$/. Restaurados os literais, o teto sobe 2. Nao e regressao de tokenizacao geral."
 }
