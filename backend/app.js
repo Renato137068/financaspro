@@ -53,12 +53,17 @@ export function createApp() {
       res.setHeader('Access-Control-Allow-Origin',  '*');
       res.setHeader('Access-Control-Allow-Methods', CONFIG.cors.methods.join(','));
       res.setHeader('Access-Control-Allow-Headers', CONFIG.cors.allowedHeaders.join(', '));
-    } else if (origin && origin === allowed) {
-      res.setHeader('Access-Control-Allow-Origin',      origin);
-      res.setHeader('Access-Control-Allow-Methods',     CONFIG.cors.methods.join(','));
-      res.setHeader('Access-Control-Allow-Headers',     CONFIG.cors.allowedHeaders.join(', '));
-      res.setHeader('Access-Control-Allow-Credentials', 'true');
-      res.setHeader('Vary', 'Origin');
+    } else if (origin && allowed) {
+      // CORS_ORIGIN pode listar várias origens separadas por vírgula, para o app
+      // Android (Capacitor → https://localhost) e a web coexistirem numa só var.
+      const permitidas = String(allowed).split(',').map((o) => o.trim()).filter(Boolean);
+      if (permitidas.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin',      origin);
+        res.setHeader('Access-Control-Allow-Methods',     CONFIG.cors.methods.join(','));
+        res.setHeader('Access-Control-Allow-Headers',     CONFIG.cors.allowedHeaders.join(', '));
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+        res.setHeader('Vary', 'Origin');
+      }
     }
 
     if (req.method === 'OPTIONS') return res.sendStatus(204);
