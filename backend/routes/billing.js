@@ -1,6 +1,7 @@
 // backend/routes/billing.js — planos, assinaturas, webhooks Stripe
 import { Router } from 'express';
 import { BillingService } from '../domain/services/billing.service.js';
+import playBillingRouter from './play-billing.js';
 import { authenticate } from '../middleware/auth.js';
 import { resolveOrg, requireOrgRole } from '../middleware/org.js';
 import { z } from 'zod';
@@ -117,5 +118,7 @@ router.get('/:orgId/invoices', validateParams(orgIdParamSchema), resolveOrg, req
     res.json({ data: invoices });
   } catch (err) { next(err); }
 });
+
+router.use('/play', playBillingRouter);
 
 export default router;

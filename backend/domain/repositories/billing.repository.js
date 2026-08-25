@@ -142,4 +142,45 @@ export const BillingRepository = {
       include: { plan: true, org: true },
     });
   },
+
+  /** Entitlement Google Play — reutiliza stripeSubId como chave `play:<token>`. */
+  async findByPlayPurchaseToken(purchaseToken) {
+    const playKey = `play:${String(purchaseToken).slice(0, 120)}`;
+    const sub = await this.findByStripeSubId(playKey);
+    if (!sub) return null;
+    return { orgId: sub.orgId, subscription: sub };
+  },
+
+  async upsertPlayEntitlement(orgId, { productId, purchaseToken, tier, expiresAt }) {
+    const plan = await this.findPlan(tier);
+    if (!plan) {
+      const err = new Error('plano-nao-encontrado');
+      err.status = 404;
+      throw err;
+    }
+    const playKey = `play:${String(purchaseToken).slice(0, 120)}`;
+    const end = expiresAt ? new Date(expiresAt) : new Date(Date.now() + 30 * 86400000);
+    return this.upsertSubscription(orgId, {
+      planId: plan.id,
+      status: 'ACTIVE',
+      billingInterval: String(productId).includes('yearly') ? 'yearly' : 'monthly',
+      stripeSubId: playKey,
+      stripeCustomerId: null,
+      currentPeriodStart: new Date(),
+      currentPeriodEnd: end,
+      cancelAtPeriodEnd: false,
+    });
+  },
+
+  async findPlayEntitlement(orgId) {
+    const sub = await this.findSubscription(orgId);
+    if (!sub || !sub.stripeSubId || !String(sub.stripeSubId).startsWith('play:')) return null;
+    return {
+      orgId,
+      tier: sub.plan?.tier || null,
+      productId: sub.billingInterval,
+      expiresAt: sub.currentPeriodEnd,
+      source: 'google_play',
+    };
+  },
 };

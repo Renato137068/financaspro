@@ -101,6 +101,7 @@ const INIT_BILLING = {
       if (action === 'billing-interval') self._setInterval(btn.dataset.interval, ov);
       if (action === 'billing-assinar') self._assinar(btn.dataset.tier, ov);
       if (action === 'billing-portal') self._portal();
+      if (action === 'billing-restaurar') self._restaurarPlay(ov);
       if (action === 'billing-cancelar') self._cancelar(ov);
       if (action === 'billing-login') self._abrirLogin();
     });
@@ -227,8 +228,13 @@ const INIT_BILLING = {
 
     var sub = BILLING._cache.subscription;
     var hasStripe = sub && sub.stripeCustomerId;
-    var html = '<p class="billing-note">Pagamento seguro via Stripe Checkout. Trial de 14 dias no Pro.</p>';
-    if (hasStripe) {
+    var usePlay = typeof PLAY_BILLING !== 'undefined' && PLAY_BILLING.isAvailable();
+    var html = usePlay
+      ? '<p class="billing-note">Pagamento via Google Play. Trial de 14 dias no Pro.</p>'
+      : '<p class="billing-note">Pagamento seguro via Stripe Checkout. Trial de 14 dias no Pro.</p>';
+    if (usePlay) {
+      html += '<button type="button" class="btn-secundario" data-action="billing-restaurar">Restaurar compras</button>';
+    } else if (hasStripe) {
       html += '<button type="button" class="btn-secundario" data-action="billing-portal">Gerenciar pagamento</button>';
     }
     if (sub && sub.plan && sub.plan.tier !== 'FREE' && !sub.cancelAtPeriodEnd) {
@@ -251,19 +257,48 @@ const INIT_BILLING = {
       btn.textContent = 'Processando…';
     }
 
-    BILLING.checkoutOrSubscribe(tier, this._interval).then(function(result) {
-      if (result && result.redirected) return;
+    var onSuccess = function() {
       UTILS.mostrarToast('Assinatura atualizada', 'success');
       self._renderPlans(ov);
       self._renderFooter(ov);
       self.refreshPlanoCard();
       if (typeof INIT_CONFIG !== 'undefined' && INIT_CONFIG.refreshPerfil) INIT_CONFIG.refreshPerfil();
-    }).catch(function(err) {
+    };
+
+    var onError = function(err) {
       UTILS.mostrarToast(err.message || 'Falha ao assinar', 'error');
       if (btn) {
         btn.disabled = false;
         btn.textContent = 'Assinar';
       }
+    };
+
+    if (typeof PLAY_BILLING !== 'undefined' && PLAY_BILLING.isAvailable()) {
+      var productId = PLAY_BILLING.productIdForTier(tier, this._interval);
+      if (!productId) {
+        onError(new Error('Plano indisponível no Google Play'));
+        return;
+      }
+      PLAY_BILLING.purchase(productId).then(onSuccess).catch(onError);
+      return;
+    }
+
+    BILLING.checkoutOrSubscribe(tier, this._interval).then(function(result) {
+      if (result && result.redirected) return;
+      onSuccess();
+    }).catch(onError);
+  },
+
+  _restaurarPlay: function(ov) {
+    var self = this;
+    if (typeof PLAY_BILLING === 'undefined' || !PLAY_BILLING.isAvailable()) return;
+    PLAY_BILLING.restore().then(function() {
+      UTILS.mostrarToast('Compras restauradas', 'success');
+      self._renderPlans(ov);
+      self._renderFooter(ov);
+      self.refreshPlanoCard();
+    }).catch(function(err) {
+      UTILS.mostrarToast(err.message || 'Nada para restaurar', 'info');
     });
   },
 

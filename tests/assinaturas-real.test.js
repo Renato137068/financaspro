@@ -221,7 +221,8 @@ describe('UTILS.parseMoeda vs parseMoedaEstrita', function() {
 
   test('estrita recusa número com texto colado', function() {
     expect(Number.isNaN(global.UTILS.parseMoedaEstrita('39,90 reais'))).toBe(true);
-    expect(Number.isNaN(global.UTILS.parseMoedaEstrita('R$ 39,90'))).toBe(true);
+    // Prefixo R$ é aceito (usuário cola do extrato bancário).
+    expect(global.UTILS.parseMoedaEstrita('R$ 39,90')).toBe(39.9);
   });
 
   test('estrita preserva o sinal negativo', function() {
