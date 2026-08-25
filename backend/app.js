@@ -78,7 +78,12 @@ export function createApp() {
 
   app.use(addTraceContext);
   app.use(requestLogger);
-  app.use(globalLimiter);
+  // Rate limit só na API. Aplicá-lo a TUDO fazia os assets estáticos gastarem o
+  // orçamento por IP: uma única carga da página busca dezenas de arquivos (e, em
+  // dev, o app não-bundleado são ~100 scripts), estourando o limite de 60/janela
+  // e devolvendo 429 no meio do carregamento — o app nem inicializava. Assets e
+  // /health não precisam de rate limit; a API e o webhook, sim.
+  app.use('/api', globalLimiter);
 
   app.post(
     '/api/v1/billing/webhook',
