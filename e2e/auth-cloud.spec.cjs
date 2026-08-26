@@ -57,17 +57,29 @@ test.describe('Auth cloud', function() {
   test('registro e login via UI', async function({ page }) {
     var email = 'e2e-' + Date.now() + '@financaspro.test';
     await page.goto(BASE + '/');
+
+    // O app é local-first: o overlay de login NÃO abre no boot — só sob demanda
+    // (ex.: ação premium chama setupAuthUI). Esperamos o app subir em modo cloud
+    // (_apiAtiva) e abrimos o overlay pela mesma função pública que a UI usa.
     await page.waitForFunction(function() {
-      return typeof window.DADOS !== 'undefined';
+      return typeof window.DADOS !== 'undefined'
+        && typeof window.setupAuthUI === 'function'
+        && typeof window.DADOS._apiAtiva === 'function'
+        && window.DADOS._apiAtiva();
     }, { timeout: 20000 });
+    await page.evaluate(function() { window.setupAuthUI(); });
 
     await expect(page.locator('#auth-overlay')).toBeVisible({ timeout: 10000 });
 
+    // UI atual: abas Entrar / Criar conta. Troca para o registro e preenche o
+    // formulário #auth-register-* (a UI antiga usava #auth-name/#auth-email).
     await page.locator('#auth-tab-register').click();
-    await page.fill('#auth-name', 'E2E User');
-    await page.fill('#auth-email', email);
-    await page.fill('#auth-password', 'SenhaForte123!');
-    await page.locator('#auth-submit').click();
+    await page.fill('#auth-register-name', 'E2E User');
+    await page.fill('#auth-register-email', email);
+    await page.fill('#auth-register-password', 'SenhaForte123!');
+    await page.locator('#auth-register-form button[type="submit"]').click();
+
+    // Registro bem-sucedido encadeia login e fecha o overlay (authController).
     await expect(page.locator('#auth-overlay')).toBeHidden({ timeout: 20000 });
   });
 });
