@@ -84,6 +84,10 @@ const INIT_CONFIG = {
     if (chkPin) chkPin.checked = !!config.pinAtivo;
     var pinStatus = document.getElementById('perfil-pin-status');
     if (pinStatus) pinStatus.textContent = config.pinAtivo ? 'PIN ativo' : 'PIN desativado';
+    // Verde = proteção ativa. Com o PIN desativado o selo vira neutro: mostrar
+    // uma proteção DESLIGADA em verde lê como "tudo certo", que é o oposto.
+    var pinPill = document.getElementById('security-pin-status');
+    if (pinPill) pinPill.classList.toggle('security-indicator--neutro', !config.pinAtivo);
     this._refreshCryptoToggle();
     this._updateAppFooter();
     this._updateLembreteStatus();

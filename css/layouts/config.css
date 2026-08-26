@@ -167,6 +167,14 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* Estado neutro: proteção desligada (ex.: PIN desativado). Cinza, não verde —
+   verde é para o que está de fato protegido. */
+.security-indicator--neutro {
+  background: var(--color-gray-100);
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
+}
+
 /* ── SEÇÕES ───────────────────────────────────────────────── */
 
 .perfil-section {
@@ -1005,6 +1013,13 @@
   background: rgba(47, 156, 109, 0.12);
   border-color: rgba(47, 156, 109, 0.3);
   color: var(--color-success-light);
+}
+
+/* Neutro no escuro: proteção desligada não usa o verde. */
+[data-theme="dark"] .security-indicator--neutro {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
 }
 
 [data-theme="dark"] .perfil-card {

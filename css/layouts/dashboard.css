@@ -276,6 +276,34 @@
   gap: var(--space-2);
 }
 
+/* Item do mini-limites do painel: nome, valores e selo de % na mesma linha (com
+   espaço entre eles — antes saíam colados, "AlimentaçãoR$ 248,90"), barra
+   embaixo. As classes não tinham estilo próprio. */
+.orcamento-item-resumo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.orcamento-info {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.orcamento-nome {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.orcamento-valores {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  margin-right: auto;
+}
+
 /* ── Botão CTA principal do dashboard ──────────────────────── */
 
 #aba-resumo > .btn-primario {

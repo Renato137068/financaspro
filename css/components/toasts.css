@@ -7,7 +7,10 @@
 
 .toast {
   position: fixed;
-  bottom: 110px;
+  /* Folga sobre a barra inferior: o FAB "Novo" sobe ~16px acima da nav, e o
+     toast em 110px encostava nele. 124px + safe-area libera o FAB e respeita o
+     home indicator do iOS (que faltava). */
+  bottom: calc(124px + env(safe-area-inset-bottom, 0px));
   left: var(--space-5);
   right: var(--space-5);
   padding: var(--space-4);
