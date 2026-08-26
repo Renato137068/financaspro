@@ -489,179 +489,25 @@ button i[data-lucide] {
 }
 
 /* ============================================================
-   BOTÕES (Componente Base)
+   COMPONENTES CANÔNICOS — onde eles moram de verdade
+   ============================================================
+   A família de COMPONENTES .fp-btn / .fp-card / .fp-input vivia aqui como
+   camada "oficial", mas tinha ZERO uso no app e divergia da real (raio 16 vs
+   8, borda 2px vs 1px). Foi removida para não ser armadilha: um componente
+   novo escrito com .fp-btn nasceria fora do padrão que a tela de fato usa.
+
+   Os componentes canônicos são os que o app realmente usa, definidos por
+   domínio ao lado deste arquivo:
+     botões  → css/components/buttons.css   (.btn-primario, .btn-secundario, …)
+     cards   → css/components/cards.css      (.card, .kpi-card, .dashboard-section)
+     inputs  → css/components/forms.css      (.form-group input/select/textarea)
+     nav     → css/components/navigation.css
+     toasts  → css/components/toasts.css
+   Todos consomem os tokens deste arquivo (:root acima), que segue sendo a
+   fonte única de verdade dos tokens. Os UTILITÁRIOS .fp-* (texto, espaçamento,
+   layout) abaixo ficam: mapeiam tokens, não divergem de nada, e há um guard
+   de acessibilidade sobre .fp-text-*.
    ============================================================ */
-
-/* --- Base --- */
-.fp-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
-  font-family: var(--font-family-sans);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
-  line-height: var(--line-height-tight);
-  text-decoration: none;
-  border: none;
-  border-radius: var(--radius-lg);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  white-space: nowrap;
-}
-
-.fp-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* --- Variantes --- */
-
-/* Primary */
-.fp-btn--primary {
-  background: var(--color-primary-500);
-  color: var(--color-text-inverse);
-  box-shadow: var(--shadow-primary);
-}
-
-.fp-btn--primary:hover:not(:disabled) {
-  background: var(--color-primary-600);
-  transform: translateY(-1px);
-  box-shadow: 0 12px 32px rgba(18, 105, 78, 0.35);
-}
-
-.fp-btn--primary:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-/* Secondary */
-.fp-btn--secondary {
-  background: var(--color-gray-100);
-  color: var(--color-gray-700);
-}
-
-.fp-btn--secondary:hover:not(:disabled) {
-  background: var(--color-gray-200);
-}
-
-/* Outline */
-.fp-btn--outline {
-  background: transparent;
-  color: var(--color-primary-text);
-  border: 2px solid var(--color-primary-500);
-}
-
-.fp-btn--outline:hover:not(:disabled) {
-  background: var(--color-primary-50);
-}
-
-/* Ghost */
-.fp-btn--ghost {
-  background: transparent;
-  color: var(--color-gray-600);
-}
-
-.fp-btn--ghost:hover:not(:disabled) {
-  background: var(--color-gray-100);
-  color: var(--color-gray-900);
-}
-
-/* Danger */
-.fp-btn--danger {
-  background: var(--color-danger-on-light);
-  color: var(--color-text-inverse);
-}
-
-.fp-btn--danger:hover:not(:disabled) {
-  background: var(--color-danger-dark);
-}
-
-/* --- Tamanhos --- */
-.fp-btn--sm {
-  padding: var(--space-2) var(--space-3);
-  font-size: var(--font-size-xs);
-}
-
-.fp-btn--lg {
-  padding: var(--space-4) var(--space-6);
-  font-size: var(--font-size-base);
-}
-
-/* --- Icon Button --- */
-.fp-btn--icon {
-  padding: var(--space-2);
-  border-radius: var(--radius-md);
-}
-
-/* ============================================================
-   CARDS (Componente Base)
-   ============================================================ */
-
-.fp-card {
-  background: var(--color-bg-card);
-  border-radius: var(--radius-xl);
-  padding: var(--space-4);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--color-border-light);
-}
-
-.fp-card--hover:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
-  transition: all var(--transition-fast);
-}
-
-.fp-card--padded-sm { padding: var(--space-3); }
-.fp-card--padded-lg { padding: var(--space-6); }
-
-/* ============================================================
-   FORMULÁRIOS (Componentes Base)
-   ============================================================ */
-
-.fp-input {
-  width: 100%;
-  padding: var(--space-3) var(--space-4);
-  font-family: var(--font-family-sans);
-  font-size: var(--font-size-base);
-  line-height: var(--line-height-normal);
-  color: var(--color-text-primary);
-  background: var(--color-bg-card);
-  border: 2px solid var(--color-gray-200);
-  border-radius: var(--radius-lg);
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-}
-
-.fp-input:focus {
-  outline: none;
-  border-color: var(--color-primary-500);
-  box-shadow: 0 0 0 3px rgba(18, 105, 78, 0.1);
-}
-
-.fp-input::placeholder {
-  color: var(--color-text-muted);
-}
-
-.fp-input:disabled {
-  background: var(--color-gray-100);
-  cursor: not-allowed;
-}
-
-.fp-label {
-  display: block;
-  margin-bottom: var(--space-2);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-secondary);
-}
-
-.fp-form-group {
-  margin-bottom: var(--space-4);
-}
-
-.fp-form-group:last-child {
-  margin-bottom: 0;
-}
 
 /* ============================================================
    TIPOGRAFIA UTILITÁRIA
@@ -771,26 +617,6 @@ button i[data-lucide] {
      a segunda família de sombras que a escala veio eliminar. */
   --elevacao-1: 0 1px 2px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.32);
   --elevacao-2: 0 2px 8px rgba(0, 0, 0, 0.34), 0 12px 32px rgba(0, 0, 0, 0.44);
-}
-
-[data-theme="dark"] .fp-card {
-  border-color: var(--color-border);
-  background: var(--color-bg-card);
-}
-
-[data-theme="dark"] .fp-input {
-  background: var(--color-bg-dark-elevated);
-  border-color: var(--color-border);
-  color: var(--color-text-primary);
-}
-
-[data-theme="dark"] .fp-btn--secondary {
-  background: var(--color-gray-700);
-  color: var(--color-text-primary);
-}
-
-[data-theme="dark"] .fp-btn--ghost:hover {
-  background: var(--color-gray-700);
 }
 
 /* ══════════════════════════════════════════════════════════════
