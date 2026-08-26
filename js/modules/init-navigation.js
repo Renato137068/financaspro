@@ -428,6 +428,18 @@ function mudarAba(nomeAba) {
     ariaLive.announce('Aba ' + (tabLabels[nomeAba] || nomeAba));
   }
 
+  // Reset de rolagem: trocar de aba sempre começa no topo (auditoria UI/UX P1-01)
+  try {
+    if (typeof window !== 'undefined' && window.scrollTo) {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    }
+    var mainScroll = document.querySelector('.app-main, main, #app-content, .conteudo-principal');
+    if (mainScroll) mainScroll.scrollTop = 0;
+    if (alvo) alvo.scrollTop = 0;
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+  } catch (scrollErr) { /* noop */ }
+
   // Renderers opcionais
   setTimeout(function() {
     try {

@@ -51,6 +51,20 @@ describe('Fase 9 — feedback de sincronização', () => {
     expect(ind).toContain('Salvando');
     expect(ind).toContain('conflito');
     expect(ind).toContain('Falha ao sincronizar');
+    expect(ind).toContain('sync-indicator-dismiss');
+    expect(ind).toContain('fp-sync-indicator-dismissed');
+  });
+
+  test('mudarAba reseta rolagem ao trocar de aba', () => {
+    const nav = fs.readFileSync(path.join(root, 'js/modules/init-navigation.js'), 'utf8');
+    expect(nav).toMatch(/scrollTo\s*\(/);
+    expect(nav).toContain('scrollTop = 0');
+  });
+
+  test('convite de onboarding usa role status e etapa explícita', () => {
+    const onb = fs.readFileSync(path.join(root, 'js/onboarding.js'), 'utf8');
+    expect(onb).toContain("role', 'status'");
+    expect(onb).toContain('Etapa 1 de 2');
   });
 });
 

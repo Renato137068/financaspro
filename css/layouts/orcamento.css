@@ -206,6 +206,16 @@
   letter-spacing: 0.5px;
 }
 
+.orc-kpi-hint {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  line-height: 1.35;
+}
+
 .orc-kpi-value {
   font-size: var(--font-size-4xl);
   font-weight: 800;
@@ -960,6 +970,11 @@
   margin: 0 auto;
 }
 
+.orc-categorias-empty .btn-primario {
+  margin-top: var(--space-4);
+  min-height: 44px;
+}
+
 .orc-insight {
   display: flex;
   align-items: flex-start;
@@ -1222,8 +1237,23 @@
 @media (max-width: 768px) {
   /* Header */
   .orc-header {
-    padding: var(--space-4);
-    border-radius: var(--radius-2xl);
+    padding: var(--space-3);
+    border-radius: var(--radius-xl);
+    margin: var(--space-3) 0;
+    gap: var(--space-3);
+  }
+
+  [id="aba-orcamento"] > .perfil-header-compact {
+    padding: var(--space-3);
+  }
+
+  [id="aba-orcamento"] > .perfil-header-compact .perfil-card-icon-wrapper {
+    width: 40px;
+    height: 40px;
+  }
+
+  [id="aba-orcamento"] > .perfil-header-compact .perfil-nome {
+    font-size: var(--font-size-lg);
   }
 
   .orc-kpi-main {

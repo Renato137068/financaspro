@@ -1,15 +1,16 @@
 /**
- * sync-indicator.js — badge visível de estado de sincronização (#4 da auditoria).
+ * sync-indicator.js — badge de estado de persistência/sincronização.
  *
- * Mostra ao usuário se os dados estão salvos/sincronizados — a confiança é o
- * ativo nº 1 de um app financeiro. Lê o estado de APP_STORE.sync quando
- * disponível e cai para navigator.onLine quando a API está desativada
- * (modo 100% local). Defensivo: nunca quebra se o store não existir.
- *
- * Estados: salvo no servidor · salvando · sincronizando · pendente · falha · conflito · offline · local
+ * Local: discreto no topo (não cobre nav/cards). Transient (salvando/sync):
+ * toast curto. Falha/pendente: badge com dismiss. "Salvo neste dispositivo"
+ * pode ser dispensado (sessionStorage) e reaparece só em mudança de estado.
  */
 (function() {
   'use strict';
+
+  var DISMISS_KEY = 'fp-sync-indicator-dismissed';
+  var _lastCls = '';
+  var _toastTimer = null;
 
   function apiAtiva() {
     try { return typeof DADOS !== 'undefined' && DADOS._apiAtiva && DADOS._apiAtiva(); }
@@ -52,15 +53,6 @@
     return 'há ' + Math.floor(h / 24) + 'd';
   }
 
-  /**
-   * O que o selo explica quando alguém toca nele.
-   *
-   * O diferencial deste app é funcionar inteiro sem servidor, e até aqui isso
-   * só era dito na ficha da loja e na primeira tela do onboarding — quem já
-   * usa o app nunca mais lia. Este selo já estava no rodapé de todas as telas
-   * dizendo "Salvo neste dispositivo"; faltava poder perguntar o que aquilo
-   * significa. É o lugar mais barato de colocar a promessa onde ela é vista.
-   */
   var EXPLICACAO = {
     local: {
       titulo: 'Onde ficam os seus dados',
@@ -82,9 +74,6 @@
   function explicar(cls) {
     var info = (cls === 'local') ? EXPLICACAO.local : EXPLICACAO.nuvem;
     if (typeof fpAlert !== 'function') return;
-    // O título vai como `title` (o modal o coloca num h3 só para leitor de
-    // tela) e também visível aqui — por isso a versão visível é aria-hidden,
-    // senão o leitor anuncia duas vezes.
     fpAlert(
       '<p aria-hidden="true" style="font-weight:700;margin:0 0 10px;text-align:left">'
       + info.titulo + '</p>'
@@ -94,21 +83,38 @@
   }
 
   function classificar(st) {
-    if (!st.api) return { cls: 'local', label: 'Salvo neste dispositivo' };
+    if (!st.api) return { cls: 'local', label: 'Salvo neste dispositivo', persistente: true };
     if (st.conflicts && st.conflicts.length) {
-      return { cls: 'conflito', label: 'Conflito de sync — revise seus dados' };
+      return { cls: 'conflito', label: 'Conflito de sync — revise seus dados', persistente: true };
     }
-    if (!st.online) return { cls: 'offline', label: 'Offline — alterações pendentes' };
+    if (!st.online) return { cls: 'offline', label: 'Offline — alterações pendentes', persistente: true };
     if (st.lastError) {
-      return { cls: 'falha', label: 'Falha ao sincronizar — tentaremos de novo' };
+      return { cls: 'falha', label: 'Falha ao sincronizar — tentaremos de novo', persistente: true };
     }
-    if (st.saving) return { cls: 'salvando', label: 'Salvando…' };
-    if (st.flushing || st.pending) return { cls: 'sincronizando', label: 'Sincronizando…' };
+    if (st.saving) return { cls: 'salvando', label: 'Salvando…', toast: true };
+    if (st.flushing || st.pending) return { cls: 'sincronizando', label: 'Sincronizando…', toast: true };
     if (st.outboxCount > 0) {
-      return { cls: 'pendente', label: st.outboxCount + ' alteração(ões) aguardando envio' };
+      return { cls: 'pendente', label: st.outboxCount + ' alteração(ões) aguardando envio', persistente: true };
     }
     var quando = textoRelativo(st.lastSyncAt);
-    return { cls: 'ok', label: 'Salvo no servidor' + (quando ? ' · ' + quando : '') };
+    return { cls: 'ok', label: 'Salvo no servidor' + (quando ? ' · ' + quando : ''), toast: true, ephemeral: true };
+  }
+
+  function foiDispensado(cls) {
+    try {
+      return sessionStorage.getItem(DISMISS_KEY) === cls;
+    } catch (e) { return false; }
+  }
+
+  function marcarDispensado(cls) {
+    try { sessionStorage.setItem(DISMISS_KEY, cls); } catch (e) { /* noop */ }
+  }
+
+  function limparDispensaSeMudou(cls) {
+    try {
+      var prev = sessionStorage.getItem(DISMISS_KEY);
+      if (prev && prev !== cls) sessionStorage.removeItem(DISMISS_KEY);
+    } catch (e) { /* noop */ }
   }
 
   var el = null;
@@ -116,20 +122,53 @@
     if (el && document.body.contains(el)) return el;
     el = document.getElementById('sync-indicator');
     if (!el) {
-      // É um <button> de verdade, não uma div com onclick: precisa receber foco
-      // pelo teclado e ser anunciado como acionável pelo leitor de tela.
-      el = document.createElement('button');
-      el.type = 'button';
+      el = document.createElement('div');
       el.id = 'sync-indicator';
       el.className = 'sync-indicator';
+      el.setAttribute('role', 'status');
       el.setAttribute('aria-live', 'polite');
-      el.innerHTML = '<span class="sync-dot" aria-hidden="true"></span><span class="sync-text"></span>';
-      el.addEventListener('click', function() {
+      el.innerHTML =
+        '<button type="button" class="sync-indicator-main" id="sync-indicator-main">' +
+          '<span class="sync-dot" aria-hidden="true"></span>' +
+          '<span class="sync-text"></span>' +
+        '</button>' +
+        '<button type="button" class="sync-indicator-dismiss" id="sync-indicator-dismiss" aria-label="Dispensar aviso">×</button>';
+      document.body.appendChild(el);
+
+      el.querySelector('#sync-indicator-main').addEventListener('click', function() {
         explicar(el.getAttribute('data-estado') || 'local');
       });
-      document.body.appendChild(el);
+      el.querySelector('#sync-indicator-dismiss').addEventListener('click', function(e) {
+        e.stopPropagation();
+        var cls = el.getAttribute('data-estado') || 'local';
+        marcarDispensado(cls);
+        el.hidden = true;
+        el.classList.add('sync-indicator--hidden');
+        if (typeof ariaLive !== 'undefined' && ariaLive.announce) {
+          ariaLive.announce('Aviso de persistência dispensado');
+        }
+      });
     }
     return el;
+  }
+
+  function mostrarToastCurto(label) {
+    if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+      UTILS.mostrarToast(label, 'info');
+      return;
+    }
+    // Fallback mínimo se toast não existir
+    var node = garantirElemento();
+    node.hidden = false;
+    node.classList.remove('sync-indicator--hidden');
+    node.classList.add('sync-indicator--toast');
+    var txt = node.querySelector('.sync-text');
+    if (txt) txt.textContent = label;
+    clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(function() {
+      node.classList.remove('sync-indicator--toast');
+      node.hidden = true;
+    }, 2800);
   }
 
   function render() {
@@ -137,32 +176,63 @@
       var node = garantirElemento();
       var st = lerStatus();
       var info = classificar(st);
+      limparDispensaSeMudou(info.cls);
+
       node.className = 'sync-indicator sync-' + info.cls;
       node.setAttribute('data-estado', info.cls);
       var txt = node.querySelector('.sync-text');
       if (txt) txt.textContent = info.label;
-      node.setAttribute('title', info.label + ' — toque para entender');
-      node.setAttribute('aria-label', info.label + '. Toque para saber onde ficam os seus dados.');
+      var main = node.querySelector('#sync-indicator-main');
+      if (main) {
+        main.setAttribute('title', info.label + ' — toque para entender');
+        main.setAttribute('aria-label', info.label + '. Toque para saber onde ficam os seus dados.');
+      }
+
+      // Toast efêmero para salvando/ok — não ocupa a tela o tempo todo
+      if (info.toast && info.cls !== _lastCls) {
+        if (info.ephemeral || info.cls === 'salvando' || info.cls === 'sincronizando') {
+          mostrarToastCurto(info.label);
+          _lastCls = info.cls;
+          if (info.ephemeral) {
+            node.hidden = true;
+            node.classList.add('sync-indicator--hidden');
+            return;
+          }
+        }
+      }
+      _lastCls = info.cls;
+
+      if (foiDispensado(info.cls) && info.persistente && info.cls === 'local') {
+        node.hidden = true;
+        node.classList.add('sync-indicator--hidden');
+        return;
+      }
+
+      // Estados que precisam atenção ficam no topo; local fica discreto e dispensável
+      node.hidden = false;
+      node.classList.remove('sync-indicator--hidden', 'sync-indicator--toast');
+      if (info.cls === 'local' || info.cls === 'ok') {
+        node.classList.add('sync-indicator--subtle');
+      } else {
+        node.classList.remove('sync-indicator--subtle');
+      }
     } catch (e) { /* nunca quebra o app */ }
   }
 
   function iniciar() {
     render();
-    // Atualiza por eventos de rede.
     if (typeof window !== 'undefined' && window.addEventListener) {
       window.addEventListener('online', render);
       window.addEventListener('offline', render);
     }
-    // Reage a mudanças no store, se suportado.
     try {
       if (typeof APP_STORE !== 'undefined' && APP_STORE.subscribe) {
         APP_STORE.subscribe('sync', render);
       }
     } catch (e) { /* segue com polling */ }
-    // Rede de segurança: revalida periodicamente (barato) — mas só com a aba
-    // visível. Era o timer mais frequente do app (15s) rodando em segundo
-    // plano para atualizar um ícone que ninguém estava olhando.
-    UTILS.intervaloVisivel(render, 15000);
+    if (typeof UTILS !== 'undefined' && UTILS.intervaloVisivel) {
+      UTILS.intervaloVisivel(render, 15000);
+    }
   }
 
   if (typeof document !== 'undefined') {

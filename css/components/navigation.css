@@ -48,6 +48,16 @@
   border-top-color: var(--color-primary-500);
 }
 
+.nav-btn:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+  z-index: 1;
+}
+
+.nav-btn.ativo .nav-emoji {
+  transform: translateY(-1px);
+}
+
 .nav-emoji {
   font-size: var(--font-size-xl);
   position: relative;

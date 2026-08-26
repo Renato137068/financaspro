@@ -69,10 +69,13 @@ const INIT_ASSINATURAS = {
       html += '</div>';
     }
 
+    var headerBtn = document.querySelector('#assinaturas-section [data-action="assinatura-nova"]');
     if (lista.length === 0) {
+      if (headerBtn) headerBtn.hidden = true;
       html += '<div class="sub-empty"><p>Nenhuma assinatura cadastrada.</p>' +
         '<button type="button" class="btn-primario" data-action="assinatura-nova">Adicionar assinatura</button></div>';
     } else {
+      if (headerBtn) headerBtn.hidden = false;
       html += '<div class="sub-list">' + lista.map(function(a) {
         return INIT_ASSINATURAS._renderItem(a);
       }).join('') + '</div>';

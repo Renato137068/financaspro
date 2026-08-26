@@ -204,29 +204,57 @@ textarea:focus-visible {
    Indicador de sincronização (#4) + Toast com ação Desfazer (#12)
    Adicionado pela auditoria de melhorias.
    ============================================================ */
+/* Topo seguro: não cobre nav inferior, CTAs nem cards do meio da tela. */
 .sync-indicator{
-  position:fixed; z-index:1200; left:50%; transform:translateX(-50%);
-  bottom:calc(env(safe-area-inset-bottom, 0px) + 74px);
-  display:inline-flex; align-items:center; gap:8px;
-  padding:6px 12px; border-radius:var(--radius-full);
-  font-size:var(--font-size-xs); font-weight:600; line-height:1;
-  background:rgba(255,255,255,.95); color:var(--color-text-primary);
+  position:fixed; z-index:1100;
+  top:calc(env(safe-area-inset-top, 0px) + 10px);
+  right:12px; left:auto; transform:none;
+  display:inline-flex; align-items:center; gap:2px;
+  max-width:min(320px, calc(100vw - 24px));
+  padding:0; border-radius:var(--radius-full);
+  font-size:var(--font-size-xs); font-weight:600; line-height:1.2;
+  background:var(--color-bg-card); color:var(--color-text-primary);
   border:1px solid var(--color-border); box-shadow: var(--elevacao-1);
   backdrop-filter:blur(6px); user-select:none;
-  opacity:.96; transition:opacity .25s ease, box-shadow .18s ease;
-  /* Deixou de ser decoração: é o botão que explica onde os dados ficam. */
-  cursor:pointer; font-family:inherit; text-align:left;
+  opacity:.94; transition:opacity .25s ease, box-shadow .18s ease, transform .2s ease;
+  font-family:inherit;
 }
-.sync-indicator:hover{ opacity:1; box-shadow: var(--elevacao-2); }
-.sync-indicator:focus-visible{
-  outline:none; box-shadow: 0 0 0 3px var(--color-overlay-md), var(--elevacao-1);
+.sync-indicator--hidden,
+.sync-indicator[hidden]{ display:none !important; }
+.sync-indicator--subtle{ opacity:.88; }
+.sync-indicator--toast{
+  top:auto; bottom:calc(env(safe-area-inset-bottom, 0px) + 80px);
+  left:50%; right:auto; transform:translateX(-50%);
 }
-@media (min-width:900px){ .sync-indicator{ bottom:18px; left:auto; right:18px; transform:none; } }
+.sync-indicator-main{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:7px 10px 7px 12px; border:0; background:transparent;
+  color:inherit; cursor:pointer; font:inherit; text-align:left;
+  border-radius:var(--radius-full); min-height:36px; max-width:100%;
+}
+.sync-indicator-main .sync-text{
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.sync-indicator-dismiss{
+  flex:0 0 auto; width:32px; height:32px; margin-right:4px;
+  border:0; border-radius:var(--radius-full); background:transparent;
+  color:var(--color-text-muted); cursor:pointer; font-size:18px; line-height:1;
+}
+.sync-indicator-dismiss:hover,
+.sync-indicator-dismiss:focus-visible{ color:var(--color-text-primary); background:var(--color-bg-primary); }
+.sync-indicator-main:hover{ opacity:1; }
+.sync-indicator-main:focus-visible{
+  outline:none; box-shadow: 0 0 0 3px var(--color-overlay-md);
+}
+@media (min-width:900px){
+  .sync-indicator{ top:16px; right:18px; }
+  .sync-indicator--toast{ bottom:24px; }
+}
 .sync-indicator .sync-dot{ width:8px; height:8px; border-radius:50%; background:var(--color-text-muted); flex:0 0 auto; }
 .sync-ok .sync-dot{ background:var(--color-success-on-light); }
 .sync-sincronizando .sync-dot{ background:var(--color-warning-on-light); animation:sync-pulse 1s ease-in-out infinite; }
-.sync-salvando .sync-dot{ background:#3c86a8; animation:sync-pulse 1s ease-in-out infinite; }
-.sync-pendente .sync-dot{ background:#9a6206; }
+.sync-salvando .sync-dot{ background:var(--color-info); animation:sync-pulse 1s ease-in-out infinite; }
+.sync-pendente .sync-dot{ background:var(--color-warning-on-light); }
 .sync-falha .sync-dot{ background:var(--color-danger-on-light); }
 .sync-conflito .sync-dot{ background:var(--color-info-on-light); }
 .sync-offline .sync-dot{ background:var(--color-warning-on-light); }
