@@ -23,26 +23,34 @@
   padding: 0;
 }
 
+/* Bloco do valor dentro do form: era um card com borda dentro do card do
+   formulário (mesmo fundo branco) — dois contêineres empilhados que só somavam
+   peso e uma emenda visual, sem elevar nada. Sem a borda, vira uma região do
+   próprio form; o valor já se destaca pelo tamanho do texto e pelo seletor
+   Receita/Despesa acima. As regras de border-color por tipo (aqui e no
+   dark-mode) ficam inertes sem borda. */
 .valor-hero {
   text-align: center;
-  padding: 28px var(--space-5) var(--space-6);
-  margin-bottom: var(--space-6);
+  padding: var(--space-5) var(--space-4) var(--space-6);
+  margin-bottom: var(--space-5);
   background: var(--color-bg-card);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--color-border-light);
-  box-shadow: var(--shadow-superficie);
+  border: none;
+  box-shadow: none;
   animation: slideUp var(--transition-normal);
   transition: background var(--transition-normal), border-color var(--transition-normal);
 }
 
+/* Sem borda: o tipo é sinalizado pelo seletor Receita/Despesa, não por uma
+   borda no bloco do valor. O fundo continua opaco e igual ao do formulário
+   (sem borda, não vira card nem emenda) — e mantém o contraste do valor que os
+   testes de a11y garantem. */
 .valor-hero.tipo-receita {
   background: var(--color-bg-card);
-  border-color: var(--color-primary-200);
 }
 
 .valor-hero.tipo-despesa {
   background: var(--color-bg-card);
-  border-color: var(--color-border-light);
 }
 
 #aba-novo .formulario {

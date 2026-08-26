@@ -461,9 +461,10 @@
    FORM NOVO — Aba de lançamento
    ═══════════════════════════════════════════════════════════ */
 
-/* Fundo OPACO: rgba translúcido não vencia a cascata contra
-   form-novo.css (.valor-hero { background: var(--color-bg-card) })
-   e deixava o cartão branco com texto claro (contraste ~1,1:1). */
+/* Fundo OPACO e igual ao do formulário nos dois temas. Sem a borda (removida em
+   form-novo.css) ele deixa de parecer um card dentro do card, mas o fundo
+   precisa continuar opaco: translúcido não vence a cascata e deixaria o texto
+   claro sobre superfície clara (contraste ~1,1:1). Há teste de a11y garantindo. */
 [data-theme="dark"] .valor-hero,
 [data-theme="dark"] .valor-hero.tipo-despesa,
 [data-theme="dark"] .valor-hero.tipo-receita {

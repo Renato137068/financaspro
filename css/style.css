@@ -304,6 +304,16 @@ main {
     padding: 32px 40px;
   }
 
+  /* Conteúdo com largura de leitura confortável, centrado no espaço à direita
+     da sidebar. Sem isto o layout de coluna única (feito para o celular) esticava
+     de borda a borda: o card de saldo virava uma faixa de ~1200px com o valor no
+     terço esquerdo. 820px mantém os grids de 2 colunas (receita/despesa) folgados
+     sem transformar a tela num campo vazio. */
+  main .aba {
+    max-width: 820px;
+    margin-inline: auto;
+  }
+
   /* Auth overlay cobre tudo, incluindo sidebar */
   #auth-overlay {
     left: 0 !important;
@@ -311,18 +321,10 @@ main {
   }
 }
 
-/* ── Desktop largo: app-shell centralizado ──────────────────────
-   Em telas grandes o conteúdo passa a ter uma largura máxima
-   confortável e é centralizado no espaço à direita da sidebar,
-   evitando o efeito de "mobile esticado". Sem efeito < 1280px
-   (a conta max(...) só ultrapassa a sidebar quando há espaço). */
-@media (min-width: 1280px) {
-  main {
-    max-width: 1200px;
-    margin-left: max(var(--sidebar-width), calc((100% - 1200px) / 2));
-    margin-right: auto;
-  }
-}
+/* A largura de leitura de 820px (main .aba, acima) já centraliza o conteúdo em
+   qualquer tela ≥768px — o antigo bloco @media (min-width:1280px) que limitava o
+   main a 1200px ficou redundante e foi removido: 1200px de coluna única ainda
+   era largo demais e deixava o valor no terço esquerdo. */
 
 /* ── Dark mode sidebar ──────────────────────────────────────── */
 
