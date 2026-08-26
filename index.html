@@ -790,8 +790,9 @@
         <!-- KPI Principal -->
         <div class="orc-kpi-main">
           <div class="orc-kpi-main-content">
-            <div class="orc-kpi-label">Saldo disponível do orçamento</div>
-            <div class="orc-kpi-value" id="orc-saldo-disponivel">R$ 0,00</div>
+            <div class="orc-kpi-label" title="Renda do mês menos despesas lançadas">Saldo disponível do orçamento</div>
+            <div class="orc-kpi-value" id="orc-saldo-disponivel" aria-describedby="orc-kpi-saldo-hint">R$ 0,00</div>
+            <p id="orc-kpi-saldo-hint" class="orc-kpi-hint">Renda informada menos despesas do mês</p>
             <div class="orc-kpi-meta">
               <span class="orc-kpi-percent" id="orc-percent-restante">0%</span>
               <span class="orc-kpi-separator">•</span>
@@ -808,28 +809,28 @@
           <div class="orc-kpi-card">
             <div class="orc-kpi-card-icon"><i data-lucide="clipboard-list" aria-hidden="true"></i></div>
             <div class="orc-kpi-card-content">
-              <span class="orc-kpi-card-label">Total planejado</span>
+              <span class="orc-kpi-card-label" title="Soma da renda usada como base do 50/30/20">Total planejado</span>
               <span class="orc-kpi-card-value" id="orc-total-planejado">R$ 0,00</span>
             </div>
           </div>
           <div class="orc-kpi-card">
             <div class="orc-kpi-card-icon"><i data-lucide="check-circle" aria-hidden="true"></i></div>
             <div class="orc-kpi-card-content">
-              <span class="orc-kpi-card-label">Total realizado</span>
+              <span class="orc-kpi-card-label" title="Soma das despesas lançadas no mês">Total realizado</span>
               <span class="orc-kpi-card-value" id="orc-total-realizado">R$ 0,00</span>
             </div>
           </div>
           <div class="orc-kpi-card">
             <div class="orc-kpi-card-icon"><i data-lucide="alert-triangle" aria-hidden="true"></i></div>
             <div class="orc-kpi-card-content">
-              <span class="orc-kpi-card-label">Críticas</span>
+              <span class="orc-kpi-card-label" title="Categorias acima do limite ou em risco">Críticas</span>
               <span class="orc-kpi-card-value" id="orc-categorias-criticas">0</span>
             </div>
           </div>
           <div class="orc-kpi-card">
             <div class="orc-kpi-card-icon"><i data-lucide="trending-up" aria-hidden="true"></i></div>
             <div class="orc-kpi-card-content">
-              <span class="orc-kpi-card-label">Economia</span>
+              <span class="orc-kpi-card-label" title="Quanto ainda cabe na fatia de poupança (20%)">Economia</span>
               <span class="orc-kpi-card-value" id="orc-economia-mes">R$ 0,00</span>
             </div>
           </div>
@@ -1006,9 +1007,10 @@
 
           <!-- Empty State para Categorias -->
           <div class="orc-categorias-empty" id="orc-categorias-empty" style="display:none">
-            <div class="orc-empty-icon"><i data-lucide="bar-chart"></i></div>
-            <p class="orc-empty-title">Nenhuma categoria configurada</p>
-            <p class="orc-empty-desc">Configure seus orçamentos por categoria para começar seu planejamento financeiro.</p>
+            <div class="orc-empty-icon"><i data-lucide="bar-chart" aria-hidden="true"></i></div>
+            <p class="orc-empty-title">Nenhuma categoria com gasto neste mês</p>
+            <p class="orc-empty-desc">Lance uma despesa no Extrato ou em Novo para ver o detalhamento por categoria. Depois você pode ajustar limites em Configurações › Orçamentos.</p>
+            <button type="button" class="btn-primario" data-mudar-aba="novo">Registrar primeiro lançamento</button>
           </div>
         </div>
       </div>

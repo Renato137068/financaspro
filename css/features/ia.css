@@ -54,9 +54,9 @@
   font-size: var(--font-size-sm);
   font-weight: 700;
   color: var(--color-text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .alerta-msg {
@@ -70,6 +70,32 @@
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
+}
+
+@media (max-width: 360px) {
+  .alerta-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .alerta-acoes {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+  .alerta-acoes .alerta-btn {
+    flex: 1 1 auto;
+    text-align: center;
+    min-height: 36px;
+  }
+  .alerta-dispensar {
+    margin-left: auto;
+    min-width: 36px;
+    min-height: 36px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .alerta-item { animation: none; }
 }
 
 .alerta-btn {

@@ -121,13 +121,16 @@ var ONBOARDING = (function() {
     _inviteEl = document.createElement('div');
     _inviteEl.id = 'onboarding-invite';
     _inviteEl.className = 'onboarding-invite';
-    _inviteEl.setAttribute('role', 'region');
-    _inviteEl.setAttribute('aria-label', 'Convite para tour de boas-vindas');
+    // Aviso acionável (não region genérica): status + label explícita da etapa
+    _inviteEl.setAttribute('role', 'status');
+    _inviteEl.setAttribute('aria-live', 'polite');
+    _inviteEl.setAttribute('aria-label', 'Etapa 1 de 2: convite para o tour de boas-vindas');
     _inviteEl.innerHTML =
       '<div class="onboarding-invite-inner">' +
+        '<p class="onboarding-invite-step">Etapa 1 de 2 · Boas-vindas</p>' +
         '<span class="onboarding-invite-text">' +
           '<i data-lucide="compass" aria-hidden="true"></i> ' +
-          'Primeira vez aqui? Veja um tour rápido de 30 segundos.' +
+          'Primeira vez aqui? Faça um tour rápido (cerca de 30 segundos) para conhecer o Resumo, lançamentos e orçamento.' +
         '</span>' +
         '<div class="onboarding-invite-actions">' +
           '<button type="button" class="onb-btn-skip" id="onb-invite-dismiss">Agora não</button>' +
@@ -147,10 +150,19 @@ var ONBOARDING = (function() {
       _fecharConvite(true);
     });
 
+    var startBtn = document.getElementById('onb-invite-start');
+    if (startBtn && typeof startBtn.focus === 'function') {
+      try { startBtn.focus({ preventScroll: true }); } catch (e) { startBtn.focus(); }
+    }
+
     if (typeof renderLucideIconsNow === 'function') {
       renderLucideIconsNow();
     } else if (typeof renderLucideIcons === 'function') {
       renderLucideIcons(_inviteEl);
+    }
+
+    if (typeof ariaLive !== 'undefined' && ariaLive.announce) {
+      ariaLive.announce('Convite de boas-vindas disponível. Inicie o tour ou escolha Agora não.');
     }
   }
 
@@ -196,7 +208,7 @@ var ONBOARDING = (function() {
       var cls = 'onb-dot';
       if (i === _passo) cls += ' ativo';
       else if (i < _passo) cls += ' concluido';
-      return '<div class="' + cls + '"></div>';
+      return '<div class="' + cls + '" role="presentation"></div>';
     }).join('');
 
     var rendaHtml = p.rendaStep
@@ -215,21 +227,27 @@ var ONBOARDING = (function() {
 
     _tooltip.innerHTML =
       '<div class="onb-passo-header">' +
-        '<span class="onb-passo-num">' + (_passo + 1) + ' / ' + _passos.length + '</span>' +
+        '<span class="onb-passo-num" id="onb-passo-label">Etapa ' + (_passo + 1) + ' de ' + _passos.length + '</span>' +
       '</div>' +
-      '<div class="onb-progress-track"><div class="onb-progress-fill" style="width:' + pct + '%"></div></div>' +
-      '<span class="onb-emoji">' + p.emoji + '</span>' +
-      '<h3>' + p.titulo + '</h3>' +
+      '<div class="onb-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '" aria-labelledby="onb-passo-label">' +
+        '<div class="onb-progress-fill" style="width:' + pct + '%"></div>' +
+      '</div>' +
+      '<span class="onb-emoji" aria-hidden="true">' + p.emoji + '</span>' +
+      '<h3 id="onb-passo-titulo">' + p.titulo + '</h3>' +
       '<p>' + p.texto + '</p>' +
       rendaHtml +
       dicaHtml +
-      '<div class="onb-dots">' + dots + '</div>' +
+      '<div class="onb-dots" aria-hidden="true">' + dots + '</div>' +
       '<div class="onb-actions">' +
         '<button type="button" class="onb-btn-skip" id="onb-skip">' + skipLabel + '</button>' +
         '<button type="button" class="onb-btn-next ripple-host" id="onb-next">' +
           (ultimo ? '<i data-lucide="rocket" aria-hidden="true"></i> Começar!' : 'Próximo <i data-lucide="chevron-right" aria-hidden="true"></i>') +
         '</button>' +
       '</div>';
+    if (_overlay) {
+      _overlay.setAttribute('aria-labelledby', 'onb-passo-titulo');
+      _overlay.setAttribute('aria-describedby', 'onb-passo-label');
+    }
 
     document.getElementById('onb-next').addEventListener('click', _avancar);
     document.getElementById('onb-skip').addEventListener('click', encerrar);

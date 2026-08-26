@@ -92,7 +92,10 @@ const INIT_METAS = {
     var el = document.getElementById('metas-list');
     if (!el || typeof METAS === 'undefined') return;
     var metas = METAS.listar();
+    var headerBtn = document.querySelector('#metas-section [data-action="meta-nova"]');
     if (metas.length === 0) {
+      // Uma CTA principal no empty state; esconde o botão do cabeçalho (P1/P2 auditoria)
+      if (headerBtn) headerBtn.hidden = true;
       el.innerHTML = '<div class="meta-empty">' +
         '<div class="meta-empty-icon">' + this._iconHtml('target') + '</div>' +
         '<p class="meta-empty-title">Nenhuma meta ainda</p>' +
@@ -100,6 +103,7 @@ const INIT_METAS = {
         '<button type="button" class="btn-primario" data-action="meta-nova">Criar primeira meta</button>' +
       '</div>';
     } else {
+      if (headerBtn) headerBtn.hidden = false;
       el.innerHTML = metas.map(function(m) { return INIT_METAS._renderCard(m, false); }).join('');
     }
     if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(el);
