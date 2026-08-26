@@ -230,7 +230,7 @@
 .indicador-card {
   background: var(--color-bg-card);
   padding: var(--space-4);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   display: flex;
   flex-wrap: wrap;

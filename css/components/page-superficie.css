@@ -3,19 +3,50 @@
  * Seções, cards, ícones e cabeçalhos compactos
  */
 
-/* ── Cabeçalho compacto (sem avatar) ───────────────────────── */
+/* ── Cabeçalho de aba (Extrato / Orçamento / Novo) ─────────────
+   Antes: card decorativo grande, centralizado no mobile, repetindo o rótulo
+   que a navegação já mostra — pesado, redundante e ausente no Resumo. Agora é
+   um rótulo leve alinhado à esquerda, coerente com o cumprimento do Resumo. O
+   .perfil-header de IDENTIDADE (Perfil) não usa -compact e segue intacto. */
 
-.perfil-header-compact {
-  padding: var(--space-5);
+.perfil-header.perfil-header-compact {
+  padding: 0;
+  margin-bottom: var(--space-5);
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  gap: var(--space-3);
+  overflow: visible;
+}
+
+.perfil-header.perfil-header-compact::before {
+  display: none;
 }
 
 .perfil-header-compact .perfil-card-icon-wrapper {
-  width: 56px;
-  height: 56px;
+  width: 44px;
+  height: 44px;
 }
 
 .perfil-header-compact .perfil-nome {
   font-size: var(--font-size-xl);
+}
+
+.perfil-header-compact .perfil-meta {
+  color: var(--color-text-muted);
+}
+
+/* O .perfil-header base vira coluna centralizada no mobile — isso é para o
+   cabeçalho de identidade do Perfil. O título de aba fica em linha, à esquerda. */
+@media (max-width: 767px) {
+  .perfil-header.perfil-header-compact {
+    flex-direction: row;
+    text-align: left;
+    padding: 0;
+  }
+  .perfil-header-compact .perfil-info {
+    text-align: left;
+  }
 }
 
 .perfil-header-compact--flat {

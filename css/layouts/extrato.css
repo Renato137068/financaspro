@@ -201,12 +201,16 @@
   border-color: var(--color-primary-200);
 }
 
+/* Acento de polaridade alinhado à semântica do app: receita = success,
+   despesa = danger — os mesmos tokens dos cards do Resumo e das linhas do
+   extrato. Antes eram primary-200/danger-light, um verde de marca e um coral
+   que só existiam aqui. */
 .kpi-card.receita::before {
-  background: var(--color-primary-200);
+  background: var(--color-success);
 }
 
 .kpi-card.despesa::before {
-  background: var(--color-danger-light);
+  background: var(--color-danger);
 }
 
 .kpi-card.movimentacoes::before {
@@ -1411,7 +1415,7 @@
   }
 
   [id="aba-extrato"] .perfil-header-compact {
-    padding: var(--space-3);
+    padding: 0;
   }
 
   [id="aba-extrato"] .perfil-header-compact .perfil-card-icon-wrapper {

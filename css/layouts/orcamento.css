@@ -1244,7 +1244,7 @@
   }
 
   [id="aba-orcamento"] > .perfil-header-compact {
-    padding: var(--space-3);
+    padding: 0;
   }
 
   [id="aba-orcamento"] > .perfil-header-compact .perfil-card-icon-wrapper {
