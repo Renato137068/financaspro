@@ -341,16 +341,22 @@ const INIT_ORCAMENTO = {
     this._updateElement('orc-nec-limite', UTILS.formatarMoeda(data.limNec));
     this._setProgressBar('orc-nec-bar', data.pctNec, 'Necessidades');
     this._updateElementClass('orc-nec-bar', 'orc-progress-fill ' + (data.pctNec >= 100 ? 'exceeded' : data.pctNec >= 80 ? 'attention' : 'healthy'));
+    // O rotulo de texto "X% utilizado" tem id proprio (orc-nec-percent) e nao
+    // era atualizado: so a barra recebia o valor. A tela mostrava a barra em 36%
+    // ao lado de "0% utilizado", que num app de dinheiro le como dado quebrado.
+    this._updateElement('orc-nec-percent', data.pctNec + '%');
 
     this._updateElement('orc-des-gasto', UTILS.formatarMoeda(data.gasDes));
     this._updateElement('orc-des-limite', UTILS.formatarMoeda(data.limDes));
     this._setProgressBar('orc-des-bar', data.pctDes, 'Desejos');
     this._updateElementClass('orc-des-bar', 'orc-progress-fill ' + (data.pctDes >= 100 ? 'exceeded' : data.pctDes >= 80 ? 'attention' : 'healthy'));
+    this._updateElement('orc-des-percent', data.pctDes + '%');
 
     this._updateElement('orc-pou-gasto', UTILS.formatarMoeda(Math.max(0, data.poupancaReal)));
     this._updateElement('orc-pou-limite', UTILS.formatarMoeda(data.limPou));
     this._setProgressBar('orc-pou-bar', data.pctPou, 'Poupança');
     this._updateElementClass('orc-pou-bar', 'orc-progress-fill ' + (data.pctPou >= 100 ? 'otimo' : data.pctPou >= 50 ? 'healthy' : 'attention'));
+    this._updateElement('orc-pou-percent', data.pctPou + '%');
   },
 
   renderInsights: function(data) {

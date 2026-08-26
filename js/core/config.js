@@ -31,14 +31,14 @@ const CONFIG = {
   CATEGORIAS_DESPESA_SLUGS: ['alimentacao','transporte','moradia','saude','educacao','lazer','assinaturas','seguros','impostos','servicos_financeiros','compras','vestuario','viagem','pet','familia','doacoes','beleza','outro'],
 
   CATEGORIAS_LABELS: {
-    salario: 'Salario', freelance: 'Freelance', investimentos: 'Investimentos',
-    vendas: 'Vendas', reembolsos: 'Reembolsos', beneficios: 'Beneficios', presentes: 'Presentes', aluguel_recebido: 'Aluguel Recebido', premios: 'Premios', outros: 'Outros',
-    alimentacao: 'Alimentacao', transporte: 'Transporte', moradia: 'Moradia',
-    saude: 'Saude', educacao: 'Educacao', lazer: 'Lazer', outro: 'Outros',
-    entretenimento: 'Entretenimento', compras: 'Compras', vestuario: 'Vestuario',
+    salario: 'Salário', freelance: 'Freelance', investimentos: 'Investimentos',
+    vendas: 'Vendas', reembolsos: 'Reembolsos', beneficios: 'Benefícios', presentes: 'Presentes', aluguel_recebido: 'Aluguel Recebido', premios: 'Prêmios', outros: 'Outros',
+    alimentacao: 'Alimentação', transporte: 'Transporte', moradia: 'Moradia',
+    saude: 'Saúde', educacao: 'Educação', lazer: 'Lazer', outro: 'Outros',
+    entretenimento: 'Entretenimento', compras: 'Compras', vestuario: 'Vestuário',
     viagem: 'Viagem', pet: 'Pet', assinaturas: 'Assinaturas', seguros: 'Seguros',
-    impostos: 'Impostos e Taxas', servicos_financeiros: 'Servicos Financeiros',
-    familia: 'Familia', doacoes: 'Doacoes', beleza: 'Beleza e Cuidados'
+    impostos: 'Impostos e Taxas', servicos_financeiros: 'Serviços Financeiros',
+    familia: 'Família', doacoes: 'Doações', beleza: 'Beleza e Cuidados'
   },
 
   get CATEGORIAS_RECEITA() { return this.CATEGORIAS_RECEITA_SLUGS; },

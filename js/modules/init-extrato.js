@@ -475,7 +475,7 @@ const INIT_EXTRATO = {
       var ativo = isActive ? ' ativo' : '';
       var pressed = isActive ? 'true' : 'false';
       return '<button type="button" class="filtro-cat-chip' + ativo + '" data-cat="' + UTILS.escapeHtml(cat) + '" aria-pressed="' + pressed + '">' +
-        INIT_EXTRATO.getCatIcon(cat) + ' ' + UTILS.escapeHtml(cat) + ' <span class="cat-count">' + cats[cat] + '</span></button>';
+        INIT_EXTRATO.getCatIcon(cat) + ' ' + UTILS.escapeHtml(CONFIG.getCatLabel(cat)) + ' <span class="cat-count">' + cats[cat] + '</span></button>';
     }.bind(this)).join('');
 
     if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(container);
@@ -744,7 +744,7 @@ const INIT_EXTRATO = {
       '<div class="ext-tx-info">' +
         '<div class="ext-tx-desc">' + UTILS.escapeHtml(t.descricao || t.categoria) + '</div>' +
         '<div class="ext-tx-meta">' +
-          '<span class="ext-tx-meta-tag">' + UTILS.escapeHtml(t.categoria) + '</span>' +
+          '<span class="ext-tx-meta-tag">' + UTILS.escapeHtml(CONFIG.getCatLabel(t.categoria)) + '</span>' +
           '<span>' + dataStr + '</span>' +
           (t.anexoCount ? '<span class="ext-tx-anexo-badge" aria-hidden="true"><i data-lucide="paperclip"></i></span>' : '') +
         '</div>' +
