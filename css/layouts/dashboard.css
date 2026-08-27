@@ -100,6 +100,14 @@
   z-index: 1;
 }
 
+.saldo-projetado-hint {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-xs);
+  line-height: 1.35;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.82));
+  opacity: 0.92;
+}
+
 .saldo-label {
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-semibold);

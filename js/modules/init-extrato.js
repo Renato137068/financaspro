@@ -44,6 +44,7 @@ const INIT_EXTRATO = {
     this.atualizarPeriodoLabel();
     this._bindBusca();
     this._bindKeyboardShortcuts();
+    this.atualizarBadgeFiltrosAvancados();
   },
 
   /**
@@ -198,9 +199,13 @@ const INIT_EXTRATO = {
       var btnDel = e.target.closest('.btn-deletar');
       var btnAnexo = e.target.closest('.btn-anexo');
       var btnCarregarMais = e.target.closest('.btn-carregar-mais');
+      var btnLimparFiltros = e.target.closest('#extrato-empty-limpar-filtros');
       var txItem = e.target.closest('.ext-tx') || e.target.closest('.extrato-item');
 
-      if (btnAnexo) {
+      if (btnLimparFiltros) {
+        e.stopPropagation();
+        INIT_EXTRATO.limparFiltros();
+      } else if (btnAnexo) {
         e.stopPropagation();
       } else if (btnEdit) {
         e.stopPropagation();
@@ -255,8 +260,50 @@ const INIT_EXTRATO = {
     
     this.setFiltroTipo('todos');
     this.setOrdenacao('data-desc');
+    this.atualizarBadgeFiltrosAvancados();
     
     UTILS.mostrarToast('Filtros limpos', 'info');
+  },
+
+  /**
+   * Abre/fecha painel de filtros avançados (categoria, ordenação, limpar).
+   */
+  toggleFiltrosAvancados: function() {
+    var panel = document.getElementById('extrato-filtros-avancados');
+    var btn = document.getElementById('btn-filtros-avancados');
+    if (!panel || !btn) return;
+    var aberto = panel.hasAttribute('hidden');
+    if (aberto) {
+      panel.removeAttribute('hidden');
+      btn.setAttribute('aria-expanded', 'true');
+    } else {
+      panel.setAttribute('hidden', '');
+      btn.setAttribute('aria-expanded', 'false');
+    }
+    if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(btn);
+  },
+
+  /**
+   * Selinho no botão "Filtros" quando há categoria ou ordenação ≠ padrão.
+   */
+  atualizarBadgeFiltrosAvancados: function() {
+    var badge = document.getElementById('filtro-avancados-count');
+    var btn = document.getElementById('btn-filtros-avancados');
+    if (!badge) return;
+    var n = 0;
+    if (this.state.filtroCat) n += 1;
+    if (this.state.ordenacao && this.state.ordenacao !== 'data-desc') n += 1;
+    if (n > 0) {
+      badge.textContent = String(n);
+      badge.hidden = false;
+      badge.removeAttribute('hidden');
+      if (btn) btn.classList.add('tem-avancados');
+    } else {
+      badge.textContent = '0';
+      badge.hidden = true;
+      badge.setAttribute('hidden', '');
+      if (btn) btn.classList.remove('tem-avancados');
+    }
   },
 
   /**
@@ -417,6 +464,7 @@ const INIT_EXTRATO = {
       b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
     });
     this._salvarFiltros();
+    this.atualizarBadgeFiltrosAvancados();
     this.filtrarExtrato();
   },
 
@@ -456,6 +504,7 @@ const INIT_EXTRATO = {
       b.classList.toggle('ativo', isActive);
       b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
     }.bind(this));
+    this.atualizarBadgeFiltrosAvancados();
     this.filtrarExtrato();
   },
 
@@ -760,6 +809,12 @@ const INIT_EXTRATO = {
    */
   _renderEmptyState: function() {
     var totalReal = (typeof DADOS !== 'undefined' && DADOS.getTransacoes) ? DADOS.getTransacoes().length : 0;
+    var filtrosAtivos = this.state.filtroTipo !== 'todos' || this.state.filtroCat
+      || this.state.busca
+      || this.state.buscaAvancada.valorMin != null
+      || this.state.buscaAvancada.valorMax != null
+      || this.state.buscaAvancada.dataInicio
+      || this.state.buscaAvancada.dataFim;
     var opts = totalReal === 0
       ? {
           lucide: 'wallet',
@@ -772,22 +827,42 @@ const INIT_EXTRATO = {
       : {
           lucide: 'search-x',
           titulo: 'Nenhuma movimentação encontrada',
-          subtitulo: 'Tente ajustar os filtros ou selecionar outro intervalo de período.',
-          aba: 'novo',
-          ctaTexto: 'Registrar transação',
+          subtitulo: filtrosAtivos
+            ? 'Nenhum lançamento combina com os filtros atuais.'
+            : 'Tente selecionar outro intervalo de período.',
+          aba: filtrosAtivos ? null : 'novo',
+          ctaTexto: filtrosAtivos ? null : 'Registrar transação',
           animado: true,
         };
     if (typeof UI !== 'undefined' && UI.EmptyState && typeof UI.EmptyState.render === 'function') {
       var el = UI.EmptyState.render(opts);
       if (el) {
         el.setAttribute('role', 'status');
+        if (filtrosAtivos && totalReal > 0) {
+          var btnLimpar = document.createElement('button');
+          btnLimpar.type = 'button';
+          btnLimpar.className = 'btn-empty-cta btn-empty-cta--secundario';
+          btnLimpar.id = 'extrato-empty-limpar-filtros';
+          btnLimpar.innerHTML = '<i data-lucide="rotate-ccw" aria-hidden="true"></i> Limpar filtros';
+          btnLimpar.addEventListener('click', function() { INIT_EXTRATO.limparFiltros(); });
+          el.appendChild(btnLimpar);
+          if (typeof renderLucideIcons === 'function') renderLucideIcons(el);
+        }
         return el.outerHTML;
       }
     }
-    return '<div class="empty-state" role="status">' +
+    var html = '<div class="empty-state" role="status">' +
       '<div class="empty-state-title">' + opts.titulo + '</div>' +
-      '<div class="empty-state-message">' + opts.subtitulo + '</div>' +
-    '</div>';
+      '<div class="empty-state-message">' + opts.subtitulo + '</div>';
+    if (filtrosAtivos && totalReal > 0) {
+      html += '<button type="button" class="btn-empty-cta btn-empty-cta--secundario" id="extrato-empty-limpar-filtros">' +
+        'Limpar filtros</button>';
+    } else if (opts.aba) {
+      html += '<button type="button" class="btn-empty-cta" data-mudar-aba="' + opts.aba + '">' +
+        (opts.ctaTexto || 'Começar') + '</button>';
+    }
+    html += '</div>';
+    return html;
   },
 
   /**

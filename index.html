@@ -39,7 +39,7 @@
   <link rel="stylesheet" href="css/fonts.css">
   <link rel="stylesheet" href="css/design-system.css">
   <link rel="stylesheet" href="css/critical-inline.css">
-  <link rel="stylesheet" href="css/style.css?v=modular-v3">
+  <link rel="stylesheet" href="css/style.css?v=modular-v7">
   <link rel="stylesheet" href="css/features/brand.css">
   <title>FinançasPro</title>
   <script defer src="js/utilities/observability.js"></script>
@@ -217,7 +217,7 @@
     <section class="dashboard-section perfil-section" id="secao-orcamento-resumo">
       <div class="secao-header">
         <h2 class="secao-titulo">Limites de orçamento</h2>
-        <button class="secao-link" type="button" data-mudar-aba="orcamento">Gerenciar <i data-lucide="chevron-right" aria-hidden="true"></i></button>
+        <button class="secao-link" type="button" data-mudar-aba="orcamento" data-orc-sub="planejamento">Gerenciar <i data-lucide="chevron-right" aria-hidden="true"></i></button>
       </div>
       <div id="resumo-orcamentos"></div>
     </section>
@@ -309,7 +309,7 @@
     <section class="dashboard-section perfil-section" id="secao-metas-resumo" style="display:none">
       <div class="secao-header">
         <h2 class="secao-titulo">Metas em andamento</h2>
-        <button class="secao-link" type="button" data-mudar-aba="orcamento">Ver todas <i data-lucide="chevron-right" aria-hidden="true"></i></button>
+        <button class="secao-link" type="button" data-mudar-aba="orcamento" data-orc-sub="metas">Ver todas <i data-lucide="chevron-right" aria-hidden="true"></i></button>
       </div>
       <div id="dashboard-metas-resumo" class="metas-resumo-grid"></div>
     </section>
@@ -317,7 +317,7 @@
     <section class="dashboard-section perfil-section" id="secao-assinaturas-resumo" style="display:none">
       <div class="secao-header">
         <h2 class="secao-titulo"><i data-lucide="tv" aria-hidden="true"></i> Assinaturas</h2>
-        <button class="secao-link" type="button" data-mudar-aba="orcamento">Gerenciar <i data-lucide="chevron-right" aria-hidden="true"></i></button>
+        <button class="secao-link" type="button" data-mudar-aba="orcamento" data-orc-sub="assinaturas">Gerenciar <i data-lucide="chevron-right" aria-hidden="true"></i></button>
       </div>
       <div id="dashboard-assinaturas-resumo"></div>
     </section>
@@ -325,7 +325,7 @@
     <section class="dashboard-section perfil-section" id="secao-patrimonio-resumo" style="display:none">
       <div class="secao-header">
         <h2 class="secao-titulo"><i data-lucide="landmark" aria-hidden="true"></i> Patrimônio</h2>
-        <button class="secao-link" type="button" data-mudar-aba="orcamento">Gerenciar <i data-lucide="chevron-right" aria-hidden="true"></i></button>
+        <button class="secao-link" type="button" data-mudar-aba="orcamento" data-orc-sub="patrimonio">Gerenciar <i data-lucide="chevron-right" aria-hidden="true"></i></button>
       </div>
       <div id="dashboard-patrimonio-resumo"></div>
     </section>
@@ -691,29 +691,38 @@
         <button class="filtro-chip ativo" data-filtro="todos" data-action="filtro-tipo" aria-pressed="true">Todas</button>
         <button class="filtro-chip" data-filtro="receita" data-action="filtro-tipo" aria-pressed="false">Receitas</button>
         <button class="filtro-chip" data-filtro="despesa" data-action="filtro-tipo" aria-pressed="false">Despesas</button>
-      </div>
-      <div class="filtros-categoria" id="filtros-categoria" role="group" aria-label="Filtro por categoria"></div>
-      
-      <!-- Ordenação -->
-      <div class="ordenacao-container" role="group" aria-label="Ordenar por">
-        <button class="ordenacao-btn ativo" data-ordenacao="data-desc" data-action="ordenar" aria-pressed="true" title="Data (mais recente)" aria-label="Ordenar por data, mais recente primeiro">
-          <i data-lucide="calendar" aria-hidden="true"></i> Data <i data-lucide="arrow-down" aria-hidden="true"></i>
-        </button>
-        <button class="ordenacao-btn" data-ordenacao="data-asc" data-action="ordenar" aria-pressed="false" title="Data (mais antiga)" aria-label="Ordenar por data, mais antiga primeiro">
-          <i data-lucide="calendar" aria-hidden="true"></i> Data <i data-lucide="arrow-up" aria-hidden="true"></i>
-        </button>
-        <button class="ordenacao-btn" data-ordenacao="valor-desc" data-action="ordenar" aria-pressed="false" title="Valor (maior)" aria-label="Ordenar por valor, maior primeiro">
-          <i data-lucide="dollar-sign" aria-hidden="true"></i> Valor <i data-lucide="arrow-down" aria-hidden="true"></i>
-        </button>
-        <button class="ordenacao-btn" data-ordenacao="valor-asc" data-action="ordenar" aria-pressed="false" title="Valor (menor)" aria-label="Ordenar por valor, menor primeiro">
-          <i data-lucide="dollar-sign" aria-hidden="true"></i> Valor <i data-lucide="arrow-up" aria-hidden="true"></i>
+        <button type="button" class="filtro-chip filtro-chip--avancados" id="btn-filtros-avancados"
+          data-action="toggle-filtros-avancados"
+          aria-expanded="false" aria-controls="extrato-filtros-avancados">
+          <i data-lucide="sliders-horizontal" aria-hidden="true"></i> Filtros
+          <span class="filtro-avancados-count" id="filtro-avancados-count" hidden>0</span>
         </button>
       </div>
 
-      <!-- Botão limpar filtros -->
-      <button class="btn-limpar-filtros" data-action="limpar-filtros" aria-label="Limpar todos os filtros">
-        <i data-lucide="rotate-ccw" aria-hidden="true"></i> Limpar filtros
-      </button>
+      <div class="extrato-filtros-avancados" id="extrato-filtros-avancados" hidden>
+        <div class="filtros-categoria" id="filtros-categoria" role="group" aria-label="Filtro por categoria"></div>
+
+        <!-- Ordenação -->
+        <div class="ordenacao-container" role="group" aria-label="Ordenar por">
+          <button class="ordenacao-btn ativo" data-ordenacao="data-desc" data-action="ordenar" aria-pressed="true" title="Data (mais recente)" aria-label="Ordenar por data, mais recente primeiro">
+            <i data-lucide="calendar" aria-hidden="true"></i> Data <i data-lucide="arrow-down" aria-hidden="true"></i>
+          </button>
+          <button class="ordenacao-btn" data-ordenacao="data-asc" data-action="ordenar" aria-pressed="false" title="Data (mais antiga)" aria-label="Ordenar por data, mais antiga primeiro">
+            <i data-lucide="calendar" aria-hidden="true"></i> Data <i data-lucide="arrow-up" aria-hidden="true"></i>
+          </button>
+          <button class="ordenacao-btn" data-ordenacao="valor-desc" data-action="ordenar" aria-pressed="false" title="Valor (maior)" aria-label="Ordenar por valor, maior primeiro">
+            <i data-lucide="dollar-sign" aria-hidden="true"></i> Valor <i data-lucide="arrow-down" aria-hidden="true"></i>
+          </button>
+          <button class="ordenacao-btn" data-ordenacao="valor-asc" data-action="ordenar" aria-pressed="false" title="Valor (menor)" aria-label="Ordenar por valor, menor primeiro">
+            <i data-lucide="dollar-sign" aria-hidden="true"></i> Valor <i data-lucide="arrow-up" aria-hidden="true"></i>
+          </button>
+        </div>
+
+        <!-- Botão limpar filtros -->
+        <button class="btn-limpar-filtros" data-action="limpar-filtros" aria-label="Limpar todos os filtros">
+          <i data-lucide="rotate-ccw" aria-hidden="true"></i> Limpar filtros
+        </button>
+      </div>
     </div>
     </div>
 
@@ -758,6 +767,24 @@
 
   <!-- ABA 4: ORÇAMENTO -->
   <div id="aba-orcamento" class="aba">
+    <nav class="orc-subnav" aria-label="Seções do orçamento">
+      <div class="filtros-tipo" role="tablist">
+        <button type="button" class="filtro-chip ativo" role="tab"
+          id="orc-sub-tab-planejamento" data-action="orc-sub-aba" data-orc-sub="planejamento"
+          aria-selected="true" aria-controls="orc-sub-panel-planejamento">Planejamento</button>
+        <button type="button" class="filtro-chip" role="tab"
+          id="orc-sub-tab-metas" data-action="orc-sub-aba" data-orc-sub="metas"
+          aria-selected="false" aria-controls="orc-sub-panel-metas">Metas</button>
+        <button type="button" class="filtro-chip" role="tab"
+          id="orc-sub-tab-assinaturas" data-action="orc-sub-aba" data-orc-sub="assinaturas"
+          aria-selected="false" aria-controls="orc-sub-panel-assinaturas">Assinaturas</button>
+        <button type="button" class="filtro-chip" role="tab"
+          id="orc-sub-tab-patrimonio" data-action="orc-sub-aba" data-orc-sub="patrimonio"
+          aria-selected="false" aria-controls="orc-sub-panel-patrimonio">Patrimônio</button>
+      </div>
+    </nav>
+
+    <div id="orc-sub-panel-planejamento" class="orc-sub-panel ativo" role="tabpanel" aria-labelledby="orc-sub-tab-planejamento">
     <!-- Renda mensal (se não definida) -->
     <div class="orc-renda-setup" id="orc-renda-setup">
       <div class="perfil-header perfil-header-compact perfil-header-compact--flat">
@@ -778,13 +805,7 @@
     <!-- Dashboard -->
     <div id="orc-dashboard" style="display:none">
       <div id="orc-live-region" class="sr-only" aria-live="polite" aria-atomic="true"></div>
-      <div class="perfil-header perfil-header-compact">
-        <div class="perfil-card-icon-wrapper" aria-hidden="true"><i data-lucide="target"></i></div>
-        <div class="perfil-info">
-          <h2 class="perfil-nome">Orçamento</h2>
-          <div class="perfil-meta"><span>Planejamento 50/30/20 do mês</span></div>
-        </div>
-      </div>
+      <p class="orc-panel-subtitle">Planejamento 50/30/20 do mês</p>
       <!-- Header Estratégico -->
       <div class="orc-header">
         <!-- KPI Principal -->
@@ -1015,8 +1036,10 @@
         </div>
       </div>
     </div>
+    </div><!-- /orc-sub-panel-planejamento -->
 
     <!-- Metas financeiras (visível mesmo sem renda definida) -->
+    <div id="orc-sub-panel-metas" class="orc-sub-panel" role="tabpanel" hidden aria-labelledby="orc-sub-tab-metas">
     <div class="metas-section perfil-section" id="metas-section">
       <div class="orc-secao-header">
         <h3 class="perfil-section-title">Metas financeiras</h3>
@@ -1024,8 +1047,10 @@
       </div>
       <div id="metas-list" class="metas-list"></div>
     </div>
+    </div><!-- /orc-sub-panel-metas -->
 
     <!-- Assinaturas -->
+    <div id="orc-sub-panel-assinaturas" class="orc-sub-panel" role="tabpanel" hidden aria-labelledby="orc-sub-tab-assinaturas">
     <div class="assinaturas-section perfil-section" id="assinaturas-section">
       <div class="orc-secao-header">
         <h3 class="perfil-section-title"><i data-lucide="tv" aria-hidden="true"></i> Assinaturas</h3>
@@ -1033,8 +1058,10 @@
       </div>
       <div id="assinaturas-list" class="assinaturas-list"></div>
     </div>
+    </div><!-- /orc-sub-panel-assinaturas -->
 
     <!-- Patrimônio líquido -->
+    <div id="orc-sub-panel-patrimonio" class="orc-sub-panel" role="tabpanel" hidden aria-labelledby="orc-sub-tab-patrimonio">
     <div class="patrimonio-section perfil-section" id="patrimonio-section">
       <div class="orc-secao-header">
         <h3 class="perfil-section-title"><i data-lucide="landmark" aria-hidden="true"></i> Patrimônio líquido</h3>
@@ -1045,6 +1072,7 @@
       </div>
       <div id="patrimonio-panel" class="patrimonio-panel"></div>
     </div>
+    </div><!-- /orc-sub-panel-patrimonio -->
   </div>
 
   <!-- ABA 5: CONFIGURAÇÕES (PERFIL) -->

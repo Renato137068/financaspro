@@ -1,0 +1,102 @@
+{
+  "generatedAt": "2026-08-27T22:39:59.662Z",
+  "referencia": "Auditoria matinal 20260826 — verificação pós-fixes",
+  "total": 13,
+  "ok": 12,
+  "falhas": 0,
+  "skips": 1,
+  "veredito": "CORRIGIDO",
+  "probes": [
+    {
+      "id": "P1-01",
+      "titulo": "Saldo realizado exclui lançamentos futuros no mês",
+      "severidade": "P1",
+      "status": "OK",
+      "detalhe": "completo=4600, realizado=5000"
+    },
+    {
+      "id": "P1-02",
+      "titulo": "Saldo realizado alinha com saldo das contas (cutoff hoje)",
+      "severidade": "P1",
+      "status": "OK",
+      "detalhe": "realizado=5000, contas=5000"
+    },
+    {
+      "id": "P1-03",
+      "titulo": "Resumo categoria usa centavos (1000 × R$0,10 = R$100)",
+      "severidade": "P1",
+      "status": "OK",
+      "detalhe": "cat=100"
+    },
+    {
+      "id": "P1-04",
+      "titulo": "UTILS.calcularSaldo ignora transferências",
+      "severidade": "P2",
+      "status": "OK",
+      "detalhe": "saldo=800"
+    },
+    {
+      "id": "P1-05",
+      "titulo": "Performance: 50 filtros mensais em 5k txs < 500ms",
+      "severidade": "P1",
+      "status": "OK",
+      "detalhe": "37ms"
+    },
+    {
+      "id": "P1-06",
+      "titulo": "monthIndex construído após obterResumoMes",
+      "severidade": "P1",
+      "status": "OK",
+      "detalhe": "índice presente"
+    },
+    {
+      "id": "P2-01",
+      "titulo": "accountId gravado no criar()",
+      "severidade": "P2",
+      "status": "OK",
+      "detalhe": "accountId=3f2504e0-4f89-41d3-9a0c-0305e82c3301"
+    },
+    {
+      "id": "P2-02",
+      "titulo": "Saldo sobrevive a rename de conta",
+      "severidade": "P2",
+      "status": "OK",
+      "detalhe": "saldo=900"
+    },
+    {
+      "id": "P2-03",
+      "titulo": "Patrimônio detecta dupla contagem",
+      "severidade": "P2",
+      "status": "OK",
+      "detalhe": "1 overlap"
+    },
+    {
+      "id": "P2-04",
+      "titulo": "Recorrente materializa com accountId (modo local)",
+      "severidade": "P2",
+      "status": "OK",
+      "detalhe": "accountId propagado"
+    },
+    {
+      "id": "P2-05",
+      "titulo": "FINANCE_CONTRACT recorrentePtToEn inclui accountId",
+      "severidade": "P2",
+      "status": "OK",
+      "detalhe": "accountId no sync payload"
+    },
+    {
+      "id": "P2-06",
+      "titulo": "renderBancoSelect mescla fp-contas + legado",
+      "severidade": "P2",
+      "status": "SKIP",
+      "detalhe": "sem DOM"
+    },
+    {
+      "id": "P3-01",
+      "titulo": "obterRecentes(3) retorna as mais novas",
+      "severidade": "P3",
+      "status": "OK",
+      "detalhe": "top=nova"
+    }
+  ]
+}

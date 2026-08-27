@@ -156,6 +156,17 @@ describe('processRecurring', () => {
     expect(criadas[0].date.getTime()).toBe(rec.nextDue.getTime());
   });
 
+  test('propaga accountId da recorrência para a transação gerada', async () => {
+    const accountId = '3f2504e0-4f89-41d3-9a0c-0305e82c3301';
+    await recorrenteVencida({ accountId });
+
+    await processRecurring({});
+    const criadas = await prisma.transaction.findMany({ where: { userId: 'user-1' } });
+
+    expect(criadas).toHaveLength(1);
+    expect(criadas[0].accountId).toBe(accountId);
+  });
+
   test('avança nextDue para o próximo período', async () => {
     const rec = await recorrenteVencida();
 

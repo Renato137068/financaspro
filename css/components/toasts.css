@@ -41,6 +41,23 @@
 .toast.info,
 .toast.toast-info    { background: var(--color-primary-500); }
 
+/* Desktop: snackbar centrado na base — não cobre a coluna lateral do
+   dashboard (≥1280px). Combina translateX(-50%) com translateY da animação. */
+@media (min-width: 768px) {
+  .toast {
+    left: 50%;
+    right: auto;
+    bottom: 24px;
+    max-width: 380px;
+    transform: translateX(-50%) translateY(30px);
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
 /* ── Empty states ─────────────────────────────────────────── */
 
 .empty {

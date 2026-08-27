@@ -296,9 +296,14 @@ var UTILS = {
   },
 
   calcularSaldo: function(transacoes) {
-    return transacoes.reduce(function(acc, t) {
-      return t.tipo === CONFIG.TIPO_RECEITA ? acc + t.valor : acc - t.valor;
-    }, 0);
+    if (typeof TRANSACTION_SERVICE !== 'undefined' && TRANSACTION_SERVICE.calculateBalance) {
+      return TRANSACTION_SERVICE.calculateBalance(transacoes);
+    }
+    return (transacoes || []).reduce(function(acc, t) {
+      if (t.tipo === CONFIG.TIPO_RECEITA) return acc + UTILS.paraCentavos(t.valor);
+      if (t.tipo === CONFIG.TIPO_DESPESA) return acc - UTILS.paraCentavos(t.valor);
+      return acc;
+    }, 0) / 100;
   },
 
   filtrarPorMes: function(transacoes, mes, ano) {

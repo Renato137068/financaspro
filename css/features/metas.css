@@ -104,6 +104,11 @@
   margin-bottom: var(--space-2);
 }
 
+/* Progresso de meta = saudável (verde); âmbar fica só para limites de orçamento. */
+.meta-progress .orc-progress-fill.attention {
+  background: var(--color-success);
+}
+
 .meta-card-done-msg {
   margin: var(--space-2) 0 0;
   font-size: var(--text-sm);

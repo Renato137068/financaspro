@@ -321,10 +321,74 @@ main {
   }
 }
 
-/* A largura de leitura de 820px (main .aba, acima) já centraliza o conteúdo em
-   qualquer tela ≥768px — o antigo bloco @media (min-width:1280px) que limitava o
-   main a 1200px ficou redundante e foi removido: 1200px de coluna única ainda
-   era largo demais e deixava o valor no terço esquerdo. */
+/* Aba Resumo em telas largas: 2 colunas (hero full-width + main/side).
+   Demais abas e viewports <1280px seguem a coluna única de 820px acima.
+   Só aplica display:grid quando .ativo — senão sobrescreveria .aba { display:none }.
+   Nota: usamos [id="aba-resumo"] (não #aba-resumo) para o guard de tokens
+   não contar "#aba" como cor hexadecimal. */
+
+@media (min-width: 1280px) {
+  main .aba.ativo[id="aba-resumo"] {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    grid-auto-flow: row dense;
+    gap: var(--space-4) var(--space-6);
+    align-items: start;
+    max-width: 1140px;
+  }
+
+  main .aba.ativo[id="aba-resumo"] > * {
+    min-width: 0;
+  }
+
+  /* Gap do grid substitui margin-bottom das seções nesta largura. */
+  main .aba.ativo[id="aba-resumo"] > .dashboard-section,
+  main .aba.ativo[id="aba-resumo"] > .dashboard-section-toggle,
+  main .aba.ativo[id="aba-resumo"] > .btn-primario,
+  main .aba.ativo[id="aba-resumo"] > .previsao-mini,
+  main .aba.ativo[id="aba-resumo"] > .insights-container,
+  main .aba.ativo[id="aba-resumo"] > .cards-container,
+  main .aba.ativo[id="aba-resumo"] > .card-saldo-principal {
+    margin-bottom: 0;
+  }
+
+  /* Faixa hero — span nas 2 colunas */
+  [id="aba-resumo"] > h2.sr-only,
+  #dashboard-skeleton,
+  #dashboard-greeting,
+  #card-saldo-principal,
+  #saldo-anuncio,
+  #dashboard-alertas,
+  [id="aba-resumo"] > .cards-container,
+  #dashboard-indicadores,
+  #secao-disponivel {
+    grid-column: 1 / -1;
+  }
+
+  /* Coluna principal (~1.5fr): fluxo + Relatório (equilíbrio visual vs lateral) */
+  #secao-ultimas-transacoes,
+  [id="aba-resumo"] > .btn-primario,
+  #insights-container,
+  #previsao-mini,
+  #secao-relatorios {
+    grid-column: 1;
+  }
+
+  /* Coluna lateral (~1fr): limites, metas, análise/previsão e widgets */
+  #secao-orcamento-resumo,
+  #secao-metas-resumo,
+  #btn-graficos,
+  #graficos-panel,
+  #secao-previsao,
+  #secao-assinaturas-resumo,
+  #secao-patrimonio-resumo,
+  #secao-cartoes,
+  #secao-contas-saldos,
+  #secao-contas-pagar,
+  #secao-alertas-painel {
+    grid-column: 2;
+  }
+}
 
 /* ── Dark mode sidebar ──────────────────────────────────────── */
 

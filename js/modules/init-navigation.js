@@ -51,12 +51,13 @@ const INIT_NAVIGATION = {
       var muda = e.target.closest('[data-mudar-aba]');
       if (muda) {
         var aba = muda.dataset.mudarAba;
+        var orcSub = muda.dataset.orcSub || null;
         if (typeof ONBOARDING !== 'undefined' && ONBOARDING.registrarInteracao) {
           ONBOARDING.registrarInteracao({ aba: aba });
         }
         if (aba && typeof mudarAba === 'function') {
           try {
-            mudarAba(aba);
+            mudarAba(aba, orcSub ? { orcSub: orcSub } : null);
           } catch (err) {
             console.error('[INIT_NAVIGATION] Erro ao mudar aba:', err);
           }
@@ -136,16 +137,32 @@ const INIT_NAVIGATION = {
       'of-conectar-sandbox': true,
       'of-conectar-belvo': true,
       'of-sync': true,
-      'of-desconectar': true
+      'of-desconectar': true,
+      'ordenar': true,
+      'limpar-filtros': true,
+      'toggle-filtros-avancados': true,
+      'abrir-busca-avancada': true,
+      'aplicar-busca-avancada': true
     };
 
     var actions = {
       'mudar-aba': function() {
         var aba = target.dataset.aba;
+        var orcSub = target.dataset.orcSub || null;
         if (typeof ONBOARDING !== 'undefined' && ONBOARDING.registrarInteracao) {
           ONBOARDING.registrarInteracao({ aba: aba });
         }
-        if (aba && typeof mudarAba === 'function') mudarAba(aba);
+        if (aba && typeof mudarAba === 'function') {
+          mudarAba(aba, orcSub ? { orcSub: orcSub } : null);
+        }
+      },
+      'orc-sub-aba': function() {
+        var sub = target.dataset.orcSub || 'planejamento';
+        if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.mudarSubAba) {
+          INIT_ORCAMENTO.mudarSubAba(sub);
+        } else if (typeof mudarSubAbaOrcamento === 'function') {
+          mudarSubAbaOrcamento(sub);
+        }
       },
       'abrir-entrada-rapida': function() { safeCall('abrirEntradaRapida'); },
       'navegar-periodo': function() { 
@@ -390,7 +407,7 @@ const INIT_NAVIGATION = {
  * Função global de mudança de aba (mantida para compatibilidade)
  * @param {string} nomeAba - Nome da aba a ser ativada
  */
-function mudarAba(nomeAba) {
+function mudarAba(nomeAba, opcoes) {
   // Mostrar/esconder abas
   var abas = document.querySelectorAll('[id^="aba-"]');
   for (var i = 0; i < abas.length; i++) {
@@ -463,6 +480,12 @@ function mudarAba(nomeAba) {
         }
       }
       if (nomeAba === 'orcamento') {
+        var orcSubPref = (opcoes && opcoes.orcSub) ? opcoes.orcSub : null;
+        if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.restaurarSubAba) {
+          INIT_ORCAMENTO.restaurarSubAba(orcSubPref);
+        } else if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.mudarSubAba) {
+          INIT_ORCAMENTO.mudarSubAba(orcSubPref || 'planejamento');
+        }
         if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.renderDashboard) {
           INIT_ORCAMENTO.renderDashboard();
         } else if (typeof renderOrcamentoDashboard === 'function') {

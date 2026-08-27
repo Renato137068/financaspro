@@ -88,6 +88,7 @@ function loadCoreModules() {
   // teste veria.
   loadScript(context, 'js/core/password-policy.js');
   loadScript(context, 'js/core/utils.js');
+  loadScript(context, 'js/core/finance-contract.js');
   // Carregado antes de transacoes.js: TRANSACOES delega a ele quando presente,
   // então testar sem ele exercitaria só o caminho de fallback — justamente o
   // que NÃO roda em produção.
@@ -123,6 +124,7 @@ function loadCoreModules() {
     'TRANSACOES', 'METAS', 'APP_STORE', 'APP_STATE', 'DADOS', 'ACTIONS',
     'RELATORIOS', 'PATRIMONIO', 'CONTAS', 'CONTAS_PAGAR', 'ASSINATURAS', 'ANEXOS',
     'TRANSACTION_SERVICE', 'COMPROMISSOS', 'CARTOES', 'RECORRENTES', 'AI_ENGINE', 'INIT_CONFIG',
+    'FINANCE_CONTRACT',
   ].forEach(function(k) {
     if (typeof sandbox[k] !== 'undefined') global[k] = sandbox[k];
   });
@@ -149,8 +151,10 @@ function resetFixtures() {
   if (global.TRANSACOES) {
     global.TRANSACOES._cache = null;
     global.TRANSACOES._cacheTimestamp = null;
+    global.TRANSACOES._monthIndex = null;
   }
   if (global.ORCAMENTO) global.ORCAMENTO._cache = null;
+  if (global.CONTAS) global.CONTAS._cache = [];
 }
 
 /**

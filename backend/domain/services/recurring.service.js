@@ -1,5 +1,6 @@
 // backend/domain/services/recurring.service.js
 import { RecurringRepository } from '../repositories/recurring.repository.js';
+import { AccountService } from './account.service.js';
 import { AppError } from '../errors.js';
 
 export const RecurringService = {
@@ -15,6 +16,7 @@ export const RecurringService = {
 
   async create(userId, body) {
     const { startDate, endDate, nextDue, ...rest } = body;
+    await AccountService.assertAccountsOwned(userId, rest);
     return RecurringRepository.create({
       ...rest,
       startDate: new Date(startDate),
@@ -27,6 +29,7 @@ export const RecurringService = {
   async update(id, userId, body) {
     await this.getById(id, userId);
     const { startDate, endDate, nextDue, ...rest } = body;
+    await AccountService.assertAccountsOwned(userId, rest);
     return RecurringRepository.update(id, {
       ...rest,
       ...(startDate && { startDate: new Date(startDate) }),

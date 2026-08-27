@@ -49,6 +49,7 @@ const recurringPayloadSchema = z.object({
   endDate: z.string().datetime().optional().nullable(),
   nextDue: z.string().datetime().optional(),
   active: z.boolean().optional(),
+  accountId: z.string().uuid().optional().nullable(),
 });
 
 const budgetPayloadSchema = z.object({

@@ -66,7 +66,8 @@ var ORCAMENTO = {
 
   calcularGastoMes: function(categoria, mes, ano) {
     if (typeof BUDGET_SERVICE !== 'undefined') {
-      return BUDGET_SERVICE.calculateSpent(TRANSACOES.obter({}), categoria, mes, ano);
+      var txsMes = TRANSACOES.obter({ mes: mes, ano: ano });
+      return BUDGET_SERVICE.calculateSpent(txsMes, categoria, null, null);
     }
     var transacoes = TRANSACOES.obter({ mes: mes, ano: ano, categoria: categoria });
     // Soma em centavos inteiros — acumular reais em float faz mil parcelas de
@@ -82,7 +83,8 @@ var ORCAMENTO = {
 
   obterStatus: function(categoria, mes, ano) {
     if (typeof BUDGET_SERVICE !== 'undefined') {
-      return BUDGET_SERVICE.getStatus(this._cache, TRANSACOES.obter({}), categoria, mes, ano);
+      var txsMes = TRANSACOES.obter({ mes: mes, ano: ano });
+      return BUDGET_SERVICE.getStatus(this._cache, txsMes, categoria, null, null);
     }
     var limite = this.obterLimite(categoria);
     if (!limite) {
@@ -225,7 +227,8 @@ var ORCAMENTO = {
 
   obterStatusTodos: function(mes, ano) {
     if (typeof BUDGET_SERVICE !== 'undefined') {
-      return BUDGET_SERVICE.getAllStatus(this._cache, TRANSACOES.obter({}), mes, ano);
+      var txsMes = TRANSACOES.obter({ mes: mes, ano: ano });
+      return BUDGET_SERVICE.getAllStatus(this._cache, txsMes, null, null);
     }
     var categorias = Object.keys(this._cache);
     var self = this;

@@ -534,6 +534,58 @@ const INIT_ORCAMENTO = {
     if (emptyEl) emptyEl.style.display = algum === 0 ? '' : 'none';
 
     if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(container);
+  },
+
+  SUB_ABAS: ['planejamento', 'metas', 'assinaturas', 'patrimonio'],
+
+  /**
+   * Alterna as sub-seções do Orçamento sem destruir IDs internos.
+   * @param {string} nome planejamento|metas|assinaturas|patrimonio
+   */
+  mudarSubAba: function(nome) {
+    var permitido = this.SUB_ABAS.indexOf(nome) !== -1 ? nome : 'planejamento';
+    var root = document.getElementById('aba-orcamento');
+    if (!root) return;
+
+    var tabs = root.querySelectorAll('[data-orc-sub]');
+    for (var i = 0; i < tabs.length; i++) {
+      var on = tabs[i].getAttribute('data-orc-sub') === permitido;
+      tabs[i].classList.toggle('ativo', on);
+      tabs[i].setAttribute('aria-selected', on ? 'true' : 'false');
+    }
+
+    var panels = root.querySelectorAll('.orc-sub-panel');
+    for (var j = 0; j < panels.length; j++) {
+      var match = panels[j].id === 'orc-sub-panel-' + permitido;
+      panels[j].classList.toggle('ativo', match);
+      if (match) panels[j].removeAttribute('hidden');
+      else panels[j].setAttribute('hidden', '');
+    }
+
+    try {
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem('fp-orc-sub', permitido);
+      }
+    } catch (_e) { /* storage opcional */ }
+
+    try {
+      var main = document.querySelector('main');
+      if (main && typeof main.scrollTo === 'function') main.scrollTo(0, 0);
+      if (typeof window.scrollTo === 'function') window.scrollTo(0, 0);
+    } catch (_s) { /* scroll opcional */ }
+  },
+
+  /** Restaura última sub-aba da sessão ou cai em planejamento. */
+  restaurarSubAba: function(preferida) {
+    var nome = preferida;
+    if (!nome) {
+      try {
+        nome = (typeof sessionStorage !== 'undefined')
+          ? sessionStorage.getItem('fp-orc-sub')
+          : null;
+      } catch (_e) { nome = null; }
+    }
+    this.mudarSubAba(nome || 'planejamento');
   }
 };
 
@@ -542,6 +594,7 @@ function editarRendaOrcamento() { INIT_ORCAMENTO.editarRenda(); }
 function editarRegra503020() { INIT_ORCAMENTO.editarRegra503020(); }
 function toggleDetalhesCategorias() { INIT_ORCAMENTO.toggleDetalhesCategorias(); }
 function renderOrcamentoDashboard() { INIT_ORCAMENTO.renderDashboard(); }
+function mudarSubAbaOrcamento(nome) { INIT_ORCAMENTO.mudarSubAba(nome); }
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = INIT_ORCAMENTO;

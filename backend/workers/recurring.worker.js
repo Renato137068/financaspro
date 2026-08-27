@@ -109,6 +109,7 @@ export async function processRecurring(_job) {
             description: rec.description,
             category:    rec.category,
             date:        oldNextDue,
+            accountId:   rec.accountId || null,
             recurring:   true,
           },
         });

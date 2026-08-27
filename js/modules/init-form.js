@@ -912,7 +912,11 @@ const INIT_FORM = {
         exata: exata,
         prefixo: prefixo,
         valorProximo: valorProximo,
-        mesmoBanco: !!(banco && tx.banco === banco),
+        mesmoBanco: !!(banco && (
+          (typeof CONTAS !== 'undefined' && CONTAS.mesmaConta)
+            ? CONTAS.mesmaConta(banco, tx.accountId || tx.banco)
+            : tx.banco === banco
+        )),
         mesmoCartao: !!(cartao && tx.cartao === cartao),
         diaMesProximo: diaMesProximo,
         recente: recente,
@@ -1229,13 +1233,17 @@ const INIT_FORM = {
 
     var seletorBanco = document.getElementById('novo-banco');
     if (seletorBanco) {
-      var valBanco = seletorBanco.value;
-      var bancoOpts = bancos.map(function(b) {
-        var nome = typeof b === 'string' ? b : (b.nome || b);
-        return '<option value="' + UTILS.escapeHtml(nome) + '">' + UTILS.escapeHtml(nome) + '</option>';
-      }).join('');
-      seletorBanco.innerHTML = '<option value="">Sem banco</option>' + bancoOpts;
-      seletorBanco.value = valBanco;
+      if (typeof CONTAS !== 'undefined' && CONTAS.renderBancoSelect) {
+        CONTAS.renderBancoSelect('novo-banco');
+      } else {
+        var valBanco = seletorBanco.value;
+        var bancoOpts = bancos.map(function(b) {
+          var nome = typeof b === 'string' ? b : (b.nome || b);
+          return '<option value="' + UTILS.escapeHtml(nome) + '">' + UTILS.escapeHtml(nome) + '</option>';
+        }).join('');
+        seletorBanco.innerHTML = '<option value="">Sem banco</option>' + bancoOpts;
+        seletorBanco.value = valBanco;
+      }
     }
 
     var seletorCartao = document.getElementById('novo-cartao');
@@ -1562,6 +1570,10 @@ const INIT_FORM = {
   },
 
   processarTransacao: function(tipo, valor, categoria, data, descricao, banco, cartao, nota) {
+    var accountId = null;
+    if (banco && typeof FINANCE_CONTRACT !== 'undefined' && typeof DADOS !== 'undefined' && DADOS.getContas) {
+      accountId = FINANCE_CONTRACT.resolveAccountId(banco, DADOS.getContas());
+    }
     var form = document.getElementById('form-transacao');
     var editId = form && form.dataset.editId;
     var chkParcelado = document.getElementById('chk-parcelado');
@@ -1579,7 +1591,8 @@ const INIT_FORM = {
           data: data,
           descricao: descFinal,
           banco: banco,
-          cartao: cartao
+          cartao: cartao,
+          accountId: accountId || undefined
         });
         var discoEdit = (typeof DADOS !== 'undefined' && DADOS.aguardarDisco)
           ? DADOS.aguardarDisco()
@@ -1628,7 +1641,8 @@ const INIT_FORM = {
         chain = chain.then(function() {
           return INIT_FORM._enfileirarLancamento({
             tipo: tipo, valor: vp, categoria: categoria,
-            data: dataParcela, descricao: descParcela, banco: banco, cartao: cartao
+            data: dataParcela, descricao: descParcela, banco: banco, cartao: cartao,
+            accountId: accountId || undefined
           }).then(function(item) {
             if (p === 0) firstTxId = item.txId;
             return item;
@@ -1642,14 +1656,16 @@ const INIT_FORM = {
       var freq = freqEl ? freqEl.dataset.freq : 'mensal';
       var recData = {
         tipo: tipo, valor: valor, categoria: categoria,
-        descricao: descFinal, frequencia: freq, dataInicio: data, ativo: true
+        descricao: descFinal, frequencia: freq, dataInicio: data, ativo: true,
+        banco: banco, cartao: cartao, accountId: accountId || undefined
       };
       DADOS.salvarRecorrente(recData);
       sucessoMsg = 'Recorrência ' + freq + ' criada!';
       chain = chain.then(function() {
         return INIT_FORM._enfileirarLancamento({
           tipo: tipo, valor: valor, categoria: categoria,
-          data: data, descricao: descFinal + ' (recorrente)', banco: banco, cartao: cartao
+          data: data, descricao: descFinal + ' (recorrente)', banco: banco, cartao: cartao,
+          accountId: accountId || undefined
         }).then(function(item) {
           firstTxId = item.txId;
           return item;
@@ -1661,7 +1677,8 @@ const INIT_FORM = {
       chain = chain.then(function() {
         return INIT_FORM._enfileirarLancamento({
           tipo: tipo, valor: valor, categoria: categoria,
-          data: data, descricao: descFinal, banco: banco, cartao: cartao
+          data: data, descricao: descFinal, banco: banco, cartao: cartao,
+          accountId: accountId || undefined
         }).then(function(item) {
           firstTxId = item.txId;
           return item;
@@ -1704,7 +1721,8 @@ const INIT_FORM = {
       : ('ck-' + Date.now());
     var tx = TRANSACOES.criar(
       payload.tipo, payload.valor, payload.categoria, payload.data,
-      payload.descricao, payload.banco, payload.cartao, { clientKey: clientKey }
+      payload.descricao, payload.banco, payload.cartao,
+      { clientKey: clientKey, accountId: payload.accountId || undefined }
     );
     var wait = (typeof DADOS !== 'undefined' && DADOS.aguardarDisco)
       ? DADOS.aguardarDisco()

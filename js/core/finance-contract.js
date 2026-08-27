@@ -70,9 +70,10 @@ var FINANCE_CONTRACT = {
 
   txPtToEn: function(tx, contas) {
     if (!tx || typeof tx !== 'object') return tx;
-    var contasRef = contas || (typeof DADOS !== 'undefined' && DADOS.getContas ? DADOS.getContas() : []);
-    var accountId = this.resolveAccountId(tx.banco, contasRef);
-    var targetAccountId = this.resolveAccountId(tx.contaDestinoId || tx.contaDestino, contasRef);
+    var contasRef = contas || (typeof DADOS !== 'undefined' && DADOS && DADOS.getContas ? DADOS.getContas() : []);
+    var accountId = tx.accountId || this.resolveAccountId(tx.banco, contasRef);
+    var targetAccountId = tx.contaDestinoId
+      || this.resolveAccountId(tx.contaDestinoId || tx.contaDestino, contasRef);
     return {
       type: tx.tipo,
       amount: this._parseAmount(tx.valor),
@@ -90,8 +91,8 @@ var FINANCE_CONTRACT = {
 
   txEnToPt: function(tx, contas) {
     if (!tx || typeof tx !== 'object') return tx;
-    var contasRef = contas || (typeof DADOS !== 'undefined' && DADOS.getContas ? DADOS.getContas() : []);
-    var banco = tx.accountId || '';
+    var contasRef = contas || (typeof DADOS !== 'undefined' && DADOS && DADOS.getContas ? DADOS.getContas() : []);
+    var accountId = tx.accountId || null;
     var contaDestinoId = tx.targetAccountId || null;
     return {
       id: tx.id,
@@ -101,7 +102,8 @@ var FINANCE_CONTRACT = {
       subcategoria: tx.subcategory || '',
       data: tx.date ? String(tx.date).substring(0, 10) : '',
       descricao: tx.description || '',
-      banco: this.accountLabel(banco, contasRef) || banco,
+      banco: this.accountLabel(accountId, contasRef) || accountId || '',
+      accountId: accountId || undefined,
       contaDestinoId: contaDestinoId,
       contaDestino: contaDestinoId ? this.accountLabel(contaDestinoId, contasRef) : '',
       cartao: '',
@@ -145,13 +147,15 @@ var FINANCE_CONTRACT = {
     };
   },
 
-  recorrentePtToEn: function(rec) {
+  recorrentePtToEn: function(rec, contas) {
     if (!rec || typeof rec !== 'object') return rec;
+    var contasRef = contas || (typeof DADOS !== 'undefined' && DADOS && DADOS.getContas ? DADOS.getContas() : []);
     var freqRaw = (rec.frequencia || rec.frequency || 'mensal').toLowerCase();
     var freqEn = this.FREQ_PT_TO_EN[freqRaw] || 'monthly';
     var inicio = rec.dataInicio || rec.inicio || rec.startDate;
     var fim = rec.dataFim || rec.fim || rec.endDate;
     var proximo = rec.proximoVencimento || rec.proxima || rec.nextDue || inicio;
+    var accountId = rec.accountId || this.resolveAccountId(rec.banco, contasRef);
     return {
       type: rec.tipo || rec.type || 'despesa',
       amount: this._parseAmount(rec.valor != null ? rec.valor : rec.amount),
@@ -162,12 +166,15 @@ var FINANCE_CONTRACT = {
       endDate: fim ? this._toIsoDate(fim) : null,
       nextDue: this._toIsoDate(proximo),
       active: rec.ativo !== false && rec.active !== false,
+      accountId: accountId || undefined,
     };
   },
 
-  recorrenteEnToPt: function(rec) {
+  recorrenteEnToPt: function(rec, contas) {
     if (!rec || typeof rec !== 'object') return rec;
+    var contasRef = contas || (typeof DADOS !== 'undefined' && DADOS && DADOS.getContas ? DADOS.getContas() : []);
     var freqPt = this.FREQ_EN_TO_PT[rec.frequency] || rec.frequency || 'mensal';
+    var accountId = rec.accountId || null;
     return {
       id: rec.id,
       tipo: rec.type,
@@ -179,6 +186,8 @@ var FINANCE_CONTRACT = {
       dataFim: rec.endDate ? String(rec.endDate).substring(0, 10) : null,
       proximoVencimento: rec.nextDue ? String(rec.nextDue).substring(0, 10) : '',
       ativo: rec.active !== false,
+      accountId: accountId || undefined,
+      banco: this.accountLabel(accountId, contasRef) || '',
       dataCriacao: rec.createdAt || new Date().toISOString(),
       updatedAt: rec.updatedAt || rec.createdAt || new Date().toISOString(),
       _apiId: rec.id,

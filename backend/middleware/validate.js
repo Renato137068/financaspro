@@ -161,4 +161,5 @@ export const recurringSchema = z.object({
   startDate: z.string().datetime(),
   endDate: z.string().datetime().optional().nullable(),
   nextDue: z.string().datetime(),
+  accountId: z.string().uuid().optional().nullable(),
 });

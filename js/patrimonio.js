@@ -130,14 +130,23 @@ const PATRIMONIO = {
   },
 
   totalAtivos: function() {
-    return this.listarAtivos().reduce(function(s, a) { return s + (a.valor || 0); }, 0);
+    var valores = this.listarAtivos().map(function(a) { return a.valor || 0; });
+    return typeof UTILS !== 'undefined' && UTILS.somarMoeda
+      ? UTILS.somarMoeda(valores)
+      : valores.reduce(function(s, v) { return s + v; }, 0);
   },
 
   totalDividas: function() {
-    return this.listarDividas().reduce(function(s, d) { return s + (d.valor || 0); }, 0);
+    var valores = this.listarDividas().map(function(d) { return d.valor || 0; });
+    return typeof UTILS !== 'undefined' && UTILS.somarMoeda
+      ? UTILS.somarMoeda(valores)
+      : valores.reduce(function(s, v) { return s + v; }, 0);
   },
 
   patrimonioLiquido: function() {
+    if (typeof UTILS !== 'undefined' && UTILS.somarMoeda) {
+      return UTILS.somarMoeda([this.totalAtivos(), -this.totalDividas()]);
+    }
     return this.totalAtivos() - this.totalDividas();
   },
 
@@ -189,9 +198,100 @@ const PATRIMONIO = {
       corrente: 'corrente', poupanca: 'poupanca', digital: 'corrente',
       carteira: 'outro', credito: 'outro', debito: 'corrente'
     };
-    return CONTAS.getAll().filter(function(c) { return !vinculados[c.id]; }).map(function(c) {
-      return { contaId: c.id, nome: c.nome, tipo: mapTipo[c.tipo] || 'corrente' };
+    var saldoPorNome = {};
+    if (CONTAS.saldos) {
+      CONTAS.saldos().forEach(function(s) {
+        if (!s || s.semConta) return;
+        var chave = CONTAS._chaveConta ? CONTAS._chaveConta(s.nome) : String(s.nome || '').trim();
+        if (chave) saldoPorNome[chave] = s.saldo;
+      });
+    }
+    return CONTAS.getAll().filter(function(c) { return c && c.id && !vinculados[c.id]; }).map(function(c) {
+      var chave = CONTAS._chaveConta ? CONTAS._chaveConta(c.nome) : String(c.nome || '').trim();
+      return {
+        contaId: c.id,
+        nome: c.nome,
+        tipo: mapTipo[c.tipo] || 'corrente',
+        saldoLedger: Object.prototype.hasOwnProperty.call(saldoPorNome, chave)
+          ? saldoPorNome[chave]
+          : null
+      };
     });
+  },
+
+  reconciliarContas: function() {
+    var vazios = {
+      overlaps: [],
+      totalSobreposto: 0,
+      saldoLedger: 0,
+      liquido: this.patrimonioLiquido(),
+      liquidoSemSobreposicao: this.patrimonioLiquido()
+    };
+    if (typeof CONTAS === 'undefined' || !CONTAS.saldos) return vazios;
+
+    var saldos = CONTAS.saldos();
+    var saldoPorNome = {};
+    var saldoPorId = {};
+    var saldoLedgerCent = 0;
+    saldos.forEach(function(s) {
+      if (!s || s.semConta) return;
+      var chave = CONTAS._chaveConta ? CONTAS._chaveConta(s.nome) : String(s.nome || '').trim();
+      if (chave) saldoPorNome[chave] = s.saldo;
+      saldoLedgerCent += UTILS.paraCentavos(s.saldo);
+    });
+    if (CONTAS.getAll) {
+      CONTAS.getAll().forEach(function(c) {
+        if (!c || !c.id) return;
+        var chave = CONTAS._chaveConta ? CONTAS._chaveConta(c.nome) : String(c.nome || '').trim();
+        if (chave && Object.prototype.hasOwnProperty.call(saldoPorNome, chave)) {
+          saldoPorId[c.id] = saldoPorNome[chave];
+        }
+      });
+    }
+
+    var tiposCaixa = { corrente: true, poupanca: true };
+    var overlaps = [];
+    var sobrepostoCent = 0;
+    this.listarAtivos().forEach(function(a) {
+      if (!a) return;
+      var ledger = null;
+      var motivo = null;
+      if (a.contaId && Object.prototype.hasOwnProperty.call(saldoPorId, a.contaId)) {
+        ledger = saldoPorId[a.contaId];
+        motivo = 'contaId';
+      } else if (tiposCaixa[a.tipo]) {
+        var chave = CONTAS._chaveConta ? CONTAS._chaveConta(a.nome) : String(a.nome || '').trim();
+        if (chave && Object.prototype.hasOwnProperty.call(saldoPorNome, chave)) {
+          ledger = saldoPorNome[chave];
+          motivo = 'nome';
+        }
+      }
+      if (ledger == null) return;
+      var valorAtivo = Number(a.valor) || 0;
+      overlaps.push({
+        ativoId: a.id,
+        nome: a.nome,
+        tipo: a.tipo,
+        contaId: a.contaId || null,
+        valorAtivo: valorAtivo,
+        saldoLedger: ledger,
+        delta: valorAtivo - ledger,
+        motivo: motivo
+      });
+      sobrepostoCent += UTILS.paraCentavos(valorAtivo);
+    });
+
+    var totalSobreposto = sobrepostoCent / 100;
+    var liquido = this.patrimonioLiquido();
+    return {
+      overlaps: overlaps,
+      totalSobreposto: totalSobreposto,
+      saldoLedger: saldoLedgerCent / 100,
+      liquido: liquido,
+      liquidoSemSobreposicao: UTILS.somarMoeda
+        ? UTILS.somarMoeda([liquido, -totalSobreposto])
+        : liquido - totalSobreposto
+    };
   }
 };
 

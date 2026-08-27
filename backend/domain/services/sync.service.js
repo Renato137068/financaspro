@@ -8,6 +8,7 @@ import {
   serializeRecurring,
   serializeBudget,
   assertTransferPayload,
+  normalizeAccountId,
   ACCOUNT_TYPES,
   RECURRING_FREQUENCIES,
 } from '../contracts/finance.contract.js';
@@ -70,6 +71,7 @@ function normalizeRecurringPayload(payload) {
     endDate: payload.endDate ? new Date(payload.endDate) : null,
     nextDue: new Date(payload.nextDue),
     active: payload.active !== false,
+    accountId: normalizeAccountId(payload.accountId),
   };
 }
 
@@ -338,6 +340,7 @@ export const SyncService = {
         case 'apply': {
           const data = normalizeRecurringPayload(m.payload);
           if (!data) return { ...base, action: 'reject', reason: 'payload-invalido' };
+          await AccountService.assertAccountsOwned(userId, data);
           const rec = await RecurringRepository.upsertSync(userId, m.id, data);
           return { ...base, action: 'apply', record: serializeRecurring(rec) };
         }

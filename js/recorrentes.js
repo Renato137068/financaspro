@@ -166,6 +166,7 @@ var RECORRENTES = {
             rec.descricao || 'Recorrente',
             rec.banco || '',
             rec.cartao || '',
+            { accountId: rec.accountId || undefined }
           );
         } catch (e) {
           // Uma recorrente inválida não pode impedir as outras de rodarem.

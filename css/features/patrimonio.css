@@ -159,6 +159,33 @@
   border-radius: var(--radius-lg);
 }
 
+.pat-aviso-dupla {
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(180, 120, 20, 0.35);
+  background: rgba(180, 120, 20, 0.08);
+}
+
+.pat-aviso-dupla strong {
+  display: block;
+  margin-bottom: var(--space-1);
+  font-size: var(--text-sm);
+}
+
+.pat-aviso-dupla p {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-sm);
+  line-height: 1.4;
+}
+
+.pat-aviso-hint,
+.pat-form-hint {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
 .pat-sugestoes-title {
   margin: 0 0 var(--space-2);
   font-size: var(--text-sm);

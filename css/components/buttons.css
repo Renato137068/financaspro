@@ -122,6 +122,18 @@
   color: var(--color-text-inverse);
 }
 
+.btn-empty-cta--secundario {
+  margin-top: var(--space-2);
+  background: transparent;
+  color: var(--color-text-secondary);
+  border-color: var(--color-border-subtle);
+}
+
+.btn-empty-cta--secundario:active {
+  background: var(--color-bg-subtle);
+  color: var(--color-text-primary);
+}
+
 /* ── Ver todos (link-button) ──────────────────────────────── */
 
 .btn-ver-todos {

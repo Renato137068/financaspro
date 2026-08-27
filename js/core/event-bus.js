@@ -237,6 +237,12 @@ const EVENT_HANDLERS = {
         INIT_EXTRATO.limparFiltros();
       }
     },
+
+    'toggle-filtros-avancados': function() {
+      if (typeof INIT_EXTRATO !== 'undefined' && typeof INIT_EXTRATO.toggleFiltrosAvancados === 'function') {
+        INIT_EXTRATO.toggleFiltrosAvancados();
+      }
+    },
     
     'abrir-busca-avancada': function() {
       var container = document.getElementById('busca-avancada-container');
