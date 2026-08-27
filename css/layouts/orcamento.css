@@ -1263,16 +1263,22 @@
   }
 
   .orc-kpi-main {
-    flex-direction: column;
     align-items: flex-start;
     gap: var(--space-3);
     padding: var(--space-4);
   }
 
+  /* Conteúdo ocupa a largura e o indicador de tendência fica no fluxo, à
+     direita — antes era position:absolute e cobria o título
+     "SALDO DISPONÍVEL DO ORÇAMENTO". */
+  .orc-kpi-main-content {
+    flex: 1;
+    min-width: 0;
+  }
+
   .orc-kpi-trend-indicator {
-    position: absolute;
-    top: var(--space-4);
-    right: var(--space-4);
+    position: static;
+    flex-shrink: 0;
   }
 
   .orc-kpi-value {
