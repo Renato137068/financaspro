@@ -241,6 +241,8 @@ describe('Sub-abas Orçamento', function() {
     expect(document.getElementById('orc-sub-panel-planejamento').classList.contains('ativo')).toBe(false);
     expect(document.getElementById('orc-sub-panel-planejamento').hasAttribute('hidden')).toBe(true);
     expect(document.querySelector('[data-orc-sub="metas"]').getAttribute('aria-selected')).toBe('true');
+    expect(document.querySelector('[data-orc-sub="metas"]').getAttribute('tabindex')).toBe('0');
+    expect(document.querySelector('[data-orc-sub="planejamento"]').getAttribute('tabindex')).toBe('-1');
   });
 
   test('nome inválido cai em planejamento', function() {

@@ -45,6 +45,7 @@
   <script defer src="js/utilities/observability.js"></script>
   <script defer src="js/utilities/local-crypto.js"></script>
   <script defer src="js/utilities/focus-trap.js"></script>
+  <script defer src="js/utilities/tablist-keyboard.js"></script>
   <script defer src="js/utilities/aria-live.js"></script>
   <script defer src="js/utilities/finance-reconciler.js"></script>
   <!-- pin-guard NAO usa defer: precisa rodar antes do primeiro paint p/ evitar leak visual -->
@@ -71,8 +72,8 @@
     <p id="auth-message">Controle gastos, metas e contas em um só lugar. Grátis para começar.</p>
     <div id="auth-env-warning" class="auth-env-warning" style="display:none"></div>
     <div class="auth-tabs" role="tablist" aria-label="Tipo de autenticação">
-      <button type="button" class="auth-tab ativo" role="tab" id="auth-tab-login" aria-selected="true" aria-controls="auth-login-form" data-auth-tab="login">Entrar</button>
-      <button type="button" class="auth-tab" role="tab" id="auth-tab-register" aria-selected="false" aria-controls="auth-register-form" data-auth-tab="register">Criar conta</button>
+      <button type="button" class="auth-tab ativo" role="tab" id="auth-tab-login" aria-selected="true" aria-controls="auth-login-form" data-auth-tab="login" tabindex="0">Entrar</button>
+      <button type="button" class="auth-tab" role="tab" id="auth-tab-register" aria-selected="false" aria-controls="auth-register-form" data-auth-tab="register" tabindex="-1">Criar conta</button>
     </div>
     <form id="auth-login-form" class="auth-form" role="tabpanel" aria-labelledby="auth-tab-login">
       <div class="auth-field">
@@ -768,19 +769,19 @@
   <!-- ABA 4: ORÇAMENTO -->
   <div id="aba-orcamento" class="aba">
     <nav class="orc-subnav" aria-label="Seções do orçamento">
-      <div class="filtros-tipo" role="tablist">
+      <div class="filtros-tipo" role="tablist" aria-label="Seções do orçamento">
         <button type="button" class="filtro-chip ativo" role="tab"
           id="orc-sub-tab-planejamento" data-action="orc-sub-aba" data-orc-sub="planejamento"
-          aria-selected="true" aria-controls="orc-sub-panel-planejamento">Planejamento</button>
+          aria-selected="true" aria-controls="orc-sub-panel-planejamento" tabindex="0">Planejamento</button>
         <button type="button" class="filtro-chip" role="tab"
           id="orc-sub-tab-metas" data-action="orc-sub-aba" data-orc-sub="metas"
-          aria-selected="false" aria-controls="orc-sub-panel-metas">Metas</button>
+          aria-selected="false" aria-controls="orc-sub-panel-metas" tabindex="-1">Metas</button>
         <button type="button" class="filtro-chip" role="tab"
           id="orc-sub-tab-assinaturas" data-action="orc-sub-aba" data-orc-sub="assinaturas"
-          aria-selected="false" aria-controls="orc-sub-panel-assinaturas">Assinaturas</button>
+          aria-selected="false" aria-controls="orc-sub-panel-assinaturas" tabindex="-1">Assinaturas</button>
         <button type="button" class="filtro-chip" role="tab"
           id="orc-sub-tab-patrimonio" data-action="orc-sub-aba" data-orc-sub="patrimonio"
-          aria-selected="false" aria-controls="orc-sub-panel-patrimonio">Patrimônio</button>
+          aria-selected="false" aria-controls="orc-sub-panel-patrimonio" tabindex="-1">Patrimônio</button>
       </div>
     </nav>
 

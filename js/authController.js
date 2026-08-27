@@ -10,10 +10,11 @@ function _abrirAuthOverlay(overlay) {
   overlay.style.display = 'flex';
   document.body.classList.add('auth-overlay-open');
   var first = document.getElementById('auth-login-email') || overlay.querySelector('input, button');
-  if (first) first.focus();
   if (typeof FocusTrap !== 'undefined') {
     _authFocusTrap = new FocusTrap(overlay);
-    _authFocusTrap.activate();
+    _authFocusTrap.activate(first || undefined);
+  } else if (first) {
+    first.focus();
   }
 }
 
@@ -77,6 +78,7 @@ function setupAuthUI() {
       var active = tab.dataset.authTab === name;
       tab.classList.toggle('ativo', active);
       tab.setAttribute('aria-selected', active ? 'true' : 'false');
+      tab.setAttribute('tabindex', active ? '0' : '-1');
     });
     if (loginForm) {
       loginForm.style.display = name === 'login' ? '' : 'none';
@@ -109,6 +111,17 @@ function setupAuthUI() {
       showTab(tab.dataset.authTab || 'login');
     });
   });
+
+  if (typeof TablistKeyboard !== 'undefined') {
+    var authTablist = overlay.querySelector('[role="tablist"]');
+    if (authTablist) {
+      TablistKeyboard.init(authTablist, {
+        onSelect: function(tab) {
+          showTab(tab.dataset.authTab || 'login');
+        }
+      });
+    }
+  }
 
   overlay.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && overlay.style.display === 'flex') {

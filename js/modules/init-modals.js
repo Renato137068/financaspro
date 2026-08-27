@@ -64,13 +64,14 @@ const INIT_MODALS = {
     document.body.appendChild(ov);
     
     var btn = ov.querySelector('.modal-btn');
-    btn.focus();
     
     // Initialize focus trap if available
     var focusTrap = null;
     if (typeof FocusTrap !== 'undefined' && FocusTrap) {
       focusTrap = new FocusTrap(ov);
-      focusTrap.activate();
+      focusTrap.activate(btn);
+    } else if (btn) {
+      btn.focus();
     }
 
     // Fechar SEMPRE desativa o trap. Módulos legados fazem `ok.onclick = save`
@@ -163,13 +164,14 @@ const INIT_MODALS = {
     
     var bo = ov.querySelector('#mo');
     var bc = ov.querySelector('#mc');
-    bo.focus();
     
     // Initialize focus trap if available
     var focusTrap = null;
     if (FocusTrap) {
       focusTrap = new FocusTrap(ov);
-      focusTrap.activate();
+      focusTrap.activate(bo);
+    } else if (bo) {
+      bo.focus();
     }
     
     // Event listeners
@@ -280,7 +282,7 @@ const INIT_MODALS = {
    */
   abrirChangelog: function() {
     var html = '<h3>Novidades</h3>' +
-      '<div style="max-height:350px;overflow-y:auto;padding-right:8px;">' +
+      '<div style="max-height:350px;overflow-y:auto;padding-right:8px;" tabindex="0" role="region" aria-label="Histórico de versões">' +
       '<div style="margin-bottom:16px;"><strong>v11.0.0</strong><br>' +
       '<i data-lucide="calendar-clock" aria-hidden="true"></i> Contas a pagar e calendário<br>' +
       '<i data-lucide="shield" aria-hidden="true"></i> PIN de segurança<br>' +

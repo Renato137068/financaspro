@@ -542,17 +542,25 @@ const INIT_ORCAMENTO = {
    * Alterna as sub-seções do Orçamento sem destruir IDs internos.
    * @param {string} nome planejamento|metas|assinaturas|patrimonio
    */
-  mudarSubAba: function(nome) {
+  mudarSubAba: function(nome, opcoes) {
+    opcoes = opcoes || {};
     var permitido = this.SUB_ABAS.indexOf(nome) !== -1 ? nome : 'planejamento';
     var root = document.getElementById('aba-orcamento');
     if (!root) return;
 
     var tabs = root.querySelectorAll('[data-orc-sub]');
+    var activeTab = null;
     for (var i = 0; i < tabs.length; i++) {
       var on = tabs[i].getAttribute('data-orc-sub') === permitido;
       tabs[i].classList.toggle('ativo', on);
       tabs[i].setAttribute('aria-selected', on ? 'true' : 'false');
+      if (on) activeTab = tabs[i];
     }
+
+    for (var t = 0; t < tabs.length; t++) {
+      tabs[t].setAttribute('tabindex', tabs[t] === activeTab ? '0' : '-1');
+    }
+    if (opcoes.focusTab && activeTab) activeTab.focus();
 
     var panels = root.querySelectorAll('.orc-sub-panel');
     for (var j = 0; j < panels.length; j++) {

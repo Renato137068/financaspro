@@ -149,6 +149,7 @@ const urlsParaCache = [
   "/js/utilities/local-crypto.js",
   "/js/utilities/observability.js",
   "/js/utilities/sync-indicator.js",
+  "/js/utilities/tablist-keyboard.js",
   "/js/vendor/lucide.min.js",
   "/manifest.json",
   "/privacidade.html"

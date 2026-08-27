@@ -590,12 +590,14 @@ var CONTAS = {
       '</div>';
     ov.setAttribute('aria-label', (id ? 'Editar' : 'Nova') + ' conta ou cartão');
     document.body.appendChild(ov);
+    var inp = document.getElementById('mc-nome');
     if (typeof FocusTrap !== 'undefined') {
       CONTAS._focusTrap = new FocusTrap(ov);
-      CONTAS._focusTrap.activate();
+      CONTAS._focusTrap.activate(inp || undefined);
+    } else if (inp) {
+      inp.focus();
     }
-    var inp = document.getElementById('mc-nome');
-    if (inp) { inp.focus(); inp.select(); }
+    if (inp) inp.select();
     ov.addEventListener('click', function(e) {
       if (e.target === ov) { CONTAS.fecharModal(); return; }
       var btn = e.target.closest('[data-modal-action]');

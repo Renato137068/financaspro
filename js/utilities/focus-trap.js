@@ -10,7 +10,8 @@ class FocusTrap {
     this.focusableElements = [];
     this.firstFocusable = null;
     this.lastFocusable = null;
-    this.previousActiveElement = null;
+    // Captura o gatilho antes de qualquer .focus() dentro do modal.
+    this.previousActiveElement = document.activeElement;
     this.boundKeyDown = this.handleKeyDown.bind(this);
   }
 
@@ -34,13 +35,9 @@ class FocusTrap {
   /**
    * Activate the focus trap
    */
-  activate() {
-    // Store the previously focused element
-    this.previousActiveElement = document.activeElement;
-
-    // Get focusable elements
+  activate(initialFocusEl) {
     this.focusableElements = this.getFocusableElements();
-    
+
     if (this.focusableElements.length === 0) {
       return;
     }
@@ -48,10 +45,11 @@ class FocusTrap {
     this.firstFocusable = this.focusableElements[0];
     this.lastFocusable = this.focusableElements[this.focusableElements.length - 1];
 
-    // Focus the first element
-    this.firstFocusable.focus();
+    var toFocus = initialFocusEl || this.firstFocusable;
+    if (toFocus && typeof toFocus.focus === 'function') {
+      toFocus.focus();
+    }
 
-    // Add event listener
     this.element.addEventListener('keydown', this.boundKeyDown);
   }
 

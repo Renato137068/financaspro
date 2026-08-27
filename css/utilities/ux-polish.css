@@ -15,6 +15,7 @@ textarea {
 
 button:focus-visible,
 [role="button"]:focus-visible,
+[role="tab"]:focus-visible,
 a:focus-visible,
 input:focus-visible,
 select:focus-visible,
@@ -118,6 +119,7 @@ textarea:focus-visible {
 
 [data-theme="dark"] button:focus-visible,
 [data-theme="dark"] [role="button"]:focus-visible,
+[data-theme="dark"] [role="tab"]:focus-visible,
 [data-theme="dark"] a:focus-visible,
 [data-theme="dark"] input:focus-visible,
 [data-theme="dark"] select:focus-visible,

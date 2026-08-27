@@ -58,3 +58,45 @@ test('a11y — tema escuro (Resumo)', async function({ page }) {
   });
   await auditar(page, 'Resumo (dark)');
 });
+
+test('a11y — sub-abas Orçamento (claro e escuro)', async function({ page }) {
+  await page.evaluate(function() { mudarAba('orcamento'); });
+  await expect(page.locator('#aba-orcamento')).toHaveClass(/ativo/);
+
+  var subs = ['planejamento', 'metas', 'assinaturas', 'patrimonio'];
+  for (var i = 0; i < subs.length; i++) {
+    await page.evaluate(function(sub) {
+      if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.mudarSubAba) {
+        INIT_ORCAMENTO.mudarSubAba(sub);
+      }
+    }, subs[i]);
+    await auditar(page, 'Orçamento / ' + subs[i]);
+  }
+
+  await page.evaluate(function() {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  });
+  for (var j = 0; j < subs.length; j++) {
+    await page.evaluate(function(sub) {
+      if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.mudarSubAba) {
+        INIT_ORCAMENTO.mudarSubAba(sub);
+      }
+    }, subs[j]);
+    await auditar(page, 'Orçamento (dark) / ' + subs[j]);
+  }
+});
+
+test('a11y — modal changelog (claro e escuro)', async function({ page }) {
+  await page.evaluate(function() { abrirChangelog(); });
+  await expect(page.locator('.modal-overlay')).toBeVisible();
+  await auditar(page, 'Modal changelog');
+
+  await page.evaluate(function() {
+    var ov = document.querySelector('.modal-overlay');
+    if (ov) ov.remove();
+    document.documentElement.setAttribute('data-theme', 'dark');
+    abrirChangelog();
+  });
+  await expect(page.locator('.modal-overlay')).toBeVisible();
+  await auditar(page, 'Modal changelog (dark)');
+});

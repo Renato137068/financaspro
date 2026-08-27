@@ -18,7 +18,27 @@ const INIT_NAVIGATION = {
     }
     this.setupNavigation();
     this.setupActionBindings();
+    this.initTablists();
     this._initialized = true;
+  },
+
+  /**
+   * Teclado WAI-ARIA em tablists (Orçamento e demais)
+   */
+  initTablists: function() {
+    if (typeof TablistKeyboard === 'undefined') return;
+
+    var orcList = document.querySelector('#aba-orcamento [role="tablist"]');
+    if (orcList) {
+      TablistKeyboard.init(orcList, {
+        onSelect: function(tab, meta) {
+          var sub = tab.getAttribute('data-orc-sub');
+          if (sub && typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.mudarSubAba) {
+            INIT_ORCAMENTO.mudarSubAba(sub, { focusTab: !!(meta && meta.focus) });
+          }
+        }
+      });
+    }
   },
 
   /**
