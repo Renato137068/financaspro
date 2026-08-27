@@ -34,6 +34,8 @@ textarea:focus-visible {
 .data-chip,
 .filtro-chip,
 .ordenacao-btn,
+.ordenacao-campo-btn,
+.ordenacao-dir-btn,
 .cat-btn {
   min-width: var(--tap-target-min);
   min-height: var(--tap-target-min);
@@ -140,6 +142,8 @@ textarea:focus-visible {
 .alerta-btn,
 .filtro-chip,
 .ordenacao-btn,
+.ordenacao-campo-btn,
+.ordenacao-dir-btn,
 .btn-busca-avancada,
 .periodo-nav,
 .perfil-action-btn,
@@ -272,6 +276,36 @@ textarea:focus-visible {
 }
 .toast-acao .toast-acao-btn:hover{ background:rgba(0,168,98,.12); }
 .toast-acao .toast-acao-btn:focus-visible{ outline:2px solid var(--color-primary-500); outline-offset:2px; }
+
+.fp-banner{
+  position:fixed; z-index:1090;
+  top:calc(env(safe-area-inset-top, 0px) + 56px);
+  left:50%; transform:translateX(-50%);
+  width:min(520px, calc(100vw - 24px));
+  display:flex; align-items:center; gap:12px;
+  padding:12px 14px; border-radius:var(--radius-lg);
+  background:var(--color-bg-card); color:var(--color-text-primary);
+  border:1px solid var(--color-border); box-shadow:var(--elevacao-2);
+}
+.fp-banner--info{ border-color:var(--color-border); }
+.fp-banner-texto{ flex:1 1 auto; margin:0; font-size:var(--font-size-sm); line-height:1.35; }
+.fp-banner-actions{ display:inline-flex; align-items:center; gap:6px; flex:0 0 auto; }
+.fp-banner-btn{
+  border:0; border-radius:var(--radius-md); cursor:pointer;
+  background:var(--color-primary-500); color:var(--color-text-inverse);
+  font-size:var(--font-size-xs); font-weight:var(--font-weight-semibold);
+  padding:8px 12px; min-height:var(--tap-target-min);
+}
+.fp-banner-dismiss{
+  border:0; background:transparent; cursor:pointer;
+  color:var(--color-text-muted); font-size:var(--font-size-xl); line-height:1;
+  width:var(--tap-target-min); height:var(--tap-target-min);
+  border-radius:var(--radius-full);
+}
+.fp-banner-btn:focus-visible,
+.fp-banner-dismiss:focus-visible{
+  outline:2px solid var(--color-primary-500); outline-offset:2px;
+}
 
 /* Respeita preferências de movimento reduzido */
 @media (prefers-reduced-motion: reduce){

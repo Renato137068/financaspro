@@ -588,6 +588,53 @@
   gap: var(--space-2);
   margin-top: var(--space-3);
   flex-wrap: wrap;
+  align-items: center;
+}
+
+.ordenacao-campo-grupo {
+  display: inline-flex;
+  gap: var(--space-1);
+  padding: 2px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-card);
+}
+
+.ordenacao-campo-btn,
+.ordenacao-dir-btn {
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  min-width: var(--tap-target-min);
+  min-height: var(--tap-target-min);
+}
+
+.ordenacao-campo-btn:hover,
+.ordenacao-dir-btn:hover {
+  background: var(--color-bg-primary);
+  border-color: var(--color-primary-500);
+}
+
+.ordenacao-campo-btn.ativo {
+  background: var(--color-primary-500);
+  color: var(--color-text-inverse);
+  border-color: var(--color-primary-500);
+}
+
+.ordenacao-dir-btn {
+  background: var(--color-bg-card);
+  border-color: var(--color-border);
 }
 
 .ordenacao-btn {

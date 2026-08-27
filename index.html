@@ -705,17 +705,12 @@
 
         <!-- Ordenação -->
         <div class="ordenacao-container" role="group" aria-label="Ordenar por">
-          <button class="ordenacao-btn ativo" data-ordenacao="data-desc" data-action="ordenar" aria-pressed="true" title="Data (mais recente)" aria-label="Ordenar por data, mais recente primeiro">
-            <i data-lucide="calendar" aria-hidden="true"></i> Data <i data-lucide="arrow-down" aria-hidden="true"></i>
-          </button>
-          <button class="ordenacao-btn" data-ordenacao="data-asc" data-action="ordenar" aria-pressed="false" title="Data (mais antiga)" aria-label="Ordenar por data, mais antiga primeiro">
-            <i data-lucide="calendar" aria-hidden="true"></i> Data <i data-lucide="arrow-up" aria-hidden="true"></i>
-          </button>
-          <button class="ordenacao-btn" data-ordenacao="valor-desc" data-action="ordenar" aria-pressed="false" title="Valor (maior)" aria-label="Ordenar por valor, maior primeiro">
-            <i data-lucide="dollar-sign" aria-hidden="true"></i> Valor <i data-lucide="arrow-down" aria-hidden="true"></i>
-          </button>
-          <button class="ordenacao-btn" data-ordenacao="valor-asc" data-action="ordenar" aria-pressed="false" title="Valor (menor)" aria-label="Ordenar por valor, menor primeiro">
-            <i data-lucide="dollar-sign" aria-hidden="true"></i> Valor <i data-lucide="arrow-up" aria-hidden="true"></i>
+          <div class="ordenacao-campo-grupo" role="group" aria-label="Campo de ordenação">
+            <button type="button" class="ordenacao-campo-btn ativo" data-ordenacao-campo="data" data-action="ordenacao-campo" aria-pressed="true">Data</button>
+            <button type="button" class="ordenacao-campo-btn" data-ordenacao-campo="valor" data-action="ordenacao-campo" aria-pressed="false">Valor</button>
+          </div>
+          <button type="button" class="ordenacao-dir-btn" data-action="toggle-ordenacao-dir" aria-pressed="true" aria-label="Ordenação descendente" title="Maior ou mais recente primeiro">
+            <i data-lucide="arrow-down" aria-hidden="true"></i>
           </button>
         </div>
 

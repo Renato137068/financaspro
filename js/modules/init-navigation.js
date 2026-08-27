@@ -159,6 +159,8 @@ const INIT_NAVIGATION = {
       'of-sync': true,
       'of-desconectar': true,
       'ordenar': true,
+      'ordenacao-campo': true,
+      'toggle-ordenacao-dir': true,
       'limpar-filtros': true,
       'toggle-filtros-avancados': true,
       'abrir-busca-avancada': true,

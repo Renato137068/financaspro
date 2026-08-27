@@ -335,6 +335,36 @@ domDescribe('UTILS.mostrarToast (jsdom)', function() {
     expect(clicado).toBe(true);
     expect(typeof ctrl.fechar).toBe('function');
   });
+
+  test('agendarExclusao adia efetivação e permite desfazer', function() {
+    jest.useFakeTimers();
+    var efetivou = false;
+    var desfez = false;
+    global.UTILS.agendarExclusao('teste-1', function() { efetivou = true; }, {
+      duracaoMs: 5000,
+      aoDesfazer: function() { desfez = true; }
+    });
+    expect(document.querySelector('.toast-acao-btn')).not.toBeNull();
+    document.querySelector('.toast-acao-btn').click();
+    expect(desfez).toBe(true);
+    jest.advanceTimersByTime(6000);
+    expect(efetivou).toBe(false);
+    jest.useRealTimers();
+  });
+
+  test('mostrarBanner cria banner dispensável com ação', function() {
+    var clicou = false;
+    global.UTILS.mostrarBanner({
+      id: 'teste-banner',
+      mensagem: 'Lembrete',
+      acao: 'Ok',
+      onAcao: function() { clicou = true; }
+    });
+    expect(document.getElementById('teste-banner')).not.toBeNull();
+    document.querySelector('.fp-banner-btn').click();
+    expect(clicou).toBe(true);
+    expect(document.getElementById('teste-banner')).toBeNull();
+  });
 });
 
 /**

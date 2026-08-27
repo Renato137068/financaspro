@@ -21,6 +21,7 @@ const INIT_EXTRATO = {
       dataFim: null
     },
     selecionados: [], // IDs de transações selecionadas
+    pendenteExclusao: {}, // IDs ocultos até efetivar ou desfazer
     virtualScroll: {
       pageSize: 50,
       currentPage: 0,
@@ -45,6 +46,7 @@ const INIT_EXTRATO = {
     this._bindBusca();
     this._bindKeyboardShortcuts();
     this.atualizarBadgeFiltrosAvancados();
+    this._syncOrdenacaoUI();
   },
 
   /**
@@ -382,18 +384,29 @@ const INIT_EXTRATO = {
     var self = this;
     var qtd = this.state.selecionados.length;
     INIT_MODALS.confirm('Deseja realmente deletar ' + qtd + ' transação(ões)?', function() {
-      var deletadas = 0;
-      self.state.selecionados.forEach(function(txId) {
-        var tx = TRANSACOES.obterPorId(txId);
-        if (tx) {
-          TRANSACOES.deletar(txId);
-          deletadas++;
-        }
-      });
+      var ids = self.state.selecionados.slice();
       self.state.selecionados = [];
       self._atualizarBarraAcoesMassa();
+
+      ids.forEach(function(txId) {
+        if (!TRANSACOES.obterPorId(txId)) return;
+        self.state.pendenteExclusao[txId] = true;
+        UTILS.agendarExclusao('tx-' + txId, function() {
+          TRANSACOES.deletar(txId);
+          delete self.state.pendenteExclusao[txId];
+          RENDER.init();
+        }, {
+          mensagem: 'Excluído',
+          duracaoMs: 5000,
+          aoDesfazer: function() {
+            delete self.state.pendenteExclusao[txId];
+            self.filtrarExtrato();
+            RENDER.init();
+          }
+        });
+      });
+
       self.filtrarExtrato();
-      UTILS.mostrarToast(deletadas + ' transação(ões) deletada(s)', 'success');
     });
   },
 
@@ -456,13 +469,50 @@ const INIT_EXTRATO = {
   /**
    * Define ordenação de transações
    */
+  _parseOrdenacao: function(ord) {
+    var m = (ord || 'data-desc').match(/^(data|valor)-(asc|desc)$/);
+    return { campo: m ? m[1] : 'data', dir: m ? m[2] : 'desc' };
+  },
+
+  _comporOrdenacao: function(campo, dir) {
+    return campo + '-' + dir;
+  },
+
+  _syncOrdenacaoUI: function() {
+    var parsed = this._parseOrdenacao(this.state.ordenacao);
+    document.querySelectorAll('.ordenacao-campo-btn').forEach(function(b) {
+      var on = b.dataset.ordenacaoCampo === parsed.campo;
+      b.classList.toggle('ativo', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    var dirBtn = document.querySelector('.ordenacao-dir-btn');
+    if (dirBtn) {
+      var desc = parsed.dir === 'desc';
+      dirBtn.setAttribute('aria-label', desc ? 'Ordenação descendente' : 'Ordenação ascendente');
+      dirBtn.setAttribute('aria-pressed', desc ? 'true' : 'false');
+      dirBtn.title = desc ? 'Maior ou mais recente primeiro' : 'Menor ou mais antiga primeiro';
+      var icon = dirBtn.querySelector('[data-lucide]');
+      if (icon) {
+        icon.setAttribute('data-lucide', desc ? 'arrow-down' : 'arrow-up');
+        if (typeof renderLucideIcons === 'function') renderLucideIcons(dirBtn);
+      }
+    }
+  },
+
+  setOrdenacaoCampo: function(campo) {
+    var parsed = this._parseOrdenacao(this.state.ordenacao);
+    this.setOrdenacao(this._comporOrdenacao(campo, parsed.dir));
+  },
+
+  toggleOrdenacaoDir: function() {
+    var parsed = this._parseOrdenacao(this.state.ordenacao);
+    var novaDir = parsed.dir === 'desc' ? 'asc' : 'desc';
+    this.setOrdenacao(this._comporOrdenacao(parsed.campo, novaDir));
+  },
+
   setOrdenacao: function(ordenacao) {
     this.state.ordenacao = ordenacao;
-    document.querySelectorAll('.ordenacao-btn').forEach(function(b) {
-      var isActive = b.dataset.ordenacao === ordenacao;
-      b.classList.toggle('ativo', isActive);
-      b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-    });
+    this._syncOrdenacaoUI();
     this._salvarFiltros();
     this.atualizarBadgeFiltrosAvancados();
     this.filtrarExtrato();
@@ -914,6 +964,10 @@ const INIT_EXTRATO = {
     // Aplicar filtros avançados
     txs = this._aplicarFiltrosAvancados(txs);
 
+    if (this.state.pendenteExclusao) {
+      txs = txs.filter(function(t) { return !INIT_EXTRATO.state.pendenteExclusao[t.id]; });
+    }
+
     // Aplicar ordenação
     txs = this._aplicarOrdenacao(txs);
 
@@ -1025,11 +1079,27 @@ const INIT_EXTRATO = {
    * Deleta transação
    */
   deletarTransacao: function(id) {
+    var self = this;
     INIT_MODALS.confirm('Tem certeza que deseja deletar esta transação?', function() {
-      TRANSACOES.deletar(id);
-      INIT_EXTRATO.filtrarExtrato();
+      if (!TRANSACOES.obterPorId(id)) return;
+      self.state.pendenteExclusao[id] = true;
+      self.filtrarExtrato();
       RENDER.init();
-      UTILS.mostrarToast('Transação deletada', 'success');
+
+      UTILS.agendarExclusao('tx-' + id, function() {
+        TRANSACOES.deletar(id);
+        delete self.state.pendenteExclusao[id];
+        self.filtrarExtrato();
+        RENDER.init();
+      }, {
+        mensagem: 'Excluído',
+        duracaoMs: 5000,
+        aoDesfazer: function() {
+          delete self.state.pendenteExclusao[id];
+          self.filtrarExtrato();
+          RENDER.init();
+        }
+      });
     });
   },
 

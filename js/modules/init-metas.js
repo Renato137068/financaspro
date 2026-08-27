@@ -3,6 +3,7 @@
  */
 const INIT_METAS = {
   _bound: false,
+  _pendenteExclusao: {},
 
   init: function() {
     if (this._bound) return;
@@ -91,7 +92,9 @@ const INIT_METAS = {
   renderOrcamento: function() {
     var el = document.getElementById('metas-list');
     if (!el || typeof METAS === 'undefined') return;
-    var metas = METAS.listar();
+    var metas = METAS.listar().filter(function(m) {
+      return !INIT_METAS._pendenteExclusao[m.id];
+    });
     var headerBtn = document.querySelector('#metas-section [data-action="meta-nova"]');
     if (metas.length === 0) {
       // Uma CTA principal no empty state; esconde o botão do cabeçalho (P1/P2 auditoria)
@@ -113,7 +116,9 @@ const INIT_METAS = {
     var el = document.getElementById('dashboard-metas-resumo');
     var sec = document.getElementById('secao-metas-resumo');
     if (!el || typeof METAS === 'undefined') return;
-    var ativas = METAS.listar(true).slice(0, 3);
+    var ativas = METAS.listar(true).filter(function(m) {
+      return !INIT_METAS._pendenteExclusao[m.id];
+    }).slice(0, 3);
     if (sec) sec.style.display = METAS.listar().length === 0 ? 'none' : '';
     if (ativas.length === 0) {
       el.innerHTML = '';
@@ -236,17 +241,29 @@ const INIT_METAS = {
     if (!meta) return;
     var self = this;
     var msg = 'Excluir a meta "' + this._tituloMeta(meta) + '"?';
-    if (typeof INIT_MODALS !== 'undefined' && INIT_MODALS.confirm) {
-      INIT_MODALS.confirm(msg, function() {
-        METAS.excluir(metaId);
-        UTILS.mostrarToast('Meta excluída', 'info');
-        self.renderOrcamento();
-        self.renderResumo();
-      });
-    } else if (window.confirm(msg)) {
-      METAS.excluir(metaId);
+    var efetivar = function() {
+      self._pendenteExclusao[metaId] = true;
       self.renderOrcamento();
       self.renderResumo();
+      UTILS.agendarExclusao('meta-' + metaId, function() {
+        METAS.excluir(metaId);
+        delete self._pendenteExclusao[metaId];
+        self.renderOrcamento();
+        self.renderResumo();
+      }, {
+        mensagem: 'Excluído',
+        duracaoMs: 5000,
+        aoDesfazer: function() {
+          delete self._pendenteExclusao[metaId];
+          self.renderOrcamento();
+          self.renderResumo();
+        }
+      });
+    };
+    if (typeof INIT_MODALS !== 'undefined' && INIT_MODALS.confirm) {
+      INIT_MODALS.confirm(msg, efetivar);
+    } else if (window.confirm(msg)) {
+      efetivar();
     }
   }
 };

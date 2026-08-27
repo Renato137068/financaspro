@@ -39,15 +39,21 @@ var HEALTH_SERVICE = {
       sessionStorage.setItem('_avisoBackup', '1');
 
       setTimeout(function() {
-        if (typeof fpConfirm !== 'function') return;
+        if (typeof UTILS === 'undefined' || !UTILS.mostrarBanner) return;
         var msg = ultimo
-          ? 'Faz mais de ' + diasLimite + ' dias desde seu último backup. Exportar dados agora?'
-          : 'Você tem ' + txs.length + ' transações sem backup. Exportar dados?';
-        fpConfirm(msg, function() {
-          if (typeof CONFIG_USER !== 'undefined' && CONFIG_USER.exportarDados) {
-            CONFIG_USER.exportarDados();
+          ? 'Faz mais de ' + diasLimite + ' dias desde seu último backup. Exporte seus dados para não perder nada.'
+          : 'Você tem ' + txs.length + ' transações sem backup. Exporte seus dados para não perder nada.';
+        UTILS.mostrarBanner({
+          id: 'backup-reminder-banner',
+          mensagem: msg,
+          acao: 'Exportar',
+          tipo: 'info',
+          onAcao: function() {
+            if (typeof CONFIG_USER !== 'undefined' && CONFIG_USER.exportarDados) {
+              CONFIG_USER.exportarDados();
+            }
           }
-        }, 'Backup');
+        });
       }, options.delay || 3000);
       return true;
     } catch (e) {

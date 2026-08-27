@@ -231,6 +231,19 @@ const EVENT_HANDLERS = {
         INIT_EXTRATO.setOrdenacao(ordenacao);
       }
     },
+
+    'ordenacao-campo': function(ctx) {
+      var campo = ctx.dataset.ordenacaoCampo || 'data';
+      if (typeof INIT_EXTRATO !== 'undefined' && typeof INIT_EXTRATO.setOrdenacaoCampo === 'function') {
+        INIT_EXTRATO.setOrdenacaoCampo(campo);
+      }
+    },
+
+    'toggle-ordenacao-dir': function() {
+      if (typeof INIT_EXTRATO !== 'undefined' && typeof INIT_EXTRATO.toggleOrdenacaoDir === 'function') {
+        INIT_EXTRATO.toggleOrdenacaoDir();
+      }
+    },
     
     'limpar-filtros': function() {
       if (typeof INIT_EXTRATO !== 'undefined' && typeof INIT_EXTRATO.limparFiltros === 'function') {
