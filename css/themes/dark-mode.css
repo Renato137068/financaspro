@@ -25,7 +25,7 @@
 }
 
 [data-theme="dark"] body {
-  background: #101613;
+  background: var(--color-bg-dark-page);
 }
 
 [data-theme="dark"] header {
@@ -81,7 +81,7 @@
 }
 
 [data-theme="dark"] .alerta-card {
-  background: #2a2210;
+  background: var(--color-warning-surface-dark);
   border-color: var(--color-warning-text);
 }
 
@@ -152,7 +152,7 @@
 }
 
 [data-theme="dark"] .tipo-btn[data-tipo="despesa"].ativo {
-  background: #2a0f0f;
+  background: var(--color-danger-surface-dark);
   border-color: var(--color-danger-light);
   color: var(--color-danger-light);
 }
@@ -274,7 +274,7 @@
 [data-theme="dark"] .ext-tx:hover       { background: rgba(18, 105, 78, 0.12); }
 [data-theme="dark"] .ext-tx:active      { background: rgba(18, 105, 78, 0.2); }
 [data-theme="dark"] .ext-tx.aberto      { background: rgba(18, 105, 78, 0.15); }
-[data-theme="dark"] .ext-tx-expanded    { background: #0a1510; }
+[data-theme="dark"] .ext-tx-expanded    { background: var(--color-bg-dark-inset); }
 [data-theme="dark"] .ext-tx-actions-bar { border-top-color: var(--color-border); }
 
 [data-theme="dark"] .ext-btn-edit  { background: rgba(18, 105, 78, 0.15); color: var(--color-success-light); }
@@ -294,7 +294,7 @@
 
 [data-theme="dark"] .btn-export-excel {
   background: rgba(22, 163, 74, 0.1);
-  border-color: #16a34a;
+  border-color: var(--color-success-emphasis);
   color: var(--color-success-light);
 }
 
@@ -670,6 +670,6 @@
 
 /* Indicador de sincronização — variante escura (auditoria #4) */
 [data-theme="dark"] .sync-indicator{
-  background:rgba(20,28,24,.95); color: var(--color-text-primary); border-color:#22302a;
+  background:rgba(20,28,24,.95); color: var(--color-text-primary); border-color:var(--color-border-dark-strong);
   box-shadow: var(--elevacao-1);
 }

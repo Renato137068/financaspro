@@ -175,6 +175,24 @@ button i[data-lucide] {
   --color-info-dark:  #235871;
   --color-info-bg:    rgba(60, 134, 168, 0.08);
 
+  /* Gráficos, confetti e acentos decorativos */
+  --color-success-chart:       #6ee7b7;
+  --color-success-chart-light: #a7f3d0;
+  --color-success-emphasis:    #16a34a;
+
+  /* Superfícies e bordas escuras (tema dark) */
+  --color-warning-surface-dark: #2a2210;
+  --color-danger-surface-dark:  #2a0f0f;
+  --color-bg-dark-inset:        #0a1510;
+  --color-border-dark-strong:   #22302a;
+  --color-billing-business-bg:  #1e3a5f;
+
+  /* Aliases pontuais de fundo/texto (legado → token) */
+  --color-bg-body-soft:      #f6fbf8;
+  --color-placeholder-muted: #9aaea3;
+  --color-bg-dark-deep:      #0c1710;
+  --color-sidebar-brand-dark:#002d1a;
+
   /* ── Semântica acessível (texto e botões) ────────────────────
      Os tons vivos acima (--color-success, --color-warning, ...) existem para
      PREENCHIMENTO: barra de progresso, ponto de legenda, fundo de toast. Eles
@@ -197,6 +215,9 @@ button i[data-lucide] {
   --color-warning-text: var(--color-warning-on-light);
   --color-danger-text:  var(--color-danger-on-light);
   --color-info-text:    var(--color-info-on-light);
+  /* Texto sobre fundos semanticamente tintados (≥ 5,5:1 no tema claro) */
+  --color-success-text-on-tint: var(--color-success-dark);
+  --color-danger-text-on-tint:  var(--color-danger-dark);
 
   /* A cor da MARCA usada como texto também precisa alternar. Faltava este
      alias, e por isso 135 regras escreviam `color: var(--color-primary-600)`
@@ -535,43 +556,8 @@ button i[data-lucide] {
 .fp-text-warning { color: var(--color-warning-text); }
 .fp-text-info { color: var(--color-info-text); }
 
-/* ============================================================
-   ESPAÇAMENTO UTILITÁRIO
-   ============================================================ */
-
-/* Padding */
-.fp-p-0 { padding: var(--space-0); }
-.fp-p-1 { padding: var(--space-1); }
-.fp-p-2 { padding: var(--space-2); }
-.fp-p-3 { padding: var(--space-3); }
-.fp-p-4 { padding: var(--space-4); }
-.fp-p-6 { padding: var(--space-6); }
-.fp-p-8 { padding: var(--space-8); }
-
-/* Margin */
-.fp-m-0 { margin: var(--space-0); }
-.fp-m-1 { margin: var(--space-1); }
-.fp-m-2 { margin: var(--space-2); }
-.fp-m-3 { margin: var(--space-3); }
-.fp-m-4 { margin: var(--space-4); }
-.fp-m-6 { margin: var(--space-6); }
-
-/* ============================================================
-   LAYOUT UTILITÁRIO
-   ============================================================ */
-
-.fp-flex { display: flex; }
-.fp-flex-col { flex-direction: column; }
-.fp-items-center { align-items: center; }
-.fp-justify-center { justify-content: center; }
-.fp-justify-between { justify-content: space-between; }
-.fp-gap-2 { gap: var(--space-2); }
-.fp-gap-4 { gap: var(--space-4); }
-
-.fp-grid { display: grid; }
-.fp-grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
-.fp-grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
-.fp-gap-4 { gap: var(--space-4); }
+/* API oficial: utilitários de tipografia/cor acima. Espaçamento e layout
+   usam classes de componente — não há uso de .fp-p-* / .fp-flex no app. */
 
 /* ============================================================
    DARK MODE — Tokens remapeados

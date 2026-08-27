@@ -82,6 +82,19 @@ describe('P2.3 — contraste folgado no tema claro', function() {
     return cm ? cm[1].trim() : null;
   }
 
+  function resolverToken(valor, profundidade) {
+    profundidade = profundidade || 0;
+    if (!valor || profundidade > 6) return valor;
+    const varMatch = valor.match(/^var\(--([a-z0-9-]+)\)$/);
+    if (!varMatch) return valor;
+    const ds = fs.readFileSync(path.join(__dirname, '..', 'css', 'design-system.css'), 'utf8');
+    const m = ds.match(new RegExp('--' + varMatch[1] + ':\\s*([^;]+);'));
+    if (!m) return valor;
+    const alvo = m[1].trim();
+    if (/^#[0-9a-fA-F]{3,6}$/.test(alvo)) return alvo;
+    return resolverToken(alvo, profundidade + 1);
+  }
+
   test('.perfil-danger-btn e .security-indicator ≥ 5,5:1 no claro', function() {
     const pares = [
       { sel: '.perfil-danger-btn', bgRgb: [201, 87, 58], alpha: 0.08 },
@@ -90,8 +103,8 @@ describe('P2.3 — contraste folgado no tema claro', function() {
     for (const p of pares) {
       const fgDecl = corNoBloco(css, p.sel);
       expect(fgDecl).toBeTruthy();
-      expect(fgDecl).toMatch(/^#[0-9a-f]{6}$/i);
-      const fg = paraRgb(fgDecl);
+      expect(fgDecl).toMatch(/^var\(--color-(danger|success)-text-on-tint\)$/);
+      const fg = paraRgb(resolverToken(fgDecl));
       expect(fg).toBeTruthy();
       const bg = blendOverWhite(p.bgRgb, p.alpha);
       expect(razao(fg, bg)).toBeGreaterThanOrEqual(AA_FOLGA);

@@ -22,7 +22,7 @@ function carregarTablistKeyboard() {
     Object: Object
   };
   sandbox.globalThis = sandbox;
-  vm.runInContext(tablistSrc, vm.createContext(sandbox));
+    vm.runInContext(tablistSrc, vm.createContext(sandbox), { filename: path.join(root, 'js', 'utilities', 'tablist-keyboard.js') });
   return sandbox.TablistKeyboard || sandbox.module.exports;
 }
 
@@ -97,7 +97,7 @@ describe('INIT_ORCAMENTO.mudarSubAba — roving tabindex', function() {
     };
     sandbox.globalThis = sandbox;
     var code = orcSrc.replace(/\bconst INIT_ORCAMENTO =/, 'var INIT_ORCAMENTO =');
-    vm.runInContext(code, vm.createContext(sandbox));
+    vm.runInContext(code, vm.createContext(sandbox), { filename: path.join(root, 'js', 'modules', 'init-orcamento.js') });
     return sandbox.INIT_ORCAMENTO;
   }
 
@@ -126,7 +126,7 @@ describe('FocusTrap — retorno de foco ao gatilho', function() {
     trigger.focus();
     var sandbox = { document: document, module: { exports: {} } };
     sandbox.globalThis = sandbox;
-    vm.runInContext(focusSrc, vm.createContext(sandbox));
+    vm.runInContext(focusSrc, vm.createContext(sandbox), { filename: path.join(root, 'js', 'utilities', 'focus-trap.js') });
     var FocusTrap = sandbox.FocusTrap || sandbox.module.exports;
     var trap = new FocusTrap(document.getElementById('modal'));
     trap.activate(document.getElementById('inside'));

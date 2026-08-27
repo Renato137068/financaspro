@@ -236,7 +236,7 @@
 }
 
 .perfil-avatar-badge--business {
-  background: #1e3a5f;
+  background: var(--color-billing-business-bg);
   color: var(--color-white);
 }
 
@@ -247,7 +247,7 @@
 
 [data-theme="dark"] .billing-interval-btn.ativo {
   background: rgba(255, 255, 255, 0.08);
-  color: #6ee7b7;
+  color: var(--color-success-chart);
 }
 
 [data-theme="dark"] .billing-plan {

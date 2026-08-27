@@ -1,7 +1,7 @@
 {
   "_comentario": "Teto de valores literais no CSS. Só pode DIMINUIR. Regenerado por scripts/check-css-tokens.cjs --update",
-  "hex": 22,
+  "hex": 4,
   "fontes": 2,
-  "total": 24,
-  "atualizadoEm": "2026-08-26"
+  "total": 6,
+  "atualizadoEm": "2026-08-27"
 }
