@@ -10,19 +10,21 @@
 .orcamento-item {
   background: var(--color-bg-card);
   padding: var(--space-4);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-xl);
   margin-bottom: var(--space-3);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-superficie);
+  border: 1px solid var(--color-border-light);
 }
 
 .orcamento-item--link {
   cursor: pointer;
-  transition: box-shadow var(--transition-fast), transform var(--transition-fast);
+  transition: box-shadow var(--transition-fast), transform var(--transition-fast), border-color var(--transition-fast);
 }
 
 .orcamento-item--link:hover {
-  box-shadow: 0 3px 10px var(--color-overlay-md);
-  transform: translateY(-1px);
+  box-shadow: var(--shadow-card-hover);
+  border-color: var(--color-primary-200);
+  transform: translateY(-2px);
 }
 
 .orcamento-item--link:focus-visible {
@@ -270,32 +272,33 @@
 }
 
 .orc-kpi-card {
-  background: var(--color-bg-page);
+  background: var(--color-bg-card);
   border-radius: var(--radius-xl);
   padding: var(--space-4);
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  border: 1px solid var(--color-border);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-superficie);
+  transition: all var(--transition-fast);
   cursor: default;
 }
 
 .orc-kpi-card:hover {
   transform: translateY(-2px);
-  box-shadow: var(--elevacao-2);
-  border-color: rgba(47, 156, 109, 0.2);
+  box-shadow: var(--shadow-card-hover);
+  border-color: var(--color-primary-200);
 }
 
 .orc-kpi-card-icon {
   font-size: var(--font-size-2xl);
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-bg-primary);
-  border-radius: var(--radius-xl);
+  background: var(--color-bg-page);
+  border-radius: var(--radius-lg);
   flex-shrink: 0;
   color: var(--color-primary-text);
 }
