@@ -148,15 +148,20 @@ const INIT_MODALS = {
       : this._isDestrutivo(msg);
     var okClass = destrutivo ? 'btn-confirmar-danger' : 'btn-confirmar-primary';
     var okLabel = options.okLabel || 'Confirmar';
+    var cancelLabel = options.cancelLabel || 'Cancelar';
+
+    var body = options.trustedHtml
+      ? '<div id="confirm-title">' + msg + '</div>'
+      : '<p id="confirm-title">' + UTILS.escapeHtml(msg) + '</p>';
 
     var ov = document.createElement('div');
     ov.className = 'modal-overlay';
     ov.setAttribute('role','dialog');
     ov.setAttribute('aria-modal','true');
     ov.setAttribute('aria-labelledby','confirm-title');
-    ov.innerHTML = '<div class="modal-box"><p id="confirm-title">' + UTILS.escapeHtml(msg) + '</p>' +
+    ov.innerHTML = '<div class="modal-box">' + body +
       '<div class="modal-actions">' +
-      '<button class="btn-cancelar" type="button" id="mc">Cancelar</button>' +
+      '<button class="btn-cancelar" type="button" id="mc">' + UTILS.escapeHtml(cancelLabel) + '</button>' +
       '<button class="' + okClass + '" type="button" id="mo">' + UTILS.escapeHtml(okLabel) + '</button>' +
       '</div></div>';
     

@@ -748,7 +748,11 @@
     <div class="perfil-section">
       <h2 class="perfil-section-title">Transações</h2>
     <p class="extrato-lista-meta" id="extrato-lista-meta" aria-live="polite" hidden></p>
-    <div id="lista-transacoes"></div>
+    <div class="extrato-lista-viewport" id="extrato-lista-viewport">
+      <div id="extrato-virtual-spacer-top" class="extrato-virtual-spacer" aria-hidden="true"></div>
+      <div id="lista-transacoes"></div>
+      <div id="extrato-virtual-spacer-bottom" class="extrato-virtual-spacer" aria-hidden="true"></div>
+    </div>
 
     <!-- Barra de ações em massa (oculta por padrão) -->
     <div class="acoes-massa-bar" id="acoes-massa-bar" style="display:none">
@@ -1352,6 +1356,39 @@
           <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
         </button>
 
+        <button type="button" class="perfil-card" data-action="exportar-diagnostico" aria-label="Exportar relatório de diagnóstico técnico">
+          <div class="perfil-card-icon-wrapper">
+            <i data-lucide="stethoscope" aria-hidden="true"></i>
+          </div>
+          <div class="perfil-card-content">
+            <span class="perfil-card-title">Exportar diagnóstico</span>
+            <span class="perfil-card-subtitle">JSON técnico sem descrições (suporte)</span>
+          </div>
+          <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+        </button>
+
+        <button type="button" class="perfil-card" data-action="replay-sessao" aria-label="Ver timeline de eventos da sessão atual">
+          <div class="perfil-card-icon-wrapper">
+            <i data-lucide="history" aria-hidden="true"></i>
+          </div>
+          <div class="perfil-card-content">
+            <span class="perfil-card-title">Replay da sessão</span>
+            <span class="perfil-card-subtitle">Timeline de sync, conflitos e diagnóstico</span>
+          </div>
+          <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+        </button>
+
+        <button type="button" class="perfil-card" data-action="exportar-replay-sessao" aria-label="Exportar replay da sessão como HTML para suporte">
+          <div class="perfil-card-icon-wrapper">
+            <i data-lucide="file-text" aria-hidden="true"></i>
+          </div>
+          <div class="perfil-card-content">
+            <span class="perfil-card-title">Exportar replay HTML</span>
+            <span class="perfil-card-subtitle">Anexar timeline ao ticket de suporte</span>
+          </div>
+          <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+        </button>
+
         <button type="button" class="perfil-card" data-action="abrir-import" aria-label="Importar dados de backup">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="upload" aria-hidden="true"></i>
@@ -1670,6 +1707,7 @@
 <script defer src="js/core/events-catalog.js"></script>
 <script defer src="js/core/event-bus.js"></script>
 <script defer src="js/core/sync-merge.js"></script>
+<script defer src="js/core/session-log.js"></script>
 <script defer src="js/core/finance-contract.js"></script>
 <script defer src="js/core/sync-engine.js"></script>
 <script defer src="js/core/persist-queue.js"></script>

@@ -61,6 +61,70 @@ var SYNC_MERGE = {
     return Object.keys(mapa).map(function(k) { return mapa[k]; });
   },
 
+  _camposCoreDivergem: function(a, b) {
+    if (!a || !b) return false;
+    var campos = ['valor', 'descricao', 'data', 'tipo', 'categoria', 'banco', 'cartao'];
+    for (var i = 0; i < campos.length; i++) {
+      var k = campos[i];
+      var va = a[k];
+      var vb = b[k];
+      if (va == null && vb == null) continue;
+      if (String(va) !== String(vb)) return true;
+    }
+    return false;
+  },
+
+  /**
+   * Conflitos raros: mesmo registro editado em duas abas com timestamps próximos.
+   * @returns {Array<{id, local, remote}>}
+   */
+  detectarConflitos: function(local, pendingIds, delta, opts) {
+    opts = opts || {};
+    var janela = opts.janelaMs || 60000;
+    var pend = this._pendingSet(pendingIds);
+    var self = this;
+    var mapaLocal = {};
+    (Array.isArray(local) ? local : []).forEach(function(r) {
+      if (r && r.id != null) mapaLocal[r.id] = r;
+    });
+    var conflitos = [];
+
+    (Array.isArray(delta) ? delta : []).forEach(function(d) {
+      if (!d || d.id == null || d.deletedAt || pend[d.id]) return;
+      var loc = mapaLocal[d.id];
+      if (!loc || !self._camposCoreDivergem(loc, d)) return;
+
+      var am = self._ms(loc.updatedAt);
+      var dm = self._ms(d.updatedAt);
+      if (isNaN(am) || isNaN(dm)) return;
+
+      var proximos = Math.abs(am - dm) <= janela;
+      var empate = am === dm;
+      if (proximos || empate) {
+        conflitos.push({ id: d.id, local: loc, remote: d });
+      }
+    });
+    return conflitos;
+  },
+
+  /**
+   * Aplica escolhas do usuário ('local' | 'remote') sobre um delta remoto.
+   */
+  aplicarResolucoes: function(local, pendingIds, delta, resolucoes) {
+    var res = resolucoes || {};
+    var deltaFiltrado = (Array.isArray(delta) ? delta : []).filter(function(d) {
+      if (!d || d.id == null) return false;
+      return res[d.id] !== 'local';
+    });
+    var merged = this.mergeDelta(local, pendingIds, deltaFiltrado);
+    var mapa = {};
+    merged.forEach(function(r) { if (r && r.id != null) mapa[r.id] = r; });
+    (Array.isArray(local) ? local : []).forEach(function(loc) {
+      if (loc && loc.id != null && res[loc.id] === 'local') mapa[loc.id] = loc;
+    });
+    return Object.keys(mapa).map(function(k) { return mapa[k]; });
+  },
+
   /**
    * Enfileira uma mutação na outbox, deduplicando por entity+id.
    * upsert substitui upsert anterior do mesmo id; delete suprime upserts anteriores.

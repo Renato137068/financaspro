@@ -253,6 +253,30 @@ const INIT_NAVIGATION = {
       'exportar-dados': function() {
         UTILS.comCarregamento(target, function() { return safeCall('exportarDados'); }, 'Exportando...');
       },
+      'exportar-diagnostico': function() {
+        if (typeof HEALTH_SERVICE !== 'undefined' && HEALTH_SERVICE.exportarDiagnostico) {
+          HEALTH_SERVICE.exportarDiagnostico();
+          UTILS.mostrarToast('Diagnóstico exportado', 'success');
+        } else {
+          UTILS.mostrarToast('Diagnóstico indisponível', 'error');
+        }
+      },
+      'replay-sessao': function() {
+        if (typeof HEALTH_SERVICE !== 'undefined' && HEALTH_SERVICE.mostrarReplaySessao) {
+          HEALTH_SERVICE.mostrarReplaySessao();
+        } else {
+          UTILS.mostrarToast('Replay indisponível', 'error');
+        }
+      },
+      'exportar-replay-sessao': function() {
+        if (typeof HEALTH_SERVICE !== 'undefined' && HEALTH_SERVICE.exportarReplaySessao) {
+          if (HEALTH_SERVICE.exportarReplaySessao()) {
+            UTILS.mostrarToast('Replay HTML exportado', 'success');
+          }
+        } else {
+          UTILS.mostrarToast('Exportação indisponível', 'error');
+        }
+      },
       'abrir-import': function() { self.abrirImport(); },
       'abrir-changelog': function() { safeCall('abrirChangelog'); },
       'abrir-feedback': function() { safeCall('abrirFeedback'); },

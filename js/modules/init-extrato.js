@@ -25,6 +25,10 @@ const INIT_EXTRATO = {
     virtualScroll: {
       pageSize: 50,
       maxRendered: 500,
+      virtualThreshold: 100,
+      windowSize: 60,
+      estimatedItemHeight: 76,
+      overscan: 8,
       currentPage: 0,
       totalItems: 0
     }
@@ -33,6 +37,9 @@ const INIT_EXTRATO = {
   filtrosCategoriasListener: false,
   listaTransacoesListener: false,
   _scrollMaisObserver: null,
+  _virtualScrollBound: false,
+  _virtualAtivo: false,
+  _virtualLastStart: -1,
   /** Lista filtrada do render atual — usada pelo handler delegado (carregar mais). */
   _listaTxsAtual: null,
   _gruposOrdenadosAtual: null,
@@ -49,6 +56,7 @@ const INIT_EXTRATO = {
     this._bindKeyboardShortcuts();
     this.atualizarBadgeFiltrosAvancados();
     this._syncOrdenacaoUI();
+    this._bindVirtualScroll();
   },
 
   /**
@@ -683,6 +691,8 @@ const INIT_EXTRATO = {
     if (!container) return;
     
     if (txs.length === 0) {
+      this._virtualAtivo = false;
+      this._limparSpacersVirtuais();
       container.innerHTML = this._renderEmptyState();
       this._atualizarContadorExtrato(0, 0);
       return;
@@ -694,9 +704,102 @@ const INIT_EXTRATO = {
     // Reset paginação quando mudam os filtros
     this.state.virtualScroll.totalItems = txs.length;
     this.state.virtualScroll.currentPage = 0;
+    this._virtualLastStart = -1;
+
+    if (this._usaVirtualizacao(txs)) {
+      this._virtualAtivo = true;
+      this._renderGruposVirtual(txs);
+      return;
+    }
+
+    this._virtualAtivo = false;
+    this._limparSpacersVirtuais();
 
     // Renderizar grupos
     this._renderGrupos(grupos, txs);
+  },
+
+  _usaVirtualizacao: function(txs) {
+    var limiar = this.state.virtualScroll.virtualThreshold || 100;
+    return Array.isArray(txs) && txs.length >= limiar;
+  },
+
+  _limparSpacersVirtuais: function() {
+    var top = document.getElementById('extrato-virtual-spacer-top');
+    var bot = document.getElementById('extrato-virtual-spacer-bottom');
+    if (top) top.style.height = '0px';
+    if (bot) bot.style.height = '0px';
+  },
+
+  _atualizarSpacersVirtuais: function(start, rendered, total) {
+    var vs = this.state.virtualScroll;
+    var h = vs.estimatedItemHeight || 76;
+    var top = document.getElementById('extrato-virtual-spacer-top');
+    var bot = document.getElementById('extrato-virtual-spacer-bottom');
+    if (top) top.style.height = (start * h) + 'px';
+    if (bot) bot.style.height = Math.max(0, (total - start - rendered) * h) + 'px';
+  },
+
+  _calcularJanelaVirtual: function(total) {
+    var vs = this.state.virtualScroll;
+    var win = vs.windowSize || 60;
+    var h = vs.estimatedItemHeight || 76;
+    var overscan = vs.overscan || 8;
+    var viewport = document.getElementById('extrato-lista-viewport');
+    var start = 0;
+
+    if (viewport && typeof window !== 'undefined') {
+      var anchor = viewport.getBoundingClientRect().top + window.pageYOffset;
+      var scrollPast = Math.max(0, window.pageYOffset + 96 - anchor);
+      start = Math.floor(scrollPast / h) - overscan;
+    }
+
+    start = Math.max(0, Math.min(start, Math.max(0, total - 1)));
+    var count = Math.min(win + overscan * 2, total - start);
+    return { start: start, count: Math.max(count, 0) };
+  },
+
+  _bindVirtualScroll: function() {
+    if (this._virtualScrollBound || typeof window === 'undefined') return;
+    this._virtualScrollBound = true;
+    var self = this;
+    var timer;
+    window.addEventListener('scroll', function() {
+      if (!self._virtualAtivo || !self._listaTxsAtual) return;
+      clearTimeout(timer);
+      timer = setTimeout(function() {
+        self._renderGruposVirtual(self._listaTxsAtual, true);
+      }, 80);
+    }, { passive: true });
+  },
+
+  _renderGruposVirtual: function(txs, fromScroll) {
+    var container = document.getElementById('lista-transacoes');
+    if (!container) return;
+
+    var grupos = this._agruparTransacoesPorPeriodo(txs);
+    var gruposOrdenados = this._ordenarGrupos(grupos);
+    this._gruposOrdenadosAtual = gruposOrdenados;
+    this._listaTxsAtual = txs;
+    this._bindListaTransacoesClick();
+
+    var janela = this._calcularJanelaVirtual(txs.length);
+    if (fromScroll && janela.start === this._virtualLastStart) return;
+    this._virtualLastStart = janela.start;
+
+    var slice = this._renderGruposHtml(gruposOrdenados, janela.start, janela.count);
+    container.innerHTML = slice.html;
+    this._atualizarSpacersVirtuais(janela.start, slice.rendered, txs.length);
+
+    var exibidos = janela.start + slice.rendered;
+    var el = document.getElementById('extrato-lista-meta');
+    if (el && txs.length) {
+      el.hidden = false;
+      el.textContent = 'Exibindo itens ' + (janela.start + 1) + '–' + exibidos
+        + ' de ' + txs.length + ' (rolagem virtual)';
+    }
+
+    if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(container);
   },
 
   /**

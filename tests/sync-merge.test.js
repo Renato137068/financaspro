@@ -72,6 +72,42 @@ describe('SYNC_MERGE.mergeDelta', () => {
   });
 });
 
+describe('SYNC_MERGE.detectarConflitos', () => {
+  test('detecta edição simultânea com timestamps próximos', () => {
+    const local = [{ id: 'a', valor: 10, updatedAt: T1 }];
+    const delta = [{ id: 'a', valor: 20, updatedAt: '2026-07-09T10:00:30Z' }];
+    expect(SM.detectarConflitos(local, [], delta)).toHaveLength(1);
+  });
+
+  test('ignora quando remoto é muito mais antigo (LWW automático)', () => {
+    const local = [{ id: 'a', valor: 10, updatedAt: T2 }];
+    const delta = [{ id: 'a', valor: 20, updatedAt: T1 }];
+    expect(SM.detectarConflitos(local, [], delta)).toHaveLength(0);
+  });
+
+  test('ignora registros pendentes na outbox', () => {
+    const local = [{ id: 'a', valor: 10, updatedAt: T1 }];
+    const delta = [{ id: 'a', valor: 20, updatedAt: T1 }];
+    expect(SM.detectarConflitos(local, ['a'], delta)).toHaveLength(0);
+  });
+});
+
+describe('SYNC_MERGE.aplicarResolucoes', () => {
+  test('mantém versão local quando escolhido', () => {
+    const local = [{ id: 'a', valor: 10, updatedAt: T1 }];
+    const delta = [{ id: 'a', valor: 20, updatedAt: T2 }];
+    const r = SM.aplicarResolucoes(local, [], delta, { a: 'local' });
+    expect(r.find(x => x.id === 'a').valor).toBe(10);
+  });
+
+  test('aceita remoto quando escolhido', () => {
+    const local = [{ id: 'a', valor: 10, updatedAt: T1 }];
+    const delta = [{ id: 'a', valor: 20, updatedAt: T2 }];
+    const r = SM.aplicarResolucoes(local, [], delta, { a: 'remote' });
+    expect(r.find(x => x.id === 'a').valor).toBe(20);
+  });
+});
+
 describe('SYNC_MERGE.outboxEnqueue', () => {
   test('deduplica upserts do mesmo registro (mantém o último)', () => {
     let fila = [];

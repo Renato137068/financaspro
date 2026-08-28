@@ -81,6 +81,7 @@ var DADOS = {
   /** Aviso de cota é uma vez por sessão — repetido, vira ruído ignorável. */
   _avisouCota: false,
   _avisouSyncMultiAba: false,
+  _modalConflitoAberto: false,
   _storageSyncBound: false,
   _transacoesBackend: null,
   _transacoesCache: null,
@@ -933,6 +934,9 @@ var DADOS = {
       if (typeof APP_STORE !== 'undefined') APP_STORE.hydrateFromDados();
       self.setupStorageSync();
       self._mostrarDicaMultiAba();
+      if (typeof SESSION_LOG !== 'undefined') {
+        SESSION_LOG.registrar('init_dados', { backend: self._transacoesBackend || 'localStorage' });
+      }
       self.sincronizarComApi();
       self._initialized = true;
     });
@@ -940,6 +944,7 @@ var DADOS = {
   },
 
   _mostrarBannerMultiAba: function(mensagem) {
+    if (this._modalConflitoAberto) return;
     if (this._avisouSyncMultiAba || typeof UTILS === 'undefined' || !UTILS.mostrarBanner) return;
     this._avisouSyncMultiAba = true;
     UTILS.mostrarBanner({
@@ -949,6 +954,96 @@ var DADOS = {
       acao: 'Recarregar',
       fecharAoAcao: false,
       onAcao: function() { window.location.reload(); },
+    });
+  },
+
+  _aplicarCacheTransacoes: function(lista) {
+    this._transacoesCache = Array.isArray(lista) ? lista : [];
+    if (typeof TRANSACOES !== 'undefined') TRANSACOES.init();
+    if (typeof ORCAMENTO !== 'undefined') ORCAMENTO.init();
+    if (typeof CONTAS !== 'undefined') CONTAS.init();
+    if (typeof RENDER !== 'undefined') RENDER.init();
+  },
+
+  _persistirTransacoesLista: function(lista) {
+    this._ignorarStorageSync = true;
+    if (this._transacoesBackend === 'idb') {
+      this._transacoesCache = lista;
+      var json = JSON.stringify(lista);
+      var self = this;
+      this._idbWriteChain = this._idbWriteChain.then(function() {
+        return IDB_KV.set(CONFIG.STORAGE_TRANSACOES, json);
+      });
+    } else {
+      localStorage.setItem(CONFIG.STORAGE_TRANSACOES, JSON.stringify(lista));
+    }
+    var self = this;
+    setTimeout(function() { self._ignorarStorageSync = false; }, 0);
+  },
+
+  _mostrarModalConflitos: function(conflitos, onResolve) {
+    var self = this;
+    if (!conflitos || !conflitos.length || typeof document === 'undefined') {
+      if (onResolve) onResolve({});
+      return;
+    }
+    if (typeof INIT_MODALS !== 'undefined' && INIT_MODALS.fpConfirm) {
+      self._modalConflitoAberto = true;
+      var html = 'Outra aba alterou <strong>' + conflitos.length + '</strong> lançamento(s) que você também modificou.<br><br><ul style="text-align:left;margin:0;padding-left:1.2em">';
+      conflitos.forEach(function(c) {
+        var titulo = (c.local && c.local.descricao) ? c.local.descricao : 'Lançamento';
+        var locVal = (typeof UTILS !== 'undefined' && UTILS.formatarMoeda)
+          ? UTILS.formatarMoeda(c.local.valor) : String(c.local.valor);
+        var remVal = (typeof UTILS !== 'undefined' && UTILS.formatarMoeda)
+          ? UTILS.formatarMoeda(c.remote.valor) : String(c.remote.valor);
+        html += '<li><strong>' + UTILS.escapeHtml(titulo) + '</strong><br>';
+        html += 'Esta aba: ' + UTILS.escapeHtml(locVal) + ' · Outra aba: ' + UTILS.escapeHtml(remVal) + '</li>';
+      });
+      html += '</ul><br>Qual versão manter?';
+      INIT_MODALS.fpConfirm(html, function() {
+        var res = {};
+        conflitos.forEach(function(c) { res[c.id] = 'local'; });
+        self._modalConflitoAberto = false;
+        onResolve(res);
+      }, function() {
+        var res = {};
+        conflitos.forEach(function(c) { res[c.id] = 'remote'; });
+        self._modalConflitoAberto = false;
+        onResolve(res);
+      }, { okLabel: 'Manter desta aba', cancelLabel: 'Usar outra aba', danger: false, trustedHtml: true });
+      return;
+    }
+    var res = {};
+    conflitos.forEach(function(c) { res[c.id] = 'remote'; });
+    onResolve(res);
+  },
+
+  _mesclarTransacoesComConflitos: function(locais, remotas, pending) {
+    var conflitos = (typeof SYNC_MERGE !== 'undefined' && SYNC_MERGE.detectarConflitos)
+      ? SYNC_MERGE.detectarConflitos(locais, pending, remotas) : [];
+    if (!conflitos.length) {
+      var merged = (typeof SYNC_MERGE !== 'undefined')
+        ? SYNC_MERGE.mergeDelta(locais, pending, remotas)
+        : remotas;
+      if (typeof SESSION_LOG !== 'undefined') {
+        SESSION_LOG.registrar('merge_multiaba', { conflitos: 0, total: merged.length });
+      }
+      return Promise.resolve({ lista: merged, conflitos: 0 });
+    }
+    if (typeof SESSION_LOG !== 'undefined') {
+      SESSION_LOG.registrar('conflito_multiaba', { qtd: conflitos.length });
+    }
+    var self = this;
+    return new Promise(function(resolve) {
+      self._mostrarModalConflitos(conflitos, function(resolucoes) {
+        var resultado = (typeof SYNC_MERGE !== 'undefined' && SYNC_MERGE.aplicarResolucoes)
+          ? SYNC_MERGE.aplicarResolucoes(locais, pending, remotas, resolucoes)
+          : remotas;
+        if (typeof SESSION_LOG !== 'undefined') {
+          SESSION_LOG.registrar('conflito_resolvido', { qtd: conflitos.length });
+        }
+        resolve({ lista: resultado, conflitos: conflitos.length });
+      });
     });
   },
 
@@ -1039,23 +1134,38 @@ var DADOS = {
   _hidratarTransacoesIdb: function() {
     var self = this;
     if (this._transacoesBackend !== 'idb' || typeof IDB_KV === 'undefined') {
-      return Promise.resolve();
+      return Promise.resolve(false);
     }
+    var antes = (this._transacoesCache || []).slice();
+    var pending = this._pendingTxIds();
     return IDB_KV.get(CONFIG.STORAGE_TRANSACOES).then(function(data) {
+      var novas;
       try {
-        self._transacoesCache = data ? self._parseTransacoesJson(data) : [];
+        novas = data ? self._parseTransacoesJson(data) : [];
       } catch (e) {
-        self._transacoesCache = [];
+        novas = [];
       }
-      if (typeof TRANSACOES !== 'undefined') TRANSACOES.init();
-      if (typeof ORCAMENTO !== 'undefined') ORCAMENTO.init();
-      if (typeof CONTAS !== 'undefined') CONTAS.init();
-      if (typeof RENDER !== 'undefined') RENDER.init();
+      return self._mesclarTransacoesComConflitos(antes, novas, pending).then(function(result) {
+        var merged = result.lista;
+        self._aplicarCacheTransacoes(merged);
+        if (JSON.stringify(merged) !== JSON.stringify(novas)) {
+          self._persistirTransacoesLista(merged);
+        }
+        return result.conflitos > 0;
+      });
     });
   },
 
   _mesclarTransacoesRemotas: function(remoteJson) {
     if (!remoteJson || remoteJson === this.TX_IDB_SENTINEL) return;
+    var form = typeof document !== 'undefined' ? document.getElementById('form-transacao') : null;
+    if (form && form.dataset && form.dataset.editId) {
+      this._mostrarBannerMultiAba(
+        'Outra aba alterou dados enquanto você edita um lançamento. Recarregue antes de salvar.'
+      );
+      return;
+    }
+    var self = this;
     try {
       var remotas = this._parseTransacoesJson(remoteJson);
       if (!remotas.length && remoteJson !== '[]') return;
@@ -1063,25 +1173,14 @@ var DADOS = {
         ? (this._transacoesCache || []).slice()
         : this._parseTransacoesJson(this._storageGetRaw(CONFIG.STORAGE_TRANSACOES));
       var pending = this._pendingTxIds();
-      var merged = (typeof SYNC_MERGE !== 'undefined')
-        ? SYNC_MERGE.mergeDelta(locais, pending, remotas)
-        : remotas;
-      this._ignorarStorageSync = true;
-      if (this._transacoesBackend === 'idb') {
-        this._transacoesCache = merged;
-        var json = JSON.stringify(merged);
-        var self = this;
-        this._idbWriteChain = this._idbWriteChain.then(function() {
-          return IDB_KV.set(CONFIG.STORAGE_TRANSACOES, json);
-        });
-      } else {
-        localStorage.setItem(CONFIG.STORAGE_TRANSACOES, JSON.stringify(merged));
-      }
+      this._mesclarTransacoesComConflitos(locais, remotas, pending).then(function(result) {
+        self._persistirTransacoesLista(result.lista);
+        self._aplicarCacheTransacoes(result.lista);
+      }).catch(function(e) {
+        console.warn('Merge multi-aba falhou:', e);
+      });
     } catch (e) {
       console.warn('Merge multi-aba falhou:', e);
-    } finally {
-      var self = this;
-      setTimeout(function() { self._ignorarStorageSync = false; }, 0);
     }
   },
 
@@ -1426,8 +1525,8 @@ var DADOS = {
       if (e.key === self.TX_SYNC_PING_KEY) {
         clearTimeout(self._storageDebounceTimer);
         self._storageDebounceTimer = setTimeout(function() {
-          self._hidratarTransacoesIdb().then(function() {
-            self._mostrarBannerMultiAba();
+          self._hidratarTransacoesIdb().then(function(teveConflito) {
+            if (!teveConflito) self._mostrarBannerMultiAba();
           });
         }, 300);
         return;
