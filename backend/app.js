@@ -15,6 +15,8 @@ import { csrfGuard } from './middleware/csrf.js';
 import apiRouter from './routes/index.js';
 import healthRouter from './routes/health.js';
 import { BillingService } from './domain/services/billing.service.js';
+import { PlayBillingService } from './domain/services/play-billing.service.js';
+import { BillingRepository } from './domain/repositories/billing.repository.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DEV_ROOT  = path.join(__dirname, '..');
@@ -34,6 +36,21 @@ function resolveStaticRoot() {
 }
 
 const STATIC_ROOT = resolveStaticRoot();
+
+// Decodifica o envelope de push do Pub/Sub → DeveloperNotification do Google Play.
+// Formato: { message: { data: base64(JSON), messageId, ... }, subscription }.
+function decodeRtdnEnvelope(body) {
+  const msg = body && body.message;
+  const messageId = msg && (msg.messageId || msg.message_id);
+  const dataB64 = msg && msg.data;
+  if (!dataB64) return { messageId, notification: null };
+  try {
+    const json = Buffer.from(String(dataB64), 'base64').toString('utf8');
+    return { messageId, notification: JSON.parse(json) };
+  } catch {
+    return { messageId, notification: null };
+  }
+}
 
 export function createApp() {
   const app = express();
@@ -101,6 +118,44 @@ export function createApp() {
 
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: false, limit: '1mb' }));
+
+  // Webhook RTDN (Real-time Developer Notifications) do Google Play — push do
+  // Pub/Sub, server-to-server, sem cookie. Fica antes do csrfGuard, como o do
+  // Stripe. Autenticado por segredo compartilhado na URL (?secret=...).
+  app.post('/api/v1/play-billing/rtdn', async (req, res, next) => {
+    try {
+      const secret = CONFIG.playBilling && CONFIG.playBilling.rtdnSecret;
+      if (secret) {
+        const provided = req.query.secret || req.headers['x-rtdn-secret'];
+        if (provided !== secret) {
+          return res.status(403).json({ error: 'forbidden' });
+        }
+      }
+
+      const { messageId, notification } = decodeRtdnEnvelope(req.body);
+      // Envelope inválido/vazio: reconhece (204) para o Pub/Sub não reenviar.
+      if (!notification) return res.status(204).end();
+
+      // Idempotência por messageId (reusa a tabela de eventos de webhook).
+      if (messageId) {
+        const fresh = await BillingRepository.claimWebhookEvent(`rtdn:${messageId}`, 'play_rtdn');
+        if (!fresh) return res.status(200).json({ duplicate: true });
+      }
+
+      try {
+        const out = await PlayBillingService.handleRtdn(notification);
+        return res.status(200).json({ ok: true, ...out });
+      } catch (err) {
+        // Falha de processamento: libera o claim para o Pub/Sub reentregar.
+        if (messageId) {
+          await BillingRepository.releaseWebhookEvent(`rtdn:${messageId}`).catch(() => {});
+        }
+        throw err;
+      }
+    } catch (err) {
+      next(err);
+    }
+  });
 
   // Depois do webhook do Stripe (que é server-to-server, sem cookie e validado
   // por assinatura) e antes das rotas de aplicação.

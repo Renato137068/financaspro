@@ -1,9 +1,11 @@
 // backend/domain/services/play-billing.service.js
 //
 // Verificação de compras Google Play — entitlement centralizado no backend.
-// Em produção, chamar a Google Play Developer API (purchases.subscriptionsv2.get).
-// Este serviço valida formato, evita duplicidade e persiste o token verificado.
+// Quando a conta de serviço está configurada, consulta a Google Play Developer
+// API (purchases.subscriptionsv2.get) para obter estado e validade REAIS.
+// Sem conta de serviço: produção falha (503); dev usa validade sintética de 30d.
 import { BillingRepository } from '../repositories/billing.repository.js';
+import { getSubscriptionV2 } from '../../lib/google-play-api.js';
 import CONFIG from '../../config.js';
 
 const PRODUCT_TIERS = {
@@ -58,14 +60,48 @@ export const PlayBillingService = {
     // Sandbox/dev: aceita token sintético prefixado para testes automatizados.
     var sandbox = CONFIG.env !== 'production'
       && token.startsWith('GPA.test.');
+    var hasServiceAccount = !!(CONFIG.playBilling && CONFIG.playBilling.serviceAccountJson);
 
-    if (!sandbox && CONFIG.env === 'production' && !CONFIG.playBilling.serviceAccountJson) {
+    var expiresAt;
+    var verifiedProductId = productId;
+
+    if (sandbox) {
+      // Testes automatizados: validade sintética, sem tocar na rede.
+      expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    } else if (hasServiceAccount) {
+      // Verificação REAL contra a Google Play Developer API.
+      var sub = await getSubscriptionV2({
+        serviceAccountJson: CONFIG.playBilling.serviceAccountJson,
+        packageName: pkg,
+        purchaseToken: token,
+      });
+      if (!sub.entitled) {
+        var errNa = new Error('assinatura-nao-ativa');
+        errNa.status = 402;
+        throw errNa;
+      }
+      // Confia no productId retornado pelo Google (evita cliente pedir tier maior).
+      if (sub.productId) {
+        var realTier = this.resolveTier(sub.productId);
+        if (!realTier) {
+          var errRp = new Error('produto-desconhecido');
+          errRp.status = 400;
+          throw errRp;
+        }
+        tier = realTier;
+        verifiedProductId = sub.productId;
+      }
+      expiresAt = sub.expiryTime
+        || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    } else if (CONFIG.env === 'production') {
       var errApi = new Error('play-api-nao-configurada');
       errApi.status = 503;
       throw errApi;
+    } else {
+      // Dev sem conta de serviço: validade sintética (conveniência local).
+      expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
     }
 
-    var expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
     var existing = await BillingRepository.findByPlayPurchaseToken(token);
 
     if (existing && existing.orgId !== orgId) {
@@ -75,7 +111,7 @@ export const PlayBillingService = {
     }
 
     await BillingRepository.upsertPlayEntitlement(orgId, {
-      productId,
+      productId: verifiedProductId,
       purchaseToken: token,
       packageName: pkg,
       tier,
@@ -85,7 +121,7 @@ export const PlayBillingService = {
 
     return {
       tier,
-      productId,
+      productId: verifiedProductId,
       expiresAt,
       restored: !!existing,
     };
@@ -93,5 +129,86 @@ export const PlayBillingService = {
 
   async getEntitlement(orgId) {
     return BillingRepository.findPlayEntitlement(orgId);
+  },
+
+  /**
+   * Reconsulta o estado REAL de um purchaseToken no Google e sincroniza o
+   * entitlement da org dona do token: renova (com validade real) ou revoga.
+   * Não faz nada destrutivo quando a Google API não está configurada.
+   * @returns {{ handled: boolean, reason?: string, orgId?: string, entitled?: boolean, tier?: string|null, expiresAt?: string|null }}
+   */
+  async syncFromToken(purchaseToken) {
+    var token = normalizeToken(purchaseToken);
+    if (!token) return { handled: false, reason: 'token-invalido' };
+
+    var owner = await BillingRepository.findByPlayPurchaseToken(token);
+    if (!owner) return { handled: false, reason: 'token-desconhecido' };
+    var orgId = owner.orgId;
+
+    var hasServiceAccount = !!(CONFIG.playBilling && CONFIG.playBilling.serviceAccountJson);
+    if (!hasServiceAccount) {
+      // Sem credencial não dá para revalidar; não revoga às cegas.
+      return { handled: false, reason: 'api-nao-configurada', orgId: orgId };
+    }
+
+    var pkg = CONFIG.playBilling.packageName;
+    var sub = await getSubscriptionV2({
+      serviceAccountJson: CONFIG.playBilling.serviceAccountJson,
+      packageName: pkg,
+      purchaseToken: token,
+    });
+
+    if (sub.entitled) {
+      var tier = sub.productId
+        ? this.resolveTier(sub.productId)
+        : (owner.subscription && owner.subscription.plan && owner.subscription.plan.tier) || null;
+      if (tier) {
+        await BillingRepository.upsertPlayEntitlement(orgId, {
+          productId: sub.productId,
+          purchaseToken: token,
+          tier: tier,
+          expiresAt: sub.expiryTime,
+        });
+      }
+      return { handled: true, orgId: orgId, entitled: true, tier: tier, expiresAt: sub.expiryTime };
+    }
+
+    await BillingRepository.revokePlayEntitlement(orgId, { expiresAt: sub.expiryTime });
+    return { handled: true, orgId: orgId, entitled: false, expiresAt: sub.expiryTime };
+  },
+
+  /**
+   * Processa uma DeveloperNotification (payload já decodificado do RTDN).
+   * Só age em notificações de assinatura; test/otherNotification são ignoradas.
+   */
+  async handleRtdn(notification) {
+    var sn = notification && notification.subscriptionNotification;
+    if (!sn || !sn.purchaseToken) {
+      return { handled: false, reason: 'sem-subscription-notification' };
+    }
+    return this.syncFromToken(sn.purchaseToken);
+  },
+
+  /**
+   * Reconciliação periódica do Play (rede de segurança para RTDN perdido).
+   * O token completo não é persistido (apenas o prefixo vira chave), então não
+   * há como reconsultar o Google no worker; o que dá para corrigir localmente é
+   * revogar entitlements cujo período pago já expirou mas seguem ACTIVE — caso
+   * a notificação de expiração tenha se perdido.
+   * @returns {{ swept: number, revoked: number }}
+   */
+  async reconcileExpiries() {
+    var rows = await BillingRepository.findPlayLinkedSubscriptions();
+    var agora = Date.now();
+    var revoked = 0;
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i];
+      var vencido = row.currentPeriodEnd && new Date(row.currentPeriodEnd).getTime() < agora;
+      if (vencido && row.status === 'ACTIVE') {
+        await BillingRepository.revokePlayEntitlement(row.orgId, { expiresAt: row.currentPeriodEnd });
+        revoked++;
+      }
+    }
+    return { swept: rows.length, revoked: revoked };
   },
 };

@@ -343,6 +343,10 @@ export const BillingService = {
   async reconcileSubscription(orgId) {
     const sub = await BillingRepository.findSubscription(orgId);
     if (!sub?.stripeSubId) return { orgId, skipped: true };
+    // Entitlements do Google Play usam a chave `play:<token>` no campo
+    // stripeSubId; não são assinaturas Stripe e não devem ir para a API do
+    // Stripe (senão falhariam toda rodada). O Play é reconciliado à parte.
+    if (String(sub.stripeSubId).startsWith('play:')) return { orgId, skipped: true, source: 'google_play' };
 
     const stripe = await getStripe();
     if (!stripe) throw new AppError('Stripe não configurado', 503);

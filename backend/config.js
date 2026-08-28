@@ -127,6 +127,9 @@ const CONFIG = {
   playBilling: {
     packageName: process.env.PLAY_PACKAGE_NAME || 'com.financaspro.mobile',
     serviceAccountJson: process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON || null,
+    // Segredo compartilhado exigido na URL do push do Pub/Sub (?secret=...).
+    // Quando definido, o webhook RTDN rejeita chamadas sem o valor correto.
+    rtdnSecret: process.env.PLAY_RTDN_SECRET || null,
   },
 };
 

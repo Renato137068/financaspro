@@ -30,6 +30,7 @@ jest.unstable_mockModule('../../backend/lib/db.js', () => ({ default: prisma }))
 
 const { createApp } = await import('../../backend/app.js');
 const { signTokens } = await import('../../backend/lib/jwt.js');
+const { default: CONFIG } = await import('../../backend/config.js');
 
 const app = createApp();
 
@@ -502,6 +503,54 @@ describe('política de cache dos estáticos', () => {
   test('asset sem hash usa cache curto', async () => {
     const res = await request(app).get('/js/pin-guard.js');
     expect(res.headers['cache-control']).toBe('public, max-age=3600');
+  });
+});
+
+// ─── webhook RTDN do Google Play ─────────────────────────────────────────────
+describe('webhook RTDN (Google Play)', () => {
+  const ROTA = '/api/v1/play-billing/rtdn';
+
+  function envelope(notification, messageId = 'msg-1') {
+    const data = Buffer.from(JSON.stringify(notification)).toString('base64');
+    return { message: { data, messageId }, subscription: 'projects/x/subscriptions/y' };
+  }
+
+  let segredoOriginal;
+  beforeEach(() => { segredoOriginal = CONFIG.playBilling.rtdnSecret; });
+  afterEach(() => { CONFIG.playBilling.rtdnSecret = segredoOriginal; });
+
+  test('não exige autenticação de usuário (é server-to-server)', async () => {
+    CONFIG.playBilling.rtdnSecret = null;
+    const res = await request(app).post(ROTA).send(envelope({ testNotification: { version: '1.0' } }));
+    expect(res.status).toBe(200);
+  });
+
+  test('decodifica o envelope e delega ao serviço (token desconhecido → 200 sem ação)', async () => {
+    CONFIG.playBilling.rtdnSecret = null;
+    const notif = { subscriptionNotification: { notificationType: 3, purchaseToken: 'a'.repeat(50) } };
+    const res = await request(app).post(ROTA).send(envelope(notif));
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ ok: true, handled: false, reason: 'token-desconhecido' });
+  });
+
+  test('envelope sem data é reconhecido com 204 (Pub/Sub não reenvia)', async () => {
+    CONFIG.playBilling.rtdnSecret = null;
+    const res = await request(app).post(ROTA).send({ message: { messageId: 'x' } });
+    expect(res.status).toBe(204);
+  });
+
+  test('com segredo configurado, rejeita chamada sem o segredo (403)', async () => {
+    CONFIG.playBilling.rtdnSecret = 's3cr3t';
+    const res = await request(app).post(ROTA).send(envelope({ testNotification: {} }));
+    expect(res.status).toBe(403);
+  });
+
+  test('com segredo configurado, aceita quando o ?secret confere', async () => {
+    CONFIG.playBilling.rtdnSecret = 's3cr3t';
+    const res = await request(app)
+      .post(`${ROTA}?secret=s3cr3t`)
+      .send(envelope({ testNotification: {} }));
+    expect(res.status).toBe(200);
   });
 });
 

@@ -59,6 +59,14 @@ export const BillingRepository = {
     });
   },
 
+  /** Assinaturas do Google Play (chave `play:<token>`). */
+  async findPlayLinkedSubscriptions() {
+    return prisma.subscription.findMany({
+      where: { stripeSubId: { startsWith: 'play:' } },
+      select: { orgId: true, stripeSubId: true, status: true, currentPeriodEnd: true },
+    });
+  },
+
   async recordUsage(subscriptionId, metric, value, periodStart, periodEnd) {
     return prisma.usageRecord.create({
       data: { subscriptionId, metric, value, periodStart, periodEnd },
@@ -182,5 +190,21 @@ export const BillingRepository = {
       expiresAt: sub.currentPeriodEnd,
       source: 'google_play',
     };
+  },
+
+  /**
+   * Revoga o entitlement do Play (cancelamento/reembolso/expiração via RTDN).
+   * Só age se a assinatura atual da org for de fato do Play — nunca mexe numa
+   * assinatura Stripe. Encerra o período em `expiresAt` (ou agora).
+   */
+  async revokePlayEntitlement(orgId, { expiresAt } = {}) {
+    const sub = await this.findSubscription(orgId);
+    if (!sub || !sub.stripeSubId || !String(sub.stripeSubId).startsWith('play:')) return null;
+    const end = expiresAt ? new Date(expiresAt) : new Date();
+    return this.updateSubscription(orgId, {
+      status: 'CANCELED',
+      cancelAtPeriodEnd: true,
+      currentPeriodEnd: end,
+    });
   },
 };
