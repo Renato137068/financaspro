@@ -135,11 +135,11 @@ const INIT_BILLING = {
   /**
    * Desconto do plano anual sobre 12 meses, em pontos percentuais inteiros.
    *
-   * O selo era fixo em "-17%" no seletor de periodicidade. Batia com o Business
-   * (12 x 99,90 = 1.198,80 contra 999,00) e errava no Pro, que estava a 119,00
-   * sobre 12 x 16,90 = 202,80, ou seja 41% -- o app anunciava menos desconto do
-   * que dava, justamente no plano de volume. Calcular por plano faz o numero
-   * seguir o preco, em vez de o preco precisar lembrar do numero.
+   * O selo era fixo em "-17%" no seletor de periodicidade, mas cada plano tem
+   * seu proprio desconto anual: hoje o Pro da ~36% (12 x 16,90 = 202,80 contra
+   * 129,00) e o Business ~17% (12 x 79,90 = 958,80 contra 799,00). Calcular por
+   * plano faz o numero seguir o preco, em vez de o preco precisar lembrar do
+   * numero.
    *
    * @returns {number|null} null quando o plano nao tem os dois precos
    */
