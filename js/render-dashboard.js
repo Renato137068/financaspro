@@ -181,6 +181,7 @@
     this._ctx.resumoProjetado = this._resumoMes(mes, ano);
 
     this.renderGreeting();
+    this.renderOnboarding();
     this.renderCardSaldo();
     this.renderResumo();
     this.renderComparacaoMesAnterior();
@@ -219,6 +220,25 @@
   // ============================================================
   // SUB-RENDERERS
   // ============================================================
+
+  DashboardRenderer.renderOnboarding = function() {
+    try {
+      var el = document.getElementById('dashboard-onboarding');
+      if (!el) return;
+      var total = 0;
+      if (typeof DADOS !== 'undefined' && DADOS.getTransacoes) {
+        total = DADOS.getTransacoes().length;
+      } else if (this._ctx && this._ctx.tx && typeof this._ctx.tx.obter === 'function') {
+        total = this._ctx.tx.obter({}).length;
+      }
+      el.hidden = total > 0;
+      if (!el.hidden && typeof renderLucideIconsNow === 'function') {
+        renderLucideIconsNow(el);
+      }
+    } catch (e) {
+      _reportarErroRender('onboarding', e, document.getElementById('dashboard-onboarding'));
+    }
+  };
 
   DashboardRenderer.renderGreeting = function() {
     try {
@@ -541,7 +561,14 @@
       }
 
       if (transacoes.length === 0) {
-        _setChildren(el, [UI.EmptyState.render({ lucide: 'clock', titulo: 'Nenhuma transação registrada ainda. Comece adicionando sua primeira!', aba: 'novo' })]);
+        _setChildren(el, [UI.EmptyState.render({
+          lucide: 'sparkles',
+          titulo: 'Seu painel está pronto',
+          subtitulo: 'Registre a primeira transação para ver saldo, gráficos e últimas movimentações.',
+          aba: 'novo',
+          ctaTexto: 'Registrar primeira transação',
+          animado: true
+        })]);
         return;
       }
 

@@ -118,3 +118,31 @@ describe('auditoria — saldo realizado vs projetado', function() {
     expect(dashSrc).toMatch(/title/);
   });
 });
+
+describe('auditoria — fase 2 (roadmap)', function() {
+  const formSrc = fs.readFileSync(path.join(root, 'js', 'modules', 'init-form.js'), 'utf8');
+  const htmlFresh = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+
+  test('edição de transação oferece desfazer por 5s', function() {
+    expect(formSrc).toMatch(/agendarExclusao\('edit-tx-'/);
+    expect(formSrc).toMatch(/Alteração salva/);
+    expect(formSrc).toMatch(/snapshot/);
+  });
+
+  test('extrato limita renderização e usa observer para carregar mais', function() {
+    expect(extratoSrc).toMatch(/maxRendered:\s*500/);
+    expect(extratoSrc).toMatch(/_vincularCarregarMaisObserver/);
+    expect(extratoSrc).toMatch(/extrato-lista-limite/);
+  });
+
+  test('multi-aba documentado no perfil e na inicialização', function() {
+    expect(dadosSrc).toMatch(/_mostrarDicaMultiAba/);
+    expect(htmlFresh).toMatch(/perfil-dica-multiaba/);
+  });
+
+  test('dashboard onboarding para usuário casual', function() {
+    expect(htmlFresh).toMatch(/id="dashboard-onboarding"/);
+    expect(dashSrc).toMatch(/renderOnboarding/);
+    expect(dashSrc).toMatch(/Registrar primeira transação/);
+  });
+});

@@ -140,7 +140,7 @@
       <article class="finding"><span class="tag p2">P2 · performance</span><h3>Extrato lento com 10k+ registros</h3><p><code>obterRecentes</code> ~8 ms/op; scroll e re-render podem degradar UX mobile. <strong>28/08:</strong> contador “Mostrando X de Y” e paginação 50 itens ajudam percepção.</p><p class="small muted">Pendente: virtualização completa da lista.</p></article>
       <article class="finding"><span class="tag ok">Resolvido · produto</span><h3>Transferência pouco óbvia no fluxo Novo</h3><p><strong>28/08:</strong> link “Transferir entre contas” abaixo do botão Registrar, roteado via <code>init-navigation</code>.</p></article>
       <article class="finding"><span class="tag ok">Resolvido parcial · UX</span><h3>Realizado vs projetado no dashboard</h3><p><strong>28/08:</strong> tooltips no saldo realizado e no valor projetado explicam a diferença.</p></article>
-      <article class="finding"><span class="tag p2">P2 · UX</span><h3>Desfazer só em exclusão</h3><p>Edições acidentais não têm janela de reversão (~5s como em delete).</p></article>
+      <article class="finding"><span class="tag ok">Resolvido · UX</span><h3>Desfazer só em exclusão</h3><p><strong>28/08:</strong> edições também têm janela de ~5s com toast “Desfazer”, espelhando exclusões.</p></article>
       <article class="finding"><span class="tag p2">P2 · harness</span><h3>1 achado P2 no script de auditoria</h3><p>5 rejeições “inesperadas” na persona E — artefato do contador do harness, não bug de produção.</p></article>
       <p class="small muted"><strong>Bugs P0/P1 confirmados no núcleo financeiro: 0.</strong> Achados iniciais do script (241) eram falsos positivos do harness — corrigidos e reexecutados.</p>
     </section>
@@ -177,9 +177,8 @@
     <section id="roadmap">
       <h2>Recomendações priorizadas</h2>
       <div class="phase"><span class="tag ok">Concluído · 28/08</span><h3>Quick wins da auditoria</h3><ul><li><span class="check">✓</span> Aviso de cota em 80% + banner exportável.</li><li><span class="check">✓</span> <code>setupStorageSync</code> + banner multi-aba.</li><li><span class="check">✓</span> CTA transferência no Novo.</li><li><span class="check">✓</span> Hint ordenação + contador no extrato.</li><li><span class="check">✓</span> Tooltips realizado vs projetado.</li></ul></div>
-      <div class="phase"><span class="tag p1">0–15 dias</span><h3>Antes de escala</h3><ul><li>Virtualizar ou paginar extrato a partir de ~500 itens visíveis (paginação parcial já existe).</li><li>Documentar risco residual de last-write-wins.</li></ul></div>
-      <div class="phase"><span class="tag p2">15–30 dias</span><h3>Produto e UX</h3><ul><li>Undo em edições (espelhar exclusões).</li><li>Estados vazios mais acionáveis (persona casual).</li></ul></div>
-      <div class="phase"><span class="tag p2">30–60 dias</span><h3>Escala</h3><ul><li>Migração IndexedDB para transações.</li><li>Merge ou versionamento otimista multi-aba.</li><li>E2E Playwright “caminho do dinheiro” completo.</li></ul></div>
+      <div class="phase"><span class="tag ok">Concluído · 28/08 (fase 2)</span><h3>Roadmap 0–30 dias</h3><ul><li><span class="check">✓</span> Desfazer edições (~5s, como exclusões).</li><li><span class="check">✓</span> Extrato: teto 500 itens no DOM + scroll infinito.</li><li><span class="check">✓</span> Dica multi-aba no Perfil + banner na 1ª sessão.</li><li><span class="check">✓</span> Onboarding “3 passos” no dashboard (persona casual).</li></ul></div>
+      <div class="phase"><span class="tag p1">Pendente</span><h3>Escala</h3><ul><li>Migração IndexedDB para transações.</li><li>Merge ou versionamento otimista multi-aba.</li><li>Virtualização completa do extrato (além do teto de 500).</li><li>E2E Playwright “caminho do dinheiro” completo.</li></ul></div>
     </section>
   </main>
 

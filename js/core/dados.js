@@ -920,7 +920,23 @@ var DADOS = {
     }
     if (typeof APP_STORE !== 'undefined') APP_STORE.hydrateFromDados();
     this.setupStorageSync();
+    this._mostrarDicaMultiAba();
     this.sincronizarComApi();
+  },
+
+  _mostrarDicaMultiAba: function() {
+    try {
+      if (sessionStorage.getItem('_avisoMultiAbaDoc')) return;
+      sessionStorage.setItem('_avisoMultiAbaDoc', '1');
+    } catch (e) {
+      return;
+    }
+    if (typeof UTILS === 'undefined' || !UTILS.mostrarBanner) return;
+    UTILS.mostrarBanner({
+      id: 'fp-banner-multiaba-doc',
+      tipo: 'info',
+      mensagem: 'Dica: evite editar em duas abas ao mesmo tempo. A última gravação prevalece — o app avisa quando outra aba altera seus dados.',
+    });
   },
 
   _migrarSchema: function() {

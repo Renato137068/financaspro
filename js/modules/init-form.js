@@ -1583,6 +1583,25 @@ const INIT_FORM = {
     if (editId) {
       INIT_FORM._submitBusy = true;
       INIT_FORM._setRegistrarBusy(true, 'Salvando…');
+      var anterior = TRANSACOES.obterPorId(editId);
+      if (!anterior) {
+        INIT_FORM._submitBusy = false;
+        INIT_FORM._setRegistrarBusy(false);
+        UTILS.mostrarToast('Transação não encontrada', 'error');
+        return Promise.reject(new Error('Transação não encontrada'));
+      }
+      var snapshot = {
+        tipo: anterior.tipo,
+        valor: anterior.valor,
+        categoria: anterior.categoria,
+        data: anterior.data,
+        descricao: anterior.descricao,
+        banco: anterior.banco,
+        cartao: anterior.cartao,
+        accountId: anterior.accountId,
+        contaDestino: anterior.contaDestino,
+        contaDestinoId: anterior.contaDestinoId
+      };
       try {
         TRANSACOES.atualizar(editId, {
           tipo: tipo,
@@ -1606,6 +1625,23 @@ const INIT_FORM = {
             APRENDIZADO.registrar(descricao, categoria, tipo, banco, cartao, valor);
           }
           INIT_FORM.mostrarSucesso('Transação atualizada!');
+          UTILS.agendarExclusao('edit-tx-' + editId, function() {}, {
+            mensagem: 'Alteração salva',
+            rotuloAcao: 'Desfazer',
+            duracaoMs: 5000,
+            tipo: 'info',
+            aoDesfazer: function() {
+              TRANSACOES.atualizar(editId, snapshot);
+              if (typeof DADOS !== 'undefined' && DADOS.aguardarDisco) {
+                return DADOS.aguardarDisco().then(function() {
+                  if (typeof INIT_EXTRATO !== 'undefined') INIT_EXTRATO.filtrarExtrato();
+                  if (typeof RENDER !== 'undefined') RENDER.init();
+                });
+              }
+              if (typeof INIT_EXTRATO !== 'undefined') INIT_EXTRATO.filtrarExtrato();
+              if (typeof RENDER !== 'undefined') RENDER.init();
+            }
+          });
           INIT_FORM._finalizarTransacao();
         }).catch(function(err) {
           UTILS.mostrarToast((err && err.message) || 'Falha ao salvar', 'error');

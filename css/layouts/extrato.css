@@ -655,6 +655,18 @@
   color: var(--color-text-muted);
 }
 
+.extrato-lista-limite {
+  margin: var(--space-4) 0 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px dashed var(--color-border);
+  background: var(--color-bg-card);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+  text-align: center;
+}
+
 .ordenacao-btn {
   padding: var(--space-2) var(--space-3);
   font-family: var(--font-family-sans);

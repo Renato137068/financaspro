@@ -185,6 +185,21 @@
       <div class="sk-tx-item"><div class="skeleton sk-tx-icon"></div><div class="sk-tx-body"><div class="skeleton sk-tx-line"></div><div class="skeleton sk-tx-line-short"></div></div><div class="skeleton sk-tx-val"></div></div>
     </div>
     <div id="dashboard-greeting" class="dashboard-greeting"></div>
+
+    <section id="dashboard-onboarding" class="dashboard-onboarding perfil-section" hidden aria-label="Primeiros passos">
+      <div class="dashboard-onboarding-card">
+        <h2 class="dashboard-onboarding-title">Comece em 3 passos</h2>
+        <ol class="dashboard-onboarding-steps">
+          <li>Registre sua primeira receita ou despesa na aba <strong>Novo</strong>.</li>
+          <li>Defina limites em <strong>Orçamento</strong> para acompanhar gastos.</li>
+          <li>Consulte o <strong>Extrato</strong> e exporte um backup em <strong>Perfil › Dados</strong>.</li>
+        </ol>
+        <button type="button" class="btn-primario" data-mudar-aba="novo">
+          <i data-lucide="plus" aria-hidden="true"></i> Registrar primeira transação
+        </button>
+      </div>
+    </section>
+
     <div id="card-saldo-principal" class="card-saldo-principal"></div>
     <span class="sr-only" aria-live="polite" id="saldo-anuncio"></span>
     <div id="dashboard-alertas" class="dashboard-alertas"></div>
@@ -1337,6 +1352,10 @@
           <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
         </button>
       </div>
+      <p class="perfil-dica" id="perfil-dica-multiaba">
+        <i data-lucide="layers" aria-hidden="true"></i>
+        Evite editar em duas abas ao mesmo tempo — a última gravação prevalece. O app avisa quando outra aba altera seus dados.
+      </p>
       <input type="file" id="import-file" accept=".json" style="display:none" aria-hidden="true">
     </div>
 

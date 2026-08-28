@@ -24,6 +24,7 @@ const INIT_EXTRATO = {
     pendenteExclusao: {}, // IDs ocultos até efetivar ou desfazer
     virtualScroll: {
       pageSize: 50,
+      maxRendered: 500,
       currentPage: 0,
       totalItems: 0
     }
@@ -31,6 +32,7 @@ const INIT_EXTRATO = {
   listenerAttached: false,
   filtrosCategoriasListener: false,
   listaTransacoesListener: false,
+  _carregarMaisObserver: null,
   /** Lista filtrada do render atual — usada pelo handler delegado (carregar mais). */
   _listaTxsAtual: null,
   _gruposOrdenadosAtual: null,
@@ -808,8 +810,53 @@ const INIT_EXTRATO = {
       el.hidden = true;
       return;
     }
+    var maxRendered = this._maxRenderedExtrato();
+    var exibidos = Math.min(mostrados, total, maxRendered);
     el.hidden = false;
-    el.textContent = 'Mostrando ' + mostrados + ' de ' + total + ' transações';
+    if (total > maxRendered && exibidos >= maxRendered) {
+      el.textContent = 'Mostrando ' + exibidos + ' de ' + total
+        + ' transações (limite de exibição — use filtros)';
+    } else {
+      el.textContent = 'Mostrando ' + exibidos + ' de ' + total + ' transações';
+    }
+  },
+
+  _maxRenderedExtrato: function() {
+    return this.state.virtualScroll.maxRendered || 500;
+  },
+
+  _desconectarCarregarMaisObserver: function() {
+    if (this._carregarMaisObserver) {
+      this._carregarMaisObserver.disconnect();
+      this._carregarMaisObserver = null;
+    }
+  },
+
+  _vincularCarregarMaisObserver: function(txs) {
+    var self = this;
+    this._desconectarCarregarMaisObserver();
+    if (typeof IntersectionObserver === 'undefined') return;
+    var btn = document.getElementById('btn-carregar-mais');
+    if (!btn) return;
+    this._carregarMaisObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) self._carregarMais(txs);
+      });
+    }, { root: null, rootMargin: '160px', threshold: 0 });
+    this._carregarMaisObserver.observe(btn);
+  },
+
+  _appendControlesPaginacao: function(html, txs, totalShown) {
+    var maxRendered = this._maxRenderedExtrato();
+    if (totalShown < txs.length && totalShown < maxRendered) {
+      var restantes = Math.min(txs.length, maxRendered) - totalShown;
+      html += '<button type="button" class="btn-carregar-mais" id="btn-carregar-mais">Carregar mais ('
+        + restantes + ')</button>';
+    } else if (txs.length > maxRendered && totalShown >= maxRendered) {
+      html += '<p class="extrato-lista-limite" role="status">Mostrando os primeiros ' + maxRendered
+        + ' de ' + txs.length + ' transações. Use filtros ou exporte o período para refinar.</p>';
+    }
+    return html;
   },
 
   /**
@@ -826,18 +873,18 @@ const INIT_EXTRATO = {
     this._gruposOrdenadosAtual = gruposOrdenados;
 
     var pageSize = this.state.virtualScroll.pageSize;
+    var maxRendered = this._maxRenderedExtrato();
     var startItem = this.state.virtualScroll.currentPage * pageSize;
-    var slice = this._renderGruposHtml(gruposOrdenados, startItem, pageSize);
+    var limit = Math.min(pageSize, Math.max(0, maxRendered - startItem));
+    var slice = this._renderGruposHtml(gruposOrdenados, startItem, limit || pageSize);
     var html = slice.html;
     var totalShown = startItem + slice.rendered;
 
-    if (totalShown < txs.length) {
-      html += '<button type="button" class="btn-carregar-mais" id="btn-carregar-mais">Carregar mais (' +
-        (txs.length - totalShown) + ')</button>';
-    }
+    html = this._appendControlesPaginacao(html, txs, totalShown);
 
     container.innerHTML = html;
-    this._atualizarContadorExtrato(txs.length, Math.min(totalShown, txs.length));
+    this._atualizarContadorExtrato(txs.length, totalShown);
+    this._vincularCarregarMaisObserver(txs);
 
     if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(container);
   },
@@ -941,6 +988,11 @@ const INIT_EXTRATO = {
    * Carrega mais itens na lista (virtual scrolling)
    */
   _carregarMais: function(txs) {
+    var maxRendered = this._maxRenderedExtrato();
+    var pageSize = this.state.virtualScroll.pageSize;
+    var proximoStart = (this.state.virtualScroll.currentPage + 1) * pageSize;
+    if (proximoStart >= maxRendered) return;
+
     this.state.virtualScroll.currentPage++;
     var container = document.getElementById('lista-transacoes');
     if (!container) return;
@@ -948,20 +1000,18 @@ const INIT_EXTRATO = {
     var btnCarregarMais = document.getElementById('btn-carregar-mais');
     if (btnCarregarMais) btnCarregarMais.remove();
 
-    var pageSize = this.state.virtualScroll.pageSize;
     var startItem = this.state.virtualScroll.currentPage * pageSize;
+    var limit = Math.min(pageSize, Math.max(0, maxRendered - startItem));
     var gruposOrdenados = this._gruposOrdenadosAtual || {};
-    var slice = this._renderGruposHtml(gruposOrdenados, startItem, pageSize);
+    var slice = this._renderGruposHtml(gruposOrdenados, startItem, limit || pageSize);
     var html = slice.html;
     var totalShown = startItem + slice.rendered;
 
-    if (totalShown < txs.length) {
-      html += '<button type="button" class="btn-carregar-mais" id="btn-carregar-mais">Carregar mais (' +
-        (txs.length - totalShown) + ')</button>';
-    }
+    html = this._appendControlesPaginacao(html, txs, totalShown);
 
     container.insertAdjacentHTML('beforeend', html);
-    this._atualizarContadorExtrato(txs.length, Math.min(totalShown, txs.length));
+    this._atualizarContadorExtrato(txs.length, totalShown);
+    this._vincularCarregarMaisObserver(txs);
     if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(container);
   },
 
