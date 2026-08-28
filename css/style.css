@@ -86,7 +86,7 @@ body {
 /* ── Header mobile ─────────────────────────────────────────── */
 
 header {
-  padding: 14px var(--space-5);
+  padding: calc(14px + env(safe-area-inset-top, 0px)) var(--space-5) 14px;
   background: var(--color-primary-600);
   border-radius: 0 0 var(--radius-xl) var(--radius-xl);
   box-shadow: var(--elevacao-2);
@@ -130,7 +130,8 @@ main {
 /* ── Navegação inferior no celular ─────────────────────────── */
 
 .nav-bottom {
-  bottom: 10px;
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   left: 50%;
   transform: translateX(-50%);
   width: calc(100% - 24px);
@@ -321,13 +322,29 @@ main {
   }
 }
 
+/* Tablet landscape / laptop pequeno: rail mais estreito e conteúdo mais largo
+   que a coluna única de 820px, sem comprimir o grid de 2 colunas do Resumo. */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  :root {
+    --sidebar-width: 200px;
+  }
+
+  main {
+    padding: 28px 28px;
+  }
+
+  main .aba {
+    max-width: min(900px, calc(100vw - var(--sidebar-width) - 56px));
+  }
+}
+
 /* Aba Resumo em telas largas: 2 colunas (hero full-width + main/side).
-   Demais abas e viewports <1280px seguem a coluna única de 820px acima.
+   A partir de 1024px o grid usa o espaço útil; demais abas seguem max-width acima.
    Só aplica display:grid quando .ativo — senão sobrescreveria .aba { display:none }.
    Nota: usamos [id="aba-resumo"] (não #aba-resumo) para o guard de tokens
    não contar "#aba" como cor hexadecimal. */
 
-@media (min-width: 1280px) {
+@media (min-width: 1024px) {
   main .aba.ativo[id="aba-resumo"] {
     display: grid;
     grid-template-columns: 1.5fr 1fr;
@@ -387,6 +404,25 @@ main {
   #secao-contas-pagar,
   #secao-alertas-painel {
     grid-column: 2;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1279px) {
+  main .aba.ativo[id="aba-resumo"] {
+    grid-template-columns: 1.35fr 1fr;
+    gap: var(--space-3) var(--space-4);
+    max-width: min(960px, calc(100vw - var(--sidebar-width) - 56px));
+  }
+}
+
+/* Desktop muito largo: limita a faixa de leitura sem deixar cards esticados. */
+@media (min-width: 1920px) {
+  main .aba {
+    max-width: min(900px, calc(100vw - var(--sidebar-width) - 120px));
+  }
+
+  main .aba.ativo[id="aba-resumo"] {
+    max-width: min(1280px, calc(100vw - var(--sidebar-width) - 120px));
   }
 }
 

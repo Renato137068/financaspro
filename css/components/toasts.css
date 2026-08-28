@@ -47,7 +47,7 @@
   .toast {
     left: 50%;
     right: auto;
-    bottom: 24px;
+    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
     max-width: 380px;
     transform: translateX(-50%) translateY(30px);
   }
