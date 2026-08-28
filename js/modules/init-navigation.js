@@ -233,6 +233,11 @@ const INIT_NAVIGATION = {
       'gerenciar-categorias': function() { 
         safeCall('abrirGerenciarCategorias', [target.dataset.tipo]); 
       },
+      'conta-transferir': function() {
+        if (typeof CONTAS !== 'undefined' && CONTAS.abrirFormTransferencia) {
+          CONTAS.abrirFormTransferencia();
+        }
+      },
       'exportar-dados': function() {
         UTILS.comCarregamento(target, function() { return safeCall('exportarDados'); }, 'Exportando...');
       },

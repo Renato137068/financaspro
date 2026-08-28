@@ -497,6 +497,14 @@ const INIT_EXTRATO = {
         if (typeof renderLucideIcons === 'function') renderLucideIcons(dirBtn);
       }
     }
+    var hint = document.getElementById('ordenacao-hint');
+    if (hint) {
+      var campoTxt = parsed.campo === 'valor' ? 'valor' : 'data';
+      var dirTxt = parsed.campo === 'valor'
+        ? (parsed.dir === 'desc' ? 'Maior valor primeiro' : 'Menor valor primeiro')
+        : (parsed.dir === 'desc' ? 'Data mais recente primeiro' : 'Data mais antiga primeiro');
+      hint.textContent = dirTxt + '. Toque em Data, Valor ou na seta para mudar a ordenação por ' + campoTxt + '.';
+    }
   },
 
   setOrdenacaoCampo: function(campo) {
@@ -674,6 +682,7 @@ const INIT_EXTRATO = {
     
     if (txs.length === 0) {
       container.innerHTML = this._renderEmptyState();
+      this._atualizarContadorExtrato(0, 0);
       return;
     }
 
@@ -791,6 +800,18 @@ const INIT_EXTRATO = {
     return { html: html, rendered: rendered };
   },
 
+  _atualizarContadorExtrato: function(total, mostrados) {
+    var el = document.getElementById('extrato-lista-meta');
+    if (!el) return;
+    if (!total) {
+      el.textContent = '';
+      el.hidden = true;
+      return;
+    }
+    el.hidden = false;
+    el.textContent = 'Mostrando ' + mostrados + ' de ' + total + ' transações';
+  },
+
   /**
    * Renderiza grupos de transações (primeira página ou re-render completo).
    */
@@ -816,6 +837,7 @@ const INIT_EXTRATO = {
     }
 
     container.innerHTML = html;
+    this._atualizarContadorExtrato(txs.length, Math.min(totalShown, txs.length));
 
     if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(container);
   },
@@ -939,6 +961,7 @@ const INIT_EXTRATO = {
     }
 
     container.insertAdjacentHTML('beforeend', html);
+    this._atualizarContadorExtrato(txs.length, Math.min(totalShown, txs.length));
     if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(container);
   },
 

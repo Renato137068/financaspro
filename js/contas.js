@@ -424,17 +424,6 @@ var CONTAS = {
     }).join('');
 
     if (typeof renderLucideIcons === 'function') renderLucideIcons(el);
-    this._bindTransferencia();
-  },
-
-  _transferenciaBound: false,
-
-  _bindTransferencia: function() {
-    if (this._transferenciaBound) return;
-    var btn = document.querySelector('[data-action="conta-transferir"]');
-    if (!btn) return;
-    this._transferenciaBound = true;
-    btn.addEventListener('click', function() { CONTAS.abrirFormTransferencia(); });
   },
 
   /** Nomes de conta conhecidos, para os selects do formulário. */

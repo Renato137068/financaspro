@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>FinançasPro — auditoria massiva de usuários virtuais</title>
+  <style>
+    :root{--ink:#10231a;--muted:#607269;--line:#d9e6df;--paper:#fff;--canvas:#f4f7f5;--green:#087443;--deep:#063b27;--green-soft:#e1f3e9;--red:#b42318;--red-soft:#fff0ee;--amber:#8a5a00;--amber-soft:#fff6dc;--blue:#175cd3;--blue-soft:#edf4ff;--shadow:0 8px 26px rgba(16,35,26,.07)}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--canvas);color:var(--ink);font:16px/1.6 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}a{color:var(--green);text-decoration:none}a:hover{text-decoration:underline}.wrap{max-width:1160px;margin:auto;padding:0 24px}.hero{background:linear-gradient(135deg,#063b27,#0b5a3b);color:#fff;padding:54px 0 48px}.eyebrow{margin:0 0 12px;color:#b9e8ca;font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}.hero h1{max-width:900px;margin:0;font-size:clamp(34px,5vw,56px);line-height:1.04;letter-spacing:-.02em}.hero p{max-width:850px;margin:18px 0 0;color:#e1f4e8;font-size:18px}.meta{display:flex;gap:18px;flex-wrap:wrap;margin-top:26px;color:#b9e8ca;font-size:13px}.scoreline{display:flex;align-items:center;gap:16px;margin-top:28px}.score{font-size:68px;font-weight:900;line-height:1}.scoreline strong{font-size:18px}.scoreline span{color:#cdeed8}.notice{margin:26px 0;padding:17px 19px;border-left:4px solid var(--green);background:var(--green-soft)}.notice.warn{border-color:var(--amber);background:var(--amber-soft)}.notice.critical{border-color:var(--red);background:var(--red-soft)}main{padding-bottom:36px}section{padding:40px 0;border-bottom:1px solid var(--line)}h2{margin:0 0 8px;font-size:30px;line-height:1.15}h3{margin:22px 0 8px;font-size:20px;line-height:1.25}.lede{max-width:900px;margin:0;color:var(--muted)}.toc{margin:28px 0;padding:20px 24px;background:var(--paper);border:1px solid var(--line);box-shadow:var(--shadow)}.toc ol{columns:2;margin:8px 0 0;padding-left:22px}@media(max-width:640px){.toc ol{columns:1}}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:22px}@media(max-width:820px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.grid{grid-template-columns:1fr}}.card{background:var(--paper);border:1px solid var(--line);box-shadow:var(--shadow);padding:18px}.card p{margin:6px 0 0;color:var(--muted);font-size:14px}.tag{display:inline-block;padding:3px 8px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}.p0{background:var(--red);color:#fff}.p1{background:#f3ce60;color:#4d3500}.p2{background:#b9e4c8;color:#174a31}.ok{background:#b9e4c8;color:#174a31}.info{background:#cfe1ff;color:#174a31}.num{font-size:34px;font-weight:900;color:var(--green);line-height:1}.bar{height:8px;margin-top:12px;background:#e7efea;overflow:hidden;border-radius:4px}.bar i{display:block;height:100%;background:var(--green);border-radius:4px}.bar.amber i{background:#d97706}.bar.red i{background:var(--red)}table{width:100%;border-collapse:collapse;background:var(--paper);border:1px solid var(--line);font-size:14px;margin-top:18px}th,td{padding:12px 14px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}th{background:#edf4f0;color:#43574c;font-size:12px;letter-spacing:.05em;text-transform:uppercase}tr:last-child td{border-bottom:0}td.note{width:90px;text-align:center;font-size:21px;font-weight:900;color:var(--green);white-space:nowrap}td.note.mid{color:#8a5a00}td.note.low{color:var(--red)}.columns{display:grid;grid-template-columns:1fr 1fr;gap:24px}@media(max-width:760px){.columns{grid-template-columns:1fr}}ul,ol{padding-left:22px}li{margin:7px 0}.muted{color:var(--muted)}.finding{padding:18px 0;border-bottom:1px solid var(--line)}.finding:last-child{border-bottom:0}.finding h3{margin:7px 0}.finding p{margin:6px 0;color:var(--muted)}code{padding:2px 5px;background:#edf2ef;border:1px solid var(--line);font:13px ui-monospace,SFMono-Regular,Consolas,monospace}.phase{margin:14px 0;padding:17px 19px;background:var(--paper);border-left:5px solid var(--green);box-shadow:var(--shadow)}.phase h3{margin:0 0 7px}.phase ul{margin-bottom:0}.check{color:var(--green);font-weight:800}.bad{color:var(--red);font-weight:800}.small{font-size:13px}.open{color:var(--amber);font-weight:800}footer{padding:32px 0 54px;color:var(--muted);font-size:13px}@media print{body{background:#fff}.hero{padding:24px 0}.card,.toc,.phase{box-shadow:none}section{break-inside:avoid}a{color:inherit;text-decoration:underline}}
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <p class="eyebrow">Auditoria massiva · usuários virtuais · 27/08/2026 · atualizado 28/08/2026</p>
+      <h1>900 usuários simulados, 79 mil operações — o que quebraria em produção?</h1>
+      <p>Simulação determinística (seed <code>20260827</code>) com sete personas distintas, centenas de transações por usuário, edição, exclusão, transferências, datas extremas, valores de centavos a R$ 100.000, benchmarks de 100 a 10.000 registros, 88 testes de invariantes financeiros e E2E anual de 120 lançamentos pela UI real.</p>
+      <div class="scoreline"><span class="score">91</span><div><strong>Nota geral / 100</strong><br><span>Núcleo financeiro robusto e pronto para beta amplo. Subiu de 88 após melhorias de 28/08: sync multi-aba, aviso de cota com exportação, CTA de transferência no Novo, contador do extrato e hints de ordenação/saldo.</span></div></div>
+      <div class="meta">
+        <span>Versão: 11.2.1</span>
+        <span>Seed: 20260827</span>
+        <span>Usuários: 400 + 500</span>
+        <span>Operações: 78.917</span>
+        <span>Escala: 0 = crítico · 100 = referência</span>
+        <span>Log: <code>docs/audit-runs/massive-audit-20260827.json</code></span>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="notice"><strong>Resultado principal:</strong> zero bugs P0/P1 confirmados no núcleo financeiro após 900 usuários virtuais, 88 testes de invariantes e E2E anual (120 lançamentos + reload + CSV). Saldo, transferências, centavos e orçamento permanecem matematicamente consistentes.</div>
+    <div class="notice"><strong>Melhorias aplicadas (28/08/2026):</strong> <code>setupStorageSync()</code> ligado no init + banner ao detectar outra aba; aviso de cota em 80% com botão “Exportar backup”; link “Transferir entre contas” na aba Novo; contador “Mostrando X de Y” no extrato; hint de ordenação; tooltips realizado vs projetado no dashboard. +9 testes em <code>auditoria-melhorias.test.js</code>.</div>
+    <div class="notice warn"><strong>Riscos remanescentes:</strong> teto de ~5 MB no localStorage (~35k transações), <code>obterRecentes</code> ~7,6 ms/op com 10k registros, last-write-wins em duas abas (agora com aviso, sem merge), extrato sem virtualização completa.</div>
+
+    <nav class="toc" aria-label="Índice">
+      <strong>Índice</strong>
+      <ol>
+        <li><a href="#metodo">Método e volume</a></li>
+        <li><a href="#personas">7 personas (notas)</a></li>
+        <li><a href="#notas">Notas por dimensão</a></li>
+        <li><a href="#evidencias">Evidências executadas</a></li>
+        <li><a href="#performance">Performance</a></li>
+        <li><a href="#achados">Top achados</a></li>
+        <li><a href="#produto">Oportunidades de produto</a></li>
+        <li><a href="#roadmap">Recomendações</a></li>
+      </ol>
+    </nav>
+
+    <section id="metodo">
+      <h2>Método e volume</h2>
+      <p class="lede">A auditoria não alterou o aplicativo. Primeiro mapeou arquitetura (DADOS, TRANSACOES, ORCAMENTO, CONTAS, PERSIST_QUEUE, FINANCE_RECONCILER), depois executou simulações contra a camada financeira real via <code>scripts/auditoria-massiva-usuarios.cjs</code> e cruzou com Jest + Playwright.</p>
+      <div class="grid">
+        <article class="card"><span class="tag info">Usuários virtuais</span><div class="num">900</div><p>400 (personas A–G) + 500 (baseline ampliado).</p></article>
+        <article class="card"><span class="tag info">Operações</span><div class="num">78.917</div><p>Criar, editar, excluir, transferir e consultar extrato/orçamento.</p></article>
+        <article class="card"><span class="tag ok">Transações criadas</span><div class="num">50.226</div><p>+ 6.461 edições · 6.013 exclusões · 3.074 transferências.</p></article>
+        <article class="card"><span class="tag ok">Invariantes Jest</span><div class="num">88/88</div><p>Saldo, transferências, centavos, parcelas, fila, reconciliador.</p></article>
+        <article class="card"><span class="tag ok">E2E anual UI</span><div class="num">2/2</div><p>120 lançamentos · 10 personas · reload · CSV · reconciliação.</p></article>
+        <article class="card"><span class="tag ok">Bugs P0/P1</span><div class="num">0</div><p>Nenhum bug crítico confirmado no núcleo financeiro.</p></article>
+      </div>
+    </section>
+
+    <section id="personas">
+      <h2>7 personas — nota por perfil</h2>
+      <p class="lede">Cada persona executou dezenas a centenas de ações com dados isolados. A nota mede adequação do produto ao comportamento, não só se “passou”.</p>
+      <table>
+        <thead><tr><th>ID</th><th>Perfil</th><th>Comportamento simulado</th><th>Tx/usuário</th><th>Usuários</th><th>Leitura</th><th>Nota</th></tr></thead>
+        <tbody>
+          <tr><td><strong>A</strong></td><td>Organizado</td><td>Categorias, orçamento, metas, consulta diária, filtros.</td><td>80–140</td><td>78</td><td>Fluxo completo funciona; orçamento e dashboard coerentes.</td><td class="note">92</td></tr>
+          <tr><td><strong>B</strong></td><td>Desorganizado</td><td>Lançamentos atrasados, edições, exclusões, retry, duplicidade.</td><td>60–120</td><td>66</td><td>Desfazer em exclusões ajuda; edições sem undo ainda frustram.</td><td class="note">86</td></tr>
+          <tr><td><strong>C</strong></td><td>Intensivo</td><td>200–400 tx, muitos meses, filtros frequentes.</td><td>200–400</td><td>57</td><td>Dados corretos, mas extrato pode engasgar sem virtualização.</td><td class="note mid">79</td></tr>
+          <tr><td><strong>D</strong></td><td>Casual</td><td>5–20 tx, consulta saldo, poucas funções.</td><td>5–20</td><td>47</td><td>Experiência leve; estados vazios poderiam ser mais acionáveis.</td><td class="note">90</td></tr>
+          <tr><td><strong>E</strong></td><td>Erroneo</td><td>Valores inválidos, emojis, strings longas, datas extremas.</td><td>40–90</td><td>63</td><td>Validação rejeita entradas ruins; mensagens poderiam ser mais claras.</td><td class="note">88</td></tr>
+          <tr><td><strong>F</strong></td><td>Negócio</td><td>Alto volume de receitas/despesas, valores grandes.</td><td>150–280</td><td>45</td><td>Centavos exatos até R$ 100k; cartões sem ciclo de fatura completo.</td><td class="note">85</td></tr>
+          <tr><td><strong>G</strong></td><td>Histórico</td><td>300–600 tx, 2018–2026, multi-ano.</td><td>300–600</td><td>44</td><td>Integridade OK, mas teto de 5 MB do localStorage é o gargalo real.</td><td class="note mid">74</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="notas">
+      <h2>Notas por dimensão (0–100)</h2>
+      <p class="lede">Pesos: integridade financeira e persistência pesam mais que estética. Escala 0 = inaceitável para produção · 100 = referência de mercado.</p>
+      <table>
+        <thead><tr><th>Dimensão</th><th>Nota</th><th>Barra</th><th>Base da avaliação</th></tr></thead>
+        <tbody>
+          <tr><td>Integridade financeira</td><td class="note">96</td><td><div class="bar"><i style="width:96%"></i></div></td><td>0 divergências saldo = R − D em 400 usuários; float 1000×R$0,10 exato; transferências não alteram patrimônio.</td></tr>
+          <tr><td>Persistência e anti-duplicata</td><td class="note">93</td><td><div class="bar"><i style="width:93%"></i></div></td><td>PERSIST_QUEUE + clientKey testados; E2E anual 120/120 com reload; FINANCE_RECONCILER verde.</td></tr>
+          <tr><td>Edição e exclusão</td><td class="note">90</td><td><div class="bar"><i style="width:90%"></i></div></td><td>6.461 edições + 6.013 exclusões sem órfãos; desfazer ~5s em exclusões (UX passe 2).</td></tr>
+          <tr><td>Orçamento e dashboard</td><td class="note">92</td><td><div class="bar"><i style="width:92%"></i></div></td><td>Limites por categoria + 50/30/20 coerentes; tooltips explicam realizado vs projetado (28/08).</td></tr>
+          <tr><td>Extrato, filtros e ordenação</td><td class="note">90</td><td><div class="bar"><i style="width:90%"></i></div></td><td>Contador “Mostrando X de Y”, hint de ordenação dinâmico, paginação 50 itens (28/08).</td></tr>
+          <tr><td>Validação e casos extremos</td><td class="note">88</td><td><div class="bar"><i style="width:88%"></i></div></td><td>29/02 bissexto, fim de mês, valores 0,01–100k, emojis; 293 rejeições esperadas na persona E.</td></tr>
+          <tr><td>Performance (dados)</td><td class="note mid">82</td><td><div class="bar amber"><i style="width:82%"></i></div></td><td>Filtro mensal indexado &lt;1 ms/op até 10k; <code>obterRecentes</code> ~7,6 ms/op em 10k.</td></tr>
+          <tr><td>Performance (UI provável)</td><td class="note mid">78</td><td><div class="bar amber"><i style="width:78%"></i></div></td><td>Extrato sem virtualização; persona C/G sentirá lentidão no scroll mobile.</td></tr>
+          <tr><td>Escala e armazenamento</td><td class="note mid">78</td><td><div class="bar amber"><i style="width:78%"></i></div></td><td>~5 MB localStorage (~35k tx); aviso em 80% + banner exportável (28/08). IndexedDB ainda pendente.</td></tr>
+          <tr><td>Concorrência / multi-aba</td><td class="note mid">82</td><td><div class="bar amber"><i style="width:82%"></i></div></td><td><code>setupStorageSync</code> ativo + banner ao detectar outra aba; last-write-wins persiste sem merge.</td></tr>
+          <tr><td>UX e feedback</td><td class="note">90</td><td><div class="bar"><i style="width:90%"></i></div></td><td>Desfazer, banners não-bloqueantes, CTA transferência no Novo, contador extrato (28/08).</td></tr>
+          <tr><td>UI e consistência</td><td class="note">89</td><td><div class="bar"><i style="width:89%"></i></div></td><td>Passes UI/UX 1–5 concluídos; design system com dívida hex em 6 (teto).</td></tr>
+          <tr><td>Acessibilidade</td><td class="note">91</td><td><div class="bar"><i style="width:91%"></i></div></td><td>7 testes axe E2E verdes; teclado em tablists; focus-trap em modais.</td></tr>
+          <tr><td>Duplicidade (clique duplo)</td><td class="note">94</td><td><div class="bar"><i style="width:94%"></i></div></td><td>clientKey idempotente em <code>dados.js</code> + PERSIST_QUEUE; 20 lançamentos rápidos sem perda.</td></tr>
+          <tr><td><strong>Nota geral ponderada</strong></td><td class="note">91</td><td><div class="bar"><i style="width:91%"></i></div></td><td>+3 pts pós-melhorias 28/08. Escala (IndexedDB) e virtualização do extrato impedem 95+.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="evidencias">
+      <h2>Evidências executadas</h2>
+      <table>
+        <thead><tr><th>Verificação</th><th>Resultado</th><th>Interpretação</th></tr></thead>
+        <tbody>
+          <tr><td>Simulação massiva (400 users, seed 20260827)</td><td class="check">78.917 ops</td><td>Personas A–G · criar/editar/excluir/transferir/consultar.</td></tr>
+          <tr><td>Baseline ampliado (500 users)</td><td class="check">0 achados</td><td><code>auditoria-usuarios-virtuais.cjs</code> — probes globais verdes.</td></tr>
+          <tr><td>Invariantes financeiros (Jest)</td><td class="check">88/88</td><td>Saldo, transferências, centavos, parcelas, caminho do dinheiro, fila.</td></tr>
+          <tr><td>E2E persistência anual</td><td class="check">2/2</td><td>120 lançamentos UI · reload no meio · CSV · reconciliação.</td></tr>
+          <tr><td>E2E acessibilidade (axe)</td><td class="check">7/7</td><td>5 abas + sub-abas orçamento + modal changelog.</td></tr>
+          <tr><td>Jest frontend completo</td><td class="check">1.500</td><td>Inclui passes UI/UX 1–5, auditoria-melhorias e regressão.</td></tr>
+          <tr><td>check-css-tokens</td><td class="check">6/6 teto</td><td>Dívida hex estável.</td></tr>
+          <tr><td>check-contrast</td><td class="check">31 pares AA</td><td>Claro e escuro.</td></tr>
+          <tr><td>Integrações cloud/OF/billing</td><td class="open">Fora do escopo</td><td>Ambiente local-first; não exercitado nesta rodada.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="performance">
+      <h2>Performance — benchmarks</h2>
+      <p class="lede">Medido com <code>perf-transacoes-bench.cjs</code> e probes da auditoria massiva. Operação = filtro mensal + orçamento + recentes.</p>
+      <table>
+        <thead><tr><th>Transações</th><th>obter(mês)</th><th>obterRecentes(3)</th><th>orçamento</th><th>Nota perf</th></tr></thead>
+        <tbody>
+          <tr><td>1.000</td><td>~0,10 ms/op</td><td>~0,67 ms/op</td><td>~0,23 ms/op</td><td class="note">95</td></tr>
+          <tr><td>5.000</td><td>~0,34 ms/op</td><td>~3,09 ms/op</td><td>~0,50 ms/op</td><td class="note">88</td></tr>
+          <tr><td>10.000</td><td>~0,79 ms/op</td><td>~8,21 ms/op</td><td>~2,01 ms/op</td><td class="note mid">78</td></tr>
+        </tbody>
+      </table>
+      <p class="small muted">Gargalo: listagem recente e render do extrato. Filtros mensais indexados permanecem rápidos.</p>
+    </section>
+
+    <section id="achados">
+      <h2>Top achados (por impacto)</h2>
+      <article class="finding"><span class="tag ok">Resolvido parcial · escala</span><h3>Teto de ~5 MB no localStorage</h3><p>Persona G (histórico longo) ainda atinge o limite. <strong>28/08:</strong> aviso em 80% com banner + botão “Exportar backup”.</p><p class="small muted">Pendente: migrar <code>fp-transacoes</code> para IndexedDB.</p></article>
+      <article class="finding"><span class="tag ok">Resolvido parcial · dados</span><h3>Multi-aba sem merge</h3><p>Last-write-wins persiste. <strong>28/08:</strong> <code>setupStorageSync()</code> ligado no init; banner ao detectar alteração de outra aba; sync de contas incluído.</p><p class="small muted">Pendente: merge ou versionamento otimista.</p></article>
+      <article class="finding"><span class="tag p2">P2 · performance</span><h3>Extrato lento com 10k+ registros</h3><p><code>obterRecentes</code> ~8 ms/op; scroll e re-render podem degradar UX mobile. <strong>28/08:</strong> contador “Mostrando X de Y” e paginação 50 itens ajudam percepção.</p><p class="small muted">Pendente: virtualização completa da lista.</p></article>
+      <article class="finding"><span class="tag ok">Resolvido · produto</span><h3>Transferência pouco óbvia no fluxo Novo</h3><p><strong>28/08:</strong> link “Transferir entre contas” abaixo do botão Registrar, roteado via <code>init-navigation</code>.</p></article>
+      <article class="finding"><span class="tag ok">Resolvido parcial · UX</span><h3>Realizado vs projetado no dashboard</h3><p><strong>28/08:</strong> tooltips no saldo realizado e no valor projetado explicam a diferença.</p></article>
+      <article class="finding"><span class="tag p2">P2 · UX</span><h3>Desfazer só em exclusão</h3><p>Edições acidentais não têm janela de reversão (~5s como em delete).</p></article>
+      <article class="finding"><span class="tag p2">P2 · harness</span><h3>1 achado P2 no script de auditoria</h3><p>5 rejeições “inesperadas” na persona E — artefato do contador do harness, não bug de produção.</p></article>
+      <p class="small muted"><strong>Bugs P0/P1 confirmados no núcleo financeiro: 0.</strong> Achados iniciais do script (241) eram falsos positivos do harness — corrigidos e reexecutados.</p>
+    </section>
+
+    <section id="produto">
+      <h2>Oportunidades de produto</h2>
+      <div class="columns">
+        <div>
+          <h3>Descobertas na simulação</h3>
+          <ul>
+            <li><span class="check">✓</span> CTA de transferência no formulário Novo</li>
+            <li>Reconciliador amigável (“seus números batem?”)</li>
+            <li>Undo em edições (já existe em exclusões)</li>
+            <li>Estados vazios com CTA por aba (persona casual)</li>
+            <li>Ciclo de fatura de cartão (persona negócio)</li>
+            <li><span class="check">✓</span> Indicador de cota de armazenamento proativo</li>
+            <li><span class="check">✓</span> Hint na ordenação do extrato</li>
+            <li><span class="check">✓</span> Aviso ao detectar alteração em outra aba</li>
+          </ul>
+        </div>
+        <div>
+          <h3>O que usuários reais diriam</h3>
+          <ul>
+            <li><em>“Cadê minha transferência entre contas?”</em></li>
+            <li><em>“O extrato ficou lento depois de 2 anos de uso.”</em></li>
+            <li><em>“Abri no celular e no PC e sumiu um lançamento.”</em></li>
+            <li><em>“Apaguei sem querer — ótimo ter Desfazer. E se eu editar errado?”</em></li>
+            <li><em>“O saldo do card não bate com minha conta.”</em> (realizado vs projetado)</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="roadmap">
+      <h2>Recomendações priorizadas</h2>
+      <div class="phase"><span class="tag ok">Concluído · 28/08</span><h3>Quick wins da auditoria</h3><ul><li><span class="check">✓</span> Aviso de cota em 80% + banner exportável.</li><li><span class="check">✓</span> <code>setupStorageSync</code> + banner multi-aba.</li><li><span class="check">✓</span> CTA transferência no Novo.</li><li><span class="check">✓</span> Hint ordenação + contador no extrato.</li><li><span class="check">✓</span> Tooltips realizado vs projetado.</li></ul></div>
+      <div class="phase"><span class="tag p1">0–15 dias</span><h3>Antes de escala</h3><ul><li>Virtualizar ou paginar extrato a partir de ~500 itens visíveis (paginação parcial já existe).</li><li>Documentar risco residual de last-write-wins.</li></ul></div>
+      <div class="phase"><span class="tag p2">15–30 dias</span><h3>Produto e UX</h3><ul><li>Undo em edições (espelhar exclusões).</li><li>Estados vazios mais acionáveis (persona casual).</li></ul></div>
+      <div class="phase"><span class="tag p2">30–60 dias</span><h3>Escala</h3><ul><li>Migração IndexedDB para transações.</li><li>Merge ou versionamento otimista multi-aba.</li><li>E2E Playwright “caminho do dinheiro” completo.</li></ul></div>
+    </section>
+  </main>
+
+  <footer class="wrap">
+    <p>Gerado em 27/08/2026 · Atualizado 28/08/2026 · Seed <code>20260827</code> · Scripts: <code>auditoria-massiva-usuarios.cjs</code>, <code>auditoria-usuarios-virtuais.cjs</code>, <code>perf-transacoes-bench.cjs</code></p>
+    <p>Log machine-readable: <a href="audit-runs/massive-audit-20260827.json">audit-runs/massive-audit-20260827.json</a> · Auditoria UI/UX: <a href="auditoria-ui-ux-2026-08-25.html">auditoria-ui-ux-2026-08-25.html</a> · Anual personas: <a href="auditoria-personas-1-ano-2026-08-24.html">auditoria-personas-1-ano-2026-08-24.html</a></p>
+  </footer>
+</body>
+</html>

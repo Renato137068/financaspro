@@ -269,6 +269,7 @@
       var info = this.create('div', { class: 'saldo-info' });
       var lbl  = this.create('div', { class: 'saldo-label' });
       lbl.textContent = 'Saldo do mês (realizado)';
+      lbl.title = 'Soma apenas de lançamentos já ocorridos neste mês, sem contas futuras.';
       info.appendChild(lbl);
 
       var val = this.create('div', { class: 'saldo-valor' });
@@ -279,6 +280,7 @@
       if (proj && Math.abs((proj.saldo || 0) - saldo) >= 0.005) {
         var hint = this.create('p', { class: 'saldo-projetado-hint' });
         hint.textContent = 'Projetado no mês (incl. futuros): ' + this.money(proj.saldo || 0);
+        hint.title = 'Inclui lançamentos com data futura ainda não realizados.';
         info.appendChild(hint);
       }
 

@@ -1,0 +1,31 @@
+{
+  "seed": 20260827,
+  "users": 500,
+  "simMs": 4211,
+  "stats": {
+    "created": 33109,
+    "edited": 3795,
+    "deleted": 2883,
+    "transfers": 0,
+    "rejected": 0,
+    "filters": 10047,
+    "txFinal": 30726,
+    "performance": {
+      "ops30": 99,
+      "msPerOp": 3.3
+    }
+  },
+  "findings": [],
+  "uniqueFindings": [],
+  "summary": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 0,
+    "P3": 0
+  },
+  "performance": {
+    "ops30": 99,
+    "msPerOp": 3.3
+  },
+  "generatedAt": "2026-08-28T00:51:30.424Z"
+}

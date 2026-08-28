@@ -80,6 +80,8 @@ var DADOS = {
 
   /** Aviso de cota é uma vez por sessão — repetido, vira ruído ignorável. */
   _avisouCota: false,
+  _avisouSyncMultiAba: false,
+  _storageSyncBound: false,
 
   /** Idem para o desvio de relógio: uma vez por sessão. */
   _avisouRelogio: false,
@@ -173,12 +175,26 @@ var DADOS = {
     if (uso.percentual < this._LIMIAR_AVISO * 100) return uso;
 
     this._avisouCota = true;
+    var msgCota = 'Armazenamento em ' + uso.percentual + '%. Exporte um backup e '
+      + 'considere apagar lançamentos antigos.';
     if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
-      UTILS.mostrarToast(
-        'Armazenamento em ' + uso.percentual + '%. Exporte um backup e '
-        + 'considere apagar lançamentos antigos.',
-        'warning',
-      );
+      UTILS.mostrarToast(msgCota, 'warning');
+    }
+    if (typeof UTILS !== 'undefined' && UTILS.mostrarBanner) {
+      UTILS.mostrarBanner({
+        id: 'fp-banner-cota',
+        tipo: 'warning',
+        mensagem: msgCota,
+        acao: 'Exportar backup',
+        fecharAoAcao: false,
+        onAcao: function() {
+          if (typeof CONFIG_USER !== 'undefined' && CONFIG_USER.exportarDados) {
+            CONFIG_USER.exportarDados();
+          } else if (typeof exportarDados === 'function') {
+            exportarDados();
+          }
+        },
+      });
     }
     return uso;
   },
@@ -903,6 +919,7 @@ var DADOS = {
       this._migrarSchema();
     }
     if (typeof APP_STORE !== 'undefined') APP_STORE.hydrateFromDados();
+    this.setupStorageSync();
     this.sincronizarComApi();
   },
 
@@ -1189,9 +1206,14 @@ var DADOS = {
   // Sync entre abas: atualiza quando outra aba muda o localStorage.
   // Debounce de 300ms evita múltiplos re-inits em rajadas de escrita.
   setupStorageSync: function() {
+    if (this._storageSyncBound) return;
+    this._storageSyncBound = true;
     var self = this;
     window.addEventListener('storage', function(e) {
-      if (e.key !== CONFIG.STORAGE_TRANSACOES && e.key !== CONFIG.STORAGE_CONFIG) return;
+      if (!e.key) return;
+      if (e.key !== CONFIG.STORAGE_TRANSACOES
+        && e.key !== CONFIG.STORAGE_CONFIG
+        && e.key !== CONFIG.STORAGE_CONTAS) return;
 
       clearTimeout(self._storageDebounceTimer);
       self._storageDebounceTimer = setTimeout(function() {
@@ -1200,7 +1222,16 @@ var DADOS = {
         } else {
           if (typeof TRANSACOES !== 'undefined') TRANSACOES.init();
           if (typeof ORCAMENTO !== 'undefined') ORCAMENTO.init();
+          if (typeof CONTAS !== 'undefined') CONTAS.init();
           if (typeof RENDER !== 'undefined') RENDER.init();
+        }
+        if (!self._avisouSyncMultiAba && typeof UTILS !== 'undefined' && UTILS.mostrarBanner) {
+          self._avisouSyncMultiAba = true;
+          UTILS.mostrarBanner({
+            id: 'fp-banner-multiaba',
+            tipo: 'info',
+            mensagem: 'Outra aba alterou seus dados. A tela foi atualizada.',
+          });
         }
       }, 300);
     });

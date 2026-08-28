@@ -569,6 +569,12 @@
       <button type="submit" class="btn-primario btn-registrar">
         <i data-lucide="check" aria-hidden="true"></i> Registrar
       </button>
+
+      <p class="novo-acoes-secundarias">
+        <button type="button" class="btn-link-secundario" data-action="conta-transferir">
+          <i data-lucide="arrow-left-right" aria-hidden="true"></i> Transferir entre contas
+        </button>
+      </p>
     </form>
 
     <!-- ANIMAÇÃO DE SUCESSO (overlay) -->
@@ -713,6 +719,7 @@
             <i data-lucide="arrow-down" aria-hidden="true"></i>
           </button>
         </div>
+        <p class="ordenacao-hint" id="ordenacao-hint">Data mais recente primeiro. Toque em Data, Valor ou na seta para mudar.</p>
 
         <!-- Botão limpar filtros -->
         <button class="btn-limpar-filtros" data-action="limpar-filtros" aria-label="Limpar todos os filtros">
@@ -725,6 +732,7 @@
     <!-- Lista de transações -->
     <div class="perfil-section">
       <h2 class="perfil-section-title">Transações</h2>
+    <p class="extrato-lista-meta" id="extrato-lista-meta" aria-live="polite" hidden></p>
     <div id="lista-transacoes"></div>
 
     <!-- Barra de ações em massa (oculta por padrão) -->
