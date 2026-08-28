@@ -233,6 +233,18 @@ const INIT_NAVIGATION = {
       'gerenciar-categorias': function() { 
         safeCall('abrirGerenciarCategorias', [target.dataset.tipo]); 
       },
+      'verificar-numeros': function() {
+        if (typeof FINANCE_RECONCILER === 'undefined' || !FINANCE_RECONCILER.verificarPainel) {
+          UTILS.mostrarToast('Verificação indisponível agora.', 'error');
+          return;
+        }
+        var r = FINANCE_RECONCILER.verificarPainel();
+        if (r.ok) {
+          UTILS.mostrarToast('Seus números batem: disponível = saldo − comprometido.', 'success');
+        } else {
+          UTILS.mostrarToast(r.detalhes[0] || 'Encontramos divergências nos totais.', 'warning');
+        }
+      },
       'conta-transferir': function() {
         if (typeof CONTAS !== 'undefined' && CONTAS.abrirFormTransferencia) {
           CONTAS.abrirFormTransferencia();

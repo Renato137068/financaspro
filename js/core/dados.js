@@ -82,6 +82,16 @@ var DADOS = {
   _avisouCota: false,
   _avisouSyncMultiAba: false,
   _storageSyncBound: false,
+  _transacoesBackend: null,
+  _transacoesCache: null,
+  _idbWriteChain: Promise.resolve(),
+  _initPromise: null,
+  _ignorarStorageSync: false,
+  TX_BACKEND_KEY: 'fp-tx-backend',
+  TX_SYNC_PING_KEY: 'fp-tx-sync-ping',
+  TX_IDB_SENTINEL: '{"_idb":1}',
+  LIMIAR_MIGRAR_TX_COUNT: 2500,
+  LIMIAR_MIGRAR_TX_BYTES: 3 * 1024 * 1024,
 
   /** Idem para o desvio de relógio: uma vez por sessão. */
   _avisouRelogio: false,
@@ -906,22 +916,173 @@ var DADOS = {
   },
 
   init: function() {
-    if (this._initialized) return;
-    this._initialized = true;
-    this._limparTokensLegados();
-    if (!this._storageGetRaw(CONFIG.STORAGE_TRANSACOES)) {
-      this._storageSetRaw(CONFIG.STORAGE_TRANSACOES, JSON.stringify([]));
+    if (this._initialized) return Promise.resolve();
+    if (this._initPromise) return this._initPromise;
+    var self = this;
+    this._initPromise = this._prepararStorageTransacoes().then(function() {
+      self._limparTokensLegados();
+      if (self._transacoesBackend !== 'idb' && !self._storageGetRaw(CONFIG.STORAGE_TRANSACOES)) {
+        self._storageSetRaw(CONFIG.STORAGE_TRANSACOES, JSON.stringify([]));
+      }
+      if (!self._storageGetRaw(CONFIG.STORAGE_CONFIG)) {
+        var defaults = Object.assign({}, CONFIG.DEFAULT_CONFIG, { _schemaVer: self.SCHEMA_VERSION });
+        self._storageSetRaw(CONFIG.STORAGE_CONFIG, JSON.stringify(defaults));
+      } else {
+        self._migrarSchema();
+      }
+      if (typeof APP_STORE !== 'undefined') APP_STORE.hydrateFromDados();
+      self.setupStorageSync();
+      self._mostrarDicaMultiAba();
+      self.sincronizarComApi();
+      self._initialized = true;
+    });
+    return this._initPromise;
+  },
+
+  _mostrarBannerMultiAba: function(mensagem) {
+    if (this._avisouSyncMultiAba || typeof UTILS === 'undefined' || !UTILS.mostrarBanner) return;
+    this._avisouSyncMultiAba = true;
+    UTILS.mostrarBanner({
+      id: 'fp-banner-multiaba',
+      tipo: 'info',
+      mensagem: mensagem || 'Outra aba alterou seus dados. A tela foi atualizada.',
+      acao: 'Recarregar',
+      fecharAoAcao: false,
+      onAcao: function() { window.location.reload(); },
+    });
+  },
+
+  _pendingTxIds: function() {
+    if (typeof PERSIST_QUEUE === 'undefined' || !PERSIST_QUEUE.getSnapshot) return [];
+    var snap = PERSIST_QUEUE.getSnapshot();
+    return (snap.items || []).filter(function(it) {
+      return it && (it.status === 'pending' || it.status === 'saving');
+    }).map(function(it) { return it.txId; }).filter(Boolean);
+  },
+
+  _parseTransacoesJson: function(data) {
+    if (!data || data === this.TX_IDB_SENTINEL) return [];
+    var parsed = JSON.parse(data);
+    return Array.isArray(parsed) ? parsed : [];
+  },
+
+  _deveMigrarTransacoesParaIdb: function(data, lista) {
+    if (typeof IDB_KV === 'undefined' || !IDB_KV.isReady || !IDB_KV.isReady()) return false;
+    if (!Array.isArray(lista)) return false;
+    if (lista.length >= this.LIMIAR_MIGRAR_TX_COUNT) return true;
+    if (data && data.length * 2 >= this.LIMIAR_MIGRAR_TX_BYTES) return true;
+    var uso = this.usoArmazenamento();
+    return uso.disponivel && uso.percentual >= this._LIMIAR_AVISO * 100;
+  },
+
+  _ativarBackendIdbTransacoes: function(lista) {
+    this._transacoesBackend = 'idb';
+    this._transacoesCache = Array.isArray(lista) ? lista : [];
+    try {
+      localStorage.setItem(this.TX_BACKEND_KEY, 'idb');
+      localStorage.setItem(CONFIG.STORAGE_TRANSACOES, this.TX_IDB_SENTINEL);
+    } catch (e) { /* noop */ }
+    var json = JSON.stringify(this._transacoesCache);
+    var self = this;
+    this._idbWriteChain = this._idbWriteChain.then(function() {
+      return IDB_KV.set(CONFIG.STORAGE_TRANSACOES, json);
+    }).then(function() {
+      self._pingTransacoesSync();
+    });
+    return this._idbWriteChain;
+  },
+
+  _prepararStorageTransacoes: function() {
+    var self = this;
+    if (typeof IDB_KV === 'undefined') {
+      self._transacoesBackend = 'localStorage';
+      return Promise.resolve();
     }
-    if (!this._storageGetRaw(CONFIG.STORAGE_CONFIG)) {
-      var defaults = Object.assign({}, CONFIG.DEFAULT_CONFIG, { _schemaVer: this.SCHEMA_VERSION });
-      this._storageSetRaw(CONFIG.STORAGE_CONFIG, JSON.stringify(defaults));
-    } else {
-      this._migrarSchema();
+    return IDB_KV.init().then(function() {
+      var backend = null;
+      try { backend = localStorage.getItem(self.TX_BACKEND_KEY); } catch (e) { backend = null; }
+      if (backend === 'idb' && IDB_KV.isReady()) {
+        self._transacoesBackend = 'idb';
+        return IDB_KV.get(CONFIG.STORAGE_TRANSACOES).then(function(data) {
+          try {
+            self._transacoesCache = data ? self._parseTransacoesJson(data) : [];
+          } catch (e) {
+            self._transacoesCache = [];
+          }
+        });
+      }
+      self._transacoesBackend = 'localStorage';
+      var raw = self._storageGetRaw(CONFIG.STORAGE_TRANSACOES);
+      if (!raw) return;
+      try {
+        var lista = self._parseTransacoesJson(raw);
+        if (self._deveMigrarTransacoesParaIdb(raw, lista)) {
+          return self._ativarBackendIdbTransacoes(lista);
+        }
+      } catch (e) {
+        console.warn('Migração IDB ignorada:', e);
+      }
+    });
+  },
+
+  _pingTransacoesSync: function() {
+    try {
+      this._ignorarStorageSync = true;
+      localStorage.setItem(this.TX_SYNC_PING_KEY, String(Date.now()));
+    } catch (e) { /* noop */ }
+    finally {
+      var self = this;
+      setTimeout(function() { self._ignorarStorageSync = false; }, 0);
     }
-    if (typeof APP_STORE !== 'undefined') APP_STORE.hydrateFromDados();
-    this.setupStorageSync();
-    this._mostrarDicaMultiAba();
-    this.sincronizarComApi();
+  },
+
+  _hidratarTransacoesIdb: function() {
+    var self = this;
+    if (this._transacoesBackend !== 'idb' || typeof IDB_KV === 'undefined') {
+      return Promise.resolve();
+    }
+    return IDB_KV.get(CONFIG.STORAGE_TRANSACOES).then(function(data) {
+      try {
+        self._transacoesCache = data ? self._parseTransacoesJson(data) : [];
+      } catch (e) {
+        self._transacoesCache = [];
+      }
+      if (typeof TRANSACOES !== 'undefined') TRANSACOES.init();
+      if (typeof ORCAMENTO !== 'undefined') ORCAMENTO.init();
+      if (typeof CONTAS !== 'undefined') CONTAS.init();
+      if (typeof RENDER !== 'undefined') RENDER.init();
+    });
+  },
+
+  _mesclarTransacoesRemotas: function(remoteJson) {
+    if (!remoteJson || remoteJson === this.TX_IDB_SENTINEL) return;
+    try {
+      var remotas = this._parseTransacoesJson(remoteJson);
+      if (!remotas.length && remoteJson !== '[]') return;
+      var locais = this._transacoesBackend === 'idb'
+        ? (this._transacoesCache || []).slice()
+        : this._parseTransacoesJson(this._storageGetRaw(CONFIG.STORAGE_TRANSACOES));
+      var pending = this._pendingTxIds();
+      var merged = (typeof SYNC_MERGE !== 'undefined')
+        ? SYNC_MERGE.mergeDelta(locais, pending, remotas)
+        : remotas;
+      this._ignorarStorageSync = true;
+      if (this._transacoesBackend === 'idb') {
+        this._transacoesCache = merged;
+        var json = JSON.stringify(merged);
+        var self = this;
+        this._idbWriteChain = this._idbWriteChain.then(function() {
+          return IDB_KV.set(CONFIG.STORAGE_TRANSACOES, json);
+        });
+      } else {
+        localStorage.setItem(CONFIG.STORAGE_TRANSACOES, JSON.stringify(merged));
+      }
+    } catch (e) {
+      console.warn('Merge multi-aba falhou:', e);
+    } finally {
+      var self = this;
+      setTimeout(function() { self._ignorarStorageSync = false; }, 0);
+    }
   },
 
   _mostrarDicaMultiAba: function() {
@@ -1011,10 +1172,13 @@ var DADOS = {
   },
 
   getTransacoesRaw: function() {
+    if (this._transacoesBackend === 'idb') {
+      return Array.isArray(this._transacoesCache) ? this._transacoesCache : [];
+    }
     try {
       var data = this._storageGetRaw(CONFIG.STORAGE_TRANSACOES);
       if (!data) return [];
-      var parsed = JSON.parse(data);
+      var parsed = this._parseTransacoesJson(data);
       if (!Array.isArray(parsed)) {
         this._registrarFalhaLeitura(CONFIG.STORAGE_TRANSACOES,
           new Error('conteúdo não é uma lista'));
@@ -1028,12 +1192,33 @@ var DADOS = {
   },
 
   _storageSetTransacoes: function(transacoes) {
+    var json = JSON.stringify(transacoes);
+    if (this._transacoesBackend === 'idb' && typeof IDB_KV !== 'undefined') {
+      this._transacoesCache = transacoes;
+      var self = this;
+      this._idbWriteChain = this._idbWriteChain.then(function() {
+        return IDB_KV.set(CONFIG.STORAGE_TRANSACOES, json);
+      }).then(function() {
+        self._pingTransacoesSync();
+      });
+      return;
+    }
     var check = UTILS.verificarStorageDisponivel(transacoes, CONFIG.STORAGE_TRANSACOES);
     if (!check.disponivel) {
+      if (typeof IDB_KV !== 'undefined' && this._deveMigrarTransacoesParaIdb(json, transacoes)) {
+        this._ativarBackendIdbTransacoes(transacoes);
+        return;
+      }
       console.error('Storage indisponível:', check.erro);
       throw new Error(check.erro);
     }
-    this._storageSetRaw(CONFIG.STORAGE_TRANSACOES, JSON.stringify(transacoes));
+    try {
+      this._ignorarStorageSync = true;
+      this._storageSetRaw(CONFIG.STORAGE_TRANSACOES, json);
+    } finally {
+      var self = this;
+      setTimeout(function() { self._ignorarStorageSync = false; }, 0);
+    }
   },
 
   getTransacoes: function() {
@@ -1173,10 +1358,20 @@ var DADOS = {
   },
 
   limparTodos: function() {
+    this._transacoesCache = [];
+    this._transacoesBackend = 'localStorage';
+    try {
+      localStorage.removeItem(this.TX_BACKEND_KEY);
+      localStorage.removeItem(this.TX_SYNC_PING_KEY);
+    } catch (e) { /* noop */ }
+    if (typeof IDB_KV !== 'undefined') {
+      IDB_KV.remove(CONFIG.STORAGE_TRANSACOES);
+    }
     this._storageRemoveRaw(CONFIG.STORAGE_TRANSACOES);
     this._storageRemoveRaw(CONFIG.STORAGE_CONFIG);
     this._initialized = false;
-    this.init();
+    this._initPromise = null;
+    return this.init();
   },
 
   getRecorrentes: function() {
@@ -1226,13 +1421,27 @@ var DADOS = {
     this._storageSyncBound = true;
     var self = this;
     window.addEventListener('storage', function(e) {
-      if (!e.key) return;
+      if (!e.key || self._ignorarStorageSync) return;
+
+      if (e.key === self.TX_SYNC_PING_KEY) {
+        clearTimeout(self._storageDebounceTimer);
+        self._storageDebounceTimer = setTimeout(function() {
+          self._hidratarTransacoesIdb().then(function() {
+            self._mostrarBannerMultiAba();
+          });
+        }, 300);
+        return;
+      }
+
       if (e.key !== CONFIG.STORAGE_TRANSACOES
         && e.key !== CONFIG.STORAGE_CONFIG
         && e.key !== CONFIG.STORAGE_CONTAS) return;
 
       clearTimeout(self._storageDebounceTimer);
       self._storageDebounceTimer = setTimeout(function() {
+        if (e.key === CONFIG.STORAGE_TRANSACOES && e.newValue) {
+          self._mesclarTransacoesRemotas(e.newValue);
+        }
         if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
           APP_STORE.dispatch(ACTIONS.SYNC_CONCLUIR);
         } else {
@@ -1241,14 +1450,7 @@ var DADOS = {
           if (typeof CONTAS !== 'undefined') CONTAS.init();
           if (typeof RENDER !== 'undefined') RENDER.init();
         }
-        if (!self._avisouSyncMultiAba && typeof UTILS !== 'undefined' && UTILS.mostrarBanner) {
-          self._avisouSyncMultiAba = true;
-          UTILS.mostrarBanner({
-            id: 'fp-banner-multiaba',
-            tipo: 'info',
-            mensagem: 'Outra aba alterou seus dados. A tela foi atualizada.',
-          });
-        }
+        self._mostrarBannerMultiAba();
       }, 300);
     });
   },

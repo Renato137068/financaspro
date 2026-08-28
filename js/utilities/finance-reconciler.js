@@ -156,11 +156,45 @@ var FINANCE_RECONCILER = (function() {
     return report;
   }
 
+  /**
+   * Verificação amigável para o usuário: disponível bate com saldo − comprometido?
+   */
+  function verificarPainel() {
+    var hoje = new Date();
+    var persistidas = obterPersistidas();
+    var dups = detectarDuplicidades(persistidas);
+    var fila = snapshotFila();
+    var detalhes = [];
+
+    if (typeof COMPROMISSOS !== 'undefined' && COMPROMISSOS.disponivel) {
+      var d = COMPROMISSOS.disponivel(hoje);
+      var esperado = Number((d.saldo - d.comprometido).toFixed(2));
+      var atual = Number((d.valor || 0).toFixed(2));
+      if (Math.abs(esperado - atual) > 0.01) {
+        detalhes.push('Disponível (' + atual + ') não bate com saldo − comprometido (' + esperado + ').');
+      }
+    }
+
+    if (dups.length) detalhes.push(dups.length + ' possível(is) duplicata(s) detectada(s).');
+    if (fila.failed > 0) detalhes.push(fila.failed + ' lançamento(s) com falha na fila local.');
+    if (fila.pending > 0 || fila.saving > 0) {
+      detalhes.push((fila.pending + fila.saving) + ' lançamento(s) ainda sincronizando.');
+    }
+
+    return {
+      ok: detalhes.length === 0,
+      detalhes: detalhes,
+      transacoes: persistidas.length,
+      ts: new Date().toISOString()
+    };
+  }
+
   return {
     reconcile: reconcile,
     totais: totais,
     totaisPorMes: totaisPorMes,
-    detectarDuplicidades: detectarDuplicidades
+    detectarDuplicidades: detectarDuplicidades,
+    verificarPainel: verificarPainel
   };
 })();
 

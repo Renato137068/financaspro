@@ -51,6 +51,7 @@
     "test:e2e": "playwright test --config playwright.config.cjs",
     "test:e2e:smoke": "playwright test --config playwright.config.cjs e2e/smoke-boot.spec.cjs e2e/onboarding-primeiro-cta.spec.cjs",
     "test:e2e:anual": "playwright test --config playwright.config.cjs e2e/persistencia-anual.spec.cjs",
+    "test:e2e:caminho": "playwright test --config playwright.config.cjs e2e/caminho-do-dinheiro.spec.cjs",
     "test:a11y": "playwright test --config playwright.config.cjs accessibility.spec.cjs",
     "android:sync": "npm run build && npx cap sync android",
     "android:open": "npx cap open android",

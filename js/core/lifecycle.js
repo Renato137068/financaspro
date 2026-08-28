@@ -333,7 +333,7 @@ const LIFECYCLE_BOOT = {
     }, { critical: true });
 
     LIFECYCLE.register('dados', function() {
-      if (typeof DADOS !== 'undefined') DADOS.init();
+      if (typeof DADOS !== 'undefined') return DADOS.init();
     }, { depends: ['dom-utils'], critical: true });
 
     LIFECYCLE.register('store', function() {

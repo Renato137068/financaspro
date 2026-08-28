@@ -15,7 +15,7 @@
       <p class="eyebrow">Auditoria massiva · usuários virtuais · 27/08/2026 · atualizado 28/08/2026</p>
       <h1>900 usuários simulados, 79 mil operações — o que quebraria em produção?</h1>
       <p>Simulação determinística (seed <code>20260827</code>) com sete personas distintas, centenas de transações por usuário, edição, exclusão, transferências, datas extremas, valores de centavos a R$ 100.000, benchmarks de 100 a 10.000 registros, 88 testes de invariantes financeiros e E2E anual de 120 lançamentos pela UI real.</p>
-      <div class="scoreline"><span class="score">91</span><div><strong>Nota geral / 100</strong><br><span>Núcleo financeiro robusto e pronto para beta amplo. Subiu de 88 após melhorias de 28/08: sync multi-aba, aviso de cota com exportação, CTA de transferência no Novo, contador do extrato e hints de ordenação/saldo.</span></div></div>
+      <div class="scoreline"><span class="score">93</span><div><strong>Nota geral / 100</strong><br><span>Subiu após fases 2–3: IndexedDB para transações grandes, merge multi-aba (LWW), verificador de números no Perfil, E2E caminho do dinheiro e escala do extrato.</span></div></div>
       <div class="meta">
         <span>Versão: 11.2.1</span>
         <span>Seed: 20260827</span>
@@ -178,7 +178,8 @@
       <h2>Recomendações priorizadas</h2>
       <div class="phase"><span class="tag ok">Concluído · 28/08</span><h3>Quick wins da auditoria</h3><ul><li><span class="check">✓</span> Aviso de cota em 80% + banner exportável.</li><li><span class="check">✓</span> <code>setupStorageSync</code> + banner multi-aba.</li><li><span class="check">✓</span> CTA transferência no Novo.</li><li><span class="check">✓</span> Hint ordenação + contador no extrato.</li><li><span class="check">✓</span> Tooltips realizado vs projetado.</li></ul></div>
       <div class="phase"><span class="tag ok">Concluído · 28/08 (fase 2)</span><h3>Roadmap 0–30 dias</h3><ul><li><span class="check">✓</span> Desfazer edições (~5s, como exclusões).</li><li><span class="check">✓</span> Extrato: teto 500 itens no DOM + scroll infinito.</li><li><span class="check">✓</span> Dica multi-aba no Perfil + banner na 1ª sessão.</li><li><span class="check">✓</span> Onboarding “3 passos” no dashboard (persona casual).</li></ul></div>
-      <div class="phase"><span class="tag p1">Pendente</span><h3>Escala</h3><ul><li>Migração IndexedDB para transações.</li><li>Merge ou versionamento otimista multi-aba.</li><li>Virtualização completa do extrato (além do teto de 500).</li><li>E2E Playwright “caminho do dinheiro” completo.</li></ul></div>
+      <div class="phase"><span class="tag ok">Concluído · 28/08 (fase 3)</span><h3>Escala e integridade</h3><ul><li><span class="check">✓</span> Migração automática de <code>fp-transacoes</code> para IndexedDB (&gt;2,5k tx ou &gt;65% cota).</li><li><span class="check">✓</span> Merge multi-aba por registro (<code>SYNC_MERGE</code>) + ping IDB entre abas.</li><li><span class="check">✓</span> “Verificar números” no Perfil (<code>FINANCE_RECONCILER.verificarPainel</code>).</li><li><span class="check">✓</span> E2E Playwright <code>caminho-do-dinheiro.spec.cjs</code>.</li></ul></div>
+      <div class="phase"><span class="tag p2">Futuro</span><h3>Backlog</h3><ul><li>Virtualização completa do extrato (render sob demanda por viewport).</li><li>Merge otimista com resolução manual de conflitos raros.</li><li>Diagnóstico avançado exportável (modo suporte).</li></ul></div>
     </section>
   </main>
 

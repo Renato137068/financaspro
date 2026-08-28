@@ -34,7 +34,7 @@ function carregarDadosReal(extra) {
 
 describe('auditoria — sync multi-aba', function() {
   test('DADOS.init liga setupStorageSync', function() {
-    expect(dadosSrc).toMatch(/this\.setupStorageSync\(\)/);
+    expect(dadosSrc).toMatch(/setupStorageSync\(\)/);
     expect(dadosSrc).toMatch(/_storageSyncBound/);
   });
 
@@ -131,7 +131,7 @@ describe('auditoria — fase 2 (roadmap)', function() {
 
   test('extrato limita renderização e usa observer para carregar mais', function() {
     expect(extratoSrc).toMatch(/maxRendered:\s*500/);
-    expect(extratoSrc).toMatch(/_vincularCarregarMaisObserver/);
+    expect(extratoSrc).toMatch(/_vincularScrollMaisObserver/);
     expect(extratoSrc).toMatch(/extrato-lista-limite/);
   });
 

@@ -32,7 +32,7 @@ const INIT_EXTRATO = {
   listenerAttached: false,
   filtrosCategoriasListener: false,
   listaTransacoesListener: false,
-  _carregarMaisObserver: null,
+  _scrollMaisObserver: null,
   /** Lista filtrada do render atual — usada pelo handler delegado (carregar mais). */
   _listaTxsAtual: null,
   _gruposOrdenadosAtual: null,
@@ -825,25 +825,25 @@ const INIT_EXTRATO = {
     return this.state.virtualScroll.maxRendered || 500;
   },
 
-  _desconectarCarregarMaisObserver: function() {
-    if (this._carregarMaisObserver) {
-      this._carregarMaisObserver.disconnect();
-      this._carregarMaisObserver = null;
+  _desconectarScrollMaisObserver: function() {
+    if (this._scrollMaisObserver) {
+      this._scrollMaisObserver.disconnect();
+      this._scrollMaisObserver = null;
     }
   },
 
-  _vincularCarregarMaisObserver: function(txs) {
+  _vincularScrollMaisObserver: function(txs) {
     var self = this;
-    this._desconectarCarregarMaisObserver();
+    this._desconectarScrollMaisObserver();
     if (typeof IntersectionObserver === 'undefined') return;
     var btn = document.getElementById('btn-carregar-mais');
     if (!btn) return;
-    this._carregarMaisObserver = new IntersectionObserver(function(entries) {
+    this._scrollMaisObserver = new IntersectionObserver(function(entries) {
       entries.forEach(function(entry) {
         if (entry.isIntersecting) self._carregarMais(txs);
       });
     }, { root: null, rootMargin: '160px', threshold: 0 });
-    this._carregarMaisObserver.observe(btn);
+    this._scrollMaisObserver.observe(btn);
   },
 
   _appendControlesPaginacao: function(html, txs, totalShown) {
@@ -884,7 +884,7 @@ const INIT_EXTRATO = {
 
     container.innerHTML = html;
     this._atualizarContadorExtrato(txs.length, totalShown);
-    this._vincularCarregarMaisObserver(txs);
+    this._vincularScrollMaisObserver(txs);
 
     if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(container);
   },
@@ -1011,7 +1011,7 @@ const INIT_EXTRATO = {
 
     container.insertAdjacentHTML('beforeend', html);
     this._atualizarContadorExtrato(txs.length, totalShown);
-    this._vincularCarregarMaisObserver(txs);
+    this._vincularScrollMaisObserver(txs);
     if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(container);
   },
 
