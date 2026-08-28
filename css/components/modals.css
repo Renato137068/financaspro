@@ -51,6 +51,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--space-3);
+  margin-top: var(--space-5);
 }
 
 .modal-actions:has(.modal-btn:only-child),

@@ -266,8 +266,8 @@ const INIT_MODALS = {
 
             setTimeout(function() {
               overlay.remove();
-              UTILS.mostrarToast('Feedback salvo. Você também pode enviar por e-mail.', 'success');
-              var mail = 'mailto:?subject=' + encodeURIComponent('Feedback FinançasPro') +
+              UTILS.mostrarToast('Feedback registrado — abrindo seu e-mail para enviar.', 'success');
+              var mail = 'mailto:renato.soares1370@gmail.com?subject=' + encodeURIComponent('Feedback FinançasPro') +
                 '&body=' + encodeURIComponent(corpo);
               try { window.open(mail, '_blank'); } catch (_e) { /* ignore */ }
             }, 800);

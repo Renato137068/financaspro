@@ -11,6 +11,7 @@
   var DISMISS_KEY = 'fp-sync-indicator-dismissed';
   var _lastCls = '';
   var _toastTimer = null;
+  var _autoHideTimer = null;
 
   function apiAtiva() {
     try { return typeof DADOS !== 'undefined' && DADOS._apiAtiva && DADOS._apiAtiva(); }
@@ -211,8 +212,17 @@
       // Estados que precisam atenção ficam no topo; local fica discreto e dispensável
       node.hidden = false;
       node.classList.remove('sync-indicator--hidden', 'sync-indicator--toast');
+      clearTimeout(_autoHideTimer);
       if (info.cls === 'local' || info.cls === 'ok') {
         node.classList.add('sync-indicator--subtle');
+        // "Salvo neste dispositivo"/"Salvo no servidor" são reassurance: aparecem
+        // e somem sozinhos. Antes ficavam fixos no topo-direito encavalando o
+        // cabeçalho e o conteúdo. Estados que pedem atenção (falha/offline/
+        // pendente) continuam persistentes.
+        _autoHideTimer = setTimeout(function() {
+          node.hidden = true;
+          node.classList.add('sync-indicator--hidden');
+        }, 4500);
       } else {
         node.classList.remove('sync-indicator--subtle');
       }

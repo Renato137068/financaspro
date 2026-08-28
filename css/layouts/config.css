@@ -1162,11 +1162,14 @@
 }
 
 .perfil-modal-btn-primary {
-  padding: 8px 16px;
+  width: 100%;
+  margin-top: var(--space-3);
+  padding: 12px 16px;
   background: var(--primary);
   color: white;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
+  font-weight: var(--font-weight-semibold);
   cursor: pointer;
 }
 
