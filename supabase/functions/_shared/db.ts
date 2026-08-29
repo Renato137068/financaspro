@@ -18,7 +18,8 @@ function playKey(token: string): string {
 
 export async function findPlan(sb: SupabaseClient, tier: string) {
   const { data } = await sb
-    .from("Plan").select("id, tier")
+    .from("Plan")
+    .select("id, tier, name, stripePriceIdMonthly, stripePriceIdYearly")
     .eq("tier", tier).eq("active", true)
     .maybeSingle();
   return data;
@@ -108,4 +109,67 @@ export async function claimEvent(sb: SupabaseClient, id: string, type: string): 
 
 export async function releaseEvent(sb: SupabaseClient, id: string) {
   await sb.from("StripeWebhookEvent").delete().eq("id", id);
+}
+
+// ─── Stripe (port de billing.repository.js) ─────────────────────────────────
+
+export async function findSubscription(sb: SupabaseClient, orgId: string) {
+  const { data } = await sb.from("Subscription").select("*").eq("orgId", orgId).maybeSingle();
+  return data;
+}
+
+export async function findByStripeSubId(sb: SupabaseClient, stripeSubId: string) {
+  const { data } = await sb.from("Subscription").select("*").eq("stripeSubId", stripeSubId).maybeSingle();
+  return data;
+}
+
+export async function findPlanById(sb: SupabaseClient, planId: string) {
+  const { data } = await sb.from("Plan").select("id, name, tier").eq("id", planId).maybeSingle();
+  return data;
+}
+
+export async function updateSubscription(sb: SupabaseClient, orgId: string, data: Record<string, unknown>) {
+  await sb.from("Subscription").update({ ...data, updatedAt: new Date().toISOString() }).eq("orgId", orgId);
+}
+
+/** Grava/atualiza a assinatura da org (id e updatedAt são gerados aqui). */
+export async function upsertSubscriptionStripe(sb: SupabaseClient, orgId: string, data: Record<string, unknown>) {
+  const now = new Date().toISOString();
+  const { data: existing } = await sb.from("Subscription").select("id").eq("orgId", orgId).maybeSingle();
+  if (existing) {
+    await sb.from("Subscription").update({ ...data, updatedAt: now }).eq("orgId", orgId);
+  } else {
+    await sb.from("Subscription").insert({ id: crypto.randomUUID(), orgId, ...data, updatedAt: now });
+  }
+}
+
+/** Grava o customerId só se ainda vazio (evita corrida). true = gravou. */
+export async function setStripeCustomerIfEmpty(sb: SupabaseClient, orgId: string, customerId: string): Promise<boolean> {
+  const { data } = await sb.from("Subscription")
+    .update({ stripeCustomerId: customerId, updatedAt: new Date().toISOString() })
+    .eq("orgId", orgId).is("stripeCustomerId", null)
+    .select("id");
+  return Array.isArray(data) && data.length > 0;
+}
+
+export async function findInvoiceByStripeId(sb: SupabaseClient, stripeInvoiceId: string | null) {
+  if (!stripeInvoiceId) return null;
+  const { data } = await sb.from("Invoice").select("id").eq("stripeInvoiceId", stripeInvoiceId).maybeSingle();
+  return data;
+}
+
+export async function upsertInvoice(sb: SupabaseClient, data: Record<string, unknown>) {
+  const now = new Date().toISOString();
+  const stripeInvoiceId = data.stripeInvoiceId as string | undefined;
+  if (stripeInvoiceId) {
+    const { data: existing } = await sb.from("Invoice").select("id").eq("stripeInvoiceId", stripeInvoiceId).maybeSingle();
+    if (existing) {
+      await sb.from("Invoice").update({
+        amount: data.amount, status: data.status, paidAt: data.paidAt,
+        hostedUrl: data.hostedUrl, pdfUrl: data.pdfUrl,
+      }).eq("stripeInvoiceId", stripeInvoiceId);
+      return;
+    }
+  }
+  await sb.from("Invoice").insert({ id: crypto.randomUUID(), createdAt: now, ...data });
 }
