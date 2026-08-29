@@ -19,6 +19,12 @@ const CONFIG = {
   API_REFRESH_TOKEN_STORAGE: 'fp-refresh-token',
   API_USER_STORAGE: 'fp-api-user',
 
+  // Supabase (migração BaaS). Vazios = app segue local-first (como API_BASE_URL).
+  // A anon key é pública (protegida por RLS) e vai aqui na Fase 2; a service_role
+  // key e a senha do banco NUNCA entram no front — só nos secrets das functions.
+  SUPABASE_URL: 'https://nubvlksibmpryltkfpei.supabase.co',
+  SUPABASE_ANON_KEY: '',
+
   TIPO_RECEITA: 'receita',
   TIPO_DESPESA: 'despesa',
   // Movimentação entre contas do próprio usuário. Não é ganho nem gasto: só
