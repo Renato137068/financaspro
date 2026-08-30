@@ -428,6 +428,11 @@ const LIFECYCLE_BOOT = {
 
       // Backup e sessão
       if (typeof verificarBackupAutomatico === 'function') verificarBackupAutomatico();
+      // Modo Supabase: liga a tela de login (no modo local ela fica desativada).
+      if (typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.isActive()
+          && typeof setupAuthUI === 'function') {
+        setupAuthUI();
+      }
       if (typeof atualizarBarraSessao === 'function') atualizarBarraSessao();
 
       // Onboarding (adiado para não competir com auth/PIN)

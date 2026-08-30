@@ -228,6 +228,17 @@ function setupAuthUI() {
     }
   }
 
+  // Modo Supabase: a sessão do Supabase decide o overlay de login.
+  if (typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.isActive()) {
+    SUPA_AUTH.validate().then(function (logged) {
+      if (logged) { _fecharAuthOverlay(overlay); }
+      else { _abrirAuthOverlay(overlay); }
+      showTab('login');
+      atualizarBarraSessao();
+    });
+    return false;
+  }
+
   var sessao = DADOS.getSessao();
   if (sessao && sessao.user) {
     if (DADOS._apiAtiva()) {
@@ -266,7 +277,8 @@ function setupAuthUI() {
 
 function atualizarBarraSessao() {
   var label = document.getElementById('user-session-label');
-  var sessao = DADOS.getSessao();
+  var sessao = (typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.isActive())
+    ? SUPA_AUTH.getSessionSync() : DADOS.getSessao();
   if (!label) return;
   if (sessao && sessao.user && sessao.user.name) {
     label.textContent = 'Logado como ' + sessao.user.name;

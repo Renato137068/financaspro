@@ -24,7 +24,7 @@
          sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR/D3A991F
        (calculado a partir do tarball publicado no npm, que é exatamente o que
        o jsDelivr serve em /npm/tesseract.js@5.1.1/dist/tesseract.min.js). -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net/npm/tesseract.js@5/ https://cdn.jsdelivr.net/npm/tesseract.js-core@5/ https://cdn.belvo.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; connect-src 'self' http://localhost:4000 http://127.0.0.1:4000 https://cdn.jsdelivr.net https://api.belvo.com https://sandbox.belvo.com https://widget.belvo.io; frame-src https://widget.belvo.io; object-src 'none'; base-uri 'self'; form-action 'self';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net/npm/tesseract.js@5/ https://cdn.jsdelivr.net/npm/tesseract.js-core@5/ https://cdn.belvo.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; connect-src 'self' http://localhost:4000 http://127.0.0.1:4000 https://cdn.jsdelivr.net https://api.belvo.com https://sandbox.belvo.com https://widget.belvo.io https://nubvlksibmpryltkfpei.supabase.co wss://nubvlksibmpryltkfpei.supabase.co; frame-src https://widget.belvo.io; object-src 'none'; base-uri 'self'; form-action 'self';">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
   <link rel="icon" href="icons/logo.svg" type="image/svg+xml">
@@ -1714,6 +1714,9 @@
 <script defer src="js/core/idb-kv.js"></script>
 <script defer src="js/core/dados.js"></script>
 <script defer src="js/core/store.js"></script>
+<!-- Supabase Auth (inerte se CONFIG.SUPABASE_URL/ANON_KEY vazios) -->
+<script defer src="js/vendor/supabase.js"></script>
+<script defer src="js/core/supabase.js"></script>
 <script defer src="js/core/lifecycle.js"></script>
 <!-- Domínio: categorização e parsing -->
 <script defer src="js/categories.js"></script>
