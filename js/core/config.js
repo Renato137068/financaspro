@@ -23,7 +23,8 @@ const CONFIG = {
   // A anon key é pública (protegida por RLS) e vai aqui na Fase 2; a service_role
   // key e a senha do banco NUNCA entram no front — só nos secrets das functions.
   SUPABASE_URL: 'https://nubvlksibmpryltkfpei.supabase.co',
-  SUPABASE_ANON_KEY: '',
+  // Chave pública (anon), protegida por RLS — seguro no cliente.
+  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51YnZsa3NpYm1wcnlsdGtmcGVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MzQ1NjEsImV4cCI6MjA5MjExMDU2MX0.lVA2ms3WvWPZ1fStgQC9-32CCLqNFVtSr8LNYZrfwq0',
 
   TIPO_RECEITA: 'receita',
   TIPO_DESPESA: 'despesa',
