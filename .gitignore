@@ -24,3 +24,6 @@ _pilot_*
 
 # snapshots/backup locais da auditoria (tarballs pesados — nunca versionar)
 .aud/
+
+# Supabase CLI temp
+supabase/.temp/
