@@ -29,6 +29,22 @@
     return row;
   }
 
+  // Constrói a linha EN preservando o updatedAt local (para reconciliação sem clobber).
+  function txRow(tx, u, validAccIds) {
+    var en = (typeof FINANCE_CONTRACT !== 'undefined') ? FINANCE_CONTRACT.txPtToEn(tx) : {};
+    var row = clean(Object.assign({}, en, { id: tx.id, userId: u, updatedAt: tx.updatedAt || nowIso() }));
+    // Evita falha de FK: zera contas que não existem (nem na nuvem nem locais a subir).
+    if (validAccIds) {
+      if (row.accountId && !validAccIds.has(row.accountId)) delete row.accountId;
+      if (row.targetAccountId && !validAccIds.has(row.targetAccountId)) delete row.targetAccountId;
+    }
+    return row;
+  }
+  function contaRow(c, u) {
+    var en = (typeof FINANCE_CONTRACT !== 'undefined') ? FINANCE_CONTRACT.contaPtToEn(c) : {};
+    return clean(Object.assign({}, en, { id: c.id, userId: u, updatedAt: c.updatedAt || nowIso() }));
+  }
+
   var _pulling = false;
 
   var SUPA_SYNC = {
@@ -57,15 +73,18 @@
         if (typeof DADOS !== 'undefined' && DADOS._mergeSnapshotLocal) {
           DADOS._mergeSnapshotLocal(snapshot);
         }
-        if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
-          APP_STORE.dispatch(ACTIONS.SYNC_CONCLUIR);
-        } else {
-          if (typeof TRANSACOES !== 'undefined') TRANSACOES.init();
-          if (typeof ORCAMENTO !== 'undefined') ORCAMENTO.init();
-          if (typeof CONTAS !== 'undefined') CONTAS.init();
-          if (typeof RENDER !== 'undefined') RENDER.init();
-        }
-        return true;
+        // Reconciliação: sobe pra nuvem o que é só-local (antes de sinalizar pronto).
+        return SUPA_SYNC._reconcileUp(snapshot).then(function () {
+          if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
+            APP_STORE.dispatch(ACTIONS.SYNC_CONCLUIR);
+          } else {
+            if (typeof TRANSACOES !== 'undefined') TRANSACOES.init();
+            if (typeof ORCAMENTO !== 'undefined') ORCAMENTO.init();
+            if (typeof CONTAS !== 'undefined') CONTAS.init();
+            if (typeof RENDER !== 'undefined') RENDER.init();
+          }
+          return true;
+        });
       }).catch(function (err) {
         console.warn('Supabase pull falhou, dados locais preservados:', err && err.message);
         if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
@@ -73,6 +92,47 @@
         }
         return false;
       }).finally(function () { _pulling = false; });
+    },
+
+    /** Sobe para a nuvem os itens locais ausentes lá (contas → transações → config). */
+    _reconcileUp: function (cloud) {
+      var u = uid();
+      if (!u) return Promise.resolve();
+
+      var cloudAccIds = {};
+      (cloud.accounts || []).forEach(function (a) { if (a && a.id) cloudAccIds[a.id] = 1; });
+      var localAcc = (DADOS.getContas && DADOS.getContas()) || [];
+      // Ids de conta válidos (na nuvem + locais que vão subir) para checagem de FK.
+      var validAccIds = { has: function (id) { return !!cloudAccIds[id] || localAcc.some(function (a) { return a && a.id === id; }); } };
+
+      var accToPush = localAcc
+        .filter(function (a) { return a && a.id && !cloudAccIds[a.id]; })
+        .map(function (a) { return contaRow(a, u); });
+
+      var cloudTxIds = {};
+      (cloud.transactions || []).forEach(function (t) { if (t && t.id) cloudTxIds[t.id] = 1; });
+      var localTx = (DADOS.getTransacoesRaw && DADOS.getTransacoesRaw()) || [];
+      var txToPush = localTx
+        .filter(function (t) { return t && t.id && !t.deletedAt && !cloudTxIds[t.id]; })
+        .map(function (t) { return txRow(t, u, validAccIds); });
+
+      // Contas primeiro (FK das transações), depois transações, depois config.
+      var chain = accToPush.length
+        ? SB.from('Account').upsert(accToPush, { onConflict: 'id' })
+        : Promise.resolve({});
+      return chain.then(function () {
+        if (txToPush.length) return SB.from('Transaction').upsert(txToPush, { onConflict: 'id' });
+      }).then(function () {
+        var cfg = (DADOS.getConfig && DADOS.getConfig()) || {};
+        return SUPA_SYNC.pushConfig(cfg);
+      }).then(function () {
+        if (accToPush.length || txToPush.length) {
+          console.log('Reconciliação: subiu', accToPush.length, 'contas e', txToPush.length, 'transações locais.');
+        }
+        return { contas: accToPush.length, transacoes: txToPush.length };
+      }).catch(function (e) {
+        console.warn('Reconciliação (subida) falhou:', e && e.message);
+      });
     },
 
     pushTx: function (tx) {
