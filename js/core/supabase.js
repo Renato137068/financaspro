@@ -48,7 +48,10 @@
   client.auth.getSession().then(function (r) {
     _session = (r && r.data && r.data.session) || null;
   }).catch(function () {});
-  client.auth.onAuthStateChange(function (_evt, s) { _session = s || null; });
+  client.auth.onAuthStateChange(function (_evt, s) {
+    _session = s || null;
+    if (typeof atualizarBarraSessao === 'function') atualizarBarraSessao();
+  });
 
   function _msg(e) {
     var m = (e && e.message) || 'Falha na autenticação';
