@@ -81,7 +81,7 @@ var PREVISAO = {
       el.innerHTML =
         '<div class="previsao-vazia previsao-upsell">' +
           '<i data-lucide="sparkles" aria-hidden="true"></i>' +
-          '<p>Previsão com IA disponível no plano Pro.</p>' +
+          '<p>Previsão com IA na nuvem — disponível no plano Pro.</p>' +
           '<button type="button" class="btn-primario btn-sm" data-action="abrir-plano">Ver planos</button>' +
         '</div>';
       if (typeof renderLucideIcons === 'function') renderLucideIcons(el);

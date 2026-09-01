@@ -11,6 +11,7 @@ const PLAN_LIMITS = {
     aiFeatures:      false,
     teamFeatures:    false,
     reportExport:    false,
+    advancedAlerts:  false,
   },
   PRO: {
     maxUsers:        5,
@@ -20,6 +21,7 @@ const PLAN_LIMITS = {
     aiFeatures:      true,
     teamFeatures:    true,
     reportExport:    true,
+    advancedAlerts:  true,
   },
   BUSINESS: {
     maxUsers:        Infinity,
@@ -29,6 +31,7 @@ const PLAN_LIMITS = {
     aiFeatures:      true,
     teamFeatures:    true,
     reportExport:    true,
+    advancedAlerts:  true,
   },
 };
 

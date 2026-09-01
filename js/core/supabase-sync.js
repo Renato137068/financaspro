@@ -29,6 +29,42 @@
     return row;
   }
 
+  /**
+   * PostgREST devolve QUOTA_EXCEEDED:* via RAISE EXCEPTION (P0001).
+   * O lançamento local já foi salvo em DADOS.salvarTransacao antes do push;
+   * aqui só avisamos e não propagamos o erro (nuvem fica pendente).
+   */
+  function isQuotaExceededError(err) {
+    if (!err) return false;
+    var msg = String(err.message || err.details || err.hint || '');
+    return err.code === 'P0001' || /QUOTA_EXCEEDED:(transaction|account|budget)/.test(msg);
+  }
+
+  function handleQuotaExceeded(err) {
+    if (!isQuotaExceededError(err)) return false;
+    var msg = String(err.message || '');
+    var kind = (msg.match(/QUOTA_EXCEEDED:(\w+)/) || [])[1] || 'transaction';
+    var labels = {
+      transaction: 'lançamentos este mês',
+      account: 'contas/cartões',
+      budget: 'orçamentos',
+    };
+    var texto = 'Limite de ' + (labels[kind] || 'uso')
+      + ' no plano gratuito. Assine o Pro para continuar.';
+    if (typeof BILLING !== 'undefined' && BILLING.onPaymentRequired) {
+      BILLING.onPaymentRequired({ message: texto });
+    } else if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+      UTILS.mostrarToast(texto, 'warning');
+    }
+    return true;
+  }
+
+  function afterPushError(err, fallback) {
+    if (handleQuotaExceeded(err)) return fallback;
+    console.warn('Supabase push falhou:', err && err.message);
+    return fallback;
+  }
+
   // Constrói a linha EN preservando o updatedAt local (para reconciliação sem clobber).
   function txRow(tx, u, validAccIds) {
     var en = (typeof FINANCE_CONTRACT !== 'undefined') ? FINANCE_CONTRACT.txPtToEn(tx) : {};
@@ -131,6 +167,7 @@
         }
         return { contas: accToPush.length, transacoes: txToPush.length };
       }).catch(function (e) {
+        if (handleQuotaExceeded(e)) return;
         console.warn('Reconciliação (subida) falhou:', e && e.message);
       });
     },
@@ -142,7 +179,7 @@
       var row = clean(Object.assign({}, en, { id: tx.id, userId: u, updatedAt: nowIso() }));
       return SB.from('Transaction').upsert(row, { onConflict: 'id' }).then(function (r) {
         if (r.error) throw r.error; return tx;
-      }).catch(function (e) { console.warn('push tx falhou:', e && e.message); return tx; });
+      }).catch(function (e) { return afterPushError(e, tx); });
     },
 
     deleteTx: function (id) {
@@ -159,7 +196,7 @@
       var row = clean(Object.assign({}, en, { id: conta.id, userId: u, updatedAt: nowIso() }));
       return SB.from('Account').upsert(row, { onConflict: 'id' }).then(function (r) {
         if (r.error) throw r.error; return conta;
-      }).catch(function (e) { console.warn('push conta falhou:', e && e.message); return conta; });
+      }).catch(function (e) { return afterPushError(e, conta); });
     },
 
     pushBudget: function (categoria, limite) {
@@ -175,7 +212,7 @@
             id: id, userId: u, category: categoria, limit: Number(limite),
             period: 'monthly', updatedAt: nowIso()
           });
-        }).catch(function (e) { console.warn('push budget falhou:', e && e.message); });
+        }).catch(function (e) { return afterPushError(e, undefined); });
     },
 
     pushConfig: function (config) {

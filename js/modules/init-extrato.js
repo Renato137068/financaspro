@@ -1293,7 +1293,7 @@ const INIT_EXTRATO = {
    */
   exportarExcel: function() {
     if (typeof BILLING !== 'undefined' && !BILLING.canUse('reportExport')) {
-      BILLING.onPaymentRequired({ message: 'Exportação em Excel/CSV disponível no plano Pro.' });
+      BILLING.onPaymentRequired({ message: 'Exportação em Excel/CSV na nuvem disponível no plano Pro.' });
       return;
     }
     var info = this.getExtratoMesAno();
@@ -1366,7 +1366,7 @@ const INIT_EXTRATO = {
    */
   exportarExtrato: function() {
     if (typeof BILLING !== 'undefined' && !BILLING.canUse('reportExport')) {
-      BILLING.onPaymentRequired({ message: 'Exportação em PDF disponível no plano Pro.' });
+      BILLING.onPaymentRequired({ message: 'Exportação em PDF na nuvem disponível no plano Pro.' });
       return;
     }
     var info = this.getExtratoMesAno();

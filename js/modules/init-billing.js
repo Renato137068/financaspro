@@ -45,16 +45,18 @@ const INIT_BILLING = {
 
   refreshPlanoCard: function() {
     var el = document.getElementById('perfil-plano-subtitle');
-    if (!el) return;
-    if (typeof BILLING !== 'undefined') {
-      var label = BILLING.getStatusLabel();
-      var usage = BILLING.getUsageLabel ? BILLING.getUsageLabel() : '';
-      el.textContent = usage ? label + ' · ' + usage : label;
-    } else {
-      el.textContent = 'Gratuito · uso local';
+    if (el) {
+      if (typeof BILLING !== 'undefined') {
+        var label = BILLING.getStatusLabel();
+        var usage = BILLING.getUsageLabel ? BILLING.getUsageLabel() : '';
+        el.textContent = usage ? label + ' · ' + usage : label;
+      } else {
+        el.textContent = 'Gratuito · uso local';
+      }
     }
     this.refreshUsageBanner();
     this.refreshExportButtons();
+    this.refreshExtratoSubtitle();
   },
 
   refreshUsageBanner: function() {
@@ -81,6 +83,16 @@ const INIT_BILLING = {
     if (typeof renderLucideIcons === 'function') renderLucideIcons(el);
   },
 
+  refreshExtratoSubtitle: function() {
+    var el = document.getElementById('extrato-meta-subtitle');
+    if (!el) return;
+    var bloqueado = typeof BILLING !== 'undefined' && BILLING.isCloudUser && BILLING.isCloudUser()
+      && BILLING.canUse && !BILLING.canUse('reportExport');
+    el.textContent = bloqueado
+      ? 'Histórico, filtros · exportação CSV/PDF no Pro na nuvem'
+      : 'Histórico, filtros e exportação';
+  },
+
   refreshExportButtons: function() {
     var bloqueado = typeof BILLING !== 'undefined' && BILLING.isCloudUser && BILLING.isCloudUser()
       && BILLING.canUse && !BILLING.canUse('reportExport');
@@ -88,7 +100,7 @@ const INIT_BILLING = {
       if (bloqueado) {
         btn.setAttribute('aria-disabled', 'true');
         btn.classList.add('perfil-card--disabled');
-        btn.title = 'Exportação disponível no plano Pro';
+        btn.title = 'Exportação na nuvem disponível no plano Pro';
       } else {
         btn.removeAttribute('aria-disabled');
         btn.classList.remove('perfil-card--disabled');
@@ -122,8 +134,8 @@ const INIT_BILLING = {
         '<button type="button" class="billing-close" data-action="billing-fechar" aria-label="Fechar">&times;</button>' +
         '<div class="billing-header">' +
           '<span class="billing-badge"><i data-lucide="sparkles" aria-hidden="true"></i> FinançasPro</span>' +
-          '<h2 id="billing-title">O Pro tira os limites</h2>' +
-          '<p class="billing-lead" id="billing-lead">' + UTILS.escapeHtml(contextMsg || 'Contas ilimitadas, relatórios do ano inteiro e backup automático. Cancela quando quiser.') + '</p>' +
+          '<h2 id="billing-title">O Pro tira os limites na nuvem</h2>' +
+          '<p class="billing-lead" id="billing-lead">' + UTILS.escapeHtml(contextMsg || 'Sync sem limites: contas, lançamentos, exportação e alertas avançados na nuvem. Cancela quando quiser.') + '</p>' +
         '</div>' +
         '<div class="billing-interval" role="group" aria-label="Periodicidade">' +
           '<button type="button" class="billing-interval-btn ativo" data-action="billing-interval" data-interval="monthly">Mensal</button>' +

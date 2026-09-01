@@ -6,7 +6,7 @@ App de finanças pessoais com PWA, experiência mobile/Android e API SaaS opcion
 
 - Dashboard mensal de receitas, despesas e saldo
 - Cadastro de transações, contas, orçamentos e recorrências
-- Extrato com filtros, exportação e suporte offline
+- Extrato com filtros; exportação local livre; na nuvem FREE limitada, Pro ilimitada
 - Autenticação via API com access/refresh token
 - Sincronização local/remota quando a API está configurada
 - Base SaaS com organizações, planos, billing e workers

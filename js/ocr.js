@@ -76,7 +76,7 @@ var OCR = {
     if (this._processando) return;
     if (typeof BILLING !== 'undefined' && !BILLING.canUse('aiFeatures')) {
       if (typeof INIT_BILLING !== 'undefined' && INIT_BILLING.abrirPaywall) {
-        INIT_BILLING.abrirPaywall('OCR de comprovantes está disponível no plano Pro.');
+        INIT_BILLING.abrirPaywall('OCR de comprovantes na nuvem está disponível no plano Pro.');
       }
       return;
     }

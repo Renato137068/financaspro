@@ -202,7 +202,7 @@ const INIT_NAVIGATION = {
       'exportar-excel': function() {
         if (target.getAttribute('aria-disabled') === 'true') {
           self.carregarChunkConta(function() {
-            if (typeof INIT_BILLING !== 'undefined') INIT_BILLING.abrirPaywall('Exportação disponível no plano Pro.');
+            if (typeof INIT_BILLING !== 'undefined') INIT_BILLING.abrirPaywall('Exportação na nuvem disponível no plano Pro.');
           });
           return;
         }
@@ -211,7 +211,7 @@ const INIT_NAVIGATION = {
       'exportar-pdf': function() {
         if (target.getAttribute('aria-disabled') === 'true') {
           self.carregarChunkConta(function() {
-            if (typeof INIT_BILLING !== 'undefined') INIT_BILLING.abrirPaywall('Exportação disponível no plano Pro.');
+            if (typeof INIT_BILLING !== 'undefined') INIT_BILLING.abrirPaywall('Exportação na nuvem disponível no plano Pro.');
           });
           return;
         }

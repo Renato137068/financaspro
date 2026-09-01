@@ -1,0 +1,30 @@
+{
+  "$comment": "Fonte versionada dos limites numéricos e flags de plano. Manter em sync com js/billing.js, backend/middleware/plan.js e supabase/migrations/*_quota_enforcement.sql",
+  "FREE": {
+    "maxTransPerMonth": 100,
+    "maxAccounts": 3,
+    "maxBudgets": 5,
+    "aiFeatures": false,
+    "teamFeatures": false,
+    "reportExport": false,
+    "advancedAlerts": false
+  },
+  "PRO": {
+    "maxTransPerMonth": null,
+    "maxAccounts": 20,
+    "maxBudgets": null,
+    "aiFeatures": true,
+    "teamFeatures": true,
+    "reportExport": true,
+    "advancedAlerts": true
+  },
+  "BUSINESS": {
+    "maxTransPerMonth": null,
+    "maxAccounts": null,
+    "maxBudgets": null,
+    "aiFeatures": true,
+    "teamFeatures": true,
+    "reportExport": true,
+    "advancedAlerts": true
+  }
+}
