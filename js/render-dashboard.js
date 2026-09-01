@@ -235,6 +235,9 @@
       if (!el.hidden && typeof renderLucideIconsNow === 'function') {
         renderLucideIconsNow(el);
       }
+      if (typeof INIT_BILLING !== 'undefined' && INIT_BILLING.refreshUsageBanner) {
+        INIT_BILLING.refreshUsageBanner();
+      }
     } catch (e) {
       _reportarErroRender('onboarding', e, document.getElementById('dashboard-onboarding'));
     }

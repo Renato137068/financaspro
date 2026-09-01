@@ -278,6 +278,45 @@
   font-size: var(--text-sm);
 }
 
+.fp-usage-banner-cta {
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid rgba(18, 105, 78, 0.35);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-card);
+  color: var(--color-primary-text);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  font-family: var(--font-family-sans);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.fp-usage-banner-cta:hover {
+  background: rgba(18, 105, 78, 0.08);
+  border-color: var(--color-primary-500);
+}
+
+.fp-usage-banner-cta:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+  .fp-usage-banner {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: left;
+  }
+
+  .fp-usage-banner-cta {
+    width: 100%;
+    text-align: center;
+    padding: var(--space-3);
+  }
+}
+
 .fp-usage-banner--warn {
   border-color: rgba(234, 88, 12, 0.35);
   background: rgba(234, 88, 12, 0.08);

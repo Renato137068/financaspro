@@ -203,7 +203,6 @@
     </div>
     <div id="dashboard-greeting" class="dashboard-greeting"></div>
     <p class="dashboard-method-tagline" id="dashboard-method-tagline">Método 50/30/20 — Necessidades, Desejos e Poupança</p>
-    <div id="fp-usage-banner" class="fp-usage-banner" hidden></div>
 
     <section id="dashboard-onboarding" class="dashboard-onboarding perfil-section" hidden aria-label="Primeiros passos">
       <div class="dashboard-onboarding-card">
@@ -213,11 +212,13 @@
           <li>Defina sua renda e veja o orçamento <strong>50/30/20</strong> em <strong>Orçamento</strong>.</li>
           <li>Consulte o <strong>Extrato</strong> e faça backup dos dados em <strong>Perfil › Dados</strong>.</li>
         </ol>
-        <button type="button" class="btn-primario" data-mudar-aba="novo">
+        <button type="button" class="btn-primario dashboard-onboarding-cta" data-mudar-aba="novo">
           <i data-lucide="plus" aria-hidden="true"></i> Registrar primeira transação
         </button>
       </div>
     </section>
+
+    <div id="fp-usage-banner" class="fp-usage-banner" hidden></div>
 
     <div id="card-saldo-principal" class="card-saldo-principal"></div>
     <span class="sr-only" aria-live="polite" id="saldo-anuncio"></span>
@@ -1478,7 +1479,8 @@
     <!-- ZONA DE PERIGO -->
     <div class="perfil-section perfil-section-danger">
       <h2 class="perfil-section-title perfil-section-title-danger"><i data-lucide="alert-triangle" aria-hidden="true"></i> Zona de perigo</h2>
-      <button class="perfil-danger-btn" data-action="limpar-dados">
+      <div class="perfil-danger-actions">
+      <button type="button" class="perfil-danger-btn" data-action="limpar-dados">
         <i data-lucide="trash-2" aria-hidden="true"></i>
         Apagar todos os dados
       </button>
@@ -1486,10 +1488,11 @@
            app para quem permite criar conta; a API ja tinha DELETE /users/me,
            mas nada no frontend chamava. Some junto com o resto da nuvem quando
            nao ha backend, porque ai nao existe conta para excluir. -->
-      <button class="perfil-danger-btn" data-action="excluir-conta" data-requer-nuvem>
+      <button type="button" class="perfil-danger-btn" data-action="excluir-conta" data-requer-nuvem>
         <i data-lucide="user-x" aria-hidden="true"></i>
         Excluir minha conta
       </button>
+      </div>
     </div>
 
     <!-- SISTEMA -->
@@ -1698,13 +1701,13 @@
     <span class="nav-emoji" aria-hidden="true"><i data-lucide="bar-chart"></i></span>
     <span>Resumo</span>
   </button>
-  <button class="nav-btn" data-aba="novo" data-action="mudar-aba" aria-label="Registrar nova transação">
-    <span class="nav-emoji" aria-hidden="true"><i data-lucide="plus"></i></span>
-    <span>Novo</span>
-  </button>
   <button class="nav-btn" data-aba="extrato" data-action="mudar-aba" aria-label="Ver extrato de transações">
     <span class="nav-emoji" aria-hidden="true"><i data-lucide="clipboard-list"></i></span>
     <span>Extrato</span>
+  </button>
+  <button class="nav-btn" data-aba="novo" data-action="mudar-aba" aria-label="Registrar nova transação">
+    <span class="nav-emoji" aria-hidden="true"><i data-lucide="plus"></i></span>
+    <span>Novo</span>
   </button>
   <button class="nav-btn" data-aba="orcamento" data-action="mudar-aba" aria-label="Gerenciar orçamento">
     <span class="nav-emoji" aria-hidden="true"><i data-lucide="target"></i></span>

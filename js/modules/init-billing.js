@@ -62,6 +62,12 @@ const INIT_BILLING = {
   refreshUsageBanner: function() {
     var el = document.getElementById('fp-usage-banner');
     if (!el || typeof BILLING === 'undefined') return;
+    var onboarding = document.getElementById('dashboard-onboarding');
+    if (onboarding && !onboarding.hidden) {
+      el.hidden = true;
+      el.innerHTML = '';
+      return;
+    }
     if (!BILLING.shouldEnforceLimits || !BILLING.shouldEnforceLimits()) {
       el.hidden = true;
       el.innerHTML = '';
@@ -79,7 +85,7 @@ const INIT_BILLING = {
         '<strong>Plano gratuito na nuvem</strong> · ' + UTILS.escapeHtml(msg) +
         (perto ? ' — perto do limite' : '') +
       '</div>' +
-      '<button type="button" class="btn-primario btn-sm" data-action="abrir-paywall">Ver Pro</button>';
+      '<button type="button" class="fp-usage-banner-cta" data-action="abrir-paywall">Ver planos Pro</button>';
     if (typeof renderLucideIcons === 'function') renderLucideIcons(el);
   },
 

@@ -45,6 +45,15 @@
   margin: var(--space-2) 0;
 }
 
+.dashboard-onboarding-cta {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  box-sizing: border-box;
+}
+
 .greeting-text {
   display: flex;
   flex-direction: column;

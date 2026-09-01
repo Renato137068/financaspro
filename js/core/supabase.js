@@ -134,6 +134,15 @@
         _session = (r && r.data && r.data.session) || null;
         return _session ? _session.access_token : null;
       }).catch(function () { return null; });
+    },
+
+    /** LGPD / Play Store — apaga dados na nuvem e encerra sessão Supabase. */
+    deleteAccount: function () {
+      return client.rpc('fp_delete_own_account').then(function (r) {
+        if (r.error) throw new Error(_msg(r.error));
+        _session = null;
+        return client.auth.signOut().catch(function () {});
+      });
     }
   };
   window.SUPA_AUTH = SUPA_AUTH;

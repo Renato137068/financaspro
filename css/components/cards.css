@@ -391,6 +391,16 @@
   margin-right: auto;
 }
 
+.empty-state .btn-empty-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: min(100%, 320px);
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
 /* ── Donut chart ─────────────────────────────────────────── */
 
 .donut-container {

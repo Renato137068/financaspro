@@ -342,7 +342,20 @@ const INIT_NAVIGATION = {
    * "Apagar todos os dados".
    */
   excluirConta: function() {
-    if (typeof DADOS === 'undefined' || !DADOS._apiAtiva()) return;
+    if (typeof DADOS === 'undefined' || !DADOS._nuvemAtiva || !DADOS._nuvemAtiva()) {
+      if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+        UTILS.mostrarToast('Faça login na nuvem para excluir a conta.', 'warning');
+      }
+      return;
+    }
+
+    var sessao = DADOS.getSessao ? DADOS.getSessao() : null;
+    if (!sessao || !sessao.user) {
+      if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+        UTILS.mostrarToast('Faça login na nuvem para excluir a conta.', 'warning');
+      }
+      return;
+    }
 
     var confirmar = (typeof INIT_MODALS !== 'undefined' && INIT_MODALS.confirm)
       ? INIT_MODALS.confirm.bind(INIT_MODALS)
@@ -353,16 +366,39 @@ const INIT_NAVIGATION = {
       + 'Não há como desfazer. Os dados salvos neste aparelho continuam aqui.',
       function() {
         confirmar('Confirma a exclusão definitiva da conta?', function() {
-          DADOS._apiFetch('/api/v1/users/me', { method: 'DELETE' })
+          var promessa;
+          if (DADOS._supabaseAtivo && DADOS._supabaseAtivo()) {
+            promessa = (typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.deleteAccount)
+              ? SUPA_AUTH.deleteAccount()
+              : Promise.reject(new Error('Supabase indisponível'));
+          } else if (DADOS._apiAtiva && DADOS._apiAtiva()) {
+            var senha = window.prompt('Digite sua senha para confirmar a exclusão da conta:');
+            if (!senha) return;
+            promessa = DADOS._apiFetch('/api/v1/users/me', {
+              method: 'DELETE',
+              body: JSON.stringify({ password: senha }),
+            });
+          } else {
+            if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+              UTILS.mostrarToast('Nuvem indisponível no momento.', 'error');
+            }
+            return;
+          }
+
+          promessa
             .then(function() {
               DADOS.encerrarSessao();
-              UTILS.mostrarToast('Conta excluída', 'info');
+              if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+                UTILS.mostrarToast('Conta excluída', 'info');
+              }
               if (typeof INIT_CONFIG !== 'undefined' && INIT_CONFIG.refreshPerfil) {
                 INIT_CONFIG.refreshPerfil();
               }
             })
             .catch(function() {
-              UTILS.mostrarToast('Não foi possível excluir agora. Tente de novo.', 'error');
+              if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+                UTILS.mostrarToast('Não foi possível excluir agora. Tente de novo.', 'error');
+              }
             });
         });
       },
