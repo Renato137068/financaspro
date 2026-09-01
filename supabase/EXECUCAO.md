@@ -33,6 +33,11 @@ Legenda: 🧑 = você (precisa da conta) · 🤖 = eu faço (código, quando o p
    psql "<conexão DIRETA :5432>" -f supabase/migrations/20260828120000_rls_policies.sql
    ```
 
+4b. 🤖 **Bootstrap de organização** (membro OWNER + plano FREE ao criar org):
+   ```bash
+   psql "<conexão DIRETA :5432>" -f supabase/migrations/20260901120000_org_bootstrap.sql
+   ```
+
 5. 🤖 **Rodar os testes de RLS** (precisa do Supabase CLI + Docker, ou pgTAP no banco):
    ```bash
    supabase test db

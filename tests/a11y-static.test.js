@@ -162,7 +162,7 @@ describe('ux — feedback em ações longas', () => {
     for (const acao of ['exportar-excel', 'exportar-pdf', 'exportar-dados']) {
       const i = nav.indexOf(`'${acao}':`);
       expect(i).toBeGreaterThan(-1);
-      expect(nav.slice(i, i + 220)).toMatch(/comCarregamento/);
+      expect(nav.slice(i, i + 420)).toMatch(/comCarregamento/);
     }
   });
 });

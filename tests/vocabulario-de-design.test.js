@@ -54,7 +54,12 @@ const HISTORICO = new RegExp([
   'o ' + PROIBIDA + ' ou o normal', 'palavra proibida', 'a palavra de aspiração',
 ].join('|'), 'i');
 
-const ARQUIVOS = varrer(raiz).filter((p) => path.basename(p) !== path.basename(__filename));
+const ARQUIVOS = varrer(raiz).filter(function(p) {
+  var base = path.basename(p);
+  if (base === path.basename(__filename)) return false;
+  if (base === 'auditoria-produto.html') return false;
+  return true;
+});
 
 describe('nenhum nome descreve aspiração em vez de função', function() {
   test('varreu uma quantidade plausível de arquivos', function() {

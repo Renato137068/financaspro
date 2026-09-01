@@ -2,6 +2,25 @@
  * csp-connect-src.cjs — Origens permitidas em connect-src (CSP)
  * Usa APP_URL / PUBLIC_API_URL do ambiente no build.
  */
+const fs = require('fs');
+const path = require('path');
+
+function supabaseOriginsFromConfig() {
+  var origins = [];
+  try {
+    var cfgPath = path.join(__dirname, '..', 'js', 'core', 'config.js');
+    var src = fs.readFileSync(cfgPath, 'utf8');
+    var m = src.match(/SUPABASE_URL:\s*['"]([^'"]+)['"]/);
+    if (!m || !m[1]) return origins;
+    var url = new URL(m[1].trim());
+    origins.push(url.origin);
+    if (url.protocol === 'https:') {
+      origins.push('wss://' + url.host);
+    }
+  } catch (_e) { /* config ausente ou URL inválida */ }
+  return origins;
+}
+
 function buildCspConnectSrc() {
   // Produção nunca deve liberar origens de desenvolvimento (localhost).
   var isProd = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
@@ -17,12 +36,20 @@ function buildCspConnectSrc() {
   origins.push('https://sandbox.belvo.com');
   origins.push('https://widget.belvo.io');
 
-  ['APP_URL', 'PUBLIC_API_URL', 'VITE_API_URL'].forEach(function(key) {
+  supabaseOriginsFromConfig().forEach(function(origin) {
+    if (origins.indexOf(origin) === -1) origins.push(origin);
+  });
+
+  ['APP_URL', 'PUBLIC_API_URL', 'VITE_API_URL', 'SUPABASE_URL'].forEach(function(key) {
     var raw = (process.env[key] || '').trim();
     if (!raw) return;
     try {
       var origin = new URL(raw).origin;
       if (origins.indexOf(origin) === -1) origins.push(origin);
+      if (origin.indexOf('https://') === 0) {
+        var ws = 'wss://' + new URL(raw).host;
+        if (origins.indexOf(ws) === -1) origins.push(ws);
+      }
     } catch (_e) { /* ignore invalid URL */ }
   });
 

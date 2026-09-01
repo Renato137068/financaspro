@@ -25,33 +25,17 @@ header h1 .brand-mark { margin-right: 6px; }
   border-radius: var(--radius-xl);
 }
 
-/* ── Prova de confiança na tela de entrada ──────────────────── */
-.auth-trust {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  justify-content: center;
-  margin-top: var(--space-4);
-}
-.auth-trust .chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
+/* ── Rodapé discreto na tela de entrada (sem chips de feature) ─ */
+.auth-footer-note {
+  margin: var(--space-5) 0 0;
+  text-align: center;
   font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-semibold);
+  line-height: 1.45;
   color: var(--color-text-muted);
-  background: var(--color-primary-50);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-full);
-  padding: 4px 11px;
 }
-.auth-trust .chip svg,
-.auth-trust .chip i { width: 13px; height: 13px; }
 
-[data-theme="dark"] .auth-trust .chip {
-  color: var(--color-text-muted);
-  background: var(--color-bg-dark-elevated);
-  border-color: var(--color-border);
+[data-theme="dark"] .auth-footer-note {
+  color: var(--color-gray-400);
 }
 
 /* ── Card "Comece aqui" ─────────────────────────────────────── */

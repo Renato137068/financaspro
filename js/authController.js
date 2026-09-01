@@ -73,6 +73,61 @@ function setupAuthUI() {
     showTab('login');
   }
 
+  function _authOnSuccess(overlay) {
+    _fecharAuthOverlay(overlay);
+    if (typeof BILLING !== 'undefined' && BILLING.sync) {
+      BILLING.sync().catch(function() {});
+    }
+    if (typeof INIT_CONFIG !== 'undefined' && INIT_CONFIG.aplicarVisibilidadeNuvem) {
+      INIT_CONFIG.aplicarVisibilidadeNuvem();
+    }
+    atualizarBarraSessao();
+  }
+
+  function _authOnError(err, fallbackMsg) {
+    var msg = (err && err.message) || fallbackMsg;
+    if (message) message.textContent = msg;
+    UTILS.mostrarToast(msg, 'error');
+    if (typeof ariaLive !== 'undefined' && typeof ariaLive.announceError === 'function') {
+      ariaLive.announceError(msg);
+    }
+  }
+
+  function _bindPasswordToggles(root) {
+    if (!root) return;
+    root.querySelectorAll('.auth-password-toggle').forEach(function(btn) {
+      if (btn.dataset.bound === '1') return;
+      btn.dataset.bound = '1';
+      btn.addEventListener('click', function() {
+        var input = document.getElementById(btn.getAttribute('data-target') || '');
+        if (!input) return;
+        var show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        btn.setAttribute('aria-pressed', show ? 'true' : 'false');
+        btn.setAttribute('aria-label', show ? 'Ocultar senha' : 'Mostrar senha');
+        var icon = btn.querySelector('[data-lucide]');
+        if (icon) icon.setAttribute('data-lucide', show ? 'eye-off' : 'eye');
+        if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(btn);
+      });
+    });
+  }
+
+  function _checkCloudReachable() {
+    if (typeof SUPA_AUTH === 'undefined' || !SUPA_AUTH.isActive || !SUPA_AUTH.isActive()) return;
+    if (!warning) return;
+    SUPA_AUTH.ping().then(function() {
+      warning.style.display = 'none';
+      warning.textContent = '';
+    }).catch(function(err) {
+      warning.style.display = 'block';
+      warning.textContent = (err && err.message)
+        || 'Não foi possível conectar ao servidor. Verifique sua internet.';
+    });
+  }
+
+  _bindPasswordToggles(overlay);
+  if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(overlay);
+
   function showTab(name) {
     tabs.forEach(function(tab) {
       var active = tab.dataset.authTab === name;
@@ -143,17 +198,10 @@ function setupAuthUI() {
           showTotpStep(data.pendingToken);
           return;
         }
-        _fecharAuthOverlay(overlay);
-        if (typeof BILLING !== 'undefined' && BILLING.sync) {
-          BILLING.sync().catch(function() {});
-        }
-        if (typeof APP_BOOTSTRAP !== 'undefined') APP_BOOTSTRAP.ativarApp();
+        _authOnSuccess(overlay);
       }).catch(function(err) {
         console.error('Login falhou:', err);
-        UTILS.mostrarToast(err.message || 'Falha no login', 'error');
-        if (typeof ariaLive !== 'undefined' && typeof ariaLive.announceError === 'function') {
-          ariaLive.announceError(err.message || 'Falha no login');
-        }
+        _authOnError(err, 'Falha no login');
       }).finally(function() {
         _setAuthSubmitting(loginForm, false);
       });
@@ -201,17 +249,35 @@ function setupAuthUI() {
         }
       }
       _setAuthSubmitting(registerForm, true);
-      DADOS.registrarApi(nome, email, password).then(function() {
-        return DADOS.loginApi(email, password);
-      }).then(function() {
-        _fecharAuthOverlay(overlay);
-        if (typeof APP_BOOTSTRAP !== 'undefined') APP_BOOTSTRAP.ativarApp();
+      var cloudReady = (typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.isActive && SUPA_AUTH.ping)
+        ? SUPA_AUTH.ping().catch(function(err) {
+          _authOnError(err, 'Servidor indisponível');
+          throw err;
+        })
+        : Promise.resolve();
+      cloudReady.then(function() {
+        return DADOS.registrarApi(nome, email, password);
+      }).then(function(result) {
+        if (result && result.needsEmailConfirmation) {
+          if (message) {
+            message.textContent = 'Conta criada! Abra o e-mail de confirmação e depois toque em Entrar com a mesma senha.';
+          }
+          UTILS.mostrarToast('Confirme seu e-mail para entrar.', 'info');
+          showTab('login');
+          var loginEmail = document.getElementById('auth-login-email');
+          if (loginEmail) loginEmail.value = email;
+          return false;
+        }
+        if (typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.isActive()
+            && SUPA_AUTH.getSessionSync() && SUPA_AUTH.getSessionSync().user) {
+          return true;
+        }
+        return DADOS.loginApi(email, password).then(function() { return true; });
+      }).then(function(ok) {
+        if (ok) _authOnSuccess(overlay);
       }).catch(function(err) {
         console.error('Cadastro falhou:', err);
-        UTILS.mostrarToast(err.message || 'Falha no cadastro', 'error');
-        if (typeof ariaLive !== 'undefined' && typeof ariaLive.announceError === 'function') {
-          ariaLive.announceError(err.message || 'Falha no cadastro');
-        }
+        _authOnError(err, 'Falha no cadastro');
       }).finally(function() {
         _setAuthSubmitting(registerForm, false);
       });
@@ -230,6 +296,7 @@ function setupAuthUI() {
 
   // Modo Supabase: a sessão do Supabase decide o overlay de login.
   if (typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.isActive()) {
+    _checkCloudReachable();
     SUPA_AUTH.validate().then(function (logged) {
       if (logged) { _fecharAuthOverlay(overlay); }
       else { _abrirAuthOverlay(overlay); }

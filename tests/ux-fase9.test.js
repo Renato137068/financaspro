@@ -13,6 +13,9 @@ describe('Fase 9 — UX e acessibilidade', () => {
     expect(html).toContain('auth-register-password-hint');
     expect(html).toContain('aria-describedby="auth-register-password-hint"');
     expect(html).not.toContain('Minimo de 6 caracteres');
+    expect(html).toContain('auth-password-toggle');
+    expect(html).not.toContain('auth-trust');
+    expect(html).toContain('auth-footer-note');
   });
 
   test('password-policy compartilhado com validations', () => {

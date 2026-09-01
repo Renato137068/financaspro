@@ -381,9 +381,12 @@
   border-color: rgba(255, 255, 255, 0.09);
 }
 
-[data-theme="dark"] .orc-renda-input input {
+[data-theme="dark"] .orc-renda-group {
   background: var(--color-bg-dark-page);
   border-color: var(--color-border);
+}
+
+[data-theme="dark"] .orc-renda-input {
   color: var(--color-text-primary);
 }
 [data-theme="dark"] .orc-cat-bar   { background: rgba(255, 255, 255, 0.08); }

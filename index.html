@@ -75,14 +75,24 @@
       <button type="button" class="auth-tab ativo" role="tab" id="auth-tab-login" aria-selected="true" aria-controls="auth-login-form" data-auth-tab="login" tabindex="0">Entrar</button>
       <button type="button" class="auth-tab" role="tab" id="auth-tab-register" aria-selected="false" aria-controls="auth-register-form" data-auth-tab="register" tabindex="-1">Criar conta</button>
     </div>
-    <form id="auth-login-form" class="auth-form" role="tabpanel" aria-labelledby="auth-tab-login">
+    <form id="auth-login-form" class="auth-form" role="tabpanel" aria-labelledby="auth-tab-login" autocomplete="on">
       <div class="auth-field">
         <label for="auth-login-email">Email</label>
-        <input type="email" id="auth-login-email" autocomplete="email" placeholder="voce@email.com" required>
+        <input type="email" id="auth-login-email" name="username" autocomplete="username"
+               inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false"
+               placeholder="voce@email.com" required>
       </div>
       <div class="auth-field">
         <label for="auth-login-password">Senha</label>
-        <input type="password" id="auth-login-password" autocomplete="current-password" placeholder="Sua senha" required>
+        <div class="auth-password-wrap">
+          <input type="password" id="auth-login-password" name="password" autocomplete="current-password"
+                 autocapitalize="off" autocorrect="off" spellcheck="false"
+                 placeholder="Sua senha" required>
+          <button type="button" class="auth-password-toggle" data-target="auth-login-password"
+                  aria-label="Mostrar senha" aria-pressed="false">
+            <i data-lucide="eye" aria-hidden="true"></i>
+          </button>
+        </div>
       </div>
       <button type="submit" class="btn-primario">Entrar</button>
     </form>
@@ -96,27 +106,34 @@
       <button type="submit" class="btn-primario">Confirmar</button>
       <button type="button" class="btn-ghost auth-totp-back" id="auth-totp-back">Voltar</button>
     </form>
-    <form id="auth-register-form" class="auth-form" role="tabpanel" aria-labelledby="auth-tab-register" hidden>
+    <form id="auth-register-form" class="auth-form" role="tabpanel" aria-labelledby="auth-tab-register" hidden autocomplete="on">
       <div class="auth-field">
         <label for="auth-register-name">Nome</label>
-        <input type="text" id="auth-register-name" autocomplete="name" placeholder="Seu nome" required>
+        <input type="text" id="auth-register-name" name="name" autocomplete="name"
+               autocapitalize="words" placeholder="Seu nome" required>
       </div>
       <div class="auth-field">
         <label for="auth-register-email">Email</label>
-        <input type="email" id="auth-register-email" autocomplete="email" placeholder="voce@email.com" required>
+        <input type="email" id="auth-register-email" name="email" autocomplete="email"
+               inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false"
+               placeholder="voce@email.com" required>
       </div>
       <div class="auth-field">
         <label for="auth-register-password">Senha</label>
-        <input type="password" id="auth-register-password" autocomplete="new-password" minlength="8" maxlength="128" aria-describedby="auth-register-password-hint" placeholder="Mín. 8 caracteres" required>
+        <div class="auth-password-wrap">
+          <input type="password" id="auth-register-password" name="new-password" autocomplete="new-password"
+                 minlength="8" maxlength="128" autocapitalize="off" autocorrect="off" spellcheck="false"
+                 aria-describedby="auth-register-password-hint" placeholder="Mín. 8 caracteres" required>
+          <button type="button" class="auth-password-toggle" data-target="auth-register-password"
+                  aria-label="Mostrar senha" aria-pressed="false">
+            <i data-lucide="eye" aria-hidden="true"></i>
+          </button>
+        </div>
         <p id="auth-register-password-hint" class="auth-field-hint">Mínimo 8 caracteres, com pelo menos um número ou caractere especial (!@#…).</p>
       </div>
       <button type="submit" class="btn-primario">Criar conta</button>
     </form>
-    <div class="auth-trust" aria-hidden="true">
-      <span class="chip"><i data-lucide="lock"></i> Seus dados são seus</span>
-      <span class="chip"><i data-lucide="landmark"></i> Open Finance</span>
-      <span class="chip"><i data-lucide="shield-check"></i> Sem anúncios</span>
-    </div>
+    <p class="auth-footer-note">Seus dados ficam no seu aparelho e são criptografados na nuvem.</p>
   </div>
 </div>
 
@@ -185,13 +202,15 @@
       <div class="sk-tx-item"><div class="skeleton sk-tx-icon"></div><div class="sk-tx-body"><div class="skeleton sk-tx-line"></div><div class="skeleton sk-tx-line-short"></div></div><div class="skeleton sk-tx-val"></div></div>
     </div>
     <div id="dashboard-greeting" class="dashboard-greeting"></div>
+    <p class="dashboard-method-tagline" id="dashboard-method-tagline">Método 50/30/20 — Necessidades, Desejos e Poupança</p>
+    <div id="fp-usage-banner" class="fp-usage-banner" hidden></div>
 
     <section id="dashboard-onboarding" class="dashboard-onboarding perfil-section" hidden aria-label="Primeiros passos">
       <div class="dashboard-onboarding-card">
         <h2 class="dashboard-onboarding-title">Comece em 3 passos</h2>
         <ol class="dashboard-onboarding-steps">
           <li>Registre sua primeira receita ou despesa na aba <strong>Novo</strong>.</li>
-          <li>Defina limites em <strong>Orçamento</strong> para acompanhar gastos.</li>
+          <li>Defina sua renda e veja o orçamento <strong>50/30/20</strong> em <strong>Orçamento</strong>.</li>
           <li>Consulte o <strong>Extrato</strong> e exporte um backup em <strong>Perfil › Dados</strong>.</li>
         </ol>
         <button type="button" class="btn-primario" data-mudar-aba="novo">
@@ -332,7 +351,7 @@
 
     <section class="dashboard-section perfil-section" id="secao-assinaturas-resumo" style="display:none">
       <div class="secao-header">
-        <h2 class="secao-titulo"><i data-lucide="tv" aria-hidden="true"></i> Assinaturas</h2>
+        <h2 class="secao-titulo"><i data-lucide="tv" aria-hidden="true"></i> Gastos fixos</h2>
         <button class="secao-link" type="button" data-mudar-aba="orcamento" data-orc-sub="assinaturas">Gerenciar <i data-lucide="chevron-right" aria-hidden="true"></i></button>
       </div>
       <div id="dashboard-assinaturas-resumo"></div>
@@ -800,7 +819,7 @@
           aria-selected="false" aria-controls="orc-sub-panel-metas" tabindex="-1">Metas</button>
         <button type="button" class="filtro-chip" role="tab"
           id="orc-sub-tab-assinaturas" data-action="orc-sub-aba" data-orc-sub="assinaturas"
-          aria-selected="false" aria-controls="orc-sub-panel-assinaturas" tabindex="-1">Assinaturas</button>
+          aria-selected="false" aria-controls="orc-sub-panel-assinaturas" tabindex="-1">Gastos fixos</button>
         <button type="button" class="filtro-chip" role="tab"
           id="orc-sub-tab-patrimonio" data-action="orc-sub-aba" data-orc-sub="patrimonio"
           aria-selected="false" aria-controls="orc-sub-panel-patrimonio" tabindex="-1">Patrimônio</button>
@@ -810,25 +829,27 @@
     <div id="orc-sub-panel-planejamento" class="orc-sub-panel ativo" role="tabpanel" aria-labelledby="orc-sub-tab-planejamento">
     <!-- Renda mensal (se não definida) -->
     <div class="orc-renda-setup" id="orc-renda-setup">
-      <div class="perfil-header perfil-header-compact perfil-header-compact--flat">
-        <div class="perfil-card-icon-wrapper" aria-hidden="true"><i data-lucide="target"></i></div>
-        <div class="perfil-info">
+      <div class="orc-renda-setup-head">
+        <div class="orc-renda-icon" aria-hidden="true"><i data-lucide="target"></i></div>
+        <div class="orc-renda-copy">
           <p class="orc-renda-title">Qual sua renda mensal?</p>
           <p class="orc-renda-desc">Informe para calcular seu orçamento 50/30/20</p>
         </div>
       </div>
-      <div class="orc-renda-input">
+      <div class="orc-renda-field">
         <label class="sr-only" for="orc-renda-valor">Renda mensal em reais</label>
-        <span class="orc-renda-prefix">R$</span>
-        <input type="text" id="orc-renda-valor" placeholder="0,00" inputmode="numeric">
+        <div class="orc-renda-group">
+          <span class="orc-renda-prefix" aria-hidden="true">R$</span>
+          <input type="text" id="orc-renda-valor" class="orc-renda-input" placeholder="0,00" inputmode="decimal" autocomplete="off">
+        </div>
+        <button type="button" class="btn-primario orc-renda-submit" data-action="salvar-renda-orcamento">Definir renda</button>
       </div>
-      <button class="btn-primario" data-action="salvar-renda-orcamento">Definir Renda</button>
     </div>
 
     <!-- Dashboard -->
     <div id="orc-dashboard" style="display:none">
       <div id="orc-live-region" class="sr-only" aria-live="polite" aria-atomic="true"></div>
-      <p class="orc-panel-subtitle">Planejamento 50/30/20 do mês</p>
+      <p class="orc-panel-subtitle">Planejamento 50/30/20 — divida sua renda em Necessidades, Desejos e Poupança</p>
       <!-- Header Estratégico -->
       <div class="orc-header">
         <!-- KPI Principal -->
@@ -1076,7 +1097,7 @@
     <div id="orc-sub-panel-assinaturas" class="orc-sub-panel" role="tabpanel" hidden aria-labelledby="orc-sub-tab-assinaturas">
     <div class="assinaturas-section perfil-section" id="assinaturas-section">
       <div class="orc-secao-header">
-        <h3 class="perfil-section-title"><i data-lucide="tv" aria-hidden="true"></i> Assinaturas</h3>
+        <h3 class="perfil-section-title"><i data-lucide="tv" aria-hidden="true"></i> Gastos fixos</h3>
         <button type="button" class="btn-secundario btn-sm" data-action="assinatura-nova">Nova assinatura</button>
       </div>
       <div id="assinaturas-list" class="assinaturas-list"></div>
@@ -1717,6 +1738,7 @@
 <!-- Supabase Auth (inerte se CONFIG.SUPABASE_URL/ANON_KEY vazios) -->
 <script defer src="js/vendor/supabase.js"></script>
 <script defer src="js/core/supabase.js"></script>
+<script defer src="js/core/supabase-billing.js"></script>
 <script defer src="js/core/supabase-sync.js"></script>
 <script defer src="js/core/lifecycle.js"></script>
 <!-- Domínio: categorização e parsing -->

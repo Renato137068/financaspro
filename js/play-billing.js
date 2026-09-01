@@ -21,7 +21,7 @@ var PLAY_BILLING = {
   },
 
   isAvailable: function() {
-    if (typeof DADOS !== 'undefined' && DADOS._apiAtiva && !DADOS._apiAtiva()) return false;
+    if (typeof DADOS !== 'undefined' && DADOS._nuvemAtiva && !DADOS._nuvemAtiva()) return false;
     return !!(typeof window !== 'undefined' && window.Capacitor
       && typeof window.Capacitor.isNativePlatform === 'function'
       && window.Capacitor.isNativePlatform());
@@ -36,7 +36,30 @@ var PLAY_BILLING = {
 
   verifyOnServer: function(productId, purchaseToken) {
     var orgId = this._orgId();
-    if (!orgId || typeof DADOS === 'undefined' || !DADOS._apiFetch) {
+    if (!orgId) {
+      return Promise.reject(new Error('conta-cloud-indisponivel'));
+    }
+
+    var verify = function(resp) {
+      if (typeof BILLING !== 'undefined' && BILLING.sync) {
+        return BILLING.sync().then(function() { return resp; });
+      }
+      return resp;
+    };
+
+    if (typeof DADOS !== 'undefined' && DADOS._supabaseAtivo && DADOS._supabaseAtivo()
+        && typeof SUPA_BILLING !== 'undefined' && SUPA_BILLING.isActive()) {
+      return BILLING.ensureOrg().then(function(resolvedOrgId) {
+        return SUPA_BILLING.invoke('play-verify', {
+          orgId: resolvedOrgId,
+          productId: productId,
+          purchaseToken: purchaseToken,
+          packageName: 'com.financaspro.mobile',
+        });
+      }).then(verify);
+    }
+
+    if (typeof DADOS === 'undefined' || !DADOS._apiFetch) {
       return Promise.reject(new Error('conta-cloud-indisponivel'));
     }
     return DADOS._apiFetch('/api/v1/billing/play/' + encodeURIComponent(orgId) + '/verify', {
@@ -47,10 +70,7 @@ var PLAY_BILLING = {
         packageName: 'com.financaspro.mobile',
       }),
     }).then(function(resp) {
-      if (typeof BILLING !== 'undefined' && BILLING.sync) {
-        return BILLING.sync().then(function() { return resp && resp.data ? resp.data : resp; });
-      }
-      return resp && resp.data ? resp.data : resp;
+      return verify(resp && resp.data ? resp.data : resp);
     });
   },
 

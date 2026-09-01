@@ -345,21 +345,9 @@ var ONBOARDING = (function() {
 
   /* ── API pública ───────────────────────────────────────── */
 
-  /** Exibe convite não bloqueante — o tour só abre com clique explícito. */
+  /** Não agenda convite automático — onboarding único via card do Resumo + setup-guide. */
   function iniciar() {
-    if (_ativo || _marcado() || _interagiu) return;
-    if (_temUsoPrevio()) {
-      _concluir();
-      return;
-    }
-    if (_authBloqueando()) return;
-
-    _cancelarAgendamento();
-    _delayTimer = setTimeout(function() {
-      _delayTimer = null;
-      if (_marcado() || _authBloqueando() || _interagiu || _ativo) return;
-      _mostrarConvite();
-    }, 2800);
+    return;
   }
 
   /** Abre o tour imediatamente — só para ações explícitas do usuário. */

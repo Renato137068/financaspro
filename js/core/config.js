@@ -4,7 +4,10 @@
 
 const CONFIG = {
   APP_NAME: 'FinançasPro',
-  VERSION: '11.0.0',
+  VERSION: '11.3.0',
+
+  /** Open Finance em produção (Belvo). Enquanto false, o card some do Perfil. */
+  FEATURE_OPEN_FINANCE: false,
 
   STORAGE_TRANSACOES: 'fp-transacoes',
   STORAGE_CONFIG: 'fp-config',

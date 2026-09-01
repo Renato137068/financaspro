@@ -14,7 +14,7 @@
   var _autoHideTimer = null;
 
   function apiAtiva() {
-    try { return typeof DADOS !== 'undefined' && DADOS._apiAtiva && DADOS._apiAtiva(); }
+    try { return typeof DADOS !== 'undefined' && DADOS._nuvemAtiva && DADOS._nuvemAtiva(); }
     catch (e) { return false; }
   }
 

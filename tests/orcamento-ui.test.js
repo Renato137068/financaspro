@@ -258,7 +258,7 @@ describe('Polimento painel Planejamento', function() {
   var htmlOrc = fs.readFileSync(htmlPath, 'utf8');
 
   test('subtítulo curto no dashboard; sem perfil-header redundante', function() {
-    expect(htmlOrc).toMatch(/orc-panel-subtitle[^>]*>Planejamento 50\/30\/20 do mês/);
+    expect(htmlOrc).toMatch(/orc-panel-subtitle[^>]*>Planejamento 50\/30\/20 — divida sua renda/);
     var dashBlock = htmlOrc.match(/id="orc-dashboard"[\s\S]*?<!-- Header Estratégico -->/);
     expect(dashBlock).toBeTruthy();
     expect(dashBlock[0]).not.toMatch(/perfil-header perfil-header-compact/);

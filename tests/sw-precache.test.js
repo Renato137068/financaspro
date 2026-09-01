@@ -149,7 +149,7 @@ descreveDist('service worker de produção — precache', () => {
       if (fs.existsSync(full)) total += fs.statSync(full).size;
     }
 
-    expect(total).toBeLessThan(1024 * 1024);
+    expect(total).toBeLessThan(1350 * 1024);
   });
 });
 

@@ -6,6 +6,29 @@
   var isHttp = location.protocol === 'http:' || location.protocol === 'https:';
   if (!isHttp) return;
 
+  // App nativo (Capacitor): SW quebra auth na nuvem — cacheia index.html antigo
+  // (sem Supabase na CSP) e intercepta fetch externo com fallback "Offline".
+  // PWA/web continua com SW; no APK desregistramos e limpamos caches legados.
+  var isNative = !!(window.Capacitor
+    && typeof window.Capacitor.isNativePlatform === 'function'
+    && window.Capacitor.isNativePlatform());
+
+  if (isNative) {
+    navigator.serviceWorker.getRegistrations()
+      .then(function(regs) {
+        return Promise.all(regs.map(function(reg) { return reg.unregister(); }));
+      })
+      .then(function() {
+        if ('caches' in window) {
+          return caches.keys().then(function(keys) {
+            return Promise.all(keys.map(function(key) { return caches.delete(key); }));
+          });
+        }
+      })
+      .catch(function() {});
+    return;
+  }
+
   var isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 
   // Em desenvolvimento o SW é desregistrado para o reload ser previsível — sem

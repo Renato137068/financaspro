@@ -18,6 +18,15 @@ var ALERTAS = {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   },
 
+  /** Alertas básicos (FREE na nuvem): saldo e orçamento. */
+  _tipoBasico: function(tipo) {
+    return tipo === 'saldo' || tipo === 'orcamento';
+  },
+
+  _podeAlertasAvancados: function() {
+    return typeof BILLING === 'undefined' || BILLING.canUse('advancedAlerts');
+  },
+
   // ─────────────────────────────────────────────────────────────────
   // ESTADO PERSISTIDO
   // ─────────────────────────────────────────────────────────────────
@@ -69,8 +78,13 @@ var ALERTAS = {
 
     // Alertas do AI_ENGINE
     var alertas = AI_ENGINE.gerarAlertas(txs, config);
+    var avancados = this._podeAlertasAvancados();
+    if (!avancados) {
+      alertas = alertas.filter(function(a) { return ALERTAS._tipoBasico(a.tipo); });
+    }
 
-    // Anomalias de transações
+    // Anomalias de transações (PRO)
+    if (avancados) {
     var anomalias = AI_ENGINE.detectarAnomalias(txs);
     anomalias.forEach(function(a) {
       alertas.push({
@@ -101,6 +115,7 @@ var ALERTAS = {
         parametros: { descricao: p.descricao, valor: p.valorMedio }
       });
     });
+    }
 
     // Filtrar dispensados
     var self = this;

@@ -51,21 +51,23 @@ const INIT_CONFIG = {
    * fora dos mercados onde o link externo foi liberado -- o Brasil nao esta
    * entre eles.
    *
-   * A condicao deriva de `DADOS._apiAtiva()` em vez de um flag proprio: assim
+   * A condicao deriva de `DADOS._nuvemAtiva()` em vez de um flag proprio: assim
    * nao ha um segundo interruptor para esquecer de virar. Configure
-   * `CONFIG.API_BASE_URL` e a nuvem reaparece sozinha.
+   * `CONFIG.API_BASE_URL` ou Supabase e a nuvem reaparece sozinha.
    */
   aplicarVisibilidadeNuvem: function() {
     var temNuvem = typeof DADOS !== 'undefined'
-      && typeof DADOS._apiAtiva === 'function'
-      && DADOS._apiAtiva();
+      && typeof DADOS._nuvemAtiva === 'function'
+      && DADOS._nuvemAtiva();
+    var openFinanceOn = typeof CONFIG !== 'undefined' && CONFIG.FEATURE_OPEN_FINANCE;
 
     var alvos = document.querySelectorAll('[data-requer-nuvem]');
     for (var i = 0; i < alvos.length; i++) {
       var el = alvos[i];
-      el.hidden = !temNuvem;
-      // `hidden` sozinho perde para qualquer `display` do CSS dos cards.
-      el.style.display = temNuvem ? '' : 'none';
+      var isOpenFinance = el.getAttribute('data-action') === 'abrir-open-finance';
+      var visivel = temNuvem && (!isOpenFinance || openFinanceOn);
+      el.hidden = !visivel;
+      el.style.display = visivel ? '' : 'none';
     }
     return temNuvem;
   },
@@ -1213,12 +1215,19 @@ const INIT_CONFIG = {
     
     var html = '';
     cartoes.forEach(function(cartao, index) {
-      html += '<div class="banco-item" data-index="' + index + '" data-tipo="cartao">' +
+      var info = (typeof CARTOES !== 'undefined' && CARTOES.obter)
+        ? CARTOES.obter(cartao.nome) : null;
+      var semCiclo = info && !info.temCiclo;
+      html += '<div class="banco-item' + (semCiclo ? ' banco-item--aviso' : '') + '" data-index="' + index + '" data-tipo="cartao">' +
         '<div class="banco-item-info">' +
           '<div class="banco-item-icon" aria-hidden="true"><i data-lucide="credit-card"></i></div>' +
           '<div class="banco-item-details">' +
-            '<div class="banco-item-nome">' + UTILS.escapeHtml(cartao.nome) + '</div>' +
-            '<div class="banco-item-tipo">' + UTILS.escapeHtml(cartao.bandeira) + (cartao.limite ? ' • Limite: R$ ' + parseFloat(cartao.limite).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '') + '</div>' +
+            '<div class="banco-item-nome">' + UTILS.escapeHtml(cartao.nome) +
+              (semCiclo ? ' <span class="banco-item-badge-aviso">Sem ciclo</span>' : '') +
+            '</div>' +
+            '<div class="banco-item-tipo">' + UTILS.escapeHtml(cartao.bandeira) + (cartao.limite ? ' • Limite: R$ ' + parseFloat(cartao.limite).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '') +
+              (semCiclo ? ' · Informe fechamento e vencimento para calcular faturas' : '') +
+            '</div>' +
           '</div>' +
         '</div>' +
         '<div class="banco-item-actions">' +
@@ -1242,6 +1251,7 @@ const INIT_CONFIG = {
       UTILS.mostrarToast(validacao.message, 'error');
       return;
     }
+    if (typeof BILLING !== 'undefined' && !BILLING.guardQuota('account', 1)) return;
     
     var config = DADOS.getConfig();
     var bancos = config.bancos || [];
@@ -1282,6 +1292,7 @@ const INIT_CONFIG = {
       UTILS.mostrarToast(validacao.message, 'error');
       return;
     }
+    if (typeof BILLING !== 'undefined' && !BILLING.guardQuota('account', 1)) return;
     
     var config = DADOS.getConfig();
     var cartoes = config.cartoes || [];

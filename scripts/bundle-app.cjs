@@ -36,6 +36,14 @@ const LAZY_CHUNKS = {
   previsao: ['js/previsao.js'],
   relatorios: ['js/relatorios.js', 'js/modules/init-relatorios.js'],
 
+  // OCR + anexos só ao registrar comprovante (~80 KB fora do 1º acesso).
+  ocr: ['js/ocr.js', 'js/anexos.js', 'js/modules/init-anexos.js'],
+
+  // Sub-abas de Orçamento — carregadas ao abrir Metas, Gastos fixos ou Patrimônio.
+  metas: ['js/metas.js', 'js/modules/init-metas.js'],
+  assinaturas: ['js/assinaturas.js', 'js/modules/init-assinaturas.js'],
+  patrimonio: ['js/patrimonio.js', 'js/modules/init-patrimonio.js'],
+
   // Billing, 2FA e Open Finance vivem exclusivamente na aba de configurações.
   // Vão juntos num chunk só porque são carregados pelo mesmo gatilho: separá-los
   // renderia três requisições onde uma resolve.

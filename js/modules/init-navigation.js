@@ -180,11 +180,13 @@ const INIT_NAVIGATION = {
       },
       'orc-sub-aba': function() {
         var sub = target.dataset.orcSub || 'planejamento';
-        if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.mudarSubAba) {
-          INIT_ORCAMENTO.mudarSubAba(sub);
-        } else if (typeof mudarSubAbaOrcamento === 'function') {
-          mudarSubAbaOrcamento(sub);
-        }
+        self._carregarSubOrcamento(sub, function() {
+          if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.mudarSubAba) {
+            INIT_ORCAMENTO.mudarSubAba(sub);
+          } else if (typeof mudarSubAbaOrcamento === 'function') {
+            mudarSubAbaOrcamento(sub);
+          }
+        });
       },
       'abrir-entrada-rapida': function() { safeCall('abrirEntradaRapida'); },
       'navegar-periodo': function() { 
@@ -198,10 +200,27 @@ const INIT_NAVIGATION = {
       // segundo em base grande. Sem bloquear o botão, o clique duplo gera dois
       // downloads e a impressão de que o app travou.
       'exportar-excel': function() {
+        if (target.getAttribute('aria-disabled') === 'true') {
+          self.carregarChunkConta(function() {
+            if (typeof INIT_BILLING !== 'undefined') INIT_BILLING.abrirPaywall('Exportação disponível no plano Pro.');
+          });
+          return;
+        }
         UTILS.comCarregamento(target, function() { return safeCall('exportarExcel'); }, 'Gerando...');
       },
       'exportar-pdf': function() {
+        if (target.getAttribute('aria-disabled') === 'true') {
+          self.carregarChunkConta(function() {
+            if (typeof INIT_BILLING !== 'undefined') INIT_BILLING.abrirPaywall('Exportação disponível no plano Pro.');
+          });
+          return;
+        }
         UTILS.comCarregamento(target, function() { return safeCall('exportarExtrato'); }, 'Gerando...');
+      },
+      'abrir-paywall': function() {
+        self.carregarChunkConta(function() {
+          if (typeof INIT_BILLING !== 'undefined') INIT_BILLING.abrirPaywall();
+        });
       },
       'salvar-renda-orcamento': function() { safeCall('salvarRendaOrcamento'); },
       'editar-renda-orcamento': function() { safeCall('editarRendaOrcamento'); },
@@ -281,13 +300,13 @@ const INIT_NAVIGATION = {
       'abrir-changelog': function() { safeCall('abrirChangelog'); },
       'abrir-feedback': function() { safeCall('abrirFeedback'); },
       'abrir-plano': function() {
-        if (typeof DADOS !== 'undefined' && DADOS._apiAtiva && !DADOS._apiAtiva()) return;
+        if (typeof DADOS !== 'undefined' && DADOS._nuvemAtiva && !DADOS._nuvemAtiva()) return;
         if (typeof INIT_BILLING !== 'undefined' && INIT_BILLING.abrirPaywall) {
           INIT_BILLING.abrirPaywall();
         }
       },
       'abrir-open-finance': function() {
-        if (typeof DADOS !== 'undefined' && DADOS._apiAtiva && !DADOS._apiAtiva()) return;
+        if (typeof DADOS !== 'undefined' && DADOS._nuvemAtiva && !DADOS._nuvemAtiva()) return;
         if (typeof INIT_OPEN_FINANCE !== 'undefined' && INIT_OPEN_FINANCE.abrir) {
           INIT_OPEN_FINANCE.abrir();
         }
@@ -410,6 +429,57 @@ const INIT_NAVIGATION = {
     );
   },
 
+  carregarChunkOcr: function(callback) {
+    this._ensureChunk(
+      'ocr',
+      function() { return typeof OCR !== 'undefined'; },
+      function(justLoaded) {
+        if (justLoaded && typeof OCR !== 'undefined' && OCR.init) {
+          UTILS.tentar('chunk.ocr.init', OCR.init);
+        }
+        if (typeof callback === 'function') callback();
+      },
+    );
+  },
+
+  _carregarSubOrcamento: function(sub, callback) {
+    var self = this;
+    var finish = function() {
+      if (typeof callback === 'function') callback();
+    };
+    if (sub === 'metas') {
+      this._ensureChunk('metas', function() { return typeof INIT_METAS !== 'undefined'; }, function(justLoaded) {
+        if (justLoaded) {
+          if (typeof METAS !== 'undefined' && METAS.init) METAS.init();
+          if (typeof INIT_METAS !== 'undefined' && INIT_METAS.init) INIT_METAS.init();
+        }
+        finish();
+      });
+      return;
+    }
+    if (sub === 'assinaturas') {
+      this._ensureChunk('assinaturas', function() { return typeof INIT_ASSINATURAS !== 'undefined'; }, function(justLoaded) {
+        if (justLoaded) {
+          if (typeof ASSINATURAS !== 'undefined' && ASSINATURAS.init) ASSINATURAS.init();
+          if (typeof INIT_ASSINATURAS !== 'undefined' && INIT_ASSINATURAS.init) INIT_ASSINATURAS.init();
+        }
+        finish();
+      });
+      return;
+    }
+    if (sub === 'patrimonio') {
+      this._ensureChunk('patrimonio', function() { return typeof INIT_PATRIMONIO !== 'undefined'; }, function(justLoaded) {
+        if (justLoaded) {
+          if (typeof PATRIMONIO !== 'undefined' && PATRIMONIO.init) PATRIMONIO.init();
+          if (typeof INIT_PATRIMONIO !== 'undefined' && INIT_PATRIMONIO.init) INIT_PATRIMONIO.init();
+        }
+        finish();
+      });
+      return;
+    }
+    finish();
+  },
+
   _ensureChunk: function(chunk, isReady, onReady) {
     if (isReady()) { onReady(false); return; }
     if (typeof LAZY === 'undefined' || !LAZY.load) { onReady(false); return; }
@@ -524,16 +594,18 @@ function mudarAba(nomeAba, opcoes) {
   setTimeout(function() {
     try {
       if (nomeAba === 'novo') {
-        if (typeof INIT_FORM !== 'undefined') {
-          if (INIT_FORM.renderizarSelects) INIT_FORM.renderizarSelects();
-          if (INIT_FORM.renderQuickEntries) INIT_FORM.renderQuickEntries();
-          var tipoAtual = (document.getElementById('novo-tipo') || {}).value || 'despesa';
-          if (INIT_FORM.renderCategoriasBtns) INIT_FORM.renderCategoriasBtns(tipoAtual);
-        } else if (typeof renderQuickEntries === 'function') {
-          renderQuickEntries();
-        }
-        var vi = document.getElementById('novo-valor');
-        if (vi) vi.focus();
+        INIT_NAVIGATION.carregarChunkOcr(function() {
+          if (typeof INIT_FORM !== 'undefined') {
+            if (INIT_FORM.renderizarSelects) INIT_FORM.renderizarSelects();
+            if (INIT_FORM.renderQuickEntries) INIT_FORM.renderQuickEntries();
+            var tipoAtual = (document.getElementById('novo-tipo') || {}).value || 'despesa';
+            if (INIT_FORM.renderCategoriasBtns) INIT_FORM.renderCategoriasBtns(tipoAtual);
+          } else if (typeof renderQuickEntries === 'function') {
+            renderQuickEntries();
+          }
+          var vi = document.getElementById('novo-valor');
+          if (vi) vi.focus();
+        });
       }
       if (nomeAba === 'extrato') {
         if (typeof INIT_EXTRATO !== 'undefined' && INIT_EXTRATO.filtrarExtrato) {
@@ -544,24 +616,40 @@ function mudarAba(nomeAba, opcoes) {
       }
       if (nomeAba === 'orcamento') {
         var orcSubPref = (opcoes && opcoes.orcSub) ? opcoes.orcSub : null;
-        if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.restaurarSubAba) {
-          INIT_ORCAMENTO.restaurarSubAba(orcSubPref);
-        } else if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.mudarSubAba) {
-          INIT_ORCAMENTO.mudarSubAba(orcSubPref || 'planejamento');
-        }
-        if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.renderDashboard) {
-          INIT_ORCAMENTO.renderDashboard();
-        } else if (typeof renderOrcamentoDashboard === 'function') {
-          renderOrcamentoDashboard();
-        }
-        if (typeof INIT_METAS !== 'undefined' && INIT_METAS.renderOrcamento) {
-          INIT_METAS.renderOrcamento();
-        }
-        if (typeof INIT_ASSINATURAS !== 'undefined' && INIT_ASSINATURAS.render) {
-          INIT_ASSINATURAS.render();
-        }
-        if (typeof INIT_PATRIMONIO !== 'undefined' && INIT_PATRIMONIO.render) {
-          INIT_PATRIMONIO.render();
+        INIT_NAVIGATION._carregarSubOrcamento(orcSubPref || 'planejamento', function() {
+          if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.restaurarSubAba) {
+            INIT_ORCAMENTO.restaurarSubAba(orcSubPref);
+          } else if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.mudarSubAba) {
+            INIT_ORCAMENTO.mudarSubAba(orcSubPref || 'planejamento');
+          }
+          if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.renderDashboard) {
+            INIT_ORCAMENTO.renderDashboard();
+          } else if (typeof renderOrcamentoDashboard === 'function') {
+            renderOrcamentoDashboard();
+          }
+          if (orcSubPref === 'metas' && typeof INIT_METAS !== 'undefined' && INIT_METAS.renderOrcamento) {
+            INIT_METAS.renderOrcamento();
+          }
+          if (orcSubPref === 'assinaturas' && typeof INIT_ASSINATURAS !== 'undefined' && INIT_ASSINATURAS.render) {
+            INIT_ASSINATURAS.render();
+          }
+          if (orcSubPref === 'patrimonio' && typeof INIT_PATRIMONIO !== 'undefined' && INIT_PATRIMONIO.render) {
+            INIT_PATRIMONIO.render();
+          }
+        });
+      }
+      if (nomeAba === 'resumo' || nomeAba === 'extrato') {
+        var refreshBillingUi = function() {
+          if (typeof INIT_BILLING !== 'undefined') {
+            if (INIT_BILLING.refreshUsageBanner) INIT_BILLING.refreshUsageBanner();
+            if (INIT_BILLING.refreshExportButtons) INIT_BILLING.refreshExportButtons();
+          }
+        };
+        if (typeof DADOS !== 'undefined' && DADOS._nuvemAtiva && DADOS._nuvemAtiva()
+            && typeof INIT_BILLING === 'undefined') {
+          INIT_NAVIGATION.carregarChunkConta(refreshBillingUi);
+        } else {
+          refreshBillingUi();
         }
       }
       if (nomeAba === 'config') {

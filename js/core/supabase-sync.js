@@ -212,6 +212,12 @@
   SB.auth.onAuthStateChange(function (evt, session) {
     if (session && (evt === 'SIGNED_IN' || evt === 'INITIAL_SESSION')) {
       SUPA_SYNC.pull();
+      if (typeof BILLING !== 'undefined' && BILLING.sync) {
+        BILLING.sync().catch(function () {});
+      }
+      if (typeof INIT_CONFIG !== 'undefined' && INIT_CONFIG.aplicarVisibilidadeNuvem) {
+        INIT_CONFIG.aplicarVisibilidadeNuvem();
+      }
     }
   });
 })();

@@ -201,9 +201,11 @@ describe('faturas vencidas sem confirmação', () => {
 
 describe('a fatura sabe o próprio estado', () => {
   test('em aberto antes do vencimento', () => {
+    jest.spyOn(UTILS, 'dataLocalIso').mockReturnValue('2026-08-25');
     cartao();
     compra(500, '2026-08-10');
     expect(CARTOES.fatura('Nubank', '2026-08').status).toBe('aberta');
+    UTILS.dataLocalIso.mockRestore();
   });
 
   test('paga quando confirmada', () => {

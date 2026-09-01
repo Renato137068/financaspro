@@ -347,6 +347,20 @@ var DADOS = {
     return !!this._apiBaseUrl();
   },
 
+  /** Supabase Auth + Postgres (RLS) ativos no cliente. */
+  _supabaseAtivo: function() {
+    var url = (CONFIG.SUPABASE_URL || '').trim();
+    var key = (CONFIG.SUPABASE_ANON_KEY || '').trim();
+    if (!url || !key) return false;
+    return typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.isActive && SUPA_AUTH.isActive();
+  },
+
+  /** Nuvem = Supabase OU API Express configurada (billing, login, sync). */
+  _nuvemAtiva: function() {
+    if (this._supabaseAtivo()) return true;
+    return this._apiAtiva();
+  },
+
   _syncV2Ativo: function() {
     if (!this._apiAtiva()) return false;
     if (typeof SYNC_ENGINE === 'undefined') return false;

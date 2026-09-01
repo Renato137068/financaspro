@@ -55,6 +55,9 @@
 
   function _msg(e) {
     var m = (e && e.message) || 'Falha na autenticação';
+    if (/failed to fetch|networkerror|network error|load failed/i.test(m)) {
+      return 'Sem conexão com o servidor. Verifique sua internet e tente de novo.';
+    }
     if (/Invalid login credentials/i.test(m)) return 'E-mail ou senha inválidos.';
     if (/Email not confirmed/i.test(m)) return 'Confirme seu e-mail antes de entrar.';
     if (/User already registered|already registered/i.test(m)) return 'Este e-mail já está cadastrado.';
@@ -65,6 +68,20 @@
 
   var SUPA_AUTH = {
     isActive: function () { return true; },
+
+    ping: function () {
+      return fetch(url.replace(/\/$/, '') + '/auth/v1/health', {
+        method: 'GET',
+        headers: { apikey: key, Authorization: 'Bearer ' + key },
+      }).then(function (res) {
+        if (!res.ok) throw new Error('servidor-indisponivel');
+        return true;
+      }).catch(function (err) {
+        var e = new Error(_msg(err));
+        e.cause = err;
+        throw e;
+      });
+    },
 
     login: function (email, password) {
       return client.auth.signInWithPassword({ email: email, password: password })
@@ -82,9 +99,18 @@
         options: { data: { name: nome } }
       }).then(function (r) {
         if (r.error) throw new Error(_msg(r.error));
-        // Com "Confirm email" ligado, não há sessão até confirmar o e-mail.
+        var user = r.data && r.data.user;
+        if (user && user.identities && user.identities.length === 0) {
+          throw new Error('Este e-mail já está cadastrado. Tente Entrar ou use outro e-mail.');
+        }
         _session = (r.data && r.data.session) || null;
-        return {};
+        return {
+          needsEmailConfirmation: !_session,
+          email: email,
+        };
+      }).catch(function (err) {
+        if (err && err.message) throw err;
+        throw new Error(_msg(err));
       });
     },
 
@@ -100,6 +126,14 @@
         _session = (r && r.data && r.data.session) || null;
         return !!_session;
       }).catch(function () { return false; });
+    },
+
+    getAccessToken: function () {
+      if (_session && _session.access_token) return Promise.resolve(_session.access_token);
+      return client.auth.getSession().then(function (r) {
+        _session = (r && r.data && r.data.session) || null;
+        return _session ? _session.access_token : null;
+      }).catch(function () { return null; });
     }
   };
   window.SUPA_AUTH = SUPA_AUTH;

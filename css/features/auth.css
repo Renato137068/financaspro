@@ -186,6 +186,48 @@
   box-shadow: var(--elevacao-1);
 }
 
+.auth-password-wrap {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+
+.auth-password-wrap input {
+  padding-right: 52px;
+}
+
+.auth-password-toggle {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-gray-500);
+  cursor: pointer;
+}
+
+.auth-password-toggle:hover {
+  color: var(--color-primary-text);
+  background: var(--color-primary-50);
+}
+
+.auth-password-toggle:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+}
+
+.auth-password-toggle svg,
+.auth-password-toggle i {
+  width: 20px;
+  height: 20px;
+}
+
 /* Botão primário específico do auth */
 .auth-form .btn-primario {
   min-height: 52px;

@@ -8,8 +8,9 @@ const vm = require('vm');
 function loadPlayBilling() {
   const ctx = vm.createContext({
     window: {},
-    DADOS: { _apiAtiva: () => true },
-    BILLING: { _cache: { orgId: 'org-1' } },
+    DADOS: { _nuvemAtiva: () => true, _supabaseAtivo: () => true },
+    BILLING: { _cache: { orgId: 'org-1' }, ensureOrg: () => Promise.resolve('org-1') },
+    SUPA_BILLING: { isActive: () => true, invoke: () => Promise.resolve({}) },
     module: { exports: {} },
   });
   vm.runInContext(

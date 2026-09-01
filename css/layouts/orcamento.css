@@ -99,10 +99,87 @@
 .orc-renda-setup {
   background: var(--color-bg-card);
   border-radius: var(--radius-xl);
-  padding: var(--space-6) var(--space-5);
-  text-align: center;
+  padding: var(--space-5);
   margin: var(--space-2) 0;
   box-shadow: var(--shadow-md);
+}
+
+.orc-renda-setup-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.orc-renda-copy {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.orc-renda-title {
+  margin: 0 0 var(--space-1);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  line-height: var(--line-height-tight);
+}
+
+.orc-renda-desc {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+}
+
+.orc-renda-field {
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.orc-renda-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-page);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.orc-renda-group:focus-within {
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 3px var(--color-overlay-sm);
+}
+
+.orc-renda-prefix {
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-base);
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.orc-renda-input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-sans);
+}
+
+.orc-renda-input:focus {
+  outline: none;
+}
+
+.orc-renda-submit {
+  width: 100%;
+  margin-top: var(--space-4);
+  min-height: 52px;
 }
 
 .orc-renda-setup h3 {
@@ -118,53 +195,6 @@
   margin-bottom: var(--space-6);
   line-height: var(--line-height-normal);
 }
-
-.orc-renda-input {
-  display: flex;
-  gap: var(--space-3);
-  max-width: 360px;
-  margin: 0 auto;
-}
-
-.orc-renda-input input {
-  flex: 1;
-  /* Item flex nao encolhe abaixo do proprio tamanho intrinseco enquanto
-     min-width for `auto`, e um <input> tem largura intrinseca de cerca de 20
-     caracteres (~270px). Num telefone de 320px o pai tem 246px, entao o campo
-     vazava 27px para fora da tela -- e em 280px (Fold fechado), 75px. O
-     `flex: 1` nao resolve sozinho: e preciso soltar o piso. */
-  min-width: 0;
-  padding: var(--space-4);
-  border: 2px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-semibold);
-  background: var(--color-bg-page);
-  color: var(--color-text-primary);
-  transition: border-color var(--transition-fast);
-  font-family: var(--font-family-sans);
-}
-
-.orc-renda-input input:focus {
-  outline: none;
-  border-color: var(--color-primary-500);
-}
-
-.orc-renda-input button {
-  padding: var(--space-4) var(--space-6);
-  background: var(--color-primary-500);
-  color: var(--color-text-inverse);
-  border: none;
-  border-radius: var(--radius-lg);
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-semibold);
-  cursor: pointer;
-  transition: transform var(--transition-fast), opacity var(--transition-fast);
-  white-space: nowrap;
-  font-family: var(--font-family-sans);
-}
-
-.orc-renda-input button:active { transform: scale(0.96); }
 
 /* ── Header Estratégico ─────────────────────────────── */
 

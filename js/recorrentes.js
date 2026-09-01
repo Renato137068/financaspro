@@ -43,12 +43,25 @@ var RECORRENTES = {
   _ehModoLocal: function() {
     if (typeof DADOS === 'undefined') return false;
     if (typeof DADOS._modoLocal === 'boolean') return DADOS._modoLocal;
+    // Supabase ainda não tem worker de recorrência — o cliente materializa.
+    if (typeof DADOS._supabaseAtivo === 'function' && DADOS._supabaseAtivo()) return true;
     return typeof DADOS._apiAtiva === 'function' ? !DADOS._apiAtiva() : true;
   },
 
-  /** 'YYYY-MM' de uma data ISO. */
-  _competencia: function(dataIso) {
-    return String(dataIso || '').slice(0, 7);
+  _addDias: function(dataIso, dias) {
+    var d = new Date(String(dataIso).slice(0, 10) + 'T12:00:00');
+    if (isNaN(d.getTime())) return null;
+    d.setDate(d.getDate() + dias);
+    return UTILS.dataLocalIso(d);
+  },
+
+  /**
+   * Chave de idempotência: mensal usa YYYY-MM; demais frequências usam a data.
+   */
+  _competencia: function(dataIso, frequencia) {
+    var iso = String(dataIso || '').slice(0, 10);
+    if (frequencia && frequencia !== 'mensal') return iso;
+    return iso.slice(0, 7);
   },
 
   /**
@@ -86,36 +99,48 @@ var RECORRENTES = {
   /**
    * Competências devidas de uma recorrente até hoje.
    *
-   * Só frequência mensal por enquanto. Semanal e quinzenal exigem outra
-   * aritmética, e gerar errado seria pior do que não gerar — então a limitação
-   * é explícita aqui em vez de virar um lançamento silenciosamente torto.
+   * Suporta mensal, semanal, quinzenal e anual. Frequências desconhecidas são
+   * ignoradas em vez de gerar lançamento torto.
    *
    * @returns {Array<{competencia:string, data:string}>} da mais antiga à mais nova
    */
   _competenciasDevidas: function(rec, hoje) {
     if (!rec || !rec.dataInicio || rec.ativo === false) return [];
-    if (rec.frequencia && rec.frequencia !== 'mensal') return [];
+
+    var freq = rec.frequencia || 'mensal';
+    var suportadas = { mensal: true, semanal: true, quinzenal: true, anual: true };
+    if (!suportadas[freq]) return [];
 
     var inicio = String(rec.dataInicio).slice(0, 10);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(inicio)) return [];
 
     var hojeIso = UTILS.dataLocalIso(hoje);
     var fim = rec.dataFim ? String(rec.dataFim).slice(0, 10) : null;
-
+    var self = this;
     var devidas = [];
-    for (var i = 0; i < 600; i++) { // teto duro contra laço infinito
-      // addMesesClamp evita o transbordo de 31/01 para 03/03 — o mesmo erro
-      // que já apareceu em parcelas e no worker do backend.
-      var data = UTILS.addMesesClamp(inicio, i);
-      if (!data) break;
-      if (data > hojeIso) break;
-      if (fim && data > fim) break;
+    var i;
+    var data;
 
-      devidas.push({ competencia: this._competencia(data), data: data });
+    if (freq === 'mensal' || freq === 'anual') {
+      var passoMeses = freq === 'anual' ? 12 : 1;
+      for (i = 0; i < 600; i++) {
+        data = UTILS.addMesesClamp(inicio, i * passoMeses);
+        if (!data) break;
+        if (data > hojeIso) break;
+        if (fim && data > fim) break;
+        devidas.push({ competencia: self._competencia(data, freq), data: data });
+      }
+    } else {
+      var intervalo = freq === 'semanal' ? 7 : 14;
+      for (i = 0; i < 520; i++) {
+        data = self._addDias(inicio, i * intervalo);
+        if (!data) break;
+        if (data > hojeIso) break;
+        if (fim && data > fim) break;
+        devidas.push({ competencia: self._competencia(data, freq), data: data });
+      }
     }
 
-    // Teto retroativo: uma recorrente cadastrada com início em 2020 não pode
-    // despejar setenta lançamentos de uma vez na cara de quem abriu o app.
     if (devidas.length > this.MAX_RETROATIVO) {
       devidas = devidas.slice(devidas.length - this.MAX_RETROATIVO);
     }

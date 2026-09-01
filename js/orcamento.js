@@ -16,6 +16,10 @@ var ORCAMENTO = {
   },
 
   definirLimite: function(categoria, limite) {
+    var isNovo = !this._cache[categoria] || !(this._cache[categoria].limite > 0);
+    if (isNovo && typeof BILLING !== 'undefined' && !BILLING.guardQuota('budget', 1)) {
+      throw new Error('Limite de orçamentos atingido');
+    }
     if (typeof BUDGET_SERVICE !== 'undefined') {
       this._cache = BUDGET_SERVICE.setBudget(this._cache, categoria, limite);
     } else {

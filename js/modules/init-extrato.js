@@ -1292,6 +1292,10 @@ const INIT_EXTRATO = {
    * Exporta extrato para Excel (CSV melhorado)
    */
   exportarExcel: function() {
+    if (typeof BILLING !== 'undefined' && !BILLING.canUse('reportExport')) {
+      BILLING.onPaymentRequired({ message: 'Exportação em Excel/CSV disponível no plano Pro.' });
+      return;
+    }
     var info = this.getExtratoMesAno();
     var txs = TRANSACOES.obter({ mes: info.mes, ano: info.ano });
     
@@ -1361,6 +1365,10 @@ const INIT_EXTRATO = {
    * Exporta extrato para PDF
    */
   exportarExtrato: function() {
+    if (typeof BILLING !== 'undefined' && !BILLING.canUse('reportExport')) {
+      BILLING.onPaymentRequired({ message: 'Exportação em PDF disponível no plano Pro.' });
+      return;
+    }
     var info = this.getExtratoMesAno();
     var txs = TRANSACOES.obter({ mes: info.mes, ano: info.ano });
     

@@ -1,7 +1,7 @@
 // FinançasPro - Service Worker (PWA offline-first, stale-while-revalidate)
 // Gerado por scripts/generate-sw-cache.cjs — não edite urlsParaCache manualmente
 
-const CACHE_NAME = 'financaspro-v1110-p6';
+const CACHE_NAME = 'financaspro-v1110-p2';
 const urlsParaCache = [
   "/",
   "/css/base.css",
@@ -91,8 +91,12 @@ const urlsParaCache = [
   "/js/core/lifecycle.js",
   "/js/core/password-policy.js",
   "/js/core/persist-queue.js",
+  "/js/core/session-log.js",
   "/js/core/setup-guide.js",
   "/js/core/store.js",
+  "/js/core/supabase-billing.js",
+  "/js/core/supabase-sync.js",
+  "/js/core/supabase.js",
   "/js/core/sync-engine.js",
   "/js/core/sync-merge.js",
   "/js/core/utils.js",
@@ -152,6 +156,7 @@ const urlsParaCache = [
   "/js/utilities/sync-indicator.js",
   "/js/utilities/tablist-keyboard.js",
   "/js/vendor/lucide.min.js",
+  "/js/vendor/supabase.js",
   "/manifest.json",
   "/privacidade.html"
 ];

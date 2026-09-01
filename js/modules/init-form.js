@@ -1657,6 +1657,14 @@ const INIT_FORM = {
       }
     }
 
+    var parcelCount = 1;
+    if (chkParcelado && chkParcelado.checked && tipo === 'despesa') {
+      parcelCount = parseInt(document.getElementById('num-parcelas').value, 10) || 2;
+    }
+    if (typeof BILLING !== 'undefined' && !BILLING.guardQuota('transaction', parcelCount)) {
+      return Promise.reject(new Error('Limite do plano gratuito'));
+    }
+
     INIT_FORM._submitBusy = true;
     INIT_FORM._setRegistrarBusy(true, 'Salvando…');
 
@@ -1776,6 +1784,9 @@ const INIT_FORM = {
     }
     if (typeof SCORE !== 'undefined') {
       SCORE.limparCache();
+    }
+    if (typeof INIT_BILLING !== 'undefined' && INIT_BILLING.refreshPlanoCard) {
+      INIT_BILLING.refreshPlanoCard();
     }
     INIT_FORM.renderSmartDescriptionSuggestions();
     INIT_FORM.renderPaymentContextChips();

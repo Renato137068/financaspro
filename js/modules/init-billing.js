@@ -5,6 +5,8 @@ const INIT_BILLING = {
   _overlay: null,
   _focusTrap: null,
   _interval: 'monthly',
+  // Business fica no backend/Play Console, mas oculto no paywall até os recursos existirem.
+  SHOW_BUSINESS_PLAN: false,
 
   init: function() {
     if (typeof BILLING !== 'undefined') BILLING.init();
@@ -45,10 +47,54 @@ const INIT_BILLING = {
     var el = document.getElementById('perfil-plano-subtitle');
     if (!el) return;
     if (typeof BILLING !== 'undefined') {
-      el.textContent = BILLING.getStatusLabel();
+      var label = BILLING.getStatusLabel();
+      var usage = BILLING.getUsageLabel ? BILLING.getUsageLabel() : '';
+      el.textContent = usage ? label + ' · ' + usage : label;
     } else {
       el.textContent = 'Gratuito · uso local';
     }
+    this.refreshUsageBanner();
+    this.refreshExportButtons();
+  },
+
+  refreshUsageBanner: function() {
+    var el = document.getElementById('fp-usage-banner');
+    if (!el || typeof BILLING === 'undefined') return;
+    if (!BILLING.shouldEnforceLimits || !BILLING.shouldEnforceLimits()) {
+      el.hidden = true;
+      el.innerHTML = '';
+      return;
+    }
+    var usage = BILLING.getUsage();
+    var maxT = usage.maxTransPerMonth === Infinity ? 0 : usage.maxTransPerMonth;
+    var pct = maxT ? Math.round((100 * usage.transactionsThisMonth) / maxT) : 0;
+    var perto = pct >= 80;
+    var msg = BILLING.getUsageLabel();
+    el.hidden = false;
+    el.className = 'fp-usage-banner' + (perto ? ' fp-usage-banner--warn' : '');
+    el.innerHTML =
+      '<div class="fp-usage-banner-text">' +
+        '<strong>Plano gratuito na nuvem</strong> · ' + UTILS.escapeHtml(msg) +
+        (perto ? ' — perto do limite' : '') +
+      '</div>' +
+      '<button type="button" class="btn-primario btn-sm" data-action="abrir-paywall">Ver Pro</button>';
+    if (typeof renderLucideIcons === 'function') renderLucideIcons(el);
+  },
+
+  refreshExportButtons: function() {
+    var bloqueado = typeof BILLING !== 'undefined' && BILLING.isCloudUser && BILLING.isCloudUser()
+      && BILLING.canUse && !BILLING.canUse('reportExport');
+    document.querySelectorAll('[data-action="exportar-excel"], [data-action="exportar-pdf"]').forEach(function(btn) {
+      if (bloqueado) {
+        btn.setAttribute('aria-disabled', 'true');
+        btn.classList.add('perfil-card--disabled');
+        btn.title = 'Exportação disponível no plano Pro';
+      } else {
+        btn.removeAttribute('aria-disabled');
+        btn.classList.remove('perfil-card--disabled');
+        btn.removeAttribute('title');
+      }
+    });
   },
 
   abrirPaywall: function(contextMsg) {
@@ -59,8 +105,8 @@ const INIT_BILLING = {
     // Google proibe onde o link externo nao foi liberado. Guarda de profundidade:
     // a entrada pela aba Perfil ja some por data-requer-nuvem, mas ocr.js e
     // previsao.js tambem chamam este metodo.
-    if (typeof DADOS !== 'undefined' && typeof DADOS._apiAtiva === 'function'
-        && !DADOS._apiAtiva()) {
+    if (typeof DADOS !== 'undefined' && typeof DADOS._nuvemAtiva === 'function'
+        && !DADOS._nuvemAtiva()) {
       return;
     }
 
@@ -75,7 +121,7 @@ const INIT_BILLING = {
       '<div class="modal-box billing-modal">' +
         '<button type="button" class="billing-close" data-action="billing-fechar" aria-label="Fechar">&times;</button>' +
         '<div class="billing-header">' +
-          '<span class="billing-badge"><i data-lucide="sparkles" aria-hidden="true"></i> FinançasPro Cloud</span>' +
+          '<span class="billing-badge"><i data-lucide="sparkles" aria-hidden="true"></i> FinançasPro</span>' +
           '<h2 id="billing-title">O Pro tira os limites</h2>' +
           '<p class="billing-lead" id="billing-lead">' + UTILS.escapeHtml(contextMsg || 'Contas ilimitadas, relatórios do ano inteiro e backup automático. Cancela quando quiser.') + '</p>' +
         '</div>' +
@@ -178,6 +224,7 @@ const INIT_BILLING = {
       var html = '';
       plans.forEach(function(plan) {
         if (!plan || plan.tier === 'FREE') return;
+        if (plan.tier === 'BUSINESS' && !self.SHOW_BUSINESS_PLAN) return;
         var price = self._interval === 'yearly' ? plan.priceYearly : plan.priceMonthly;
         var priceLabel = price > 0
           ? 'R$ ' + Number(price).toFixed(2).replace('.', ',') + (self._interval === 'yearly' ? '/ano' : '/mês')
@@ -234,6 +281,7 @@ const INIT_BILLING = {
       : '<p class="billing-note">Pagamento seguro via Stripe Checkout. Trial de 14 dias no Pro.</p>';
     if (usePlay) {
       html += '<button type="button" class="btn-secundario" data-action="billing-restaurar">Restaurar compras</button>';
+      html += '<p class="billing-restore-hint">Use se reinstalou o app ou trocou de celular e já tinha assinatura ativa.</p>';
     } else if (hasStripe) {
       html += '<button type="button" class="btn-secundario" data-action="billing-portal">Gerenciar pagamento</button>';
     }
@@ -324,6 +372,13 @@ const INIT_BILLING = {
 
   _doCancel: function(ov) {
     var self = this;
+    if (typeof PLAY_BILLING !== 'undefined' && PLAY_BILLING.isAvailable()) {
+      BILLING.cancelSubscription().then(function() {
+        UTILS.mostrarToast('Abra o Google Play para gerenciar ou cancelar a assinatura.', 'info');
+        self._renderFooter(ov);
+      });
+      return;
+    }
     BILLING.cancelSubscription().then(function() {
       UTILS.mostrarToast('Cancelado. Você continua no Pro até o fim do período, e seus dados ficam aqui depois disso.', 'info');
       self._renderFooter(ov);
