@@ -1,6 +1,6 @@
 {
   "name": "financaspro-v11",
-  "version": "11.3.2",
+  "version": "11.3.4",
   "description": "FinançasPro — SaaS de Finanças Pessoais",
   "type": "module",
   "main": "index.html",

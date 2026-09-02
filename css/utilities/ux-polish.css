@@ -244,7 +244,7 @@ textarea:focus-visible {
 .sync-indicator-dismiss{
   flex:0 0 auto; width:32px; height:32px; margin-right:4px;
   border:0; border-radius:var(--radius-full); background:transparent;
-  color:var(--color-text-muted); cursor:pointer; font-size:18px; line-height:1;
+  color:var(--color-text-muted); cursor:pointer; font-size:var(--font-size-lg); line-height:1;
 }
 .sync-indicator-dismiss:hover,
 .sync-indicator-dismiss:focus-visible{ color:var(--color-text-primary); background:var(--color-bg-primary); }

@@ -39,7 +39,14 @@ describe('Fase 9 — UX e acessibilidade', () => {
     expect(html).toContain('auth-biometric-btn');
     expect(html).toContain('auth-greeting-name');
     expect(auth).toContain('showLoginStep');
+    expect(auth).toContain('offerEnableAfterLogin');
+    expect(html).toContain('auth-exit-btn');
+    expect(auth).toContain('setupLogoutButton');
+    expect(auth).toContain('sairDaConta');
     expect(bio).toContain('tryLogin');
+    expect(bio).toContain('offerEnableAfterLogin');
+    expect(fs.readFileSync(path.join(root, 'css/critical-inline.css'), 'utf8'))
+      .toContain('body.auth-overlay-open > header');
   });
 });
 

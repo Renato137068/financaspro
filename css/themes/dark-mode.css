@@ -564,82 +564,14 @@
    AUTH
    ═══════════════════════════════════════════════════════════ */
 
-[data-theme="dark"] .auth-overlay {
-  background: var(--color-gray-900);
-}
-
-[data-theme="dark"] .auth-card {
-  background: rgba(30, 41, 59, 0.95);
-  color: var(--color-text-primary);
-  border: 1px solid rgba(71, 85, 105, 0.4);
-  box-shadow:
-    0 20px 50px rgba(0, 0, 0, 0.4),
-    0 8px 25px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-
-[data-theme="dark"] .auth-card:hover {
-  box-shadow:
-    0 25px 60px rgba(0, 0, 0, 0.5),
-    0 12px 35px rgba(0, 0, 0, 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-
-[data-theme="dark"] .auth-card h2 { color: var(--color-text-primary); }
-[data-theme="dark"] .auth-card > p { color: var(--color-gray-400); }
-
-[data-theme="dark"] .auth-logo {
-  background: var(--color-success);
-  box-shadow: 0 12px 28px rgba(47, 156, 109, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .auth-tabs {
-  background: rgba(51, 65, 85, 0.4);
-  border: 1px solid rgba(71, 85, 105, 0.3);
-}
-
-[data-theme="dark"] .auth-tab { color: var(--color-gray-400); }
-
-[data-theme="dark"] .auth-tab.ativo {
-  background: rgba(30, 41, 59, 0.9);
-  color: var(--color-success-text);
-  box-shadow: var(--elevacao-1);
-}
-
-[data-theme="dark"] .auth-tab:hover:not(.ativo) {
-  background: rgba(51, 65, 85, 0.3);
-  color: var(--color-gray-300);
-}
-
-[data-theme="dark"] .auth-field label { color: var(--color-gray-300); }
-
-[data-theme="dark"] .auth-form input {
-  background: rgba(30, 41, 59, 0.8);
-  border: 2px solid var(--color-border);
-  color: var(--color-text-primary);
-  box-shadow: var(--elevacao-1);
-}
-
-[data-theme="dark"] .auth-form input::placeholder { color: var(--color-gray-500); }
-
-[data-theme="dark"] .auth-form input:focus {
-  border-color: var(--color-success);
-  box-shadow: 0 0 0 4px rgba(47, 156, 109, 0.15), 0 4px 12px rgba(47, 156, 109, 0.25);
-}
-
-[data-theme="dark"] .auth-form input:hover:not(:focus) {
-  border-color: rgba(100, 116, 139, 0.5);
-  box-shadow: var(--elevacao-1);
-}
-
-[data-theme="dark"] .auth-form .btn-primario {
-  background: var(--color-success);
-  box-shadow: var(--elevacao-2);
-}
-
-[data-theme="dark"] .auth-form .btn-primario:hover {
-  box-shadow: var(--elevacao-2);
-}
+/*
+ * A tela de login usa o layout "bank" (auth-overlay--bank), que é sempre claro
+ * por design (fundo branco forçado em auth.css) — como a maioria dos apps
+ * bancários. O bloco de tema escuro que existia aqui era do layout antigo (card
+ * centralizado) e, no layout novo, só escurecia o container deixando a saudação
+ * ilegível. Removido: o login segue claro nos dois temas, com as cores do
+ * auth.css. (.auth-env-warning tem seu próprio ajuste dark mais acima.)
+ */
 
 /* ═══════════════════════════════════════════════════════════
    FASE 2 UX — Novos elementos

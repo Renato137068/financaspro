@@ -145,6 +145,34 @@
       }).catch(function() { /* não bloqueia login */ });
     },
 
+    offerEnableAfterLogin: function() {
+      if (_readPref() || !_native()) return Promise.resolve(false);
+      return AUTH_BIOMETRIC.isAvailable().then(function(ok) {
+        if (!ok) return false;
+        return new Promise(function(resolve) {
+          var msg = 'Deseja entrar com biometria facial ou digital nas próximas vezes?';
+          var onYes = function() {
+            AUTH_BIOMETRIC.enable().then(function() { resolve(true); }).catch(function(err) {
+              if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+                UTILS.mostrarToast((err && err.message) || 'Não foi possível ativar a biometria.', 'error');
+              }
+              resolve(false);
+            });
+          };
+          var onNo = function() { resolve(false); };
+          if (typeof INIT_MODALS !== 'undefined' && INIT_MODALS.fpConfirm) {
+            INIT_MODALS.fpConfirm(msg, onYes, onNo, {
+              okLabel: 'Ativar',
+              cancelLabel: 'Agora não',
+            });
+            return;
+          }
+          if (window.confirm(msg)) onYes();
+          else onNo();
+        });
+      });
+    },
+
     setupPerfilToggle: function() {
       var chk = document.getElementById('chk-biometric');
       if (!chk || chk.dataset.bound === '1') return;

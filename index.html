@@ -62,9 +62,10 @@
 
 <div id="auth-overlay" class="auth-overlay auth-overlay--bank" style="display:none" role="dialog" aria-modal="true" aria-labelledby="auth-dialog-title" aria-describedby="auth-message">
   <div class="auth-shell">
-    <header class="auth-top-bar">
-      <img src="icons/logo.svg" alt="FinançasPro" class="auth-top-logo brand-mark" width="120" height="32">
-    </header>
+    <div class="auth-top-bar">
+      <img src="icons/logo.svg" alt="FinançasPro" class="auth-top-logo brand-mark" width="40" height="40">
+      <button type="button" id="auth-exit-btn" class="auth-exit-btn" hidden>Sair</button>
+    </div>
     <div class="auth-card">
       <div class="auth-brand auth-brand--compact">
         <h2 id="auth-dialog-title" class="auth-screen-title">Entrar</h2>
@@ -84,10 +85,6 @@
                    placeholder="voce@email.com" required>
           </div>
           <button type="submit" class="btn-primario auth-btn-primary">Continuar</button>
-          <button type="button" id="auth-biometric-btn" class="auth-biometric-btn" hidden>
-            <i data-lucide="fingerprint" aria-hidden="true"></i>
-            <span>Entrar com biometria</span>
-          </button>
         </form>
         <form id="auth-login-form" class="auth-form auth-step" data-auth-step="password" hidden autocomplete="on">
           <div class="auth-user-block">
@@ -111,6 +108,10 @@
           <button type="submit" class="btn-primario auth-btn-primary">Entrar</button>
           <button type="button" id="auth-change-email" class="auth-link-btn auth-link-btn--center">Usar outro e-mail</button>
         </form>
+        <button type="button" id="auth-biometric-btn" class="auth-biometric-btn" hidden>
+          <i data-lucide="fingerprint" aria-hidden="true"></i>
+          <span>Entrar com biometria</span>
+        </button>
       </div>
     <form id="auth-totp-form" class="auth-form" hidden style="display:none" aria-labelledby="auth-totp-title">
       <h3 id="auth-totp-title" class="auth-totp-title">Verificação em duas etapas</h3>

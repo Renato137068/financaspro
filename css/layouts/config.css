@@ -667,7 +667,7 @@
   display: inline-block;
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-semibold);
-  color: var(--color-warning-text, #c2410c);
+  color: var(--color-warning-text);
   background: rgba(234, 88, 12, 0.12);
   padding: 0 var(--space-2);
   border-radius: var(--radius-sm);
@@ -1198,7 +1198,7 @@
 }
 
 .perfil-modal-item-icon {
-  font-size: 18px;
+  font-size: var(--font-size-lg);
 }
 
 .perfil-modal-item-title {

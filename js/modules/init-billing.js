@@ -78,6 +78,11 @@ const INIT_BILLING = {
     var pct = maxT ? Math.round((100 * usage.transactionsThisMonth) / maxT) : 0;
     var perto = pct >= 80;
     var msg = BILLING.getUsageLabel();
+    if (!msg) {
+      el.hidden = true;
+      el.innerHTML = '';
+      return;
+    }
     el.hidden = false;
     el.className = 'fp-usage-banner' + (perto ? ' fp-usage-banner--warn' : '');
     el.innerHTML =

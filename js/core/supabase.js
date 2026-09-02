@@ -51,6 +51,15 @@
   client.auth.onAuthStateChange(function (_evt, s) {
     _session = s || null;
     if (typeof atualizarBarraSessao === 'function') atualizarBarraSessao();
+    /* O Supabase rotaciona o refresh token a cada renovação. Se a biometria
+       estiver ativa, precisamos regravar o token novo no Keystore — senão o
+       guardado vira obsoleto e o login por biometria passa a falhar. */
+    if (_evt === 'TOKEN_REFRESHED'
+        && typeof AUTH_BIOMETRIC !== 'undefined'
+        && AUTH_BIOMETRIC.isEnabled && AUTH_BIOMETRIC.isEnabled()
+        && AUTH_BIOMETRIC.onLoginSuccess) {
+      try { AUTH_BIOMETRIC.onLoginSuccess(_toSessao(s)); } catch (e) { /* noop */ }
+    }
   });
 
   function _msg(e) {

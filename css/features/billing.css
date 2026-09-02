@@ -265,6 +265,14 @@
   background: rgba(18, 105, 78, 0.12);
 }
 
+.fp-usage-banner[hidden],
+.fp-usage-banner:empty {
+  display: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+
 .fp-usage-banner {
   display: flex;
   align-items: center;

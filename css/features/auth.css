@@ -346,11 +346,18 @@
 
 /* ── Layout estilo app financeiro (login em etapas) ───────── */
 
-.auth-overlay--bank {
+.auth-overlay.auth-overlay--bank {
   align-items: stretch;
   justify-content: flex-start;
   padding: 0;
-  background: var(--color-white, #fff);
+  /* Reserva espaço para a barra de status do Android. Em WebViews sem
+     safe-area-inset (env = 0) o max() garante uma folga mínima para a logo
+     não ficar atrás do relógio/bateria. */
+  padding-top: max(env(safe-area-inset-top, 0px), var(--space-5));
+  z-index: calc(var(--z-overlay) + 10);
+  background: var(--color-white) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 .auth-shell {
@@ -360,19 +367,52 @@
   min-height: 100%;
   max-width: 480px;
   margin: 0 auto;
-  padding: calc(env(safe-area-inset-top, 0px) + var(--space-4)) var(--space-5) var(--space-6);
+  padding: var(--space-4) var(--space-5) calc(env(safe-area-inset-bottom, 0px) + var(--space-6));
 }
 
 .auth-top-bar {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  margin-bottom: var(--space-8);
+  justify-content: space-between;
+  margin-bottom: var(--space-6);
+  /* Defesa: se algum dia esta barra virar <header>, não deve herdar o header
+     verde global (background/box-shadow/overflow que cortava a logo). */
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0;
+  overflow: visible;
+  position: static;
+}
+
+.auth-exit-btn {
+  margin-left: auto;
+  padding: var(--space-2) var(--space-1);
+  border: 0;
+  background: none;
+  color: var(--color-primary-text);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  font-family: var(--font-family-sans);
+}
+
+.auth-exit-btn:hover {
+  text-decoration: underline;
+}
+
+.auth-exit-btn:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
 }
 
 .auth-top-logo {
-  height: 32px;
+  display: block;
+  height: 36px;
   width: auto;
+  max-width: 140px;
+  object-fit: contain;
 }
 
 .auth-overlay--bank .auth-card {
@@ -457,30 +497,43 @@
 
 .auth-field--underline label {
   font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--font-weight-semibold);
   color: var(--color-gray-500);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
 
-.auth-field--underline input {
-  min-height: 48px;
-  padding: var(--space-3) 0;
-  border: 0;
-  border-bottom: 2px solid var(--color-gray-200);
-  border-radius: 0;
+/* Campos "enquadrados": caixa suave com borda e cantos arredondados, foco
+   verde com anel. (Antes era só uma linha inferior, que ficava sem forma.)
+   Vale para login (etapas e-mail/senha) e cadastro, para ficarem idênticos. */
+.auth-overlay--bank .auth-form input {
+  min-height: 54px;
+  padding: 0 var(--space-4);
+  border: 1.5px solid var(--color-gray-200);
+  border-radius: var(--radius-lg);
+  background: var(--color-gray-50);
+  color: var(--color-gray-800);
+  font-size: var(--font-size-base);
   box-shadow: none;
-  background: transparent;
+  transition: border-color var(--transition-smooth),
+              background var(--transition-smooth),
+              box-shadow var(--transition-smooth);
 }
 
-.auth-field--underline input:focus {
-  border-bottom-color: var(--color-primary-500);
-  box-shadow: none;
+.auth-overlay--bank .auth-form input:focus {
+  outline: none;
+  border-color: var(--color-primary-500);
+  background: var(--color-white);
+  box-shadow: 0 0 0 4px var(--color-overlay-sm);
   transform: none;
 }
 
-.auth-field--underline .auth-password-wrap input {
-  padding-right: 48px;
+.auth-overlay--bank .auth-form input:hover:not(:focus) {
+  border-color: var(--color-gray-300);
+}
+
+.auth-overlay--bank .auth-password-wrap input {
+  padding-right: 52px;
 }
 
 .auth-btn-primary {
@@ -543,6 +596,10 @@
 
 body.auth-overlay-open {
   overflow: hidden;
+}
+
+#auth-login-flow > .auth-biometric-btn {
+  margin-top: var(--space-2);
 }
 
 @media (min-width: 520px) {

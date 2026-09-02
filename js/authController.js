@@ -4,8 +4,34 @@
  */
 
 var _authFocusTrap = null;
+var _authDesbloqueadoNestaCarga = false;
+/* Diálogo de biometria nativo tira o WebView de foco (visibilitychange=hidden).
+   Sem esta trava, o bloqueio-ao-retomar tratava isso como "saiu do app" e
+   reabria/retriggerava a biometria em loop, impedindo o login por senha. */
+var _authBiometricInFlight = false;
+/* Auto-biometria dispara só uma vez por retomada; se falhar (ex.: token
+   expirado), o usuário entra com senha sem a tela reabrir sozinha. */
+var _authBiometricAutoTried = false;
 var AUTH_LAST_EMAIL_KEY = 'fp-auth-last-email';
 var AUTH_DISPLAY_NAME_KEY = 'fp-auth-display-name';
+
+function _authMarcarDesbloqueado() {
+  _authDesbloqueadoNestaCarga = true;
+}
+
+function _authRevogarDesbloqueio() {
+  _authDesbloqueadoNestaCarga = false;
+}
+
+function _authEstaDesbloqueado() {
+  return _authDesbloqueadoNestaCarga;
+}
+
+function _authTemSessaoNuvem() {
+  if (typeof SUPA_AUTH === 'undefined' || !SUPA_AUTH.isActive || !SUPA_AUTH.isActive()) return false;
+  var sess = SUPA_AUTH.getSessionSync();
+  return !!(sess && sess.user);
+}
 
 function _authLer(key) {
   try { return localStorage.getItem(key) || ''; } catch (e) { return ''; }
@@ -132,6 +158,7 @@ function setupAuthUI() {
     if (typeof AUTH_BIOMETRIC !== 'undefined' && AUTH_BIOMETRIC.refreshBiometricUI) {
       AUTH_BIOMETRIC.refreshBiometricUI();
     }
+    _atualizarBotaoSairAuth();
     if (_authFocusTrap && typeof _authFocusTrap.refresh === 'function') {
       _authFocusTrap.refresh();
     }
@@ -157,7 +184,9 @@ function setupAuthUI() {
     showTab('login');
   }
 
-  function _authOnSuccess(overlay) {
+  function _authOnSuccess(overlay, opts) {
+    opts = opts || {};
+    _authMarcarDesbloqueado();
     var emailInput = document.getElementById('auth-login-email');
     var email = emailInput ? emailInput.value.trim() : '';
     var sess = (typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.isActive && SUPA_AUTH.isActive())
@@ -165,17 +194,28 @@ function setupAuthUI() {
       : DADOS.getSessao();
     var nome = (sess && sess.user && sess.user.name) || _authLer(AUTH_DISPLAY_NAME_KEY);
     if (email) _lembrarUsuario(email, nome);
-    if (typeof AUTH_BIOMETRIC !== 'undefined' && AUTH_BIOMETRIC.onLoginSuccess) {
-      AUTH_BIOMETRIC.onLoginSuccess(sess);
+
+    function _finalizar() {
+      if (typeof AUTH_BIOMETRIC !== 'undefined' && AUTH_BIOMETRIC.onLoginSuccess) {
+        AUTH_BIOMETRIC.onLoginSuccess(sess);
+      }
+      _fecharAuthOverlay(overlay);
+      if (typeof BILLING !== 'undefined' && BILLING.sync) {
+        BILLING.sync().catch(function() {});
+      }
+      if (typeof INIT_CONFIG !== 'undefined' && INIT_CONFIG.aplicarVisibilidadeNuvem) {
+        INIT_CONFIG.aplicarVisibilidadeNuvem();
+      }
+      atualizarBarraSessao();
     }
-    _fecharAuthOverlay(overlay);
-    if (typeof BILLING !== 'undefined' && BILLING.sync) {
-      BILLING.sync().catch(function() {});
+
+    if (!opts.viaBiometric
+        && typeof AUTH_BIOMETRIC !== 'undefined'
+        && AUTH_BIOMETRIC.offerEnableAfterLogin) {
+      AUTH_BIOMETRIC.offerEnableAfterLogin().finally(_finalizar);
+      return;
     }
-    if (typeof INIT_CONFIG !== 'undefined' && INIT_CONFIG.aplicarVisibilidadeNuvem) {
-      INIT_CONFIG.aplicarVisibilidadeNuvem();
-    }
-    atualizarBarraSessao();
+    _finalizar();
   }
 
   function _authOnError(err, fallbackMsg) {
@@ -273,6 +313,7 @@ function setupAuthUI() {
     if (_authFocusTrap && typeof _authFocusTrap.refresh === 'function') {
       _authFocusTrap.refresh();
     }
+    _atualizarBotaoSairAuth();
   }
 
   tabs.forEach(function(tab) {
@@ -301,8 +342,47 @@ function setupAuthUI() {
     }
   });
 
+  function _tentarBiometriaAutomatica() {
+    if (_authBiometricAutoTried || _authBiometricInFlight) return;
+    if (typeof AUTH_BIOMETRIC === 'undefined' || !AUTH_BIOMETRIC.isEnabled || !AUTH_BIOMETRIC.isEnabled()) return;
+    if (!AUTH_BIOMETRIC.tryLogin) return;
+    _authBiometricAutoTried = true;
+    AUTH_BIOMETRIC.isAvailable().then(function(ok) {
+      if (!ok) return;
+      _authBiometricInFlight = true;
+      AUTH_BIOMETRIC.tryLogin().then(function(result) {
+        var emailInput = document.getElementById('auth-login-email');
+        if (emailInput && result && result.email) emailInput.value = result.email;
+        _authOnSuccess(overlay, { viaBiometric: true });
+      }).catch(function() {
+        /* Falhou/cancelou: silencioso. O usuário conclui com senha e a tela
+           NÃO reabre sozinha (guardas _authBiometricAutoTried/InFlight). */
+      }).finally(function() {
+        _authBiometricInFlight = false;
+      });
+    });
+  }
+
+  function _mostrarDesbloqueioSessao() {
+    var emailInput = document.getElementById('auth-login-email');
+    var sess = (typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.isActive && SUPA_AUTH.isActive())
+      ? SUPA_AUTH.getSessionSync()
+      : DADOS.getSessao();
+    if (sess && sess.user && sess.user.email && emailInput) {
+      emailInput.value = sess.user.email;
+      if (sess.user.name) _authSalvar(AUTH_DISPLAY_NAME_KEY, sess.user.name);
+    }
+    showTab('login');
+    showLoginStep('password');
+    setTimeout(_tentarBiometriaAutomatica, 350);
+  }
+
   overlay.addEventListener('fp-auth-reopen', function() {
     showTab('login');
+  });
+
+  overlay.addEventListener('fp-auth-unlock', function() {
+    _mostrarDesbloqueioSessao();
   });
 
   if (emailStepForm) {
@@ -344,16 +424,18 @@ function setupAuthUI() {
     biometricBtn.addEventListener('click', function() {
       if (typeof AUTH_BIOMETRIC === 'undefined' || !AUTH_BIOMETRIC.tryLogin) return;
       biometricBtn.disabled = true;
+      _authBiometricInFlight = true;
       AUTH_BIOMETRIC.tryLogin().then(function(result) {
         var emailInput = document.getElementById('auth-login-email');
         if (emailInput && result && result.email) emailInput.value = result.email;
-        _authOnSuccess(overlay);
+        _authOnSuccess(overlay, { viaBiometric: true });
       }).catch(function(err) {
         var msg = (err && err.message) || 'Biometria não reconhecida.';
         if (!/cancel|user cancel/i.test(msg)) {
           UTILS.mostrarToast(msg, 'error');
         }
       }).finally(function() {
+        _authBiometricInFlight = false;
         biometricBtn.disabled = false;
       });
     });
@@ -387,6 +469,7 @@ function setupAuthUI() {
       var code = document.getElementById('auth-totp-code').value.trim();
       _setAuthSubmitting(totpForm, true);
       DADOS.verifyTotpLoginApi(_pendingTotpToken, code).then(function() {
+        _authMarcarDesbloqueado();
         _fecharAuthOverlay(overlay);
         hideTotpStep();
         if (typeof BILLING !== 'undefined' && BILLING.sync) BILLING.sync().catch(function() {});
@@ -471,12 +554,18 @@ function setupAuthUI() {
 
   if (typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.isActive()) {
     _checkCloudReachable();
+    _abrirAuthOverlay(overlay);
     SUPA_AUTH.validate().then(function (logged) {
-      if (logged) { _fecharAuthOverlay(overlay); }
-      else { _abrirAuthOverlay(overlay); }
-      showTab('login');
+      if (logged && _authEstaDesbloqueado()) {
+        _fecharAuthOverlay(overlay);
+      } else if (logged) {
+        _mostrarDesbloqueioSessao();
+      } else {
+        showTab('login');
+      }
       atualizarBarraSessao();
     });
+    _authRegistrarBloqueioAoRetomar(overlay);
     return false;
   }
 
@@ -484,12 +573,15 @@ function setupAuthUI() {
   if (sessao && sessao.user) {
     if (DADOS._apiAtiva()) {
       DADOS.validarSessaoApi().then(function(ok) {
-        if (ok) {
+        if (ok && _authEstaDesbloqueado()) {
           _fecharAuthOverlay(overlay);
+        } else if (ok) {
+          _abrirAuthOverlay(overlay);
+          _mostrarDesbloqueioSessao();
         } else {
           _abrirAuthOverlay(overlay);
+          showTab('login');
         }
-        showTab('login');
         atualizarBarraSessao();
       });
       return false;
@@ -510,7 +602,31 @@ function setupAuthUI() {
   _abrirAuthOverlay(overlay);
   showTab('login');
   atualizarBarraSessao();
+  setupLogoutButton();
+  _atualizarBotaoSairAuth();
   return false;
+}
+
+/** Ao voltar do background, pede senha/biometria de novo (estilo app bancário). */
+function _authRegistrarBloqueioAoRetomar(overlay) {
+  if (!overlay || overlay.dataset.authResumeBound === '1') return;
+  overlay.dataset.authResumeBound = '1';
+
+  document.addEventListener('visibilitychange', function() {
+    if (!_authTemSessaoNuvem()) return;
+    /* O prompt de biometria nativo esconde o WebView. Não é o usuário saindo do
+       app — ignorar para não revogar o desbloqueio nem reabrir em loop. */
+    if (_authBiometricInFlight) return;
+    if (document.visibilityState === 'hidden') {
+      _authRevogarDesbloqueio();
+      _authBiometricAutoTried = false; // saída real: permite auto-biometria ao voltar
+      return;
+    }
+    if (document.visibilityState === 'visible' && !_authEstaDesbloqueado()) {
+      _abrirAuthOverlay(overlay);
+      overlay.dispatchEvent(new CustomEvent('fp-auth-unlock'));
+    }
+  });
 }
 
 function atualizarBarraSessao() {
@@ -525,35 +641,54 @@ function atualizarBarraSessao() {
   }
 }
 
+function _executarLogout() {
+  _authRevogarDesbloqueio();
+  DADOS.encerrarSessao();
+  var overlay = document.getElementById('auth-overlay');
+  if (overlay) {
+    _abrirAuthOverlay(overlay);
+    overlay.dispatchEvent(new CustomEvent('fp-auth-reopen'));
+  }
+  atualizarBarraSessao();
+  if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+    UTILS.mostrarToast('Você saiu da conta. Seus dados continuam neste aparelho.', 'info');
+  }
+}
+
+function sairDaConta() {
+  if (typeof INIT_MODALS !== 'undefined' && INIT_MODALS.confirm) {
+    INIT_MODALS.confirm('Deseja sair da sua conta?', function() {
+      _executarLogout();
+    });
+  } else {
+    _executarLogout();
+  }
+}
+
+function _atualizarBotaoSairAuth() {
+  var btn = document.getElementById('auth-exit-btn');
+  if (!btn) return;
+  btn.hidden = !_authTemSessaoNuvem();
+}
+
 function setupLogoutButton() {
   var btn = document.getElementById('btn-logout');
   if (!btn || btn.dataset.logoutBound === '1') return;
   btn.dataset.logoutBound = '1';
-  btn.addEventListener('click', function() {
-    if (typeof INIT_MODALS !== 'undefined' && INIT_MODALS.confirm) {
-      INIT_MODALS.confirm('Deseja sair da sua conta?', function() {
-        DADOS.encerrarSessao();
-        var overlay = document.getElementById('auth-overlay');
-        if (overlay) {
-          _abrirAuthOverlay(overlay);
-          overlay.dispatchEvent(new CustomEvent('fp-auth-reopen'));
-        }
-        atualizarBarraSessao();
-        UTILS.mostrarToast('Você saiu da conta. Seus dados continuam neste aparelho.', 'info');
-      });
-    } else {
-      DADOS.encerrarSessao();
-      var overlay = document.getElementById('auth-overlay');
-      if (overlay) {
-        _abrirAuthOverlay(overlay);
-        overlay.dispatchEvent(new CustomEvent('fp-auth-reopen'));
-      }
-      atualizarBarraSessao();
-      UTILS.mostrarToast('Você saiu da conta. Seus dados continuam neste aparelho.', 'info');
-    }
-  });
+  btn.addEventListener('click', sairDaConta);
+
+  var authExit = document.getElementById('auth-exit-btn');
+  if (authExit && authExit.dataset.logoutBound !== '1') {
+    authExit.dataset.logoutBound = '1';
+    authExit.addEventListener('click', sairDaConta);
+  }
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { setupAuthUI: setupAuthUI, atualizarBarraSessao: atualizarBarraSessao, setupLogoutButton: setupLogoutButton };
+  module.exports = {
+    setupAuthUI: setupAuthUI,
+    atualizarBarraSessao: atualizarBarraSessao,
+    setupLogoutButton: setupLogoutButton,
+    sairDaConta: sairDaConta,
+  };
 }

@@ -433,6 +433,7 @@ const LIFECYCLE_BOOT = {
           && typeof setupAuthUI === 'function') {
         setupAuthUI();
       }
+      if (typeof setupLogoutButton === 'function') setupLogoutButton();
       if (typeof atualizarBarraSessao === 'function') atualizarBarraSessao();
 
       // Onboarding (adiado para não competir com auth/PIN)
