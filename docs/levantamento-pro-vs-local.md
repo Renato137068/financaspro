@@ -71,7 +71,7 @@ Paywall não abre sem nuvem (`init-billing.js:108-110`) — usuário local não 
 | Arquivo | Nota |
 |---|---|
 | `auditoria-produto-pos-fases.html` | Já documenta “Local: ilimitado” vs nuvem FREE (`linha ~192, 221`) — alinhado com código |
-| `auditoria-produto.html` (original) | Pode estar desatualizado vs enforcement atual — não alterar nesta tarefa |
+| Auditoria de produto (set/2026) | Substituída por `auditoria-produto-pos-fases.html` |
 
 ---
 

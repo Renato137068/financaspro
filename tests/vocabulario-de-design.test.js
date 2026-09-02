@@ -57,7 +57,6 @@ const HISTORICO = new RegExp([
 const ARQUIVOS = varrer(raiz).filter(function(p) {
   var base = path.basename(p);
   if (base === path.basename(__filename)) return false;
-  if (base === 'auditoria-produto.html') return false;
   if (base === 'auditoria-produto-pos-fases.html') return false;
   return true;
 });

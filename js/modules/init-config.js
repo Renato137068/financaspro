@@ -102,6 +102,9 @@ const INIT_CONFIG = {
     if (typeof INIT_OPEN_FINANCE !== 'undefined' && INIT_OPEN_FINANCE.refreshCard) {
       INIT_OPEN_FINANCE.refreshCard();
     }
+    if (typeof AUTH_BIOMETRIC !== 'undefined' && AUTH_BIOMETRIC.refreshBiometricUI) {
+      AUTH_BIOMETRIC.refreshBiometricUI();
+    }
   },
 
   _updateAppFooter: function() {

@@ -30,6 +30,17 @@ describe('Fase 9 — UX e acessibilidade', () => {
     const auth = fs.readFileSync(path.join(root, 'js/authController.js'), 'utf8');
     expect(auth).toContain('VALIDATIONS.validarSenha');
   });
+
+  test('login em duas etapas e biometria no app nativo', () => {
+    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+    const auth = fs.readFileSync(path.join(root, 'js/authController.js'), 'utf8');
+    const bio = fs.readFileSync(path.join(root, 'js/auth-biometric.js'), 'utf8');
+    expect(html).toContain('auth-login-step-email');
+    expect(html).toContain('auth-biometric-btn');
+    expect(html).toContain('auth-greeting-name');
+    expect(auth).toContain('showLoginStep');
+    expect(bio).toContain('tryLogin');
+  });
 });
 
 describe('Fase 9 — feedback de sincronização', () => {

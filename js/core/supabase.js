@@ -136,6 +136,34 @@
       }).catch(function () { return null; });
     },
 
+    getRefreshToken: function () {
+      if (_session && _session.refresh_token) return Promise.resolve(_session.refresh_token);
+      return client.auth.getSession().then(function (r) {
+        _session = (r && r.data && r.data.session) || null;
+        return _session ? _session.refresh_token : null;
+      }).catch(function () { return null; });
+    },
+
+    restoreSession: function (refreshToken) {
+      if (!refreshToken) return Promise.reject(new Error('Sessão expirada. Entre com sua senha.'));
+      return client.auth.setSession({ refresh_token: refreshToken }).then(function (r) {
+        if (r.error) throw new Error(_msg(r.error));
+        _session = (r.data && r.data.session) || null;
+        if (!_session) throw new Error('Não foi possível restaurar a sessão.');
+        return _toSessao(_session);
+      });
+    },
+
+    resetPasswordEmail: function (email) {
+      var redirect = (typeof window !== 'undefined' && window.location)
+        ? (window.location.origin + '/')
+        : undefined;
+      return client.auth.resetPasswordForEmail(email, { redirectTo: redirect }).then(function (r) {
+        if (r.error) throw new Error(_msg(r.error));
+        return true;
+      });
+    },
+
     /** LGPD / Play Store — apaga dados na nuvem e encerra sessão Supabase. */
     deleteAccount: function () {
       return client.rpc('fp_delete_own_account').then(function (r) {

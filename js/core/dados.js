@@ -947,7 +947,6 @@ var DADOS = {
       }
       if (typeof APP_STORE !== 'undefined') APP_STORE.hydrateFromDados();
       self.setupStorageSync();
-      self._mostrarDicaMultiAba();
       if (typeof SESSION_LOG !== 'undefined') {
         SESSION_LOG.registrar('init_dados', { backend: self._transacoesBackend || 'localStorage' });
       }

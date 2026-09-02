@@ -60,42 +60,58 @@
      conteúdo. Precisa ser o primeiro elemento focável do documento. -->
 <a href="#main-content" class="skip-link">Pular para o conteúdo principal</a>
 
-<div id="auth-overlay" class="auth-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="auth-dialog-title" aria-describedby="auth-message">
-  <div class="auth-card">
-    <div class="auth-brand">
-      <div class="auth-logo brand-logo-badge" aria-hidden="true"><img src="icons/logo.svg" alt="" class="brand-mark"></div>
-      <div>
-        <p class="auth-kicker">FinançasPro</p>
-        <h2 id="auth-dialog-title">Suas finanças, sob controle</h2>
+<div id="auth-overlay" class="auth-overlay auth-overlay--bank" style="display:none" role="dialog" aria-modal="true" aria-labelledby="auth-dialog-title" aria-describedby="auth-message">
+  <div class="auth-shell">
+    <header class="auth-top-bar">
+      <img src="icons/logo.svg" alt="FinançasPro" class="auth-top-logo brand-mark" width="120" height="32">
+    </header>
+    <div class="auth-card">
+      <div class="auth-brand auth-brand--compact">
+        <h2 id="auth-dialog-title" class="auth-screen-title">Entrar</h2>
       </div>
-    </div>
-    <p id="auth-message">Controle gastos, metas e contas em um só lugar. Grátis para começar.</p>
-    <div id="auth-env-warning" class="auth-env-warning" style="display:none"></div>
-    <div class="auth-tabs" role="tablist" aria-label="Tipo de autenticação">
-      <button type="button" class="auth-tab ativo" role="tab" id="auth-tab-login" aria-selected="true" aria-controls="auth-login-form" data-auth-tab="login" tabindex="0">Entrar</button>
-      <button type="button" class="auth-tab" role="tab" id="auth-tab-register" aria-selected="false" aria-controls="auth-register-form" data-auth-tab="register" tabindex="-1">Criar conta</button>
-    </div>
-    <form id="auth-login-form" class="auth-form" role="tabpanel" aria-labelledby="auth-tab-login" autocomplete="on">
-      <div class="auth-field">
-        <label for="auth-login-email">Email</label>
-        <input type="email" id="auth-login-email" name="username" autocomplete="username"
-               inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false"
-               placeholder="voce@email.com" required>
+      <p id="auth-message" class="auth-message">Digite seu e-mail para continuar.</p>
+      <div id="auth-env-warning" class="auth-env-warning" style="display:none"></div>
+      <div class="auth-tabs" role="tablist" aria-label="Tipo de autenticação">
+        <button type="button" class="auth-tab ativo" role="tab" id="auth-tab-login" aria-selected="true" aria-controls="auth-login-flow" data-auth-tab="login" tabindex="0">Entrar</button>
+        <button type="button" class="auth-tab" role="tab" id="auth-tab-register" aria-selected="false" aria-controls="auth-register-form" data-auth-tab="register" tabindex="-1">Criar conta</button>
       </div>
-      <div class="auth-field">
-        <label for="auth-login-password">Senha</label>
-        <div class="auth-password-wrap">
-          <input type="password" id="auth-login-password" name="password" autocomplete="current-password"
-                 autocapitalize="off" autocorrect="off" spellcheck="false"
-                 placeholder="Sua senha" required>
-          <button type="button" class="auth-password-toggle" data-target="auth-login-password"
-                  aria-label="Mostrar senha" aria-pressed="false">
-            <i data-lucide="eye" aria-hidden="true"></i>
+      <div id="auth-login-flow" role="tabpanel" aria-labelledby="auth-tab-login">
+        <form id="auth-login-step-email" class="auth-form auth-step" data-auth-step="email" autocomplete="on">
+          <div class="auth-field auth-field--underline">
+            <label for="auth-login-email">E-mail</label>
+            <input type="email" id="auth-login-email" name="username" autocomplete="username"
+                   inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false"
+                   placeholder="voce@email.com" required>
+          </div>
+          <button type="submit" class="btn-primario auth-btn-primary">Continuar</button>
+          <button type="button" id="auth-biometric-btn" class="auth-biometric-btn" hidden>
+            <i data-lucide="fingerprint" aria-hidden="true"></i>
+            <span>Entrar com biometria</span>
           </button>
-        </div>
+        </form>
+        <form id="auth-login-form" class="auth-form auth-step" data-auth-step="password" hidden autocomplete="on">
+          <div class="auth-user-block">
+            <div class="auth-user-avatar" aria-hidden="true"><i data-lucide="user"></i></div>
+            <h3 id="auth-greeting-name" class="auth-greeting-name">Olá!</h3>
+            <p id="auth-greeting-email" class="auth-greeting-email"></p>
+          </div>
+          <div class="auth-field auth-field--underline">
+            <label for="auth-login-password">Senha</label>
+            <div class="auth-password-wrap">
+              <input type="password" id="auth-login-password" name="password" autocomplete="current-password"
+                     autocapitalize="off" autocorrect="off" spellcheck="false"
+                     placeholder="Sua senha" required>
+              <button type="button" class="auth-password-toggle" data-target="auth-login-password"
+                      aria-label="Mostrar senha" aria-pressed="false">
+                <i data-lucide="eye" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+          <button type="button" id="auth-forgot-password" class="auth-link-btn">Esqueci minha senha</button>
+          <button type="submit" class="btn-primario auth-btn-primary">Entrar</button>
+          <button type="button" id="auth-change-email" class="auth-link-btn auth-link-btn--center">Usar outro e-mail</button>
+        </form>
       </div>
-      <button type="submit" class="btn-primario">Entrar</button>
-    </form>
     <form id="auth-totp-form" class="auth-form" hidden style="display:none" aria-labelledby="auth-totp-title">
       <h3 id="auth-totp-title" class="auth-totp-title">Verificação em duas etapas</h3>
       <p class="auth-totp-hint">Digite o código de 6 dígitos do seu app autenticador.</p>
@@ -133,7 +149,8 @@
       </div>
       <button type="submit" class="btn-primario">Criar conta</button>
     </form>
-    <p class="auth-footer-note">Seus dados ficam no seu aparelho e são criptografados na nuvem.</p>
+      <p class="auth-footer-note">Seus dados ficam no seu aparelho e são criptografados na nuvem.</p>
+    </div>
   </div>
 </div>
 
@@ -1230,6 +1247,21 @@
           </label>
         </div>
 
+        <div class="perfil-card perfil-card-toggle" id="perfil-biometric-card" data-requer-nuvem hidden>
+          <div class="perfil-card-icon-wrapper">
+            <i data-lucide="fingerprint" aria-hidden="true"></i>
+          </div>
+          <div class="perfil-card-content">
+            <span class="perfil-card-title">Entrar com biometria</span>
+            <span class="perfil-card-subtitle" id="perfil-biometric-status">Disponível no app Android</span>
+            <span class="perfil-card-hint">Desbloqueia sua conta com digital ou reconhecimento facial neste aparelho.</span>
+          </div>
+          <label class="perfil-switch">
+            <input type="checkbox" id="chk-biometric" aria-label="Ativar login com biometria">
+            <span class="perfil-switch-slider"></span>
+          </label>
+        </div>
+
         <div class="perfil-card perfil-card-toggle" id="perfil-2fa-card" data-requer-nuvem>
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="shield-check" aria-hidden="true"></i>
@@ -1803,6 +1835,7 @@
 <script defer src="js/play-billing.js"></script>
 <script defer src="js/fp-native-billing-bridge.js"></script>
 <script defer src="js/open-finance.js"></script>
+<script defer src="js/auth-biometric.js"></script>
 <script defer src="js/authController.js"></script>
 <!-- Onboarding antes do bootstrap: garante ONBOARDING no post-init (dev e prod) -->
 <script defer src="js/onboarding.js"></script>

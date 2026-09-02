@@ -135,8 +135,9 @@ describe('auditoria — fase 2 (roadmap)', function() {
     expect(extratoSrc).toMatch(/extrato-lista-limite/);
   });
 
-  test('multi-aba documentado no perfil e na inicialização', function() {
-    expect(dadosSrc).toMatch(/_mostrarDicaMultiAba/);
+  test('multi-aba documentado no perfil; aviso só em conflito real', function() {
+    expect(dadosSrc).toMatch(/_mostrarBannerMultiAba/);
+    expect(dadosSrc).not.toMatch(/setupStorageSync\(\)[\s\S]{0,120}_mostrarDicaMultiAba/);
     expect(htmlFresh).toMatch(/perfil-dica-multiaba/);
   });
 

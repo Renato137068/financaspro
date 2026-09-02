@@ -1,17 +1,18 @@
 /**
  * sync-indicator.js — badge de estado de persistência/sincronização.
  *
- * Local: discreto no topo (não cobre nav/cards). Transient (salvando/sync):
- * toast curto. Falha/pendente: badge com dismiss. "Salvo neste dispositivo"
- * pode ser dispensado (sessionStorage) e reaparece só em mudança de estado.
+ * Só aparece quando algo precisa de atenção (offline, falha, pendente,
+ * conflito). Estados saudáveis (local/ok) ficam silenciosos para não poluir
+ * cada abertura do app. Toasts de progresso só após o boot inicial.
  */
 (function() {
   'use strict';
 
   var DISMISS_KEY = 'fp-sync-indicator-dismissed';
+  var BOOT_GRACE_MS = 3500;
   var _lastCls = '';
   var _toastTimer = null;
-  var _autoHideTimer = null;
+  var _bootGrace = true;
 
   function apiAtiva() {
     try { return typeof DADOS !== 'undefined' && DADOS._nuvemAtiva && DADOS._nuvemAtiva(); }
@@ -98,7 +99,7 @@
       return { cls: 'pendente', label: st.outboxCount + ' alteração(ões) aguardando envio', persistente: true };
     }
     var quando = textoRelativo(st.lastSyncAt);
-    return { cls: 'ok', label: 'Salvo no servidor' + (quando ? ' · ' + quando : ''), toast: true, ephemeral: true };
+    return { cls: 'ok', label: 'Salvo no servidor' + (quando ? ' · ' + quando : ''), silencioso: true };
   }
 
   function foiDispensado(cls) {
@@ -189,48 +190,37 @@
         main.setAttribute('aria-label', info.label + '. Toque para saber onde ficam os seus dados.');
       }
 
-      // Toast efêmero para salvando/ok — não ocupa a tela o tempo todo
-      if (info.toast && info.cls !== _lastCls) {
-        if (info.ephemeral || info.cls === 'salvando' || info.cls === 'sincronizando') {
-          mostrarToastCurto(info.label);
-          _lastCls = info.cls;
-          if (info.ephemeral) {
-            node.hidden = true;
-            node.classList.add('sync-indicator--hidden');
-            return;
-          }
-        }
-      }
+      var prevCls = _lastCls;
       _lastCls = info.cls;
 
-      if (foiDispensado(info.cls) && info.persistente && info.cls === 'local') {
+      // Estados saudáveis: nada na tela (evita "servidor online" a cada abertura)
+      if (info.silencioso || info.cls === 'local' || info.cls === 'ok') {
         node.hidden = true;
         node.classList.add('sync-indicator--hidden');
         return;
       }
 
-      // Estados que precisam atenção ficam no topo; local fica discreto e dispensável
-      node.hidden = false;
-      node.classList.remove('sync-indicator--hidden', 'sync-indicator--toast');
-      clearTimeout(_autoHideTimer);
-      if (info.cls === 'local' || info.cls === 'ok') {
-        node.classList.add('sync-indicator--subtle');
-        // "Salvo neste dispositivo"/"Salvo no servidor" são reassurance: aparecem
-        // e somem sozinhos. Antes ficavam fixos no topo-direito encavalando o
-        // cabeçalho e o conteúdo. Estados que pedem atenção (falha/offline/
-        // pendente) continuam persistentes.
-        _autoHideTimer = setTimeout(function() {
-          node.hidden = true;
-          node.classList.add('sync-indicator--hidden');
-        }, 4500);
-      } else {
-        node.classList.remove('sync-indicator--subtle');
+      // Progresso ativo: toast curto só depois do boot e só na transição
+      if (!_bootGrace && info.toast && info.cls !== prevCls) {
+        if (info.cls === 'salvando' || info.cls === 'sincronizando') {
+          mostrarToastCurto(info.label);
+        }
       }
+
+      if (foiDispensado(info.cls) && info.persistente) {
+        node.hidden = true;
+        node.classList.add('sync-indicator--hidden');
+        return;
+      }
+
+      node.hidden = false;
+      node.classList.remove('sync-indicator--hidden', 'sync-indicator--toast', 'sync-indicator--subtle');
     } catch (e) { /* nunca quebra o app */ }
   }
 
   function iniciar() {
     render();
+    setTimeout(function() { _bootGrace = false; }, BOOT_GRACE_MS);
     if (typeof window !== 'undefined' && window.addEventListener) {
       window.addEventListener('online', render);
       window.addEventListener('offline', render);

@@ -1,15 +1,41 @@
 /**
  * authController.js - UI de autenticacao e sessao.
- * Mantem as funcoes publicas usadas pelo bootstrap.
+ * Login em duas etapas (e-mail → senha) estilo app financeiro.
  */
 
 var _authFocusTrap = null;
+var AUTH_LAST_EMAIL_KEY = 'fp-auth-last-email';
+var AUTH_DISPLAY_NAME_KEY = 'fp-auth-display-name';
+
+function _authLer(key) {
+  try { return localStorage.getItem(key) || ''; } catch (e) { return ''; }
+}
+
+function _authSalvar(key, val) {
+  try { if (val) localStorage.setItem(key, val); } catch (e) { /* noop */ }
+}
+
+function _mascararEmail(email) {
+  if (!email || email.indexOf('@') < 1) return email || '';
+  var parts = email.split('@');
+  var local = parts[0];
+  var domain = parts[1];
+  if (local.length <= 2) return '**@' + domain;
+  return local.charAt(0) + '***' + local.charAt(local.length - 1) + '@' + domain;
+}
+
+function _primeiroNome(nome) {
+  if (!nome) return '';
+  return String(nome).trim().split(/\s+/)[0] || '';
+}
 
 function _abrirAuthOverlay(overlay) {
   if (!overlay) return;
   overlay.style.display = 'flex';
   document.body.classList.add('auth-overlay-open');
-  var first = document.getElementById('auth-login-email') || overlay.querySelector('input, button');
+  var first = document.getElementById('auth-login-email')
+    || document.getElementById('auth-login-password')
+    || overlay.querySelector('input, button');
   if (typeof FocusTrap !== 'undefined') {
     _authFocusTrap = new FocusTrap(overlay);
     _authFocusTrap.activate(first || undefined);
@@ -38,6 +64,11 @@ function _setAuthSubmitting(form, submitting) {
   }
 }
 
+function _lembrarUsuario(email, nome) {
+  if (email) _authSalvar(AUTH_LAST_EMAIL_KEY, email.trim().toLowerCase());
+  if (nome) _authSalvar(AUTH_DISPLAY_NAME_KEY, nome.trim());
+}
+
 function setupAuthUI() {
   var overlay = document.getElementById('auth-overlay');
   if (!overlay) return false;
@@ -47,17 +78,69 @@ function setupAuthUI() {
   overlay.dataset.authBound = '1';
 
   var tabs = overlay.querySelectorAll('.auth-tab');
+  var loginFlow = document.getElementById('auth-login-flow');
+  var emailStepForm = document.getElementById('auth-login-step-email');
   var loginForm = document.getElementById('auth-login-form');
   var totpForm = document.getElementById('auth-totp-form');
   var registerForm = document.getElementById('auth-register-form');
   var message = document.getElementById('auth-message');
   var warning = document.getElementById('auth-env-warning');
+  var screenTitle = document.getElementById('auth-dialog-title');
+  var biometricBtn = document.getElementById('auth-biometric-btn');
+  var changeEmailBtn = document.getElementById('auth-change-email');
+  var forgotBtn = document.getElementById('auth-forgot-password');
   var _pendingTotpToken = null;
+  var _loginStep = 'email';
+
+  function _atualizarSaudacao(email) {
+    var nome = _authLer(AUTH_DISPLAY_NAME_KEY);
+    var greetName = document.getElementById('auth-greeting-name');
+    var greetEmail = document.getElementById('auth-greeting-email');
+    if (greetName) {
+      greetName.textContent = nome ? ('Olá, ' + _primeiroNome(nome).toUpperCase() + '!') : 'Olá!';
+    }
+    if (greetEmail) greetEmail.textContent = _mascararEmail(email);
+  }
+
+  function showLoginStep(step) {
+    _loginStep = step;
+    var emailInput = document.getElementById('auth-login-email');
+    if (emailStepForm) {
+      emailStepForm.hidden = step !== 'email';
+      emailStepForm.style.display = step === 'email' ? '' : 'none';
+    }
+    if (loginForm) {
+      loginForm.hidden = step !== 'password';
+      loginForm.style.display = step === 'password' ? '' : 'none';
+    }
+    if (screenTitle) screenTitle.textContent = step === 'password' ? 'Entrar' : 'Entrar';
+    if (message) {
+      message.textContent = step === 'password'
+        ? 'Digite sua senha para continuar.'
+        : 'Digite seu e-mail para continuar.';
+    }
+    if (step === 'password' && emailInput) {
+      _atualizarSaudacao(emailInput.value.trim());
+      var passInput = document.getElementById('auth-login-password');
+      if (passInput) {
+        passInput.value = '';
+        passInput.focus();
+      }
+    } else if (emailInput) {
+      emailInput.focus();
+    }
+    if (typeof AUTH_BIOMETRIC !== 'undefined' && AUTH_BIOMETRIC.refreshBiometricUI) {
+      AUTH_BIOMETRIC.refreshBiometricUI();
+    }
+    if (_authFocusTrap && typeof _authFocusTrap.refresh === 'function') {
+      _authFocusTrap.refresh();
+    }
+  }
 
   function showTotpStep(pendingToken) {
     _pendingTotpToken = pendingToken;
     tabs.forEach(function(tab) { tab.style.display = 'none'; });
-    if (loginForm) { loginForm.style.display = 'none'; loginForm.hidden = true; }
+    if (loginFlow) loginFlow.style.display = 'none';
     if (registerForm) { registerForm.style.display = 'none'; registerForm.hidden = true; }
     if (totpForm) { totpForm.style.display = ''; totpForm.hidden = false; }
     if (message) message.textContent = 'Digite o código do app autenticador.';
@@ -69,11 +152,22 @@ function setupAuthUI() {
   function hideTotpStep() {
     _pendingTotpToken = null;
     tabs.forEach(function(tab) { tab.style.display = ''; });
+    if (loginFlow) loginFlow.style.display = '';
     if (totpForm) { totpForm.style.display = 'none'; totpForm.hidden = true; }
     showTab('login');
   }
 
   function _authOnSuccess(overlay) {
+    var emailInput = document.getElementById('auth-login-email');
+    var email = emailInput ? emailInput.value.trim() : '';
+    var sess = (typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.isActive && SUPA_AUTH.isActive())
+      ? SUPA_AUTH.getSessionSync()
+      : DADOS.getSessao();
+    var nome = (sess && sess.user && sess.user.name) || _authLer(AUTH_DISPLAY_NAME_KEY);
+    if (email) _lembrarUsuario(email, nome);
+    if (typeof AUTH_BIOMETRIC !== 'undefined' && AUTH_BIOMETRIC.onLoginSuccess) {
+      AUTH_BIOMETRIC.onLoginSuccess(sess);
+    }
     _fecharAuthOverlay(overlay);
     if (typeof BILLING !== 'undefined' && BILLING.sync) {
       BILLING.sync().catch(function() {});
@@ -125,8 +219,22 @@ function setupAuthUI() {
     });
   }
 
+  function _prefillLogin() {
+    var emailInput = document.getElementById('auth-login-email');
+    var last = _authLer(AUTH_LAST_EMAIL_KEY);
+    if (emailInput && last) {
+      emailInput.value = last;
+      showLoginStep('password');
+    } else {
+      showLoginStep('email');
+    }
+  }
+
   _bindPasswordToggles(overlay);
   if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(overlay);
+  if (typeof AUTH_BIOMETRIC !== 'undefined' && AUTH_BIOMETRIC.setupPerfilToggle) {
+    AUTH_BIOMETRIC.setupPerfilToggle();
+  }
 
   function showTab(name) {
     tabs.forEach(function(tab) {
@@ -135,9 +243,9 @@ function setupAuthUI() {
       tab.setAttribute('aria-selected', active ? 'true' : 'false');
       tab.setAttribute('tabindex', active ? '0' : '-1');
     });
-    if (loginForm) {
-      loginForm.style.display = name === 'login' ? '' : 'none';
-      loginForm.hidden = name !== 'login';
+    if (loginFlow) {
+      loginFlow.style.display = name === 'login' ? '' : 'none';
+      loginFlow.hidden = name !== 'login';
     }
     if (registerForm) {
       registerForm.style.display = name === 'register' ? '' : 'none';
@@ -147,15 +255,21 @@ function setupAuthUI() {
       totpForm.style.display = 'none';
       totpForm.hidden = true;
     }
+    if (screenTitle) {
+      screenTitle.textContent = name === 'register' ? 'Criar conta' : 'Entrar';
+    }
     if (message) {
       message.textContent = name === 'login'
-        ? 'Entre para continuar seu controle financeiro.'
-        : 'Crie sua conta para começar a organizar seus dados.';
+        ? (_loginStep === 'password' ? 'Digite sua senha para continuar.' : 'Digite seu e-mail para continuar.')
+        : 'Preencha os dados para começar.';
     }
-    var focusTarget = name === 'login'
-      ? document.getElementById('auth-login-email')
-      : document.getElementById('auth-register-name');
-    if (focusTarget) focusTarget.focus();
+    if (name === 'login') {
+      _prefillLogin();
+    } else {
+      showLoginStep('email');
+      var focusTarget = document.getElementById('auth-register-name');
+      if (focusTarget) focusTarget.focus();
+    }
     if (_authFocusTrap && typeof _authFocusTrap.refresh === 'function') {
       _authFocusTrap.refresh();
     }
@@ -186,6 +300,64 @@ function setupAuthUI() {
       }
     }
   });
+
+  overlay.addEventListener('fp-auth-reopen', function() {
+    showTab('login');
+  });
+
+  if (emailStepForm) {
+    emailStepForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      var email = document.getElementById('auth-login-email').value.trim();
+      if (!email) return;
+      showLoginStep('password');
+    });
+  }
+
+  if (changeEmailBtn) {
+    changeEmailBtn.addEventListener('click', function() {
+      showLoginStep('email');
+    });
+  }
+
+  if (forgotBtn) {
+    forgotBtn.addEventListener('click', function() {
+      var email = document.getElementById('auth-login-email').value.trim();
+      if (!email) {
+        UTILS.mostrarToast('Informe seu e-mail na etapa anterior.', 'warning');
+        showLoginStep('email');
+        return;
+      }
+      if (typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.resetPasswordEmail) {
+        SUPA_AUTH.resetPasswordEmail(email).then(function() {
+          UTILS.mostrarToast('Enviamos um link de redefinição para ' + email + '.', 'info');
+        }).catch(function(err) {
+          _authOnError(err, 'Não foi possível enviar o e-mail de recuperação.');
+        });
+        return;
+      }
+      UTILS.mostrarToast('Recuperação de senha disponível apenas com login na nuvem.', 'info');
+    });
+  }
+
+  if (biometricBtn) {
+    biometricBtn.addEventListener('click', function() {
+      if (typeof AUTH_BIOMETRIC === 'undefined' || !AUTH_BIOMETRIC.tryLogin) return;
+      biometricBtn.disabled = true;
+      AUTH_BIOMETRIC.tryLogin().then(function(result) {
+        var emailInput = document.getElementById('auth-login-email');
+        if (emailInput && result && result.email) emailInput.value = result.email;
+        _authOnSuccess(overlay);
+      }).catch(function(err) {
+        var msg = (err && err.message) || 'Biometria não reconhecida.';
+        if (!/cancel|user cancel/i.test(msg)) {
+          UTILS.mostrarToast(msg, 'error');
+        }
+      }).finally(function() {
+        biometricBtn.disabled = false;
+      });
+    });
+  }
 
   if (loginForm) {
     loginForm.addEventListener('submit', function(e) {
@@ -263,11 +435,14 @@ function setupAuthUI() {
             message.textContent = 'Conta criada! Abra o e-mail de confirmação e depois toque em Entrar com a mesma senha.';
           }
           UTILS.mostrarToast('Confirme seu e-mail para entrar.', 'info');
+          _lembrarUsuario(email, nome);
           showTab('login');
           var loginEmail = document.getElementById('auth-login-email');
           if (loginEmail) loginEmail.value = email;
+          showLoginStep('password');
           return false;
         }
+        _lembrarUsuario(email, nome);
         if (typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.isActive()
             && SUPA_AUTH.getSessionSync() && SUPA_AUTH.getSessionSync().user) {
           return true;
@@ -294,7 +469,6 @@ function setupAuthUI() {
     }
   }
 
-  // Modo Supabase: a sessão do Supabase decide o overlay de login.
   if (typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.isActive()) {
     _checkCloudReachable();
     SUPA_AUTH.validate().then(function (logged) {
@@ -326,9 +500,6 @@ function setupAuthUI() {
     return true;
   }
 
-  // Sem backend configurado (piloto em modo local): não força o login —
-  // o app funciona offline com localStorage. Quando um backend for
-  // configurado (CONFIG.API_BASE_URL), o login volta a ser exibido.
   if (!DADOS._apiAtiva()) {
     _fecharAuthOverlay(overlay);
     showTab('login');
@@ -363,14 +534,20 @@ function setupLogoutButton() {
       INIT_MODALS.confirm('Deseja sair da sua conta?', function() {
         DADOS.encerrarSessao();
         var overlay = document.getElementById('auth-overlay');
-        if (overlay) _abrirAuthOverlay(overlay);
+        if (overlay) {
+          _abrirAuthOverlay(overlay);
+          overlay.dispatchEvent(new CustomEvent('fp-auth-reopen'));
+        }
         atualizarBarraSessao();
         UTILS.mostrarToast('Você saiu da conta. Seus dados continuam neste aparelho.', 'info');
       });
     } else {
       DADOS.encerrarSessao();
       var overlay = document.getElementById('auth-overlay');
-      if (overlay) _abrirAuthOverlay(overlay);
+      if (overlay) {
+        _abrirAuthOverlay(overlay);
+        overlay.dispatchEvent(new CustomEvent('fp-auth-reopen'));
+      }
       atualizarBarraSessao();
       UTILS.mostrarToast('Você saiu da conta. Seus dados continuam neste aparelho.', 'info');
     }

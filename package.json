@@ -1,6 +1,6 @@
 {
   "name": "financaspro-v11",
-  "version": "11.3.0",
+  "version": "11.3.2",
   "description": "FinançasPro — SaaS de Finanças Pessoais",
   "type": "module",
   "main": "index.html",
@@ -89,6 +89,7 @@
     "@capacitor/ios": "^8.4.1",
     "@capacitor/splash-screen": "^8.0.1",
     "@capacitor/status-bar": "^8.0.2",
+    "@capgo/capacitor-native-biometric": "^8.6.7",
     "@prisma/client": "^5.22.0",
     "@supabase/supabase-js": "^2.112.4",
     "bullmq": "^5.13.0",
