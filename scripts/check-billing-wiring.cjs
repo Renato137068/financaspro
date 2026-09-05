@@ -112,6 +112,17 @@ mustContain('js/alertas.js', /upsell-alertas-avancados/, 'upsell alertas FREE nu
 mustContain('js/core/supabase-sync.js', /_consumePendingInvite/, 'invite após SIGNED_IN');
 mustContain('js/play-billing.js', /getProductDetails/, 'Play product details');
 mustContain('js/fp-native-billing-bridge.js', /getProductDetails/, 'bridge getProductDetails');
+mustContain('js/core/lifecycle.js', /_reconciliarPlay\(\{\s*force:\s*true/,
+  'reconcile Play no boot (RISK-04)');
+mustContain('js/modules/init-billing.js', /_reconciliouNestaSessao/,
+  'reconcile force 1×/sessão');
+{
+  const bundle = read('scripts/bundle-app.cjs');
+  const conta = bundle.slice(bundle.indexOf('conta:'), bundle.indexOf('conta:') + 500);
+  if (/js\/billing\.js/.test(conta)) {
+    fails.push('billing.js voltou ao lazy conta (RISK-01)');
+  }
+}
 mustContain(
   'android/app/src/main/java/com/financaspro/app/PlayBillingPlugin.java',
   /getProductDetails/,

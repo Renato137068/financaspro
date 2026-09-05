@@ -44,17 +44,16 @@ const LAZY_CHUNKS = {
   assinaturas: ['js/assinaturas.js', 'js/modules/init-assinaturas.js'],
   patrimonio: ['js/patrimonio.js', 'js/modules/init-patrimonio.js'],
 
-  // Billing, 2FA e Open Finance vivem exclusivamente na aba de configurações.
-  // Vão juntos num chunk só porque são carregados pelo mesmo gatilho: separá-los
-  // renderia três requisições onde uma resolve.
+  // Paywall UI, Play Billing bridge, 2FA e Open Finance — aba Config (e
+  // Resumo/Extrato em nuvem para banner). Vão juntos: mesmo gatilho.
   //
-  // ATENÇÃO: os três eram inicializados no boot (lifecycle.js) e referenciados
-  // atrás de `typeof X !== 'undefined'`. Sem o gatilho em mudarAba('config'),
-  // eles simplesmente não existiriam e as guardas silenciariam a ausência —
-  // exatamente o tipo de falha invisível que a auditoria encontrou em 15 lugares.
-  // O teste tests/lazy-chunks.test.js trava a existência do gatilho.
+  // IMPORTANTE (RISK-01 / 2026-09): `js/billing.js` NÃO entra neste chunk.
+  // Quotas e canUse rodam em Metas/Contas/OCR/etc. sem abrir Config; se BILLING
+  // só existisse após lazy `conta`, os `typeof BILLING !== 'undefined' &&
+  // !guardQuota` falhavam abertos (Free ultrapassava limites no AAB).
+  // O núcleo BILLING fica no app.bundle.js (eager). Este chunk só traz UI e
+  // compra. tests/lazy-chunks.test.js trava: billing.js fora do lazy + gatilho.
   conta: [
-    'js/billing.js',
     'js/play-billing.js',
     'js/fp-native-billing-bridge.js',
     'js/modules/init-billing.js',

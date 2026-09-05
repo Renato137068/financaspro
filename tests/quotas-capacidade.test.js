@@ -8,7 +8,8 @@
  * Os testes dos módulos rodam sem `BILLING` no sandbox, então os guards
  * degradam para "permitido" e nunca são exercitados por lá. Aqui o stub é
  * injetado dentro do sandbox de propósito — é o único lugar que prova que o
- * limite realmente barra, e que ele some quando o BILLING não carrega.
+ * limite realmente barra. Em produção BILLING é eager (app.bundle); ausência
+ * no AAB era RISK-01 e foi removida do lazy chunk `conta`.
  */
 const { loadCoreModules, resetFixtures, execNoSandbox } = require('./load-sources');
 
@@ -101,9 +102,9 @@ describe('Sem teto atingido, tudo passa', function() {
     expect(global.METAS.listar().length).toBe(1);
   });
 
-  test('sem BILLING carregado nada é bloqueado', function() {
-    // Boot parcial, script fora do app, teste de módulo: o guard some e o
-    // usuário nunca fica preso por causa de um módulo que não carregou.
+  test('sem BILLING no sandbox de teste nada é bloqueado', function() {
+    // Sandbox de módulo: BILLING=undefined de propósito. Em produção o
+    // app.bundle inclui billing.js (eager) — ver tests/lazy-chunks.test.js.
     global.METAS.init();
     var m = global.METAS.criar({ titulo: 'Sem billing', valorAlvo: 500 });
     expect(m.id).toBeDefined();

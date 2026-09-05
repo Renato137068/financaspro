@@ -32,32 +32,36 @@ const INIT_BILLING = {
   // ativos: o play-verify renova quando a assinatura segue valida e revoga
   // quando nao segue.
   //
-  // QUANDO isto roda, de verdade: este modulo esta no chunk lazy `conta`
-  // (ver scripts/bundle-app.cjs), carregado por mudarAba('config'). No APP
-  // EMPACOTADO a reconciliacao acontece quando o usuario abre a aba Config --
-  // NAO na abertura do app. Em dev, com os scripts soltos no index.html,
-  // init() roda no boot e a diferenca nao aparece. Nao chame isto de
-  // "reconciliacao no boot": e rede TERCIARIA, atras do RTDN (push do Google,
-  // em segundos) e da revogacao no 402 do play-verify.
-  //
-  // Para roda-la perto do boot seria preciso disparar LAZY.load('conta')
-  // alguns segundos apos a inicializacao, ou extrair este caminho para um
-  // modulo proprio que carregue cedo.
+  // QUANDO isto roda:
+  // 1) Boot adiado (lifecycle post-init → carregarChunkConta) em Android
+  //    nuvem — 1× por sessão com `{ force: true }` (RISK-04).
+  // 2) Ao abrir Config / init() — throttle 6h em localStorage.
+  // RTDN (play-rtdn) continua sendo o caminho primario server-side.
   //
   // Silencioso de proposito -- sem toast em sucesso nem em falha. O botao
   // continua sendo o caminho explicito, para quem reinstalou ou trocou de
   // aparelho e quer ver uma confirmacao.
   _RECONCILIA_KEY: 'fp-play-reconcilia',
   _RECONCILIA_INTERVALO: 6 * 60 * 60 * 1000, // 6h
+  _reconciliouNestaSessao: false,
 
-  _reconciliarPlay: function() {
+  /**
+   * @param {{ force?: boolean }} [opts] force=true: ignora throttle 6h, no máx. 1×/sessão
+   */
+  _reconciliarPlay: function(opts) {
+    opts = opts || {};
     if (typeof PLAY_BILLING === 'undefined' || !PLAY_BILLING.isAvailable()) return;
     if (typeof BILLING === 'undefined' || !BILLING.isCloudUser || !BILLING.isCloudUser()) return;
 
     var agora = Date.now();
     try {
-      var ultimo = Number(localStorage.getItem(this._RECONCILIA_KEY) || 0);
-      if (ultimo && (agora - ultimo) < this._RECONCILIA_INTERVALO) return;
+      if (opts.force) {
+        if (this._reconciliouNestaSessao) return;
+      } else {
+        var ultimo = Number(localStorage.getItem(this._RECONCILIA_KEY) || 0);
+        if (ultimo && (agora - ultimo) < this._RECONCILIA_INTERVALO) return;
+      }
+      this._reconciliouNestaSessao = true;
       localStorage.setItem(this._RECONCILIA_KEY, String(agora));
     } catch (e) { /* storage indisponivel: segue sem throttle */ }
 

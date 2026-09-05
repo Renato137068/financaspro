@@ -35,7 +35,7 @@ var _fpLocal = _fpWantLocal();
 
 const CONFIG = {
   APP_NAME: 'FinançasPro',
-  VERSION: '11.3.13',
+  VERSION: '11.3.14',
   BUILD_MODE: _fpLocal ? 'local' : 'cloud',
 
   /** Open Finance em produção (Belvo). Enquanto false, o card some do Perfil. */

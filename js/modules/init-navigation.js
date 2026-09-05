@@ -449,12 +449,11 @@ const INIT_NAVIGATION = {
    * onReady(justLoaded): justLoaded=true só na primeira carga real do chunk.
    */
   /**
-   * Garante o chunk 'conta' (billing + 2FA + Open Finance) e roda o callback.
+   * Garante o chunk 'conta' (paywall UI + Play + 2FA + Open Finance) e callback.
    *
-   * Os três eram inicializados no boot. Ao virarem lazy, o `init()` de cada um
-   * precisa acontecer na primeira carga — senão o módulo existe mas nunca se
-   * liga aos elementos da tela, e o resultado é uma aba que parece funcionar
-   * e não faz nada.
+   * BILLING (quotas/canUse) é eager no app.bundle — não depende deste chunk.
+   * Aqui só entra a UI de planos/compra e os módulos exclusivos da aba Config.
+   * Sem init() na 1ª carga, a aba parece funcionar e não faz nada.
    *
    * Em DEV os módulos vêm eager: isReady() já é verdadeiro e o callback roda
    * na hora, sem nenhuma requisição.
@@ -465,7 +464,7 @@ const INIT_NAVIGATION = {
       function() { return typeof INIT_BILLING !== 'undefined'; },
       function(justLoaded) {
         if (justLoaded) {
-          // Mesma ordem do lifecycle original.
+          // BILLING.init() já rodou no lifecycle; re-chamar é idempotente (sync).
           // Um init que falha não pode impedir os outros — mas precisa deixar
           // rastro: sem isso, "a aba de configurações não mostra o plano" vira
           // um relato sem nenhuma pista de investigação.
@@ -713,11 +712,9 @@ function mudarAba(nomeAba, opcoes) {
         }
       }
       if (nomeAba === 'config') {
-        // Billing, 2FA e Open Finance saem do bundle eager (chunk 'conta') —
-        // são ~45 KB que só interessam a quem abre esta aba. O chunk precisa
-        // chegar ANTES do refreshPerfil: ele chama refreshPlanoCard, refreshUI
-        // e refreshCard atrás de `typeof X !== 'undefined'`, e sem os módulos
-        // essas guardas silenciariam a ausência em vez de acusá-la.
+        // Paywall/Play/2FA/Open Finance: chunk 'conta' (~UI). BILLING (quotas)
+        // já está no eager. O chunk precisa chegar ANTES do refreshPerfil:
+        // refreshPlanoCard/refreshUI checam `typeof X !== 'undefined'`.
         INIT_NAVIGATION.carregarChunkConta(function() {
           if (typeof INIT_CONFIG !== 'undefined' && INIT_CONFIG.refreshPerfil) {
             INIT_CONFIG.refreshPerfil();
