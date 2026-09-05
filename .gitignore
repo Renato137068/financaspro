@@ -31,3 +31,10 @@ _pilot_*
 
 # Supabase CLI temp
 supabase/.temp/
+
+# Google Cloud service account keys (nunca versionar)
+financaspro-*-*.json
+*service-account*.json
+
+/_to_delete/
+/AUDITORIA_*.html

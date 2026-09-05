@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FinançasPro — Auditoria Auth (Login, Cadastro, Biometria)</title>
+<style>
+:root{
+  --bg:#070a0f;--card:#111820;--card2:#161f2a;--line:#243044;
+  --txt:#eef2f8;--mut:#8fa3be;--mut2:#5a708a;
+  --ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--info:#22d3ee;--acc:#12694E;--r:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:linear-gradient(165deg,#070a0f,#0a1218 45%,#070a0f);color:var(--txt);
+  font:15px/1.65 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding-bottom:80px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+header{padding:48px 0 36px;border-bottom:1px solid var(--line);margin-bottom:36px;
+  background:radial-gradient(800px 320px at 10% -60px,rgba(18,105,78,.18),transparent),
+             radial-gradient(600px 280px at 90% -40px,rgba(34,211,238,.1),transparent)}
+.tag{display:inline-block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:#6ee7b7;border:1px solid rgba(18,105,78,.4);background:rgba(18,105,78,.12);
+  padding:5px 12px;border-radius:99px;margin-bottom:14px;font-weight:700}
+h1{font-size:34px;line-height:1.12;letter-spacing:-.02em;margin-bottom:8px;font-weight:800}
+h1 em{font-style:normal;color:#6ee7b7}
+.sub{color:var(--mut);font-size:15px;max-width:880px}
+.meta{display:flex;gap:20px;flex-wrap:wrap;margin-top:20px;font-size:13px;color:var(--mut2)}
+.meta b{color:var(--txt)}
+
+.hero{display:grid;grid-template-columns:210px 1fr;gap:28px;align-items:center;
+  background:var(--card);border:1px solid var(--line);border-radius:18px;padding:28px;margin-bottom:18px}
+.gauge{position:relative;width:180px;height:180px;margin:0 auto}
+.gauge svg{transform:rotate(-90deg)}
+.gauge .val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.gauge .num{font-size:48px;font-weight:800;line-height:1}
+.gauge .lbl{font-size:10px;color:var(--mut2);text-transform:uppercase;letter-spacing:.1em;margin-top:4px;text-align:center}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.pill{font-size:11px;padding:5px 11px;border-radius:99px;border:1px solid var(--line);background:#0c1018;color:var(--mut)}
+.pill.bad{border-color:rgba(239,68,68,.35);color:#fca5a5}
+.pill.warn{border-color:rgba(245,158,11,.35);color:#fcd34d}
+.pill.ok{border-color:rgba(34,197,94,.35);color:#86efac}
+
+.note{border-radius:12px;padding:16px 20px;font-size:14px;color:var(--mut);margin-bottom:14px;line-height:1.55;border:1px solid var(--line)}
+.note.bad{background:rgba(239,68,68,.06);border-color:rgba(239,68,68,.25)}
+.note.bad b{color:#fca5a5}
+.note.info{background:rgba(34,211,238,.06);border-color:rgba(34,211,238,.2)}
+.note.info b{color:#67e8f9}
+
+section{margin-bottom:44px}
+h2.sec{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut2);
+  padding-bottom:10px;border-bottom:1px solid var(--line);margin-bottom:20px;font-weight:700}
+
+.dims{display:flex;flex-direction:column;gap:10px}
+.dim{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 18px;
+  display:grid;grid-template-columns:1fr 190px 52px;gap:16px;align-items:center}
+.dim h3{font-size:14px;font-weight:650;margin-bottom:2px}
+.dim p{font-size:12px;color:var(--mut2);line-height:1.45}
+.bar{height:8px;background:#0a0e14;border-radius:99px;overflow:hidden;border:1px solid #1e293b}
+.bar i{display:block;height:100%;border-radius:99px}
+.w{font-size:10px;color:var(--mut2);margin-top:4px}
+.score{font-size:24px;font-weight:800;text-align:right}
+
+.flow{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px;
+  font:13px/1.7 ui-monospace,Consolas,monospace;color:#a5b4c8;overflow-x:auto;white-space:pre-wrap}
+
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+th{background:#0c1018;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);
+  text-align:left;padding:11px 14px;border-bottom:1px solid var(--line)}
+td{padding:10px 14px;font-size:13px;border-bottom:1px solid #1a2332;color:var(--mut);vertical-align:top}
+tr:last-child td{border-bottom:none}
+td:first-child{color:var(--txt);font-weight:550}
+td.n{text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+.st{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;white-space:nowrap}
+.st.p0{background:rgba(239,68,68,.15);color:#fca5a5}
+.st.p1{background:rgba(245,158,11,.15);color:#fcd34d}
+.st.p2{background:rgba(34,211,238,.12);color:#7dd3fc}
+.st.fx{background:rgba(34,197,94,.12);color:#86efac}
+code{background:#0a0e14;border:1px solid #1e293b;padding:1px 5px;border-radius:4px;
+  font:12px ui-monospace,Consolas,monospace;color:#a5b4fc}
+
+.find{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--line);
+  border-radius:0 var(--r) var(--r) 0;padding:14px 16px;margin-bottom:10px}
+.find.crit{border-left-color:var(--bad)}.find.warn{border-left-color:var(--warn)}.find.good{border-left-color:var(--ok)}
+.find h4{font-size:14px;margin-bottom:5px}
+.find p,.find ul{font-size:13px;color:var(--mut);margin:4px 0}
+.find ul{margin-left:18px}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.box h4{font-size:11px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;font-weight:700}
+.box.r h4{color:#fca5a5}.box.g h4{color:#86efac}
+.box ul{list-style:none;font-size:13px;color:var(--mut)}
+.box li{padding:5px 0;border-bottom:1px solid #1a2332;line-height:1.45}
+.box li:last-child{border-bottom:none}
+.box li b{color:var(--txt)}
+
+.phase{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:12px;border-left:4px solid var(--warn)}
+.phase h3{font-size:16px;margin-bottom:6px}
+.phase p,.phase ol{font-size:13px;color:var(--mut)}
+.phase ol{margin:8px 0 0 20px}
+.phase li{margin:5px 0}
+
+footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);font-size:12px;color:var(--mut2);line-height:1.6}
+
+@media(max-width:760px){
+  .hero{grid-template-columns:1fr;text-align:center}
+  .dim{grid-template-columns:1fr}
+  .score{text-align:left}
+  .grid2{grid-template-columns:1fr}
+  h1{font-size:26px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="tag">Auditoria completa · Autenticação</div>
+  <h1>Login, cadastro e sessão — <em>FinançasPro v11.3.4</em></h1>
+  <p class="sub">Revisão estática de todo o módulo de autenticação: overlay em 2 etapas, Supabase Auth, biometria Capacitor, logout, recuperação de senha, bloqueio ao retomar e integração com PIN/2FA. Foco nos problemas que você relatou (não entra após senha, biometria, tela desalinhada).</p>
+  <div class="meta">
+    <span><b>Data:</b> 02/09/2026</span>
+    <span><b>Arquivos:</b> authController.js, auth-biometric.js, supabase.js, index.html, auth.css</span>
+    <span><b>Método:</b> leitura de código + mapeamento sintoma → causa</span>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="gauge">
+    <svg width="180" height="180" viewBox="0 0 180 180">
+      <circle cx="90" cy="90" r="74" fill="none" stroke="#1e293b" stroke-width="12"/>
+      <circle cx="90" cy="90" r="74" fill="none" stroke="#f59e0b" stroke-width="12"
+        stroke-dasharray="465" stroke-dashoffset="209" stroke-linecap="round"/>
+    </svg>
+    <div class="val"><div class="num" style="color:#fcd34d">55</div><div class="lbl">nota geral<br>/ 100</div></div>
+  </div>
+  <div>
+    <h2 style="font-size:18px;margin-bottom:6px">Veredito: fluxo ambicioso, execução instável</h2>
+    <p style="color:var(--mut);font-size:14px">A base (login em 2 etapas, Supabase, biometria nativa, focus trap, mensagens traduzidas) é sólida. Porém há <b>dois backends de auth concorrentes</b> (Express vs Supabase), bugs de camada visual já corrigidos parcialmente, e lacunas que explicam “digito senha e não entra”, biometria confusa e cadastro que parece funcionar mas trava.</p>
+    <div class="pills">
+      <span class="pill bad">Login travava pós-senha (corrigido no código)</span>
+      <span class="pill warn">Biometria + sessão dupla</span>
+      <span class="pill warn">2FA morto no Supabase</span>
+      <span class="pill warn">Desbloqueio obrigatório toda abertura</span>
+      <span class="pill ok">Mensagens de erro claras</span>
+    </div>
+  </div>
+</div>
+
+<div class="note bad">
+  <b>Sintoma que você reportou:</b> “Coloco e-mail e senha e não entra.”<br>
+  <b>Causa raiz identificada (já corrigida no repositório, exige novo AAB):</b> após login bem-sucedido, o diálogo “Deseja usar biometria?” abria com <code>z-index</code> 500, <b>atrás</b> do overlay de login (900+). A promise só resolvia ao fechar o modal — invisível — então o app parecia travado. Fix: fechar overlay <em>antes</em> de oferecer biometria (<code>authController.js</code> ~L210) + modal acima do overlay (<code>modals.css</code>).
+</div>
+
+<section>
+  <h2 class="sec">Notas por dimensão (0–100)</h2>
+  <div class="dims" id="dims"></div>
+</section>
+
+<section>
+  <h2 class="sec">Mapa do fluxo atual (Supabase — build Android padrão)</h2>
+  <div class="flow">[Boot app]
+    → lifecycle.js chama setupAuthUI() se SUPA_AUTH.isActive()
+    → authController abre #auth-overlay (tela cheia, esconde header/nav)
+    → SUPA_AUTH.validate(): já tem sessão no localStorage?
+         SIM → _mostrarDesbloqueioSessao() (etapa senha + auto-biometria 350ms)
+         NÃO → aba Entrar, e-mail → Continuar → senha → Entrar
+    → DADOS.loginApi → supabase.js signInWithPassword
+    → _authOnSuccess: marca desbloqueado, fecha overlay, sync billing
+    → (Android) offerEnableAfterLogin após 400ms
+
+[Usuario minimiza app]
+    → visibilitychange hidden → _authRevogarDesbloqueio()
+    → visibilitychange visible → reabre overlay + desbloqueio senha/biometria
+
+[Logout Perfil ou botão Sair no login]
+    → encerrarSessao + Supabase signOut
+    → reabre overlay (NÃO limpa biometria do Keystore)</div>
+</section>
+
+<section>
+  <h2 class="sec">Sintomas reportados → causa no código</h2>
+  <table>
+    <thead><tr><th>Sintoma</th><th>Causa provável</th><th>Status</th><th>Arquivo</th></tr></thead>
+    <tbody>
+      <tr><td>Senha correta, app não abre</td><td>Modal biometria atrás do overlay; login OK mas UI bloqueada</td><td><span class="st fx">Corrigido no código</span></td><td><code>authController.js</code></td></tr>
+      <tr><td>Logo/header cortado no login</td><td>Header do app visível atrás do overlay; safe-area duplicada</td><td><span class="st fx">Corrigido</span></td><td><code>critical-inline.css</code>, <code>auth.css</code></td></tr>
+      <tr><td>Biometria não aparece</td><td>Botão só visível se <code>fp-biometric-enabled</code> já ativo; 1º login não mostra até ativar</td><td><span class="st p1">Por design confuso</span></td><td><code>auth-biometric.js</code> L59</td></tr>
+      <tr><td>Biometria abre e some / loop</td><td><code>visibilitychange</code> tratava prompt nativo como “saiu do app”</td><td><span class="st fx">Corrigido</span></td><td><code>authController.js</code> L8-14, L619</td></tr>
+      <tr><td>“E-mail ou senha inválidos” com senha certa</td><td>E-mail não confirmado no Supabase; ou refresh token biométrico expirado</td><td><span class="st p1">Operacional</span></td><td><code>supabase.js</code> L71</td></tr>
+      <tr><td>Cadastrei mas não entro</td><td>Supabase exige confirmação de e-mail (<code>needsEmailConfirmation</code>)</td><td><span class="st p1">Esperado, UX fraca</span></td><td><code>authController.js</code> L516</td></tr>
+      <tr><td>Botão Sair não aparecia</td><td><code>setupLogoutButton</code> não era chamado no boot</td><td><span class="st fx">Corrigido</span></td><td><code>lifecycle.js</code> L436</td></tr>
+      <tr><td>Sai da conta, biometria ainda entra</td><td>Logout não chama <code>AUTH_BIOMETRIC.disable()</code></td><td><span class="st p0">Aberto</span></td><td><code>authController.js</code> L644</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2 class="sec">Catálogo de achados (prioridade)</h2>
+
+  <div class="find crit">
+    <h4><span class="st p0">P0</span> Logout não revoga biometria</h4>
+    <p><code>_executarLogout()</code> chama <code>DADOS.encerrarSessao()</code> mas nunca <code>AUTH_BIOMETRIC.disable()</code>. Quem sair da conta ainda pode reentrar via impressão digital com token antigo no Keystore até expirar no servidor.</p>
+  </div>
+
+  <div class="find crit">
+    <h4><span class="st p0">P0</span> Dois backends de auth no mesmo app</h4>
+    <p>Express (<code>dados.js</code> → <code>/api/v1/auth/*</code>, cookies HttpOnly, TOTP real) vs Supabase (<code>supabase.js</code> sobrescreve <code>loginApi</code>, stub TOTP). O APK usa Supabase hardcoded em <code>config.js</code>. Código morto do path Express confunde manutenção e testes E2E não cobrem Supabase.</p>
+  </div>
+
+  <div class="find warn">
+    <h4><span class="st p1">P1</span> 2FA (TOTP) inexistente no fluxo Supabase</h4>
+    <p><code>DADOS.verifyTotpLoginApi = () => Promise.resolve()</code> em <code>supabase.js</code> L191. UI de TOTP em <code>index.html</code> e <code>init-2fa.js</code> exige <code>DADOS._apiAtiva()</code> — falso com Supabase. Usuário cloud não tem 2FA apesar da tela existir no Perfil como “Requer login na nuvem”.</p>
+  </div>
+
+  <div class="find warn">
+    <h4><span class="st p1">P1</span> Política de senha inconsistente</h4>
+    <ul>
+      <li>Frontend cadastro: mín. 8 + número/especial (<code>password-policy.js</code>)</li>
+      <li>Supabase aceita 6 caracteres — mensagem em <code>supabase.js</code> L73 contradiz o hint do formulário</li>
+      <li>Login não valida complexidade (correto), mas cadastro via API Supabase pode passar senha mais fraca se validação client falhar</li>
+    </ul>
+  </div>
+
+  <div class="find warn">
+    <h4><span class="st p1">P1</span> Sessão dupla: localStorage + Keystore</h4>
+    <p>Supabase persiste sessão em <code>fp-supabase-auth</code> (localStorage WebView). Biometria guarda refresh token no Keystore. São caminhos paralelos — logout limpa um, não necessariamente o outro.</p>
+  </div>
+
+  <div class="find warn">
+    <h4><span class="st p1">P1</span> Desbloqueio obrigatório a cada abertura</h4>
+    <p><code>_authDesbloqueadoNestaCarga</code> começa false. Mesmo com sessão Supabase válida, toda abertura exige senha/biometria. Estilo banco — correto para segurança, frustrante se não comunicado. Ao voltar do background, <code>visibilitychange</code> revoga de novo.</p>
+  </div>
+
+  <div class="find warn">
+    <h4><span class="st p1">P1</span> Recuperação de senha no Capacitor</h4>
+    <p><code>resetPasswordForEmail</code> usa <code>redirectTo: window.location.origin</code>. No WebView Capacitor o origin é <code>https://app.financaspro.com</code> (sintético) — link do e-mail pode não reabrir o app corretamente.</p>
+  </div>
+
+  <div class="find warn">
+    <h4><span class="st p1">P1</span> Copy enganoso no rodapé do login</h4>
+    <p><code>auth-footer-note</code>: “Seus dados ficam no seu aparelho e são criptografados na nuvem.” — nem todo usuário ativou criptografia local; nuvem não criptografa automaticamente o JSON financeiro da forma que o texto sugere.</p>
+  </div>
+
+  <div class="find warn">
+    <h4><span class="st p1">P1</span> Etapa e-mail não verifica conta</h4>
+    <p>“Continuar” só troca para senha sem ping ao servidor. Usuário descobre e-mail errado ou inexistente só ao submeter senha — mais uma rodada de frustração.</p>
+  </div>
+
+  <div class="find warn">
+    <h4><span class="st p2">P2</span> Fluxo TOTP pós-login incompleto</h4>
+    <p>Se Express API exigir TOTP, <code>totpForm</code> sucesso não chama <code>_authOnSuccess</code> completo (falta offer biometria, <code>INIT_CONFIG.aplicarVisibilidadeNuvem</code>).</p>
+  </div>
+
+  <div class="find warn">
+    <h4><span class="st p2">P2</span> HTML do overlay desorganizado</h4>
+    <p><code>#auth-totp-form</code> e <code>#auth-register-form</code> ficam fora de <code>#auth-login-flow</code> mas dentro de <code>.auth-card</code> — tabs ARIA apontam painéis com estrutura inconsistente.</p>
+  </div>
+
+  <div class="find warn">
+    <h4><span class="st p2">P2</span> Exclusão de conta sem reautenticação</h4>
+    <p>Path Supabase: duplo confirm no modal, sem senha/biometria. Path Express: <code>window.prompt</code> para senha (má UX, mas mais seguro).</p>
+  </div>
+
+  <div class="find good">
+    <h4><span class="st fx">Pontos positivos</span></h4>
+    <ul>
+      <li>Login em 2 etapas com saudação, e-mail mascarado, “Usar outro e-mail”</li>
+      <li>Mensagens Supabase traduzidas (<code>_msg</code>): rede, credenciais, e-mail não confirmado, rate limit</li>
+      <li>Focus trap, tabs com teclado, toggle mostrar senha, aria-live nos erros</li>
+      <li>Biometria: rotação de refresh token no <code>TOKEN_REFRESHED</code></li>
+      <li>Guards anti-loop biometria (<code>_authBiometricInFlight</code>, <code>_authBiometricAutoTried</code>)</li>
+      <li>Overlay esconde header/nav durante login (<code>body.auth-overlay-open</code>)</li>
+      <li>Cadastro valida senha com <code>VALIDATIONS.validarSenha</code> antes de enviar</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2 class="sec">Matriz por fluxo</h2>
+  <table>
+    <thead><tr><th>Fluxo</th><th>Nota</th><th>Principal problema</th><th>Principal acerto</th></tr></thead>
+    <tbody>
+      <tr><td>Login e-mail → senha</td><td class="n">62</td><td>Travava pós-login (modal oculto); desbloqueio sempre obrigatório</td><td>2 etapas claras, erros traduzidos</td></tr>
+      <tr><td>Criar conta</td><td class="n">58</td><td>Confirmação e-mail Supabase; política senha divergente</td><td>Validação client 8 chars + hint a11y</td></tr>
+      <tr><td>Biometria Android</td><td class="n">52</td><td>Logout não limpa; botão oculto até 1º enable; sessão dupla</td><td>Auto-update token no refresh; guards anti-loop</td></tr>
+      <tr><td>Sessão / desbloqueio</td><td class="n">54</td><td>Re-pede senha ao retomar app; confuso com sessão já ativa</td><td>Estilo app bancário intencional</td></tr>
+      <tr><td>Logout / Sair</td><td class="n">60</td><td>Biometria sobrevive; botão Sair só com sessão nuvem</td><td>Confirmação + toast “dados locais permanecem”</td></tr>
+      <tr><td>Esqueci senha</td><td class="n">55</td><td>Redirect Capacitor incerto</td><td>Integrado ao Supabase reset</td></tr>
+      <tr><td>2FA / TOTP</td><td class="n">30</td><td>Morto com Supabase; UI enganosa no Perfil</td><td>Backend Express robusto (não usado no APK)</td></tr>
+      <tr><td>UI / layout auth</td><td class="n">74</td><td>Rodapé copy; estrutura HTML tabs</td><td>Layout bank fullscreen, logo, safe-area</td></tr>
+      <tr><td>Mensagens de erro</td><td class="n">78</td><td>Alguns erros Supabase crus escapam</td><td>Toast + aria-live + texto no overlay</td></tr>
+      <tr><td>Segurança auth</td><td class="n">50</td><td>Tokens em localStorage; sem reauth delete</td><td>RLS Supabase; refresh no Keystore</td></tr>
+      <tr><td>Testes automatizados</td><td class="n">38</td><td>Só estáticos; E2E Express, não Supabase/Android</td><td>ux-fase9 guarda estrutura HTML</td></tr>
+      <tr><td>Arquitetura / manutenção</td><td class="n">45</td><td>Dois backends; stubs; lifecycle só init auth se Supabase</td><td>supabase.js isola override limpo</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2 class="sec">Express vs Supabase (o que o APK usa hoje)</h2>
+  <div class="grid2">
+    <div class="box r">
+      <h4>Backend Express (código legado no repo)</h4>
+      <ul>
+        <li><b>Login:</b> POST /api/v1/auth/login + cookies HttpOnly</li>
+        <li><b>TOTP:</b> funcional, testado no backend</li>
+        <li><b>E2E:</b> playwright <code>auth-cloud.spec.cjs</code></li>
+        <li><b>Boot:</b> overlay NÃO abre sozinho</li>
+        <li><b>Status:</b> não é o path do AAB atual</li>
+      </ul>
+    </div>
+    <div class="box g">
+      <h4>Supabase Auth (APK v11.3.4)</h4>
+      <ul>
+        <li><b>Login:</b> signInWithPassword + localStorage</li>
+        <li><b>TOTP:</b> stub vazio</li>
+        <li><b>E2E:</b> inexistente</li>
+        <li><b>Boot:</b> overlay SEMPRE abre se chaves em config.js</li>
+        <li><b>Status:</b> produção Android</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2 class="sec">Cobertura de testes (lacunas)</h2>
+  <table>
+    <thead><tr><th>Teste</th><th>Cobre</th><th>Não cobre</th></tr></thead>
+    <tbody>
+      <tr><td><code>tests/ux-fase9.test.js</code></td><td>HTML ids, strings no authController</td><td>Runtime login, z-index, biometria</td></tr>
+      <tr><td><code>e2e/auth-cloud.spec.cjs</code></td><td>Registro+login Express UI</td><td>Supabase, Android, desbloqueio, biometria</td></tr>
+      <tr><td><code>tests/security-static.test.js</code></td><td>Backend Express cookies/TOTP</td><td>Supabase client, Keystore</td></tr>
+      <tr><td><code>tests/auth-sw-native.test.js</code></td><td>SW + health ping Supabase</td><td>Plugin NativeBiometric</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2 class="sec">Plano de correção (ordem recomendada)</h2>
+
+  <div class="phase" style="border-left-color:#ef4444">
+    <h3>Fase 1 — Estabilizar login (1–2 dias)</h3>
+    <ol>
+      <li>Gerar AAB com fix modal/z-index já no código (vc28+).</li>
+      <li>Chamar <code>AUTH_BIOMETRIC.disable()</code> em <code>_executarLogout</code> e exclusão de conta.</li>
+      <li>Adicionar spinner/“Entrando…” visível no botão durante <code>loginApi</code>.</li>
+      <li>Toast explícito quando e-mail não confirmado + link “Reenviar confirmação” (se Supabase permitir).</li>
+    </ol>
+  </div>
+
+  <div class="phase">
+    <h3>Fase 2 — Clareza para o usuário (2–3 dias)</h3>
+    <ol>
+      <li>Reescrever <code>auth-footer-note</code> (local vs nuvem).</li>
+      <li>Mostrar botão biometria com texto “Configure após entrar com senha” quando disponível mas desativado.</li>
+      <li>Comunicar na 1ª abertura: “Por segurança, confirme sua identidade”.</li>
+      <li>Fix redirect recuperação senha para deep link Android (<code>intent://</code> ou URL real do app).</li>
+    </ol>
+  </div>
+
+  <div class="phase" style="border-left-color:#22d3ee">
+    <h3>Fase 3 — Arquitetura (1 semana)</h3>
+    <ol>
+      <li>Escolher UM backend auth para o APK (recomendado: Supabase only) e remover stubs Express do path mobile.</li>
+      <li>Supabase MFA ou remover card 2FA do Perfil quando Supabase ativo.</li>
+      <li>E2E Playwright contra Supabase (login, cadastro, email confirm mock).</li>
+      <li>Teste instrumentado Android: biometria enable → logout → não deve reentrar.</li>
+    </ol>
+  </div>
+</section>
+
+<section>
+  <h2 class="sec">Referência rápida de arquivos</h2>
+  <table>
+    <thead><tr><th>Arquivo</th><th>Responsabilidade</th></tr></thead>
+    <tbody>
+      <tr><td><code>js/authController.js</code></td><td>UI overlay, 2 etapas, desbloqueio, logout, boot Supabase</td></tr>
+      <tr><td><code>js/auth-biometric.js</code></td><td>Keystore, tryLogin, offerEnableAfterLogin</td></tr>
+      <tr><td><code>js/core/supabase.js</code></td><td>Cliente Auth, override loginApi/registrarApi</td></tr>
+      <tr><td><code>index.html</code> L63–156</td><td>Markup forms, tabs, biometria</td></tr>
+      <tr><td><code>css/features/auth.css</code></td><td>Layout bank, safe-area, top bar</td></tr>
+      <tr><td><code>css/critical-inline.css</code></td><td>Esconder app atrás do overlay</td></tr>
+      <tr><td><code>js/core/lifecycle.js</code> L431</td><td>Chama setupAuthUI se Supabase ativo</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<footer>
+  <p><b>FinançasPro — Auditoria Auth completa</b> · 02/09/2026 · v11.3.4 (vc27).</p>
+  <p>Nota geral <b>55/100</b> reflete instabilidade percebida pelo usuário, não ausência de features. Com Fase 1 aplicada e novo AAB instalado, expectativa sobe para ~70/100 na experiência de login.</p>
+  <p>Arquivo: <code>docs/auditoria-auth-login-2026-09-02.html</code></p>
+</footer>
+
+</div>
+
+<script>
+(function(){
+  var data=[
+    {t:'Login e-mail → senha',s:62,c:'#f59e0b',d:'2 etapas boas; travava pós-login (fix no repo); desbloqueio sempre obrigatório.'},
+    {t:'Cadastro de conta',s:58,c:'#f59e0b',d:'Validação client ok; Supabase exige confirmar e-mail; política senha divergente.'},
+    {t:'Biometria Android',s:52,c:'#ef4444',d:'Logout não limpa Keystore; botão oculto até ativar; sessão dupla com localStorage.'},
+    {t:'Sessão e desbloqueio',s:54,c:'#f59e0b',d:'Senha/biometria a cada abertura e ao voltar do background — estilo banco.'},
+    {t:'Logout e botão Sair',s:60,c:'#f59e0b',d:'Funciona; biometria sobrevive; exit btn só com sessão nuvem.'},
+    {t:'Recuperação de senha',s:55,c:'#f59e0b',d:'Supabase reset ok; redirect incerto no Capacitor WebView.'},
+    {t:'2FA / TOTP',s:30,c:'#ef4444',d:'Stub vazio no Supabase; UI Perfil enganosa; Express não usado no APK.'},
+    {t:'UI e layout da tela auth',s:74,c:'#22c55e',d:'Layout bank corrigido; rodapé copy errado; HTML tabs inconsistente.'},
+    {t:'Mensagens de erro',s:78,c:'#22c55e',d:'_msg traduz rede, credenciais, rate limit; toast + overlay.'},
+    {t:'Segurança da autenticação',s:50,c:'#ef4444',d:'Tokens WebView; delete sem reauth; PIN separado do auth.'},
+    {t:'Testes automatizados',s:38,c:'#ef4444',d:'Só estáticos; E2E Express; zero teste biometria/Android.'},
+    {t:'Arquitetura (Express vs Supabase)',s:45,c:'#ef4444',d:'Dois backends; código morto TOTP; confusão de manutenção.'}
+  ];
+  var el=document.getElementById('dims');
+  data.forEach(function(d){
+    var row=document.createElement('div');
+    row.className='dim';
+    row.innerHTML='<div><h3>'+d.t+'</h3><p>'+d.d+'</p></div>'
+      +'<div><div class="bar"><i style="width:'+d.s+'%;background:'+d.c+'"></i></div><div class="w">'+d.s+'/100</div></div>'
+      +'<div class="score" style="color:'+d.c+'">'+d.s+'</div>';
+    el.appendChild(row);
+  });
+})();
+</script>
+</body>
+</html>

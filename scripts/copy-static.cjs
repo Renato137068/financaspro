@@ -78,6 +78,9 @@ if (fs.existsSync(path.join(root, 'privacidade.html'))) {
 if (fs.existsSync(path.join(root, 'celular.html'))) {
   copyFileSafe(path.join(root, 'celular.html'), path.join(dist, 'celular.html'));
 }
+if (fs.existsSync(path.join(root, '.well-known'))) {
+  copyRecursive(path.join(root, '.well-known'), path.join(dist, '.well-known'));
+}
 
 copyScreenshots();
 
@@ -93,7 +96,7 @@ function patchIndexHtml(filePath) {
     /<link rel="icon" href="[^"]*"[^>]*>/,
     '<link rel="icon" href="icons/logo.svg" type="image/svg+xml">'
   );
-  html = patchCspMeta(html);
+  html = patchCspMeta(html, { prod: true });
   fs.writeFileSync(filePath, html);
 }
 

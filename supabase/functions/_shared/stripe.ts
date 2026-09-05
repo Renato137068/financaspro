@@ -69,9 +69,5 @@ export function assertAllowedRedirectUrl(url: string): void {
   }
 }
 
-// ─── Notificações ────────────────────────────────────────────────────────────
-// O Express enfileirava e-mails no BullMQ. Aqui é um stub que loga; integrar
-// com Resend/Edge Function de e-mail numa fase seguinte (ver README).
-export function notify(templateName: string, payload: Record<string, unknown>) {
-  console.log(`[email:${templateName}]`, JSON.stringify(payload));
-}
+/** @deprecated use ./email.ts — reexport para imports legados */
+export { notify } from "./email.ts";

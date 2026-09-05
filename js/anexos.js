@@ -78,6 +78,92 @@ const ANEXOS = {
     });
   },
 
+  _wrapBlobForStore: function(arrayBuffer) {
+    if (typeof LOCAL_CRYPTO === 'undefined' || !LOCAL_CRYPTO.isEnabled()) {
+      return Promise.resolve({ blob: arrayBuffer, encrypted: false, encryptedPayload: null });
+    }
+    var b64 = ANEXOS._arrayBufferToBase64(arrayBuffer);
+    return LOCAL_CRYPTO.encrypt(b64).then(function(enc) {
+      return { blob: null, encrypted: true, encryptedPayload: enc };
+    });
+  },
+
+  _unwrapRegistro: function(reg) {
+    if (!reg) return Promise.resolve(null);
+    if (!reg.encrypted || !reg.encryptedPayload) return Promise.resolve(reg);
+    if (typeof LOCAL_CRYPTO === 'undefined' || !LOCAL_CRYPTO.decrypt) {
+      return Promise.resolve(reg);
+    }
+    return LOCAL_CRYPTO.decrypt(reg.encryptedPayload).then(function(b64) {
+      if (typeof LOCAL_CRYPTO.isEncrypted === 'function' && LOCAL_CRYPTO.isEncrypted(b64)) {
+        return reg;
+      }
+      var out = {
+        id: reg.id,
+        transacaoId: reg.transacaoId,
+        nome: reg.nome,
+        mimeType: reg.mimeType,
+        tamanho: reg.tamanho,
+        criadoEm: reg.criadoEm,
+        blob: ANEXOS._base64ToArrayBuffer(b64),
+        encrypted: false
+      };
+      return out;
+    });
+  },
+
+  /**
+   * Regrava anexos ao ligar/desligar LOCAL_CRYPTO (espelha aplicarCriptografia do DADOS).
+   */
+  migrarCriptografia: function(enable) {
+    var self = this;
+    return this._dbReady().then(function(db) {
+      if (!db) return;
+      return new Promise(function(resolve, reject) {
+        var tx = db.transaction(ANEXOS.STORE, 'readonly');
+        var req = tx.objectStore(ANEXOS.STORE).getAll();
+        req.onsuccess = function() { resolve(req.result || []); };
+        req.onerror = function() { reject(new Error('Falha ao ler anexos')); };
+      });
+    }).then(function(lista) {
+      if (!lista || !lista.length) return;
+      var chain = Promise.resolve();
+      lista.forEach(function(reg) {
+        chain = chain.then(function() {
+          return self._unwrapRegistro(reg).then(function(plain) {
+            if (!plain || !plain.blob) return;
+            var payload = enable
+              ? self._wrapBlobForStore(plain.blob)
+              : Promise.resolve({ blob: plain.blob, encrypted: false, encryptedPayload: null });
+            return payload.then(function(wrapped) {
+              return self._dbReady().then(function(db) {
+                if (!db) return;
+                return new Promise(function(resolve, reject) {
+                  var row = {
+                    id: plain.id,
+                    transacaoId: plain.transacaoId,
+                    nome: plain.nome,
+                    mimeType: plain.mimeType,
+                    tamanho: plain.tamanho,
+                    criadoEm: plain.criadoEm,
+                    blob: wrapped.blob,
+                    encrypted: !!wrapped.encrypted,
+                    encryptedPayload: wrapped.encryptedPayload || null
+                  };
+                  var wtx = db.transaction(ANEXOS.STORE, 'readwrite');
+                  wtx.objectStore(ANEXOS.STORE).put(row);
+                  wtx.oncomplete = resolve;
+                  wtx.onerror = function() { reject(new Error('Falha ao migrar anexo')); };
+                });
+              });
+            });
+          });
+        });
+      });
+      return chain;
+    });
+  },
+
   salvar: function(transacaoId, file) {
     var validacao = this.validarArquivo(file);
     if (!validacao.valido) return Promise.reject(new Error(validacao.erro));
@@ -93,30 +179,34 @@ const ANEXOS = {
       return new Promise(function(resolve, reject) {
         var reader = new FileReader();
         reader.onload = function(e) {
-          var registro = {
-            id: UTILS.gerarId(),
-            transacaoId: transacaoId,
-            nome: file.name || 'anexo',
-            mimeType: file.type,
-            tamanho: file.size,
-            criadoEm: new Date().toISOString(),
-            blob: e.target.result
-          };
-          var tx = db.transaction(ANEXOS.STORE, 'readwrite');
-          tx.objectStore(ANEXOS.STORE).put(registro);
-          tx.oncomplete = function() {
-            self._atualizarContagem(transacaoId).then(function() {
-              resolve({
-                id: registro.id,
-                transacaoId: registro.transacaoId,
-                nome: registro.nome,
-                mimeType: registro.mimeType,
-                tamanho: registro.tamanho,
-                criadoEm: registro.criadoEm
+          self._wrapBlobForStore(e.target.result).then(function(wrapped) {
+            var registro = {
+              id: UTILS.gerarId(),
+              transacaoId: transacaoId,
+              nome: file.name || 'anexo',
+              mimeType: file.type,
+              tamanho: file.size,
+              criadoEm: new Date().toISOString(),
+              blob: wrapped.blob,
+              encrypted: !!wrapped.encrypted,
+              encryptedPayload: wrapped.encryptedPayload || null
+            };
+            var tx = db.transaction(ANEXOS.STORE, 'readwrite');
+            tx.objectStore(ANEXOS.STORE).put(registro);
+            tx.oncomplete = function() {
+              self._atualizarContagem(transacaoId).then(function() {
+                resolve({
+                  id: registro.id,
+                  transacaoId: registro.transacaoId,
+                  nome: registro.nome,
+                  mimeType: registro.mimeType,
+                  tamanho: registro.tamanho,
+                  criadoEm: registro.criadoEm
+                });
               });
-            });
-          };
-          tx.onerror = function() { reject(new Error('Falha ao salvar anexo')); };
+            };
+            tx.onerror = function() { reject(new Error('Falha ao salvar anexo')); };
+          }).catch(reject);
         };
         reader.onerror = function() { reject(new Error('Falha ao ler arquivo')); };
         reader.readAsArrayBuffer(file);
@@ -130,7 +220,9 @@ const ANEXOS = {
       return new Promise(function(resolve) {
         var tx = db.transaction(ANEXOS.STORE, 'readonly');
         var req = tx.objectStore(ANEXOS.STORE).get(id);
-        req.onsuccess = function() { resolve(req.result || null); };
+        req.onsuccess = function() {
+          ANEXOS._unwrapRegistro(req.result || null).then(resolve);
+        };
         req.onerror = function() { resolve(null); };
       });
     });
@@ -206,18 +298,20 @@ const ANEXOS = {
         var tx = db.transaction(ANEXOS.STORE, 'readonly');
         var req = tx.objectStore(ANEXOS.STORE).getAll();
         req.onsuccess = function() {
-          var lista = (req.result || []).map(function(a) {
-            return {
-              id: a.id,
-              transacaoId: a.transacaoId,
-              nome: a.nome,
-              mimeType: a.mimeType,
-              tamanho: a.tamanho,
-              criadoEm: a.criadoEm,
-              dadosBase64: ANEXOS._arrayBufferToBase64(a.blob)
-            };
+          var raw = req.result || [];
+          Promise.all(raw.map(function(a) { return ANEXOS._unwrapRegistro(a); })).then(function(lista) {
+            resolve(lista.filter(Boolean).map(function(a) {
+              return {
+                id: a.id,
+                transacaoId: a.transacaoId,
+                nome: a.nome,
+                mimeType: a.mimeType,
+                tamanho: a.tamanho,
+                criadoEm: a.criadoEm,
+                dadosBase64: ANEXOS._arrayBufferToBase64(a.blob)
+              };
+            }));
           });
-          resolve(lista);
         };
         req.onerror = function() { resolve([]); };
       });

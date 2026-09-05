@@ -14,9 +14,13 @@
   var _toastTimer = null;
   var _bootGrace = true;
 
-  function apiAtiva() {
-    try { return typeof DADOS !== 'undefined' && DADOS._nuvemAtiva && DADOS._nuvemAtiva(); }
-    catch (e) { return false; }
+  function nuvemConectada() {
+    try {
+      if (typeof BILLING !== 'undefined' && BILLING.isCloudUser) {
+        return BILLING.isCloudUser();
+      }
+      return typeof DADOS !== 'undefined' && DADOS._nuvemAtiva && DADOS._nuvemAtiva();
+    } catch (e) { return false; }
   }
 
   function lerStatus() {
@@ -39,7 +43,7 @@
     return {
       online: online, pending: pending, saving: saving, flushing: flushing,
       lastSyncAt: lastSyncAt, outboxCount: outboxCount, conflicts: conflicts,
-      lastError: lastError, api: apiAtiva(),
+      lastError: lastError, api: nuvemConectada(),
     };
   }
 
@@ -58,10 +62,10 @@
   var EXPLICACAO = {
     local: {
       titulo: 'Onde ficam os seus dados',
-      corpo: 'Tudo o que você lança fica guardado neste aparelho. O app não pede '
-        + 'cadastro, não conecta ao seu banco e não envia nada para servidor nenhum.'
-        + '<br><br>Isso tem duas consequências: ninguém além de você vê seus lançamentos, '
-        + 'e <b>trocar de aparelho ou apagar o app leva os dados junto</b>. '
+      corpo: 'Tudo o que você lança fica guardado neste aparelho. Sem login na nuvem, '
+        + 'nada é enviado para servidor.'
+        + '<br><br>Isso significa privacidade total neste aparelho, mas '
+        + '<b>trocar de celular ou apagar o app leva os dados junto</b>. '
         + 'Exporte um backup de vez em quando, em Perfil › Dados.',
     },
     nuvem: {

@@ -225,8 +225,8 @@ describe('Sub-abas Orçamento', function() {
     window.scrollTo = function() {};
     document.body.innerHTML =
       '<div id="aba-orcamento">' +
-        '<button type="button" data-orc-sub="planejamento" class="filtro-chip ativo" aria-selected="true">Planejamento</button>' +
-        '<button type="button" data-orc-sub="metas" class="filtro-chip" aria-selected="false">Metas</button>' +
+        '<button type="button" data-orc-sub="planejamento" class="orc-tab ativo" aria-selected="true">Planejamento</button>' +
+        '<button type="button" data-orc-sub="metas" class="orc-tab" aria-selected="false">Metas</button>' +
         '<div id="orc-sub-panel-planejamento" class="orc-sub-panel ativo"></div>' +
         '<div id="orc-sub-panel-metas" class="orc-sub-panel" hidden></div>' +
       '</div>';
@@ -263,5 +263,13 @@ describe('Polimento painel Planejamento', function() {
     expect(dashBlock).toBeTruthy();
     expect(dashBlock[0]).not.toMatch(/perfil-header perfil-header-compact/);
     expect(dashBlock[0]).not.toMatch(/<h2 class="perfil-nome">Orçamento<\/h2>/);
+  });
+
+  test('subnav usa orc-tab / orc-tablist (não filtro-chip)', function() {
+    expect(htmlOrc).toMatch(/class="orc-tablist"/);
+    expect(htmlOrc).toMatch(/class="orc-tab ativo"/);
+    var subnav = htmlOrc.match(/orc-subnav[\s\S]*?<\/nav>/);
+    expect(subnav).toBeTruthy();
+    expect(subnav[0]).not.toMatch(/filtro-chip/);
   });
 });

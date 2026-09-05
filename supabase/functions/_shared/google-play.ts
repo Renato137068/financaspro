@@ -23,13 +23,34 @@ export function parseServiceAccount(raw: unknown): ServiceAccount | null {
   if (!raw) return null;
   let json: any = raw;
   if (typeof raw === "string") {
+    let s = raw.trim();
+    // BOM / aspas extras que o PowerShell às vezes injeta
+    if (s.charCodeAt(0) === 0xfeff) s = s.slice(1);
+    if (
+      (s.startsWith("'") && s.endsWith("'")) ||
+      (s.startsWith('"') && s.endsWith('"') && !s.startsWith("{"))
+    ) {
+      s = s.slice(1, -1);
+    }
     try {
-      json = JSON.parse(raw);
+      json = JSON.parse(s);
     } catch {
       return null;
     }
+    // Ainda string? (double-encoded)
+    if (typeof json === "string") {
+      try {
+        json = JSON.parse(json);
+      } catch {
+        return null;
+      }
+    }
   }
   if (!json || !json.client_email || !json.private_key) return null;
+  // private_key com \n literais (escapados) em vez de quebras reais
+  if (typeof json.private_key === "string" && json.private_key.includes("\\n")) {
+    json.private_key = json.private_key.replace(/\\n/g, "\n");
+  }
   return json as ServiceAccount;
 }
 
@@ -155,7 +176,7 @@ export async function getSubscriptionV2(opts: {
   if (!res.ok) {
     const detail = await res.text().catch(() => "");
     console.error("Google Play Developer API falhou", res.status, detail.slice(0, 300));
-    const err: any = new Error("google-play-api-falhou");
+    const err: any = new Error("google-play-api-falhou:" + res.status);
     err.status = 502;
     throw err;
   }

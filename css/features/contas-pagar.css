@@ -24,12 +24,12 @@
 
 .cp-kpi-label {
   display: block;
-  font-size: var(--text-xs);
+  font-size: var(--font-size-xs);
   color: var(--color-text-muted);
 }
 
 .cp-kpi-val {
-  font-size: var(--text-sm);
+  font-size: var(--font-size-sm);
   font-weight: 700;
 }
 
@@ -42,7 +42,7 @@
 
 .cp-cal-title {
   font-weight: 700;
-  font-size: var(--text-sm);
+  font-size: var(--font-size-sm);
 }
 
 .cp-cal-nav {
@@ -140,7 +140,7 @@
   justify-content: center;
   border-radius: var(--radius-lg);
   background: rgba(18, 105, 78, 0.1);
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   flex-shrink: 0;
 }
 
@@ -151,12 +151,12 @@
 
 .cp-item-title {
   margin: 0;
-  font-size: var(--text-base);
+  font-size: var(--font-size-base);
   font-weight: 700;
 }
 
 .cp-item-meta {
-  font-size: var(--text-xs);
+  font-size: var(--font-size-xs);
   color: var(--color-text-muted);
 }
 
@@ -191,7 +191,7 @@
   background: var(--color-bg-card);
   border: 1px solid var(--color-border-light);
   margin-bottom: var(--space-2);
-  font-size: var(--text-sm);
+  font-size: var(--font-size-sm);
 }
 
 .cp-resumo-item.cp-item--vencida {
@@ -199,7 +199,7 @@
 }
 
 .cp-resumo-empty {
-  font-size: var(--text-sm);
+  font-size: var(--font-size-sm);
   color: var(--color-text-muted);
   margin: 0;
 }
@@ -209,5 +209,5 @@
   align-items: center;
   gap: 8px;
   margin-top: var(--space-3);
-  font-size: var(--text-sm);
+  font-size: var(--font-size-sm);
 }

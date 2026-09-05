@@ -100,14 +100,35 @@ var PLAY_BILLING = {
         && typeof window.__fpNativeBilling.restore === 'function') {
       var self = this;
       return window.__fpNativeBilling.restore().then(function(purchases) {
+        var list = purchases || [];
         var chain = Promise.resolve();
-        (purchases || []).forEach(function(p) {
+        list.forEach(function(p) {
           chain = chain.then(function() {
             return self.verifyOnServer(p.productId, p.purchaseToken);
           });
         });
-        return chain;
+        return chain.then(function() { return list; });
       });
+    }
+    return Promise.reject(new Error('plugin-play-billing-nao-instalado'));
+  },
+
+  /**
+   * Preços oficiais do Play (quando o plugin expõe getProductDetails).
+   * @returns {Promise<Array<{productId:string,formattedPrice:string}>>}
+   */
+  getProductDetails: function(productIds) {
+    if (!this.isAvailable()) {
+      return Promise.reject(new Error('play-billing-indisponivel'));
+    }
+    if (typeof window.__fpNativeBilling === 'object'
+        && typeof window.__fpNativeBilling.getProductDetails === 'function') {
+      var ids = productIds;
+      if (!ids || !ids.length) {
+        // Só Pro — Business não é vendido no app.
+        ids = [this.PRODUCT_IDS.PRO_MONTHLY, this.PRODUCT_IDS.PRO_YEARLY];
+      }
+      return window.__fpNativeBilling.getProductDetails(ids);
     }
     return Promise.reject(new Error('plugin-play-billing-nao-instalado'));
   },

@@ -1,90 +1,144 @@
-# Levantamento: benefícios PRO vendidos vs modo local
+# Levantamento: o que é FREE, o que é PRO, e por quê
 
-Relatório somente leitura (Tarefa 5). **Regra de produto:** em modo 100% local, `BILLING.canUse()` e `BILLING.shouldEnforceLimits()` não bloqueiam — ver `js/billing.js:139-152`. O PRO pago hoje vale principalmente para **sync na nuvem sem limites** + recursos gated só quando `isCloudUser()`.
+Relatório de produto — atualizado 2026-09-04 (v12, quota v2).
 
-Legenda de ação:
-- **(a)** Reescrever copy/UI para deixar claro que o benefício é na **nuvem** (ou “com login”).
-- **(b)** Gate offline (bloquear também no modo local) — **fora de escopo** das fases atuais; listado só como opção.
+**Mudança de eixo.** Até a v11.3.13 o limite era de *volume de uso* (100
+lançamentos/mês, 3 contas) e valia **só na nuvem**: em modo local
+`shouldEnforceLimits()` retornava `false` e liberava tudo. O efeito era um
+segundo plano gratuito, mais generoso que o da nuvem — criar conta piorava a
+experiência do usuário, e o funil local → nuvem → pago tinha o incentivo
+econômico apontando ao contrário.
 
----
+Agora o limite é de **profundidade e automação**, e vale igual com e sem login.
 
-## 1. Lista de features do plano Pro (paywall estático)
-
-| Item vendido | Arquivo:linha | Grátis local? | Ação sugerida |
-|---|---|---|---|
-| Transações ilimitadas | `js/billing.js:58-59` | Sim — sem `guardQuota` offline | **(a)** “Ilimitado na nuvem”; local já é ilimitado |
-| IA e previsão financeira | `js/billing.js:60` | Sim — `previsao.js:80` só bloqueia se `canUse` na nuvem | **(a)** “Previsão com IA na nuvem” |
-| OCR de comprovantes | `js/billing.js:61` | Sim — `ocr.js:77-79` | **(a)** “OCR na nuvem” |
-| Exportação e alertas avançados | `js/billing.js:62` | Sim — export `init-extrato.js:1295+`; alertas `alertas.js:26-27` | **(a)** Separar: export/alertas avançados **na nuvem** |
-| Trial de 14 dias | `js/billing.js:63` | N/A (só assinatura) | OK |
-
-Plano FREE estático já menciona “Dados locais offline” (`js/billing.js:51`) — bom contraste; falta espelhar no card Pro.
+> **Regra de produto:** o FREE nunca impede o usuário de registrar a vida
+> financeira dele. O PRO faz o trabalho por ele.
 
 ---
 
-## 2. Copy do paywall (modal)
+## 1. O que muda para quem não faz login
 
-| Texto | Arquivo:linha | Problema | Ação |
-|---|---|---|---|
-| “O Pro tira os limites” | `js/modules/init-billing.js:125` | Implica limites globais; local não tem | **(a)** “O Pro tira os limites **na nuvem**” |
-| “Contas ilimitadas, relatórios do ano inteiro e backup automático.” | `js/modules/init-billing.js:126` | Local: contas/relatórios/backup já livres | **(a)** Qualificar “na nuvem” / “com sync” |
-| “Exportação disponível no plano Pro” (tooltip botões) | `js/modules/init-billing.js:91` | Export CSV/PDF funciona offline | **(a)** “Exportação na nuvem (plano Pro)” |
+O modo 100% local continua existindo e continua sendo a porta de entrada — é o
+que ganhamos do Mobills e do Organizze, que perdem gente no muro de cadastro da
+primeira tela. O que muda é que ele passa a ser **o mesmo plano gratuito**, não
+um plano paralelo melhor.
 
-Paywall não abre sem nuvem (`init-billing.js:108-110`) — usuário local não vê o modal; o risco é **expectativa** ao ler marketing ou ao migrar para nuvem.
-
----
-
-## 3. Onboarding e telas principais
-
-| Texto | Arquivo:linha | Problema | Ação |
-|---|---|---|---|
-| “exporte um backup em Perfil › Dados” | `index.html:214` | Correto para backup JSON; pode confundir com export Pro do extrato | **(a)** “exporte backup” (já é backup, não CSV/PDF Pro) |
-| “Histórico, filtros e exportação” (Extrato) | `index.html:634` | Export extrato bloqueado só na nuvem FREE | **(a)** “exportação (Pro na nuvem)” se usuário logado FREE |
-| Subtítulo IA no formulário | `index.html:460` | IA de categoria funciona local | **(a)** Nenhuma se for NLP local; se for “previsão”, não confundir com `previsao.js` |
-
----
-
-## 4. Gates de código (comportamento real)
-
-| Feature | Gate | Arquivo:linha | Local |
-|---|---|---|---|
-| OCR | `!BILLING.canUse('aiFeatures')` | `js/ocr.js:77-79` | Liberado |
-| Previsão IA | `!BILLING.canUse('aiFeatures')` | `js/previsao.js:80-88` | Liberado |
-| Export CSV/PDF | `!BILLING.canUse('reportExport')` | `js/modules/init-extrato.js:1295, 1368` | Liberado |
-| Alertas avançados | `!BILLING.canUse('advancedAlerts')` | `js/alertas.js:26-27` | Liberado |
-| Quota tx/conta/orçamento | `guardQuota` + `shouldEnforceLimits` | `js/billing.js:148-152`, `init-form.js:1664`, `init-config.js:1254`, `orcamento.js:20` | **Não aplica** offline |
-
----
-
-## 5. README e Play Store
-
-| Fonte | Achado | Ação |
+| | Antes (v11) | Agora (v12) |
 |---|---|---|
-| `README.md:9` | “Extrato com filtros, exportação” — genérico, não distingue nuvem | **(a)** “exportação local; na nuvem FREE limitada, Pro ilimitada” |
-| `android/.../strings.xml` | Só nome do app — sem claims Pro | OK |
-| `docs/play-store/` | Screenshots visuais; sem copy de listing no repo | Revisar descrição na Play Console manualmente |
+| Lançamentos | ilimitado local · 100/mês nuvem | **ilimitado em todo lugar** |
+| Contas e cartões | ilimitado local · 3 nuvem | **5 em todo lugar** |
+| Exportar CSV | livre local · bloqueado nuvem | **livre em todo lugar** |
+| OCR | 5 usos **vitalícios** | **5 por mês**, renovando |
+| Alertas avançados | livres local · bloqueados nuvem | PRO em todo lugar (com teaser) |
+| Previsão / insights avançados | 5 usos local | PRO em todo lugar |
+| Histórico de análise | ilimitado | **3 meses** no FREE |
+| Backup na nuvem | — | **incluído no FREE logado**, 1 aparelho |
+
+Logar deixa de tirar e passa a dar: backup automático e 14 dias de Pro de
+boas-vindas, sem cartão.
 
 ---
 
-## 6. Auditoria de produto (HTML)
+## 2. Limites do FREE (fonte: `config/plan-limits.json`)
 
-| Arquivo | Nota |
+| Recurso | FREE | PRO |
+|---|---|---|
+| Lançamentos/mês | ilimitado | ilimitado |
+| Contas e cartões | 5 | ilimitado |
+| Orçamentos por categoria | 5 | ilimitado |
+| Categorias personalizadas | 5 | ilimitado |
+| Metas | 1 | ilimitado |
+| Recorrentes | 3 | ilimitado |
+| Contas a pagar | 5 | ilimitado |
+| Gastos fixos | 5 | ilimitado |
+| Anexos | 10 | ilimitado |
+| Dispositivos sincronizados | 1 | ilimitado |
+| Janela de análise | 3 meses | ilimitada |
+| OCR | 5/mês | ilimitado |
+| Membros | 1 | 2 |
+
+Flags: `aiFeatures`, `advancedAlerts`, `openFinance`, `exportPdf`,
+`learnedCategorization`, `futureInvoiceProjection`, `netWorthHistory` — todas
+`false` no FREE, `true` no PRO.
+
+`exportCsv` é `true` nos dois. Exportar o próprio dado é argumento de aquisição
+("saia quando quiser") e a leitura correta da LGPD — nunca item de paywall.
+
+---
+
+## 3. A janela de análise não esconde dado
+
+`BILLING.janelaAnalitica()` restringe **gráfico, relatório e comparativo**. Não
+toca no extrato, na busca nem na exportação: o lançamento de janeiro continua
+visível e exportável em outubro. Limite de análise é limite justo; esconder dado
+que o usuário digitou é sequestro, e num app de finanças isso custa a confiança
+que é o ativo da marca.
+
+---
+
+## 4. Onde cada gate mora no código
+
+| Gate | Arquivo | Comportamento no FREE |
+|---|---|---|
+| Quotas de capacidade | `js/billing.js` → `checkQuota` / `guardQuota` | paywall contextual ao estourar |
+| Janela de análise | `js/billing.js` → `janelaAnalitica` | 3 meses; extrato intacto |
+| OCR | `js/ocr.js` + `BILLING.ocrRemaining` | 5/mês, renovando |
+| Previsão | `js/previsao.js` | card de upsell |
+| Insights avançados | `js/insights.js` | só os básicos |
+| Alertas avançados | `js/alertas.js` | teaser "detectamos algo" |
+| Open Finance | `js/open-finance.js` | paywall |
+| Exportar PDF | `js/modules/init-extrato.js` | paywall (CSV livre) |
+| Equipe | `js/billing.js` → `inviteTeamMember` | paywall |
+
+**Não existe quota de transação.** O teto de 100/mês parava de aceitar os gastos
+do usuário por volta do dia 15 — justamente do usuário intenso, que é quem
+pagaria. O middleware `checkTransactionLimit` segue montado e contando por
+`createdAt` (e não por `date`, que o usuário digita e que permitia burlar o teto
+com data retroativa), mas fica inerte com `maxTransPerMonth` nulo: reintroduzir
+um teto é mudar um dado, não reescrever enforcement.
+
+---
+
+## 5. Preços
+
+| Plano | Mensal | Anual | Observação |
+|---|---|---|---|
+| Pro | R$ 16,99 | **R$ 129,99** (−36%) | tiers do Play; anual é o plano promovido |
+| Business | R$ 79,90 | R$ 799 | fora do paywall (`SHOW_BUSINESS_PLAN: false`) |
+
+O anual fica abaixo do Mobills Premium (R$ 99,90/ano), que é a âncora do mercado
+brasileiro. Sem marca, cobrar acima do líder não converte.
+
+Trials: **7 dias** no SKU da loja (Play/Stripe) e **14 dias** de Pro de
+boas-vindas concedidos pelo backend na criação da conta, sem cartão. São coisas
+distintas e convivem — o segundo é entitlement próprio, não assinatura da loja.
+
+---
+
+## 6. Paridade e guardas
+
+| Fonte | Arquivo |
 |---|---|
-| `auditoria-produto-pos-fases.html` | Já documenta “Local: ilimitado” vs nuvem FREE (`linha ~192, 221`) — alinhado com código |
-| Auditoria de produto (set/2026) | Substituída por `auditoria-produto-pos-fases.html` |
+| Canônica | `config/plan-limits.json` |
+| Frontend | `js/billing.js` → `PLAN_LIMITS` |
+| Express | `backend/middleware/plan.js` (**lê** o JSON, não duplica) |
+| Supabase | `supabase/migrations/*_quota_v2_*.sql` → `fp_plan_limit_config` |
+| Edge | `supabase/functions/_shared/billing-constants.ts` |
+
+Testes: `tests/plan-limits-parity.test.js` (JS ↔ JSON ↔ SQL),
+`tests/backend/plan-limits-parity.test.js` (Express ↔ JSON, derivando os campos
+do próprio canônico), `tests/billing.test.js`, `npm run check:billing`.
 
 ---
 
-## 7. Resumo executivo
+## 7. Instrumentação
 
-**Inconsistência principal:** marketing e `STATIC_PLANS` listam IA, OCR, export e ilimitado como benefícios Pro **sem qualificar “na nuvem”**, enquanto o código só enforce quando `isCloudUser()` (`js/billing.js:142-151`).
+`js/utilities/funil.js` emite os dez passos do funil via `OBS.track`, com marcos
+únicos por aparelho e sem nenhum valor financeiro no payload. O envio depende de
+`obsAnalyticsEnabled` + `obsEndpoint`: sem consentimento explícito, tudo fica no
+buffer local.
 
-**Recomendação padrão (a):** ajustar strings em `js/billing.js` (features), `js/modules/init-billing.js` (título/lead/tooltip) e hints no Extrato — **sem** mudar comportamento local.
+Sem isto, toda decisão de preço e de limite é opinião — inclusive as deste
+documento.
 
-**Status:** copy **(a)** aplicada em 2026-09-01 (`billing.js`, `init-billing.js`, `init-extrato.js`, `init-navigation.js`, `ocr.js`, `previsao.js`, `index.html`, `README.md`).
-
-**Opção (b)** — gate offline — aumentaria conversão Pro mas **viola** a regra de produto “modo 100% local permanece liberado”; não implementar sem decisão explícita.
-
----
-
-*Gerado em 2026-09-01 · escopo Tarefa 5 (relatório apenas)*
+*Atualizado 2026-09-04 · quota v2 · limite por profundidade*

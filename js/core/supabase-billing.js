@@ -165,6 +165,94 @@
           return mapSubscription(r.data);
         });
     },
+
+    listMembers: function (orgId) {
+      return SB.from('OrganizationMember')
+        .select('id, userId, role, joinedAt')
+        .eq('orgId', orgId)
+        .order('joinedAt', { ascending: true })
+        .then(function (r) {
+          if (r.error) throw r.error;
+          return r.data || [];
+        });
+    },
+
+    listInvitations: function (orgId) {
+      return SB.from('Invitation')
+        .select('id, email, role, token, expiresAt, acceptedAt, createdAt')
+        .eq('orgId', orgId)
+        .is('acceptedAt', null)
+        .gt('expiresAt', new Date().toISOString())
+        .order('createdAt', { ascending: false })
+        .then(function (r) {
+          if (r.error) throw r.error;
+          return r.data || [];
+        });
+    },
+
+    inviteMember: function (orgId, email, role) {
+      var id = (typeof UTILS !== 'undefined' && UTILS.gerarUuid)
+        ? UTILS.gerarUuid()
+        : String(Date.now());
+      var token = (typeof UTILS !== 'undefined' && UTILS.gerarUuid)
+        ? UTILS.gerarUuid()
+        : (id + '-tok');
+      var expires = new Date();
+      expires.setDate(expires.getDate() + 7);
+      return SB.from('Invitation').insert({
+        id: id,
+        orgId: orgId,
+        email: String(email || '').trim().toLowerCase(),
+        role: role || 'MEMBER',
+        token: token,
+        expiresAt: expires.toISOString(),
+      }).select('id, email, role, token, expiresAt').single().then(function (r) {
+        if (r.error) throw r.error;
+        return r.data;
+      });
+    },
+
+    acceptInvitation: function (token) {
+      return SB.rpc('fp_accept_org_invitation', { p_token: String(token || '').trim() })
+        .then(function (r) {
+          if (r.error) {
+            var msg = (r.error.message || '').toLowerCase();
+            var e = new Error(
+              msg.indexOf('email') >= 0 ? 'Este convite não é para a conta logada.'
+                : msg.indexOf('expir') >= 0 ? 'Convite expirado.'
+                  : msg.indexOf('usado') >= 0 ? 'Convite já utilizado.'
+                    : msg.indexOf('limite') >= 0 ? 'A organização atingiu o limite de membros do plano.'
+                      : msg.indexOf('autentic') >= 0 ? 'Faça login para aceitar o convite.'
+                        : 'Convite inválido ou indisponível.'
+            );
+            e.status = 400;
+            throw e;
+          }
+          return r.data;
+        });
+    },
+
+    revokeInvitation: function (orgId, invitationId) {
+      return SB.from('Invitation')
+        .delete()
+        .eq('orgId', orgId)
+        .eq('id', invitationId)
+        .then(function (r) {
+          if (r.error) throw r.error;
+          return true;
+        });
+    },
+
+    removeMember: function (orgId, userId) {
+      return SB.from('OrganizationMember')
+        .delete()
+        .eq('orgId', orgId)
+        .eq('userId', userId)
+        .then(function (r) {
+          if (r.error) throw r.error;
+          return true;
+        });
+    },
   };
 
   window.SUPA_BILLING = SUPA_BILLING;

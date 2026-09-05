@@ -45,18 +45,21 @@
       var chk = document.getElementById('chk-biometric');
       var status = document.getElementById('perfil-biometric-status');
       var btn = document.getElementById('auth-biometric-btn');
-      if (!card && !btn) return Promise.resolve();
+      var hint = document.getElementById('auth-biometric-hint');
+      if (!card && !btn && !hint) return Promise.resolve();
 
       return AUTH_BIOMETRIC.isAvailable().then(function(ok) {
         var show = ok && typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.isActive && SUPA_AUTH.isActive();
+        var enabled = _readPref();
         if (card) card.hidden = !show;
-        if (chk) chk.checked = _readPref();
+        if (chk) chk.checked = enabled;
         if (status) {
           status.textContent = !show
             ? 'Disponível no app Android'
-            : (_readPref() ? 'Ativo neste aparelho' : 'Desativado');
+            : (enabled ? 'Ativo neste aparelho' : 'Desativado');
         }
-        if (btn) btn.hidden = !(show && _readPref());
+        if (btn) btn.hidden = !(show && enabled);
+        if (hint) hint.hidden = !(show && !enabled);
       });
     },
 
@@ -112,22 +115,53 @@
         subtitle: 'Use sua biometria',
         description: '',
       }).then(function() {
-        return nb.getCredentials({ server: SERVER });
-      }).then(function(creds) {
+        /* O Supabase rotaciona o refresh token e invalida o anterior. Ao reabrir
+           o app, o próprio cliente já renovou a sessão a partir do storage — e o
+           token guardado no Keystore virou "already used". Chamar setSession com
+           ele derrubava o login biométrico com um erro que nem aparecia na tela.
+
+           Então: se já existe sessão válida, a biometria só confirma identidade.
+           O Keystore só é usado quando realmente não há sessão. */
+        if (typeof SUPA_AUTH === 'undefined' || !SUPA_AUTH.validate) return false;
+        return SUPA_AUTH.validate().catch(function() { return false; });
+      }).then(function(temSessao) {
+        var sess = (typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.getSessionSync)
+          ? SUPA_AUTH.getSessionSync() : null;
+        if (temSessao && sess && sess.user) {
+          // Regrava o token atual: o do Keystore pode ter ficado para trás.
+          AUTH_BIOMETRIC.onLoginSuccess(sess);
+          return { email: sess.user.email };
+        }
+        return AUTH_BIOMETRIC._loginComKeystore(nb);
+      }).catch(function(err) {
+        var msg = String((err && err.message) || err);
+        if (/not found|no credentials/i.test(msg)) {
+          return AUTH_BIOMETRIC.disable().then(function() { throw err; });
+        }
+        /* Token vencido ou já usado: a biometria continua ativa e volta a
+           funcionar sozinha depois de UM login por senha (onLoginSuccess
+           regrava o token novo). O usuário precisa saber disso. */
+        if (/already used|invalid refresh token|refresh_token_not_found|expired/i.test(msg)) {
+          throw new Error('Sua sessão expirou. Entre com a senha uma vez para reativar a biometria.');
+        }
+        throw err;
+      });
+    },
+
+    /** Sem sessão no cliente: restaura a partir do token guardado no Keystore. */
+    _loginComKeystore: function(nb) {
+      return nb.getCredentials({ server: SERVER }).then(function(creds) {
         if (!creds || !creds.username || !creds.password) {
           throw new Error('Credenciais biométricas não encontradas.');
         }
         if (typeof SUPA_AUTH === 'undefined' || !SUPA_AUTH.restoreSession) {
           throw new Error('Login na nuvem indisponível.');
         }
-        return SUPA_AUTH.restoreSession(creds.password).then(function() {
+        return SUPA_AUTH.restoreSession(creds.password).then(function(sess) {
+          // A restauração já rotacionou o token — guardar o novo agora.
+          AUTH_BIOMETRIC.onLoginSuccess(sess);
           return { email: creds.username };
         });
-      }).catch(function(err) {
-        if (err && /not found|no credentials/i.test(String(err.message || err))) {
-          return AUTH_BIOMETRIC.disable().then(function() { throw err; });
-        }
-        throw err;
       });
     },
 

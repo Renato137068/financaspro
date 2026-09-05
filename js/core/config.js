@@ -1,13 +1,49 @@
 ﻿/**
- * @file config.js � Application constants & configuration
+ * @file config.js — Application constants & configuration
+ *
+ * FP_BUILD_MODE:
+ *   'cloud' — Play Store / sync Supabase (padrão)
+ *   'local' — piloto offline sem login (scripts/set-build-mode.cjs local)
+ * Runtime: localStorage fp-force-local=1 também força modo local (dev).
+ *
+ * Credenciais cloud: defaults abaixo (anon key pública). Override no build via
+ * SUPABASE_URL + SUPABASE_ANON_KEY → scripts/inject-supabase-env.cjs.
  */
+
+var FP_BUILD_MODE = 'cloud';
+
+function _fpWantLocal() {
+  if (FP_BUILD_MODE === 'local') return true;
+  try {
+    if (typeof localStorage !== 'undefined' && localStorage.getItem('fp-force-local') === '1') {
+      return true;
+    }
+  } catch (e) { /* noop */ }
+  try {
+    if (typeof window !== 'undefined' && window.__FP_FORCE_LOCAL__ === true) return true;
+  } catch (e2) { /* noop */ }
+  return false;
+}
+
+/* Preenchidos por inject-supabase-env.cjs quando as env vars existem; senão ''. */
+var _FP_ENV_URL = '';
+var _FP_ENV_ANON = '';
+
+var _FP_CLOUD_URL = _FP_ENV_URL || 'https://nubvlksibmpryltkfpei.supabase.co';
+var _FP_CLOUD_ANON = _FP_ENV_ANON || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51YnZsa3NpYm1wcnlsdGtmcGVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MzQ1NjEsImV4cCI6MjA5MjExMDU2MX0.lVA2ms3WvWPZ1fStgQC9-32CCLqNFVtSr8LNYZrfwq0';
+var _fpLocal = _fpWantLocal();
 
 const CONFIG = {
   APP_NAME: 'FinançasPro',
-  VERSION: '11.3.0',
+  VERSION: '11.3.13',
+  BUILD_MODE: _fpLocal ? 'local' : 'cloud',
 
   /** Open Finance em produção (Belvo). Enquanto false, o card some do Perfil. */
   FEATURE_OPEN_FINANCE: false,
+  /* Tesseract servido pelo próprio app. Ligado por
+     scripts/vendor-tesseract.cjs; harden-csp.cjs lê a mesma flag para
+     fechar a CSP em script-src 'self'. */
+  TESSERACT_LOCAL: false,
 
   STORAGE_TRANSACOES: 'fp-transacoes',
   STORAGE_CONFIG: 'fp-config',
@@ -22,12 +58,9 @@ const CONFIG = {
   API_REFRESH_TOKEN_STORAGE: 'fp-refresh-token',
   API_USER_STORAGE: 'fp-api-user',
 
-  // Supabase (migração BaaS). Vazios = app segue local-first (como API_BASE_URL).
-  // A anon key é pública (protegida por RLS) e vai aqui na Fase 2; a service_role
-  // key e a senha do banco NUNCA entram no front — só nos secrets das functions.
-  SUPABASE_URL: 'https://nubvlksibmpryltkfpei.supabase.co',
-  // Chave pública (anon), protegida por RLS — seguro no cliente.
-  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51YnZsa3NpYm1wcnlsdGtmcGVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MzQ1NjEsImV4cCI6MjA5MjExMDU2MX0.lVA2ms3WvWPZ1fStgQC9-32CCLqNFVtSr8LNYZrfwq0',
+  // Supabase: vazios = local-first (sem login forçado). Cloud = Play Store.
+  SUPABASE_URL: _fpLocal ? '' : _FP_CLOUD_URL,
+  SUPABASE_ANON_KEY: _fpLocal ? '' : _FP_CLOUD_ANON,
 
   TIPO_RECEITA: 'receita',
   TIPO_DESPESA: 'despesa',

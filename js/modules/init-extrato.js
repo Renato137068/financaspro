@@ -334,10 +334,7 @@ const INIT_EXTRATO = {
     
     this.filtrarExtrato();
     UTILS.mostrarToast('Filtros avançados aplicados', 'success');
-    
-    // Fechar painel
-    var container = document.getElementById('busca-avancada-container');
-    if (container) container.style.display = 'none';
+    // Valor/período vive dentro de #extrato-filtros-avancados — não esconder o bloco
   },
 
   /**
@@ -467,7 +464,7 @@ const INIT_EXTRATO = {
    */
   setFiltroTipo: function(tipo) {
     this.state.filtroTipo = tipo;
-    document.querySelectorAll('.filtro-chip').forEach(function(b) {
+    document.querySelectorAll('#aba-extrato .filtro-chip[data-filtro]').forEach(function(b) {
       var isActive = b.dataset.filtro === tipo;
       b.classList.toggle('ativo', isActive);
       b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
@@ -1292,10 +1289,9 @@ const INIT_EXTRATO = {
    * Exporta extrato para Excel (CSV melhorado)
    */
   exportarExcel: function() {
-    if (typeof BILLING !== 'undefined' && !BILLING.canUse('reportExport')) {
-      BILLING.onPaymentRequired({ message: 'Exportação em Excel/CSV na nuvem disponível no plano Pro.' });
-      return;
-    }
+    // CSV e livre em todos os planos: o dado e do usuario e poder leva-lo
+    // embora e argumento de aquisicao ("saia quando quiser"), nao de paywall.
+
     var info = this.getExtratoMesAno();
     var txs = TRANSACOES.obter({ mes: info.mes, ano: info.ano });
     
@@ -1365,8 +1361,11 @@ const INIT_EXTRATO = {
    * Exporta extrato para PDF
    */
   exportarExtrato: function() {
-    if (typeof BILLING !== 'undefined' && !BILLING.canUse('reportExport')) {
-      BILLING.onPaymentRequired({ message: 'Exportação em PDF na nuvem disponível no plano Pro.' });
+    if (typeof BILLING !== 'undefined' && !BILLING.canUse('exportPdf')) {
+      BILLING.onPaymentRequired({
+        message: 'O relatório em PDF, pronto para apresentar, está no Pro.',
+        gate: 'exportPdf',
+      });
       return;
     }
     var info = this.getExtratoMesAno();

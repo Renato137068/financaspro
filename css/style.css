@@ -138,10 +138,10 @@ main {
   max-width: 460px;
   border-radius: var(--radius-xl);
   border: 1px solid var(--border-soft);
-  overflow: hidden;
+  overflow: visible;
   backdrop-filter: blur(16px) saturate(140%);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
-  background: rgba(255, 255, 255, 0.90);
+  background: var(--nav-bottom-bg, rgba(255, 255, 255, 0.90));
   box-shadow:
     0 16px 40px rgba(18, 25, 21, 0.18),
     0 4px 12px rgba(18, 25, 21, 0.08),
@@ -205,7 +205,7 @@ main {
 }
 
 [data-theme="dark"] .nav-bottom {
-  background: rgba(18, 28, 20, 0.92);
+  background: var(--nav-bottom-bg, rgba(18, 28, 20, 0.92));
   border-color: rgba(255, 255, 255, 0.08);
 }
 

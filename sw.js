@@ -1,7 +1,7 @@
 // FinançasPro - Service Worker (PWA offline-first, stale-while-revalidate)
 // Gerado por scripts/generate-sw-cache.cjs — não edite urlsParaCache manualmente
 
-const CACHE_NAME = 'financaspro-v1134-p2';
+const CACHE_NAME = 'financaspro-v11313-p3';
 const urlsParaCache = [
   "/",
   "/css/base.css",
@@ -103,6 +103,7 @@ const urlsParaCache = [
   "/js/core/utils.js",
   "/js/core/validations.js",
   "/js/fp-native-billing-bridge.js",
+  "/js/fp-secure-screen.js",
   "/js/init.js",
   "/js/insights.js",
   "/js/lucide-init.js",
@@ -201,6 +202,17 @@ self.addEventListener('message', (event) => {
   if (event && event.data === 'SKIP_WAITING') self.skipWaiting();
 });
 
+// Únicas origens cross-origin cujas respostas PODEM entrar no cache: asset
+// estático imutável e versionado (CDN). NUNCA a origem do Supabase — as
+// consultas de sincronização são GET PostgREST (SB.from('Transaction')
+// .select('*')…) e carregam dado financeiro do usuário. Cacheadas por URL,
+// ficariam em texto puro no Cache Storage (fora do LOCAL_CRYPTO) e, como a URL
+// é idêntica entre usuários, poderiam ser servidas a outra sessão no mesmo
+// aparelho quando offline. Tudo fora desta allowlist é network-only.
+const CACHEABLE_CROSS_ORIGIN = new Set([
+  'cdn.jsdelivr.net',
+]);
+
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
@@ -208,13 +220,17 @@ self.addEventListener('fetch', (event) => {
   const isOrigem = url.origin === self.location.origin;
   const isNavigation = event.request.mode === 'navigate';
   const isApi = isOrigem && url.pathname.startsWith('/api/');
+  const crossOriginCacheavel = !isOrigem && CACHEABLE_CROSS_ORIGIN.has(url.hostname);
 
-  if (isApi) {
+  // Network-only, sem tocar no cache: API local e QUALQUER cross-origin fora da
+  // allowlist (Supabase REST/Auth/Realtime, Belvo…). É o que fecha o vazamento
+  // de dado financeiro at-rest e o cruzamento de sessões (H1).
+  if (isApi || (!isOrigem && !crossOriginCacheavel)) {
     event.respondWith(fetch(event.request));
     return;
   }
 
-  if (!isOrigem) {
+  if (crossOriginCacheavel) {
     event.respondWith(
       fetch(event.request)
         .then((res) => {

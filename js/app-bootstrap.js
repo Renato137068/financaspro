@@ -24,6 +24,10 @@ var APP_BOOTSTRAP = {
   _orquestrar: function() {
     var self = this;
 
+    // Antes de qualquer módulo: é o passo 1 do funil e o marco que data todos
+    // os outros ("no dia N de uso, ele encontrou o gate X").
+    if (typeof FUNIL !== 'undefined' && FUNIL.init) FUNIL.init();
+
     if (typeof LIFECYCLE_BOOT !== 'undefined' && LIFECYCLE_BOOT.registerDefaults) {
       LIFECYCLE_BOOT.registerDefaults();
     }

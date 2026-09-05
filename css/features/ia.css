@@ -89,8 +89,8 @@
   }
   .alerta-dispensar {
     margin-left: auto;
-    min-width: 36px;
-    min-height: 36px;
+    min-width: var(--tap-target-min, 44px);
+    min-height: var(--tap-target-min, 44px);
   }
 }
 
@@ -100,7 +100,8 @@
 
 .alerta-btn {
   font-size: var(--font-size-xs);
-  padding: 4px 8px;
+  padding: 8px 12px;
+  min-height: var(--tap-target-min, 44px);
   border-radius: var(--radius-md);
   border: 1px solid currentColor;
   background: transparent;
@@ -108,6 +109,9 @@
   color: var(--color-primary-text);
   white-space: nowrap;
   transition: background .15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .alerta-btn:hover { background: var(--color-primary-500); color: var(--color-white); }
 
@@ -117,10 +121,18 @@
   cursor: pointer;
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
-  line-height: 1;
-  padding: 2px 4px;
+  line-height: 0;
+  padding: 0;
+  width: var(--tap-target-min, 44px);
+  height: var(--tap-target-min, 44px);
+  min-width: var(--tap-target-min, 44px);
+  min-height: var(--tap-target-min, 44px);
   border-radius: var(--radius-sm);
   transition: color .15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 .alerta-dispensar:hover { color: var(--color-danger-text); }
 
@@ -357,16 +369,27 @@
 
 .btn-insight {
   font-size: var(--font-size-xs);
-  padding: 3px 8px;
+  font-weight: var(--font-weight-semibold);
+  font-family: var(--font-family-sans);
+  padding: 0 12px;
+  min-height: var(--tap-target-min, 44px);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-primary-500);
   background: transparent;
   color: var(--color-primary-text);
   cursor: pointer;
   margin-left: 6px;
-  transition: background .15s, color .15s;
+  transition: background .15s, color .15s, transform .12s, box-shadow .15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
-.btn-insight:hover { background: var(--color-primary-500); color: var(--color-white); }
+.btn-insight:hover {
+  background: var(--color-primary-500);
+  color: var(--color-white);
+  box-shadow: var(--shadow-primary-sm);
+}
+.btn-insight:active { transform: scale(0.98); }
 
 .orc-insights-titulo {
   font-size: var(--font-size-sm);
@@ -426,8 +449,24 @@
   border: 1px solid var(--color-primary-500) !important;
   border-radius: var(--radius-md) !important;
   font-size: var(--font-size-lg) !important;
-  width: 36px !important;
+  width: var(--tap-target-min, 44px) !important;
+  height: var(--tap-target-min, 44px) !important;
+  min-width: var(--tap-target-min, 44px) !important;
+  min-height: var(--tap-target-min, 44px) !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 0 !important;
   transition: background .15s, transform .12s;
+}
+
+.ocr-btn i[data-lucide],
+.ocr-btn svg {
+  width: 1.25em;
+  height: 1.25em;
+  display: block;
+  margin: 0;
 }
 
 /* O .er-btn nasce com opacity 0 e só aparece com o wrapper em foco — regra

@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.financaspro.mobile",
+      "sha256_cert_fingerprints": [
+        "67:42:C8:2F:93:DA:10:15:ED:F5:44:95:C2:00:0A:A9:91:5F:04:35:23:1A:9B:2D:15:DD:B0:84:DA:57:CD:99"
+      ]
+    }
+  }
+]

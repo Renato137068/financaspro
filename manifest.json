@@ -1,7 +1,7 @@
 {
   "name": "FinançasPro — Seu dinheiro, no seu aparelho.",
   "short_name": "FinançasPro",
-  "description": "Seu dinheiro, no seu aparelho. Controle de gastos que funciona sem cadastro, sem banco conectado e sem internet.",
+  "description": "Controle de gastos com dados no aparelho e sincronização opcional na nuvem. Sem anúncios.",
   "start_url": "/",
   "scope": "/",
   "id": "/",

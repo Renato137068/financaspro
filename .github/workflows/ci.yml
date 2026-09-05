@@ -73,11 +73,24 @@ jobs:
       - name: Divida de tokens no CSS
         run: npm run check:css
 
+      - name: Wiring de monetizacao (estatico)
+        run: npm run check:billing
+
       - name: Testes
         run: npm run test:ci
         env:
           INTEGRATION_TEST_DATABASE_URL: postgresql://financaspro:testpass@localhost:5432/financaspro_test
           SKIP_INTEGRATION: ${{ matrix.node-version == '18.x' && '1' || '' }}
+
+      - name: Instalar cliente PostgreSQL (pgTAP)
+        if: matrix.node-version == '20.x'
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Testes pgTAP Supabase (RLS, quota, MFA)
+        if: matrix.node-version == '20.x'
+        run: npm run test:db:ci
+        env:
+          INTEGRATION_TEST_DATABASE_URL: postgresql://financaspro:testpass@localhost:5432/financaspro_test
 
       - name: Instalar Chromium (Playwright)
         if: matrix.node-version == '20.x'
@@ -93,6 +106,12 @@ jobs:
         env:
           E2E_API: '1'
           INTEGRATION_TEST_DATABASE_URL: postgresql://financaspro:testpass@localhost:5432/financaspro_test
+          E2E_SUPABASE: ${{ secrets.E2E_SUPABASE }}
+          E2E_EMAIL: ${{ secrets.E2E_SUPABASE_EMAIL }}
+          E2E_PASSWORD: ${{ secrets.E2E_SUPABASE_PASSWORD }}
+          E2E_SUPABASE_MFA_EMAIL: ${{ secrets.E2E_SUPABASE_MFA_EMAIL }}
+          E2E_SUPABASE_MFA_PASSWORD: ${{ secrets.E2E_SUPABASE_MFA_PASSWORD }}
+          E2E_TOTP_SECRET: ${{ secrets.E2E_SUPABASE_TOTP_SECRET }}
 
       - name: Gerar relatorio de cobertura
         if: matrix.node-version == '20.x'

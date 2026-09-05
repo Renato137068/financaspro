@@ -74,9 +74,14 @@ var OCR = {
    */
   abrirScanner: function() {
     if (this._processando) return;
-    if (typeof BILLING !== 'undefined' && !BILLING.canUse('aiFeatures')) {
+    // Cota MENSAL, nao vitalicia: o usuario reencontra o recurso todo mes.
+    if (typeof BILLING !== 'undefined' && BILLING.ocrRemaining
+        && BILLING.ocrRemaining() <= 0) {
       if (typeof INIT_BILLING !== 'undefined' && INIT_BILLING.abrirPaywall) {
-        INIT_BILLING.abrirPaywall('OCR de comprovantes na nuvem está disponível no plano Pro.');
+        INIT_BILLING.abrirPaywall(
+          'Você já usou seus ' + (BILLING.OCR_FREE_PER_MONTH || 5) +
+          ' escaneamentos deste mês. No Pro você fotografa quantos comprovantes quiser.'
+        );
       }
       return;
     }
@@ -105,6 +110,11 @@ var OCR = {
       .then(function(texto) {
         var resultado = self._parseComprovante(texto);
         self._preencherFormulario(resultado, texto);
+        // Consome so quando o scan deu certo: cobrar cota por uma foto tremida
+        // que nao virou lancamento e queimar o recurso sem entregar nada.
+        if (typeof BILLING !== 'undefined' && BILLING.consumeOcrUse) {
+          BILLING.consumeOcrUse();
+        }
         if (typeof INIT_ANEXOS !== 'undefined' && INIT_ANEXOS.adicionarPendente) {
           INIT_ANEXOS.adicionarPendente(file);
         }
@@ -202,19 +212,40 @@ var OCR = {
     });
   },
 
+  /** Servimos o Tesseract localmente? Ver scripts/vendor-tesseract.cjs. */
+  _tesseractLocal: function() {
+    return typeof CONFIG !== 'undefined' && CONFIG.TESSERACT_LOCAL === true;
+  },
+
   _extrairViaTesseract: function(canvas) {
     var self = this;
+    var CDN = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist';
+    var CDN_CORE = 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1';
+    var LOCAL = 'js/vendor/tesseract';
+    var local = this._tesseractLocal();
     return this._carregarTesseract().then(function(Tesseract) {
       if (!Tesseract) return self._extrairHeuristico(canvas);
       self._mostrarFeedback('<i data-lucide="search" aria-hidden="true"></i> Reconhecendo texto (OCR)...', 'info');
-      return Tesseract.recognize(canvas, 'por', {
+      /* O worker e o core são EXECUTADOS (importScripts), então saem do CDN
+         quando vendorizados — é o que permite fechar a CSP. Os .traineddata
+         continuam no CDN: são dados, buscados por fetch, e pesam vários MB. */
+      var opts = {
+        workerPath: local ? LOCAL + '/worker.min.js' : CDN + '/worker.min.js',
+        corePath: local ? LOCAL + '/tesseract-core.wasm.js' : CDN_CORE + '/tesseract-core.wasm.js',
         logger: function(m) {
           if (m.status === 'recognizing text') {
             self._mostrarFeedback('<i data-lucide="search" aria-hidden="true"></i> OCR: ' + Math.round((m.progress || 0) * 100) + '%...', 'info');
           }
-        }
-      }).then(function(result) {
+        },
+      };
+      // por → eng fallback: traineddata pt pode falhar offline/CDN; eng lê dígitos/R$.
+      return Tesseract.recognize(canvas, 'por', opts).then(function(result) {
         return result && result.data ? result.data.text : '';
+      }).catch(function(err) {
+        console.warn('[OCR] recognize(por) falhou, tentando eng:', err);
+        return Tesseract.recognize(canvas, 'eng', opts).then(function(result) {
+          return result && result.data ? result.data.text : '';
+        });
       });
     });
   },
@@ -237,17 +268,39 @@ var OCR = {
       return Promise.resolve(window.Tesseract);
     }
     return new Promise(function(resolve) {
-      var script    = document.createElement('script');
-      script.src    = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
-      script.onload = function() {
-        OCR._tesseractLoaded = true;
-        resolve(window.Tesseract || null);
-      };
-      script.onerror = function() {
-        console.warn('[OCR] Tesseract.js não carregou (offline?).');
-        resolve(null);
-      };
-      document.head.appendChild(script);
+      var localSrc = 'js/vendor/tesseract.min.js';
+      var cdnSrc = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+      var cdnIntegrity = 'sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR/D3A991F';
+
+      function attach(src, useSri) {
+        var script = document.createElement('script');
+        script.src = src;
+        if (useSri) {
+          script.integrity = cdnIntegrity;
+          script.crossOrigin = 'anonymous';
+          script.referrerPolicy = 'no-referrer';
+        }
+        script.onload = function() {
+          OCR._tesseractLoaded = true;
+          resolve(window.Tesseract || null);
+        };
+        script.onerror = function() {
+          /* Com o Tesseract vendorizado a CSP não permite o CDN — tentar
+             geraria só um erro de console e um atraso inútil. */
+          if (src === localSrc && !OCR._tesseractLocal()) {
+            attach(cdnSrc, true);
+            return;
+          }
+          console.warn('[OCR] Tesseract.js não carregou (offline ou CSP?).');
+          if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+            UTILS.mostrarToast('OCR precisa de internet na primeira vez.', 'info');
+          }
+          resolve(null);
+        };
+        document.head.appendChild(script);
+      }
+
+      attach(localSrc, false);
     });
   },
 

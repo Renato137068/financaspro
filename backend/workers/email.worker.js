@@ -29,7 +29,7 @@ export const TEMPLATES = {
       `Você foi convidado para participar da organização "${data.orgName}" no FinançasPro.`,
       ``,
       `Clique no link para aceitar o convite:`,
-      `${CONFIG.appUrl}/invite/${data.token}`,
+      `${CONFIG.appUrl}?invite=${data.token}`,
       ``,
       `O convite expira em 7 dias.`,
     ].join('\n'),
@@ -43,7 +43,7 @@ export const TEMPLATES = {
       `Sua assinatura do plano ${data.planName} foi ativada com sucesso.`,
       `Próxima cobrança: ${new Date(data.nextBilling).toLocaleDateString('pt-BR')}`,
       ``,
-      `Aproveite todos os recursos do FinançasPro!`,
+      `Aproveite o Pro: sync sem limites, IA e exportação na nuvem.`,
     ].join('\n'),
   }),
 

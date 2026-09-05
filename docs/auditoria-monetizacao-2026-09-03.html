@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FinançasPro — Auditoria de Monetização · v11.3.13 (pós-melhorias)</title>
+<style>
+:root{
+  --bg:#070a0f;--card:#111820;--line:#243044;
+  --txt:#eef2f8;--mut:#8fa3be;--mut2:#5a708a;
+  --ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--info:#22d3ee;--r:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:linear-gradient(165deg,#070a0f,#0c1210 40%,#070a0f);color:var(--txt);
+  font:15px/1.65 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding-bottom:80px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+header{padding:48px 0 36px;border-bottom:1px solid var(--line);margin-bottom:36px;
+  background:radial-gradient(800px 320px at 12% -60px,rgba(34,197,94,.12),transparent),
+             radial-gradient(600px 280px at 90% -40px,rgba(18,105,78,.16),transparent)}
+.tag{display:inline-block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:#86efac;border:1px solid rgba(34,197,94,.4);background:rgba(34,197,94,.1);
+  padding:5px 12px;border-radius:99px;margin-bottom:14px;font-weight:700}
+h1{font-size:34px;line-height:1.12;letter-spacing:-.02em;margin-bottom:8px;font-weight:800}
+h1 em{font-style:normal;color:#86efac}
+.sub{color:var(--mut);font-size:15px;max-width:980px}
+.meta{display:flex;gap:20px;flex-wrap:wrap;margin-top:20px;font-size:13px;color:var(--mut2)}
+.meta b{color:var(--txt)}
+.hero{display:grid;grid-template-columns:210px 1fr;gap:28px;align-items:center;
+  background:var(--card);border:1px solid var(--line);border-radius:18px;padding:28px;margin-bottom:22px}
+.gauge{position:relative;width:180px;height:180px;margin:0 auto}
+.gauge svg{transform:rotate(-90deg)}
+.gauge .val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.gauge .num{font-size:48px;font-weight:800;line-height:1;color:#86efac}
+.gauge .lbl{font-size:10px;color:var(--mut2);text-transform:uppercase;letter-spacing:.1em;margin-top:4px;text-align:center}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.pill{font-size:11px;padding:5px 11px;border-radius:99px;border:1px solid var(--line);background:#0c1018;color:var(--mut)}
+.pill.ok{border-color:rgba(34,197,94,.35);color:#86efac}
+.pill.warn{border-color:rgba(245,158,11,.35);color:#fcd34d}
+.price-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px}
+.price{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;text-align:center}
+.price .name{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--mut2);margin-bottom:8px}
+.price .amt{font-size:28px;font-weight:800}
+.price .amt small{font-size:13px;font-weight:600;color:var(--mut)}
+.price .yr{font-size:12px;color:var(--mut);margin-top:6px}
+.price.pro{border-color:rgba(34,197,94,.4)}
+.price.pro .amt{color:#86efac}
+section{margin-bottom:44px}
+h2.sec{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut2);
+  margin-bottom:14px;border-top:1px solid var(--line);padding-top:22px}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut2);background:#0c1018;
+  text-align:left;padding:11px 14px;border-bottom:1px solid var(--line)}
+td{padding:10px 14px;font-size:13px;border-bottom:1px solid #1a2332;color:var(--mut);vertical-align:middle}
+.n{font-weight:700;text-align:center;font-variant-numeric:tabular-nums}
+.n.hi{color:#86efac}.n.mid{color:#fcd34d}.n.lo{color:#fca5a5}
+.row-bar td{padding:8px 14px 12px}
+.mini{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--mut2)}
+.track{flex:1;height:7px;background:#0a0e14;border-radius:99px;overflow:hidden;border:1px solid #1e293b;position:relative}
+.track b{display:block;height:100%;border-radius:99px}
+.find{border-left:3px solid var(--line);background:var(--card);border:1px solid var(--line);
+  border-radius:0 var(--r) var(--r) 0;padding:14px 16px;margin-bottom:10px}
+.find.good{border-left-color:var(--ok)}.find.warn{border-left-color:var(--warn)}.find.info{border-left-color:var(--info)}
+.find h4{font-size:14px;margin-bottom:5px}
+.st{font-size:10px;font-weight:800;letter-spacing:.06em;padding:2px 7px;border-radius:4px;margin-right:6px}
+.st.fx{background:rgba(34,197,94,.15);color:#86efac}
+.st.p1{background:rgba(245,158,11,.15);color:#fcd34d}
+.st.p2{background:rgba(34,211,238,.12);color:#67e8f9}
+code{background:#0a0e14;border:1px solid #1e293b;padding:1px 5px;border-radius:4px;font-size:12px;color:#cbd5e1}
+.funnel{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px}
+.step{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center}
+.step .n{font-size:22px;color:#86efac}.step .t{font-size:14px;font-weight:700;margin:6px 0 4px;color:var(--txt)}
+.step .s{font-size:12px;color:var(--mut)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.box.g{border-color:rgba(34,197,94,.3)}.box.w{border-color:rgba(245,158,11,.3)}
+.box h4{margin-bottom:10px}.box ul{padding-left:18px;color:var(--mut);font-size:13px}
+.box li{margin-bottom:6px}
+footer{border-top:1px solid var(--line);padding:28px 0;color:var(--mut2);font-size:13px}
+@media(max-width:800px){.hero,.price-row,.funnel,.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="tag">Auditoria · Monetização · reaudit pós-melhorias</div>
+  <h1>Planos, paywall e receita — <em>65 → 81</em></h1>
+  <p class="sub">Reavaliação após recomendações P0/P1 e UI de equipe: trial 7d, soft paywall local, portal/cancel Stripe, Business + Equipe no perfil, maxUsers alinhado, gates insights/Open Finance.</p>
+  <div class="meta">
+    <span>Data: <b>03 set 2026 · 14:40</b></span>
+    <span>Baseline: <b>65/100</b></span>
+    <span>Nota geral: <b style="color:#86efac">81/100</b></span>
+    <span>Path prod Android: <b>Supabase + Play</b></span>
+  </div>
+</header>
+
+<section>
+  <div class="hero">
+    <div class="gauge" aria-hidden="true">
+      <svg width="180" height="180" viewBox="0 0 180 180">
+        <circle cx="90" cy="90" r="74" fill="none" stroke="#1e293b" stroke-width="12"/>
+        <circle cx="90" cy="90" r="74" fill="none" stroke="#22c55e" stroke-width="12"
+          stroke-dasharray="464.96" stroke-dashoffset="88.34" stroke-linecap="round"/>
+      </svg>
+      <div class="val">
+        <div class="num">81</div>
+        <div class="lbl">Monetização</div>
+      </div>
+    </div>
+    <div>
+      <p style="color:var(--mut);font-size:14px;line-height:1.6">
+        Os P0 de confiança (trial 14≠7) e lifecycle Stripe no path Supabase foram fechados. Soft paywall local (5 usos de OCR/previsão) e gates de insights/Open Finance na nuvem FREE melhoram conversão sem abandonar offline-first. Business aparece no paywall; <code>maxUsers</code> PRO=2 em todas as fontes.
+      </p>
+      <div class="pills">
+        <span class="pill ok">Trial 7d unificado</span>
+        <span class="pill ok">Stripe portal/cancel Edge</span>
+        <span class="pill ok">Soft local 5 usos</span>
+        <span class="pill ok">Business no paywall</span>
+        <span class="pill ok">maxUsers parity</span>
+        <span class="pill ok">UI Equipe + convites</span>
+        <span class="pill ok">Resend + org-invite</span>
+        <span class="pill warn">Deploy Edge + secrets</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2 class="sec">Tabela de preços</h2>
+  <div class="price-row">
+    <div class="price">
+      <div class="name">Gratuito</div>
+      <div class="amt">R$ 0</div>
+      <div class="yr">100 lançamentos/mês na nuvem · 3 contas · 5 orçamentos</div>
+    </div>
+    <div class="price pro">
+      <div class="name">Pro · principal</div>
+      <div class="amt">R$ 16,90 <small>/mês</small></div>
+      <div class="yr">ou R$ 129/ano (~36% off) · trial 7 dias · até 2 membros</div>
+    </div>
+    <div class="price">
+      <div class="name">Business · visível</div>
+      <div class="amt">R$ 79,90 <small>/mês</small></div>
+      <div class="yr">R$ 799/ano · membros ilimitados · SHOW_BUSINESS_PLAN=true</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2 class="sec">Funil de conversão (após melhorias)</h2>
+  <div class="funnel">
+    <div class="step">
+      <div class="n">1</div>
+      <div class="t">Local / offline</div>
+      <div class="s">Soft paywall após 5 usos OCR/previsão</div>
+    </div>
+    <div class="step">
+      <div class="n">2</div>
+      <div class="t">Login nuvem FREE</div>
+      <div class="s">Quotas + OCR/IA/export/insights avançados/OF</div>
+    </div>
+    <div class="step">
+      <div class="n">3</div>
+      <div class="t">Paywall Pro/Business</div>
+      <div class="s">Android → Play · Web → Stripe checkout</div>
+    </div>
+    <div class="step">
+      <div class="n">4</div>
+      <div class="t">Gerenciar / cancelar</div>
+      <div class="s">Play OK · Stripe portal/cancel via Edge</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2 class="sec">Dimensões — notas 0–100</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Dimensão</th>
+        <th style="text-align:center">Nota</th>
+        <th style="text-align:center">Peso</th>
+        <th>Síntese</th>
+      </tr>
+    </thead>
+    <tbody id="rows-dims"></tbody>
+  </table>
+</section>
+
+<section>
+  <h2 class="sec">O que está gated vs livre</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Recurso</th>
+        <th>Flag</th>
+        <th style="text-align:center">Local FREE</th>
+        <th style="text-align:center">Nuvem FREE</th>
+        <th style="text-align:center">Pro+</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>OCR comprovantes</td><td><code>aiFeatures</code></td><td class="n mid">5 usos</td><td class="n lo">paywall</td><td class="n hi">ok</td></tr>
+      <tr><td>Previsão com IA</td><td><code>aiFeatures</code></td><td class="n mid">5 usos</td><td class="n lo">upsell</td><td class="n hi">ok</td></tr>
+      <tr><td>Export CSV/PDF</td><td><code>reportExport</code></td><td class="n hi">livre</td><td class="n lo">paywall</td><td class="n hi">ok</td></tr>
+      <tr><td>Alertas avançados</td><td><code>advancedAlerts</code></td><td class="n hi">livre</td><td class="n mid">parcial</td><td class="n hi">ok</td></tr>
+      <tr><td>Insights avançados</td><td><code>aiFeatures</code></td><td class="n mid">com soft</td><td class="n lo">básico só</td><td class="n hi">ok</td></tr>
+      <tr><td>Open Finance</td><td><code>openFinance</code></td><td class="n mid">N/A</td><td class="n lo">paywall</td><td class="n hi">ok</td></tr>
+      <tr><td>Quotas tx/conta/orçamento</td><td>numérico</td><td class="n hi">sem limite</td><td class="n mid">100/3/5</td><td class="n hi">∞</td></tr>
+      <tr><td>Team / org members</td><td><code>teamFeatures</code></td><td class="n mid">N/A</td><td class="n lo">402 no invite</td><td class="n mid">API + maxUsers</td></tr>
+      <tr><td>Business (equipe/orgs)</td><td>UI on</td><td class="n mid">visível</td><td class="n mid">visível</td><td class="n hi">assinável</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2 class="sec">Status das recomendações</h2>
+
+  <div class="find good">
+    <h4><span class="st fx">FEITO</span> Trial unificado em 7 dias</h4>
+    <p>Paywall, <code>STATIC_PLANS</code>, Express Stripe, Edge <code>stripe-checkout</code> e <code>BILLING.TRIAL_DAYS</code> alinhados a 7.</p>
+  </div>
+
+  <div class="find good">
+    <h4><span class="st fx">FEITO</span> Soft paywall local (OCR/previsão)</h4>
+    <p><code>LOCAL_AI_FREE_USES=5</code> no localStorage; após o teto abre paywall. Export/alertas básicos seguem livres offline.</p>
+  </div>
+
+  <div class="find good">
+    <h4><span class="st fx">FEITO</span> Portal/cancel Stripe no path Supabase</h4>
+    <p>Edge <code>stripe-portal</code> + <code>stripe-cancel</code>; cliente chama via <code>SUPA_BILLING.invoke</code>. Footer do paywall mostra botões também no path Supabase.</p>
+  </div>
+
+  <div class="find good">
+    <h4><span class="st fx">FEITO</span> Business no paywall + teamFeatures no backend</h4>
+    <p><code>SHOW_BUSINESS_PLAN: true</code>. Convite de membros exige <code>teamFeatures</code> (402 no FREE). UI de equipe no perfil.</p>
+  </div>
+
+  <div class="find good">
+    <h4><span class="st fx">FEITO</span> <code>maxUsers</code> canônico</h4>
+    <p><code>plan-limits.json</code> + billing.js + middleware: FREE=1, PRO=2, BUSINESS=∞ (alinhado ao seed casal).</p>
+  </div>
+
+  <div class="find good">
+    <h4><span class="st fx">FEITO</span> Gates nuvem FREE extras</h4>
+    <p>Insights avançados (projeção, anomalias, poupança…) e Open Finance gated por <code>aiFeatures</code>/<code>openFinance</code>.</p>
+  </div>
+
+  <div class="find good">
+    <h4><span class="st fx">FEITO</span> UI de equipe / convites</h4>
+    <p>Card <b>Equipe</b> no perfil, modal com membros/pendentes, convite por e-mail (link 7 dias), aceite via <code>?invite=</code> + RPC <code>fp_accept_org_invitation</code>. FREE abre paywall; Pro respeita maxUsers=2.</p>
+  </div>
+
+  <div class="find good">
+    <h4><span class="st fx">FEITO</span> E-mails Resend + org-invite</h4>
+    <p><code>notify()</code> envia via Resend quando <code>RESEND_API_KEY</code> está setada. Edge <code>org-invite</code> cria convite e dispara e-mail; cliente faz fallback para insert direto se a function não existir.</p>
+  </div>
+
+  <div class="find good">
+    <h4><span class="st fx">FEITO</span> Ficha Play alinhada</h4>
+    <p><code>docs/play-store-ficha.md</code> sem promessa de “sem cadastro”, com trial 7 dias e preços Pro/Business. Teste de honestidade cobre a ficha.</p>
+  </div>
+
+  <div class="find good">
+    <h4><span class="st fx">FEITO</span> Dunning / trial ending no app</h4>
+    <p>Banner no dashboard para <code>PAST_DUE</code>, trial ≤3 dias e cancelamento agendado, com CTA para portal Stripe ou planos. Checklist: <code>docs/deploy-billing-edge.md</code>.</p>
+  </div>
+
+  <div class="find info">
+    <h4><span class="st p2">OPS</span> Deploy remoto</h4>
+    <p>Ver <code>docs/deploy-billing-edge.md</code> — migrations, functions, secrets Resend/Stripe/Play e smoke manual.</p>
+  </div>
+</section>
+
+<section>
+  <h2 class="sec">Canais de pagamento</h2>
+  <div class="grid2">
+    <div class="box g">
+      <h4>Google Play (Android prod)</h4>
+      <ul>
+        <li><b>IDs</b> — <code>financaspro.pro.monthly/yearly</code> (+ business)</li>
+        <li><b>Client</b> — <code>play-billing.js</code> + bridge Capacitor</li>
+        <li><b>Verify / RTDN</b> — Edge + Express</li>
+        <li><b>Cancel UI</b> — abre página de assinaturas da Play</li>
+      </ul>
+    </div>
+    <div class="box g">
+      <h4>Stripe (web / Supabase)</h4>
+      <ul>
+        <li><b>Checkout</b> — Edge trial 7d</li>
+        <li><b>Portal / cancel</b> — Edge + client wired</li>
+        <li><b>Webhook</b> — Express + Edge</li>
+        <li><b>E-mail</b> — Resend via <code>notify()</code> (opcional; sem key = log)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p><b>FinançasPro — Auditoria de Monetização (reaudit)</b> · 03/09/2026 · v11.3.13 (vc36).</p>
+  <p>Baseline 65 → <b style="color:#86efac">81</b>. Arquivo: <code>docs/auditoria-monetizacao-2026-09-03.html</code></p>
+</footer>
+
+</div>
+<script>
+/* [dimensão, nota, peso%, justificativa] */
+var dims=[
+  ['Eficácia do feature gating',72,15,'Soft local IA; nuvem FREE com insights avançados + Open Finance gated'],
+  ['Funil de conversão local→nuvem→pago',72,12,'Soft local + banner PAST_DUE/trial ending + quotas'],
+  ['Google Play Billing',80,12,'Plugin+verify+RTDN+restore; Business agora vendável na UI'],
+  ['Stripe / checkout web',84,10,'Checkout + portal + cancel + org-invite + dunning UI'],
+  ['Clareza de preços',88,8,'Pro + Business; trial 7d; ficha Play alinhada'],
+  ['Paywall UX e copy',84,8,'Copy “na nuvem”, trial dinâmico, lifecycle banner'],
+  ['Quotas e enforcement',88,8,'FE+SQL+parity incl. maxUsers; teamFeatures no invite'],
+  ['Honestidade / trial / listing',92,8,'Trial 7 canônico + teste parity; ficha Play sem “sem cadastro”'],
+  ['Ops de billing (portal, cancel, dunning)',90,7,'Checklist deploy-billing-edge; Resend + banners dunning'],
+  ['Arquitetura dual Express vs Supabase',58,5,'Dois caminhos; revoke invite nos dois; Express inerte no APK'],
+  ['Expansão Business / team',90,4,'Equipe: convidar, copiar, revogar, remover membro'],
+  ['Testes de monetização',92,3,'lifecycle + trial-parity + residual equipe']
+];
+function sc(n){return n>=80?'hi':n>=60?'mid':'lo'}
+function bar(v){return v>=80?'#22c55e':v>=60?'#f59e0b':'#ef4444'}
+var tb=document.getElementById('rows-dims');
+var w=0,t=0;
+dims.forEach(function(d){
+  w+=d[1]*d[2];t+=d[2];
+  var tr=document.createElement('tr');
+  tr.innerHTML='<td>'+d[0]+'</td><td class="n '+sc(d[1])+'">'+d[1]+'</td><td style="text-align:center;color:var(--mut2)">'+d[2]+'%</td><td style="font-size:12px">'+d[3]+'</td>';
+  tb.appendChild(tr);
+  var tr2=document.createElement('tr');tr2.className='row-bar';
+  tr2.innerHTML='<td colspan="4"><div class="mini"><span>'+d[1]+'</span><div class="track"><b style="width:'+d[1]+'%;background:'+bar(d[1])+'"></b></div></div></td>';
+  tb.appendChild(tr2);
+});
+</script>
+</body>
+</html>

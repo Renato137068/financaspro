@@ -44,7 +44,8 @@ const PERMITIDO = new RegExp([
   "'" + PROIBIDA + "'",                  // comparação com o tier vindo da API
   'youtube ' + PROIBIDA,                 // serviço de terceiro
   'Recursos ' + PROIBIDA + ' na nuvem',  // comentário sobre o plano
-  "label: 'Premium'",                    // rótulo do plano na interface
+  // rótulo antigo do plano (histórico); UI atual usa "Pro"
+  "label: '" + PROIBIDA + "'",
 ].join('|'), 'i');
 
 /** Comentários que EXPLICAM a renomeação precisam poder citar o nome antigo. */

@@ -289,7 +289,7 @@
 }
 
 .perfil-card:active {
-  transform: translateY(0);
+  transform: scale(0.98);
 }
 
 .perfil-card-toggle {
@@ -562,9 +562,11 @@
   line-height: var(--line-height-normal);
 }
 
-/* ── BOTÃO SECUNDÁRIO ─────────────────────────────────────── */
+/* ── BOTÃO SECUNDÁRIO (só em telas de perfil/config — não sobrescreve o DS global) ── */
 
-.btn-secundario {
+#aba-config .btn-secundario,
+#aba-editar-perfil .btn-secundario,
+#aba-gerenciar-bancos .btn-secundario {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -582,7 +584,9 @@
   box-shadow: var(--shadow-xs);
 }
 
-.btn-secundario:hover {
+#aba-config .btn-secundario:hover,
+#aba-editar-perfil .btn-secundario:hover,
+#aba-gerenciar-bancos .btn-secundario:hover {
   background: var(--color-bg-page);
   border-color: var(--color-border);
   color: var(--color-text-primary);
@@ -590,13 +594,17 @@
   box-shadow: var(--shadow-sm);
 }
 
-.btn-secundario:focus-visible {
+#aba-config .btn-secundario:focus-visible,
+#aba-editar-perfil .btn-secundario:focus-visible,
+#aba-gerenciar-bancos .btn-secundario:focus-visible {
   outline: 2px solid var(--color-primary-500);
   outline-offset: 2px;
   box-shadow: 0 0 0 4px rgba(18, 105, 78, 0.15);
 }
 
-.btn-secundario:active {
+#aba-config .btn-secundario:active,
+#aba-editar-perfil .btn-secundario:active,
+#aba-gerenciar-bancos .btn-secundario:active {
   transform: translateY(0);
 }
 
@@ -878,12 +886,26 @@
   color: var(--color-text-inverse);
   border: none;
   border-radius: var(--radius-md);
-  padding: var(--space-1) var(--space-3);
+  padding: 0;
+  width: var(--tap-target-min, 44px);
+  height: var(--tap-target-min, 44px);
+  min-width: var(--tap-target-min, 44px);
+  min-height: var(--tap-target-min, 44px);
   font-size: var(--font-size-base);
   cursor: pointer;
-  opacity: 0;
-  transition: opacity var(--transition-fast);
-  line-height: 1.4;
+  opacity: 1;
+  transition: opacity var(--transition-fast), transform .12s, background .15s;
+  line-height: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.er-btn i[data-lucide],
+.er-btn svg {
+  display: block;
+  width: 1.2em;
+  height: 1.2em;
 }
 
 .er-wrapper:focus-within .er-btn { opacity: 1; }
@@ -1209,21 +1231,31 @@
   width: 100%;
   margin-top: var(--space-3);
   padding: 12px 16px;
+  min-height: var(--tap-target-min, 44px);
   background: var(--primary);
   color: white;
   border: none;
   border-radius: var(--radius-md);
   font-weight: var(--font-weight-semibold);
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .perfil-modal-btn-danger {
-  padding: 4px 8px;
-  background: var(--danger);
+  padding: 12px 16px;
+  min-height: var(--tap-target-min, 44px);
+  background: var(--color-danger, var(--danger));
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   cursor: pointer;
+  font-weight: var(--font-weight-semibold);
+  font-family: var(--font-family-sans);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .perfil-modal-empty {

@@ -2,6 +2,10 @@
  * patrimonio.js — Patrimônio líquido (ativos manuais − dívidas)
  */
 const PATRIMONIO = {
+  // A flag `netWorthHistory` ja existe no contrato de plano, mas a evolucao
+  // historica do patrimonio ainda nao foi construida (P2). Quando for, o gate
+  // entra aqui: o snapshot de hoje fica livre, a curva ao longo do tempo e PRO.
+
   TIPOS_ATIVO: ['corrente', 'poupanca', 'investimento', 'imovel', 'veiculo', 'outro'],
   TIPOS_DIVIDA: ['emprestimo', 'financiamento', 'cartao', 'outro'],
 

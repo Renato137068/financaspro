@@ -258,6 +258,12 @@ const EVENT_HANDLERS = {
     },
     
     'abrir-busca-avancada': function() {
+      // Engrenagem legado: abre o mesmo painel unificado de "Mais filtros"
+      if (typeof INIT_EXTRATO !== 'undefined' && typeof INIT_EXTRATO.toggleFiltrosAvancados === 'function') {
+        var panel = document.getElementById('extrato-filtros-avancados');
+        if (panel && panel.hidden) INIT_EXTRATO.toggleFiltrosAvancados();
+        return;
+      }
       var container = document.getElementById('busca-avancada-container');
       if (container) {
         container.style.display = container.style.display === 'none' ? 'block' : 'none';

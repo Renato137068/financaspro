@@ -210,13 +210,21 @@
   background: none;
   border: none;
   cursor: pointer;
-  padding: 2px 0;
+  padding: 8px 4px;
+  min-height: var(--tap-target-min, 44px);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   flex-shrink: 0;
-  transition: opacity var(--transition-fast);
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
   font-family: var(--font-family-sans);
 }
 
 .secao-link:hover { opacity: 0.75; }
+
+.secao-link:active {
+  transform: scale(var(--press-scale, 0.98));
+}
 
 /* ── Indicador card (renda + dias) ───────────────────────── */
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5, user-scalable=yes">
-  <meta name="description" content="Seu dinheiro, no seu aparelho. Controle de gastos sem cadastro, sem banco conectado e sem internet.">
+  <meta name="description" content="Controle de gastos com dados no aparelho e sincronização opcional na nuvem. Sem anúncios e sem conectar ao banco.">
   <meta name="theme-color" content="#12694E">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -24,7 +24,9 @@
          sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR/D3A991F
        (calculado a partir do tarball publicado no npm, que é exatamente o que
        o jsDelivr serve em /npm/tesseract.js@5.1.1/dist/tesseract.min.js). -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net/npm/tesseract.js@5/ https://cdn.jsdelivr.net/npm/tesseract.js-core@5/ https://cdn.belvo.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; connect-src 'self' http://localhost:4000 http://127.0.0.1:4000 https://cdn.jsdelivr.net https://api.belvo.com https://sandbox.belvo.com https://widget.belvo.io https://nubvlksibmpryltkfpei.supabase.co wss://nubvlksibmpryltkfpei.supabase.co; frame-src https://widget.belvo.io; object-src 'none'; base-uri 'self'; form-action 'self';">
+  <!-- CSP: path @5/ NÃO casa com @5.1.1/ (prefixo literal). Versão pinada +
+       worker-src blob: + wasm-unsafe-eval são obrigatórios para o Tesseract.js. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/ https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1/ https://cdn.belvo.com; worker-src 'self' blob: 'wasm-unsafe-eval' https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/ https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1/; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; connect-src 'self' http://localhost:4000 http://127.0.0.1:4000 https://cdn.jsdelivr.net https://api.belvo.com https://sandbox.belvo.com https://widget.belvo.io https://nubvlksibmpryltkfpei.supabase.co wss://nubvlksibmpryltkfpei.supabase.co; frame-src https://widget.belvo.io; object-src 'none'; base-uri 'self'; form-action 'self';">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
   <link rel="icon" href="icons/logo.svg" type="image/svg+xml">
@@ -39,10 +41,11 @@
   <link rel="stylesheet" href="css/fonts.css">
   <link rel="stylesheet" href="css/design-system.css">
   <link rel="stylesheet" href="css/critical-inline.css">
-  <link rel="stylesheet" href="css/style.css?v=modular-v7">
+  <link rel="stylesheet" href="css/style.css?v=modular-v8">
   <link rel="stylesheet" href="css/features/brand.css">
   <title>FinançasPro</title>
   <script defer src="js/utilities/observability.js"></script>
+  <script defer src="js/utilities/funil.js"></script>
   <script defer src="js/utilities/local-crypto.js"></script>
   <script defer src="js/utilities/focus-trap.js"></script>
   <script defer src="js/utilities/tablist-keyboard.js"></script>
@@ -50,6 +53,7 @@
   <script defer src="js/utilities/finance-reconciler.js"></script>
   <!-- pin-guard NAO usa defer: precisa rodar antes do primeiro paint p/ evitar leak visual -->
   <script src="js/pin-guard.js"></script>
+  <script defer src="js/fp-secure-screen.js"></script>
   <script defer src="js/vendor/lucide.min.js"></script>
   <script defer src="js/lucide-init.js"></script>
 </head>
@@ -112,7 +116,31 @@
           <i data-lucide="fingerprint" aria-hidden="true"></i>
           <span>Entrar com biometria</span>
         </button>
+        <p id="auth-biometric-hint" class="auth-biometric-hint" hidden>
+          Entre com senha uma vez para ativar biometria nas próximas vezes.
+        </p>
+        <button type="button" id="auth-resend-email-btn" class="auth-link-btn auth-link-btn--center" hidden>
+          Reenviar e-mail de confirmação
+        </button>
       </div>
+    <form id="auth-reset-password-form" class="auth-form auth-form--reset" hidden style="display:none" aria-labelledby="auth-reset-title">
+      <h3 id="auth-reset-title" class="auth-totp-title">Definir nova senha</h3>
+      <p class="auth-totp-hint">Escolha uma senha forte para sua conta na nuvem.</p>
+      <div class="auth-field auth-field--underline">
+        <label for="auth-reset-password">Nova senha</label>
+        <div class="auth-password-wrap">
+          <input type="password" id="auth-reset-password" name="new-password" autocomplete="new-password"
+                 minlength="8" maxlength="128" autocapitalize="off" autocorrect="off" spellcheck="false"
+                 aria-describedby="auth-reset-password-hint" placeholder="Mín. 8 caracteres" required>
+          <button type="button" class="auth-password-toggle" data-target="auth-reset-password"
+                  aria-label="Mostrar senha" aria-pressed="false">
+            <i data-lucide="eye" aria-hidden="true"></i>
+          </button>
+        </div>
+        <p id="auth-reset-password-hint" class="auth-field-hint">Mínimo 8 caracteres, com pelo menos um número ou caractere especial.</p>
+      </div>
+      <button type="submit" class="btn-primario auth-btn-primary">Salvar nova senha</button>
+    </form>
     <form id="auth-totp-form" class="auth-form" hidden style="display:none" aria-labelledby="auth-totp-title">
       <h3 id="auth-totp-title" class="auth-totp-title">Verificação em duas etapas</h3>
       <p class="auth-totp-hint">Digite o código de 6 dígitos do seu app autenticador.</p>
@@ -121,6 +149,7 @@
         <input type="text" id="auth-totp-code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="000000" required>
       </div>
       <button type="submit" class="btn-primario">Confirmar</button>
+      <button type="button" id="auth-totp-recovery" class="auth-link-btn auth-link-btn--center">Não tenho o autenticador</button>
       <button type="button" class="btn-ghost auth-totp-back" id="auth-totp-back">Voltar</button>
     </form>
     <form id="auth-register-form" class="auth-form" role="tabpanel" aria-labelledby="auth-tab-register" hidden autocomplete="on">
@@ -150,7 +179,7 @@
       </div>
       <button type="submit" class="btn-primario">Criar conta</button>
     </form>
-      <p class="auth-footer-note">Seus dados ficam no seu aparelho e são criptografados na nuvem.</p>
+      <p class="auth-footer-note">Seus lançamentos ficam neste aparelho. Com login, sincronizam com a nuvem (Supabase) para backup entre dispositivos. A cifragem local é opcional em Perfil.</p>
     </div>
   </div>
 </div>
@@ -712,37 +741,10 @@
 
     <!-- Busca e filtros -->
     <div class="perfil-section">
-      <h2 class="perfil-section-title">Filtros</h2>
     <!-- Busca -->
     <div class="extrato-busca">
       <i data-lucide="search" class="busca-icon" aria-hidden="true"></i>
       <input type="text" id="extrato-busca" class="extrato-busca-input" placeholder="Buscar transações..." aria-label="Buscar transações por descrição ou categoria" autocomplete="off">
-      <button class="btn-busca-avancada" id="btn-busca-avancada" data-action="abrir-busca-avancada" aria-label="Abrir busca avançada">
-        <i data-lucide="settings" aria-hidden="true"></i>
-      </button>
-    </div>
-
-    <!-- Busca Avançada (oculta por padrão) -->
-    <div class="busca-avancada-container" id="busca-avancada-container" style="display:none">
-      <div class="busca-avancada-content">
-        <div class="busca-avancada-row">
-          <label for="valor-min">Valor mínimo:</label>
-          <input type="number" id="valor-min" class="busca-avancada-input" placeholder="R$ 0,00" step="0.01">
-        </div>
-        <div class="busca-avancada-row">
-          <label for="valor-max">Valor máximo:</label>
-          <input type="number" id="valor-max" class="busca-avancada-input" placeholder="R$ 0,00" step="0.01">
-        </div>
-        <div class="busca-avancada-row">
-          <label for="data-inicio">Data início:</label>
-          <input type="date" id="data-inicio" class="busca-avancada-input">
-        </div>
-        <div class="busca-avancada-row">
-          <label for="data-fim">Data fim:</label>
-          <input type="date" id="data-fim" class="busca-avancada-input">
-        </div>
-        <button class="btn-aplicar-busca-avancada" id="btn-aplicar-busca-avancada" data-action="aplicar-busca-avancada">Aplicar filtros</button>
-      </div>
     </div>
 
     <!-- Filtros -->
@@ -754,12 +756,35 @@
         <button type="button" class="filtro-chip filtro-chip--avancados" id="btn-filtros-avancados"
           data-action="toggle-filtros-avancados"
           aria-expanded="false" aria-controls="extrato-filtros-avancados">
-          <i data-lucide="sliders-horizontal" aria-hidden="true"></i> Filtros
+          <i data-lucide="sliders-horizontal" aria-hidden="true"></i> Mais filtros
           <span class="filtro-avancados-count" id="filtro-avancados-count" hidden>0</span>
         </button>
       </div>
 
       <div class="extrato-filtros-avancados" id="extrato-filtros-avancados" hidden>
+        <!-- Valor / período (antes na engrenagem da busca) -->
+        <div class="busca-avancada-container" id="busca-avancada-container">
+          <div class="busca-avancada-content">
+            <div class="busca-avancada-row">
+              <label for="valor-min">Valor mínimo:</label>
+              <input type="number" id="valor-min" class="busca-avancada-input" placeholder="R$ 0,00" step="0.01">
+            </div>
+            <div class="busca-avancada-row">
+              <label for="valor-max">Valor máximo:</label>
+              <input type="number" id="valor-max" class="busca-avancada-input" placeholder="R$ 0,00" step="0.01">
+            </div>
+            <div class="busca-avancada-row">
+              <label for="data-inicio">Data início:</label>
+              <input type="date" id="data-inicio" class="busca-avancada-input">
+            </div>
+            <div class="busca-avancada-row">
+              <label for="data-fim">Data fim:</label>
+              <input type="date" id="data-fim" class="busca-avancada-input">
+            </div>
+            <button class="btn-aplicar-busca-avancada" id="btn-aplicar-busca-avancada" data-action="aplicar-busca-avancada">Aplicar período e valor</button>
+          </div>
+        </div>
+
         <div class="filtros-categoria" id="filtros-categoria" role="group" aria-label="Filtro por categoria"></div>
 
         <!-- Ordenação -->
@@ -829,17 +854,17 @@
   <!-- ABA 4: ORÇAMENTO -->
   <div id="aba-orcamento" class="aba">
     <nav class="orc-subnav" aria-label="Seções do orçamento">
-      <div class="filtros-tipo" role="tablist" aria-label="Seções do orçamento">
-        <button type="button" class="filtro-chip ativo" role="tab"
+      <div class="orc-tablist" role="tablist" aria-label="Seções do orçamento">
+        <button type="button" class="orc-tab ativo" role="tab"
           id="orc-sub-tab-planejamento" data-action="orc-sub-aba" data-orc-sub="planejamento"
           aria-selected="true" aria-controls="orc-sub-panel-planejamento" tabindex="0">Planejamento</button>
-        <button type="button" class="filtro-chip" role="tab"
+        <button type="button" class="orc-tab" role="tab"
           id="orc-sub-tab-metas" data-action="orc-sub-aba" data-orc-sub="metas"
           aria-selected="false" aria-controls="orc-sub-panel-metas" tabindex="-1">Metas</button>
-        <button type="button" class="filtro-chip" role="tab"
+        <button type="button" class="orc-tab" role="tab"
           id="orc-sub-tab-assinaturas" data-action="orc-sub-aba" data-orc-sub="assinaturas"
           aria-selected="false" aria-controls="orc-sub-panel-assinaturas" tabindex="-1">Gastos fixos</button>
-        <button type="button" class="filtro-chip" role="tab"
+        <button type="button" class="orc-tab" role="tab"
           id="orc-sub-tab-patrimonio" data-action="orc-sub-aba" data-orc-sub="patrimonio"
           aria-selected="false" aria-controls="orc-sub-panel-patrimonio" tabindex="-1">Patrimônio</button>
       </div>
@@ -1206,6 +1231,17 @@
           <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
         </button>
 
+        <button type="button" class="perfil-card" data-action="abrir-equipe" data-requer-nuvem aria-label="Gerenciar membros da equipe">
+          <div class="perfil-card-icon-wrapper">
+            <i data-lucide="users" aria-hidden="true"></i>
+          </div>
+          <div class="perfil-card-content">
+            <span class="perfil-card-title">Equipe</span>
+            <span class="perfil-card-subtitle" id="perfil-equipe-subtitle">Convide até 2 pessoas no Pro (modo casal)</span>
+          </div>
+          <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+        </button>
+
         <button type="button" class="perfil-card" data-action="abrir-config-bancos" aria-label="Gerenciar bancos e cartões">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="landmark" aria-hidden="true"></i>
@@ -1241,6 +1277,7 @@
           <div class="perfil-card-content">
             <span class="perfil-card-title">Proteção por PIN</span>
             <span class="perfil-card-subtitle" id="perfil-pin-toggle-status">Desativado</span>
+            <span class="perfil-card-hint">Oculta saldos ao abrir o app neste aparelho. Não criptografa dados contra acesso técnico.</span>
           </div>
           <label class="perfil-switch">
             <input type="checkbox" id="chk-pin" aria-label="Ativar proteção por PIN">
@@ -1277,6 +1314,28 @@
           </label>
         </div>
 
+        <div class="perfil-card perfil-recovery-card" id="perfil-recovery-card" hidden>
+          <div class="perfil-card-icon-wrapper">
+            <i data-lucide="key-round" aria-hidden="true"></i>
+          </div>
+          <div class="perfil-card-content">
+            <span class="perfil-card-title">Códigos de recuperação</span>
+            <span class="perfil-card-subtitle" id="perfil-recovery-status">—</span>
+          </div>
+          <button type="button" class="btn-ghost perfil-recovery-btn" id="btn-recovery-gerar">Gerar novos</button>
+        </div>
+
+        <div class="perfil-card" id="perfil-sessoes-card" data-requer-nuvem>
+          <div class="perfil-card-icon-wrapper">
+            <i data-lucide="monitor-smartphone" aria-hidden="true"></i>
+          </div>
+          <div class="perfil-card-content">
+            <span class="perfil-card-title">Sessões em outros aparelhos</span>
+            <span class="perfil-card-subtitle" id="perfil-sessoes-status">Desconectar todos, menos este</span>
+          </div>
+          <button type="button" class="btn-ghost perfil-recovery-btn" id="btn-sair-outros">Desconectar</button>
+        </div>
+
         <div class="perfil-card perfil-card-toggle" id="perfil-crypto-card">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="shield" aria-hidden="true"></i>
@@ -1288,7 +1347,7 @@
                  a chave. Sem passphrase do usuário ela fica neste dispositivo,
                  e o rótulo precisa refletir isso em vez de sugerir uma garantia
                  que o desenho não dá. -->
-            <span class="perfil-card-hint">Embaralha os dados guardados no navegador. Protege backups e olhares casuais, não um invasor com acesso ao aparelho.</span>
+            <span class="perfil-card-hint">Protege localStorage e anexos (IndexedDB) com AES-GCM. Não cobre XSS nem acesso completo ao aparelho.</span>
           </div>
           <label class="perfil-switch">
             <input type="checkbox" id="chk-crypto" aria-label="Cifrar dados armazenados no dispositivo">
@@ -1396,6 +1455,7 @@
           <div class="perfil-card-content">
             <span class="perfil-card-title">Exportar backup</span>
             <span class="perfil-card-subtitle" id="perfil-ultimo-backup">Nunca exportado</span>
+            <span class="perfil-card-hint" id="perfil-export-hint">JSON com lançamentos, contas e preferências deste aparelho.</span>
           </div>
           <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
         </button>
@@ -1483,7 +1543,7 @@
           </div>
           <div class="perfil-card-content">
             <span class="perfil-card-title">Novidades</span>
-            <span class="perfil-card-subtitle" id="perfil-changelog-version">v11.0.0 — PWA e Android</span>
+            <span class="perfil-card-subtitle" id="perfil-changelog-version">v11.3.13 — PWA e Android</span>
           </div>
           <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
         </button>
@@ -1530,7 +1590,7 @@
 
     <!-- SISTEMA -->
     <div class="perfil-system-info">
-      <p id="perfil-app-footer">FinançasPro v11.0.0 · Dados salvos localmente</p>
+      <p id="perfil-app-footer">FinançasPro v11.3.13 · Dados salvos localmente</p>
       <p>Feito com <i data-lucide="heart" aria-hidden="true"></i> para suas finanças</p>
     </div>
 

@@ -451,11 +451,28 @@
         return;
       }
 
+      // Janela analítica: o gráfico continua com seis colunas, mas as que
+      // caem fora do plano vêm esmaecidas em vez de sumirem. Efeito de
+      // demonstração — o usuário vê a FORMA do que está perdendo, e é isso
+      // que converte; um gráfico que simplesmente encolhe não comunica nada.
+      var janela = (typeof BILLING !== 'undefined' && BILLING.janelaAnalitica)
+        ? BILLING.janelaAnalitica()
+        : { limitado: false, desde: null };
+
       var dados = [];
       for (var i = 5; i >= 0; i--) {
         var d      = new Date(ctx.ano, ctx.mes - 1 - i, 1);
         var resumo = this._resumoMes(d.getMonth() + 1, d.getFullYear());
-        dados.push({ mes: NOMES_MESES[d.getMonth()], receitas: resumo.receitas, despesas: resumo.despesas });
+        var fora   = janela.limitado && janela.desde && d < janela.desde;
+        dados.push({
+          mes: NOMES_MESES[d.getMonth()],
+          receitas: fora ? 0 : resumo.receitas,
+          despesas: fora ? 0 : resumo.despesas,
+          bloqueado: !!fora,
+          // Altura só para dar silhueta ao mês bloqueado. Nunca é o valor real:
+          // o número fica no Pro, a forma fica visível.
+          silhueta: fora ? Math.max(0.25, Math.min(0.8, (resumo.despesas || 1) / 10000)) : 0
+        });
       }
 
       var temDados = dados.some(function(d) { return d.receitas > 0 || d.despesas > 0; });

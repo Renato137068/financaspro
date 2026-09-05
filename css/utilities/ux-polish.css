@@ -3,6 +3,19 @@
 :root {
   --tap-target-min: 44px;
   --focus-ring: 0 0 0 3px rgba(18, 105, 78, 0.18);
+  /* Folga do sticky "Registrar" acima da nav inferior + FAB */
+  --nav-clearance: calc(92px + env(safe-area-inset-bottom, 0px));
+  --press-scale: 0.98;
+}
+
+/* Pressed state canônico em cards/linhas clicáveis */
+.perfil-card:not(.perfil-card-toggle):active,
+.ext-tx:active,
+.orcamento-item--link:active,
+.orc-kpi-card:active,
+.orc-regra-card:active,
+.kpi-card:active {
+  transform: scale(var(--press-scale));
 }
 
 button,
@@ -33,6 +46,7 @@ textarea:focus-visible {
 .btn-busca-avancada,
 .data-chip,
 .filtro-chip,
+.orc-tab,
 .ordenacao-btn,
 .ordenacao-campo-btn,
 .ordenacao-dir-btn,
@@ -42,7 +56,7 @@ textarea:focus-visible {
 }
 
 .extrato-busca-input {
-  padding-right: 64px;
+  padding-right: var(--space-4);
 }
 .ext-tx {
   min-height: 72px;
@@ -69,7 +83,7 @@ textarea:focus-visible {
 }
 
 .btn-registrar {
-  bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+  bottom: var(--nav-clearance);
 }
 
 @media (min-width: 768px) {
@@ -138,9 +152,15 @@ textarea:focus-visible {
    toque, TODO controle interativo recebe o mínimo. Fica restrita ao ponteiro
    grosso de propósito — no desktop, com mouse, forçar 44px em botões pequenos
    distorceria o layout sem ganho de acessibilidade. */
+.ocr-btn,
+.er-btn:not(.ocr-btn),
+.btn-insight,
+.ia-confirm-btn,
+.ia-alt-btn,
 .alerta-dispensar,
 .alerta-btn,
 .filtro-chip,
+.orc-tab,
 .ordenacao-btn,
 .ordenacao-campo-btn,
 .ordenacao-dir-btn,
@@ -148,6 +168,7 @@ textarea:focus-visible {
 .periodo-nav,
 .perfil-action-btn,
 .btn-remover-banco,
+.btn-sm,
 .btn-small,
 .anexo-remover {
   min-width: var(--tap-target-min);

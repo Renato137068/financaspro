@@ -12,15 +12,17 @@ const CANONICAL = JSON.parse(
   fs.readFileSync(path.join(ROOT, 'config/plan-limits.json'), 'utf8'),
 );
 
-const FIELDS = [
-  'maxTransPerMonth',
-  'maxAccounts',
-  'maxBudgets',
-  'aiFeatures',
-  'teamFeatures',
-  'reportExport',
-  'advancedAlerts',
-];
+/**
+ * A lista de campos vem do proprio JSON, nao de uma copia aqui.
+ *
+ * Uma lista fixa envelhece em silencio: quando `reportExport` virou
+ * `exportCsv`/`exportPdf`, o teste continuou verde comparando `undefined` com
+ * `undefined` dos dois lados. Derivar do canonico faz um campo novo ser
+ * cobrado automaticamente, que e o unico jeito de a paridade nao mentir.
+ */
+function camposDe(tier) {
+  return Object.keys(CANONICAL[tier]);
+}
 
 function normNumeric(value) {
   if (value === null || value === undefined || value === Infinity) return null;
@@ -32,13 +34,25 @@ describe('backend/middleware/plan.js — paridade com config/plan-limits.json', 
     test(tier, function() {
       const src = PLAN_LIMITS[tier];
       const expected = CANONICAL[tier];
-      FIELDS.forEach(function(field) {
-        if (field.startsWith('max')) {
-          expect(normNumeric(src[field])).toBe(expected[field]);
-        } else {
-          expect(src[field]).toBe(expected[field]);
-        }
+      const campos = camposDe(tier);
+
+      // Guarda contra teste vazio: se o JSON perder o tier, o forEach abaixo
+      // passaria sem checar nada.
+      expect(campos.length).toBeGreaterThan(15);
+
+      campos.forEach(function(field) {
+        const atual = typeof src[field] === 'number'
+          ? normNumeric(src[field])
+          : src[field];
+        expect(atual).toBe(expected[field]);
       });
+    });
+
+    test(tier + ' — o backend não inventa campo fora do canônico', function() {
+      const extras = Object.keys(PLAN_LIMITS[tier]).filter(function(k) {
+        return !(k in CANONICAL[tier]);
+      });
+      expect(extras).toEqual([]);
     });
   });
 });

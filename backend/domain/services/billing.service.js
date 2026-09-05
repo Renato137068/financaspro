@@ -5,7 +5,22 @@ import CONFIG from '../../config.js';
 import logger from '../../lib/logger.js';
 import { enqueue, QUEUES } from '../../lib/queue.js';
 import { assertAllowedRedirectUrl } from '../../lib/billing-urls.js';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+
 let _stripePromise = null;
+
+const TRIAL_DAYS = (function loadTrialDays() {
+  try {
+    const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../..');
+    const cfg = JSON.parse(readFileSync(path.join(root, 'config/plan-limits.json'), 'utf8'));
+    const n = Number(cfg.trialDays);
+    return Number.isFinite(n) && n > 0 ? n : 7;
+  } catch {
+    return 7;
+  }
+})();
 
 function getStripe() {
   if (!CONFIG.stripe?.secretKey) return Promise.resolve(null);
@@ -71,7 +86,7 @@ export const BillingService = {
       const stripeSub = await stripe.subscriptions.create({
         customer: stripeCustomerId,
         items: [{ price: priceId }],
-        trial_period_days: 14,
+        trial_period_days: TRIAL_DAYS,
         metadata: { orgId },
       });
 
@@ -181,7 +196,7 @@ export const BillingService = {
       cancel_url:           cancelUrl + cancelSep + 'billing=cancel',
       allow_promotion_codes: true,
       subscription_data: {
-        trial_period_days: 14,
+        trial_period_days: TRIAL_DAYS,
         metadata:          { orgId, planTier },
       },
       metadata: { orgId, planTier, interval },

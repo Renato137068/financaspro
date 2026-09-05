@@ -13,9 +13,16 @@ describe('Auth + Service Worker (app nativo)', () => {
     expect(src).toContain('unregister');
   });
 
-  test('sw.js não intercepta fetch cross-origin', () => {
+  test('sw.js não cacheia respostas do Supabase (H1: dado financeiro at-rest)', () => {
     const src = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
-    expect(src).toMatch(/if\s*\(\s*!isOrigem\s*\)/);
+    // Existe uma allowlist explícita de origens cross-origin cacheáveis...
+    expect(src).toMatch(/CACHEABLE_CROSS_ORIGIN\s*=\s*new Set\(/);
+    // ...e ela NÃO contém a origem do Supabase (só asset estático de CDN).
+    const allowlist = src.match(/CACHEABLE_CROSS_ORIGIN\s*=\s*new Set\(\[([\s\S]*?)\]\)/);
+    expect(allowlist).not.toBeNull();
+    expect(allowlist[1]).not.toMatch(/supabase/i);
+    // Cross-origin fora da allowlist é network-only (não toca no cache).
+    expect(src).toMatch(/!isOrigem\s*&&\s*!crossOriginCacheavel/);
   });
 
   test('SUPA_AUTH expõe ping de saúde', () => {

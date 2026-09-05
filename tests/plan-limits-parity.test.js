@@ -10,14 +10,50 @@ const CANONICAL = JSON.parse(
 );
 const billing = require('../js/billing.js');
 
+/**
+ * Todas as chaves do contrato de plano. Manter esta lista fechada e o que
+ * impede um limite novo de nascer em billing.js e nunca chegar ao backend --
+ * o modo como as duas tabelas divergiram da ultima vez.
+ */
 const FIELDS = [
+  'maxUsers',
   'maxTransPerMonth',
   'maxAccounts',
   'maxBudgets',
+  'maxCustomCategories',
+  'maxGoals',
+  'maxRecurring',
+  'maxBillsToPay',
+  'maxSubscriptions',
+  'maxAttachments',
+  'maxDevices',
+  'historyMonths',
+  'ocrPerMonth',
   'aiFeatures',
   'teamFeatures',
-  'reportExport',
+  'exportCsv',
+  'exportPdf',
   'advancedAlerts',
+  'openFinance',
+  'learnedCategorization',
+  'futureInvoiceProjection',
+  'netWorthHistory',
+];
+
+/** Colunas numericas espelhadas na tabela fp_plan_limit_config. */
+const SQL_FIELDS = [
+  'maxTransPerMonth',
+  'maxAccounts',
+  'maxBudgets',
+  'maxCustomCategories',
+  'maxGoals',
+  'maxRecurring',
+  'maxBillsToPay',
+  'maxSubscriptions',
+  'maxAttachments',
+  'maxDevices',
+  'historyMonths',
+  'ocrPerMonth',
 ];
 
 function normNumeric(value) {
@@ -25,20 +61,28 @@ function normNumeric(value) {
   return value;
 }
 
+/**
+ * Le a migration de quota mais recente. A v2 reescreve a tabela inteira via
+ * `on conflict do update`, entao e ela que descreve o estado final do banco.
+ */
 function parseSqlLimits() {
-  const migration = fs.readFileSync(
-    path.join(ROOT, 'supabase/migrations/20260901150000_quota_enforcement.sql'),
-    'utf8',
-  );
+  const dir = path.join(ROOT, 'supabase/migrations');
+  const arquivo = fs.readdirSync(dir)
+    .filter(function(f) { return /quota/.test(f) && f.endsWith('.sql'); })
+    .sort()
+    .pop();
+  const migration = fs.readFileSync(path.join(dir, arquivo), 'utf8');
   const rows = {};
-  const re = /\('(\w+)',\s*(\d+|null),\s*(\d+|null),\s*(\d+|null)\)/g;
+  const re = /\('(FREE|PRO|BUSINESS)',((?:\s*(?:\d+|null),?){12})\)/g;
   let m;
   while ((m = re.exec(migration))) {
-    rows[m[1]] = {
-      maxTransPerMonth: m[2] === 'null' ? null : Number(m[2]),
-      maxAccounts: m[3] === 'null' ? null : Number(m[3]),
-      maxBudgets: m[4] === 'null' ? null : Number(m[4]),
-    };
+    const valores = m[2].split(',').map(function(v) {
+      const t = v.trim();
+      return t === 'null' ? null : Number(t);
+    });
+    const linha = {};
+    SQL_FIELDS.forEach(function(field, i) { linha[field] = valores[i]; });
+    rows[m[1]] = linha;
   }
   return rows;
 }
@@ -47,11 +91,9 @@ function limitsFromBilling(tier) {
   const src = billing.PLAN_LIMITS[tier];
   const out = {};
   FIELDS.forEach(function(field) {
-    if (field.startsWith('max')) {
-      out[field] = normNumeric(src[field]);
-    } else {
-      out[field] = src[field];
-    }
+    // Normaliza qualquer campo numerico, nao so os que comecam com "max":
+    // historyMonths e ocrPerMonth tambem usam Infinity no JS e null no JSON.
+    out[field] = typeof src[field] === 'number' ? normNumeric(src[field]) : src[field];
   });
   return out;
 }
@@ -74,9 +116,9 @@ describe('PLAN_LIMITS — paridade', function() {
 
     test('SQL fp_plan_limit_config e config/plan-limits.json (numéricos) — ' + tier, function() {
       expect(sqlLimits[tier]).toBeDefined();
-      expect(sqlLimits[tier].maxTransPerMonth).toBe(CANONICAL[tier].maxTransPerMonth);
-      expect(sqlLimits[tier].maxAccounts).toBe(CANONICAL[tier].maxAccounts);
-      expect(sqlLimits[tier].maxBudgets).toBe(CANONICAL[tier].maxBudgets);
+      SQL_FIELDS.forEach(function(field) {
+        expect(sqlLimits[tier][field]).toBe(CANONICAL[tier][field]);
+      });
     });
   });
 });

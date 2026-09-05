@@ -136,6 +136,16 @@
   color: var(--color-success-light);
 }
 
+[data-theme="dark"] .auth-biometric-btn {
+  background: var(--color-bg-dark-card);
+  border-color: var(--color-primary-500);
+  color: var(--color-success-light);
+}
+
+[data-theme="dark"] .auth-biometric-btn:hover {
+  background: rgba(18, 105, 78, 0.18);
+}
+
 [data-theme="dark"] .btn-danger-outline {
   border-color: var(--color-danger-light);
   color: var(--color-danger-light);
@@ -163,17 +173,7 @@
   color: var(--color-success-light);
 }
 
-[data-theme="dark"] .filtro-btn {
-  background: var(--color-bg-dark-card);
-  border-color: var(--color-border);
-  color: var(--color-text-secondary);
-}
-
-[data-theme="dark"] .filtro-btn.ativo {
-  background: var(--color-primary-500);
-  border-color: var(--color-primary-500);
-  color: white;
-}
+/* .filtro-btn legado: oculto via buttons.css (display:none) */
 
 [data-theme="dark"] .filtro-cat-chip {
   background: var(--color-bg-dark-card);
@@ -309,7 +309,7 @@
    ═══════════════════════════════════════════════════════════ */
 
 [data-theme="dark"] .nav-bottom {
-  background: rgba(22, 34, 25, 0.85);
+  background: var(--nav-bottom-bg, rgba(18, 28, 20, 0.92));
   box-shadow: var(--elevacao-1);
   border-color: rgba(255, 255, 255, 0.09);
   backdrop-filter: blur(8px);

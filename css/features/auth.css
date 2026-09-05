@@ -10,10 +10,22 @@
   inset: 0;
   z-index: var(--z-overlay);
   display: flex;
-  align-items: center;
+  /* flex-start + margin:auto no filho: centraliza quando cabe e PERMITE ROLAR
+     quando não cabe. Com align-items:center o topo do conteúdo fica fora da
+     área rolável e some — era o que cortava o rodapé da tela de entrar em
+     telas baixas e com o teclado aberto. */
+  align-items: flex-start;
   justify-content: center;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   background: var(--color-bg-page);
   padding: var(--space-5);
+}
+
+.auth-overlay > .auth-card,
+.auth-overlay > .auth-shell {
+  margin: auto;
 }
 
 .auth-overlay[style*="flex"] .auth-card {
@@ -364,10 +376,13 @@
   display: flex;
   flex-direction: column;
   width: 100%;
+  /* min-height (não height): cresce além da viewport e o overlay rola. */
   min-height: 100%;
   max-width: 480px;
   margin: 0 auto;
-  padding: var(--space-4) var(--space-5) calc(env(safe-area-inset-bottom, 0px) + var(--space-6));
+  /* Folga extra no rodapé para o último botão não encostar no gesto de voltar
+     nem ficar sob o teclado. */
+  padding: var(--space-4) var(--space-5) calc(env(safe-area-inset-bottom, 0px) + var(--space-8));
 }
 
 .auth-top-bar {
@@ -564,20 +579,36 @@
 }
 
 .auth-biometric-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-2);
+  gap: var(--btn-icon-gap, 8px);
   width: 100%;
   margin-top: var(--space-5);
-  padding: var(--space-3);
-  border: 0;
-  background: transparent;
+  min-height: var(--btn-height, 48px);
+  padding: var(--btn-pad-y, var(--space-3)) var(--btn-pad-x, var(--space-5));
+  border: 2px solid var(--color-primary-500);
+  border-radius: var(--btn-radius, var(--radius-controle));
+  background: var(--color-bg-card);
   color: var(--color-primary-text);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
   cursor: pointer;
   font-family: var(--font-family-sans);
+  transition: background var(--transition-fast), transform var(--transition-fast);
+}
+
+.auth-biometric-btn:hover {
+  background: var(--color-bg-primary);
+}
+
+.auth-biometric-btn:active {
+  transform: scale(0.98);
+}
+
+.auth-biometric-btn:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
 }
 
 .auth-biometric-btn svg,
@@ -602,6 +633,23 @@ body.auth-overlay-open {
   margin-top: var(--space-2);
 }
 
+.auth-biometric-hint {
+  margin: var(--space-3) 0 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: rgba(18, 105, 78, 0.06);
+  border: 1px solid rgba(18, 105, 78, 0.15);
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-500);
+  text-align: center;
+  line-height: 1.45;
+}
+
+.auth-btn-primary[aria-disabled="true"] {
+  opacity: 0.85;
+  cursor: wait;
+}
+
 @media (min-width: 520px) {
   .auth-overlay--bank {
     align-items: center;
@@ -618,4 +666,69 @@ body.auth-overlay-open {
     border: 1px solid var(--color-border-light);
     box-shadow: var(--shadow-superficie);
   }
+}
+
+/* ── Medidor de força da senha ────────────────────────────── */
+/* Informativo: a barra mostra a nota de PASSWORD_POLICY.forca(), mas quem
+   aceita ou recusa é validar() no submit. */
+
+.senha-medidor {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: calc(var(--space-2) * -1);
+  margin-bottom: var(--space-3);
+}
+
+.senha-medidor-barra {
+  flex: 1;
+  height: 4px;
+  border-radius: var(--radius-sm);
+  background: var(--color-border-light);
+  overflow: hidden;
+}
+
+.senha-medidor-barra i {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: var(--radius-sm);
+  background: var(--color-danger);
+  transition: width var(--transition-normal), background var(--transition-normal);
+}
+
+.senha-medidor[data-nota="2"] .senha-medidor-barra i { background: var(--color-warning); }
+.senha-medidor[data-nota="3"] .senha-medidor-barra i { background: var(--color-info); }
+.senha-medidor[data-nota="4"] .senha-medidor-barra i { background: var(--color-success); }
+
+.senha-medidor-rotulo {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  min-width: 11ch;
+  text-align: right;
+}
+
+/* ── Códigos de recuperação do 2FA ────────────────────────── */
+
+.recovery-codes-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-2) var(--space-4);
+  margin: var(--space-4) 0;
+  padding-left: var(--space-5);
+}
+
+.recovery-codes-list code {
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.04em;
+}
+
+.recovery-codes-hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-normal);
+}
+
+@media (max-width: 480px) {
+  .recovery-codes-list { grid-template-columns: 1fr; }
 }

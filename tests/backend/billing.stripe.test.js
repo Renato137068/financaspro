@@ -27,7 +27,7 @@ function makeStripe() {
         status: 'trialing',
         current_period_start: AGORA,
         current_period_end: AGORA + 30 * 86400,
-        trial_end: AGORA + 14 * 86400,
+        trial_end: AGORA + 7 * 86400,
       })),
       update: jest.fn(async () => ({ id: 'sub_stripe_1', cancel_at_period_end: true })),
       retrieve: jest.fn(async () => ({
@@ -125,7 +125,7 @@ describe('subscribe com Stripe configurado', () => {
     );
   });
 
-  test('assinatura nasce como TRIALING com 14 dias', async () => {
+  test('assinatura nasce como TRIALING com 7 dias', async () => {
     BillingRepository.findPlan.mockResolvedValue(PRO_PLAN);
     BillingRepository.findSubscription.mockResolvedValue(null);
     BillingRepository.upsertSubscription.mockImplementation(async (_o, d) => d);
@@ -134,7 +134,7 @@ describe('subscribe com Stripe configurado', () => {
 
     expect(sub.status).toBe('TRIALING');
     expect(stripe.subscriptions.create).toHaveBeenCalledWith(
-      expect.objectContaining({ trial_period_days: 14 }),
+      expect.objectContaining({ trial_period_days: 7 }),
     );
     expect(sub.trialEndsAt).toBeInstanceOf(Date);
   });

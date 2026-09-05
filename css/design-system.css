@@ -426,7 +426,9 @@ button i[data-lucide] {
   --z-modal:          500;
   --z-popover:        600;
   --z-tooltip:        700;
-  --z-toast:          800;
+  /* Acima de --z-overlay: o login em tela cheia usa z-overlay+10 e escondia
+     todo aviso da tela de entrar (reset de senha, erro de biometria). */
+  --z-toast:          950;
   --z-overlay:        900;
   --z-top:            1000;
 
@@ -497,6 +499,19 @@ button i[data-lucide] {
   --text-primary:   var(--color-text-primary);
   --text-secondary: var(--color-text-secondary);
   --radius:         var(--radius-lg);
+
+  /* ── Botões canônicos (.btn-primario / .btn-secundario) ───── */
+  --btn-pad-y:     var(--space-3);
+  --btn-pad-x:     var(--space-5);
+  --btn-radius:    var(--radius-controle);
+  --btn-height:    48px;
+  --btn-icon-gap:  8px;
+  --btn-sm-pad-y:  8px;
+  --btn-sm-pad-x:  12px;
+  --btn-sm-height: 44px;
+
+  /* Superfície da nav inferior flutuante (também borda do FAB Novo) */
+  --nav-bottom-bg: rgba(255, 255, 255, 0.90);
 }
 
 /* ============================================================
@@ -568,6 +583,7 @@ button i[data-lucide] {
   --color-bg-page:      var(--color-bg-dark-page);
   --color-bg-card:      var(--color-bg-dark-card);
   --color-bg-primary:   rgba(47, 163, 123, 0.14);
+  --nav-bottom-bg:      rgba(18, 28, 20, 0.92);
 
   /* Aliases legacy */
   --bg:     var(--color-bg-dark-page);

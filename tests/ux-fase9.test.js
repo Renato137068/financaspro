@@ -45,8 +45,16 @@ describe('Fase 9 — UX e acessibilidade', () => {
     expect(auth).toContain('sairDaConta');
     expect(bio).toContain('tryLogin');
     expect(bio).toContain('offerEnableAfterLogin');
+    expect(html).toContain('auth-biometric-hint');
+    expect(html).toContain('auth-resend-email-btn');
+    expect(auth).toContain('authLimparAoSair');
+    expect(auth).toContain('Entrando…');
+    expect(fs.readFileSync(path.join(root, 'js/core/supabase.js'), 'utf8'))
+      .toContain('resendSignupEmail');
     expect(fs.readFileSync(path.join(root, 'css/critical-inline.css'), 'utf8'))
       .toContain('body.auth-overlay-open > header');
+    expect(fs.readFileSync(path.join(root, 'css/features/auth.css'), 'utf8'))
+      .toMatch(/\.auth-biometric-btn\s*\{[\s\S]*?border:\s*2px\s+solid/);
   });
 });
 

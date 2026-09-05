@@ -228,6 +228,76 @@ public class PlayBillingPlugin extends Plugin implements PurchasesUpdatedListene
         call.resolve(ret);
     }
 
+    @PluginMethod
+    public void getProductDetails(PluginCall call) {
+        JSArray rawIds = call.getArray("productIds");
+        if (rawIds == null || rawIds.length() == 0) {
+            call.reject("product-ids-obrigatorios");
+            return;
+        }
+        ensureConnected(() -> {
+            if (billingClient == null || !billingClient.isReady()) {
+                call.reject("billing-indisponivel");
+                return;
+            }
+            List<QueryProductDetailsParams.Product> products = new ArrayList<>();
+            try {
+                for (int i = 0; i < rawIds.length(); i++) {
+                    String pid = rawIds.getString(i);
+                    if (pid == null || pid.isEmpty()) continue;
+                    products.add(
+                        QueryProductDetailsParams.Product.newBuilder()
+                            .setProductId(pid)
+                            .setProductType(BillingClient.ProductType.SUBS)
+                            .build()
+                    );
+                }
+            } catch (Exception e) {
+                call.reject("product-ids-invalidos");
+                return;
+            }
+            if (products.isEmpty()) {
+                call.reject("product-ids-obrigatorios");
+                return;
+            }
+            billingClient.queryProductDetailsAsync(
+                QueryProductDetailsParams.newBuilder().setProductList(products).build(),
+                (billingResult, queryProductDetailsResult) -> {
+                    if (billingResult.getResponseCode() != BillingClient.BillingResponseCode.OK) {
+                        call.reject("falha-consultar-produtos");
+                        return;
+                    }
+                    List<ProductDetails> list = queryProductDetailsResult != null
+                        ? queryProductDetailsResult.getProductDetailsList()
+                        : null;
+                    JSArray out = new JSArray();
+                    if (list != null) {
+                        for (ProductDetails details : list) {
+                            JSObject item = new JSObject();
+                            item.put("productId", details.getProductId());
+                            item.put("title", details.getTitle());
+                            String formatted = "";
+                            List<ProductDetails.SubscriptionOfferDetails> offers =
+                                details.getSubscriptionOfferDetails();
+                            if (offers != null && !offers.isEmpty()) {
+                                List<ProductDetails.PricingPhase> phases =
+                                    offers.get(0).getPricingPhases().getPricingPhaseList();
+                                if (phases != null && !phases.isEmpty()) {
+                                    formatted = phases.get(phases.size() - 1).getFormattedPrice();
+                                }
+                            }
+                            item.put("formattedPrice", formatted);
+                            out.put(item);
+                        }
+                    }
+                    JSObject ret = new JSObject();
+                    ret.put("products", out);
+                    call.resolve(ret);
+                }
+            );
+        });
+    }
+
     private void acknowledgeIfNeeded(Purchase purchase) {
         if (purchase == null || purchase.isAcknowledged()) return;
         if (billingClient == null || !billingClient.isReady()) return;

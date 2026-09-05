@@ -98,6 +98,15 @@ async function prepareOfflinePage(page, opts) {
 
   await seedOfflineStorage(page);
   await page.goto('/?offline=1');
+
+  // Scripts carregados → dispensar overlays (auth/onboarding) ANTES de exigir
+  // aba visível. Sem isso o auth-overlay deixa #aba-resumo "hidden" e o boot
+  // estoura timeout mesmo com data-dashboard-ready=1.
+  await page.waitForFunction(function() {
+    return typeof window.mudarAba === 'function' && typeof window.RENDER !== 'undefined';
+  }, { timeout: (opts && opts.timeout) || 25000 });
+  await dismissOverlays(page);
+
   await waitForAppBoot(page, opts);
   await dismissOverlays(page);
 

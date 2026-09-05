@@ -158,9 +158,17 @@
     justify-content: center;
     font-size: var(--font-size-xl);
     box-shadow: var(--elevacao-1);
-    border: 3px solid var(--color-bg-card);
-    margin-top: -16px;
+    border: 3px solid var(--nav-bottom-bg, var(--color-bg-card));
+    margin-top: -8px;
     transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  }
+
+  .nav-btn[data-aba="novo"] .nav-emoji i[data-lucide],
+  .nav-btn[data-aba="novo"] .nav-emoji svg {
+    display: block;
+    width: 1.35em;
+    height: 1.35em;
+    margin: 0;
   }
 
   .nav-btn[data-aba="novo"]:active .nav-emoji {

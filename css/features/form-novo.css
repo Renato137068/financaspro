@@ -247,7 +247,8 @@
 .ia-alt-btn {
   display: inline-flex;
   align-items: center;
-  min-height: 32px;
+  justify-content: center;
+  min-height: var(--tap-target-min, 44px);
   padding: 8px 14px;
   border: 1px solid rgba(18, 105, 78, 0.12);
   border-radius: var(--radius-2xl);
@@ -605,7 +606,7 @@
   animation: slideUp var(--transition-normal);
   box-shadow: var(--shadow-primary-sm);
   position: sticky;
-  bottom: 98px;
+  bottom: var(--nav-clearance, calc(92px + env(safe-area-inset-bottom, 0px)));
   z-index: var(--z-raised);
   width: 100%;
 }

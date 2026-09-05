@@ -52,7 +52,7 @@
   height: 40px;
   border-radius: var(--radius-lg);
   background: rgba(18, 105, 78, 0.1);
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   flex-shrink: 0;
 }
 
@@ -68,22 +68,22 @@
 
 .meta-card-title {
   margin: 0;
-  font-size: var(--text-base);
+  font-size: var(--font-size-base);
   font-weight: 700;
   color: var(--color-text-primary);
 }
 
 .meta-card-prazo {
   display: block;
-  font-size: var(--text-xs);
+  font-size: var(--font-size-xs);
   color: var(--color-text-muted);
   margin-top: 2px;
 }
 
 .meta-card-pct {
-  font-size: var(--text-sm);
+  font-size: var(--font-size-sm);
   font-weight: 700;
-  color: var(--color-primary);
+  color: var(--color-primary-text);
 }
 
 .meta-card-valores {
@@ -95,7 +95,7 @@
 }
 
 .meta-card-alvo {
-  font-size: var(--text-sm);
+  font-size: var(--font-size-sm);
   font-weight: 500;
   color: var(--color-text-muted);
 }
@@ -111,7 +111,7 @@
 
 .meta-card-done-msg {
   margin: var(--space-2) 0 0;
-  font-size: var(--text-sm);
+  font-size: var(--font-size-sm);
   color: var(--color-success-text);
   display: flex;
   align-items: center;
@@ -140,7 +140,7 @@
 .meta-empty-icon {
   font-size: var(--font-size-3xl);
   margin-bottom: var(--space-3);
-  color: var(--color-primary);
+  color: var(--color-primary-text);
 }
 
 .meta-empty-title {
@@ -149,14 +149,14 @@
 }
 
 .meta-empty-desc {
-  font-size: var(--text-sm);
+  font-size: var(--font-size-sm);
   color: var(--color-text-muted);
   margin: 0 0 var(--space-4);
 }
 
 .meta-form .form-label {
   display: block;
-  font-size: var(--text-sm);
+  font-size: var(--font-size-sm);
   font-weight: 600;
   margin: var(--space-3) 0 var(--space-1);
 }
@@ -166,14 +166,11 @@
   padding: 10px 12px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  background: var(--color-bg);
+  background: var(--color-bg-page);
   color: var(--color-text-primary);
 }
 
-.btn-sm {
-  padding: 8px 12px;
-  font-size: var(--text-sm);
-}
+/* .btn-sm canônico em css/components/buttons.css */
 
 /* ── Diagnóstico da meta ──────────────────────────────────────────
    A barra de progresso responde "onde estou". Esta linha responde

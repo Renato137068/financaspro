@@ -11,7 +11,7 @@ const INIT_CONFIG = {
       return { label: 'Business', className: 'perfil-avatar-badge--business' };
     }
     if (raw === 'premium' || raw === 'pro' || raw === 'paid' || raw === 'plus') {
-      return { label: 'Premium', className: 'perfil-avatar-badge--premium' };
+      return { label: 'Pro', className: 'perfil-avatar-badge--premium' };
     }
     return { label: 'Grátis', className: 'perfil-avatar-badge--gratis' };
   },
@@ -709,6 +709,14 @@ const INIT_CONFIG = {
           var input = document.getElementById('limit-' + btn.dataset.cat);
           if (input) input.focus();
         }, 100);
+        break;
+
+      case 'abrirPaywall':
+        // Teaser de insight (assinaturas esquecidas, por ora) levando ao
+        // paywall com o contexto que o gerou — o número em reais vai junto.
+        if (typeof INIT_BILLING !== 'undefined' && INIT_BILLING.abrirPaywall) {
+          INIT_BILLING.abrirPaywall(parametros.message);
+        }
         break;
 
       case 'ver-detalhes':

@@ -18,47 +18,61 @@ apontava para o diferencial real estava enterrada neste arquivo.
 
 ## Descrição curta (máx. 80 caracteres)
 ```
-Seu dinheiro, no seu aparelho. Sem cadastro, sem banco conectado, sem anúncios.
+Seu dinheiro no aparelho, com sync opcional na nuvem. Sem anúncios.
 ```
-(79 caracteres — o limite da Play Store é 80)
+(67 caracteres — o limite da Play Store é 80)
 
-> Abre pela privacidade, não por "simplicidade". "Com simplicidade" é o que todo
-> concorrente também promete — é a frase mais comum da categoria, e por isso não
-> diferencia nada. O que só este app pode dizer é que funciona inteiro sem
-> servidor.
+> O APK publicado usa login Supabase para sync/assinatura. Não prometa “sem cadastro”
+> na loja. O diferencial continua sendo dados no aparelho + sync sob seu controle.
 
 ## Descrição completa (máx. 4000 caracteres)
 ```
-Todo app de finanças pede acesso ao seu banco. O FinançasPro não pede nem seu e-mail.
+O FinançasPro começa no seu aparelho: registre receitas e despesas e veja quanto
+sobra no fim do mês — sem anúncios e sem vender seus dados.
 
-Ele funciona inteiro no seu aparelho: sem cadastro, sem conectar conta bancária e
-sem internet. Você registra receitas e despesas em segundos e vê a única coisa que
-importa no fim do mês — quanto sobra.
+Para sincronizar entre dispositivos, exportar na nuvem e usar recursos Pro
+(OCR, previsão, equipe), entre com uma conta. O uso local básico continua
+disponível offline.
 
 POR QUE ELE É DIFERENTE
-• Não pede cadastro nem e-mail para começar
-• Não conecta ao seu banco e não lê seus extratos
-• Funciona sem internet, do primeiro ao último dia
-• Seus dados não saem do aparelho, e você exporta ou apaga tudo quando quiser
-
-RECURSOS
-• Dashboard mensal de receitas, despesas e saldo
-• Extrato com filtros e busca
-• Orçamento por categoria
-• Metas de economia
-• Projeção de fim de mês ("neste ritmo você fecha com R$ X")
-• Alerta de assinaturas recorrentes que você talvez tenha esquecido
-• Modo escuro
-• Guia "Comece aqui" para quem está começando
-
-PRIVACIDADE NÃO É UM RECURSO, É COMO O APP FOI FEITO
-• Seus dados ficam no seu aparelho por padrão
+• Dados no aparelho por padrão — você decide quando sincronizar
 • Sem anúncios e sem venda de dados
-• PIN local opcional para proteger o acesso
-• Backup e exclusão total nas suas mãos, a qualquer momento
+• Sync opcional na nuvem (Supabase) quando você quiser
+• Assinatura Pro via Google Play, com 7 dias de teste
 
-Esta é uma versão em teste (piloto). Estamos ouvindo os primeiros usuários para
-deixar o app cada vez melhor — seu feedback é muito bem-vindo.
+NO PLANO GRATUITO, SEMPRE
+• Lançamentos ilimitados — nunca travamos seu registro
+• Dashboard mensal de receitas, despesas e saldo
+• Extrato completo com filtros e busca
+• Orçamento 50/30/20 e limites por categoria
+• Até 5 contas e cartões
+• Gráficos e relatórios dos últimos 3 meses
+• Alertas de saldo e de orçamento
+• Exportação CSV e backup dos seus dados
+• Modo escuro e PIN local
+
+NO PRO
+• Todo o seu histórico, com comparativo ano a ano
+• Previsão de fim de mês e do fluxo futuro
+• Encontra assinaturas esquecidas que você ainda paga
+• Categoriza sozinho, aprendendo com você
+• Fatura do cartão projetada, com as parcelas futuras
+• Celular, tablet e navegador sincronizados
+• Modo casal — duas pessoas, uma vida financeira
+• OCR de comprovantes ilimitado e relatório em PDF
+
+PLANOS (Google Play)
+• Gratuito — sem prazo e sem anúncios
+• Pro — R$ 16,99/mês ou R$ 129,99/ano · trial de 7 dias
+• Ao criar conta, 14 dias de Pro por nossa conta, sem cartão
+
+PRIVACIDADE
+• Seus dados ficam no aparelho por padrão
+• Sync e anexos na nuvem só com login
+• PIN local opcional (não substitui criptografia de disco)
+• Backup e exclusão nas suas mãos
+
+Esta é uma versão em evolução. Feedback é bem-vindo.
 ```
 
 ## Observações
@@ -70,3 +84,10 @@ deixar o app cada vez melhor — seu feedback é muito bem-vindo.
 - Feature graphic (1024×500): `docs/play-store/feature-graphic-1024x500.png` (já existe).
 - Screenshots (mín. 2 de celular): `docs/play-store/screenshot-resumo-...`, `-extrato-...`, `-orcamento-...` (já existem, 1080×1920).
 - Idioma padrão: Português (Brasil).
+- Trial Play Console: **7 dias** nos SKUs `financaspro.pro.monthly` e `.yearly` (ver `play-store-billing-runbook.md`).
+- Preços dos SKUs: **R$ 16,99/mês** e **R$ 129,99/ano** (tiers do Play). Preço
+  não mora em `config/plan-limits.json` — mude em `js/billing.js`
+  (`STATIC_PLANS`), no Stripe e no Play Console, os três juntos.
+- **Pro de boas-vindas** (14 dias, sem cartão) é entitlement do nosso backend,
+  não assinatura da loja. Não anunciar como trial do SKU: são coisas
+  diferentes, e confundi-las na ficha seria desonesto.

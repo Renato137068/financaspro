@@ -3,7 +3,9 @@
 // Port de backend/domain/services/billing.service.js (checkout + webhook).
 import type Stripe from "https://esm.sh/stripe@16?target=deno";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { assertAllowedRedirectUrl, notify } from "./stripe.ts";
+import { assertAllowedRedirectUrl } from "./stripe.ts";
+import { notify } from "./email.ts";
+import { TRIAL_DAYS } from "./billing-constants.ts";
 import {
   findByStripeSubId,
   findInvoiceByStripeId,
@@ -75,13 +77,51 @@ export async function createCheckout(
     cancel_url: opts.cancelUrl + cancelSep + "billing=cancel",
     allow_promotion_codes: true,
     subscription_data: {
-      trial_period_days: 7,
+      trial_period_days: TRIAL_DAYS,
       metadata: { orgId: opts.orgId, planTier: opts.planTier },
     },
     metadata: { orgId: opts.orgId, planTier: opts.planTier, interval: opts.interval },
   });
 
   return { url: session.url, sessionId: session.id };
+}
+
+/** Portal do cliente Stripe (gerenciar cartão / faturas). */
+export async function createPortal(
+  sb: SupabaseClient,
+  stripe: Stripe,
+  opts: { orgId: string; returnUrl: string },
+) {
+  assertAllowedRedirectUrl(opts.returnUrl);
+
+  const existing = await findSubscription(sb, opts.orgId);
+  if (!existing?.stripeCustomerId) throw httpError(400, "sem-conta-stripe");
+
+  const session = await stripe.billingPortal.sessions.create({
+    customer: existing.stripeCustomerId,
+    return_url: opts.returnUrl,
+  });
+
+  return { url: session.url };
+}
+
+/** Cancela no fim do período (cancel_at_period_end). */
+export async function cancelSubscription(
+  sb: SupabaseClient,
+  stripe: Stripe,
+  opts: { orgId: string },
+) {
+  const existing = await findSubscription(sb, opts.orgId);
+  if (!existing) throw httpError(404, "assinatura-nao-encontrada");
+
+  if (existing.stripeSubId) {
+    await stripe.subscriptions.update(existing.stripeSubId, {
+      cancel_at_period_end: true,
+    });
+  }
+
+  const updated = await updateSubscription(sb, opts.orgId, { cancelAtPeriodEnd: true });
+  return updated || { ...existing, cancelAtPeriodEnd: true };
 }
 
 // ─── Webhook ────────────────────────────────────────────────────────────────
@@ -123,14 +163,14 @@ async function onInvoicePaid(sb: SupabaseClient, invoice: any) {
   await updateSubscription(sb, sub.orgId, { status: "ACTIVE" });
 
   const plan = await findPlanById(sb, sub.planId);
-  notify("subscription-activated", { to: invoice.customer_email, planName: plan?.name });
+  await notify("subscription-activated", { to: invoice.customer_email, planName: plan?.name });
 }
 
 async function onPaymentFailed(sb: SupabaseClient, invoice: any) {
   const sub = await findByStripeSubId(sb, invoice.subscription);
   if (!sub) return;
   await updateSubscription(sb, sub.orgId, { status: "PAST_DUE" });
-  notify("payment-failed", { to: invoice.customer_email });
+  await notify("payment-failed", { to: invoice.customer_email });
 }
 
 async function onSubscriptionDeleted(sb: SupabaseClient, stripeSub: any) {
@@ -139,7 +179,7 @@ async function onSubscriptionDeleted(sb: SupabaseClient, stripeSub: any) {
   await updateSubscription(sb, sub.orgId, { status: "CANCELED" });
 
   const plan = await findPlanById(sb, sub.planId);
-  notify("subscription-canceled", {
+  await notify("subscription-canceled", {
     to: stripeSub.customer_email,
     planName: plan?.name,
     accessUntil: new Date(stripeSub.current_period_end * 1000).toISOString(),

@@ -1,6 +1,6 @@
 /**
  * csp-connect-src.cjs — Origens permitidas em connect-src (CSP)
- * Usa APP_URL / PUBLIC_API_URL do ambiente no build.
+ * Usa APP_URL / PUBLIC_API_URL / SUPABASE_URL do ambiente no build.
  */
 const fs = require('fs');
 const path = require('path');
@@ -10,9 +10,15 @@ function supabaseOriginsFromConfig() {
   try {
     var cfgPath = path.join(__dirname, '..', 'js', 'core', 'config.js');
     var src = fs.readFileSync(cfgPath, 'utf8');
-    var m = src.match(/SUPABASE_URL:\s*['"]([^'"]+)['"]/);
-    if (!m || !m[1]) return origins;
-    var url = new URL(m[1].trim());
+    var urlStr = '';
+    var envM = src.match(/var _FP_ENV_URL\s*=\s*['"]([^'"]*)['"]/);
+    if (envM && envM[1]) urlStr = envM[1];
+    if (!urlStr) {
+      var cloudM = src.match(/_FP_CLOUD_URL\s*=\s*[^\n]*['"](https?:\/\/[^'"]+)['"]/);
+      if (cloudM) urlStr = cloudM[1];
+    }
+    if (!urlStr) return origins;
+    var url = new URL(urlStr.trim());
     origins.push(url.origin);
     if (url.protocol === 'https:') {
       origins.push('wss://' + url.host);
@@ -21,9 +27,15 @@ function supabaseOriginsFromConfig() {
   return origins;
 }
 
-function buildCspConnectSrc() {
-  // Produção nunca deve liberar origens de desenvolvimento (localhost).
-  var isProd = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
+function isProdCsp(opts) {
+  opts = opts || {};
+  if (opts.prod === true) return true;
+  if (String(process.env.FP_CSP_PROD || '') === '1') return true;
+  return String(process.env.NODE_ENV || '').toLowerCase() === 'production';
+}
+
+function buildCspConnectSrc(opts) {
+  var isProd = isProdCsp(opts);
 
   var origins = ["'self'"];
   if (!isProd) {
@@ -56,12 +68,12 @@ function buildCspConnectSrc() {
   return origins.join(' ');
 }
 
-function patchCspMeta(html) {
-  var connect = buildCspConnectSrc();
+function patchCspMeta(html, opts) {
+  var connect = buildCspConnectSrc(opts);
   return html.replace(
     /connect-src[^;]+;/,
     'connect-src ' + connect + ';'
   );
 }
 
-module.exports = { buildCspConnectSrc, patchCspMeta };
+module.exports = { buildCspConnectSrc, patchCspMeta, isProdCsp };

@@ -8,23 +8,43 @@
  *   PIN_SECURITY, hashPin, setupPinInputs,
  *   togglePinSeguranca, verificarPinAoAbrir, tentarDesbloquear
  *
- * Segurança:
- * - PBKDF2 100k iterations → ~30ms derivar (UX OK, brute-force ~5min/PIN)
+ * Segurança — e os limites dela:
+ * - PBKDF2-SHA256 310k iterations (OWASP 2023) → ~90ms derivar
  * - Salt único por usuário → rainbow tables inúteis
  * - Rate limit: 5 tentativas → backoff exponencial 30s/60s/120s/240s
  * - Comparação tempo-constante → defesa contra timing attacks
+ * - PINs previsíveis recusados na criação (1234, 0000, 1111, sequências…)
+ *
+ * O que este módulo NÃO é: proteção dos dados. Um PIN de 4 dígitos tem 10 mil
+ * combinações; com o aparelho em mãos e o hash em disco, força bruta offline
+ * é questão de tempo (~15 min a 310k iterações). O rate limit vive no
+ * localStorage, então também é contornável por quem tem o aparelho destravado.
+ * Isto é uma TRANCA DE CONVENIÊNCIA contra quem pega o celular na mesa — e a
+ * interface deve dizer exatamente isso. Proteção de dado de verdade é a
+ * cifragem local (LOCAL_CRYPTO) e a senha da conta.
  */
 
 /** PIN crypto + rate limit core */
 var PIN_SECURITY = {
   /** @type {number} */
-  ITERATIONS: 100000,
+  ITERATIONS: 310000,
+  /** Hashes antigos continuam válidos e são migrados no primeiro acerto. */
+  ITERATIONS_LEGADO: 100000,
   /** @type {number} */
   MAX_TENTATIVAS: 5,
   /** @type {number} */
   BLOQUEIO_BASE_MS: 30000,
   /** @type {string} */
-  ALGORITMO_ID: 'pbkdf2-sha256-100k',
+  ALGORITMO_ID: 'pbkdf2-sha256-310k',
+  ALGORITMO_ID_LEGADO: 'pbkdf2-sha256-100k',
+  LOCK_FLAG_KEY: 'financaspro_pin_locked',
+
+  syncLockFlag: function(ativo) {
+    try {
+      if (ativo) localStorage.setItem(this.LOCK_FLAG_KEY, '1');
+      else localStorage.removeItem(this.LOCK_FLAG_KEY);
+    } catch (e) { /* noop */ }
+  },
 
   /**
    * Buffer → hex string.
@@ -63,20 +83,80 @@ var PIN_SECURITY = {
    * @param {string} saltHex
    * @returns {Promise<string>} hash hex (256 bits)
    */
-  derivar: function(pin, saltHex) {
+  derivar: function(pin, saltHex, iteracoes) {
     var encoder = new TextEncoder();
     var saltBytes = this.hexToBytes(saltHex);
     var self = this;
+    var n = iteracoes || this.ITERATIONS;
     return crypto.subtle.importKey(
       'raw', encoder.encode(pin), { name: 'PBKDF2' }, false, ['deriveBits']
     ).then(function(key) {
       return crypto.subtle.deriveBits(
-        { name: 'PBKDF2', salt: saltBytes, iterations: self.ITERATIONS, hash: 'SHA-256' },
+        { name: 'PBKDF2', salt: saltBytes, iterations: n, hash: 'SHA-256' },
         key, 256
       );
     }).then(function(buffer) {
       return self.bytesToHex(buffer);
     });
+  },
+
+  /** Iterações do hash guardado — PINs criados antes da migração usam 100k. */
+  iteracoesDe: function(algoritmoId) {
+    return algoritmoId === this.ALGORITMO_ID_LEGADO
+      ? this.ITERATIONS_LEGADO
+      : this.ITERATIONS;
+  },
+
+  /** Hash antigo → precisa ser regravado depois de um acerto. */
+  precisaMigrar: function(algoritmoId) {
+    return algoritmoId !== this.ALGORITMO_ID;
+  },
+
+  /**
+   * PINs que um ladrão de celular tenta primeiro.
+   * A lista curta importa mais do que parece: as ~20 combinações abaixo
+   * respondem por perto de um quarto dos PINs escolhidos por pessoas reais.
+   * Com 5 tentativas antes do bloqueio, quem escolhe 1234 está entregando a
+   * tranca — nenhuma quantidade de iterações do PBKDF2 conserta isso.
+   */
+  PINS_FRACOS: [
+    '1234', '0000', '1111', '1212', '7777', '1004', '2000', '4444', '2222',
+    '6969', '9999', '3333', '5555', '6666', '1122', '1313', '8888', '4321',
+    '2001', '1010', '1230', '2580', '0852',
+  ],
+
+  /**
+   * @param {string} pin
+   * @returns {{fraco: boolean, motivo?: string}}
+   */
+  avaliarPin: function(pin) {
+    var p = String(pin == null ? '' : pin);
+    if (!/^\d{4}$/.test(p)) return { fraco: true, motivo: 'O PIN precisa ter 4 dígitos.' };
+    if (/^(\d)\1{3}$/.test(p)) {
+      return { fraco: true, motivo: 'Evite quatro dígitos iguais — é dos primeiros que se tenta.' };
+    }
+    if (this.PINS_FRACOS.indexOf(p) >= 0) {
+      return { fraco: true, motivo: 'Esse é um dos PINs mais usados no mundo. Escolha outro.' };
+    }
+    // Sequências: 1234, 3456, 8765…
+    var cresc = true, decresc = true;
+    for (var i = 1; i < p.length; i++) {
+      var d = p.charCodeAt(i) - p.charCodeAt(i - 1);
+      if (d !== 1) cresc = false;
+      if (d !== -1) decresc = false;
+    }
+    if (cresc || decresc) {
+      return { fraco: true, motivo: 'Sequências como 1234 ou 8765 são fáceis demais de adivinhar.' };
+    }
+    // Padrão ABAB: 1212, 3535…
+    if (p[0] === p[2] && p[1] === p[3]) {
+      return { fraco: true, motivo: 'Padrões repetidos como 1212 são previsíveis. Escolha outro.' };
+    }
+    // Ano provável: 19xx / 20xx
+    if (/^(19|20)\d{2}$/.test(p)) {
+      return { fraco: true, motivo: 'Anos de nascimento estão entre os primeiros palpites.' };
+    }
+    return { fraco: false };
   },
 
   /**
@@ -180,7 +260,7 @@ function togglePinSeguranca() {
   if (chk && chk.checked) {
     var html = '<div style="display:flex;flex-direction:column;gap:16px;text-align:center">' +
       '<p style="font-weight:700;font-size:17px">Criar PIN</p>' +
-      '<p style="font-size:13px;color:var(--text-secondary)">Crie um PIN de 4 dígitos</p>' +
+      '<p style="font-size:13px;color:var(--text-secondary)">PIN de 4 dígitos para ocultar saldos ao abrir. Não criptografa dados no aparelho.</p>' +
       '<div style="display:flex;gap:8px;justify-content:center">' +
       '<input type="password" id="pin-1" maxlength="1" inputmode="numeric" style="width:48px;height:56px;text-align:center;font-size:24px;font-weight:700;border:2px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text-primary)">' +
       '<input type="password" id="pin-2" maxlength="1" inputmode="numeric" style="width:48px;height:56px;text-align:center;font-size:24px;font-weight:700;border:2px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text-primary)">' +
@@ -197,8 +277,15 @@ function togglePinSeguranca() {
         okBtn.onclick = function() {
           var pin = ['pin-1','pin-2','pin-3','pin-4']
             .map(function(id){ var el = document.getElementById(id); return el ? el.value : ''; }).join('');
-          if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
-            UTILS.mostrarToast('PIN deve ter 4 dígitos', 'error');
+          var avaliacao = PIN_SECURITY.avaliarPin(pin);
+          if (avaliacao.fraco) {
+            UTILS.mostrarToast(avaliacao.motivo, 'error');
+            ['pin-1','pin-2','pin-3','pin-4'].forEach(function(id) {
+              var el = document.getElementById(id);
+              if (el) el.value = '';
+            });
+            var primeiro = document.getElementById('pin-1');
+            if (primeiro) primeiro.focus();
             return;
           }
           var saltHex = PIN_SECURITY.gerarSalt();
@@ -211,6 +298,7 @@ function togglePinSeguranca() {
               pinTentativas: 0,
               pinBloqueadoAte: 0
             });
+            PIN_SECURITY.syncLockFlag(true);
             overlay.remove();
             if (typeof renderConfigTab === 'function') renderConfigTab();
             UTILS.mostrarToast('PIN ativado', 'success');
@@ -238,6 +326,7 @@ function confirmarDesativarPin() {
       pinAtivo: false, pinHash: null, pinSalt: null,
       pinAlgoritmo: null, pinTentativas: 0, pinBloqueadoAte: 0
     });
+    PIN_SECURITY.syncLockFlag(false);
     var chkOff = document.getElementById('chk-pin');
     if (chkOff) chkOff.checked = false;
     if (typeof renderConfigTab === 'function') renderConfigTab();
@@ -280,7 +369,8 @@ function confirmarDesativarPin() {
           UTILS.mostrarToast('PIN deve ter 4 dígitos', 'error');
           return;
         }
-        hashPin(pin, config.pinSalt).then(function(hash) {
+        PIN_SECURITY.derivar(pin, config.pinSalt, PIN_SECURITY.iteracoesDe(config.pinAlgoritmo))
+          .then(function(hash) {
           if (!PIN_SECURITY.comparar(hash, config.pinHash)) {
             UTILS.mostrarToast('PIN incorreto', 'error');
             return;
@@ -289,6 +379,7 @@ function confirmarDesativarPin() {
             pinAtivo: false, pinHash: null, pinSalt: null,
             pinAlgoritmo: null, pinTentativas: 0, pinBloqueadoAte: 0
           });
+          PIN_SECURITY.syncLockFlag(false);
           overlay.remove();
           var chkDone = document.getElementById('chk-pin');
           if (chkDone) chkDone.checked = false;
@@ -311,13 +402,21 @@ function verificarPinAoAbrir() {
   var config = DADOS.getConfig();
   if (!config.pinAtivo || !config.pinHash) {
     document.documentElement.classList.remove('pin-locked');
+    PIN_SECURITY.syncLockFlag(false);
+    if (typeof window !== 'undefined' && window.__FP_PIN_EARLY_SECURE_HELD__ === 1
+        && typeof FP_SECURE_SCREEN !== 'undefined' && FP_SECURE_SCREEN.release) {
+      FP_SECURE_SCREEN.release();
+      window.__FP_PIN_EARLY_SECURE_HELD__ = 0;
+      window.__FP_PIN_EARLY_SECURE__ = 0;
+    }
     return;
   }
+  PIN_SECURITY.syncLockFlag(true);
   document.documentElement.classList.add('pin-locked');
   var html = '<div style="display:flex;flex-direction:column;gap:16px;text-align:center">' +
     '<p class="pin-lock-icon" aria-hidden="true"><i data-lucide="lock" aria-hidden="true"></i></p>' +
     '<p style="font-weight:700;font-size:17px">FinançasPro</p>' +
-    '<p style="font-size:13px;color:var(--text-secondary)">Digite seu PIN</p>' +
+    '<p style="font-size:13px;color:var(--text-secondary)">Digite seu PIN para ver saldos neste aparelho</p>' +
     '<div style="display:flex;gap:8px;justify-content:center">' +
     '<input type="password" id="unlock-1" maxlength="1" inputmode="numeric" style="width:48px;height:56px;text-align:center;font-size:24px;font-weight:700;border:2px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text-primary)">' +
     '<input type="password" id="unlock-2" maxlength="1" inputmode="numeric" style="width:48px;height:56px;text-align:center;font-size:24px;font-weight:700;border:2px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text-primary)">' +
@@ -332,6 +431,15 @@ function verificarPinAoAbrir() {
   lockScreen.innerHTML = '<div class="pin-lock-content">' + html +
     '<button class="btn-primario" id="unlock-submit-btn" style="margin-top:16px">Desbloquear</button></div>';
   document.body.appendChild(lockScreen);
+  if (typeof FP_SECURE_SCREEN !== 'undefined' && FP_SECURE_SCREEN.retain) {
+    /* Já retido pelo early hold do pin-guard — evita ref dupla. */
+    if (typeof window !== 'undefined' && window.__FP_PIN_EARLY_SECURE_HELD__ === 1) {
+      window.__FP_PIN_EARLY_SECURE_HELD__ = 0;
+      window.__FP_PIN_EARLY_SECURE__ = 0;
+    } else {
+      FP_SECURE_SCREEN.retain();
+    }
+  }
   if (typeof FocusTrap !== 'undefined') {
     lockScreen._fpFocusTrap = new FocusTrap(lockScreen);
     lockScreen._fpFocusTrap.activate();
@@ -355,15 +463,26 @@ function tentarDesbloquear() {
     return;
   }
 
-  if (!config.pinSalt || config.pinAlgoritmo !== PIN_SECURITY.ALGORITMO_ID) {
+  /* Antes, QUALQUER algoritmo diferente do atual apagava o PIN do usuário —
+     endurecer o hash teria deslogado todo mundo. Agora o formato legado é
+     aceito e migrado no primeiro acerto (ver abaixo). Só um algoritmo
+     desconhecido de verdade força a recriação. */
+  var algoritmoConhecido = config.pinAlgoritmo === PIN_SECURITY.ALGORITMO_ID
+    || config.pinAlgoritmo === PIN_SECURITY.ALGORITMO_ID_LEGADO;
+
+  if (!config.pinSalt || !algoritmoConhecido) {
     UTILS.mostrarToast('Atualização de segurança: recrie seu PIN nas Configurações', 'warning');
     DADOS.salvarConfig({ pinAtivo: false, pinHash: null, pinSalt: null, pinAlgoritmo: null });
+    PIN_SECURITY.syncLockFlag(false);
     var lockLeg = document.querySelector('.pin-lock-screen');
     if (lockLeg) {
       if (lockLeg._fpFocusTrap) lockLeg._fpFocusTrap.deactivate();
       lockLeg.remove();
     }
     document.documentElement.classList.remove('pin-locked');
+    if (typeof FP_SECURE_SCREEN !== 'undefined' && FP_SECURE_SCREEN.release) {
+      FP_SECURE_SCREEN.release();
+    }
     return;
   }
 
@@ -375,15 +494,30 @@ function tentarDesbloquear() {
     return;
   }
 
-  hashPin(pin, config.pinSalt).then(function(hash) {
+  var iteracoesGuardadas = PIN_SECURITY.iteracoesDe(config.pinAlgoritmo);
+  PIN_SECURITY.derivar(pin, config.pinSalt, iteracoesGuardadas).then(function(hash) {
     if (PIN_SECURITY.comparar(hash, config.pinHash)) {
       PIN_SECURITY.resetarFalhas();
+      /* Acertou com hash antigo: regrava no formato forte agora, enquanto o
+         PIN em claro ainda está na mão. Falha aqui não bloqueia a entrada. */
+      if (PIN_SECURITY.precisaMigrar(config.pinAlgoritmo)) {
+        PIN_SECURITY.derivar(pin, config.pinSalt, PIN_SECURITY.ITERATIONS)
+          .then(function(novoHash) {
+            DADOS.salvarConfig({
+              pinHash: novoHash,
+              pinAlgoritmo: PIN_SECURITY.ALGORITMO_ID,
+            });
+          }).catch(function() { /* tenta de novo no próximo desbloqueio */ });
+      }
     var lock = document.querySelector('.pin-lock-screen');
     if (lock) {
       if (lock._fpFocusTrap) lock._fpFocusTrap.deactivate();
       lock.remove();
     }
       document.documentElement.classList.remove('pin-locked');
+      if (typeof FP_SECURE_SCREEN !== 'undefined' && FP_SECURE_SCREEN.release) {
+        FP_SECURE_SCREEN.release();
+      }
       UTILS.mostrarToast('Que bom te ver.', 'success');
     } else {
       var bloqAte = PIN_SECURITY.registrarFalha();

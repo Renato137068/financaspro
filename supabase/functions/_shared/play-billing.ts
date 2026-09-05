@@ -64,7 +64,18 @@ export async function verifyPurchase(
     expiresAt = new Date(Date.now() + 30 * 86400000).toISOString();
   } else if (sa) {
     const sub = await getSubscriptionV2({ serviceAccountJson: sa, packageName: pkg, purchaseToken: token });
-    if (!sub.entitled) throw httpError(402, "assinatura-nao-ativa");
+    if (!sub.entitled) {
+      // Reconciliação sem RTDN. Sem o Pub/Sub configurado, `revokePlayEntitlement`
+      // só era alcançável por `handleRtdn` — ou seja, nunca: cancelamento,
+      // reembolso ou cartão recusado deixavam um `status: ACTIVE` órfão no banco
+      // e o Pro ligado para sempre. Se este token é o que sustenta o Pro desta
+      // org, retire agora, no mesmo request em que o Google disse que acabou.
+      const dono = await findByPlayPurchaseToken(sb, token);
+      if (dono && dono.orgId === orgId) {
+        await revokePlayEntitlement(sb, orgId, { expiresAt: sub.expiryTime });
+      }
+      throw httpError(402, "assinatura-nao-ativa");
+    }
     if (sub.productId) {
       const realTier = resolveTier(sub.productId);
       if (!realTier) throw httpError(400, "produto-desconhecido");

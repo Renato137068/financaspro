@@ -113,7 +113,7 @@
   margin-left: var(--space-2);
   padding: 2px 8px;
   border-radius: var(--radius-sm);
-  background: var(--color-success-50, var(--color-bg-page));
+  background: var(--color-bg-page);
   color: var(--color-primary-text);
   font-family: var(--font-family-sans);
   font-size: var(--font-size-xs);
@@ -283,7 +283,7 @@
   border-radius: var(--radius-md);
   border: 1px solid rgba(18, 105, 78, 0.2);
   background: rgba(18, 105, 78, 0.06);
-  font-size: var(--text-sm);
+  font-size: var(--font-size-sm);
 }
 
 .fp-usage-banner-cta {
@@ -343,7 +343,134 @@
 
 .dashboard-method-tagline {
   margin: calc(-1 * var(--space-3)) 0 var(--space-4);
-  font-size: var(--text-sm);
+  font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   text-align: center;
+}
+
+/* Equipe / convites */
+.equipe-body {
+  margin-bottom: var(--space-4);
+  min-height: 48px;
+}
+
+.equipe-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.equipe-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(18, 105, 78, 0.04);
+}
+
+.equipe-item--pending {
+  background: rgba(245, 158, 11, 0.06);
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+.equipe-item-name {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.equipe-item-name em {
+  font-style: normal;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin-left: 6px;
+}
+
+.equipe-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.equipe-item-role {
+  font-size: var(--font-size-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+}
+
+.equipe-invite-form {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-4);
+}
+
+.equipe-invite-label {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.equipe-invite-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.equipe-invite-input {
+  flex: 1;
+  min-width: 180px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+}
+
+.equipe-invite-hint {
+  margin: 8px 0 0;
+  font-size: var(--font-size-2xs);
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+/* ── Upsell no gráfico de evolução ──────────────────────────────────────────
+   O botão fica ABAIXO do gráfico, nunca por cima: cobrir a silhueta esmaecida
+   destruiria justamente o que faz o teaser funcionar — o usuário precisa ver a
+   forma do que está perdendo antes de ler a oferta. */
+.chart-6m-upsell {
+  display: block;
+  width: 100%;
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-2xs);
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.chart-6m-upsell:hover,
+.chart-6m-upsell:focus-visible {
+  border-color: var(--color-primary-500);
+  color: var(--color-primary-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chart-6m-upsell {
+    transition: none;
+  }
 }

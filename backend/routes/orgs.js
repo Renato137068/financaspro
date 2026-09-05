@@ -93,6 +93,25 @@ router.get('/:orgId/invitations', validateParams(orgIdParamSchema), resolveOrg, 
   } catch (err) { next(err); }
 });
 
+const inviteIdParamSchema = z.object({
+  orgId: z.string().uuid('orgId deve ser um UUID'),
+  invitationId: z.string().min(8, 'invitationId inválido'),
+});
+
+// Revogar convite pendente
+router.delete(
+  '/:orgId/invitations/:invitationId',
+  validateParams(inviteIdParamSchema),
+  resolveOrg,
+  requireOrgRole('ADMIN'),
+  async (req, res, next) => {
+    try {
+      await OrgService.revokeInvitation(req.params.orgId, req.params.invitationId, req.user.id);
+      res.sendStatus(204);
+    } catch (err) { next(err); }
+  }
+);
+
 // Aceitar convite (não requer resolveOrg — o token já contém orgId)
 router.post('/invitations/:token/accept', validateParams(tokenParamSchema), async (req, res, next) => {
   try {

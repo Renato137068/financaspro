@@ -41,6 +41,16 @@ psql "postgresql://postgres:postgres@localhost:54322/postgres" \
 supabase test db
 ```
 
+**CI / Postgres local sem Docker Supabase:**
+
+```bash
+INTEGRATION_TEST_DATABASE_URL="postgresql://..." npm run test:db:ci
+# Pule com SKIP_PGTAP=1
+```
+
+O script `scripts/test-supabase-pgtap.cjs` aplica Prisma + stub `auth.*` + migrations
+e roda os 4 arquivos em `supabase/tests/`.
+
 ## O que os testes provam
 
 `tests/rls_policies.test.sql` monta duas contas (Alice e Bob) e uma organização

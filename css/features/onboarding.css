@@ -28,7 +28,7 @@
   gap: 12px;
   padding: 14px 16px;
   background: var(--color-bg-card);
-  border: 1px solid var(--color-border-subtle, rgba(0, 0, 0, 0.08));
+  border: 1px solid var(--color-border-light);
   border-radius: var(--radius-xl);
   box-shadow: var(--elevacao-2);
 }

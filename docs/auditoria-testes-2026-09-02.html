@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FinançasPro — Auditoria de Testes · v11.3.13</title>
+<style>
+:root{
+  --bg:#070a0f;--card:#111820;--card2:#161f2a;--line:#243044;
+  --txt:#eef2f8;--mut:#8fa3be;--mut2:#5a708a;
+  --ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--info:#22d3ee;--acc:#12694E;--r:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:linear-gradient(165deg,#070a0f,#0a1218 45%,#070a0f);color:var(--txt);
+  font:15px/1.65 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding-bottom:80px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+header{padding:48px 0 36px;border-bottom:1px solid var(--line);margin-bottom:36px;
+  background:radial-gradient(800px 320px at 10% -60px,rgba(18,105,78,.18),transparent),
+             radial-gradient(600px 280px at 90% -40px,rgba(34,211,238,.1),transparent)}
+.tag{display:inline-block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:#6ee7b7;border:1px solid rgba(18,105,78,.4);background:rgba(18,105,78,.12);
+  padding:5px 12px;border-radius:99px;margin-bottom:14px;font-weight:700}
+h1{font-size:34px;line-height:1.12;letter-spacing:-.02em;margin-bottom:8px;font-weight:800}
+h1 em{font-style:normal;color:#6ee7b7}
+.sub{color:var(--mut);font-size:15px;max-width:960px}
+.meta{display:flex;gap:20px;flex-wrap:wrap;margin-top:20px;font-size:13px;color:var(--mut2)}
+.meta b{color:var(--txt)}
+
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;text-align:center}
+.kpi .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--mut2);margin-bottom:6px}
+.kpi .val{font-size:28px;font-weight:800;font-variant-numeric:tabular-nums}
+.kpi .sub{font-size:11px;color:var(--mut);margin-top:4px}
+.kpi.ok .val{color:#86efac}
+.kpi.warn .val{color:#fcd34d}
+.kpi.bad .val{color:#fca5a5}
+
+.hero{display:grid;grid-template-columns:210px 1fr;gap:28px;align-items:center;
+  background:var(--card);border:1px solid var(--line);border-radius:18px;padding:28px;margin-bottom:18px}
+.gauge{position:relative;width:180px;height:180px;margin:0 auto}
+.gauge svg{transform:rotate(-90deg)}
+.gauge .val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.gauge .num{font-size:48px;font-weight:800;line-height:1}
+.gauge .lbl{font-size:10px;color:var(--mut2);text-transform:uppercase;letter-spacing:.1em;margin-top:4px;text-align:center}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.pill{font-size:11px;padding:5px 11px;border-radius:99px;border:1px solid var(--line);background:#0c1018;color:var(--mut)}
+.pill.ok{border-color:rgba(34,197,94,.35);color:#86efac}
+.pill.warn{border-color:rgba(245,158,11,.35);color:#fcd34d}
+.pill.bad{border-color:rgba(239,68,68,.35);color:#fca5a5}
+
+section{margin-bottom:44px}
+h2.sec{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut2);
+  padding-bottom:10px;border-bottom:1px solid var(--line);margin-bottom:20px;font-weight:700}
+
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+th{background:#0c1018;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);
+  text-align:left;padding:11px 14px;border-bottom:1px solid var(--line)}
+td{padding:10px 14px;font-size:13px;border-bottom:1px solid #1a2332;color:var(--mut);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+td:first-child{color:var(--txt);font-weight:550}
+td.n{text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+td.n.hi{color:#86efac}
+td.n.mid{color:#fcd34d}
+td.n.lo{color:#fca5a5}
+.row-bar td{padding:8px 14px 12px}
+.mini{display:flex;align-items:center;gap:10px}
+.mini span{font-size:10px;color:var(--mut2);width:28px;text-align:right;font-variant-numeric:tabular-nums}
+.track{flex:1;height:7px;background:#0a0e14;border-radius:99px;overflow:hidden;border:1px solid #1e293b;position:relative}
+.track b{position:absolute;top:0;left:0;height:100%;border-radius:99px}
+
+.st{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;white-space:nowrap}
+.st.fx{background:rgba(34,197,94,.12);color:#86efac}
+.st.p1{background:rgba(245,158,11,.15);color:#fcd34d}
+.st.p2{background:rgba(34,211,238,.12);color:#7dd3fc}
+.st.p0{background:rgba(239,68,68,.15);color:#fca5a5}
+
+.cov{display:inline-block;font-size:10px;padding:2px 7px;border-radius:4px;margin-right:4px}
+.cov.alta{background:rgba(34,197,94,.15);color:#86efac}
+.cov.media{background:rgba(245,158,11,.15);color:#fcd34d}
+.cov.baixa{background:rgba(239,68,68,.15);color:#fca5a5}
+.cov.nenh{background:rgba(100,116,139,.2);color:#94a3b8}
+
+.find{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--line);
+  border-radius:0 var(--r) var(--r) 0;padding:14px 16px;margin-bottom:10px}
+.find.good{border-left-color:var(--ok)}.find.warn{border-left-color:var(--warn)}.find.bad{border-left-color:var(--bad)}.find.info{border-left-color:var(--info)}
+.find h4{font-size:14px;margin-bottom:5px}
+.find p,.find ul{font-size:13px;color:var(--mut);margin:4px 0}
+.find ul{margin-left:18px}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.box h4{font-size:11px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;font-weight:700}
+.box.g h4{color:#86efac}.box.w h4{color:#fcd34d}.box.b h4{color:#fca5a5}
+.box ul{list-style:none;font-size:13px;color:var(--mut)}
+.box li{padding:5px 0;border-bottom:1px solid #1a2332;line-height:1.45}
+.box li:last-child{border-bottom:none}
+.box li b{color:var(--txt)}
+
+code{background:#0a0e14;border:1px solid #1e293b;padding:1px 5px;border-radius:4px;
+  font:12px ui-monospace,Consolas,monospace;color:#a5b4fc}
+
+footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);font-size:12px;color:var(--mut2);line-height:1.6}
+
+@media(max-width:860px){
+  .kpi-row{grid-template-columns:1fr 1fr}
+  .hero{grid-template-columns:1fr;text-align:center}
+  .grid2{grid-template-columns:1fr}
+  h1{font-size:26px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="tag">Auditoria · Cobertura de Testes</div>
+  <h1>Funcionalidades × testes — <em>v11.3.13 (vc36)</em></h1>
+  <p class="sub">Mapeamento de todas as áreas funcionais do app contra testes unitários (Jest), E2E (Playwright), pgTAP (Supabase) e gates de CI. Execução em 02/09/2026 via <code>npm run test:report</code>. Método: inventário de <code>js/</code> + 163 arquivos de teste + 11 specs E2E + revisão estática de lacunas.</p>
+  <div class="meta">
+    <span>Data: <b>02 set 2026 · 21:00</b></span>
+    <span>Versão: <b>11.3.13 / vc36</b></span>
+    <span>Nota geral: <b style="color:#fcd34d">76/100</b></span>
+    <span>Pass rate: <b style="color:#86efac">99,6%</b> (2152/2161)</span>
+  </div>
+</header>
+
+<section>
+  <h2 class="sec">Resumo executivo — execução</h2>
+  <div class="kpi-row">
+    <div class="kpi ok">
+      <div class="lbl">Frontend Jest</div>
+      <div class="val">1660</div>
+      <div class="sub">pass · 134 suites · 2 fail · 7 skip</div>
+    </div>
+    <div class="kpi ok">
+      <div class="lbl">Backend Jest</div>
+      <div class="val">492</div>
+      <div class="sub">pass · 29 suites · 0 fail</div>
+    </div>
+    <div class="kpi warn">
+      <div class="lbl">E2E Playwright</div>
+      <div class="val">11</div>
+      <div class="sub">specs · ~51 casos · login real skip</div>
+    </div>
+    <div class="kpi bad">
+      <div class="lbl">pgTAP Supabase</div>
+      <div class="val">0/4</div>
+      <div class="sub">não executado (Docker ausente)</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="hero">
+    <div class="gauge" aria-hidden="true">
+      <svg width="180" height="180" viewBox="0 0 180 180">
+        <circle cx="90" cy="90" r="74" fill="none" stroke="#1e293b" stroke-width="12"/>
+        <circle cx="90" cy="90" r="74" fill="none" stroke="#f59e0b" stroke-width="12"
+          stroke-dasharray="464.96" stroke-dashoffset="111.59" stroke-linecap="round"/>
+      </svg>
+      <div class="val">
+        <div class="num">76</div>
+        <div class="lbl">Nota<br>geral</div>
+      </div>
+    </div>
+    <div>
+      <p style="color:var(--mut);font-size:14px;line-height:1.6">
+        O projeto tem uma <b style="color:#86efac">suíte unitária madura</b> no núcleo financeiro (transações, orçamento, extrato, metas, cartões) com <b>2161 testes</b> e guardas de integridade (<code>suite-integrity.test.js</code>). A dívida concentra-se em <b style="color:#fcd34d">UI nativa</b> (biometria, FLAG_SECURE, OCR), <b style="color:#fcd34d">sync Supabase em runtime</b>, <b style="color:#fca5a5">pgTAP/RLS não executado</b> e <b style="color:#fcd34d">E2E de auth real</b>. Dois testes falham por drift de produto, não por regressão funcional crítica.
+      </p>
+      <div class="pills">
+        <span class="pill ok">2161 testes unitários</span>
+        <span class="pill ok">Core financeiro ~88</span>
+        <span class="pill ok">A11y estática ~86</span>
+        <span class="pill warn">2 suites falhando</span>
+        <span class="pill warn">OCR sem teste</span>
+        <span class="pill bad">pgTAP offline</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2 class="sec">Dimensões — notas 0–100</h2>
+  <table id="tbl-dims">
+    <thead>
+      <tr>
+        <th>Dimensão</th>
+        <th style="text-align:center">Nota</th>
+        <th style="text-align:center">Peso</th>
+        <th>Justificativa resumida</th>
+      </tr>
+    </thead>
+    <tbody id="rows-dims"></tbody>
+  </table>
+</section>
+
+<section>
+  <h2 class="sec">Funcionalidades do app — matriz de cobertura</h2>
+  <p style="color:var(--mut);font-size:13px;margin-bottom:14px">
+    <span class="cov alta">Alta</span> lógica exercitada com testes de comportamento ·
+    <span class="cov media">Média</span> estática ou parcial ·
+    <span class="cov baixa">Baixa</span> só estrutural/markup ·
+    <span class="cov nenh">Nenhuma</span> sem teste identificado
+  </p>
+  <table id="tbl-features">
+    <thead>
+      <tr>
+        <th>Funcionalidade</th>
+        <th>Módulo(s)</th>
+        <th style="text-align:center">Unit</th>
+        <th style="text-align:center">E2E</th>
+        <th style="text-align:center">Nota</th>
+        <th>Arquivos de teste principais</th>
+      </tr>
+    </thead>
+    <tbody id="rows-features"></tbody>
+  </table>
+</section>
+
+<section>
+  <h2 class="sec">Lacunas prioritárias (P0–P2)</h2>
+
+  <div class="find bad">
+    <h4><span class="st p0">P0</span> pgTAP Supabase — RLS, MFA AAL2, recovery codes</h4>
+    <p>Quatro arquivos em <code>supabase/tests/</code> (<code>rls_policies</code>, <code>quota_enforcement</code>, <code>mfa_aal2</code>, <code>mfa_recovery</code>) existem mas <b>não rodaram</b> (<code>supabase test db</code> exige Docker). Migrations MFA aplicadas em prod sem prova automatizada local.</p>
+  </div>
+
+  <div class="find warn">
+    <h4><span class="st p1">P1</span> OCR de comprovantes (<code>js/ocr.js</code>)</h4>
+    <p>Nenhum teste de parsing, fallback ou integração com formulário. Apenas presença em <code>lazy-chunks.test.js</code>. Risco alto para regressão silenciosa em feature visível ao usuário.</p>
+  </div>
+
+  <div class="find warn">
+    <h4><span class="st p1">P1</span> Auth runtime — login Supabase, MFA TOTP, biometria nativa</h4>
+    <p><code>auth-fase3</code>, <code>auth-hardening</code> e similares são <b>estáticos</b> (leitura de fonte). E2E real skip sem <code>E2E_SUPABASE=1</code>. Plugin Capacitor biometria e <code>FpSecureScreenPlugin</code> sem teste de integração.</p>
+  </div>
+
+  <div class="find warn">
+    <h4><span class="st p1">P1</span> Sync Supabase em runtime (<code>supabase-sync.js</code>)</h4>
+    <p><code>sync-engine</code>, <code>sync-merge</code> e <code>sync-dados</code> cobrem merge e fila, mas o adapter Supabase (push/pull, conflitos, quota) não tem teste de integração com mock de API.</p>
+  </div>
+
+  <div class="find warn">
+    <h4><span class="st p1">P2</span> Dois testes falhando (drift de produto)</h4>
+    <ul>
+      <li><code>password-policy.test.js</code> — espera <code>abcdefg!</code> válida; política HIBP local barra senhas conhecidas (comportamento correto pós-hardening).</li>
+      <li><code>marca-nomes-persistidos.test.js</code> — tagline removida do <code>index.html</code> mas ainda exigida no teste.</li>
+    </ul>
+  </div>
+
+  <div class="find info">
+    <h4><span class="st p2">P2</span> Camada UI global (~97% de <code>js/</code> fora dos pisos)</h4>
+    <p><code>jest.frontend.config.cjs</code> documenta cobertura global honesta (~2,8% linhas na UI). Módulos de negócio têm pisos altos; renderers e init-* dependem de testes estáticos e E2E limitados.</p>
+  </div>
+</section>
+
+<section>
+  <h2 class="sec">Pontos fortes</h2>
+  <div class="grid2">
+    <div class="box g">
+      <h4>Núcleo financeiro</h4>
+      <ul>
+        <li><b>Transações/extrato</b> — <code>transacoes-real</code>, <code>extrato-audit</code>, <code>caminho-do-dinheiro</code>, <code>idb-transacoes</code></li>
+        <li><b>Orçamento</b> — <code>orcamento-real</code>, <code>orcamento-ui</code>, <code>budget</code>, piso 85% em <code>orcamento.js</code></li>
+        <li><b>Invariantes</b> — <code>invariantes-financeiras</code>, <code>precisao-monetaria</code>, <code>finance-contract</code></li>
+        <li><b>Pipeline</b> — <code>pipeline-real</code>, <code>cobertura-fase1-4</code></li>
+      </ul>
+    </div>
+    <div class="box g">
+      <h4>Qualidade da suíte</h4>
+      <ul>
+        <li><b>Integridade</b> — <code>suite-integrity.test.js</code> impede testes-cópia</li>
+        <li><b>Validations real</b> — módulo real, não inline (bug 10× histórico)</li>
+        <li><b>Backend</b> — 492 testes, OpenAPI coverage, billing, sync, open-finance</li>
+        <li><b>CI</b> — XSS, contraste, tokens CSS, persona 10k, extrato perf gate</li>
+      </ul>
+    </div>
+    <div class="box g">
+      <h4>A11y e UX</h4>
+      <ul>
+        <li><b>952 linhas</b> em <code>a11y-static.test.js</code></li>
+        <li><b>E2E</b> — <code>accessibility.spec.cjs</code>, <code>contraste-real.spec.cjs</code></li>
+        <li><b>Teclado</b> — <code>tablist-keyboard</code>, <code>form-autocomplete-a11y</code></li>
+        <li><b>UX auditorias</b> — fases 4–9, vocabulario-de-design, tokens-de-cor</li>
+      </ul>
+    </div>
+    <div class="box w">
+      <h4>Express legado (inerte no APK)</h4>
+      <ul>
+        <li>Backend testado a <b>90/100</b> mas não é path de produção Android</li>
+        <li>Paridade plan-limits testada frontend + backend</li>
+        <li>Risco: falso conforto se métricas backend mascararem gap Supabase</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2 class="sec">Inventário de suítes</h2>
+  <table>
+    <thead><tr><th>Camada</th><th>Arquivos</th><th>Testes</th><th>Status</th><th>Comando</th></tr></thead>
+    <tbody>
+      <tr><td>Frontend unit</td><td>134</td><td>1669</td><td class="n mid">2 fail</td><td><code>npm run test:frontend:unit</code></td></tr>
+      <tr><td>Backend unit</td><td>29</td><td>492</td><td class="n hi">OK</td><td><code>npm run test:backend:unit</code></td></tr>
+      <tr><td>E2E Playwright</td><td>11</td><td>~51</td><td class="n mid">parcial</td><td><code>npm run test:e2e</code></td></tr>
+      <tr><td>pgTAP DB</td><td>4</td><td>—</td><td class="n lo">não rodou</td><td><code>npm run test:db</code></td></tr>
+      <tr><td>CI gates</td><td>8 scripts</td><td>—</td><td class="n hi">OK*</td><td><code>npm run test:ci</code></td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:12px;color:var(--mut2);margin-top:8px">* CI completo bloqueado pelos 2 testes frontend falhando até correção.</p>
+</section>
+
+<section>
+  <h2 class="sec">Recomendações (ordem sugerida)</h2>
+  <table>
+    <thead><tr><th>#</th><th>Ação</th><th>Impacto na nota</th><th>Esforço</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Corrigir <code>password-policy</code> e <code>marca-nomes-persistidos</code> (expectativas alinhadas ao produto)</td><td class="n hi">+3 CI</td><td>Baixo</td></tr>
+      <tr><td>2</td><td>Habilitar pgTAP via Docker + <code>supabase test db</code> no CI</td><td class="n hi">+8</td><td>Médio</td></tr>
+      <tr><td>3</td><td>Testes unitários <code>ocr.js</code> (fixtures de imagem/texto OCR)</td><td class="n mid">+4</td><td>Médio</td></tr>
+      <tr><td>4</td><td>E2E auth Supabase com secrets CI (conta sem MFA + conta com TOTP separados)</td><td class="n mid">+5</td><td>Médio</td></tr>
+      <tr><td>5</td><td>Mock integration tests para <code>supabase-sync.js</code> (pull/push/quota)</td><td class="n mid">+4</td><td>Alto</td></tr>
+      <tr><td>6</td><td>Teste smoke Capacitor: biometria + FLAG_SECURE (Android instrumented ou mock plugin)</td><td class="n mid">+3</td><td>Alto</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<footer>
+  <p><b>FinançasPro — Auditoria de Testes</b> · 02/09/2026 · v11.3.13 (vc36).</p>
+  <p>Nota geral = média ponderada das 12 dimensões (pesos na tabela). Matriz funcional: nota por área considerando unit + E2E + pgTAP + gaps conhecidos. Abra no navegador: <code>docs/auditoria-testes-2026-09-02.html</code></p>
+</footer>
+
+</div>
+<script>
+/* dimensão, nota, peso%, justificativa */
+var dims=[
+  ['Núcleo financeiro (transações, extrato, orçamento)',88,20,'transacoes-real, orcamento-*, caminho-do-dinheiro, invariantes, cobertura-fase1-4'],
+  ['Módulos avançados (metas, cartões, patrimônio…)',82,12,'metas-real, cartoes, patrimonio-real, assinaturas-real, modulos-avancados-persistencia'],
+  ['Autenticação e sessão',72,10,'auth-fase3/hardening estáticos; E2E login real skip; biometria sem runtime'],
+  ['Sync e nuvem Supabase',62,8,'sync-engine/merge/dados OK; supabase-sync.js sem integração'],
+  ['Billing e planos',76,6,'billing, supabase-billing, play-billing + backend billing.*'],
+  ['Open Finance / Belvo',74,5,'open-finance, belvo + backend + e2e/open-finance'],
+  ['Segurança e compliance',84,8,'security-static, csp-connect-src, password-policy*, totp, play-store-*'],
+  ['A11y e UX',86,7,'a11y-static (952L), chart-a11y, ux-fase9, e2e accessibility'],
+  ['PWA / offline',80,5,'sw-precache, auth-sw-native, e2e/app.offline'],
+  ['Mobile / Android nativo',56,6,'play-store-*, build-mode-residual estáticos; plugins nativos sem teste'],
+  ['Integração E2E',58,8,'11 specs smoke/jornada; auth real e open-finance parciais'],
+  ['Integridade e CI da suíte',88,5,'suite-integrity, 99,6% pass; 2 fails por drift']
+];
+
+var features=[
+  ['Login / cadastro / logout','authController, supabase','Alta','Parcial',74,'auth-comportamento, auth-fase3, auth-hardening, auth-recuperacao, e2e/auth-supabase-ui'],
+  ['MFA TOTP / 2FA','supabase, init-2fa','Média','Parcial',65,'auth-fase3, totp (lib), e2e markup TOTP'],
+  ['Recovery codes MFA','supabase, init-2fa','Baixa','Nenhuma',40,'auth-fase3 estático; pgTAP mfa_recovery não rodou'],
+  ['Biometria Android','auth-biometric','Baixa','Markup',48,'auth-fase3 estático, e2e hint; sem plugin nativo'],
+  ['PIN e FLAG_SECURE','pin, pin-guard, fp-secure-screen','Baixa','Nenhuma',42,'build-mode-residual, play-store-fase2 estáticos'],
+  ['Sync Supabase','supabase-sync, sync-engine','Média','Nenhuma',60,'sync-engine, sync-merge, sync-dados, supabase-quota-error'],
+  ['Transações e formulário','transacoes, pipeline','Alta','Sim',90,'transacoes-real, pipeline-real, form-*, caminho-do-dinheiro e2e'],
+  ['Extrato e KPIs','render, transacoes','Alta','Sim',88,'extrato-audit, kpi-extrato, dashboard-kpis, extrato-lista-click'],
+  ['Orçamento','orcamento, budgetService','Alta','Parcial',87,'orcamento-real, orcamento-ui, orcamento-risco, budget'],
+  ['Metas financeiras','metas','Alta','Nenhuma',84,'metas-real, metas-projecao, cobertura-fase1-4'],
+  ['Assinaturas recorrentes','assinaturas','Alta','Nenhuma',82,'assinaturas-real, assinaturas-esquecidas'],
+  ['Patrimônio (ativos/dívidas)','patrimonio','Alta','Nenhuma',80,'patrimonio-real, accountId-patrimonio'],
+  ['Contas a pagar','contas-pagar','Alta','Nenhuma',81,'contas-pagar-real'],
+  ['Cartões e faturas','cartoes','Alta','Nenhuma',83,'cartoes, cartao-nao-duplica, fatura-pagamento'],
+  ['Contas bancárias','contas, transferencias','Alta','Nenhuma',80,'contas-real, contas-saldos, transferencias'],
+  ['Recorrentes automáticos','recorrentes','Média','Nenhuma',72,'recorrentes-cliente'],
+  ['Relatórios e gráficos','relatorios, render-dashboard','Média','Nenhuma',70,'relatorios-real, dashboard-onrender, chart-a11y'],
+  ['Previsão / projeção','previsao, projecao','Média','Nenhuma',68,'projecao, projecao-fim-mes, metas-projecao'],
+  ['Score / insights / IA','score, ai-engine, insights','Média','Nenhuma',62,'score, ai-engine-core; insights UI sem teste'],
+  ['OCR comprovantes','ocr','Nenhuma','Nenhuma',22,'lazy-chunks só verifica chunk'],
+  ['Anexos de transação','anexos','Média','Nenhuma',55,'anexos.test.js (58 linhas, básico)'],
+  ['Open Finance','open-finance, belvo','Alta','Parcial',76,'open-finance, belvo, backend/open-finance, e2e/open-finance'],
+  ['Billing Stripe / Play','billing, play-billing','Alta','Nenhuma',75,'billing, supabase-billing, play-billing + backend'],
+  ['Backup / import JSON','config-user, dados','Alta','Sim',79,'backup-simetria, perfil-backup-import, persistencia-anual e2e'],
+  ['Onboarding','onboarding','Alta','Sim',81,'onboarding-primeiro-cta + e2e'],
+  ['Config / perfil / PIN UI','init-config, config-user','Média','Nenhuma',64,'setup-guide, perfil-backup-import'],
+  ['Categorizador / automação','categorizador, automacao','Baixa','Nenhuma',48,'pipeline indireto; sem teste dedicado'],
+  ['PWA / service worker','sw.js, sw-register','Alta','Sim',82,'sw-precache, auth-sw-native, app.offline e2e'],
+  ['Segurança (CSP, XSS, crypto)','core, local-crypto','Alta','Nenhuma',85,'security-static, csp-connect-src, local-crypto-recursion, crypto-migration'],
+  ['A11y global','index.html, components','Alta','Sim',87,'a11y-static, tablist-keyboard, accessibility e2e'],
+  ['Android build / Play Store','build.gradle, manifest','Média','Nenhuma',58,'play-store-fase2/3, build-mode-residual, auth-fase3 manifest'],
+  ['Backend Express (legado)','backend/','Alta','Nenhuma',90,'29 suites backend; inerte no APK Capacitor']
+];
+
+function scoreClass(n){return n>=80?'hi':n>=60?'mid':'lo'}
+function barColor(v){return v>=80?'#22c55e':v>=60?'#f59e0b':'#ef4444'}
+function covClass(c){
+  if(c==='Alta')return'cov alta';
+  if(c==='Média')return'cov media';
+  if(c==='Baixa')return'cov baixa';
+  return'cov nenh';
+}
+
+var tbD=document.getElementById('rows-dims');
+var weighted=0,totalW=0;
+dims.forEach(function(d){
+  weighted+=d[1]*d[2];totalW+=d[2];
+  var tr=document.createElement('tr');
+  tr.innerHTML='<td>'+d[0]+'</td><td class="n '+scoreClass(d[1])+'">'+d[1]+'</td><td style="text-align:center;color:var(--mut2)">'+d[2]+'%</td><td style="font-size:12px">'+d[3]+'</td>';
+  tbD.appendChild(tr);
+  var tr2=document.createElement('tr');tr2.className='row-bar';
+  tr2.innerHTML='<td colspan="4"><div class="mini"><span>'+d[1]+'</span><div class="track"><b style="width:'+d[1]+'%;background:'+barColor(d[1])+'"></b></div></div></td>';
+  tbD.appendChild(tr2);
+});
+
+var tbF=document.getElementById('rows-features');
+features.forEach(function(f){
+  var tr=document.createElement('tr');
+  tr.innerHTML='<td>'+f[0]+'</td><td><code style="font-size:11px">'+f[1]+'</code></td>'
+    +'<td style="text-align:center"><span class="'+covClass(f[2])+'">'+f[2]+'</span></td>'
+    +'<td style="text-align:center"><span class="'+covClass(f[3]==='Sim'?'Alta':f[3]==='Parcial'?'Média':f[3]==='Markup'?'Baixa':'Nenhuma')+'">'+f[3]+'</span></td>'
+    +'<td class="n '+scoreClass(f[4])+'">'+f[4]+'</td>'
+    +'<td style="font-size:11px">'+f[5]+'</td>';
+  tbF.appendChild(tr);
+});
+</script>
+</body>
+</html>

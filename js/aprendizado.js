@@ -3,6 +3,17 @@
  */
 
 var APRENDIZADO = {
+  /**
+   * A automacao que o usuario sente todo dia -- e o motivo pelo qual ele
+   * renova. As regras por regex de AUTO_CATEGORIZER seguem livres: elas sao o
+   * aha moment do onboarding e cobrar por elas mataria a ativacao. O que e
+   * PRO e o app APRENDER com o historico dele.
+   */
+  _podeAprender: function() {
+    if (typeof BILLING === 'undefined' || !BILLING.canUse) return true;
+    return BILLING.canUse('learnedCategorization');
+  },
+
   HISTORICO: {},
   PRUNE_DIAS: 90, // descarta entradas inativas há 90 dias
   PRUNE_CONTADOR_MIN: 2, // ...se contador < 2
@@ -91,6 +102,10 @@ var APRENDIZADO = {
 
   sugerir: function(desc) {
     if (!desc) return null;
+    // Gate na leitura, de proposito: o historico continua sendo gravado no
+    // plano gratuito, entao quem assina depois ja chega com o app treinado --
+    // em vez de comecar do zero no dia em que pagou.
+    if (!this._podeAprender()) return null;
     var tokens = desc.toLowerCase().split(/\s+/);
     var candidatos = [];
 

@@ -200,18 +200,14 @@ const INIT_NAVIGATION = {
       // segundo em base grande. Sem bloquear o botão, o clique duplo gera dois
       // downloads e a impressão de que o app travou.
       'exportar-excel': function() {
-        if (target.getAttribute('aria-disabled') === 'true') {
-          self.carregarChunkConta(function() {
-            if (typeof INIT_BILLING !== 'undefined') INIT_BILLING.abrirPaywall('Exportação na nuvem disponível no plano Pro.');
-          });
-          return;
-        }
         UTILS.comCarregamento(target, function() { return safeCall('exportarExcel'); }, 'Gerando...');
       },
       'exportar-pdf': function() {
         if (target.getAttribute('aria-disabled') === 'true') {
           self.carregarChunkConta(function() {
-            if (typeof INIT_BILLING !== 'undefined') INIT_BILLING.abrirPaywall('Exportação na nuvem disponível no plano Pro.');
+            if (typeof INIT_BILLING !== 'undefined') {
+              INIT_BILLING.abrirPaywall('O relatório em PDF, pronto para apresentar, está no Pro.');
+            }
           });
           return;
         }
@@ -220,6 +216,17 @@ const INIT_NAVIGATION = {
       'abrir-paywall': function() {
         self.carregarChunkConta(function() {
           if (typeof INIT_BILLING !== 'undefined') INIT_BILLING.abrirPaywall();
+        });
+      },
+      'billing-portal-banner': function() {
+        self.carregarChunkConta(function() {
+          if (typeof BILLING !== 'undefined' && BILLING.openPortal) {
+            BILLING.openPortal().catch(function(err) {
+              if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+                UTILS.mostrarToast((err && err.message) || 'Portal indisponível', 'error');
+              }
+            });
+          }
         });
       },
       'salvar-renda-orcamento': function() { safeCall('salvarRendaOrcamento'); },
@@ -241,6 +248,11 @@ const INIT_NAVIGATION = {
       'abrir-editar-perfil': function() { 
         if (typeof INIT_CONFIG !== 'undefined' && typeof INIT_CONFIG.abrirEditarPerfil === 'function') {
           INIT_CONFIG.abrirEditarPerfil();
+        }
+      },
+      'abrir-equipe': function() {
+        if (typeof INIT_BILLING !== 'undefined' && INIT_BILLING.abrirEquipe) {
+          INIT_BILLING.abrirEquipe();
         }
       },
       'abrir-editar-renda': function() { safeCall('abrirEditarRenda'); },
@@ -368,8 +380,13 @@ const INIT_NAVIGATION = {
         confirmar('Confirma a exclusão definitiva da conta?', function() {
           var promessa;
           if (DADOS._supabaseAtivo && DADOS._supabaseAtivo()) {
-            promessa = (typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.deleteAccount)
-              ? SUPA_AUTH.deleteAccount()
+            var email = sessao.user.email;
+            var senha = window.prompt('Digite sua senha para confirmar a exclusão da conta:');
+            if (!senha) return;
+            promessa = (typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.reauthWithPassword && SUPA_AUTH.deleteAccount)
+              ? SUPA_AUTH.reauthWithPassword(email, senha).then(function() {
+                return SUPA_AUTH.deleteAccount();
+              })
               : Promise.reject(new Error('Supabase indisponível'));
           } else if (DADOS._apiAtiva && DADOS._apiAtiva()) {
             var senha = window.prompt('Digite sua senha para confirmar a exclusão da conta:');
@@ -387,7 +404,11 @@ const INIT_NAVIGATION = {
 
           promessa
             .then(function() {
-              DADOS.encerrarSessao();
+              if (typeof authLimparAoSair === 'function') {
+                authLimparAoSair();
+              } else {
+                DADOS.encerrarSessao();
+              }
               if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
                 UTILS.mostrarToast('Conta excluída', 'info');
               }
@@ -471,7 +492,8 @@ const INIT_NAVIGATION = {
       function() { return typeof OCR !== 'undefined'; },
       function(justLoaded) {
         if (justLoaded && typeof OCR !== 'undefined' && OCR.init) {
-          UTILS.tentar('chunk.ocr.init', OCR.init);
+          // Wrapper: passar OCR.init nu perde `this` (UTILS.tentar chama fn()).
+          UTILS.tentar('chunk.ocr.init', function() { OCR.init(); });
         }
         if (typeof callback === 'function') callback();
       },
@@ -539,7 +561,9 @@ const INIT_NAVIGATION = {
     if (!aberto) {
       this._ensureChunk('previsao', function() { return typeof PREVISAO !== 'undefined'; }, function(justLoaded) {
         if (typeof PREVISAO === 'undefined') return;
-        if (justLoaded && PREVISAO.init) UTILS.tentar('PREVISAO.init', PREVISAO.init);
+        if (justLoaded && PREVISAO.init) {
+          UTILS.tentar('PREVISAO.init', function() { PREVISAO.init(); });
+        }
         PREVISAO.renderizar();
       });
     }

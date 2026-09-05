@@ -369,22 +369,8 @@ legend {
 .status-alerta   { color: var(--color-warning-text); font-weight: var(--font-weight-semibold); }
 .status-excedido { color: var(--color-danger-text);  font-weight: var(--font-weight-semibold); }
 
-/* ── btn-small (delete orcamento) ────────────────────────── */
-
-.btn-small {
-  padding: var(--space-1) var(--space-3);
-  font-size: var(--font-size-2xs);
-  background: none;
-  border: 1px solid var(--color-danger);
-  color: var(--color-danger-text);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-weight: var(--font-weight-semibold);
-  transition: all var(--transition-fast);
-  font-family: var(--font-family-sans);
-}
-
-.btn-small:hover { background: var(--color-danger-bg); }
+/* ── btn-small: alias de .btn-sm (ver buttons.css) ─────────── */
+/* Estilos de danger compacto: use .btn-sm.btn-danger-outline */
 
 /* ── btn-delete (genérico) ────────────────────────────────── */
 

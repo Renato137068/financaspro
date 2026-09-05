@@ -319,20 +319,31 @@ var DADOS = {
           throw new Error('Falha ao decifrar dados existentes — migração abortada');
         }
       }
-      // 2. Alterna o flag e invalida o cache em memória.
-      LOCAL_CRYPTO.setEnabled(enable);
-      self._plainCache = {};
 
-      // 3. Regrava no novo formato (encrypt só funciona com o flag já ligado).
-      var writes = items.map(function(it) {
-        if (it.plain == null) return Promise.resolve();
-        if (enable) {
-          return LOCAL_CRYPTO.encrypt(it.plain).then(function(enc) { localStorage.setItem(it.key, enc); });
+      // Anexos: ao DESLIGAR, decifrar enquanto o flag ainda está ligado.
+      var anexosAntes = (!enable && typeof ANEXOS !== 'undefined' && ANEXOS.migrarCriptografia)
+        ? ANEXOS.migrarCriptografia(false)
+        : Promise.resolve();
+
+      return anexosAntes.then(function() {
+        LOCAL_CRYPTO.setEnabled(enable);
+        self._plainCache = {};
+
+        var writes = items.map(function(it) {
+          if (it.plain == null) return Promise.resolve();
+          if (enable) {
+            return LOCAL_CRYPTO.encrypt(it.plain).then(function(enc) { localStorage.setItem(it.key, enc); });
+          }
+          localStorage.setItem(it.key, it.plain);
+          return Promise.resolve();
+        });
+        return Promise.all(writes);
+      }).then(function() {
+        // Anexos: ao LIGAR, cifrar com o flag já ativo.
+        if (enable && typeof ANEXOS !== 'undefined' && ANEXOS.migrarCriptografia) {
+          return ANEXOS.migrarCriptografia(true);
         }
-        localStorage.setItem(it.key, it.plain);
-        return Promise.resolve();
       });
-      return Promise.all(writes);
     }).then(function() {
       return LOCAL_CRYPTO.isEnabled();
     });
@@ -344,6 +355,14 @@ var DADOS = {
   },
 
   _apiAtiva: function() {
+    // APK/Capacitor: auth e sync só via Supabase — Express fica inerte no mobile.
+    try {
+      if (typeof window !== 'undefined' && window.Capacitor
+          && window.Capacitor.isNativePlatform
+          && window.Capacitor.isNativePlatform()) {
+        return false;
+      }
+    } catch (e) { /* noop */ }
     return !!this._apiBaseUrl();
   },
 

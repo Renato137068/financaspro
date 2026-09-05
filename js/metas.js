@@ -27,6 +27,13 @@ const METAS = {
   },
 
   criar: function(dados) {
+    // Uma meta prova o conceito e engaja; a segunda e desejo declarado, e o
+    // melhor momento de oferta que o modulo tem.
+    if (typeof BILLING !== 'undefined' && !BILLING.guardQuota('goal', 1)) {
+      var errMeta = new Error('Limite de metas do plano gratuito');
+      errMeta.code = 'quota';
+      throw errMeta;
+    }
     var titulo = (dados.titulo || '').trim();
     var valorAlvo = UTILS.parseMoeda(dados.valorAlvo);
     if (!titulo) throw new Error('Informe o nome da meta');

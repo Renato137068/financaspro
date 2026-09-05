@@ -159,4 +159,10 @@ export const OrgRepository = {
       orderBy: { createdAt: 'desc' },
     });
   },
+
+  async deleteInvitation(orgId, invitationId) {
+    return prisma.invitation.deleteMany({
+      where: { id: invitationId, orgId, acceptedAt: null },
+    });
+  },
 };

@@ -5,19 +5,24 @@
  * Depende de: design-system.css
  */
 
-/* ── Base compartilhada (legacy) ──────────────────────────── */
+/* ── Base compartilhada ───────────────────────────────────── */
 
 .btn-primario,
 .btn-secundario {
-  padding: var(--space-3) var(--space-5);
+  padding: var(--btn-pad-y, var(--space-3)) var(--btn-pad-x, var(--space-5));
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--btn-radius, var(--radius-controle));
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
   cursor: pointer;
   transition: all var(--transition-fast);
   width: 100%;
   font-family: var(--font-family-sans);
+  min-height: var(--btn-height, 48px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--btn-icon-gap, 8px);
 }
 
 /* ── Primário ─────────────────────────────────────────────── */
@@ -75,6 +80,26 @@
 
 .btn-secundario:active {
   background: var(--color-bg-primary);
+  transform: scale(0.98);
+}
+
+/* ── Tamanho compacto (tertiary / ações em card) ───────────── */
+
+.btn-sm {
+  width: auto;
+  min-height: var(--btn-sm-height, 44px);
+  padding: var(--btn-sm-pad-y, 8px) var(--btn-sm-pad-x, 12px);
+  font-size: var(--font-size-sm);
+  border-radius: var(--btn-radius, var(--radius-controle));
+}
+
+/* Alias legado — preferir .btn-sm */
+.btn-small {
+  width: auto;
+  min-height: var(--btn-sm-height, 44px);
+  padding: var(--btn-sm-pad-y, 8px) var(--btn-sm-pad-x, 12px);
+  font-size: var(--font-size-sm);
+  border-radius: var(--btn-radius, var(--radius-controle));
 }
 
 /* ── Danger outline ───────────────────────────────────────── */
@@ -126,11 +151,11 @@
   margin-top: var(--space-2);
   background: transparent;
   color: var(--color-text-secondary);
-  border-color: var(--color-border-subtle);
+  border-color: var(--color-border-light);
 }
 
 .btn-empty-cta--secundario:active {
-  background: var(--color-bg-subtle);
+  background: var(--color-bg-primary);
   color: var(--color-text-primary);
 }
 
@@ -172,7 +197,7 @@
 
 .btn-export-excel:active {
   background: var(--color-primary-100);
-  transform: scale(0.97);
+  transform: scale(var(--press-scale, 0.98));
 }
 
 .btn-export-pdf {
@@ -183,7 +208,7 @@
 
 .btn-export-pdf:active {
   background: var(--color-warning-bg);
-  transform: scale(0.97);
+  transform: scale(var(--press-scale, 0.98));
   filter: brightness(0.97);
 }
 
@@ -300,7 +325,7 @@
 }
 
 .filtro-cat-chip:active {
-  transform: scale(0.95);
+  transform: scale(var(--press-scale, 0.98));
 }
 
 .cat-count {
@@ -317,32 +342,15 @@
   color: var(--color-text-inverse);
 }
 
-/* ── Filtros legado ────────────────────────────────────────── */
+/* ── Filtros legado (deprecated — use .filtro-chip) ─────────── */
+/* Mantido sem uso no HTML; remoção planejada após confirmação de zero refs. */
 
 .filtros-container {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-3);
-  margin-bottom: var(--space-5);
+  display: none !important;
 }
 
 .filtro-btn {
-  padding: var(--space-3);
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
-  transition: all var(--transition-fast);
-  color: var(--color-text-secondary);
-  font-family: var(--font-family-sans);
-}
-
-.filtro-btn.ativo {
-  background: var(--color-primary-500);
-  color: var(--color-text-inverse);
-  border-color: var(--color-primary-500);
+  display: none !important;
 }
 
 /* ── Ghost (legacy) — botões de ação discretos (ex.: "Excluir") ── */
@@ -354,12 +362,18 @@
   font-weight: var(--font-weight-semibold);
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+  min-height: var(--btn-sm-height, 44px);
+  padding: var(--btn-sm-pad-y, 8px) var(--btn-sm-pad-x, 12px);
 }
 
 .btn-ghost:hover:not(:disabled) {
   background: var(--color-gray-100);
   color: var(--color-text-primary);
+}
+
+.btn-ghost:active:not(:disabled) {
+  transform: scale(var(--press-scale, 0.98));
 }
 
 .btn-ghost:disabled {

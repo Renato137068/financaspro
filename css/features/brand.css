@@ -65,7 +65,7 @@ header h1 .brand-mark { margin-right: 6px; }
   height: 100%;
   background: var(--color-primary-500);
   border-radius: var(--radius-sm);
-  transition: width var(--transition-base, .4s ease);
+  transition: width var(--transition-slow);
 }
 .setup-card-steps { display: flex; flex-direction: column; gap: 2px; }
 .setup-step {

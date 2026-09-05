@@ -5,13 +5,112 @@ const INIT_BILLING = {
   _overlay: null,
   _focusTrap: null,
   _interval: 'monthly',
-  // Business fica no backend/Play Console, mas oculto no paywall até os recursos existirem.
+  // Business sai da vitrine: nao existe ICP para "membros ilimitados e
+  // multiplas organizacoes" num app cuja tela principal e o 50/30/20 pessoal.
+  // Como ancora de preco tambem nao serve -- ancora so ancora quando e
+  // plausivel, e uma terceira coluna sem persona so custa uma decisao a mais
+  // no momento em que queremos que o usuario decida uma coisa so.
+  // Backend, Edge Functions e tabela de planos continuam intactos.
   SHOW_BUSINESS_PLAN: false,
 
   init: function() {
     if (typeof BILLING !== 'undefined') BILLING.init();
     this.refreshPlanoCard();
     this._handleBillingReturn();
+    this._handleInviteReturn();
+    this._consumePendingInvite();
+    this._reconciliarPlay();
+  },
+
+  // Reconciliacao silenciosa do Google Play.
+  //
+  // O botao "Restaurar compras" era o UNICO gatilho que reenviava um
+  // purchaseToken ao servidor. Como o entitlement do Play so muda quando o
+  // play-verify roda, um usuario que cancelasse (ou fosse reembolsado, ou
+  // tivesse o cartao recusado) ficava com Pro ate resolver clicar num botao
+  // que ele nao tem motivo nenhum para clicar. Aqui reenviamos os tokens
+  // ativos no boot: o play-verify renova quando a assinatura segue valida e
+  // revoga quando nao segue.
+  //
+  // Silencioso de proposito -- sem toast em sucesso nem em falha. O botao
+  // continua sendo o caminho explicito, para quem reinstalou ou trocou de
+  // aparelho e quer ver uma confirmacao.
+  _RECONCILIA_KEY: 'fp-play-reconcilia',
+  _RECONCILIA_INTERVALO: 6 * 60 * 60 * 1000, // 6h
+
+  _reconciliarPlay: function() {
+    if (typeof PLAY_BILLING === 'undefined' || !PLAY_BILLING.isAvailable()) return;
+    if (typeof BILLING === 'undefined' || !BILLING.isCloudUser || !BILLING.isCloudUser()) return;
+
+    var agora = Date.now();
+    try {
+      var ultimo = Number(localStorage.getItem(this._RECONCILIA_KEY) || 0);
+      if (ultimo && (agora - ultimo) < this._RECONCILIA_INTERVALO) return;
+      localStorage.setItem(this._RECONCILIA_KEY, String(agora));
+    } catch (e) { /* storage indisponivel: segue sem throttle */ }
+
+    var self = this;
+    PLAY_BILLING.restore().catch(function() {
+      // 402 assinatura-nao-ativa: o servidor ja revogou, entao o cache local
+      // esta velho. Offline / sem plugin / sem compra caem aqui tambem e o
+      // sync simplesmente nao acha novidade.
+      if (typeof BILLING !== 'undefined' && BILLING.sync) {
+        return BILLING.sync().catch(function() { /* silencioso */ });
+      }
+    }).then(function() {
+      self.refreshPlanoCard();
+      if (self.refreshUsageBanner) self.refreshUsageBanner();
+    });
+  },
+
+  _consumePendingInvite: function() {
+    var token = null;
+    try { token = sessionStorage.getItem('fp-pending-invite'); } catch (e) { return; }
+    if (!token || typeof BILLING === 'undefined' || !BILLING.isCloudUser || !BILLING.isCloudUser()) return;
+    try { sessionStorage.removeItem('fp-pending-invite'); } catch (e2) { /* */ }
+    BILLING.acceptInvite(token).then(function() {
+      if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+        UTILS.mostrarToast('Você entrou na organização.', 'success');
+      }
+    }).catch(function(err) {
+      if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+        UTILS.mostrarToast((err && err.message) || 'Não foi possível aceitar o convite.', 'error');
+      }
+    });
+  },
+
+  _handleInviteReturn: function() {
+    if (typeof window === 'undefined' || typeof URLSearchParams === 'undefined') return;
+    var params = new URLSearchParams(window.location.search);
+    var token = params.get('invite');
+    if (!token) return;
+
+    var cleanUrl = function() {
+      var u = new URL(window.location.href);
+      u.searchParams.delete('invite');
+      window.history.replaceState({}, '', u.pathname + u.search + u.hash);
+    };
+
+    if (typeof BILLING === 'undefined' || !BILLING.isCloudUser || !BILLING.isCloudUser()) {
+      if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+        UTILS.mostrarToast('Faça login na nuvem para aceitar o convite de equipe.', 'info');
+      }
+      try { sessionStorage.setItem('fp-pending-invite', token); } catch (e) { /* */ }
+      cleanUrl();
+      return;
+    }
+
+    BILLING.acceptInvite(token).then(function() {
+      if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+        UTILS.mostrarToast('Você entrou na organização.', 'success');
+      }
+      cleanUrl();
+    }).catch(function(err) {
+      if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+        UTILS.mostrarToast((err && err.message) || 'Não foi possível aceitar o convite.', 'error');
+      }
+      cleanUrl();
+    });
   },
 
   _handleBillingReturn: function() {
@@ -29,6 +128,9 @@ const INIT_BILLING = {
 
     if (status === 'success' && typeof BILLING !== 'undefined' && BILLING.sync) {
       BILLING.sync().then(function() {
+        if (typeof FUNIL !== 'undefined') {
+          FUNIL.marco(FUNIL.E.ASSINATURA_ATIVA, { dia: FUNIL.diasDeUso() });
+        }
         if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
           UTILS.mostrarToast('Pronto, você está no Pro.', 'success');
         }
@@ -54,6 +156,19 @@ const INIT_BILLING = {
         el.textContent = 'Gratuito · uso local';
       }
     }
+    var equipeSub = document.getElementById('perfil-equipe-subtitle');
+    if (equipeSub && typeof BILLING !== 'undefined') {
+      if (!BILLING.isCloudUser || !BILLING.isCloudUser()) {
+        equipeSub.textContent = 'Disponível com login na nuvem';
+      } else if (!BILLING.canUse('teamFeatures')) {
+        equipeSub.textContent = 'Convites a partir do Pro';
+      } else {
+        var lim = BILLING.getLimits();
+        equipeSub.textContent = lim.maxUsers === Infinity
+          ? 'Membros ilimitados'
+          : 'Até ' + lim.maxUsers + ' pessoas no Pro (modo casal)';
+      }
+    }
     this.refreshUsageBanner();
     this.refreshExportButtons();
     this.refreshExtratoSubtitle();
@@ -68,15 +183,51 @@ const INIT_BILLING = {
       el.innerHTML = '';
       return;
     }
+
+    var life = BILLING.getLifecycleAlert && BILLING.getLifecycleAlert();
+    if (life) {
+      var ctaAction = life.cta === 'portal' ? 'billing-portal-banner' : 'abrir-paywall';
+      el.hidden = false;
+      el.className = 'fp-usage-banner' + (life.severity === 'warn' ? ' fp-usage-banner--warn' : '');
+      el.innerHTML =
+        '<div class="fp-usage-banner-text">' +
+          '<strong>' + UTILS.escapeHtml(life.title) + '</strong> · ' +
+          UTILS.escapeHtml(life.message) +
+        '</div>' +
+        '<button type="button" class="fp-usage-banner-cta" data-action="' + ctaAction + '">' +
+          UTILS.escapeHtml(life.ctaLabel || 'Abrir') +
+        '</button>';
+      return;
+    }
+
+    // Cota de OCR quase no fim: avisa enquanto ainda ha o que usar. O banner
+    // some sozinho quando a cota renova na virada do mes.
+    if (typeof BILLING.ocrRemaining === 'function') {
+      var remOcr = BILLING.ocrRemaining();
+      if (isFinite(remOcr) && remOcr <= 2) {
+        el.hidden = false;
+        el.className = 'fp-usage-banner' + (remOcr === 0 ? ' fp-usage-banner--warn' : '');
+        el.innerHTML =
+          '<div class="fp-usage-banner-text">' +
+            '<strong>' + (remOcr === 0
+              ? 'Você usou seus 5 escaneamentos do mês'
+              : (remOcr + ' escaneamento' + (remOcr === 1 ? '' : 's') + ' de comprovante restante' + (remOcr === 1 ? '' : 's'))) + '</strong> · ' +
+            'No Pro você fotografa quantos comprovantes quiser.' +
+          '</div>' +
+          '<button type="button" class="fp-usage-banner-cta" data-action="abrir-paywall">Ver o Pro</button>';
+        return;
+      }
+    }
+
     if (!BILLING.shouldEnforceLimits || !BILLING.shouldEnforceLimits()) {
       el.hidden = true;
       el.innerHTML = '';
       return;
     }
-    var usage = BILLING.getUsage();
-    var maxT = usage.maxTransPerMonth === Infinity ? 0 : usage.maxTransPerMonth;
-    var pct = maxT ? Math.round((100 * usage.transactionsThisMonth) / maxT) : 0;
-    var perto = pct >= 80;
+
+    // Aviso de capacidade: so aparece quando algo esta de fato perto do teto.
+    // Um banner permanente listando tudo que o gratuito nao tem transforma o
+    // plano gratuito numa reclamacao diaria -- e ninguem assina por irritacao.
     var msg = BILLING.getUsageLabel();
     if (!msg) {
       el.hidden = true;
@@ -84,34 +235,40 @@ const INIT_BILLING = {
       return;
     }
     el.hidden = false;
-    el.className = 'fp-usage-banner' + (perto ? ' fp-usage-banner--warn' : '');
+    el.className = 'fp-usage-banner';
     el.innerHTML =
       '<div class="fp-usage-banner-text">' +
-        '<strong>Plano gratuito na nuvem</strong> · ' + UTILS.escapeHtml(msg) +
-        (perto ? ' — perto do limite' : '') +
+        '<strong>Plano gratuito</strong> · ' + UTILS.escapeHtml(msg) +
       '</div>' +
-      '<button type="button" class="fp-usage-banner-cta" data-action="abrir-paywall">Ver planos Pro</button>';
+      '<button type="button" class="fp-usage-banner-cta" data-action="abrir-paywall">Ver o Pro</button>';
     if (typeof renderLucideIcons === 'function') renderLucideIcons(el);
   },
 
   refreshExtratoSubtitle: function() {
     var el = document.getElementById('extrato-meta-subtitle');
     if (!el) return;
-    var bloqueado = typeof BILLING !== 'undefined' && BILLING.isCloudUser && BILLING.isCloudUser()
-      && BILLING.canUse && !BILLING.canUse('reportExport');
-    el.textContent = bloqueado
-      ? 'Histórico, filtros · exportação CSV/PDF no Pro na nuvem'
+    // CSV e livre para todo mundo: o dado e do usuario, e poder leva-lo embora
+    // e argumento de aquisicao, nao item de paywall. So o PDF e Pro.
+    var semPdf = typeof BILLING !== 'undefined' && BILLING.canUse && !BILLING.canUse('exportPdf');
+    el.textContent = semPdf
+      ? 'Histórico, filtros e exportação CSV · PDF no Pro'
       : 'Histórico, filtros e exportação';
   },
 
   refreshExportButtons: function() {
-    var bloqueado = typeof BILLING !== 'undefined' && BILLING.isCloudUser && BILLING.isCloudUser()
-      && BILLING.canUse && !BILLING.canUse('reportExport');
-    document.querySelectorAll('[data-action="exportar-excel"], [data-action="exportar-pdf"]').forEach(function(btn) {
-      if (bloqueado) {
+    if (typeof BILLING === 'undefined' || !BILLING.canUse) return;
+    var semPdf = !BILLING.canUse('exportPdf');
+    // O botao de CSV nunca e desabilitado. Deixamos so o PDF atras do Pro.
+    document.querySelectorAll('[data-action="exportar-excel"]').forEach(function(btn) {
+      btn.removeAttribute('aria-disabled');
+      btn.classList.remove('perfil-card--disabled');
+      btn.removeAttribute('title');
+    });
+    document.querySelectorAll('[data-action="exportar-pdf"]').forEach(function(btn) {
+      if (semPdf) {
         btn.setAttribute('aria-disabled', 'true');
         btn.classList.add('perfil-card--disabled');
-        btn.title = 'Exportação na nuvem disponível no plano Pro';
+        btn.title = 'Relatório em PDF disponível no Pro';
       } else {
         btn.removeAttribute('aria-disabled');
         btn.classList.remove('perfil-card--disabled');
@@ -120,19 +277,59 @@ const INIT_BILLING = {
     });
   },
 
-  abrirPaywall: function(contextMsg) {
-    var self = this;
+  /**
+   * Anuncia o Pro de boas-vindas logo depois do login.
+   *
+   * Precisa ser explícito e nomeado como presente. Um trial que o usuário não
+   * percebe que ganhou não gera reciprocidade nenhuma — ele só estranha, dias
+   * depois, que o app "perdeu" funções. E a frase mais importante é a última:
+   * sem cartão, sem cobrança. Sem ela o brinde vira suspeita.
+   */
+  mostrarBoasVindasPro: function(info) {
+    var dias = (info && info.days) || (typeof BILLING !== 'undefined' ? BILLING.WELCOME_TRIAL_DAYS : 14);
+    var fim = '';
+    try {
+      if (info && info.trialEndsAt) {
+        fim = new Date(info.trialEndsAt).toLocaleDateString('pt-BR');
+      }
+    } catch (e) { /* data inválida não pode derrubar o aviso */ }
 
-    // Sem backend nao ha o que assinar, e mostrar preco com botao "Assinar"
-    // dentro do app Android e justamente o que a politica de pagamentos do
-    // Google proibe onde o link externo nao foi liberado. Guarda de profundidade:
-    // a entrada pela aba Perfil ja some por data-requer-nuvem, mas ocr.js e
-    // previsao.js tambem chamam este metodo.
-    if (typeof DADOS !== 'undefined' && typeof DADOS._nuvemAtiva === 'function'
-        && !DADOS._nuvemAtiva()) {
+    if (typeof UTILS === 'undefined' || !UTILS.mostrarBanner) {
+      if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+        UTILS.mostrarToast(dias + ' dias de Pro por nossa conta. Sem cartão.', 'success');
+      }
       return;
     }
 
+    UTILS.mostrarBanner({
+      id: 'welcome-trial-banner',
+      tipo: 'success',
+      mensagem: dias + ' dias de Pro por nossa conta' + (fim ? ', até ' + fim : '') +
+        '. Previsão, histórico completo e categorização automática liberados — sem cartão e sem cobrança.',
+      acao: 'Ver o que mudou',
+      onAcao: function() {
+        if (typeof mudarAba === 'function') mudarAba('resumo');
+      },
+    });
+
+    if (typeof FUNIL !== 'undefined') {
+      FUNIL.marco(FUNIL.E.TRIAL_INICIADO, { origem: 'boas-vindas', dias: dias });
+    }
+  },
+
+  abrirPaywall: function(contextMsg) {
+    var self = this;
+
+    if (typeof FUNIL !== 'undefined') {
+      FUNIL.evento(FUNIL.E.PAYWALL_VISTO, {
+        contextual: !!contextMsg,
+        dia: FUNIL.diasDeUso(),
+      });
+    }
+
+    // Sempre abre o modal (soft paywall local / upsell). Sem nuvem ou sem
+    // login, _renderPlans esconde "Assinar" e o footer pede conta — evita CTA
+    // morto quando OCR/previsão esgotam usos grátis offline.
     this._fecharPaywall();
 
     var ov = document.createElement('div');
@@ -145,8 +342,8 @@ const INIT_BILLING = {
         '<button type="button" class="billing-close" data-action="billing-fechar" aria-label="Fechar">&times;</button>' +
         '<div class="billing-header">' +
           '<span class="billing-badge"><i data-lucide="sparkles" aria-hidden="true"></i> FinançasPro</span>' +
-          '<h2 id="billing-title">O Pro tira os limites na nuvem</h2>' +
-          '<p class="billing-lead" id="billing-lead">' + UTILS.escapeHtml(contextMsg || 'Sync sem limites: contas, lançamentos, exportação e alertas avançados na nuvem. Cancela quando quiser.') + '</p>' +
+          '<h2 id="billing-title">O Pro cuida do seu mês por você</h2>' +
+          '<p class="billing-lead" id="billing-lead">' + UTILS.escapeHtml(contextMsg || 'Previsão de fim de mês, histórico completo, categorização automática e o app em todos os seus aparelhos. Cancela quando quiser.') + '</p>' +
         '</div>' +
         '<div class="billing-interval" role="group" aria-label="Periodicidade">' +
           '<button type="button" class="billing-interval-btn ativo" data-action="billing-interval" data-interval="monthly">Mensal</button>' +
@@ -205,8 +402,8 @@ const INIT_BILLING = {
    * Desconto do plano anual sobre 12 meses, em pontos percentuais inteiros.
    *
    * O selo era fixo em "-17%" no seletor de periodicidade, mas cada plano tem
-   * seu proprio desconto anual: hoje o Pro da ~36% (12 x 16,90 = 202,80 contra
-   * 129,00) e o Business ~17% (12 x 79,90 = 958,80 contra 799,00). Calcular por
+   * seu proprio desconto anual: hoje o Pro da ~36% (12 x 16,99 = 203,88 contra
+   * 129,99) e o Business ~17% (12 x 79,90 = 958,80 contra 799,00). Calcular por
    * plano faz o numero seguir o preco, em vez de o preco precisar lembrar do
    * numero.
    *
@@ -244,6 +441,11 @@ const INIT_BILLING = {
 
     var render = function(plans) {
       var tierAtual = typeof BILLING !== 'undefined' ? BILLING.getTier() : 'FREE';
+      // Sem login/nuvem: mostra preços, mas não "Assinar" (política Play + CTA morto).
+      var canAssinar = typeof BILLING !== 'undefined'
+        && BILLING.isCloudUser && BILLING.isCloudUser()
+        && typeof DADOS !== 'undefined'
+        && (!DADOS._nuvemAtiva || DADOS._nuvemAtiva());
       var html = '';
       plans.forEach(function(plan) {
         if (!plan || plan.tier === 'FREE') return;
@@ -252,6 +454,15 @@ const INIT_BILLING = {
         var priceLabel = price > 0
           ? 'R$ ' + Number(price).toFixed(2).replace('.', ',') + (self._interval === 'yearly' ? '/ano' : '/mês')
           : 'Grátis';
+        var playId = typeof PLAY_BILLING !== 'undefined' && PLAY_BILLING.productIdForTier
+          ? PLAY_BILLING.productIdForTier(plan.tier, self._interval)
+          : null;
+        var playPrice = playId && self._playPriceByProductId
+          ? self._playPriceByProductId[playId]
+          : '';
+        if (playPrice) {
+          priceLabel = playPrice + (self._interval === 'yearly' ? ' /ano' : ' /mês');
+        }
         var desconto = self._interval === 'yearly' ? self._descontoAnual(plan) : null;
         var isCurrent = tierAtual === plan.tier;
         var features = Array.isArray(plan.features) ? plan.features : [];
@@ -267,9 +478,11 @@ const INIT_BILLING = {
           '</ul>' +
           (isCurrent
             ? '<span class="billing-plan-current-label">Plano atual</span>'
-            : '<button type="button" class="btn-primario billing-plan-btn" data-action="billing-assinar" data-tier="' + UTILS.escapeHtml(plan.tier) + '">' +
-                (tierAtual === 'FREE' ? 'Assinar' : 'Mudar plano') +
-              '</button>') +
+            : (canAssinar
+              ? '<button type="button" class="btn-primario billing-plan-btn" data-action="billing-assinar" data-tier="' + UTILS.escapeHtml(plan.tier) + '">' +
+                  (tierAtual === 'FREE' ? 'Assinar' : 'Mudar plano') +
+                '</button>'
+              : '<span class="billing-plan-locked">Disponível após login na nuvem</span>')) +
         '</article>';
       });
       container.innerHTML = html || '<p class="billing-empty">Nenhum plano pago disponível no momento.</p>';
@@ -278,7 +491,21 @@ const INIT_BILLING = {
     };
 
     if (typeof BILLING !== 'undefined') {
-      BILLING.listPlans().then(render).catch(function() { render(BILLING.STATIC_PLANS); });
+      BILLING.listPlans().then(function(plans) {
+        if (typeof PLAY_BILLING !== 'undefined' && PLAY_BILLING.isAvailable
+            && PLAY_BILLING.isAvailable() && PLAY_BILLING.getProductDetails) {
+          PLAY_BILLING.getProductDetails().then(function(products) {
+            var byId = {};
+            (products || []).forEach(function(p) {
+              if (p && p.productId && p.formattedPrice) byId[p.productId] = p.formattedPrice;
+            });
+            self._playPriceByProductId = byId;
+            render(plans);
+          }).catch(function() { render(plans); });
+          return;
+        }
+        render(plans);
+      }).catch(function() { render(BILLING.STATIC_PLANS); });
     } else {
       render([]);
     }
@@ -290,26 +517,35 @@ const INIT_BILLING = {
 
     if (typeof BILLING === 'undefined' || !BILLING.isCloudUser()) {
       footer.innerHTML =
-        '<p class="billing-note">Faça login na nuvem para assinar e sincronizar seus dados entre dispositivos.</p>' +
-        '<button type="button" class="btn-primario" data-action="billing-login">Entrar ou criar conta</button>' +
-        '<p class="billing-local-note">Sem login, o app continua funcionando offline com todos os recursos locais.</p>';
+        '<p class="billing-note">Crie sua conta para assinar o Pro — e já saia com backup automático dos seus dados.</p>' +
+        '<button type="button" class="btn-primario" data-action="billing-login">Entrar e assinar</button>' +
+        '<p class="billing-local-note">Sem conta, o app continua funcionando offline com tudo do plano gratuito. Seus dados ficam só neste aparelho.</p>';
       return;
     }
 
     var sub = BILLING._cache.subscription;
     var hasStripe = sub && sub.stripeCustomerId;
     var usePlay = typeof PLAY_BILLING !== 'undefined' && PLAY_BILLING.isAvailable();
+    var expressBilling = typeof DADOS !== 'undefined' && DADOS._apiAtiva && DADOS._apiAtiva();
+    var supaBilling = typeof DADOS !== 'undefined' && DADOS._supabaseAtivo && DADOS._supabaseAtivo()
+      && typeof SUPA_BILLING !== 'undefined' && SUPA_BILLING.isActive && SUPA_BILLING.isActive();
+    var webStripe = expressBilling || (supaBilling && !usePlay);
+    var trialDays = (typeof BILLING !== 'undefined' && BILLING.TRIAL_DAYS) ? BILLING.TRIAL_DAYS : 7;
     var html = usePlay
-      ? '<p class="billing-note">Pagamento via Google Play. Trial de 14 dias no Pro.</p>'
-      : '<p class="billing-note">Pagamento seguro via Stripe Checkout. Trial de 14 dias no Pro.</p>';
+      ? '<p class="billing-note">Pagamento via Google Play. Trial de ' + trialDays + ' dias no Pro.</p>'
+      : (webStripe
+        ? '<p class="billing-note">Pagamento seguro via Stripe Checkout. Trial de ' + trialDays + ' dias no Pro.</p>'
+        : '<p class="billing-note">Assinatura Pro no app Android via Google Play. No navegador, o plano gratuito na nuvem permanece ativo.</p>');
     if (usePlay) {
       html += '<button type="button" class="btn-secundario" data-action="billing-restaurar">Restaurar compras</button>';
       html += '<p class="billing-restore-hint">Use se reinstalou o app ou trocou de celular e já tinha assinatura ativa.</p>';
-    } else if (hasStripe) {
+    } else if (hasStripe && webStripe) {
       html += '<button type="button" class="btn-secundario" data-action="billing-portal">Gerenciar pagamento</button>';
     }
     if (sub && sub.plan && sub.plan.tier !== 'FREE' && !sub.cancelAtPeriodEnd) {
-      html += ' <button type="button" class="btn-ghost billing-cancel-link" data-action="billing-cancelar">Cancelar assinatura</button>';
+      if (usePlay || webStripe) {
+        html += ' <button type="button" class="btn-ghost billing-cancel-link" data-action="billing-cancelar">Cancelar assinatura</button>';
+      }
     }
     footer.innerHTML = html;
   },
@@ -321,6 +557,14 @@ const INIT_BILLING = {
       return;
     }
     if (!tier || tier === 'FREE') return;
+
+    if (typeof FUNIL !== 'undefined') {
+      FUNIL.evento(FUNIL.E.CHECKOUT_INICIADO, {
+        tierAlvo: tier,
+        intervalo: this._interval,
+        dia: FUNIL.diasDeUso(),
+      });
+    }
 
     var btn = ov.querySelector('[data-tier="' + tier + '"]');
     if (btn) {
@@ -363,13 +607,21 @@ const INIT_BILLING = {
   _restaurarPlay: function(ov) {
     var self = this;
     if (typeof PLAY_BILLING === 'undefined' || !PLAY_BILLING.isAvailable()) return;
-    PLAY_BILLING.restore().then(function() {
-      UTILS.mostrarToast('Compras restauradas', 'success');
+    PLAY_BILLING.restore().then(function(purchases) {
+      var n = Array.isArray(purchases) ? purchases.length : 0;
+      if (n === 0) {
+        UTILS.mostrarToast('Nenhuma compra encontrada nesta conta Google.', 'info');
+        return;
+      }
+      UTILS.mostrarToast(
+        n === 1 ? 'Compra restaurada' : (n + ' compras restauradas'),
+        'success',
+      );
       self._renderPlans(ov);
       self._renderFooter(ov);
       self.refreshPlanoCard();
     }).catch(function(err) {
-      UTILS.mostrarToast(err.message || 'Nada para restaurar', 'info');
+      UTILS.mostrarToast(err.message || 'Não foi possível restaurar compras', 'info');
     });
   },
 
@@ -430,6 +682,230 @@ const INIT_BILLING = {
       this._overlay.parentNode.removeChild(this._overlay);
     }
     this._overlay = null;
+  },
+
+  /** Modal de equipe: membros, convites e upgrade se FREE. */
+  abrirEquipe: function() {
+    var self = this;
+    if (typeof DADOS !== 'undefined' && typeof DADOS._nuvemAtiva === 'function'
+        && !DADOS._nuvemAtiva()) {
+      return;
+    }
+    if (typeof BILLING === 'undefined' || !BILLING.isCloudUser || !BILLING.isCloudUser()) {
+      if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+        UTILS.mostrarToast('Faça login na nuvem para gerenciar a equipe.', 'info');
+      }
+      this._abrirLogin();
+      return;
+    }
+    if (!BILLING.canUse('teamFeatures')) {
+      this.abrirPaywall('Convide alguém da família ou do time a partir do plano Pro.');
+      return;
+    }
+
+    this._fecharEquipe();
+    var ov = document.createElement('div');
+    ov.className = 'modal-overlay billing-overlay';
+    ov.setAttribute('role', 'dialog');
+    ov.setAttribute('aria-modal', 'true');
+    ov.setAttribute('aria-labelledby', 'equipe-title');
+    ov.innerHTML =
+      '<div class="modal-box billing-modal equipe-modal">' +
+        '<button type="button" class="billing-close" data-action="equipe-fechar" aria-label="Fechar">&times;</button>' +
+        '<div class="billing-header">' +
+          '<span class="billing-badge"><i data-lucide="users" aria-hidden="true"></i> Equipe</span>' +
+          '<h2 id="equipe-title">Membros da organização</h2>' +
+          '<p class="billing-lead" id="equipe-lead">Pro: até 2 pessoas (modo casal).</p>' +
+        '</div>' +
+        '<div id="equipe-body" class="equipe-body"><p class="billing-loading">Carregando…</p></div>' +
+        '<form id="equipe-invite-form" class="equipe-invite-form">' +
+          '<label class="equipe-invite-label" for="equipe-invite-email">Convidar por e-mail</label>' +
+          '<div class="equipe-invite-row">' +
+            '<input type="email" id="equipe-invite-email" class="equipe-invite-input" required ' +
+              'placeholder="email@exemplo.com" autocomplete="email">' +
+            '<button type="submit" class="btn-primario" data-action="equipe-convidar">Convidar</button>' +
+          '</div>' +
+          '<p class="equipe-invite-hint">Envia e-mail quando Resend estiver configurado; o link também pode ser copiado (válido 7 dias).</p>' +
+        '</form>' +
+      '</div>';
+
+    document.body.appendChild(ov);
+    this._equipeOverlay = ov;
+
+    ov.addEventListener('click', function(e) {
+      if (e.target === ov) self._fecharEquipe();
+    });
+    ov.addEventListener('click', function(e) {
+      var btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      if (btn.dataset.action === 'equipe-fechar') self._fecharEquipe();
+      if (btn.dataset.action === 'equipe-copiar') {
+        var url = btn.getAttribute('data-url') || '';
+        if (url && navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(function() {
+            UTILS.mostrarToast('Link copiado', 'success');
+          }).catch(function() {
+            UTILS.mostrarToast(url, 'info');
+          });
+        } else if (url) {
+          UTILS.mostrarToast(url, 'info');
+        }
+      }
+      if (btn.dataset.action === 'equipe-revogar') {
+        self._revogarConvite(ov, btn.getAttribute('data-invite-id'));
+      }
+      if (btn.dataset.action === 'equipe-remover') {
+        self._removerMembro(ov, btn.getAttribute('data-user-id'));
+      }
+    });
+    ov.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        self._fecharEquipe();
+      }
+    });
+    var form = ov.querySelector('#equipe-invite-form');
+    if (form) {
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        self._convidarEquipe(ov);
+      });
+    }
+
+    if (typeof FocusTrap !== 'undefined') {
+      this._equipeTrap = new FocusTrap(ov);
+      this._equipeTrap.activate();
+    }
+    if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(ov);
+    this._renderEquipe(ov);
+  },
+
+  _fecharEquipe: function() {
+    if (this._equipeTrap) {
+      this._equipeTrap.deactivate();
+      this._equipeTrap = null;
+    }
+    if (this._equipeOverlay && this._equipeOverlay.parentNode) {
+      this._equipeOverlay.parentNode.removeChild(this._equipeOverlay);
+    }
+    this._equipeOverlay = null;
+  },
+
+  _renderEquipe: function(ov) {
+    var body = ov.querySelector('#equipe-body');
+    var lead = ov.querySelector('#equipe-lead');
+    if (!body || typeof BILLING === 'undefined') return;
+
+    var limits = BILLING.getLimits();
+    var maxLabel = limits.maxUsers === Infinity ? 'ilimitados' : String(limits.maxUsers);
+    if (lead) {
+      lead.textContent = 'Plano atual: ' + BILLING.getTier() + ' · até ' + maxLabel + ' membros.';
+    }
+
+    BILLING.listTeam().then(function(team) {
+      var uid = null;
+      if (typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.getSessionSync) {
+        var s = SUPA_AUTH.getSessionSync();
+        uid = s && s.user ? s.user.id : null;
+      } else if (typeof DADOS !== 'undefined' && DADOS.getSessao) {
+        var sess = DADOS.getSessao();
+        uid = sess && sess.user ? sess.user.id : null;
+      }
+
+      var members = team.members || [];
+      var invitations = team.invitations || [];
+      var html = '<ul class="equipe-list">';
+      members.forEach(function(m) {
+        var isYou = uid && m.userId === uid;
+        var isOwner = String(m.role || '').toUpperCase() === 'OWNER';
+        var label = isYou ? 'Você' : ('Membro ' + String(m.userId || '').slice(0, 8));
+        html += '<li class="equipe-item">' +
+          '<span class="equipe-item-name">' + UTILS.escapeHtml(label) + '</span>' +
+          '<span class="equipe-item-actions">' +
+            '<span class="equipe-item-role">' + UTILS.escapeHtml(m.role || 'MEMBER') + '</span>' +
+            ((!isYou && !isOwner)
+              ? ' <button type="button" class="btn-ghost btn-sm" data-action="equipe-remover" data-user-id="' +
+                  UTILS.escapeHtml(m.userId) + '">Remover</button>'
+              : '') +
+          '</span>' +
+        '</li>';
+      });
+      invitations.forEach(function(inv) {
+        var share = BILLING.inviteShareUrl(inv.token);
+        html += '<li class="equipe-item equipe-item--pending">' +
+          '<span class="equipe-item-name">' + UTILS.escapeHtml(inv.email) + ' <em>pendente</em></span>' +
+          '<span class="equipe-item-actions">' +
+            '<button type="button" class="btn-ghost btn-sm" data-action="equipe-copiar" data-url="' +
+              UTILS.escapeHtml(share) + '">Copiar</button>' +
+            '<button type="button" class="btn-ghost btn-sm" data-action="equipe-revogar" data-invite-id="' +
+              UTILS.escapeHtml(inv.id) + '">Revogar</button>' +
+          '</span>' +
+        '</li>';
+      });
+      html += '</ul>';
+      if (!members.length && !invitations.length) {
+        html = '<p class="billing-empty">Nenhum membro além de você ainda.</p>';
+      }
+      body.innerHTML = html;
+    }).catch(function(err) {
+      body.innerHTML = '<p class="billing-empty">' +
+        UTILS.escapeHtml((err && err.message) || 'Não foi possível carregar a equipe.') + '</p>';
+    });
+  },
+
+  _revogarConvite: function(ov, invitationId) {
+    var self = this;
+    if (!invitationId) return;
+    BILLING.revokeInvite(invitationId).then(function() {
+      UTILS.mostrarToast('Convite revogado', 'success');
+      self._renderEquipe(ov);
+    }).catch(function(err) {
+      UTILS.mostrarToast((err && err.message) || 'Falha ao revogar', 'error');
+    });
+  },
+
+  _removerMembro: function(ov, userId) {
+    var self = this;
+    if (!userId) return;
+    var go = function() {
+      BILLING.removeTeamMember(userId).then(function() {
+        UTILS.mostrarToast('Membro removido', 'success');
+        self._renderEquipe(ov);
+      }).catch(function(err) {
+        UTILS.mostrarToast((err && err.message) || 'Falha ao remover', 'error');
+      });
+    };
+    if (typeof INIT_MODALS !== 'undefined' && INIT_MODALS.confirm) {
+      INIT_MODALS.confirm('Remover este membro da organização?', go);
+      return;
+    }
+    if (window.confirm('Remover este membro da organização?')) go();
+  },
+
+  _convidarEquipe: function(ov) {
+    var self = this;
+    var input = ov.querySelector('#equipe-invite-email');
+    var email = input ? input.value : '';
+    var btn = ov.querySelector('[data-action="equipe-convidar"]');
+    if (btn) btn.disabled = true;
+
+    BILLING.inviteTeamMember(email).then(function(inv) {
+      if (input) input.value = '';
+      var share = inv && inv.token ? BILLING.inviteShareUrl(inv.token) : '';
+      if (share && navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(share).catch(function() {});
+      }
+      UTILS.mostrarToast(
+        share ? 'Convite criado. Link copiado — envie para a pessoa.' : 'Convite criado.',
+        'success'
+      );
+      self._renderEquipe(ov);
+    }).catch(function(err) {
+      if (err && err.message === 'upgrade-necessario') return;
+      UTILS.mostrarToast((err && err.message) || 'Falha ao convidar', 'error');
+    }).then(function() {
+      if (btn) btn.disabled = false;
+    });
   },
 };
 

@@ -24,6 +24,11 @@ const ASSINATURAS = {
   },
 
   criar: function(dados) {
+    if (typeof BILLING !== 'undefined' && !BILLING.guardQuota('subscription', 1)) {
+      var errAss = new Error('Limite de gastos fixos do plano gratuito');
+      errAss.code = 'quota';
+      throw errAss;
+    }
     var nome = (dados.nome || '').trim();
     var valor = UTILS.parseMoeda(dados.valor);
     var dia = parseInt(dados.diaCobranca, 10);

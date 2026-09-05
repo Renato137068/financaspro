@@ -81,6 +81,23 @@
     return clean(Object.assign({}, en, { id: c.id, userId: u, updatedAt: c.updatedAt || nowIso() }));
   }
 
+  /** PostgREST limita ~1000 linhas por página — paginar pull de contas grandes. */
+  var PULL_PAGE_SIZE = 1000;
+
+  function fetchAllRows(buildQuery) {
+    var acc = [];
+    function next(offset) {
+      return buildQuery().range(offset, offset + PULL_PAGE_SIZE - 1).then(function (res) {
+        if (res.error) throw res.error;
+        var batch = res.data || [];
+        acc = acc.concat(batch);
+        if (batch.length < PULL_PAGE_SIZE) return acc;
+        return next(offset + PULL_PAGE_SIZE);
+      });
+    }
+    return next(0);
+  }
+
   var _pulling = false;
 
   var SUPA_SYNC = {
@@ -93,17 +110,19 @@
         APP_STORE.dispatch(ACTIONS.SYNC_INICIAR);
       }
       return Promise.all([
-        SB.from('Transaction').select('*').is('deletedAt', null),
-        SB.from('Account').select('*'),
-        SB.from('Budget').select('*'),
-        SB.from('RecurringTransaction').select('*'),
+        fetchAllRows(function () {
+          return SB.from('Transaction').select('*').is('deletedAt', null);
+        }),
+        fetchAllRows(function () { return SB.from('Account').select('*'); }),
+        fetchAllRows(function () { return SB.from('Budget').select('*'); }),
+        fetchAllRows(function () { return SB.from('RecurringTransaction').select('*'); }),
         SB.from('UserConfig').select('data').eq('userId', u).maybeSingle()
       ]).then(function (res) {
         var snapshot = {
-          transactions: res[0].data || [],
-          accounts: res[1].data || [],
-          budgets: res[2].data || [],
-          recurringTransactions: res[3].data || [],
+          transactions: res[0] || [],
+          accounts: res[1] || [],
+          budgets: res[2] || [],
+          recurringTransactions: res[3] || [],
           config: (res[4].data && res[4].data.data) || {}
         };
         if (typeof DADOS !== 'undefined' && DADOS._mergeSnapshotLocal) {
@@ -251,6 +270,19 @@
       SUPA_SYNC.pull();
       if (typeof BILLING !== 'undefined' && BILLING.sync) {
         BILLING.sync().catch(function () {});
+      }
+      // Convite ?invite= gravado antes do login (fp-pending-invite).
+      if (typeof INIT_BILLING !== 'undefined' && INIT_BILLING._consumePendingInvite) {
+        INIT_BILLING._consumePendingInvite();
+      }
+      // Pro de boas-vindas: entrar na conta passa a DAR algo, em vez de
+      // apenas mover o usuario para um plano com mais limites.
+      if (typeof BILLING !== 'undefined' && BILLING.claimWelcomeTrial) {
+        BILLING.claimWelcomeTrial().then(function(out) {
+          if (out && typeof INIT_BILLING !== 'undefined' && INIT_BILLING.mostrarBoasVindasPro) {
+            INIT_BILLING.mostrarBoasVindasPro(out);
+          }
+        }).catch(function() { /* nunca atrapalha o login */ });
       }
       if (typeof INIT_CONFIG !== 'undefined' && INIT_CONFIG.aplicarVisibilidadeNuvem) {
         INIT_CONFIG.aplicarVisibilidadeNuvem();

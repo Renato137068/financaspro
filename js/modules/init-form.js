@@ -1661,9 +1661,11 @@ const INIT_FORM = {
     if (chkParcelado && chkParcelado.checked && tipo === 'despesa') {
       parcelCount = parseInt(document.getElementById('num-parcelas').value, 10) || 2;
     }
-    if (typeof BILLING !== 'undefined' && !BILLING.guardQuota('transaction', parcelCount)) {
-      return Promise.reject(new Error('Limite do plano gratuito'));
-    }
+    // Sem quota de transacao, de proposito. O teto de 100/mes parava de
+    // aceitar os gastos do usuario por volta do dia 15 -- o gratuito virava
+    // inutil justamente no mes em que ele mais precisava, e o mes ficava com
+    // dados pela metade, o que estragava orcamento, insight e comparativo
+    // junto. Limite de volume num app de habito e churn, nao conversao.
 
     INIT_FORM._submitBusy = true;
     INIT_FORM._setRegistrarBusy(true, 'Salvando…');
@@ -1696,6 +1698,14 @@ const INIT_FORM = {
     }
     // RECORRÊNCIA
     else if (chkRecorrente && chkRecorrente.checked) {
+      // Aluguel, salario e internet cabem no gratuito. A quarta recorrente
+      // indica alguem que ja organizou a vida dentro do app -- e o lancamento
+      // avulso continua livre, entao ninguem fica sem registrar o gasto.
+      if (typeof BILLING !== 'undefined' && !BILLING.guardQuota('recurring', 1)) {
+        INIT_FORM._submitBusy = false;
+        INIT_FORM._setRegistrarBusy(false);
+        return Promise.reject(new Error('Limite de recorrentes do plano gratuito'));
+      }
       var freqEl = document.querySelector('.rec-chip.ativo');
       var freq = freqEl ? freqEl.dataset.freq : 'mensal';
       var recData = {
@@ -1736,6 +1746,10 @@ const INIT_FORM = {
         INIT_FORM.mostrarFeedbackAprendizado('Aprendizado atualizado com sucesso.');
       }
       if (firstTxId && typeof INIT_ANEXOS !== 'undefined') INIT_ANEXOS.salvarPendentes(firstTxId);
+      // Passo 3 do funil. Só o marco, sem nada do lançamento em si.
+      if (typeof FUNIL !== 'undefined') {
+        FUNIL.marco(FUNIL.E.PRIMEIRO_LANCAMENTO, { dia: FUNIL.diasDeUso() });
+      }
       INIT_FORM.mostrarSucesso(sucessoMsg);
       INIT_FORM._finalizarTransacao();
     }).catch(function(err) {

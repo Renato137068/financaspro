@@ -27,12 +27,11 @@ const PLANS = [
   {
     name:             'Pro',
     tier:             'PRO',
-    priceMonthly:     16.90,
-    // 129,00 = ~36% de desconto sobre 12 x 16,90 (202,80). Posicionado para
-    // bater de frente com o anual do lider de mercado (Mobills ~R$120), onde os
-    // 169,00 anteriores ficavam ~40% acima. Pro e individual/casal (2 membros);
-    // colaboracao de time e o gancho exclusivo do Business.
-    priceYearly:      129.00,
+    priceMonthly:     16.99,
+    // 129,99 = ~36% de desconto sobre 12 x 16,99 (203,88). Tiers do Play
+    // (nao aceita 16,90). Pro e individual/casal (2 membros); colaboracao
+    // de time e o gancho exclusivo do Business.
+    priceYearly:      129.99,
     maxUsers:         2,
     maxTransPerMonth: 0,
     maxAccounts:      20,

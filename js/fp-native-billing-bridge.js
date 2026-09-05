@@ -24,5 +24,10 @@
         return (result && result.purchases) ? result.purchases : [];
       });
     },
+    getProductDetails: function(productIds) {
+      return plugin.getProductDetails({ productIds: productIds || [] }).then(function(result) {
+        return (result && result.products) ? result.products : [];
+      });
+    },
   };
 })();

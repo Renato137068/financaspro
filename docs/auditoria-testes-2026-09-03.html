@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FinançasPro — Reauditoria de Testes · v11.3.13</title>
+<style>
+:root{
+  --bg:#070a0f;--card:#111820;--line:#243044;
+  --txt:#eef2f8;--mut:#8fa3be;--mut2:#5a708a;
+  --ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--info:#22d3ee;--r:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:linear-gradient(165deg,#070a0f,#0a1218 45%,#070a0f);color:var(--txt);
+  font:15px/1.65 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding-bottom:80px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+header{padding:48px 0 36px;border-bottom:1px solid var(--line);margin-bottom:36px;
+  background:radial-gradient(800px 320px at 10% -60px,rgba(18,105,78,.18),transparent),
+             radial-gradient(600px 280px at 90% -40px,rgba(34,211,238,.1),transparent)}
+.tag{display:inline-block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:#6ee7b7;border:1px solid rgba(18,105,78,.4);background:rgba(18,105,78,.12);
+  padding:5px 12px;border-radius:99px;margin-bottom:14px;font-weight:700}
+h1{font-size:34px;line-height:1.12;letter-spacing:-.02em;margin-bottom:8px;font-weight:800}
+h1 em{font-style:normal;color:#6ee7b7}
+.sub{color:var(--mut);font-size:15px;max-width:960px}
+.meta{display:flex;gap:20px;flex-wrap:wrap;margin-top:20px;font-size:13px;color:var(--mut2)}
+.meta b{color:var(--txt)}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;text-align:center}
+.kpi .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--mut2);margin-bottom:6px}
+.kpi .val{font-size:28px;font-weight:800;font-variant-numeric:tabular-nums}
+.kpi .sub{font-size:11px;color:var(--mut);margin-top:4px}
+.kpi.ok .val{color:#86efac}.kpi.warn .val{color:#fcd34d}.kpi.bad .val{color:#fca5a5}
+.timeline{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;align-items:center;margin-bottom:28px}
+.snap{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 20px;text-align:center}
+.snap .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--mut2);margin-bottom:8px}
+.snap .score{font-size:48px;font-weight:800;line-height:1}
+.snap .ver{font-size:12px;color:var(--mut);margin-top:6px}
+.snap.old .score{color:#fca5a5}.snap.cur{border-color:rgba(34,197,94,.45);background:linear-gradient(180deg,rgba(34,197,94,.08),var(--card))}
+.snap.cur .score{color:#86efac}
+.arrow{font-size:28px;color:var(--mut2);text-align:center}
+.hero{display:grid;grid-template-columns:210px 1fr;gap:28px;align-items:center;
+  background:var(--card);border:1px solid var(--line);border-radius:18px;padding:28px;margin-bottom:18px}
+.gauge{position:relative;width:180px;height:180px;margin:0 auto}
+.gauge svg{transform:rotate(-90deg)}
+.gauge .val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.gauge .num{font-size:48px;font-weight:800;line-height:1}
+.gauge .lbl{font-size:10px;color:var(--mut2);text-transform:uppercase;letter-spacing:.1em;margin-top:4px;text-align:center}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.pill{font-size:11px;padding:5px 11px;border-radius:99px;border:1px solid var(--line);background:#0c1018;color:var(--mut)}
+.pill.ok{border-color:rgba(34,197,94,.35);color:#86efac}
+.pill.warn{border-color:rgba(245,158,11,.35);color:#fcd34d}
+section{margin-bottom:44px}
+h2.sec{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut2);
+  padding-bottom:10px;border-bottom:1px solid var(--line);margin-bottom:20px;font-weight:700}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+th{background:#0c1018;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut2);
+  text-align:left;padding:11px 14px;border-bottom:1px solid var(--line)}
+td{padding:10px 14px;font-size:13px;border-bottom:1px solid #1a2332;color:var(--mut);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+td:first-child{color:var(--txt);font-weight:550}
+td.n{text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+td.n.hi{color:#86efac}td.n.mid{color:#fcd34d}td.n.lo{color:#fca5a5}
+.delta{font-weight:700;text-align:center;font-variant-numeric:tabular-nums}
+.delta.up{color:var(--ok)}.delta.flat{color:var(--mut2)}
+.row-bar td{padding:8px 14px 12px}
+.mini{display:flex;align-items:center;gap:10px}
+.mini span{font-size:10px;color:var(--mut2);width:28px;text-align:right;font-variant-numeric:tabular-nums}
+.track{flex:1;height:7px;background:#0a0e14;border-radius:99px;overflow:hidden;border:1px solid #1e293b;position:relative}
+.track i{position:absolute;top:0;left:0;height:100%;border-radius:99px;opacity:.3}
+.track b{position:absolute;top:0;left:0;height:100%;border-radius:99px}
+.st{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px}
+.st.fx{background:rgba(34,197,94,.12);color:#86efac}
+.st.p1{background:rgba(245,158,11,.15);color:#fcd34d}
+.cov{display:inline-block;font-size:10px;padding:2px 7px;border-radius:4px}
+.cov.alta{background:rgba(34,197,94,.15);color:#86efac}
+.cov.media{background:rgba(245,158,11,.15);color:#fcd34d}
+.cov.baixa{background:rgba(239,68,68,.15);color:#fca5a5}
+.cov.nenh{background:rgba(100,116,139,.2);color:#94a3b8}
+.find{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--line);
+  border-radius:0 var(--r) var(--r) 0;padding:14px 16px;margin-bottom:10px}
+.find.good{border-left-color:var(--ok)}.find.warn{border-left-color:var(--warn)}.find.info{border-left-color:var(--info)}
+.find h4{font-size:14px;margin-bottom:5px}
+.find p,.find ul{font-size:13px;color:var(--mut);margin:4px 0}
+.find ul{margin-left:18px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.box h4{font-size:11px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;font-weight:700}
+.box.g h4{color:#86efac}.box.w h4{color:#fcd34d}
+.box ul{list-style:none;font-size:13px;color:var(--mut)}
+.box li{padding:5px 0;border-bottom:1px solid #1a2332;line-height:1.45}
+.box li:last-child{border-bottom:none}
+.box li b{color:var(--txt)}
+code{background:#0a0e14;border:1px solid #1e293b;padding:1px 5px;border-radius:4px;
+  font:12px ui-monospace,Consolas,monospace;color:#a5b4fc}
+footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);font-size:12px;color:var(--mut2);line-height:1.6}
+@media(max-width:860px){
+  .kpi-row,.timeline,.hero,.grid2{grid-template-columns:1fr}
+  h1{font-size:26px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="tag">Reauditoria · Cobertura de Testes</div>
+  <h1>O que aumentou — <em>v11.3.13</em></h1>
+  <p class="sub">Comparação com a auditoria de 02/09/2026 (nota 76). Inclui correções do lote de recomendações + OCR real (CSP/WASM/`this`) + testes residuais (categorizador, previsão, insights, anexos, auth runtime, automação).</p>
+  <div class="meta">
+    <span>Data: <b>03 set 2026 · 08:05</b></span>
+    <span>Baseline: <b>76/100</b> (02/09)</span>
+    <span>Atual: <b style="color:#86efac">81/100</b></span>
+    <span>Δ: <b style="color:#86efac">+5</b></span>
+    <span>Pass rate: <b style="color:#86efac">100%</b> (2212/2219 · 7 skip)</span>
+  </div>
+</header>
+
+<section>
+  <h2 class="sec">Linha do tempo</h2>
+  <div class="timeline">
+    <div class="snap old">
+      <div class="lbl">Auditoria 02/09</div>
+      <div class="score">76</div>
+      <div class="ver">2 fails · OCR nota 22 · pgTAP offline</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="snap cur">
+      <div class="lbl">Agora</div>
+      <div class="score">81</div>
+      <div class="ver">0 fails · OCR prova real OK · +10 suites</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2 class="sec">Execução atual</h2>
+  <div class="kpi-row">
+    <div class="kpi ok">
+      <div class="lbl">Frontend Jest</div>
+      <div class="val">1720</div>
+      <div class="sub">pass · 144 suites · 0 fail · 7 skip</div>
+    </div>
+    <div class="kpi ok">
+      <div class="lbl">Backend Jest</div>
+      <div class="val">492</div>
+      <div class="sub">pass · 29 suites · 0 fail</div>
+    </div>
+    <div class="kpi ok">
+      <div class="lbl">OCR probe</div>
+      <div class="val">OK</div>
+      <div class="sub">texto + parser em ~2,5s</div>
+    </div>
+    <div class="kpi warn">
+      <div class="lbl">pgTAP / E2E auth</div>
+      <div class="val">CI</div>
+      <div class="sub">script pronto; secrets opcionais</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="hero">
+    <div class="gauge" aria-hidden="true">
+      <svg width="180" height="180" viewBox="0 0 180 180">
+        <circle cx="90" cy="90" r="74" fill="none" stroke="#1e293b" stroke-width="12"/>
+        <circle cx="90" cy="90" r="74" fill="none" stroke="#22c55e" stroke-width="12"
+          stroke-dasharray="464.96" stroke-dashoffset="88.34" stroke-linecap="round"/>
+      </svg>
+      <div class="val">
+        <div class="num">81</div>
+        <div class="lbl">Nota<br>geral</div>
+      </div>
+    </div>
+    <div>
+      <p style="color:var(--mut);font-size:14px;line-height:1.6">
+        O salto veio de <b style="color:#86efac">fechar gaps reais</b>, não só de mais asserts: OCR que não rodava na CSP foi corrigido e provado no browser; sync Supabase ganhou mock de pull/push/quota; CI ficou verde (0 fails); e módulos órfãos (categorizador, previsão, insights, anexos, automação, auth runtime) passaram a ter testes de comportamento.
+      </p>
+      <div class="pills">
+        <span class="pill ok">+5 nota geral</span>
+        <span class="pill ok">OCR 22→82</span>
+        <span class="pill ok">CI 100% pass</span>
+        <span class="pill ok">+10 suites novas</span>
+        <span class="pill warn">E2E login real ainda precisa secrets</span>
+        <span class="pill warn">pgTAP depende de Postgres no CI</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2 class="sec">Dimensões — evolução 0–100</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Dimensão</th>
+        <th style="text-align:center">02/09</th>
+        <th style="text-align:center">Agora</th>
+        <th style="text-align:center">Δ</th>
+        <th style="text-align:center">Peso</th>
+      </tr>
+    </thead>
+    <tbody id="rows-dims"></tbody>
+  </table>
+</section>
+
+<section>
+  <h2 class="sec">Funcionalidades — maiores ganhos</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Funcionalidade</th>
+        <th style="text-align:center">Antes</th>
+        <th style="text-align:center">Agora</th>
+        <th style="text-align:center">Δ</th>
+        <th>O que mudou</th>
+      </tr>
+    </thead>
+    <tbody id="rows-feat"></tbody>
+  </table>
+</section>
+
+<section>
+  <h2 class="sec">O que foi entregue neste ciclo</h2>
+  <div class="grid2">
+    <div class="box g">
+      <h4>Recomendações do relatório 02/09</h4>
+      <ul>
+        <li><b>2 testes drift</b> — password-policy + marca-nomes corrigidos</li>
+        <li><b>pgTAP CI</b> — <code>test:db:ci</code> + step GitHub Actions</li>
+        <li><b>OCR unitário</b> — <code>ocr-parse.test.js</code></li>
+        <li><b>E2E auth secrets</b> — login sem MFA + TOTP opcional</li>
+        <li><b>supabase-sync mock</b> — pull/push/quota/wiring</li>
+        <li><b>Capacitor smoke</b> — FLAG_SECURE + biometria</li>
+      </ul>
+    </div>
+    <div class="box g">
+      <h4>Extra (OCR real + residuais)</h4>
+      <ul>
+        <li><b>OCR funcionando</b> — CSP <code>@5.1.1</code> + <code>wasm-unsafe-eval</code> + fix <code>this</code> no init</li>
+        <li><b>probe-ocr</b> — <code>npm run test:ocr</code> (prova browser)</li>
+        <li><b>categorizador / previsao / insights / anexos / automação</b> — testes reais</li>
+        <li><b>auth-runtime</b> — e-mail, sessão, gate MFA</li>
+        <li><b>Vendor tesseract</b> — <code>js/vendor/tesseract.min.js</code></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2 class="sec">Lacunas que ainda restam</h2>
+  <div class="find warn">
+    <h4><span class="st p1">P1</span> E2E login Supabase com secrets</h4>
+    <p>Specs prontas; no CI só rodam se <code>E2E_SUPABASE*</code> estiverem configurados. Sem isso, o caso fica em skip.</p>
+  </div>
+  <div class="find warn">
+    <h4><span class="st p1">P1</span> pgTAP precisa de Postgres + <code>psql</code> no runner</h4>
+    <p>Script e job existem; a prova RLS/MFA no banco ainda depende do ambiente CI (serviço Postgres + client).</p>
+  </div>
+  <div class="find info">
+    <h4><span class="st p1">P2</span> UI global / instrumented Android</h4>
+    <p>Cobertura de renderers e plugins nativos continua parcial — smoke estático ajuda, mas não substitui teste instrumentado no device.</p>
+  </div>
+</section>
+
+<section>
+  <h2 class="sec">Inventário</h2>
+  <table>
+    <thead><tr><th>Camada</th><th>02/09</th><th>Agora</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>Frontend suites</td><td class="n mid">134</td><td class="n hi">144</td><td class="n hi">+10</td></tr>
+      <tr><td>Frontend tests pass</td><td class="n mid">1660</td><td class="n hi">1720</td><td class="n hi">+60</td></tr>
+      <tr><td>Fails</td><td class="n lo">2</td><td class="n hi">0</td><td class="n hi">limpo</td></tr>
+      <tr><td>Backend tests</td><td class="n hi">492</td><td class="n hi">492</td><td class="n mid">—</td></tr>
+      <tr><td>OCR end-to-end</td><td class="n lo">não</td><td class="n hi">sim</td><td class="n hi">probe OK</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<footer>
+  <p><b>FinançasPro — Reauditoria de Testes</b> · 03/09/2026 · v11.3.13.</p>
+  <p>Nota geral = média ponderada das 12 dimensões. Baseline: <code>docs/auditoria-testes-2026-09-02.html</code>. Este arquivo: <code>docs/auditoria-testes-2026-09-03.html</code></p>
+</footer>
+
+</div>
+<script>
+var dims=[
+  ['Núcleo financeiro (transações, extrato, orçamento)',88,88,20],
+  ['Módulos avançados (metas, cartões, patrimônio…)',82,84,12],
+  ['Autenticação e sessão',72,78,10],
+  ['Sync e nuvem Supabase',62,76,8],
+  ['Billing e planos',76,76,6],
+  ['Open Finance / Belvo',74,74,5],
+  ['Segurança e compliance',84,88,8],
+  ['A11y e UX',86,86,7],
+  ['PWA / offline',80,80,5],
+  ['Mobile / Android nativo',56,70,6],
+  ['Integração E2E',58,68,8],
+  ['Integridade e CI da suíte',88,94,5]
+];
+var feats=[
+  ['OCR comprovantes',22,82,'CSP+WASM+init this; probe browser; ocr-parse + wiring'],
+  ['Sync Supabase',60,78,'supabase-sync.test.js pull/push/quota'],
+  ['Categorizador / automação',48,80,'categorizador-real + automacao-real'],
+  ['Anexos de transação',55,78,'anexos-real (módulo real, sem cópia)'],
+  ['Previsão / projeção',68,80,'previsao-real cache/formatação'],
+  ['Score / insights / IA',62,78,'insights-real + ai-engine-core'],
+  ['PIN / FLAG_SECURE',42,68,'capacitor-native-smoke'],
+  ['Biometria Android',48,62,'smoke Capacitor + auth-runtime'],
+  ['Login / MFA',74,80,'auth-runtime + E2E TOTP wiring'],
+  ['Android / Play Store',58,70,'smokes nativos + build residual']
+];
+function sc(n){return n>=80?'hi':n>=60?'mid':'lo'}
+function bar(v){return v>=80?'#22c55e':v>=60?'#f59e0b':'#ef4444'}
+function delta(a,b){
+  var d=b-a;
+  if(d===0) return '<td class="delta flat">0</td>';
+  return '<td class="delta up">+'+d+'</td>';
+}
+var tb=document.getElementById('rows-dims');
+dims.forEach(function(d){
+  var tr=document.createElement('tr');
+  tr.innerHTML='<td>'+d[0]+'</td><td class="n '+sc(d[1])+'">'+d[1]+'</td><td class="n '+sc(d[2])+'">'+d[2]+'</td>'+delta(d[1],d[2])+'<td style="text-align:center;color:var(--mut2)">'+d[3]+'%</td>';
+  tb.appendChild(tr);
+  var tr2=document.createElement('tr');tr2.className='row-bar';
+  tr2.innerHTML='<td colspan="5"><div class="mini"><span>'+d[2]+'</span><div class="track"><i style="width:'+d[1]+'%;background:'+bar(d[1])+'"></i><b style="width:'+d[2]+'%;background:'+bar(d[2])+'"></b></div></div></td>';
+  tb.appendChild(tr2);
+});
+var tf=document.getElementById('rows-feat');
+feats.forEach(function(f){
+  var tr=document.createElement('tr');
+  tr.innerHTML='<td>'+f[0]+'</td><td class="n '+sc(f[1])+'">'+f[1]+'</td><td class="n '+sc(f[2])+'">'+f[2]+'</td>'+delta(f[1],f[2])+'<td style="font-size:12px">'+f[3]+'</td>';
+  tf.appendChild(tr);
+});
+</script>
+</body>
+</html>

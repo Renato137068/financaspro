@@ -220,6 +220,6 @@ button.perfil-card {
 }
 
 [data-theme="dark"] :is(.perfil-card-icon-wrapper, .kpi-icon, .orc-kpi-card-icon, .orc-renda-icon) {
-  background: var(--color-bg-elevated);
+  background: var(--color-bg-card);
   color: var(--color-primary-400);
 }
