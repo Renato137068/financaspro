@@ -459,7 +459,7 @@ Três caminhos hoje, em ordem de confiabilidade:
 | Caminho | Quando roda | Cobre |
 |---|---|---|
 | **RTDN** (Pub/Sub → `play-rtdn`) | push do Google, em segundos | tudo: cancelamento, reembolso, hold, renovação |
-| **Reconciliação no boot** (`INIT_BILLING._reconciliarPlay`) | abertura do app, no máx. 1×/6h | tudo, mas só quando o usuário abre o app |
+| **Reconciliação ao abrir Config** (`INIT_BILLING._reconciliarPlay`) | quando o usuário abre a aba Config, no máx. 1×/6h | tudo, mas depende de o usuário ir até lá |
 | **Botão "Restaurar compras"** | clique manual | tudo, mas ninguém clica sem motivo |
 
 Os dois últimos passam pelo `play-verify`, que desde 05/set **revoga** quando o
@@ -473,7 +473,7 @@ apenas se o `purchaseToken` pertencer àquela org (`findByPlayPurchaseToken`).
 ### Onde mexer
 
 - Revogação no 402: `supabase/functions/_shared/play-billing.ts` → `verifyPurchase`
-- Reconciliação no boot: `js/modules/init-billing.js` → `_reconciliarPlay`
+- Reconciliação: `js/modules/init-billing.js` → `_reconciliarPlay`
   (throttle de 6h em `localStorage['fp-play-reconcilia']`, silenciosa por design)
 - Revogação em si: `supabase/functions/_shared/db.ts` → `revokePlayEntitlement`
   (filtra `stripeSubId LIKE 'play:%'`, nunca toca numa assinatura Stripe)
@@ -493,8 +493,20 @@ npx supabase functions deploy play-verify --project-ref nubvlksibmpryltkfpei
 supabase functions deploy play-rtdn  --no-verify-jwt --project-ref nubvlksibmpryltkfpei
 ```
 
-⚠️ A reconciliação no boot é **código do app**: só chega ao usuário no próximo
-AAB. Até lá, quem já instalou depende do RTDN ou do botão manual.
+⚠️ A reconciliação é **código do app**: só chega ao usuário num AAB novo.
+
+> ⚠️ **Ela NÃO roda no boot** (verificado no AAB 11.3.14-vc37, 05/set/2026).
+> `scripts/bundle-app.cjs` põe `init-billing.js`, `billing.js` e
+> `play-billing.js` no chunk **lazy `conta`**, carregado por
+> `mudarAba('config')`. Logo, no app empacotado o `INIT_BILLING.init()` — e com
+> ele o `_reconciliarPlay` — só executa quando o usuário abre a aba **Config**.
+> Em dev, com os scripts soltos no `index.html`, roda no boot e a diferença não
+> aparece: é uma divergência dev/produção fácil de não perceber.
+>
+> Consequência: trate-a como rede **terciária**, atrás do RTDN e da revogação
+> no 402. Para aproximá-la do boot seria preciso disparar `LAZY.load('conta')`
+> alguns segundos após a inicialização, ou extrair esse caminho para um módulo
+> que carregue cedo.
 
 ---
 

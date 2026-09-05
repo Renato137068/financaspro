@@ -29,8 +29,20 @@ const INIT_BILLING = {
   // play-verify roda, um usuario que cancelasse (ou fosse reembolsado, ou
   // tivesse o cartao recusado) ficava com Pro ate resolver clicar num botao
   // que ele nao tem motivo nenhum para clicar. Aqui reenviamos os tokens
-  // ativos no boot: o play-verify renova quando a assinatura segue valida e
-  // revoga quando nao segue.
+  // ativos: o play-verify renova quando a assinatura segue valida e revoga
+  // quando nao segue.
+  //
+  // QUANDO isto roda, de verdade: este modulo esta no chunk lazy `conta`
+  // (ver scripts/bundle-app.cjs), carregado por mudarAba('config'). No APP
+  // EMPACOTADO a reconciliacao acontece quando o usuario abre a aba Config --
+  // NAO na abertura do app. Em dev, com os scripts soltos no index.html,
+  // init() roda no boot e a diferenca nao aparece. Nao chame isto de
+  // "reconciliacao no boot": e rede TERCIARIA, atras do RTDN (push do Google,
+  // em segundos) e da revogacao no 402 do play-verify.
+  //
+  // Para roda-la perto do boot seria preciso disparar LAZY.load('conta')
+  // alguns segundos apos a inicializacao, ou extrair este caminho para um
+  // modulo proprio que carregue cedo.
   //
   // Silencioso de proposito -- sem toast em sucesso nem em falha. O botao
   // continua sendo o caminho explicito, para quem reinstalou ou trocou de
