@@ -49,9 +49,10 @@ on conflict (tier) do update set
   history_months        = excluded.history_months,
   ocr_per_month         = excluded.ocr_per_month;
 
--- fp_get_plan_limits ganha as colunas novas mantendo as tres antigas na frente,
--- para nao quebrar quem ja seleciona por posicao.
-create or replace function public.fp_get_plan_limits(p_tier text)
+-- fp_get_plan_limits ganha as colunas novas. CREATE OR REPLACE nao pode mudar
+-- o RETURNS TABLE — precisa DROP antes (SQLSTATE 42P13).
+drop function if exists public.fp_get_plan_limits(text);
+create function public.fp_get_plan_limits(p_tier text)
 returns table (
   max_trans_per_month   int,
   max_accounts          int,
