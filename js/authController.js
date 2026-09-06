@@ -179,7 +179,7 @@ function setupAuthUI() {
       loginForm.style.display = step === 'password' ? '' : 'none';
     }
     if (screenTitle) screenTitle.textContent = step === 'password' ? 'Entrar' : 'Entrar';
-    if (message) {
+    if (message && !_offlineAtivo) {
       message.textContent = step === 'password'
         ? 'Digite sua senha para continuar.'
         : 'Digite seu e-mail para continuar.';
@@ -319,17 +319,114 @@ function setupAuthUI() {
     });
   }
 
+  /**
+   * Pinga o servidor e devolve se ele está ao alcance.
+   *
+   * O retorno importa: quem já tem sessão guardada neste aparelho não pode
+   * depender de rede para ver os próprios lançamentos, que estão no disco
+   * local. Sem esta resposta, o boot mandava todo mundo para o formulário de
+   * senha — e a senha só se confere no servidor.
+   *
+   * @returns {Promise<boolean>} true se o servidor respondeu.
+   */
   function _checkCloudReachable() {
-    if (typeof SUPA_AUTH === 'undefined' || !SUPA_AUTH.isActive || !SUPA_AUTH.isActive()) return;
-    if (!warning) return;
-    SUPA_AUTH.ping().then(function() {
-      warning.style.display = 'none';
-      warning.textContent = '';
+    if (typeof SUPA_AUTH === 'undefined' || !SUPA_AUTH.isActive || !SUPA_AUTH.isActive()) {
+      return Promise.resolve(true);
+    }
+    return SUPA_AUTH.ping().then(function() {
+      if (warning) {
+        warning.style.display = 'none';
+        warning.textContent = '';
+      }
+      return true;
     }).catch(function(err) {
-      warning.style.display = 'block';
-      warning.textContent = (err && err.message)
-        || 'Não foi possível conectar ao servidor. Verifique sua internet.';
+      if (warning) {
+        warning.style.display = 'block';
+        warning.textContent = (err && err.message)
+          || 'Não foi possível conectar ao servidor. Verifique sua internet.';
+      }
+      return false;
     });
+  }
+
+  /**
+   * Sem rede, com sessão guardada: entra no app usando só o que está aqui.
+   *
+   * O PIN, quando configurado, continua guardando a entrada — ele é uma tela
+   * própria (verificarPinAoAbrir) que roda offline com PBKDF2 e rate limit, e
+   * não passa por aqui. A biometria também confere identidade sem rede. O que
+   * este caminho remove é a exigência de SENHA, que é a única que precisa do
+   * servidor para ser conferida.
+   */
+  /**
+   * Enquanto ligado, showLoginStep não reescreve a mensagem da tela.
+   *
+   * Sem isto, o texto de "sem conexão" durava um instante: _prefillLogin e o
+   * showLoginStep que vem junto dele rodam depois e devolviam o genérico
+   * "Digite seu e-mail para continuar", deixando o botão offline sem
+   * explicação nenhuma ao lado.
+   */
+  var _offlineAtivo = false;
+
+  /** Liga/desliga os elementos exclusivos do modo sem conexão. */
+  function _alternarUiOffline(mostrar) {
+    _offlineAtivo = !!mostrar;
+    var btn = document.getElementById('auth-offline-btn');
+    var hint = document.getElementById('auth-offline-hint');
+    if (btn) btn.hidden = !mostrar;
+    if (hint) hint.hidden = !mostrar;
+  }
+
+  function _entrarOffline(overlay) {
+    if (message) {
+      message.textContent = 'Você entrou sem conexão. Os dados são os deste aparelho.';
+    }
+    _alternarUiOffline(false);
+    _authOnSuccess(overlay, { viaBiometric: true, offline: true });
+    if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+      UTILS.mostrarToast(
+        'Sem conexão — usando os dados deste aparelho. A sincronização volta quando a internet voltar.',
+        'info',
+      );
+    }
+  }
+
+  /**
+   * Painel de desbloqueio quando o servidor está fora de alcance.
+   * Esconde o campo de senha (que não tem como ser conferido offline) e
+   * oferece biometria + entrada direta.
+   */
+  function _mostrarEntradaOffline(overlay) {
+    var sess = (typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.isActive && SUPA_AUTH.isActive())
+      ? SUPA_AUTH.getSessionSync()
+      : DADOS.getSessao();
+    var emailInput = document.getElementById('auth-login-email');
+    if (sess && sess.user && sess.user.email && emailInput) {
+      emailInput.value = sess.user.email;
+      if (sess.user.name) _authSalvar(AUTH_DISPLAY_NAME_KEY, sess.user.name);
+    }
+
+    /* Liga antes de mexer na tela: a partir daqui showLoginStep não reescreve
+       a mensagem, nem agora nem quando o prefill rodar depois. */
+    _alternarUiOffline(true);
+    showTab('login');
+    showLoginStep('password');
+
+    /* A senha não confere offline — deixar o campo à vista seria um convite a
+       um erro que o app não tem como julgar. */
+    if (loginForm) {
+      loginForm.hidden = true;
+      loginForm.style.display = 'none';
+    }
+    if (message) {
+      message.textContent = 'Sem conexão com o servidor. Você pode continuar com os dados deste aparelho.';
+    }
+    if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(overlay);
+    if (_authFocusTrap && typeof _authFocusTrap.refresh === 'function') _authFocusTrap.refresh();
+
+    /* Biometria funciona offline quando a sessão já está em cache: o
+       verifyIdentity é do aparelho e o validate() só lê o storage. */
+    setTimeout(_tentarBiometriaAutomatica, 350);
   }
 
   function _prefillLogin() {
@@ -344,6 +441,11 @@ function setupAuthUI() {
   }
 
   _bindPasswordToggles(overlay);
+  var offlineBtnEl = document.getElementById('auth-offline-btn');
+  if (offlineBtnEl && offlineBtnEl.dataset.offlineBound !== '1') {
+    offlineBtnEl.dataset.offlineBound = '1';
+    offlineBtnEl.addEventListener('click', function() { _entrarOffline(overlay); });
+  }
   if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(overlay);
   if (typeof AUTH_BIOMETRIC !== 'undefined' && AUTH_BIOMETRIC.setupPerfilToggle) {
     AUTH_BIOMETRIC.setupPerfilToggle();
@@ -371,7 +473,7 @@ function setupAuthUI() {
     if (screenTitle) {
       screenTitle.textContent = name === 'register' ? 'Criar conta' : 'Entrar';
     }
-    if (message) {
+    if (message && !_offlineAtivo) {
       message.textContent = name === 'login'
         ? (_loginStep === 'password' ? 'Digite sua senha para continuar.' : 'Digite seu e-mail para continuar.')
         : 'Preencha os dados para começar.';
@@ -453,7 +555,10 @@ function setupAuthUI() {
     if (_authFocusTrap && typeof _authFocusTrap.refresh === 'function') _authFocusTrap.refresh();
   }
 
-  function _mostrarDesbloqueioSessao() {
+  /**
+   * @param {Promise<boolean>} [alcance] Ping já em andamento, para não repetir.
+   */
+  function _mostrarDesbloqueioSessao(alcance) {
     var emailInput = document.getElementById('auth-login-email');
     var sess = (typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.isActive && SUPA_AUTH.isActive())
       ? SUPA_AUTH.getSessionSync()
@@ -464,10 +569,22 @@ function setupAuthUI() {
     }
     showTab('login');
     showLoginStep('password');
+    /* Voltou o sinal depois de uma sessão offline: some com a saída offline e
+       devolve o campo de senha (showLoginStep já reexibe o formulário). */
+    _alternarUiOffline(false);
     if (message) {
       message.textContent = 'Por segurança, confirme sua identidade para continuar.';
     }
     setTimeout(_tentarBiometriaAutomatica, 350);
+
+    /* O caminho rápido aparece na hora; a saída offline só entra em cena
+       quando o ping confirma que o servidor não responde. Assim a rede lenta
+       não atrasa quem está online, e quem está sem sinal não fica preso. */
+    (alcance || _checkCloudReachable()).then(function(online) {
+      if (online) return;
+      if (_authEstaDesbloqueado()) return; // biometria já resolveu
+      _mostrarEntradaOffline(overlay);
+    });
   }
 
   overlay.addEventListener('fp-auth-reopen', function() {
@@ -844,7 +961,7 @@ function setupAuthUI() {
       totpForm.hidden = true;
       totpForm.style.display = 'none';
     }
-    _checkCloudReachable();
+    var alcance = _checkCloudReachable();
     _abrirAuthOverlay(overlay);
     var bootAuth = (SUPA_AUTH.consumeAuthCallback)
       ? SUPA_AUTH.consumeAuthCallback()
@@ -854,13 +971,39 @@ function setupAuthUI() {
         _mostrarResetSenha();
         return;
       }
+      /**
+       * A saída offline NÃO espera o validate().
+       *
+       * Quando o access_token já venceu — o caso normal de abrir o app no dia
+       * seguinte — o getSession() do supabase-js tenta renovar, e sem rede ele
+       * entra em retry com backoff: a promessa fica pendente por dezenas de
+       * segundos. Todo o boot ficava pendurado nela e a pessoa encarava uma
+       * tela de login parada, sem saber que os dados dela estão no aparelho.
+       *
+       * Quem decide aqui é o ping, que tem teto de tempo próprio. Se o
+       * servidor não responde e existe sessão gravada neste aparelho, a
+       * entrada offline aparece na hora; o validate(), quando finalmente
+       * resolver, encontra o `_resolvidoOffline` e não desfaz nada.
+       */
+      var _resolvidoOffline = false;
+      alcance.then(function(online) {
+        if (online || _authEstaDesbloqueado()) return;
+        if (!(SUPA_AUTH.temSessaoPersistida && SUPA_AUTH.temSessaoPersistida())) return;
+        _resolvidoOffline = true;
+        _mostrarEntradaOffline(overlay);
+      });
+
       return SUPA_AUTH.validate().then(function (logged) {
+        if (_resolvidoOffline) return;
         if (!logged) {
           showTab('login');
           return;
         }
         if (!_authEstaDesbloqueado()) {
-          _mostrarDesbloqueioSessao();
+          /* Com servidor ao alcance, o desbloqueio normal por senha ou
+             biometria. _mostrarDesbloqueioSessao ainda consulta o ping por
+             conta própria, para o caso de a rede cair entre o boot e aqui. */
+          _mostrarDesbloqueioSessao(alcance);
           return;
         }
         return _authGateMfaThenSuccess(overlay);

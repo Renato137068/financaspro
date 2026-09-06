@@ -119,6 +119,17 @@
         <p id="auth-biometric-hint" class="auth-biometric-hint" hidden>
           Entre com senha uma vez para ativar biometria nas próximas vezes.
         </p>
+        <!-- Só aparece quando há sessão guardada NESTE aparelho e o servidor
+             está fora de alcance. Sem ela, quem perdeu o sinal ficava trancado
+             fora dos próprios lançamentos, que estão todos aqui no aparelho. -->
+        <button type="button" id="auth-offline-btn" class="auth-biometric-btn" hidden>
+          <i data-lucide="cloud-off" aria-hidden="true"></i>
+          <span>Continuar sem conexão</span>
+        </button>
+        <p id="auth-offline-hint" class="auth-biometric-hint" hidden>
+          Seus lançamentos ficam neste aparelho. A sincronização volta sozinha
+          quando houver internet.
+        </p>
         <button type="button" id="auth-resend-email-btn" class="auth-link-btn auth-link-btn--center" hidden>
           Reenviar e-mail de confirmação
         </button>

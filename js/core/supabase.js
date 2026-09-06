@@ -23,12 +23,16 @@
     return; // Supabase não configurado → nada muda.
   }
 
+  /* Uma constante, não um literal repetido: temSessaoPersistida() lê esta
+     mesma chave direto do disco, e as duas não podem divergir em silêncio. */
+  var STORAGE_KEY = 'fp-supabase-auth';
+
   var client = lib.createClient(url, key, {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: false,
-      storageKey: 'fp-supabase-auth'
+      storageKey: STORAGE_KEY
     }
   });
   window.SB = client;
@@ -150,10 +154,22 @@
   var SUPA_AUTH = {
     isActive: function () { return true; },
 
-    ping: function () {
+    /**
+     * O servidor está ao alcance?
+     *
+     * Tem teto de tempo porque a resposta decide se o app oferece a entrada
+     * offline. Em rede que aceita a conexão e não responde — Wi‑Fi de hotel,
+     * portal cativo, 3G morrendo — um fetch sem AbortController fica pendurado
+     * até o timeout do sistema, e o usuário encara uma tela de login parada
+     * sem saber que existe uma saída.
+     */
+    ping: function (timeoutMs) {
+      var ctrl = (typeof AbortController === 'function') ? new AbortController() : null;
+      var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, timeoutMs || 8000) : null;
       return fetch(url.replace(/\/$/, '') + '/auth/v1/health', {
         method: 'GET',
         headers: { apikey: key, Authorization: 'Bearer ' + key },
+        signal: ctrl ? ctrl.signal : undefined,
       }).then(function (res) {
         if (!res.ok) throw new Error('servidor-indisponivel');
         return true;
@@ -161,6 +177,8 @@
         var e = new Error(_msg(err));
         e.cause = err;
         throw e;
+      }).finally(function () {
+        if (timer) clearTimeout(timer);
       });
     },
 
@@ -343,6 +361,29 @@
         _session = (r && r.data && r.data.session) || null;
         return !!_session;
       }).catch(function () { return false; });
+    },
+
+    /**
+     * Existe sessão gravada NESTE aparelho? Leitura pura do storage.
+     *
+     * validate() não serve para esta pergunta: quando o access_token já venceu
+     * — o caso normal de quem abre o app no dia seguinte — o getSession tenta
+     * renovar, a renovação precisa de rede, e sem rede ele devolve false. Aí o
+     * app tratava um usuário conhecido como visitante e exigia senha, que
+     * também só se confere no servidor. Nenhum caminho de volta.
+     *
+     * Aqui a pergunta é outra: "esta pessoa já entrou neste aparelho?". A
+     * resposta está no disco e não depende de ninguém.
+     */
+    temSessaoPersistida: function () {
+      try {
+        var bruto = localStorage.getItem(STORAGE_KEY);
+        if (!bruto) return false;
+        var dados = JSON.parse(bruto);
+        return !!(dados && (dados.refresh_token || (dados.user && dados.user.id)));
+      } catch (e) {
+        return false;
+      }
     },
 
     getAccessToken: function () {

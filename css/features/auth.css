@@ -578,6 +578,18 @@
   font-weight: var(--font-weight-medium);
 }
 
+/* `hidden` precisa vencer o display declarado aqui embaixo.
+   A regra de classe (.auth-biometric-btn { display: inline-flex }) tem
+   especificidade maior que o [hidden] { display: none } do agente de usuário,
+   então o atributo virava decoração: o JS marcava `hidden = true` e o botão
+   continuava na tela. Era por isso que "Entrar com biometria" aparecia no
+   navegador, onde biometria não existe — e clicar nele só dava erro. Vale para
+   a saída offline pela mesma razão. */
+.auth-biometric-btn[hidden],
+.auth-biometric-hint[hidden] {
+  display: none !important;
+}
+
 .auth-biometric-btn {
   display: inline-flex;
   align-items: center;
