@@ -33,30 +33,62 @@
    * PostgREST devolve QUOTA_EXCEEDED:* via RAISE EXCEPTION (P0001).
    * O lançamento local já foi salvo em DADOS.salvarTransacao antes do push;
    * aqui só avisamos e não propagamos o erro (nuvem fica pendente).
+   *
+   * A lista de tipos precisa acompanhar o SQL. Quando a v3 passou a recusar
+   * metas, contas a pagar, assinaturas e categorias, a cópia daqui continuou
+   * com três tipos e o usuário lia "Limite de uso no plano gratuito" — frase
+   * que não diz o que ele atingiu nem o que fazer a respeito.
    */
-  function isQuotaExceededError(err) {
-    if (!err) return false;
-    var msg = String(err.message || err.details || err.hint || '');
-    return err.code === 'P0001' || /QUOTA_EXCEEDED:(transaction|account|budget)/.test(msg);
-  }
+  var QUOTA_KINDS = 'transaction|account|budget|goal|recurring|bill|subscription|category';
 
-  function handleQuotaExceeded(err) {
-    if (!isQuotaExceededError(err)) return false;
-    var msg = String(err.message || '');
-    var kind = (msg.match(/QUOTA_EXCEEDED:(\w+)/) || [])[1] || 'transaction';
-    var labels = {
-      transaction: 'lançamentos este mês',
-      account: 'contas/cartões',
-      budget: 'orçamentos',
-    };
-    var texto = 'Limite de ' + (labels[kind] || 'uso')
-      + ' no plano gratuito. Assine o Pro para continuar.';
+  function _avisarCota(texto) {
     if (typeof BILLING !== 'undefined' && BILLING.onPaymentRequired) {
       BILLING.onPaymentRequired({ message: texto });
     } else if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
       UTILS.mostrarToast(texto, 'warning');
     }
     return true;
+  }
+
+  function isQuotaExceededError(err) {
+    if (!err) return false;
+    var msg = String(err.message || err.details || err.hint || '');
+    return err.code === 'P0001'
+      || new RegExp('QUOTA_EXCEEDED:(' + QUOTA_KINDS + ')').test(msg);
+  }
+
+  function handleQuotaExceeded(err) {
+    if (!isQuotaExceededError(err)) return false;
+    var msg = String(err.message || '');
+    var kind = (msg.match(/QUOTA_EXCEEDED:(\w+)/) || [])[1] || 'transaction';
+
+    /* Mensagem do BILLING quando existe: ela nomeia o que o Pro FAZ, que é o
+       que a pessoa lê no momento de decidir. O texto abaixo é só o plano B
+       para quando o billing não carregou. */
+    var doBilling = (typeof BILLING !== 'undefined' && BILLING._QUOTAS && BILLING._QUOTAS[kind])
+      ? BILLING._QUOTAS[kind]
+      : null;
+    if (doBilling && BILLING.getLimits) {
+      var teto = BILLING.getLimits()[doBilling.limite];
+      if (isFinite(teto)) {
+        return _avisarCota(doBilling.msg.replace('%L', String(teto)));
+      }
+    }
+
+    var labels = {
+      transaction: 'lançamentos este mês',
+      account: 'contas/cartões',
+      budget: 'orçamentos',
+      goal: 'metas',
+      recurring: 'lançamentos recorrentes',
+      bill: 'contas a pagar',
+      subscription: 'gastos fixos',
+      category: 'categorias personalizadas',
+    };
+    return _avisarCota(
+      'Limite de ' + (labels[kind] || 'uso')
+      + ' no plano gratuito. Assine o Pro para continuar.',
+    );
   }
 
   function afterPushError(err, fallback) {
@@ -182,7 +214,13 @@
         return SUPA_SYNC.pushConfig(cfg);
       }).then(function () {
         if (accToPush.length || txToPush.length) {
-          console.log('Reconciliação: subiu', accToPush.length, 'contas e', txToPush.length, 'transações locais.');
+          /* Diagnóstico de sincronização: único log fora de warn/error, e a
+             única linha que reprovava `npm run lint:strict`. */
+          // eslint-disable-next-line no-console
+          console.info(
+            'Reconciliação: subiu', accToPush.length, 'contas e',
+            txToPush.length, 'transações locais.',
+          );
         }
         return { contas: accToPush.length, transacoes: txToPush.length };
       }).catch(function (e) {

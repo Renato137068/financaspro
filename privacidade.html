@@ -32,7 +32,7 @@
   <ul>
     <li><strong>Dados financeiros que você registra</strong> — transações, categorias, orçamentos, metas, contas, anexos e configurações. Uma cópia fica no seu aparelho. Com login na nuvem (padrão no app Android/Play Store), uma cópia sincronizada também fica nos servidores do provedor de autenticação e banco (<strong>Supabase</strong>).</li>
     <li><strong>Dados de conta</strong> — ao criar uma conta, tratamos nome, e-mail e senha (hash gerenciado pelo Supabase Auth) para login, desbloqueio no aparelho e sincronização.</li>
-    <li><strong>Conexão bancária via Open Finance (opcional)</strong> — se você optar por conectar uma conta bancária, a integração é feita por meio do provedor <strong>Belvo</strong>. Os dados bancários trafegam de forma criptografada e são usados apenas para trazer suas transações ao app. Você pode desconectar a qualquer momento.</li>
+    <li><strong>Conexão bancária via Open Finance</strong> — <strong>ainda não disponível nesta versão do app.</strong> O recurso está desligado e nenhum dado bancário é lido ou compartilhado. Quando for liberado, a integração será feita pelo provedor <strong>Belvo</strong>, será sempre opcional, os dados trafegarão criptografados e serão usados apenas para trazer suas transações ao app — e esta política será atualizada antes disso.</li>
     <li><strong>Dados de pagamento (opcional)</strong> — assinaturas no Android usam o <strong>Google Play Billing</strong>; em outras versões podem usar <strong>Stripe</strong>. O app não armazena números completos de cartão.</li>
     <li><strong>Dados técnicos/diagnóstico (opcional)</strong> — se habilitado, registros de erros anônimos podem ser coletados para melhorar a estabilidade. Não incluem valores de transações.</li>
   </ul>
@@ -41,7 +41,7 @@
   <ul>
     <li>Exibir resumos, gráficos, orçamento, metas e insights financeiros.</li>
     <li>Sincronizar dados entre dispositivos, quando você usa login na nuvem.</li>
-    <li>Trazer transações bancárias, quando você conecta uma conta via Open Finance.</li>
+    <li>Trazer transações bancárias, se e quando o Open Finance for liberado e você conectar uma conta.</li>
     <li>Processar assinaturas, quando habilitado.</li>
     <li>Melhorar a estabilidade e a segurança do serviço.</li>
   </ul>
@@ -51,7 +51,7 @@
   <p>Os lançamentos ficam no aparelho (navegador/app). Com login ativo, também sincronizam com a nuvem para backup e uso em mais de um dispositivo. Sem login (ou após sair da conta), os dados locais permanecem só neste aparelho. Você pode exportá-los ou apagá-los em <strong>Perfil → Dados</strong>. Desinstalar o app remove os dados locais; a conta na nuvem só some com exclusão de conta.</p>
 
   <h2>4. Compartilhamento</h2>
-  <p>Não vendemos seus dados. Compartilhamos informações apenas com provedores estritamente necessários ao funcionamento — <strong>Supabase</strong> (autenticação e sync), <strong>Belvo</strong> (Open Finance), <strong>Google Play</strong> / <strong>Stripe</strong> (pagamentos) — sob contratos de proteção de dados. Cada um trata os dados conforme suas próprias políticas.</p>
+  <p>Não vendemos seus dados. Compartilhamos informações apenas com provedores estritamente necessários ao funcionamento — <strong>Supabase</strong> (autenticação e sync) e <strong>Google Play</strong> / <strong>Stripe</strong> (pagamentos) — sob contratos de proteção de dados. Cada um trata os dados conforme suas próprias políticas.</p>
 
   <h2>5. Segurança</h2>
   <p>Usamos HTTPS, tokens de sessão, hash de senhas (Supabase Auth) e boas práticas de desenvolvimento. No Android, a tela de login e o PIN usam proteção contra captura de tela (FLAG_SECURE).</p>
@@ -86,7 +86,10 @@
   <p><strong>O que é mantido, e por quê:</strong> registros de auditoria são
   <em>anonimizados</em> — perdem o vínculo com você, mas permanecem pelo prazo da política de
   retenção, porque são a prova de que as operações aconteceram. Registros fiscais de
-  pagamentos, quando existirem, são mantidos pelo prazo que a legislação exige.</p>
+  pagamentos, quando existirem, são mantidos pelo prazo que a legislação exige.
+  Guardamos também o <em>identificador interno</em> de quem já recebeu o período
+  gratuito de boas-vindas — só o identificador, sem nome, e-mail ou dado financeiro —
+  para que o benefício não possa ser renovado indefinidamente criando contas novas.</p>
   <p><strong>Dados que ficam só no aparelho</strong> não passam por nós: desinstalar o app
   ou usar <em>Perfil → Apagar dados locais</em> remove tudo, sem pedido nenhum.</p>
 
