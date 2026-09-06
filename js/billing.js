@@ -217,7 +217,16 @@ var BILLING = {
    * um webhook do Stripe atrasar ou falhar. A data e a fonte da verdade.
    */
   _activeStatus: function(status, sub) {
-    if (status === 'ACTIVE') return true;
+    // Rede de segurança quando o webhook atrasa: period end no passado
+    // não deve manter Pro só porque status ainda diz ACTIVE.
+    if (status === 'ACTIVE') {
+      var fimAtivo = sub && sub.currentPeriodEnd;
+      if (fimAtivo) {
+        var tAtivo = new Date(fimAtivo).getTime();
+        if (!isNaN(tAtivo) && tAtivo < Date.now()) return false;
+      }
+      return true;
+    }
     if (status !== 'TRIALING') return false;
     var fim = sub && sub.trialEndsAt;
     if (!fim) return true;

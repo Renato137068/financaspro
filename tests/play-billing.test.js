@@ -31,7 +31,7 @@ function loadPlayBilling(overrides) {
   vm.runInContext(
     fs.readFileSync(path.join(__dirname, '..', 'js', 'play-billing.js'), 'utf8'),
     ctx,
-    { filename: 'play-billing.js' },
+    { filename: path.join(__dirname, '..', 'js', 'play-billing.js') },
   );
   return { PB: ctx.PLAY_BILLING, invoke, apiFetch, ctx };
 }

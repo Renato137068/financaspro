@@ -28,6 +28,7 @@ const INIT_CONFIG = {
     // gravou. Além de morta, teria deixado a sessão real intacta se rodasse.
     this._bindToggles();
     this._bindKeyboardNavigation();
+    this._bindSairOutrosAparelhos();
     this._updateDynamicValues();
     this._bindEditarPerfilEvents();
     this._bindBancosEvents();
@@ -86,11 +87,20 @@ const INIT_CONFIG = {
     if (chkPin) chkPin.checked = !!config.pinAtivo;
     var pinStatus = document.getElementById('perfil-pin-status');
     if (pinStatus) pinStatus.textContent = config.pinAtivo ? 'PIN ativo' : 'PIN desativado';
+    // Subtítulo do card: deixa explícito que o PIN só oculta saldos.
+    var pinToggleStatus = document.getElementById('perfil-pin-toggle-status');
+    if (pinToggleStatus) {
+      pinToggleStatus.textContent = config.pinAtivo
+        ? 'Ativo — oculta saldos'
+        : 'Desativado';
+    }
     // Verde = proteção ativa. Com o PIN desativado o selo vira neutro: mostrar
     // uma proteção DESLIGADA em verde lê como "tudo certo", que é o oposto.
     var pinPill = document.getElementById('security-pin-status');
     if (pinPill) pinPill.classList.toggle('security-indicator--neutro', !config.pinAtivo);
     this._refreshCryptoToggle();
+    this._refreshExportHint();
+    this._refreshSairOutrosBtn();
     this._updateAppFooter();
     this._updateLembreteStatus();
     if (typeof INIT_BILLING !== 'undefined' && INIT_BILLING.refreshPlanoCard) {
@@ -306,6 +316,77 @@ const INIT_CONFIG = {
     bind('btn-refazer-onboarding', 'click', function() {
       if (typeof ONBOARDING !== 'undefined' && ONBOARDING.reiniciar) {
         ONBOARDING.reiniciar();
+      }
+    });
+  },
+
+  /**
+   * Hint do export: offline = só este aparelho; nuvem = backup local complementar.
+   */
+  _refreshExportHint: function() {
+    var el = document.getElementById('perfil-export-hint');
+    if (!el) return;
+    var naNuvem = typeof BILLING !== 'undefined' && BILLING.isCloudUser && BILLING.isCloudUser();
+    el.textContent = naNuvem
+      ? 'JSON com lançamentos, contas e preferências. A nuvem continua sendo a fonte da verdade da conta.'
+      : 'JSON com lançamentos, contas e preferências deste aparelho.';
+  },
+
+  _refreshSairOutrosBtn: function() {
+    var btn = document.getElementById('btn-sair-outros');
+    if (!btn) return;
+    var naNuvem = typeof BILLING !== 'undefined' && BILLING.isCloudUser && BILLING.isCloudUser();
+    btn.disabled = !naNuvem;
+    var st = document.getElementById('perfil-sessoes-status');
+    if (st) {
+      st.textContent = naNuvem
+        ? 'Desconectar todos, menos este'
+        : 'Requer login na nuvem';
+    }
+  },
+
+  /**
+   * Desconecta sessões nos outros aparelhos (Supabase scope: others).
+   */
+  _bindSairOutrosAparelhos: function() {
+    var btn = document.getElementById('btn-sair-outros');
+    if (!btn || btn._fpBoundSairOutros) return;
+    btn._fpBoundSairOutros = true;
+    var self = this;
+    self._refreshSairOutrosBtn();
+    btn.addEventListener('click', function() {
+      var naNuvem = typeof BILLING !== 'undefined' && BILLING.isCloudUser && BILLING.isCloudUser();
+      btn.disabled = !naNuvem;
+      if (!naNuvem) {
+        if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+          UTILS.mostrarToast('Requer login na nuvem', 'info');
+        }
+        return;
+      }
+      var go = function() {
+        if (typeof SUPA_AUTH === 'undefined' || !SUPA_AUTH.signOutOthers) {
+          if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+            UTILS.mostrarToast('Indisponível neste modo.', 'warning');
+          }
+          return;
+        }
+        SUPA_AUTH.signOutOthers().then(function() {
+          if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+            UTILS.mostrarToast('Outros aparelhos desconectados.', 'success');
+          }
+        }).catch(function(err) {
+          if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+            UTILS.mostrarToast((err && err.message) || 'Não foi possível desconectar.', 'error');
+          }
+        });
+      };
+      var msg = 'Desconectar todos os outros aparelhos? Este permanece conectado.';
+      if (typeof INIT_MODALS !== 'undefined' && INIT_MODALS.fpConfirm) {
+        INIT_MODALS.fpConfirm(msg, go);
+      } else if (typeof fpConfirm === 'function') {
+        fpConfirm(msg, go);
+      } else if (window.confirm(msg)) {
+        go();
       }
     });
   },

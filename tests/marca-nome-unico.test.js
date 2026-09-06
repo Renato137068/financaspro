@@ -48,6 +48,9 @@ describe('a grafia do nome é única', function() {
   ])('nenhum arquivo escreve o nome %s', function(_rotulo, padrao) {
     const achados = [];
     for (const arquivo of ARQUIVOS) {
+      // Corrida com testes que criam/apagaram fixtures temporários.
+      if (!fs.existsSync(arquivo)) continue;
+      if (path.basename(arquivo).startsWith('_csp-sample')) continue;
       const fonte = fs.readFileSync(arquivo, 'utf8');
       fonte.split('\n').forEach((linha, i) => {
         // Comentários que explicam a grafia precisam poder citá-la.

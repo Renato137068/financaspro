@@ -35,7 +35,7 @@ function loadInitBilling(billingStub) {
   };
   vm.createContext(ctx);
   const src = fs.readFileSync(path.join(__dirname, '..', 'js/modules/init-billing.js'), 'utf8');
-  vm.runInContext(src, ctx, { filename: 'init-billing.js' });
+  vm.runInContext(src, ctx, { filename: path.join(__dirname, '..', 'js/modules/init-billing.js') });
   return { INIT: ctx.module.exports || ctx.INIT_BILLING, banner: document._banner, document };
 }
 

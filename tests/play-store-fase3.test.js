@@ -42,17 +42,21 @@ describe('Play Store Fase 3 — Android endurecido', () => {
 describe('Play Store Fase 3 — CSP produção', () => {
   test('harden-csp remove localhost de HTML de exemplo', () => {
     const harden = path.join(root, 'scripts/harden-csp.cjs');
-    const sample = path.join(root, 'tests', '_csp-sample.html');
+    // tmp — não deixar arquivo órfão em tests/ (marca-nome-unico varre a pasta).
+    const sample = path.join(require('os').tmpdir(), 'fp-csp-sample-' + process.pid + '.html');
     fs.writeFileSync(
       sample,
       '<meta http-equiv="Content-Security-Policy" content="connect-src \'self\' http://localhost:4000 https://api.example.com;">',
       'utf8',
     );
-    execSync('node "' + harden + '" "' + sample + '"', { stdio: 'pipe' });
-    const out = fs.readFileSync(sample, 'utf8');
-    expect(out).not.toMatch(/localhost/i);
-    expect(out).toContain('https://api.example.com');
-    fs.unlinkSync(sample);
+    try {
+      execSync('node "' + harden + '" "' + sample + '"', { stdio: 'pipe' });
+      const out = fs.readFileSync(sample, 'utf8');
+      expect(out).not.toMatch(/localhost/i);
+      expect(out).toContain('https://api.example.com');
+    } finally {
+      try { fs.unlinkSync(sample); } catch (_e) { /* */ }
+    }
   });
 });
 

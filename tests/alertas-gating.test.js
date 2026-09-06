@@ -40,7 +40,7 @@ function loadAlertas(opts) {
   vm.runInContext(
     fs.readFileSync(path.join(__dirname, '..', 'js', 'alertas.js'), 'utf8'),
     ctx,
-    { filename: 'alertas.js' },
+    { filename: path.join(__dirname, '..', 'js', 'alertas.js') },
   );
   return ctx.ALERTAS;
 }

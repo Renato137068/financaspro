@@ -155,4 +155,13 @@ describe('Billing — tiers e limites', function() {
     expect(billingHelpers.checkQuota('account', 'PRO', false, { accounts: 99 }, 1).allowed).toBe(true);
     expect(billingHelpers.checkQuota('goal', 'PRO', false, { goals: 99 }, 1).allowed).toBe(true);
   });
+
+  test('entitlementAtivo: ACTIVE com currentPeriodEnd no passado não é Pro', function() {
+    var passado = new Date(Date.now() - 86400000).toISOString();
+    var futuro = new Date(Date.now() + 86400000).toISOString();
+    expect(billingHelpers.entitlementAtivo({ status: 'ACTIVE', currentPeriodEnd: passado })).toBe(false);
+    expect(billingHelpers.entitlementAtivo({ status: 'ACTIVE', currentPeriodEnd: futuro })).toBe(true);
+    expect(billingHelpers.entitlementAtivo({ status: 'ACTIVE' })).toBe(true);
+    expect(billingHelpers.entitlementAtivo({ status: 'TRIALING', trialEndsAt: passado })).toBe(false);
+  });
 });
