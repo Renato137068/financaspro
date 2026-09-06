@@ -37,8 +37,37 @@ function httpError(status: number, message: string): Error {
 function saJson(): string | null {
   return Deno.env.get("GOOGLE_PLAY_SERVICE_ACCOUNT_JSON") || null;
 }
-function packageName(fallback?: string): string {
-  return fallback || Deno.env.get("PLAY_PACKAGE_NAME") || "com.financaspro.mobile";
+
+/**
+ * O pacote NÃO vem do cliente.
+ *
+ * Antes, `packageName(body.packageName)` deixava quem chama escolher contra
+ * qual app a compra seria conferida, caindo na env só quando o campo vinha
+ * vazio. O servidor já sabe a resposta — não há motivo para aceitar palpite em
+ * um parâmetro de segurança. O corpo continua sendo aceito na requisição (o
+ * app manda), mas é ignorado.
+ */
+function packageName(): string {
+  return Deno.env.get("PLAY_PACKAGE_NAME") || "com.financaspro.mobile";
+}
+
+/**
+ * Sandbox exige opt-in explícito.
+ *
+ * A regra antiga era `token começa com GPA.test. E não há service account`.
+ * Ela transformava a AUSÊNCIA de configuração em permissão: num projeto onde
+ * alguém esquecesse de setar GOOGLE_PLAY_SERVICE_ACCOUNT_JSON, qualquer token
+ * `GPA.test.*` valia 30 dias de Pro sem verificação nenhuma — e, no mesmo
+ * cenário, as compras de verdade morriam em 503. Os dois lados do mesmo
+ * interruptor: ninguém consegue pagar e qualquer um consegue não pagar.
+ *
+ * Agora o sandbox só existe quando PLAY_SANDBOX_ENABLED for ligado de
+ * propósito. Sem ele, falta de service account é erro de configuração — que é
+ * o que de fato é — e não uma porta aberta.
+ */
+function sandboxLiberado(): boolean {
+  const flag = (Deno.env.get("PLAY_SANDBOX_ENABLED") || "").trim().toLowerCase();
+  return flag === "1" || flag === "true";
 }
 
 /** Verifica uma compra e grava o entitlement. Port de verifyPurchase. */
@@ -53,9 +82,9 @@ export async function verifyPurchase(
   let tier = resolveTier(body.productId);
   if (!tier) throw httpError(400, "produto-desconhecido");
 
-  const pkg = packageName(body.packageName);
+  const pkg = packageName();
   const sa = saJson();
-  const sandbox = token.startsWith("GPA.test.") && !sa;
+  const sandbox = sandboxLiberado() && !sa && token.startsWith("GPA.test.");
 
   let expiresAt: string;
   let verifiedProductId = body.productId;

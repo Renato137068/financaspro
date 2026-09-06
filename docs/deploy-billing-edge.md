@@ -88,3 +88,69 @@ Smoke depois do push:
 -- deve devolver FREE, não PRO
 select public.fp_plan_tier('<uid-com-trial-vencido>');
 ```
+
+---
+
+## Migrations da v13 (correções da auditoria pré-beta)
+
+```bash
+# Antes de tudo: confira se o que está no repositório é o que está no banco.
+npx supabase migration list
+```
+
+Esse `list` não é formalidade. A migration `20260904120000_quota_v2` foi
+**editada depois de já ter sido aplicada**, e `db push` não reaplica migration
+registrada — o arquivo passou a descrever um estado que o banco pode não ter.
+Se os hashes divergirem, não edite a antiga: o delta vem na v13 abaixo.
+
+```bash
+npx supabase db push
+```
+
+Três migrations, nesta ordem:
+
+1. `20260906120000_fp_plan_tier_precedencia.sql` — `fp_plan_tier` passa a
+   resolver pelo **melhor** plano (BUSINESS > PRO > FREE), com `joinedAt` só
+   como desempate. Antes ordenava só por `joinedAt asc`, e como toda org nasce
+   com uma Subscription FREE ACTIVE, quem era convidado para uma org Pro
+   continuava com limites de FREE — o segundo assento do Pro não entregava nada.
+2. `20260906130000_quota_userconfig_sem_travar.sql` — o trigger de `UserConfig`
+   para de recusar o **INSERT**. O grandfather lia `OLD.data`, que no INSERT não
+   existe; quem chegava com estado local acima do limite tinha a linha recusada
+   para sempre (sem linha, a próxima tentativa também era INSERT), e junto ia
+   toda a config — renda, tema, onboarding. O UPDATE continua recusando aumento.
+   A mesma migration reafirma `fp_plan_limit_config` de forma idempotente,
+   fechando a dúvida do `migration list` acima.
+
+Smoke depois do push:
+
+```sql
+-- Convidado de org Pro tem que devolver PRO, mesmo com org própria mais antiga.
+select public.fp_plan_tier('<uid-do-convidado>');
+
+-- Primeira gravação de config acima do limite tem que passar (estado herdado).
+-- Aumento posterior tem que continuar levantando QUOTA_EXCEEDED:goal.
+```
+
+## Secret novo: `PLAY_SANDBOX_ENABLED`
+
+```bash
+# NÃO defina em produção. Só na faixa de testes internos, se precisar.
+npx supabase secrets set PLAY_SANDBOX_ENABLED=1
+```
+
+O modo sandbox aceitava qualquer `purchaseToken` começando com `GPA.test.`
+sempre que `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` estivesse **ausente**. Isso
+transformava esquecimento de configuração em permissão: sem o service account,
+ninguém conseguia pagar (503 nas compras reais) e qualquer um conseguia não
+pagar (30 dias de Pro sem verificação). Agora o sandbox exige opt-in explícito,
+e a falta do service account volta a ser o que é — erro de configuração.
+
+**Confira antes de abrir a faixa de testes:**
+
+```bash
+npx supabase secrets list | grep -E 'GOOGLE_PLAY_SERVICE_ACCOUNT_JSON|PLAY_PACKAGE_NAME|PLAY_SANDBOX_ENABLED'
+```
+
+`GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` presente e `PLAY_SANDBOX_ENABLED` ausente é
+a combinação correta para produção.
