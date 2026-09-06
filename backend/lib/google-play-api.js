@@ -129,6 +129,7 @@ export async function getSubscriptionV2({ serviceAccountJson, packageName, purch
     productId,
     expiryTime,
     entitled: isEntitledState(state, expiryTime),
+    cancelAtPeriodEnd: isCancelAtPeriodEnd(state, raw),
     raw,
   };
 }
@@ -150,5 +151,17 @@ export function isEntitledState(state, expiryTime) {
   return new Date(expiryTime).getTime() > Date.now();
 }
 
+/** Cancelou na loja / auto-renew off, mas ainda pode estar no período pago. */
+export function isCancelAtPeriodEnd(state, raw) {
+  if (state === 'SUBSCRIPTION_STATE_CANCELED') return true;
+  if (raw && raw.canceledStateContext) return true;
+  const lineItems = Array.isArray(raw && raw.lineItems) ? raw.lineItems : [];
+  for (const item of lineItems) {
+    const plan = item && item.autoRenewingPlan;
+    if (plan && plan.autoRenewEnabled === false) return true;
+  }
+  return false;
+}
+
 // Exposto para testes.
-export const _internal = { parseServiceAccount };
+export const _internal = { parseServiceAccount, isCancelAtPeriodEnd };

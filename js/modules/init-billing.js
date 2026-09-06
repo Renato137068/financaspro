@@ -20,6 +20,38 @@ const INIT_BILLING = {
     this._handleInviteReturn();
     this._consumePendingInvite();
     this._reconciliarPlay();
+    this._bindResumeReconcile();
+  },
+
+  /**
+   * Voltou da Play Store (ou de outra aba): reconsulta se ainda parece Pro
+   * sem flag de cancelamento — cobre cancelar na loja e voltar ao app.
+   */
+  _bindResumeReconcile: function() {
+    if (this._resumeReconcileBound) return;
+    this._resumeReconcileBound = true;
+    var self = this;
+    var onResume = function() {
+      try {
+        if (typeof document !== 'undefined' && document.visibilityState
+            && document.visibilityState !== 'visible') return;
+        setTimeout(function() {
+          self._reconciliarPlay({ force: true });
+        }, 800);
+      } catch (e) { /* */ }
+    };
+    if (typeof document !== 'undefined' && document.addEventListener) {
+      document.addEventListener('visibilitychange', onResume);
+    }
+    try {
+      if (typeof window !== 'undefined' && window.Capacitor
+          && window.Capacitor.Plugins && window.Capacitor.Plugins.App
+          && typeof window.Capacitor.Plugins.App.addListener === 'function') {
+        window.Capacitor.Plugins.App.addListener('appStateChange', function(state) {
+          if (state && state.isActive) onResume();
+        });
+      }
+    } catch (e2) { /* plugin ausente */ }
   },
 
   // Reconciliacao silenciosa do Google Play.
@@ -56,7 +88,14 @@ const INIT_BILLING = {
     var agora = Date.now();
     try {
       if (opts.force) {
-        if (this._reconciliouNestaSessao) return;
+        if (this._reconciliouNestaSessao) {
+          // Boot já rodou; se o usuário cancelou na Play e voltou na mesma
+          // sessão, o Pro ainda parece "cheio". Reconsulta uma vez.
+          var subCache = BILLING._cache && BILLING._cache.subscription;
+          var precisaRe = subCache && subCache.plan && subCache.plan.tier
+            && subCache.plan.tier !== 'FREE' && !subCache.cancelAtPeriodEnd;
+          if (!precisaRe) return;
+        }
       } else {
         var ultimo = Number(localStorage.getItem(this._RECONCILIA_KEY) || 0);
         if (ultimo && (agora - ultimo) < this._RECONCILIA_INTERVALO) return;

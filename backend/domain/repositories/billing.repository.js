@@ -159,7 +159,7 @@ export const BillingRepository = {
     return { orgId: sub.orgId, subscription: sub };
   },
 
-  async upsertPlayEntitlement(orgId, { productId, purchaseToken, tier, expiresAt }) {
+  async upsertPlayEntitlement(orgId, { productId, purchaseToken, tier, expiresAt, cancelAtPeriodEnd }) {
     const plan = await this.findPlan(tier);
     if (!plan) {
       const err = new Error('plano-nao-encontrado');
@@ -176,7 +176,7 @@ export const BillingRepository = {
       stripeCustomerId: null,
       currentPeriodStart: new Date(),
       currentPeriodEnd: end,
-      cancelAtPeriodEnd: false,
+      cancelAtPeriodEnd: !!cancelAtPeriodEnd,
     });
   },
 

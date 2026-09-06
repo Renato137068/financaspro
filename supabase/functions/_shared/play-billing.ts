@@ -59,17 +59,18 @@ export async function verifyPurchase(
 
   let expiresAt: string;
   let verifiedProductId = body.productId;
+  let cancelAtPeriodEnd = false;
 
   if (sandbox) {
     expiresAt = new Date(Date.now() + 30 * 86400000).toISOString();
   } else if (sa) {
-    const sub = await getSubscriptionV2({ serviceAccountJson: sa, packageName: pkg, purchaseToken: token });
+    const sub = await getSubscriptionV2({
+      serviceAccountJson: sa,
+      packageName: pkg,
+      purchaseToken: token,
+    });
     if (!sub.entitled) {
-      // Reconciliação sem RTDN. Sem o Pub/Sub configurado, `revokePlayEntitlement`
-      // só era alcançável por `handleRtdn` — ou seja, nunca: cancelamento,
-      // reembolso ou cartão recusado deixavam um `status: ACTIVE` órfão no banco
-      // e o Pro ligado para sempre. Se este token é o que sustenta o Pro desta
-      // org, retire agora, no mesmo request em que o Google disse que acabou.
+      // Reconciliação sem RTDN: se o token sustenta o Pro desta org, revoga.
       const dono = await findByPlayPurchaseToken(sb, token);
       if (dono && dono.orgId === orgId) {
         await revokePlayEntitlement(sb, orgId, { expiresAt: sub.expiryTime });
@@ -83,6 +84,8 @@ export async function verifyPurchase(
       verifiedProductId = sub.productId;
     }
     expiresAt = sub.expiryTime || new Date(Date.now() + 30 * 86400000).toISOString();
+    // Cancelou na Play mas ainda tem acesso até o fim do ciclo pago.
+    cancelAtPeriodEnd = !!sub.cancelAtPeriodEnd;
   } else {
     throw httpError(503, "play-api-nao-configurada");
   }
@@ -95,9 +98,16 @@ export async function verifyPurchase(
     purchaseToken: token,
     tier,
     expiresAt,
+    cancelAtPeriodEnd,
   });
 
-  return { tier, productId: verifiedProductId, expiresAt, restored: !!existing };
+  return {
+    tier,
+    productId: verifiedProductId,
+    expiresAt,
+    cancelAtPeriodEnd,
+    restored: !!existing,
+  };
 }
 
 /** Reconsulta o token no Google e renova ou revoga. Port de syncFromToken. */
@@ -112,7 +122,11 @@ export async function syncFromToken(sb: SupabaseClient, purchaseToken: string) {
   const sa = saJson();
   if (!sa) return { handled: false, reason: "api-nao-configurada", orgId };
 
-  const sub = await getSubscriptionV2({ serviceAccountJson: sa, packageName: packageName(), purchaseToken: token });
+  const sub = await getSubscriptionV2({
+    serviceAccountJson: sa,
+    packageName: packageName(),
+    purchaseToken: token,
+  });
 
   if (sub.entitled) {
     const tier = sub.productId ? resolveTier(sub.productId) : null;
@@ -122,16 +136,24 @@ export async function syncFromToken(sb: SupabaseClient, purchaseToken: string) {
         purchaseToken: token,
         tier,
         expiresAt: sub.expiryTime,
+        cancelAtPeriodEnd: !!sub.cancelAtPeriodEnd,
       });
     }
-    return { handled: true, orgId, entitled: true, tier, expiresAt: sub.expiryTime };
+    return {
+      handled: true,
+      orgId,
+      entitled: true,
+      tier,
+      expiresAt: sub.expiryTime,
+      cancelAtPeriodEnd: !!sub.cancelAtPeriodEnd,
+    };
   }
 
   await revokePlayEntitlement(sb, orgId, { expiresAt: sub.expiryTime });
   return { handled: true, orgId, entitled: false, expiresAt: sub.expiryTime };
 }
 
-/** Processa uma DeveloperNotification já decodificada. Port de handleRtdn. */
+/** Processa uma Developer Notification já decodificada. Port de handleRtdn. */
 export async function handleRtdn(sb: SupabaseClient, notification: any) {
   const sn = notification && notification.subscriptionNotification;
   if (!sn || !sn.purchaseToken) {

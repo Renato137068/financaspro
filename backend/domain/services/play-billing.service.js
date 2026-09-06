@@ -64,6 +64,7 @@ export const PlayBillingService = {
 
     var expiresAt;
     var verifiedProductId = productId;
+    var cancelAtPeriodEnd = false;
 
     if (sandbox) {
       // Testes automatizados: validade sintética, sem tocar na rede.
@@ -93,6 +94,7 @@ export const PlayBillingService = {
       }
       expiresAt = sub.expiryTime
         || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      cancelAtPeriodEnd = !!sub.cancelAtPeriodEnd;
     } else if (CONFIG.env === 'production') {
       var errApi = new Error('play-api-nao-configurada');
       errApi.status = 503;
@@ -116,6 +118,7 @@ export const PlayBillingService = {
       packageName: pkg,
       tier,
       expiresAt,
+      cancelAtPeriodEnd,
       source: 'google_play',
     });
 
@@ -123,6 +126,7 @@ export const PlayBillingService = {
       tier,
       productId: verifiedProductId,
       expiresAt,
+      cancelAtPeriodEnd,
       restored: !!existing,
     };
   },
@@ -168,9 +172,17 @@ export const PlayBillingService = {
           purchaseToken: token,
           tier: tier,
           expiresAt: sub.expiryTime,
+          cancelAtPeriodEnd: !!sub.cancelAtPeriodEnd,
         });
       }
-      return { handled: true, orgId: orgId, entitled: true, tier: tier, expiresAt: sub.expiryTime };
+      return {
+        handled: true,
+        orgId: orgId,
+        entitled: true,
+        tier: tier,
+        expiresAt: sub.expiryTime,
+        cancelAtPeriodEnd: !!sub.cancelAtPeriodEnd,
+      };
     }
 
     await BillingRepository.revokePlayEntitlement(orgId, { expiresAt: sub.expiryTime });

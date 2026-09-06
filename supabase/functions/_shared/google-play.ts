@@ -141,11 +141,27 @@ export function isEntitledState(state: string, expiryTime: string | null): boole
   return new Date(expiryTime).getTime() > Date.now();
 }
 
+/**
+ * Cancelou na Play mas o período pago ainda vale.
+ * ACTIVE + autoRenewEnabled=false OU estado CANCELED com expiry futuro.
+ */
+export function isCancelAtPeriodEnd(state: string, raw: any): boolean {
+  if (state === "SUBSCRIPTION_STATE_CANCELED") return true;
+  if (raw && raw.canceledStateContext) return true;
+  const lineItems = Array.isArray(raw && raw.lineItems) ? raw.lineItems : [];
+  for (const item of lineItems) {
+    const plan = item && item.autoRenewingPlan;
+    if (plan && plan.autoRenewEnabled === false) return true;
+  }
+  return false;
+}
+
 export interface SubscriptionV2Result {
   state: string;
   productId: string | null;
   expiryTime: string | null;
   entitled: boolean;
+  cancelAtPeriodEnd: boolean;
   raw: any;
 }
 
@@ -192,5 +208,12 @@ export async function getSubscriptionV2(opts: {
     }
   }
   const state = raw.subscriptionState || "SUBSCRIPTION_STATE_UNSPECIFIED";
-  return { state, productId, expiryTime, entitled: isEntitledState(state, expiryTime), raw };
+  return {
+    state,
+    productId,
+    expiryTime,
+    entitled: isEntitledState(state, expiryTime),
+    cancelAtPeriodEnd: isCancelAtPeriodEnd(state, raw),
+    raw,
+  };
 }

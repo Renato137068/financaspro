@@ -36,7 +36,13 @@ export async function findByPlayPurchaseToken(sb: SupabaseClient, token: string)
 export async function upsertPlayEntitlement(
   sb: SupabaseClient,
   orgId: string,
-  opts: { productId: string; purchaseToken: string; tier: string; expiresAt: string | null },
+  opts: {
+    productId: string;
+    purchaseToken: string;
+    tier: string;
+    expiresAt: string | null;
+    cancelAtPeriodEnd?: boolean;
+  },
 ) {
   const plan = await findPlan(sb, opts.tier);
   if (!plan) {
@@ -57,7 +63,8 @@ export async function upsertPlayEntitlement(
     stripeCustomerId: null,
     currentPeriodStart: now,
     currentPeriodEnd: end,
-    cancelAtPeriodEnd: false,
+    // Cancelou na loja mas o Google ainda libera até expiry — NÃO zerar o flag.
+    cancelAtPeriodEnd: !!opts.cancelAtPeriodEnd,
     updatedAt: now,
   };
 

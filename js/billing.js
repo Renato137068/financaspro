@@ -880,6 +880,11 @@ var BILLING = {
     }
     if (sub.cancelAtPeriodEnd && sub.currentPeriodEnd) {
       var fim = new Date(sub.currentPeriodEnd);
+      var diasRest = Math.ceil((fim.getTime() - Date.now()) / 86400000);
+      if (!isNaN(diasRest) && diasRest >= 0) {
+        if (diasRest === 0) return name + ' · último dia (cancelado)';
+        return name + ' · mais ' + diasRest + ' dia' + (diasRest === 1 ? '' : 's') + ' (cancelado)';
+      }
       return name + ' · cancela em ' + fim.toLocaleDateString('pt-BR');
     }
     if (sub.status === 'PAST_DUE') return name + ' · pagamento pendente';
@@ -933,12 +938,28 @@ var BILLING = {
 
     if (sub.cancelAtPeriodEnd && sub.currentPeriodEnd) {
       var fim = new Date(sub.currentPeriodEnd);
+      var dias = Math.ceil((fim.getTime() - Date.now()) / 86400000);
+      if (isNaN(dias) || dias < 0) {
+        return {
+          severity: 'info',
+          title: 'Assinatura cancelada',
+          message: 'Você volta ao gratuito na nuvem. O Pro já não renova.',
+          cta: 'paywall',
+          ctaLabel: 'Ver planos',
+        };
+      }
       return {
         severity: 'info',
-        title: 'Assinatura cancela em ' + fim.toLocaleDateString('pt-BR'),
-        message: 'Você continua no Pro até essa data. Depois volta ao gratuito na nuvem.',
+        title: dias === 0
+          ? 'Último dia de Pro'
+          : ('Mais ' + dias + ' dia' + (dias === 1 ? '' : 's') + ' de Pro'),
+        message: dias === 0
+          ? 'Sua assinatura foi cancelada. Depois de hoje você volta ao gratuito.'
+          : ('Você cancelou a renovação. Continua no Pro até '
+            + fim.toLocaleDateString('pt-BR')
+            + ', depois volta ao gratuito.'),
         cta: 'paywall',
-        ctaLabel: 'Ver planos',
+        ctaLabel: 'Reativar Pro',
       };
     }
 
