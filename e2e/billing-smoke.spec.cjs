@@ -32,7 +32,9 @@ test('paywall abre offline só com Pro e sem Assinar', async function({ page }) 
   await expect(page.locator('#billing-lead')).toContainText(/Soft paywall/);
   await expect(page.locator('.billing-plan h3').filter({ hasText: /^Pro$/i })).toBeVisible({ timeout: 10000 });
   await expect(page.locator('.billing-plan h3').filter({ hasText: /Business/i })).toHaveCount(0);
-  await expect(page.locator('#billing-footer')).toContainText(/Entrar ou criar conta/);
+  // A copy do rodapé mudou ("Entrar e assinar"); o que a spec guarda é que,
+  // sem conta, o paywall chama para entrar em vez de oferecer pagamento direto.
+  await expect(page.locator('#billing-footer')).toContainText(/Entrar e assinar/);
   await expect(page.locator('[data-action="billing-assinar"]')).toHaveCount(0);
   await expect(page.locator('.billing-plan-locked').first()).toBeVisible();
 });

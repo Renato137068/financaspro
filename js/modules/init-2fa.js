@@ -35,9 +35,28 @@ const INIT_2FA = {
     var status = document.getElementById('perfil-2fa-status');
     if (!chk || !status) return;
 
+    /* Duas perguntas diferentes, que estavam colapsadas numa só.
+     *
+     * `_nuvemAtiva()` é "este build TEM nuvem". `isAvailable()` é "e o usuário
+     * está logado nela". Reexibir o card antes de checar a primeira desfazia o
+     * que INIT_CONFIG.aplicarVisibilidadeNuvem() acabava de fazer com todos os
+     * `[data-requer-nuvem]`: no build local, plano e Open Finance sumiam e o
+     * 2FA voltava cinzento anunciando "Requer login na nuvem" — uma feature que
+     * naquele build não existe. A spec e2e cobria isso desde sempre, mas não
+     * rodava contra o build cloud e ninguém via.
+     */
+    var temNuvem = typeof DADOS !== 'undefined'
+      && typeof DADOS._nuvemAtiva === 'function'
+      && DADOS._nuvemAtiva();
+
     if (card) {
-      card.hidden = false;
-      card.style.display = '';
+      card.hidden = !temNuvem;
+      card.style.display = temNuvem ? '' : 'none';
+    }
+    if (!temNuvem) {
+      chk.disabled = true;
+      chk.checked = false;
+      return;
     }
 
     if (!this.isAvailable()) {
