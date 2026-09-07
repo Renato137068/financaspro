@@ -154,3 +154,62 @@ npx supabase secrets list | grep -E 'GOOGLE_PLAY_SERVICE_ACCOUNT_JSON|PLAY_PACKA
 
 `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` presente e `PLAY_SANDBOX_ENABLED` ausente é
 a combinação correta para produção.
+
+---
+
+## Testar o RTDN
+
+O `play-rtdn` é por onde renovação, cancelamento, revogação e estorno chegam.
+Ele nunca é exercitado por um teste de compra comum, então vale testar sozinho.
+
+### Do Play Console
+
+Monetização → Assinaturas → **Enviar notificação de teste**. A resposta esperada
+agora é explícita:
+
+```json
+{"ok":true,"handled":true,"tipo":"teste","reason":"notificacao-de-teste-do-play-console"}
+```
+
+Antes ela vinha como `handled:false, reason:"sem-subscription-notification"`, o
+que parecia endpoint quebrado quando estava funcionando.
+
+### Por curl, sem esperar o Google
+
+Com `PLAY_RTDN_SECRET` definido (o header não trafega em log de URL):
+
+```bash
+DADOS=$(printf '%s' '{"subscriptionNotification":{"notificationType":2,"purchaseToken":"<TOKEN_REAL>"}}' | base64 -w0)
+
+curl -i -X POST "https://<PROJETO>.supabase.co/functions/v1/play-rtdn" \
+  -H "x-rtdn-secret: $PLAY_RTDN_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d "{\"message\":{\"messageId\":\"teste-1\",\"data\":\"$DADOS\"}}"
+```
+
+Como ler a resposta:
+
+| Resposta | Significa |
+|---|---|
+| `handled:true` + `entitled:true` | reconsultou o Google e renovou o entitlement |
+| `handled:true` + `entitled:false` | revogou — é o que tem que acontecer no estorno |
+| `handled:false, reason:"token-desconhecido"` | **o token não está no banco**: o `play-verify` não gravou a compra. Toda notificação dessa assinatura vai cair aqui em silêncio |
+| `403` | segredo errado ou ausente |
+| `503` | nem `PLAY_RTDN_SERVICE_ACCOUNT` nem `PLAY_RTDN_SECRET` configurados |
+| `duplicate:true` | messageId repetido — a idempotência funcionou |
+
+Repetir o mesmo `messageId` deve devolver `duplicate:true`. Se devolver
+`ok:true` duas vezes, a idempotência não está de pé.
+
+### Cenários já cobertos
+
+Estes foram exercitados com Deno e um banco de mentira (envelopes reais do
+Pub/Sub, Google mockado) e estão travados por `tests/play-rtdn-notificacoes.test.js`:
+
+- sem mecanismo de auth → 503, falha fechada
+- segredo ausente/errado → 403; certo → processa
+- `GET` → 405; envelope ilegível → 204 (reconhece, não entra em loop de reentrega)
+- renovação → grava entitlement; revogação → revoga
+- cancelamento com ciclo pago em aberto → mantém Pro com `cancelAtPeriodEnd`
+- `messageId` repetido → `duplicate:true`
+- estorno (`voidedPurchaseNotification`) → reconsulta e revoga

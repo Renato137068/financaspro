@@ -145,7 +145,17 @@ export async function syncFromToken(sb: SupabaseClient, purchaseToken: string) {
   if (!token) return { handled: false, reason: "token-invalido" };
 
   const owner = await findByPlayPurchaseToken(sb, token);
-  if (!owner) return { handled: false, reason: "token-desconhecido" };
+  if (!owner) {
+    /* Nos logs, um RTDN quebrado é idêntico a um saudável: 200 em tudo. Se o
+       play-verify nunca gravou o token, TODA notificação daquela assinatura
+       cai aqui em silêncio e o entitlement nunca mais é atualizado. Um aviso
+       transforma isso em algo procurável antes de virar reclamação. */
+    console.warn(
+      "play-rtdn: notificação para token não registrado — o play-verify gravou "
+      + "esta compra? Sem o token no banco, o entitlement nunca é reconciliado.",
+    );
+    return { handled: false, reason: "token-desconhecido" };
+  }
   const orgId = owner.orgId as string;
 
   const sa = saJson();
@@ -184,9 +194,30 @@ export async function syncFromToken(sb: SupabaseClient, purchaseToken: string) {
 
 /** Processa uma Developer Notification já decodificada. Port de handleRtdn. */
 export async function handleRtdn(sb: SupabaseClient, notification: any) {
-  const sn = notification && notification.subscriptionNotification;
-  if (!sn || !sn.purchaseToken) {
-    return { handled: false, reason: "sem-subscription-notification" };
+  /* Teste do Play Console: reconhecer explicitamente. Antes caía no mesmo
+     "sem-subscription-notification" de um envelope desconhecido, e quem clica
+     em "Enviar notificação de teste" lia isso como falha do endpoint. */
+  if (notification && notification.testNotification) {
+    return { handled: true, tipo: "teste", reason: "notificacao-de-teste-do-play-console" };
   }
-  return syncFromToken(sb, sn.purchaseToken);
+
+  const sn = notification && notification.subscriptionNotification;
+  if (sn && sn.purchaseToken) {
+    return syncFromToken(sb, sn.purchaseToken);
+  }
+
+  /* Compra anulada — reembolso ou chargeback.
+   *
+   * Para assinatura o caminho comum é SUBSCRIPTION_REVOKED (tipo 12), que já
+   * cai no ramo acima. Mas o Google também manda voidedPurchaseNotification, e
+   * ela era só reconhecida e descartada: a resposta era 200 com handled:false
+   * e o Pro continuava de pé depois do estorno. Reconsultar o token resolve os
+   * dois casos com o mesmo código — quem decide se ainda vale é o Google. */
+  const vp = notification && notification.voidedPurchaseNotification;
+  if (vp && vp.purchaseToken) {
+    const out = await syncFromToken(sb, vp.purchaseToken);
+    return Object.assign({ tipo: "compra-anulada" }, out);
+  }
+
+  return { handled: false, reason: "sem-subscription-notification" };
 }
