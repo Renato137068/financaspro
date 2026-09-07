@@ -281,6 +281,61 @@ async function conferirFunctions(cred) {
   }
 }
 
+/* ─── 5b. RTDN: diagnóstico do deploy, sem precisar do segredo ───────────── */
+/*
+ * A play-rtdn é o caminho de cancelamento, revogação e estorno. Ela tem um
+ * modo de falhar que não aparece em lugar nenhum: se o deploy for SEM
+ * --no-verify-jwt, o gateway do Supabase recusa o push do Pub/Sub com 401
+ * ANTES de a função rodar. O Google vai reentregar, desistir, e o entitlement
+ * nunca é reconciliado — sem um único erro no seu log, porque o seu código
+ * nunca foi chamado.
+ *
+ * O status de uma requisição SEM Authorization separa os casos:
+ *   401 → verificação de JWT ligada: o Pub/Sub nunca vai passar
+ *   404 → não deployada
+ *   503 → deployada, mas sem PLAY_RTDN_SECRET nem PLAY_RTDN_SERVICE_ACCOUNT
+ *   403 → deployada, sem JWT, com autenticação configurada  ← o esperado
+ */
+async function conferirRtdn(cred) {
+  secao('5b. RTDN — deploy e autenticação');
+  let res;
+  try {
+    /* Sem apikey e sem Authorization de propósito: é assim que o Pub/Sub
+       chega, e é o que revela se o gateway está barrando antes da função. */
+    res = await buscar(cred.url + '/functions/v1/play-rtdn', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+    });
+  } catch (e) {
+    inconclusivo('não deu para checar (' + e.message + ')');
+    return;
+  }
+
+  if (res.status === 403) {
+    ok('deployada sem verificação de JWT e com autenticação exigida',
+      'é a configuração correta');
+  } else if (res.status === 401) {
+    falha('deployada COM verificação de JWT — o push do Pub/Sub é recusado antes '
+      + 'de a função rodar',
+      'npx supabase functions deploy play-rtdn --no-verify-jwt · o sintoma é '
+      + 'cancelamento e estorno que nunca chegam, sem erro nenhum no seu log');
+  } else if (res.status === 404) {
+    falha('não deployada',
+      'npx supabase functions deploy play-rtdn --no-verify-jwt');
+  } else if (res.status === 503) {
+    falha('deployada, mas sem nenhum mecanismo de autenticação configurado',
+      'defina PLAY_RTDN_SERVICE_ACCOUNT (OIDC do Pub/Sub, recomendado) ou '
+      + 'PLAY_RTDN_SECRET — hoje ela recusa tudo');
+  } else if (res.status === 204 || res.status === 200) {
+    falha('aceitou um POST sem autenticação nenhuma (HTTP ' + res.status + ')',
+      'endpoint aberto que mexe em assinatura — confira PLAY_RTDN_SECRET/SERVICE_ACCOUNT');
+  } else {
+    inconclusivo('resposta inesperada (HTTP ' + res.status + ')',
+      'esperado 403; veja a tabela em docs/deploy-billing-edge.md');
+  }
+}
+
 /* ─── 6. Secrets do billing (achado 03) ──────────────────────────────────── */
 
 function conferirSecrets() {
@@ -306,7 +361,9 @@ function conferirSecrets() {
 
   if (!temSA) {
     falha('GOOGLE_PLAY_SERVICE_ACCOUNT_JSON ausente',
-      'sem ele nenhuma compra real é verificada — as legítimas falham em 503');
+      'sem ele nenhuma compra real é verificada (as legítimas falham em 503) E o '
+      + 'RTDN vira no-op: syncFromToken devolve "api-nao-configurada" e nenhum '
+      + 'cancelamento ou estorno chega a revogar nada');
   } else {
     ok('GOOGLE_PLAY_SERVICE_ACCOUNT_JSON presente');
   }
@@ -492,6 +549,7 @@ async function main() {
     await conferirLimites(cred);
     await conferirRls(cred);
     await conferirFunctions(cred);
+    await conferirRtdn(cred);
   } else {
     inconclusivo('o projeto Supabase não respondeu (' + alcance.detalhe + ')',
       'as seções 3 a 5 ficaram SEM VERIFICAR — não são um "ok". Rode de uma '
