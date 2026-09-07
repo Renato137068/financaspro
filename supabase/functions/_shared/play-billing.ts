@@ -146,13 +146,19 @@ export async function syncFromToken(sb: SupabaseClient, purchaseToken: string) {
 
   const owner = await findByPlayPurchaseToken(sb, token);
   if (!owner) {
-    /* Nos logs, um RTDN quebrado é idêntico a um saudável: 200 em tudo. Se o
-       play-verify nunca gravou o token, TODA notificação daquela assinatura
-       cai aqui em silêncio e o entitlement nunca mais é atualizado. Um aviso
-       transforma isso em algo procurável antes de virar reclamação. */
+    /* Nos logs, um RTDN quebrado é idêntico a um saudável: 200 em tudo. Um
+       aviso transforma isso em algo procurável antes de virar reclamação.
+       Duas causas, muito diferentes:
+       - troca de ciclo (mensal↔anual): o Play substitui a assinatura e emite
+         um token NOVO. O upsert reescreve a linha da org, e o token antigo
+         deixa de ser encontrado. Cair aqui é o esperado e é inofensivo.
+       - play-verify nunca gravou a compra: aí TODA notificação daquela
+         assinatura cai aqui em silêncio, para sempre, e o entitlement nunca
+         mais é reconciliado. */
     console.warn(
-      "play-rtdn: notificação para token não registrado — o play-verify gravou "
-      + "esta compra? Sem o token no banco, o entitlement nunca é reconciliado.",
+      "play-rtdn: notificação para token não registrado. Esperado após troca de "
+      + "ciclo (o Play emite token novo). Se NÃO houve troca, o play-verify não "
+      + "gravou esta compra e o entitlement dela nunca será reconciliado.",
     );
     return { handled: false, reason: "token-desconhecido" };
   }
