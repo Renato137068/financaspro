@@ -18,7 +18,6 @@ const OUT_JSON = path.join(OUT_DIR, 'verificacao-fixes-20260826.json');
 const OUT_MD = path.join(OUT_DIR, 'verificacao-fixes-20260826.md');
 
 const UUID_A = '3f2504e0-4f89-41d3-9a0c-0305e82c3301';
-const UUID_B = '9c858901-8a57-4791-81fe-4c455b099bc9';
 
 function check(id, titulo, severidade, fn) {
   try {

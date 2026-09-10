@@ -70,7 +70,6 @@ describe('INSIGHTS._esc', function() {
 
 describe('INSIGHTS.analisar', function() {
   test('sem transações retorna lista vazia', function() {
-    var orig = global.TRANSACOES;
     // analisar usa TRANSACOES do contexto do módulo já carregado
     expect(Array.isArray(INSIGHTS.analisar())).toBe(true);
   });

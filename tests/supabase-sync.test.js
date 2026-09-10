@@ -39,8 +39,7 @@ function loadSupaSync(mocks) {
   var selects = [];
   var mergeCalled = false;
 
-  function chain(table, op) {
-    var state = { table: table, op: op, filters: [] };
+  function chain(table) {
     var api = {
       select: function() { return api; },
       is: function() { return api; },
@@ -71,13 +70,13 @@ function loadSupaSync(mocks) {
     from: function(table) {
       return {
         select: function() {
-          return chain(table, 'select');
+          return chain(table);
         },
         upsert: function(rows, opts) {
-          return chain(table, 'upsert').upsert(rows, opts);
+          return chain(table).upsert(rows, opts);
         },
-        update: function() { return chain(table, 'update'); },
-        insert: function(row) { return chain(table, 'insert').insert(row); },
+        update: function() { return chain(table); },
+        insert: function(row) { return chain(table).insert(row); },
       };
     },
     auth: { onAuthStateChange: function() {} },

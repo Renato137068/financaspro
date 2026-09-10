@@ -152,7 +152,7 @@ function setupUser(userId, rng, persona) {
   return { contaA, contaB };
 }
 
-function pickDate(persona, rng, userId) {
+function pickDate(persona, rng, _userId) {
   if (persona.id === 'G') {
     const y = 2018 + Math.floor(rng() * 9);
     const m = 1 + Math.floor(rng() * 12);
