@@ -273,6 +273,20 @@ button i[data-lucide] {
   --color-text-muted:     #55665c;  /* AA: 6,1:1 s/ branco · 5,4:1 s/ tinta · 5,8:1 s/ página */
   --color-text-inverse:   #ffffff;
 
+  /* ── Tinta travada no CLARO ──────────────────────────────────
+     Para overlays que ficam sempre claros (bank auth): com data-theme=dark
+     os tokens de texto viram claros e cairiam abaixo do AA sobre o card
+     branco. Estes espelham os valores claros e NUNCA são redefinidos no
+     bloco escuro, então o overlay pode referenciá-los sem hardcode de hex. */
+  --color-ink-locked-strong:       #121915;  /* = text-primary claro */
+  --color-ink-locked-soft:         #3f4f47;  /* = text-secondary claro */
+  --color-ink-locked-muted:        #55665c;  /* = text-muted claro */
+  --color-ink-locked-gray-600:     #55605a;  /* = gray-600 claro */
+  --color-ink-locked-gray-700:     #3c4541;  /* = gray-700 claro */
+  --color-ink-locked-gray-800:     #242a27;  /* = gray-800 claro */
+  --color-ink-locked-brand:        #0b5c42;
+  --color-ink-locked-brand-strong: #12694e;
+
   /* ── Borda ───────────────────────────────────────────────── */
   --color-border:       #dde5e1;
   --color-border-light: #eaf0ed;

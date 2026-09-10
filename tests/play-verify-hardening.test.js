@@ -20,7 +20,15 @@ const codigo = playBilling
   .replace(/\/\*[\s\S]*?\*\//g, '')
   .replace(/^\s*\/\/.*$/gm, '');
 const proguard = read('android/app/proguard-rules.pro');
-const plugins = JSON.parse(read('android/app/src/main/assets/capacitor.plugins.json'));
+// capacitor.plugins.json é GERADO por `cap sync` e está no .gitignore, então não
+// existe no CI (que roda só o build web). Carrega defensivo: com o manifesto
+// presente (dev após sync) cruzamos com o ProGuard; sem ele, as asserções que
+// dependem do manifesto são puladas — mas as regras do ProGuard, que são o
+// invariante de segurança, seguem verificadas sempre.
+let plugins = null;
+try {
+  plugins = JSON.parse(read('android/app/src/main/assets/capacitor.plugins.json'));
+} catch (e) { /* manifesto ausente (CI sem cap sync) */ }
 
 describe('Sandbox do Play exige opt-in (achado 03)', () => {
   test('a falta de service account não libera mais nada', () => {
@@ -76,21 +84,24 @@ describe('Nome do pacote fixado no servidor (achado 04)', () => {
 });
 
 describe('ProGuard guarda o pacote que existe de verdade (achado 05)', () => {
-  const classpathBiometria = (plugins.find(
-    (p) => p.pkg === '@capgo/capacitor-native-biometric',
-  ) || {}).classpath;
+  const temManifesto = Array.isArray(plugins);
+  const comManifesto = temManifesto ? test : test.skip;
+  const classpathBiometria = temManifesto
+    ? (plugins.find((p) => p.pkg === '@capgo/capacitor-native-biometric') || {}).classpath
+    : null;
 
-  test('o plugin de biometria está no build', () => {
+  test('o keep cobre o pacote real (ee.forgr) e a regra morta (io.capgo) saiu', () => {
+    // Invariante de segurança: depende só do ProGuard commitado, roda sempre.
+    expect(proguard).toContain('-keep class ee.forgr.** { *; }');
+    expect(proguard).not.toContain('-keep class io.capgo.**');
+  });
+
+  comManifesto('o plugin de biometria está no build', () => {
     expect(classpathBiometria).toBeTruthy();
   });
 
-  test('a regra de keep cobre o pacote real do plugin', () => {
+  comManifesto('o manifesto gerado confirma que o pacote real é ee.forgr', () => {
     const raiz = classpathBiometria.split('.').slice(0, 2).join('.');
     expect(raiz).toBe('ee.forgr');
-    expect(proguard).toContain('-keep class ee.forgr.** { *; }');
-  });
-
-  test('a regra morta apontando para um pacote inexistente saiu', () => {
-    expect(proguard).not.toContain('-keep class io.capgo.**');
   });
 });
