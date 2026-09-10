@@ -1660,6 +1660,30 @@
         ]
       }
     },
+    "/billing/{orgId}/resume": {
+      "post": {
+        "summary": "Reativar renovação (desfaz o cancelamento agendado)",
+        "tags": [
+          "Billing"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "orgId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
     "/billing/{orgId}/invoices": {
       "get": {
         "summary": "Faturas emitidas",
