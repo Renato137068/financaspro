@@ -597,25 +597,23 @@
 }
 
 /* ── Btn registrar ────────────────────────────────────────── */
+/* Sem sticky: no celular cobria o "Mais opções" e o painel expandido. */
 
 .btn-registrar {
-  margin-top: var(--space-4);
+  margin-top: var(--space-5);
   font-size: var(--font-size-base);
   padding: var(--space-4) var(--space-5);
-  margin-bottom: var(--space-2);
-  animation: slideUp var(--transition-normal);
+  margin-bottom: calc(var(--space-6) + env(safe-area-inset-bottom, 0px));
+  animation: none;
   box-shadow: var(--shadow-primary-sm);
-  position: sticky;
-  bottom: var(--nav-clearance, calc(92px + env(safe-area-inset-bottom, 0px)));
-  z-index: var(--z-raised);
+  /* Ganha de .btn-primario.loading { position:relative } e de sticky legado. */
+  position: static;
+  z-index: auto;
   width: 100%;
 }
 
-@media (max-height: 600px) {
-  .btn-registrar {
-    position: static;
-    margin-top: var(--space-4);
-  }
+button.btn-primario.btn-registrar {
+  position: static;
 }
 
 .btn-registrar:hover {
@@ -635,18 +633,13 @@
   flex-wrap: wrap;
 }
 
-@media (max-width: 400px) {
-  .quick-amounts {
-    gap: var(--space-1);
-  }
-  .quick-amount {
-    padding: 4px 10px;
-    font-size: var(--font-size-2xs);
-  }
-}
-
 .quick-amount {
-  padding: 5px 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap-target-min, 44px);
+  min-width: var(--tap-target-min, 44px);
+  padding: 8px 14px;
   border: 1.5px solid var(--color-border);
   border-radius: var(--radius-full);
   background: var(--color-bg-card);
@@ -659,6 +652,17 @@
   box-shadow: var(--shadow-xs);
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 400px) {
+  .quick-amounts {
+    gap: var(--space-1);
+  }
+  .quick-amount {
+    /* Continua ≥44px; só aperta tipografia/padding lateral. */
+    padding: 8px 10px;
+    font-size: var(--font-size-2xs);
+  }
 }
 
 .quick-amount:hover {

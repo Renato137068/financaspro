@@ -52,7 +52,6 @@ mustContain('js/billing.js', /getLifecycleAlert/, 'getLifecycleAlert');
 mustContain('js/billing.js', /stripe-portal/, 'client stripe-portal');
 mustContain('js/billing.js', /stripe-cancel/, 'client stripe-cancel');
 mustContain('js/billing.js', /org-invite/, 'client org-invite');
-mustContain('js/billing.js', /OCR_FREE_PER_MONTH:\s*5/, 'cota mensal de OCR');
 mustContain('js/billing.js', /WELCOME_TRIAL_DAYS:\s*14/, 'Pro de boas-vindas 14 dias');
 mustContain('js/billing.js', /janelaAnalitica/, 'janela de historico');
 mustContain('js/billing.js', /claimWelcomeTrial/, 'Pro de boas-vindas no cliente');

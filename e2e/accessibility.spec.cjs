@@ -30,8 +30,43 @@ test.beforeEach(async function({ page }) {
   await prepareOfflinePage(page);
 });
 
-test('a11y — aba Resumo', async function({ page }) {
-  await auditar(page, 'Resumo');
+test('a11y — aba Novo', async function({ page }) {
+  await page.evaluate(function() { mudarAba('novo'); });
+  await expect(page.locator('#aba-novo')).toHaveClass(/ativo/);
+  await auditar(page, 'Novo');
+});
+
+test('a11y — overlay de auth', async function({ page }) {
+  await page.evaluate(function() {
+    var ov = document.getElementById('auth-overlay');
+    if (ov) ov.style.display = '';
+    document.body.classList.add('auth-overlay-open');
+  });
+  await expect(page.locator('#auth-overlay')).toBeVisible();
+  await auditar(page, 'Auth overlay');
+  await page.evaluate(function() {
+    var ov = document.getElementById('auth-overlay');
+    if (ov) ov.style.display = 'none';
+    document.body.classList.remove('auth-overlay-open');
+  });
+});
+
+test.describe('a11y — paywall / billing (fonte 4322)', function() {
+  // INIT_BILLING no dist (4321) pode ficar no lazy bundle; na fonte o script
+  // clássico expõe o namespace — mesmo padrão de e2e/billing-smoke.spec.cjs.
+  test.use({ baseURL: 'http://127.0.0.1:4322' });
+
+  test('paywall sem violações serious/critical', async function({ page }) {
+    await page.waitForFunction(function() {
+      return typeof INIT_BILLING !== 'undefined'
+        && typeof INIT_BILLING.abrirPaywall === 'function';
+    }, { timeout: 30000 });
+    await page.evaluate(function() {
+      INIT_BILLING.abrirPaywall('A11y paywall');
+    });
+    await expect(page.locator('.billing-modal, .billing-overlay').first()).toBeVisible({ timeout: 10000 });
+    await auditar(page, 'Paywall');
+  });
 });
 
 test('a11y — aba Extrato', async function({ page }) {

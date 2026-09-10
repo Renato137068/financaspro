@@ -11,7 +11,7 @@
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
-  max-width: 500px;
+  max-width: var(--nav-max-phone, 500px);
   background: var(--color-bg-card);
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -141,9 +141,9 @@
   background: var(--color-success-light);
 }
 
-/* ── FAB "Novo" no mobile ─────────────────────────────────── */
+/* ── FAB "Novo" — celular e tablet portrait (bottom nav até 1023) ── */
 
-@media (max-width: 767px) {
+@media (max-width: 1023px) {
   .nav-btn[data-aba="novo"] {
     overflow: visible;
   }

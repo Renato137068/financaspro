@@ -41,9 +41,24 @@
 .toast.info,
 .toast.toast-info    { background: var(--color-primary-500); }
 
-/* Desktop: snackbar centrado na base — não cobre a coluna lateral do
-   dashboard (≥1280px). Combina translateX(-50%) com translateY da animação. */
-@media (min-width: 768px) {
+/* Tablet portrait (768–1023): ainda há bottom nav — centraliza o snackbar,
+   mas mantém a folga elevada do mobile. Baixar para 24px só quando a nav some. */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .toast {
+    left: 50%;
+    right: auto;
+    max-width: 380px;
+    transform: translateX(-50%) translateY(30px);
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* Desktop / sidebar (≥1024): snackbar baixo, centrado. */
+@media (min-width: 1024px) {
   .toast {
     left: 50%;
     right: auto;

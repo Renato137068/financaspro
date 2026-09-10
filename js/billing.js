@@ -196,11 +196,88 @@ var BILLING = {
       && SUPA_BILLING.isActive && SUPA_BILLING.isActive();
   },
 
+  _ENTITLEMENT_KEY: 'fp-entitlement-v1',
+  /** Snapshot offline só vale por este prazo; depois exige sync (anti-forge casual). */
+  _ENTITLEMENT_MAX_AGE_MS: 72 * 60 * 60 * 1000,
+  /** Online: se o snap for mais velho que isto, trata como FREE até sync. */
+  _ENTITLEMENT_ONLINE_GRACE_MS: 6 * 60 * 60 * 1000,
+
+  /**
+   * Snapshot local da assinatura verificada (sync/fetch). Usado offline para
+   * não cair no `config.plano` forjável por backup (RISK-02).
+   * Não é à prova de atacante local — só reduz spoof casual + TTL.
+   */
+  _persistEntitlement: function(sub) {
+    try {
+      if (!sub || !sub.plan || !sub.plan.tier || !this._activeStatus(sub.status, sub)) {
+        localStorage.removeItem(this._ENTITLEMENT_KEY);
+        return;
+      }
+      localStorage.setItem(this._ENTITLEMENT_KEY, JSON.stringify({
+        tier: sub.plan.tier,
+        status: sub.status,
+        billingInterval: sub.billingInterval || null,
+        currentPeriodEnd: sub.currentPeriodEnd || null,
+        trialEndsAt: sub.trialEndsAt || null,
+        cancelAtPeriodEnd: !!sub.cancelAtPeriodEnd,
+        /* Fingerprint leve: editar só o tier no DevTools sem o sid quebra o snap. */
+        sidHint: (typeof sub.stripeSubId === 'string' && sub.stripeSubId)
+          ? String(sub.stripeSubId).slice(0, 12)
+          : null,
+        v: 1,
+        savedAt: Date.now(),
+      }));
+    } catch (e) { /* privado / quota */ }
+  },
+
+  _readPersistedEntitlement: function() {
+    try {
+      var raw = localStorage.getItem(this._ENTITLEMENT_KEY);
+      if (!raw) return null;
+      var snap = JSON.parse(raw);
+      if (!snap || !snap.tier) return null;
+      var savedAt = Number(snap.savedAt) || 0;
+      if (!savedAt || (Date.now() - savedAt) > this._ENTITLEMENT_MAX_AGE_MS) {
+        localStorage.removeItem(this._ENTITLEMENT_KEY);
+        return null;
+      }
+      if (!this._activeStatus(snap.status, snap)) {
+        localStorage.removeItem(this._ENTITLEMENT_KEY);
+        return null;
+      }
+      return snap;
+    } catch (e) {
+      return null;
+    }
+  },
+
+  /** Intervalo da assinatura ativa: monthly | yearly | null. */
+  getBillingInterval: function() {
+    var sub = this._cache.subscription;
+    if (sub && sub.billingInterval) return sub.billingInterval;
+    var snap = this._readPersistedEntitlement();
+    return (snap && snap.billingInterval) || null;
+  },
+
   getTier: function() {
     if (this._cache.tier) return this._cache.tier;
     var sub = this._cache.subscription;
     if (sub && sub.plan && sub.plan.tier && this._activeStatus(sub.status, sub)) {
       return sub.plan.tier;
+    }
+    // Conta nuvem: só confia em entitlement verificado (memória ou snapshot).
+    // `config.plano` é espelho de UX e pode ser forjado por backup (RISK-02).
+    if (this.isCloudUser()) {
+      var snap = this._readPersistedEntitlement();
+      if (snap && snap.tier) {
+        var online = typeof navigator === 'undefined' || navigator.onLine !== false;
+        if (online) {
+          var age = Date.now() - (Number(snap.savedAt) || 0);
+          if (age > this._ENTITLEMENT_ONLINE_GRACE_MS) return 'FREE';
+        }
+        return snap.tier;
+      }
+      return 'FREE';
     }
     if (typeof DADOS !== 'undefined' && DADOS.getConfig) {
       return this.tierFromPlano(DADOS.getConfig().plano);
@@ -226,6 +303,15 @@ var BILLING = {
         if (!isNaN(tAtivo) && tAtivo < Date.now()) return false;
       }
       return true;
+    }
+    // PAST_DUE: Stripe ainda tenta cobrar; mantém Pro só enquanto o período
+    // já pago não acabou. Sem currentPeriodEnd, não inventa acesso.
+    if (status === 'PAST_DUE') {
+      var fimDue = sub && sub.currentPeriodEnd;
+      if (!fimDue) return false;
+      var tDue = new Date(fimDue).getTime();
+      if (isNaN(tDue)) return false;
+      return tDue >= Date.now();
     }
     if (status !== 'TRIALING') return false;
     var fim = sub && sub.trialEndsAt;
@@ -271,22 +357,14 @@ var BILLING = {
     }
   },
 
-  /** Quantos OCRs ainda cabem neste mes. Infinity no PRO+. */
+  /** Quantos OCRs ainda cabem neste mes. OCR removido do produto — sempre ilimitado/noop. */
   ocrRemaining: function() {
-    var cap = this.getLimits().ocrPerMonth;
-    if (cap === Infinity) return Infinity;
-    return Math.max(0, cap - this._getOcrUses());
+    return Infinity;
   },
 
-  /** Consome 1 OCR da cota do mes. No-op para PRO+. */
+  /** Consome 1 OCR da cota do mes. No-op: OCR desativado. */
   consumeOcrUse: function() {
-    if (this.getLimits().ocrPerMonth === Infinity) return;
-    try {
-      localStorage.setItem(this._OCR_USES_KEY, JSON.stringify({
-        mes: this._competenciaAtual(),
-        usos: this._getOcrUses() + 1,
-      }));
-    } catch (e) { /* modo privado */ }
+    return;
   },
 
   /**
@@ -626,12 +704,16 @@ var BILLING = {
         self._cache.subscription = sub;
         if (sub && sub.plan && sub.plan.tier && self._activeStatus(sub.status, sub)) {
           self._cache.tier = sub.plan.tier;
+        } else {
+          self._cache.tier = 'FREE';
         }
+        self._persistEntitlement(sub);
         return sub;
       }).catch(function(err) {
         if (err && err.status === 404) {
           self._cache.subscription = null;
           self._cache.tier = 'FREE';
+          self._persistEntitlement(null);
           return null;
         }
         throw err;
@@ -643,12 +725,16 @@ var BILLING = {
       self._cache.subscription = sub;
       if (sub && sub.plan && sub.plan.tier && self._activeStatus(sub.status, sub)) {
         self._cache.tier = sub.plan.tier;
+      } else {
+        self._cache.tier = 'FREE';
       }
+      self._persistEntitlement(sub);
       return sub;
     }).catch(function(err) {
       if (err && err.status === 404) {
         self._cache.subscription = null;
         self._cache.tier = 'FREE';
+        self._persistEntitlement(null);
         return null;
       }
       throw err;
@@ -669,6 +755,22 @@ var BILLING = {
     sub = sub || this._cache.subscription;
     return !!(sub && typeof sub.stripeSubId === 'string'
       && sub.stripeSubId.indexOf('welcome:') === 0);
+  },
+
+  /** Assinatura gerenciada pelo Google Play (chave play:<token>). */
+  isPlayManaged: function(sub) {
+    sub = sub || this._cache.subscription;
+    return !!(sub && typeof sub.stripeSubId === 'string'
+      && sub.stripeSubId.indexOf('play:') === 0);
+  },
+
+  _PLAY_SUBSCRIPTIONS_URL:
+    'https://play.google.com/store/account/subscriptions?package=com.financaspro.mobile',
+
+  _openPlaySubscriptions: function() {
+    var url = this._PLAY_SUBSCRIPTIONS_URL;
+    if (typeof window !== 'undefined' && window.open) window.open(url, '_blank');
+    return url;
   },
 
   /**
@@ -718,12 +820,13 @@ var BILLING = {
     var self = this;
     if (!this.isCloudUser()) return Promise.resolve(null);
     return this.fetchSubscription().then(function(sub) {
+      var plano = 'free';
       if (sub && sub.plan && sub.plan.tier && self._activeStatus(sub.status, sub)) {
-        var plano = self.planoFromTier(sub.plan.tier);
-        if (typeof DADOS !== 'undefined' && DADOS.getConfig && DADOS.salvarConfig) {
-          var atual = DADOS.getConfig().plano;
-          if (atual !== plano) DADOS.salvarConfig({ plano: plano });
-        }
+        plano = self.planoFromTier(sub.plan.tier);
+      }
+      if (typeof DADOS !== 'undefined' && DADOS.getConfig && DADOS.salvarConfig) {
+        var atual = DADOS.getConfig().plano;
+        if (atual !== plano) DADOS.salvarConfig({ plano: plano });
       }
       if (typeof INIT_CONFIG !== 'undefined' && INIT_CONFIG.refreshPerfil) {
         INIT_CONFIG.refreshPerfil();
@@ -807,9 +910,10 @@ var BILLING = {
 
   cancelSubscription: function() {
     var self = this;
-    if (typeof PLAY_BILLING !== 'undefined' && PLAY_BILLING.isAvailable()) {
-      var url = 'https://play.google.com/store/account/subscriptions?package=com.financaspro.mobile';
-      if (typeof window !== 'undefined' && window.open) window.open(url, '_blank');
+    // Roteia pela FONTE do entitlement — não por “é Capacitor”.
+    // No Android com trial welcome:/Stripe, abrir a Play Store era um beco sem saída.
+    if (this.isPlayManaged()) {
+      this._openPlaySubscriptions();
       return Promise.resolve(self._cache.subscription);
     }
     if (this._useSupabaseBilling()) {
@@ -831,10 +935,35 @@ var BILLING = {
     });
   },
 
+  /** Desfaz cancel_at_period_end (Stripe). No Play, o usuário reativa na loja. */
+  resumeSubscription: function() {
+    var self = this;
+    if (this.isPlayManaged()) {
+      this._openPlaySubscriptions();
+      return Promise.resolve(self._cache.subscription);
+    }
+    if (this._useSupabaseBilling()) {
+      return this.ensureOrg().then(function(orgId) {
+        return SUPA_BILLING.invoke('stripe-resume', { orgId: orgId });
+      }).then(function(sub) {
+        self._cache.subscription = sub;
+        return self.sync().then(function() { return sub; });
+      });
+    }
+    return this.ensureOrg().then(function(orgId) {
+      return DADOS._apiFetch('/api/v1/billing/' + encodeURIComponent(orgId) + '/resume', {
+        method: 'POST',
+        body: '{}',
+      });
+    }).then(function(sub) {
+      self._cache.subscription = sub;
+      return sub;
+    });
+  },
+
   openPortal: function() {
-    if (typeof PLAY_BILLING !== 'undefined' && PLAY_BILLING.isAvailable()) {
-      var playUrl = 'https://play.google.com/store/account/subscriptions?package=com.financaspro.mobile';
-      if (typeof window !== 'undefined' && window.open) window.open(playUrl, '_blank');
+    if (this.isPlayManaged()) {
+      this._openPlaySubscriptions();
       return Promise.resolve(this._cache.subscription);
     }
     var returnUrl = window.location.href.split('#')[0];
@@ -900,10 +1029,13 @@ var BILLING = {
     if (!sub || !this.isCloudUser()) return null;
 
     if (sub.status === 'PAST_DUE') {
+      var aindaNoPeriodo = this._activeStatus('PAST_DUE', sub);
       return {
         severity: 'warn',
         title: 'Pagamento pendente',
-        message: 'Atualize o método de pagamento para manter o Pro ativo.',
+        message: aindaNoPeriodo
+          ? 'Atualize o método de pagamento. O Pro continua até o fim do período já pago.'
+          : 'Atualize o método de pagamento para reativar o Pro.',
         cta: 'portal',
         ctaLabel: 'Atualizar pagamento',
       };
@@ -1105,11 +1237,18 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     tierFromPlano: BILLING.tierFromPlano.bind(BILLING),
     planoFromTier: BILLING.planoFromTier.bind(BILLING),
+    getTier: BILLING.getTier.bind(BILLING),
+    getBillingInterval: BILLING.getBillingInterval.bind(BILLING),
+    _persistEntitlement: BILLING._persistEntitlement.bind(BILLING),
+    _readPersistedEntitlement: BILLING._readPersistedEntitlement.bind(BILLING),
+    _ENTITLEMENT_KEY: BILLING._ENTITLEMENT_KEY,
     PLAN_LIMITS: BILLING.PLAN_LIMITS,
     TRIAL_DAYS: BILLING.TRIAL_DAYS,
     WELCOME_TRIAL_DAYS: BILLING.WELCOME_TRIAL_DAYS,
     OCR_FREE_PER_MONTH: BILLING.OCR_FREE_PER_MONTH,
     STATIC_PLANS: BILLING.STATIC_PLANS,
+    isWelcomeTrial: BILLING.isWelcomeTrial.bind(BILLING),
+    isPlayManaged: BILLING.isPlayManaged.bind(BILLING),
     _useSupabaseBilling: function() {
       return BILLING._useSupabaseBilling();
     },
@@ -1192,5 +1331,6 @@ if (typeof module !== 'undefined' && module.exports) {
       var required = BILLING.TIER_ORDER[minTier] || 0;
       return current >= required;
     },
+    BILLING: BILLING,
   };
 }

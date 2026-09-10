@@ -36,8 +36,9 @@ const LAZY_CHUNKS = {
   previsao: ['js/previsao.js'],
   relatorios: ['js/relatorios.js', 'js/modules/init-relatorios.js'],
 
-  // OCR + anexos só ao registrar comprovante (~80 KB fora do 1º acesso).
-  ocr: ['js/ocr.js', 'js/anexos.js', 'js/modules/init-anexos.js'],
+  // Anexos de comprovante só ao abrir Novo (~anexos fora do 1º acesso).
+  // OCR foi removido do produto; o chunk mantém só anexos manuais.
+  anexos: ['js/anexos.js', 'js/modules/init-anexos.js'],
 
   // Sub-abas de Orçamento — carregadas ao abrir Metas, Gastos fixos ou Patrimônio.
   metas: ['js/metas.js', 'js/modules/init-metas.js'],

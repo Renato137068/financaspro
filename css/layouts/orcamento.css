@@ -1869,11 +1869,17 @@
 
 .orc-subnav {
   position: sticky;
-  top: 0;
+  top: var(--app-header-offset, 58px);
   z-index: var(--z-sticky);
   margin: 0 0 var(--space-4);
   padding: var(--space-2) 0;
   background: var(--color-bg-page);
+}
+
+@media (min-width: 1024px) {
+  .orc-subnav {
+    top: 0;
+  }
 }
 
 .orc-tablist {

@@ -10,23 +10,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="FinançasPro">
   <meta name="format-detection" content="telephone=no">
-  <!-- CSP — por que o jsDelivr aparece com CAMINHO e não só com host:
-       `https://cdn.jsdelivr.net` sozinho libera QUALQUER pacote do npm, o que
-       transforma a única dependência de CDN do app (tesseract.js, carregado sob
-       demanda por js/ocr.js) numa porta aberta para código arbitrário de
-       terceiros. Restringir ao prefixo do pacote mantém o OCR funcionando e
-       fecha o resto. `tesseract.js-core` entra porque o worker e o wasm vêm
-       desse pacote irmão.
-
-       Próximo passo (exige testar o OCR numa máquina com acesso ao CDN): fixar
-       a versão exata e adicionar SRI ao <script> em js/ocr.js. Para a versão
-       que `@5` resolve hoje, 5.1.1, o hash é
-         sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR/D3A991F
-       (calculado a partir do tarball publicado no npm, que é exatamente o que
-       o jsDelivr serve em /npm/tesseract.js@5.1.1/dist/tesseract.min.js). -->
-  <!-- CSP: path @5/ NÃO casa com @5.1.1/ (prefixo literal). Versão pinada +
-       worker-src blob: + wasm-unsafe-eval são obrigatórios para o Tesseract.js. -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/ https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1/ https://cdn.belvo.com; worker-src 'self' blob: 'wasm-unsafe-eval' https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/ https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1/; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; connect-src 'self' http://localhost:4000 http://127.0.0.1:4000 https://cdn.jsdelivr.net https://api.belvo.com https://sandbox.belvo.com https://widget.belvo.io https://nubvlksibmpryltkfpei.supabase.co wss://nubvlksibmpryltkfpei.supabase.co; frame-src https://widget.belvo.io; object-src 'none'; base-uri 'self'; form-action 'self';">
+  <!-- CSP: Belvo widget (Open Finance). OCR/Tesseract removidos do produto. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.belvo.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; connect-src 'self' http://localhost:4000 http://127.0.0.1:4000 https://api.belvo.com https://sandbox.belvo.com https://widget.belvo.io https://nubvlksibmpryltkfpei.supabase.co wss://nubvlksibmpryltkfpei.supabase.co; frame-src https://widget.belvo.io; object-src 'none'; base-uri 'self'; form-action 'self';">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
   <link rel="icon" href="icons/logo.svg" type="image/svg+xml">
@@ -195,9 +180,6 @@
   </div>
 </div>
 
-<!-- SKIP LINK (a11y) -->
-<a href="#main-content" class="skip-link">Ir para o conteúdo principal</a>
-
 <!-- HEADER -->
 <header>
   <h1><img src="icons/logo-simbolo.svg" alt="" class="brand-mark" width="26" height="26"> FinançasPro</h1>
@@ -324,7 +306,7 @@
       <div id="resumo-list"></div>
     </section>
 
-    <button class="btn-primario" data-action="mudar-aba" data-aba="novo" style="margin-top:16px;">
+    <button class="btn-primario" data-action="mudar-aba" data-aba="novo">
       <i data-lucide="plus" aria-hidden="true"></i> Registrar Transação
     </button>
 
@@ -561,7 +543,7 @@
       <div id="extras-panel" class="extras-panel" style="display:none">
 
         <!-- Banco e Cartão -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="extras-banco-pagamento">
           <div class="form-group">
             <label for="novo-banco"><i data-lucide="building"></i> Banco</label>
             <select id="novo-banco" class="form-select">
@@ -574,13 +556,12 @@
             </select>
           </div>
           <div class="form-group">
-            <label for="novo-cartao"><i data-lucide="credit-card"></i> Cartão</label>
+            <label for="novo-cartao"><i data-lucide="wallet"></i> Pagamento</label>
             <select id="novo-cartao" class="form-select">
-              <option value="">Sem cartão</option>
+              <option value="">Sem forma</option>
+              <option value="PIX">PIX</option>
               <option value="Crédito">Crédito</option>
               <option value="Débito">Débito</option>
-              <option value="XP">XP Investimentos</option>
-              <option value="B3">B3</option>
               <option value="Outro">Outro</option>
             </select>
           </div>
@@ -767,7 +748,7 @@
         <button type="button" class="filtro-chip filtro-chip--avancados" id="btn-filtros-avancados"
           data-action="toggle-filtros-avancados"
           aria-expanded="false" aria-controls="extrato-filtros-avancados">
-          <i data-lucide="sliders-horizontal" aria-hidden="true"></i> Mais filtros
+          <i data-lucide="sliders-horizontal" aria-hidden="true"></i> Filtro
           <span class="filtro-avancados-count" id="filtro-avancados-count" hidden>0</span>
         </button>
       </div>
@@ -1898,7 +1879,6 @@
 <script defer src="js/ai-engine.js"></script>
 <script defer src="js/previsao.js"></script>
 <script defer src="js/alertas.js"></script>
-<script defer src="js/ocr.js"></script>
 <script defer src="js/insights.js"></script>
 <!-- Auth e configuração -->
 <script defer src="js/config-user.js"></script>

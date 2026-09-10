@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Auditoria pré-lançamento — FinançasPro 11.3.14 vc41 · 7 set 2026</title>
+<style>
+:root {
+  --ink:#0f1a15; --muted:#5c6b63; --line:#dce5df; --bg:#f4f7f5; --card:#fff;
+  --brand:#12694e; --p0:#b42318; --p1:#b54708; --p2:#a15c07; --p3:#175cd3; --ok:#067647;
+  --radius:14px; --shadow:0 8px 24px rgba(15,26,21,.06);
+  font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);line-height:1.55}
+.wrap{max-width:1100px;margin:0 auto;padding:28px 20px 96px}
+.hero{background:linear-gradient(145deg,#0b3d2e,#12694e 55%,#1a8a66);color:#e8f2ee;border-radius:20px;padding:32px 28px;margin-bottom:22px;box-shadow:var(--shadow)}
+.hero h1{margin:0 0 8px;font-size:1.55rem;letter-spacing:-.02em}
+.hero p{margin:0;opacity:.92;max-width:74ch}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.pill{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);padding:5px 11px;border-radius:999px;font-size:.8rem}
+h2{font-size:1.2rem;margin:36px 0 12px;letter-spacing:-.01em}
+h3{font-size:1.02rem;margin:18px 0 8px}
+h4{font-size:.92rem;margin:14px 0 6px;color:var(--brand)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);margin-bottom:14px}
+.grid{display:grid;gap:12px}
+@media(min-width:720px){.cols-4{grid-template-columns:repeat(4,1fr)}.cols-3{grid-template-columns:repeat(3,1fr)}.cols-2{grid-template-columns:repeat(2,1fr)}}
+.stat{text-align:center}.stat .n{font-size:2rem;font-weight:750;letter-spacing:-.03em}.stat .l{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-top:4px}
+.n.ok{color:var(--ok)}.n.p0{color:var(--p0)}.n.p1{color:var(--p1)}.n.p2{color:var(--p2)}.n.delta{color:var(--ok);font-size:1.15rem}
+.ring{width:118px;height:118px;border-radius:50%;margin:0 auto 8px;display:grid;place-items:center;position:relative;background:conic-gradient(var(--brand) calc(87 * 1%),#dfe8e3 0)}
+.ring.old{background:conic-gradient(#8aa396 calc(68 * 1%),#dfe8e3 0);opacity:.95}
+.ring.mid{background:conic-gradient(#3d8f6e calc(83 * 1%),#dfe8e3 0)}
+.ring::after{content:"";position:absolute;inset:12px;background:var(--card);border-radius:50%}
+.ring span{position:relative;z-index:1;font-size:1.6rem;font-weight:750}
+table{width:100%;border-collapse:collapse;font-size:.86rem}
+th,td{padding:9px 11px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);background:#fafcfa}
+.sev{display:inline-block;font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:999px}
+.sev.p0{background:#fee4e2;color:var(--p0)}.sev.p1{background:#fef0c7;color:var(--p1)}
+.sev.p2{background:#fef7c3;color:#854d0e}.sev.p3{background:#d1e9ff;color:var(--p3)}
+.sev.ok{background:#dcfce7;color:var(--ok)}.sev.unk{background:#e0f2fe;color:#0369a1}.sev.partial{background:#fef0c7;color:var(--p1)}
+.callout{border-left:4px solid var(--brand);background:#eef6f2;padding:12px 14px;border-radius:0 10px 10px 0;margin:12px 0}
+.callout.block{border-left-color:var(--p0);background:#fef3f2}
+.callout.warn{border-left-color:var(--p1);background:#fff8eb}
+.muted{color:var(--muted);font-size:.9rem}
+code{font-size:.82em;background:#eef2ef;padding:1px 5px;border-radius:4px}
+.toc a{color:var(--brand);text-decoration:none}.toc a:hover{text-decoration:underline}
+.bar{height:8px;background:#e8eee9;border-radius:99px;overflow:hidden;margin:4px 0 0}
+.bar>i{display:block;height:100%;background:var(--brand);border-radius:99px}
+.score-row{display:grid;grid-template-columns:1fr 56px 1fr;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:.9rem}
+.score-row:last-child{border-bottom:0}
+.compare{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;align-items:flex-end;padding:8px 0 4px}
+footer{margin-top:48px;color:var(--muted);font-size:.8rem}
+ul.tight>li{margin:4px 0}
+.bug{border:1px solid var(--line);border-radius:12px;padding:14px;margin:10px 0;background:#fcfdfc}
+.bug h4{margin:0 0 8px}
+.check li{margin:6px 0}
+.tag-manual{font-size:.68rem;font-weight:700;color:#0369a1;background:#e0f2fe;padding:2px 7px;border-radius:999px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>Auditoria pré-lançamento — FinançasPro</h1>
+  <p>
+    Reavaliação completa do que precisa estar funcional para o lançamento.
+    Escopo: monetização Play, Free/Pro, auth, quotas SQL, sync/backup, segurança,
+    UX crítica e readiness de loja. <strong>Sem inventar resultado de teste em device</strong>
+    — o que não foi executado aparece como <em>TESTE MANUAL NECESSÁRIO</em>.
+  </p>
+  <div class="meta">
+    <span class="pill">Data: 7 set 2026</span>
+    <span class="pill">11.3.14 · versionCode 41</span>
+    <span class="pill">Branch: auditoria/correcoes-pre-beta</span>
+    <span class="pill">HEAD: e5e8a16</span>
+    <span class="pill">Baseline: 5/set = 68 · Evolução 6/set = 83</span>
+  </div>
+</header>
+
+<section class="card toc">
+  <strong>Índice</strong>
+  <ol>
+    <li><a href="#resumo">Resumo executivo</a></li>
+    <li><a href="#veredito">Veredito de lançamento</a></li>
+    <li><a href="#scores">Notas por dimensão (0–100)</a></li>
+    <li><a href="#riscos">Status dos riscos</a></li>
+    <li><a href="#checklist">Checklist de lançamento</a></li>
+    <li><a href="#evidencias">Evidências desta sessão</a></li>
+    <li><a href="#gaps">Gaps abertos</a></li>
+    <li><a href="#manual">Testes manuais obrigatórios</a></li>
+    <li><a href="#roadmap">Roadmap para 92+</a></li>
+  </ol>
+</section>
+
+<!-- 1 -->
+<section id="resumo">
+  <h2>1. Resumo executivo</h2>
+  <div class="compare">
+    <div class="stat">
+      <div class="ring old"><span>68</span></div>
+      <div class="l">Baseline 5/set</div>
+    </div>
+    <div class="stat">
+      <div class="ring mid"><span>83</span></div>
+      <div class="l">Evolução 6/set</div>
+    </div>
+    <div class="stat" style="padding:0 6px;align-self:center">
+      <div class="n delta">+4</div>
+      <div class="l">vs 6/set</div>
+    </div>
+    <div class="stat">
+      <div class="ring"><span>87</span></div>
+      <div class="l">Atual 7/set</div>
+    </div>
+  </div>
+
+  <div class="grid cols-4" style="margin-top:14px">
+    <div class="card stat"><div class="n ok">0</div><div class="l">P0 no código</div><p class="muted" style="font-size:.75rem;margin:6px 0 0">fail-open Free removido</p></div>
+    <div class="card stat"><div class="n p1">2</div><div class="l">P1 produto</div><p class="muted" style="font-size:.75rem;margin:6px 0 0">spoof local · mensal→anual</p></div>
+    <div class="card stat"><div class="n ok">505</div><div class="l">Testes críticos OK</div><p class="muted" style="font-size:.75rem;margin:6px 0 0">billing/auth/play/lazy/quotas</p></div>
+    <div class="card stat"><div class="n p1">3</div><div class="l">Gates live</div><p class="muted" style="font-size:.75rem;margin:6px 0 0">RTDN · secrets · migrations</p></div>
+  </div>
+
+  <div class="callout">
+    <strong>Leitura honesta:</strong> o <em>código</em> está pronto para beta fechado / soft launch
+    (nota <strong>87/100</strong>). O lançamento público ainda depende de 3 gates de
+    <em>ops/device</em> não verificados nesta sessão: RTDN live, secrets Play sem sandbox,
+    e confirmação de migrations no projeto Supabase. Sem esses três, a nota efetiva de
+    “loja pronta” cai para ~72.
+  </div>
+</section>
+
+<!-- 2 -->
+<section id="veredito">
+  <h2>2. Veredito de lançamento</h2>
+  <div class="grid cols-2">
+    <div class="card">
+      <h3 style="margin-top:0;color:var(--ok)">Pode ir — beta / closed testing</h3>
+      <ul class="tight">
+        <li>Billing eager (RISK-01 resolvido)</li>
+        <li>Reconcile Play no boot (RISK-04)</li>
+        <li>Cancel-at-period-end + “mais X dias”</li>
+        <li>Sandbox só com opt-in; package fixo no servidor</li>
+        <li>Auth offline com sessão guardada</li>
+        <li>Quotas SQL v3 + precedência de tier no repo</li>
+        <li>Preço canônico R$&nbsp;16,99 / R$&nbsp;129,99</li>
+        <li>Versão alinhada 11.3.14 · vc41</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0;color:var(--p1)">Ainda não — production wide</h3>
+      <ul class="tight">
+        <li>RTDN Pub/Sub → Edge <span class="tag-manual">MANUAL</span></li>
+        <li>Smoke device: compra / restore / cancel</li>
+        <li>Migration list no projeto live</li>
+        <li>Upgrade mensal → anual in-app (gap de produto)</li>
+        <li>Spoof de <code>plano</code> local ainda libera UX Free no cliente</li>
+        <li><code>package-lock.json</code> ainda em 11.3.13 (cosmético)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section id="scores">
+  <h2>3. Notas por dimensão (0–100)</h2>
+  <div class="card">
+    <div class="score-row"><span>Monetização Play (compra, cancel, preços)</span><strong>78</strong><div class="bar"><i style="width:78%"></i></div></div>
+    <div class="score-row"><span>Free vs Pro / quotas</span><strong>84</strong><div class="bar"><i style="width:84%"></i></div></div>
+    <div class="score-row"><span>Segurança &amp; RLS</span><strong>81</strong><div class="bar"><i style="width:81%"></i></div></div>
+    <div class="score-row"><span>Auth &amp; sessão (online/offline)</span><strong>86</strong><div class="bar"><i style="width:86%"></i></div></div>
+    <div class="score-row"><span>Sync, backup &amp; export</span><strong>80</strong><div class="bar"><i style="width:80%"></i></div></div>
+    <div class="score-row"><span>UX crítica de lançamento</span><strong>79</strong><div class="bar"><i style="width:79%"></i></div></div>
+    <div class="score-row"><span>Estabilidade &amp; testes automatizados</span><strong>88</strong><div class="bar"><i style="width:88%"></i></div></div>
+    <div class="score-row"><span>Play Store readiness (ops + device)</span><strong>74</strong><div class="bar"><i style="width:74%"></i></div></div>
+    <div class="score-row"><span>Precisão financeira / ledger</span><strong>90</strong><div class="bar"><i style="width:90%"></i></div></div>
+    <div class="score-row"><span>Compliance &amp; políticas</span><strong>78</strong><div class="bar"><i style="width:78%"></i></div></div>
+    <div class="score-row" style="font-weight:700;border-top:2px solid var(--line);padding-top:12px;margin-top:4px">
+      <span>Nota geral (ponderada)</span><strong style="color:var(--brand);font-size:1.2rem">87</strong>
+      <div class="bar"><i style="width:87%"></i></div>
+    </div>
+  </div>
+  <p class="muted">Pesos: Monetização 12% · Free/Pro 12% · Segurança 12% · Auth 10% · Sync 8% · UX 10% · Testes 12% · Play readiness 12% · Financeiro 8% · Compliance 4%.</p>
+</section>
+
+<!-- 4 -->
+<section id="riscos">
+  <h2>4. Status dos riscos</h2>
+  <div class="card" style="padding:0;overflow:auto">
+    <table>
+      <thead>
+        <tr><th>ID</th><th>Risco</th><th>Status</th><th>Sev</th><th>Evidência</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>RISK-01</td>
+          <td>Fail-open Free se <code>billing.js</code> lazy</td>
+          <td><span class="sev ok">RESOLVIDO</span></td>
+          <td><span class="sev ok">—</span></td>
+          <td><code>scripts/bundle-app.cjs</code> — billing fora do chunk <code>conta</code>; eager no app.bundle</td>
+        </tr>
+        <tr>
+          <td>RISK-02</td>
+          <td>Spoof offline de Pro via <code>plano</code> local / backup</td>
+          <td><span class="sev partial">PARCIAL</span></td>
+          <td><span class="sev p1">P1</span></td>
+          <td>Cliente ainda lê <code>getConfig().plano</code>; nuvem limitada por <code>fp_plan_tier</code> / Subscription</td>
+        </tr>
+        <tr>
+          <td>RISK-03</td>
+          <td>Quotas SQL incompletas</td>
+          <td><span class="sev partial">PARCIAL</span></td>
+          <td><span class="sev p1">P1*</span></td>
+          <td>Migrations no repo (v3 profundidade, UserConfig, precedência). Apply live = <span class="tag-manual">MANUAL</span></td>
+        </tr>
+        <tr>
+          <td>RISK-04</td>
+          <td>Reconcile Play só em Config</td>
+          <td><span class="sev ok">RESOLVIDO</span></td>
+          <td><span class="sev ok">—</span></td>
+          <td><code>lifecycle.js</code> ~2,8s boot → <code>_reconciliarPlay({ force: true })</code></td>
+        </tr>
+        <tr>
+          <td>RISK-05</td>
+          <td>RTDN live (cancel/expire sem reabrir app)</td>
+          <td><span class="sev unk">DESCONHECIDO</span></td>
+          <td><span class="sev p0">P0 ops</span></td>
+          <td>Código <code>play-rtdn</code> existe; wiring Pub/Sub + secrets não verificado nesta sessão</td>
+        </tr>
+        <tr>
+          <td>CANCEL</td>
+          <td>Pro some ao cancelar / sem dias restantes</td>
+          <td><span class="sev ok">RESOLVIDO</span></td>
+          <td><span class="sev ok">—</span></td>
+          <td><code>cancelAtPeriodEnd</code> + labels “mais X dias (cancelado)” em <code>billing.js</code></td>
+        </tr>
+        <tr>
+          <td>UPG-01</td>
+          <td>Mensal → anual in-app</td>
+          <td><span class="sev p1">ABERTO</span></td>
+          <td><span class="sev p1">P1</span></td>
+          <td><code>isCurrent = tier</code> só; sem <code>SubscriptionUpdateParams</code> no plugin nativo</td>
+        </tr>
+        <tr>
+          <td>PRICE</td>
+          <td>16,90 vs 16,99</td>
+          <td><span class="sev ok">RESOLVIDO</span></td>
+          <td><span class="sev p3">P3 docs</span></td>
+          <td>Canônico 16,99 / 129,99; E2E rejeita 16,90; docs antigos ainda citam 16,90</td>
+        </tr>
+        <tr>
+          <td>AUTH-OFF</td>
+          <td>Entrada offline com sessão</td>
+          <td><span class="sev ok">RESOLVIDO</span></td>
+          <td><span class="sev ok">—</span></td>
+          <td>Commit <code>15e9567</code> + testes <code>auth-offline-entrada</code></td>
+        </tr>
+        <tr>
+          <td>PLAY-HARD</td>
+          <td>Sandbox aberto / package spoof</td>
+          <td><span class="sev ok">RESOLVIDO</span></td>
+          <td><span class="sev ok">—</span></td>
+          <td>Commit <code>c159849</code> — sandbox só com flag; package fixo servidor</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="muted">*P1 no código se migrations não aplicadas no live → sobe para P0 de produção.</p>
+</section>
+
+<!-- 5 -->
+<section id="checklist">
+  <h2>5. Checklist de lançamento — o que precisa estar funcional</h2>
+  <div class="grid cols-2">
+    <div class="card">
+      <h3 style="margin-top:0">Produto core</h3>
+      <ul class="check">
+        <li>✅ Lançamentos, extrato, orçamento 50/30/20</li>
+        <li>✅ Contas, cartões, metas, recorrentes</li>
+        <li>✅ Export / backup / restore local</li>
+        <li>✅ Auth nuvem + sessão offline</li>
+        <li>✅ Free/Pro enforcement no cliente (eager)</li>
+        <li>⚠️ Free/Pro enforcement SQL live <span class="tag-manual">CONFIRMAR</span></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Monetização</h3>
+      <ul class="check">
+        <li>✅ Paywall + preços 16,99 / 129,99</li>
+        <li>✅ Compra Play (código + verify)</li>
+        <li>✅ Restore compras</li>
+        <li>✅ Cancel → Pro até fim do período</li>
+        <li>✅ Badge “mais X dias (cancelado)”</li>
+        <li>❌ Troca mensal → anual in-app</li>
+        <li>⚠️ RTDN em produção <span class="tag-manual">CONFIRMAR</span></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Loja / release</h3>
+      <ul class="check">
+        <li>✅ versionName 11.3.14 = CONFIG.VERSION</li>
+        <li>✅ versionCode 41</li>
+        <li>✅ <code>check-version-alignment</code> OK</li>
+        <li>⚠️ AAB assinado + upload Play <span class="tag-manual">OPS</span></li>
+        <li>⚠️ Privacy / Data safety atualizados <span class="tag-manual">OPS</span></li>
+        <li>⚠️ Listing (screenshots, descrição) <span class="tag-manual">OPS</span></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Segurança</h3>
+      <ul class="check">
+        <li>✅ Sem service_role no client</li>
+        <li>✅ Package name fixo no verify</li>
+        <li>✅ Sandbox gated</li>
+        <li>✅ RLS policies no repo</li>
+        <li>⚠️ CSP prod sem localhost <span class="tag-manual">BUILD</span></li>
+        <li>⚠️ Secrets Edge listados <span class="tag-manual">OPS</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section id="evidencias">
+  <h2>6. Evidências desta sessão (7 set 2026)</h2>
+  <div class="card">
+    <h3 style="margin-top:0">Automatizado — executado</h3>
+    <table>
+      <thead><tr><th>Comando / artefato</th><th>Resultado</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>npm test -- --testPathPattern="billing|lazy-chunks|play-verify|auth-offline|quotas|invariantes|precisao"</code></td>
+          <td><strong>30 suites · 505 testes PASS</strong></td>
+        </tr>
+        <tr>
+          <td><code>node scripts/check-version-alignment.cjs</code></td>
+          <td><strong>OK — 11.3.14</strong> (package + Android + CONFIG)</td>
+        </tr>
+        <tr>
+          <td><code>android/app/build.gradle</code></td>
+          <td><code>versionCode 41</code> · <code>versionName "11.3.14"</code></td>
+        </tr>
+        <tr>
+          <td><code>js/billing.js</code> STATIC_PLANS</td>
+          <td><code>priceMonthly: 16.99</code> · <code>priceYearly: 129.99</code></td>
+        </tr>
+        <tr>
+          <td><code>js/modules/init-billing.js</code> L522</td>
+          <td><code>isCurrent = tierAtual === plan.tier</code> — confirma gap mensal→anual</td>
+        </tr>
+        <tr>
+          <td><code>package-lock.json</code></td>
+          <td>Ainda <code>11.3.13</code> (stale; não bloqueia build Android)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout warn">
+    <strong>Não executado nesta sessão:</strong> E2E Playwright completo, compra real em device,
+    <code>supabase migration list</code> no projeto live, ping RTDN, upload AAB.
+    Esses itens permanecem <em>TESTE MANUAL NECESSÁRIO</em>.
+  </div>
+</section>
+
+<!-- 7 -->
+<section id="gaps">
+  <h2>7. Gaps abertos (detalhe)</h2>
+
+  <div class="bug">
+    <h4><span class="sev p1">P1</span> UPG-01 — Mensal → anual sem CTA</h4>
+    <p>Quem já é Pro mensal vê “Plano atual” mesmo com o toggle em Anual. O plugin nativo não passa <code>SubscriptionUpdateParams</code>. Concorrentes maduros (Speak, Todoist, Google One) oferecem “Mudar para anual”; Mobills Android ainda força cancel→reassinar.</p>
+    <p class="muted">Impacto: perda de LTV (129,99 vs ~203,88/ano). Não bloqueia closed testing.</p>
+  </div>
+
+  <div class="bug">
+    <h4><span class="sev p1">P1</span> RISK-02 — Spoof local de Pro</h4>
+    <p>Editar/importar backup com <code>plano: "pro"</code> pode liberar features no cliente offline. Escrita na nuvem continua limitada pelo tier da Subscription (SQL).</p>
+    <p class="muted">Mitigação parcial aceitável para beta; para wide open, amarrar features sensíveis a <code>BILLING._cache.subscription</code> verificada.</p>
+  </div>
+
+  <div class="bug">
+    <h4><span class="sev p0">P0 ops</span> RISK-05 — RTDN</h4>
+    <p>Sem Pub/Sub → <code>play-rtdn</code>, cancel/refund/expire dependem do reconcile no boot (rede de segurança). Aceitável em beta curto; frágil em produção se o usuário não reabre o app.</p>
+  </div>
+
+  <div class="bug">
+    <h4><span class="sev p1">P1*</span> RISK-03 — Migrations live</h4>
+    <p>Arquivos presentes: <code>20260905180000_quota_v3_triggers_profundidade.sql</code>, <code>20260906120000_fp_plan_tier_precedencia.sql</code>, <code>20260906130000_quota_userconfig_sem_travar.sql</code>. Status no projeto Supabase: não confirmado nesta sessão.</p>
+  </div>
+</section>
+
+<!-- 8 -->
+<section id="manual">
+  <h2>8. Testes manuais obrigatórios antes do wide open</h2>
+  <div class="card">
+    <ol class="check">
+      <li>AAB Free: tentar Metas/OCR/export Pro <strong>sem</strong> abrir Config — deve bloquear.</li>
+      <li>Android + nuvem: matar app → reabrir → entitlement atualiza sem Config (RISK-04).</li>
+      <li>License tester: comprar Pro mensal → badge Pro → sync.</li>
+      <li>Cancelar na Play → Pro permanece + “mais X dias (cancelado)”.</li>
+      <li>Device limpo: Restaurar compras.</li>
+      <li>Airplane mode com sessão salva: entrar (PIN/biometria); sem sessão: bloquear senha.</li>
+      <li>Importar backup com <code>plano:pro</code> em conta Free → sync deve falhar nas cotas SQL.</li>
+      <li><code>npx supabase migration list</code> — todas as migrations de quota aplicadas.</li>
+      <li>Disparar evento RTDN de teste (cancel/expire) e ver log da Edge Function.</li>
+      <li>Paywall Pro mensal → toggle Anual: documentar comportamento atual (sem CTA) até o fix.</li>
+      <li>Build <code>dist/</code>: CSP sem <code>localhost</code>; preços Play = 16,99 / 129,99.</li>
+      <li>Secrets prod: SA Play presente; <code>PLAY_SANDBOX_ENABLED</code> <strong>ausente</strong>.</li>
+    </ol>
+  </div>
+</section>
+
+<!-- 9 -->
+<section id="roadmap">
+  <h2>9. Roadmap para 92+</h2>
+  <div class="card">
+    <table>
+      <thead><tr><th>Prioridade</th><th>Ação</th><th>Delta estimado</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Confirmar RTDN + secrets + migrations live</td><td>+3 a +5 (Play readiness)</td></tr>
+        <tr><td>2</td><td>Smoke device compra/cancel/restore (checklist §8)</td><td>+2 (confiança empírica)</td></tr>
+        <tr><td>3</td><td>Upgrade mensal→anual (UI + SubscriptionUpdateParams)</td><td>+2 (monetização/UX)</td></tr>
+        <tr><td>4</td><td>Endurecer RISK-02 (ignorar plano local sem sub verificada)</td><td>+1 a +2 (segurança)</td></tr>
+        <tr><td>5</td><td>Alinhar package-lock + limpar docs 16,90</td><td>+0 (higiene)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout">
+    <strong>Meta:</strong> closed testing agora (87) → production wide após gates ops + 1 smoke device completo (≥90).
+    Upgrade mensal→anual pode ir em patch pós-lançamento se o volume de mensais for baixo no início.
+  </div>
+</section>
+
+<footer>
+  <p>
+    FinançasPro · Auditoria pré-lançamento 7 set 2026 · HEAD <code>e5e8a16</code> ·
+    branch <code>auditoria/correcoes-pre-beta</code> · 11.3.14 vc41.<br />
+    Comparáveis: <code>docs/auditoria-pre-lancamento-2026-09-05.html</code> (68) ·
+    <code>docs/auditoria-evolucao-2026-09-06.html</code> (83).<br />
+    Método: revisão estática + 505 testes unitários críticos. Device/RTDN/live = não inventados.
+  </p>
+</footer>
+
+</div>
+</body>
+</html>

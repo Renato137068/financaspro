@@ -42,7 +42,6 @@ const PLANS = [
       'Casal — até 2 membros',
       'IA e previsão financeira',
       'Exportação de relatórios',
-      'OCR de comprovantes',
       'Alertas automáticos',
     ],
     ...stripeIds('PRO'),

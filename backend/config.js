@@ -148,9 +148,9 @@ const CONFIG = {
   playBilling: {
     packageName: process.env.PLAY_PACKAGE_NAME || 'com.financaspro.mobile',
     serviceAccountJson: process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON || null,
-    // Segredo compartilhado do webhook RTDN. Envie no header `x-rtdn-secret`;
-    // a query string (?secret=) segue aceita mas é deprecada — o caminho
-    // recomendado é OIDC do Pub/Sub (ver supabase/functions/play-rtdn).
+    // Segredo compartilhado do webhook RTDN. Envie só no header `x-rtdn-secret`
+    // (?secret= removido — vaza em logs). Preferível: OIDC do Pub/Sub
+    // (ver supabase/functions/play-rtdn).
     rtdnSecret: process.env.PLAY_RTDN_SECRET || null,
   },
 };

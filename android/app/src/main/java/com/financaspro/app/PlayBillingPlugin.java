@@ -90,6 +90,9 @@ public class PlayBillingPlugin extends Plugin implements PurchasesUpdatedListene
             return;
         }
 
+        final String requestedOldToken = call.getString("oldPurchaseToken");
+        final String requestedOldProductId = call.getString("oldProductId");
+
         ensureConnected(() -> {
             if (billingClient == null || !billingClient.isReady()) {
                 call.reject("billing-indisponivel");
@@ -140,6 +143,16 @@ public class PlayBillingPlugin extends Plugin implements PurchasesUpdatedListene
                         return;
                     }
 
+                    // Troca de ciclo (mensal↔anual): precisa do token da compra ativa.
+                    if ((requestedOldToken != null && !requestedOldToken.isEmpty())
+                        || (requestedOldProductId != null && !requestedOldProductId.isEmpty())) {
+                        launchWithPossibleReplacement(
+                            activity, call, productParams, productId,
+                            requestedOldToken, requestedOldProductId
+                        );
+                        return;
+                    }
+
                     BillingResult launchResult = billingClient.launchBillingFlow(
                         activity,
                         BillingFlowParams.newBuilder()
@@ -154,6 +167,71 @@ public class PlayBillingPlugin extends Plugin implements PurchasesUpdatedListene
                 }
             );
         });
+    }
+
+    /**
+     * Compra com SubscriptionUpdateParams quando há assinatura ativa a substituir.
+     * Se o JS não mandou o token, consulta compras ativas e usa a que tiver
+     * productId diferente do destino (ex.: monthly → yearly).
+     */
+    private void launchWithPossibleReplacement(
+        Activity activity,
+        PluginCall call,
+        BillingFlowParams.ProductDetailsParams productParams,
+        String newProductId,
+        String oldTokenHint,
+        String oldProductIdHint
+    ) {
+        billingClient.queryPurchasesAsync(
+            QueryPurchasesParams.newBuilder()
+                .setProductType(BillingClient.ProductType.SUBS)
+                .build(),
+            (billingResult, purchases) -> {
+                if (billingResult.getResponseCode() != BillingClient.BillingResponseCode.OK) {
+                    pendingPurchaseCall = null;
+                    call.reject("falha-consultar-assinatura");
+                    return;
+                }
+
+                String oldToken = oldTokenHint;
+                String oldProductId = oldProductIdHint;
+                if ((oldToken == null || oldToken.isEmpty()) && purchases != null) {
+                    for (Purchase purchase : purchases) {
+                        if (purchase.getPurchaseState() != Purchase.PurchaseState.PURCHASED) continue;
+                        for (String pid : purchase.getProducts()) {
+                            if (pid == null || pid.equals(newProductId)) continue;
+                            if (oldProductId != null && !oldProductId.isEmpty() && !pid.equals(oldProductId)) {
+                                continue;
+                            }
+                            oldToken = purchase.getPurchaseToken();
+                            oldProductId = pid;
+                            break;
+                        }
+                        if (oldToken != null && !oldToken.isEmpty()) break;
+                    }
+                }
+
+                BillingFlowParams.Builder flowBuilder = BillingFlowParams.newBuilder()
+                    .setProductDetailsParamsList(Collections.singletonList(productParams));
+
+                if (oldToken != null && !oldToken.isEmpty()) {
+                    flowBuilder.setSubscriptionUpdateParams(
+                        BillingFlowParams.SubscriptionUpdateParams.newBuilder()
+                            .setOldPurchaseToken(oldToken)
+                            .setSubscriptionReplacementMode(
+                                BillingFlowParams.SubscriptionUpdateParams.ReplacementMode.WITH_TIME_PRORATION
+                            )
+                            .build()
+                    );
+                }
+
+                BillingResult launchResult = billingClient.launchBillingFlow(activity, flowBuilder.build());
+                if (launchResult.getResponseCode() != BillingClient.BillingResponseCode.OK) {
+                    pendingPurchaseCall = null;
+                    call.reject("falha-abrir-compra");
+                }
+            }
+        );
     }
 
     @PluginMethod

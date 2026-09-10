@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Auditoria de enquadramento multi-dispositivo — FinançasPro 11.3.14 vc45 · 7 set 2026</title>
+<style>
+:root {
+  --ink:#0f1a15; --muted:#5c6b63; --line:#dce5df; --bg:#f4f7f5; --card:#fff;
+  --brand:#12694e; --p0:#b42318; --p1:#b54708; --p2:#a15c07; --p3:#175cd3; --ok:#067647;
+  --radius:14px; --shadow:0 8px 24px rgba(15,26,21,.06);
+  font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);line-height:1.55}
+.wrap{max-width:1100px;margin:0 auto;padding:28px 20px 96px}
+.hero{background:linear-gradient(145deg,#0b3d2e,#12694e 55%,#1a8a66);color:#e8f2ee;border-radius:20px;padding:32px 28px;margin-bottom:22px;box-shadow:var(--shadow)}
+.hero h1{margin:0 0 8px;font-size:1.55rem;letter-spacing:-.02em}
+.hero p{margin:0;opacity:.92;max-width:78ch}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.pill{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);padding:5px 11px;border-radius:999px;font-size:.8rem}
+h2{font-size:1.2rem;margin:36px 0 12px;letter-spacing:-.01em}
+h3{font-size:1.02rem;margin:18px 0 8px}
+h4{font-size:.92rem;margin:14px 0 6px;color:var(--brand)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);margin-bottom:14px}
+.grid{display:grid;gap:12px}
+@media(min-width:720px){.cols-4{grid-template-columns:repeat(4,1fr)}.cols-3{grid-template-columns:repeat(3,1fr)}.cols-2{grid-template-columns:repeat(2,1fr)}}
+.stat{text-align:center}.stat .n{font-size:2rem;font-weight:750;letter-spacing:-.03em}.stat .l{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-top:4px}
+.n.ok{color:var(--ok)}.n.p0{color:var(--p0)}.n.p1{color:var(--p1)}.n.p2{color:var(--p2)}
+.ring{width:118px;height:118px;border-radius:50%;margin:0 auto 8px;display:grid;place-items:center;position:relative;background:conic-gradient(var(--brand) calc(76 * 1%),#dfe8e3 0)}
+.ring::after{content:"";position:absolute;inset:12px;background:var(--card);border-radius:50%}
+.ring span{position:relative;z-index:1;font-size:1.6rem;font-weight:750}
+table{width:100%;border-collapse:collapse;font-size:.86rem}
+th,td{padding:9px 11px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);background:#fafcfa}
+.sev{display:inline-block;font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:999px}
+.sev.p0{background:#fee4e2;color:var(--p0)}.sev.p1{background:#fef0c7;color:var(--p1)}
+.sev.p2{background:#fef7c3;color:#854d0e}.sev.p3{background:#d1e9ff;color:var(--p3)}
+.sev.ok{background:#dcfce7;color:var(--ok)}
+.callout{border-left:4px solid var(--brand);background:#eef6f2;padding:12px 14px;border-radius:0 10px 10px 0;margin:12px 0}
+.callout.warn{border-left-color:var(--p1);background:#fff8eb}
+.callout.block{border-left-color:var(--p0);background:#fef3f2}
+.muted{color:var(--muted);font-size:.9rem}
+code{font-size:.82em;background:#eef2ef;padding:1px 5px;border-radius:4px}
+.toc a{color:var(--brand);text-decoration:none}.toc a:hover{text-decoration:underline}
+.bar{height:8px;background:#e8eee9;border-radius:99px;overflow:hidden;margin:6px 0 0}
+.bar>i{display:block;height:100%;background:var(--brand);border-radius:99px}
+.bar.p1>i{background:var(--p1)}.bar.p0>i{background:var(--p0)}.bar.ok>i{background:var(--ok)}
+.score-pill{font-weight:750;font-size:1.05rem}
+.bug{border:1px solid var(--line);border-radius:12px;padding:14px;margin:10px 0;background:#fcfdfc}
+.bug h4{margin:0 0 8px}
+.device{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.device .gauge{min-width:88px;text-align:center}
+.device .gauge .score{font-size:1.7rem;font-weight:750;letter-spacing:-.03em}
+footer{margin-top:48px;color:var(--muted);font-size:.8rem}
+ul.tight>li{margin:4px 0}
+.tag{font-size:.68rem;font-weight:700;color:#0369a1;background:#e0f2fe;padding:2px 7px;border-radius:999px}
+.bp-map{font-family:ui-monospace,Consolas,monospace;font-size:.78rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>Auditoria de enquadramento multi-dispositivo</h1>
+  <p>
+    Avaliação estática do CSS/HTML do FinançasPro: larguras, shells (bottom nav × sidebar),
+    safe-area, overlays fixos e abas críticas. Notas <strong>0–100</strong> por faixa de dispositivo.
+    <em>Sem inventar resultado de render em aparelho físico</em> — onde falta smoke no device,
+    fica marcado como teste manual.
+  </p>
+  <div class="meta">
+    <span class="pill">Data: 7 set 2026</span>
+    <span class="pill">11.3.14 · versionCode 45</span>
+    <span class="pill">Branch: auditoria/correcoes-pre-beta</span>
+    <span class="pill">HEAD: c212b83</span>
+    <span class="pill">Escopo: framing / layout responsivo</span>
+  </div>
+</header>
+
+<section class="card toc">
+  <strong>Índice</strong>
+  <ol>
+    <li><a href="#resumo">Resumo executivo</a></li>
+    <li><a href="#scores">Notas por faixa de dispositivo</a></li>
+    <li><a href="#sistema">Sistema de breakpoints</a></li>
+    <li><a href="#faixas">Achados por faixa</a></li>
+    <li><a href="#telas">Notas por tela crítica</a></li>
+    <li><a href="#conflitos">Zonas de conflito</a></li>
+    <li><a href="#prioridades">Top 10 correções</a></li>
+    <li><a href="#manual">Testes manuais obrigatórios</a></li>
+    <li><a href="#roadmap">Roadmap para 90+</a></li>
+  </ol>
+</section>
+
+<!-- 1 -->
+<section id="resumo">
+  <h2>1. Resumo executivo</h2>
+  <div class="card" style="text-align:center">
+    <div class="ring"><span>76</span></div>
+    <div class="l">Nota global ponderada (baseline desta auditoria)</div>
+    <p class="muted" style="max-width:62ch;margin:10px auto 0">
+      Peso maior na faixa de celular comum (375–430), onde o produto é mais maduro (83).
+      A média simples das 6 faixas também fecha em <strong>76</strong>. O gap para “perfeito”
+      concentrava-se em tablet portrait, safe-area duplicada e largura desperdiçada em folds.
+    </p>
+  </div>
+
+  <div class="callout" style="margin-top:14px">
+    <strong>Pós-correção (mesmo dia, código):</strong> Sprint A/B + lote P2 —
+    toast/FAB até 1023, safe-area deduplicada, folds 640px, mass-actions,
+    extras 1 col, abas 900px, nav tablet ≈ shell, quick-amounts 44px, landscape/dvh,
+    tokens <code>--app-shell-*</code>. Nota ponderada ≈ <strong>88</strong>
+    (meta ≥90 após smoke M1–M7). Ver
+    <code>auditoria-enquadramento-dispositivos-2026-09-07-reaudit.html</code>.
+  </div>
+
+  <div class="grid cols-4" style="margin-top:14px">
+    <div class="card stat"><div class="n ok">83</div><div class="l">Melhor faixa</div><p class="muted" style="font-size:.75rem;margin:6px 0 0">Celular comum 375–430</p></div>
+    <div class="card stat"><div class="n p1">66</div><div class="l">Pior faixa (baseline)</div><p class="muted" style="font-size:.75rem;margin:6px 0 0">Tablet portrait 768–1023</p></div>
+    <div class="card stat"><div class="n ok">0</div><div class="l">P1 no código</div><p class="muted" style="font-size:.75rem;margin:6px 0 0">toast×nav · massa · safe · fold</p></div>
+    <div class="card stat"><div class="n ok">~85</div><div class="l">Estimativa pós-fix</div><p class="muted" style="font-size:.75rem;margin:6px 0 0">pendente smoke device</p></div>
+  </div>
+
+  <div class="callout warn">
+    Baseline: o shell mudava em <code>768</code> e de novo em <code>1024</code>, mas toast/FAB/largura
+    não acompanhavam. As correções do Sprint A/B alinham esses ciclos; falta validar
+    no aparelho (checklist M1–M7).
+  </div>
+</section>
+
+<!-- 2 -->
+<section id="scores">
+  <h2>2. Notas por faixa de dispositivo (0–100)</h2>
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Faixa</th>
+          <th>Dispositivos típicos</th>
+          <th>Nota</th>
+          <th>Veredito</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Phone narrow<br><span class="muted">320–360px</span></td>
+          <td>iPhone SE, Android entry</td>
+          <td><span class="score-pill" style="color:var(--p2)">71</span>
+            <div class="bar p1"><i style="width:71%"></i></div></td>
+          <td>Usável; chips e extras apertados; safe-area inconsistente</td>
+        </tr>
+        <tr>
+          <td>Phone common<br><span class="muted">375–430px</span></td>
+          <td>iPhone 13/14/15, Pixel</td>
+          <td><span class="score-pill" style="color:var(--ok)">83</span>
+            <div class="bar ok"><i style="width:83%"></i></div></td>
+          <td>Faixa-alvo mais cuidada (FAB, toast, Novo, auth)</td>
+        </tr>
+        <tr>
+          <td>Phone large / fold<br><span class="muted">430–767px</span></td>
+          <td>Pro Max, Galaxy Fold (capa/interna)</td>
+          <td><span class="score-pill" style="color:var(--p2)">73</span>
+            <div class="bar p1"><i style="width:73%"></i></div></td>
+          <td><code>max-width: 500px</code> deixa faixas laterais vazias</td>
+        </tr>
+        <tr>
+          <td>Tablet portrait<br><span class="muted">768–1023px</span></td>
+          <td>iPad mini, tablets Android</td>
+          <td><span class="score-pill" style="color:var(--p1)">66</span>
+            <div class="bar p0"><i style="width:66%"></i></div></td>
+          <td>Shell OK; toast cai sobre a nav; FAB some</td>
+        </tr>
+        <tr>
+          <td>Tablet landscape / laptop<br><span class="muted">1024–1279px</span></td>
+          <td>iPad paisagem, Chromebook</td>
+          <td><span class="score-pill" style="color:var(--ok)">84</span>
+            <div class="bar ok"><i style="width:84%"></i></div></td>
+          <td>Melhor shell “desktop”: sidebar 200px + caps testados</td>
+        </tr>
+        <tr>
+          <td>Desktop<br><span class="muted">1280–1440+</span></td>
+          <td>Monitores, Web desktop</td>
+          <td><span class="score-pill" style="color:var(--p2)">79</span>
+            <div class="bar"><i style="width:79%"></i></div></td>
+          <td>Resumo forte; demais abas regredem para 820px</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="muted" style="margin:12px 0 0">
+      Ponderação da nota global: 15% narrow · <strong>35% common</strong> · 15% large ·
+      15% tablet portrait · 10% 1024–1279 · 10% desktop ≥1280.
+    </p>
+  </div>
+</section>
+
+<!-- 3 -->
+<section id="sistema">
+  <h2>3. Sistema de breakpoints</h2>
+  <div class="card">
+    <h3>O que o código realmente troca</h3>
+    <table class="bp-map">
+      <thead><tr><th>Largura</th><th>Efeito no shell</th><th>Arquivo</th></tr></thead>
+      <tbody>
+        <tr><td>≤320</td><td>Pad menor, nav labels menores, wrap de saldo</td><td><code>responsive.css</code></td></tr>
+        <tr><td>≤360</td><td>Grid de categorias → 2 colunas</td><td><code>form-novo.css</code></td></tr>
+        <tr><td>≤400</td><td>Quick amounts mais apertados</td><td><code>form-novo.css</code></td></tr>
+        <tr><td>≤480</td><td>Tipografia/cards compactos; body pad 100px</td><td><code>responsive.css</code></td></tr>
+        <tr><td>default &lt;768</td><td><code>body max-width: 500px</code> + bottom nav</td><td><code>base.css</code></td></tr>
+        <tr><td>768–1023</td><td>Body 720 / aba 680; <strong>mantém bottom nav</strong></td><td><code>style.css</code></td></tr>
+        <tr><td>≥768</td><td>Toast desce para 24px (assume sem nav)</td><td><code>toasts.css</code></td></tr>
+        <tr><td>≤767</td><td>FAB “Novo” elevado</td><td><code>navigation.css</code></td></tr>
+        <tr><td>≥900</td><td>Botões do main limitados a 320px</td><td><code>breakpoints.css</code></td></tr>
+        <tr><td>≥1024</td><td>Sidebar on, header/nav off, Resumo 2 colunas</td><td><code>style.css</code></td></tr>
+        <tr><td>1024–1279</td><td>Sidebar 200px; aba até ~900px</td><td><code>style.css</code></td></tr>
+        <tr><td>≥1280</td><td>Aba não-Resumo volta a 820px</td><td><code>style.css</code></td></tr>
+        <tr><td>≥1920</td><td>Caps 900 / Resumo 1280</td><td><code>style.css</code></td></tr>
+      </tbody>
+    </table>
+    <div class="callout" style="margin-top:14px">
+      Tokens <code>--bp-*</code> em <code>breakpoints.css</code> existem, mas <strong>não são
+      consumidos</strong> via <code>var(--bp-…)</code>. As media queries estão hardcoded —
+      risco de drift documental (1280/1440 declarados e vazios).
+    </div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section id="faixas">
+  <h2>4. Achados por faixa</h2>
+
+  <div class="card device" id="f-narrow">
+    <div class="gauge"><div class="score" style="color:var(--p2)">71</div><div class="l">320–360</div></div>
+    <div style="flex:1;min-width:240px">
+      <h3 style="margin-top:0">Phone narrow</h3>
+      <h4>Problemas</h4>
+      <ul class="tight">
+        <li>Extras Banco/Pagamento em <code>grid 1fr 1fr</code> inline no HTML — sem colapso em estreito (<code>index.html</code> ~564).</li>
+        <li>Quick amounts ≤400 com padding <code>4px 10px</code> (abaixo de 44px de toque).</li>
+        <li>≤480: <code>padding-bottom: 100px</code> <em>sem</em> safe-area; ≤320 adiciona safe — inconsistência na faixa 321–360.</li>
+        <li>Safe-area top duplicada: <code>body</code> + <code>header</code> (<code>mobile-app.css</code> + <code>style.css</code>).</li>
+        <li>Nav: <code>bottom: 10px + safe</code> <strong>e</strong> <code>padding-bottom: safe</code> — inset inferior contado duas vezes.</li>
+      </ul>
+      <h4>Pontos fortes</h4>
+      <ul class="tight">
+        <li>Regras dedicadas ≤320 + <code>overflow-x: clip</code>.</li>
+        <li><code>overflow-wrap: anywhere</code> em saldo/período.</li>
+        <li>Teste estático em <code>responsive-passe4.test.js</code>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card device" id="f-common">
+    <div class="gauge"><div class="score" style="color:var(--ok)">83</div><div class="l">375–430</div></div>
+    <div style="flex:1;min-width:240px">
+      <h3 style="margin-top:0">Phone common (faixa-alvo)</h3>
+      <h4>Problemas</h4>
+      <ul class="tight">
+        <li><code>.acoes-massa-bar</code> fixo em <code>bottom:0</code> com <code>z-index:100</code> — abaixo de <code>--z-nav:150</code> → barra sob a nav.</li>
+        <li>Filtros/grupos sticky do Extrato em <code>top:0</code> competem com header sticky.</li>
+        <li>Modais sem padding de safe-area explícito.</li>
+        <li><code>--nav-clearance</code> definido e não usado após Registrar deixar de ser sticky.</li>
+      </ul>
+      <h4>Pontos fortes</h4>
+      <ul class="tight">
+        <li><strong>Registrar estático</strong> — deixa de cobrir “Mais opções” (<code>form-novo.css</code>; travado em teste).</li>
+        <li>FAB Novo + toast a <code>124px + safe</code> bem calibrados para esta faixa.</li>
+        <li>Alvos de toque ≥44px em nav/categorias; auth com safe-area.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card device" id="f-large">
+    <div class="gauge"><div class="score" style="color:var(--p2)">73</div><div class="l">430–767</div></div>
+    <div style="flex:1;min-width:240px">
+      <h3 style="margin-top:0">Phone large / fold</h3>
+      <h4>Problemas</h4>
+      <ul class="tight">
+        <li><code>body { max-width: 500px }</code> até 767 — em ~600–740px sobra gutter lateral ocioso.</li>
+        <li>Sem regras de <code>orientation</code> / <code>dvh</code> — landscape de celular herda coluna estreita.</li>
+        <li>Entre 481–767 o pad inferior volta a 90px (base), enquanto nav+FAB ainda são altos.</li>
+        <li>FAB some abruptamente em 768.</li>
+      </ul>
+      <h4>Pontos fortes</h4>
+      <ul class="tight">
+        <li>Mesma pilha mobile (nav/FAB/Novo) estável até 767.</li>
+        <li>Orçamento já empilha regras em ≤720.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card device" id="f-tablet">
+    <div class="gauge"><div class="score" style="color:var(--p1)">66</div><div class="l">768–1023</div></div>
+    <div style="flex:1;min-width:240px">
+      <h3 style="margin-top:0">Tablet portrait — maior gap</h3>
+      <div class="callout block">
+        <strong>P1 confirmado no CSS:</strong> a partir de 768px o toast usa
+        <code>bottom: 24px + safe</code> (<code>toasts.css</code>), mas a bottom nav
+        só some em <strong>1024</strong> (<code>style.css</code>). Em toda a faixa
+        768–1023 o toast compete visualmente com a nav.
+      </div>
+      <h4>Problemas</h4>
+      <ul class="tight">
+        <li>Toast “modo desktop” com nav ainda ativa.</li>
+        <li>FAB “Novo” vira tab plana — perde hierarquia de CTA primário.</li>
+        <li>Nav flutuante <code>max-width: 460px</code> vs body <code>720px</code> — nav “órfã” no centro.</li>
+        <li>Stickies de Extrato/Orçamento sem offset da altura do header.</li>
+      </ul>
+      <h4>Pontos fortes</h4>
+      <ul class="tight">
+        <li>Decisão explícita de <em>não</em> forçar sidebar em tablet (evita “meio desktop”).</li>
+        <li>Caps 680–720px de leitura; Perfil em 2 colunas; tipografia do dashboard sobe.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card device" id="f-1024">
+    <div class="gauge"><div class="score" style="color:var(--ok)">84</div><div class="l">1024–1279</div></div>
+    <div style="flex:1;min-width:240px">
+      <h3 style="margin-top:0">Tablet landscape / laptop pequeno</h3>
+      <h4>Problemas</h4>
+      <ul class="tight">
+        <li>Sidebar <code>height: 100vh</code> (não <code>100dvh</code>) — risco de clip com chrome dinâmico.</li>
+        <li>Pouca margem para notch lateral em landscape.</li>
+        <li>Billing em grid pode apertar perto de 1024.</li>
+      </ul>
+      <h4>Pontos fortes</h4>
+      <ul class="tight">
+        <li>Sidebar 200px + fórmulas <code>min(...)</code> deliberadas e cobertas por teste.</li>
+        <li>Resumo em 2 colunas; toast finalmente alinhado (sem bottom nav).</li>
+        <li>Header/nav removidos; <code>padding-bottom: 0</code>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card device" id="f-desk">
+    <div class="gauge"><div class="score" style="color:var(--p2)">79</div><div class="l">≥1280</div></div>
+    <div style="flex:1;min-width:240px">
+      <h3 style="margin-top:0">Desktop</h3>
+      <h4>Problemas</h4>
+      <ul class="tight">
+        <li>Abas não-Resumo caem de ~900px (1024–1279) para <strong>820px</strong> — regressão de largura ao crescer o monitor.</li>
+        <li><code>--bp-desktop-large</code> / <code>--bp-desktop-xl</code> sem regras consumidoras até 1920.</li>
+        <li>Centralização de botões ≤320px pode parecer esparsa em Config/Billing.</li>
+      </ul>
+      <h4>Pontos fortes</h4>
+      <ul class="tight">
+        <li>Resumo até 1140px (1280 em 1920) — evita card-faixa.</li>
+        <li>Auth overlay full-bleed sobre a sidebar.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section id="telas">
+  <h2>5. Notas por tela crítica</h2>
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>Tela</th><th>Nota</th><th>Comentário</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Novo (lançamento)</td>
+          <td><span class="score-pill" style="color:var(--ok)">82</span></td>
+          <td>Registrar sticky corrigido (vc45). Extras 2-col ainda apertam em ≤360; “Mais opções” precisa smoke no device.</td>
+        </tr>
+        <tr>
+          <td>Resumo</td>
+          <td><span class="score-pill" style="color:var(--ok)">85</span></td>
+          <td>Melhor enquadramento desktop (grid 2 col). Em &lt;768 depende do cap 500px.</td>
+        </tr>
+        <tr>
+          <td>Extrato</td>
+          <td><span class="score-pill" style="color:var(--p1)">68</span></td>
+          <td>Ações em massa sob a nav; stickies sem offset do header.</td>
+        </tr>
+        <tr>
+          <td>Orçamento</td>
+          <td><span class="score-pill" style="color:var(--p2)">74</span></td>
+          <td>Subnav sticky + stacks ≤720 OK; competição com header mobile.</td>
+        </tr>
+        <tr>
+          <td>Perfil / Config</td>
+          <td><span class="score-pill" style="color:var(--ok)">80</span></td>
+          <td>2 colunas ≥768; botões limitados ≥900 evitam faixas.</td>
+        </tr>
+        <tr>
+          <td>Auth</td>
+          <td><span class="score-pill" style="color:var(--ok)">82</span></td>
+          <td>Safe-area e shell “banco” bem tratados; card ≤420 ajusta.</td>
+        </tr>
+        <tr>
+          <td>Billing / modais</td>
+          <td><span class="score-pill" style="color:var(--p2)">72</span></td>
+          <td>Largura relativa boa; falta safe-area e hit target do close em notch.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 6 -->
+<section id="conflitos">
+  <h2>6. Zonas de conflito (mapa)</h2>
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>Zona</th><th>Severidade</th><th>Evidência</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Registrar × Mais opções</td>
+          <td><span class="sev ok">OK</span></td>
+          <td><code>.btn-registrar { position: static }</code> em <code>form-novo.css</code></td>
+          <td>Resolvido em vc45 — validar no aparelho</td>
+        </tr>
+        <tr>
+          <td>Toast ≥768 × bottom nav &lt;1024</td>
+          <td><span class="sev p1">P1</span></td>
+          <td><code>toasts.css</code> vs <code>style.css</code></td>
+          <td>Ativo em toda faixa tablet portrait</td>
+        </tr>
+        <tr>
+          <td>Ações em massa × nav</td>
+          <td><span class="sev p1">P1</span></td>
+          <td><code>z-index:100</code> &lt; <code>--z-nav:150</code>; <code>bottom:0</code></td>
+          <td>Ativo em celular/tablet com nav</td>
+        </tr>
+        <tr>
+          <td>Safe-area top duplicada</td>
+          <td><span class="sev p1">P1</span></td>
+          <td><code>body</code> + <code>header</code> (+ standalone reforça de novo)</td>
+          <td>Ativo — chrome superior “gordo”</td>
+        </tr>
+        <tr>
+          <td>Safe-area bottom na nav</td>
+          <td><span class="sev p2">P2</span></td>
+          <td><code>bottom</code> e <code>padding-bottom</code> somam inset</td>
+          <td>Ativo — nav flutua alto demais</td>
+        </tr>
+        <tr>
+          <td>Sticky Extrato/Orçamento × header</td>
+          <td><span class="sev p2">P2</span></td>
+          <td>Ambos <code>top:0</code> / sticky</td>
+          <td>Ativo</td>
+        </tr>
+        <tr>
+          <td>Body 500px em 430–767</td>
+          <td><span class="sev p1">P1</span></td>
+          <td><code>base.css</code></td>
+          <td>Ativo — folds/pro max subutilizados</td>
+        </tr>
+        <tr>
+          <td>Desktop 820px após 900px no mid-band</td>
+          <td><span class="sev p2">P2</span></td>
+          <td><code>style.css</code> 1024+ vs 1024–1279</td>
+          <td>Ativo — sensação de “encolher” no monitor</td>
+        </tr>
+        <tr>
+          <td>Modais sem safe-area</td>
+          <td><span class="sev p2">P2</span></td>
+          <td><code>modals.css</code> / billing</td>
+          <td>Ativo em notch</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 7 -->
+<section id="prioridades">
+  <h2>7. Top 10 correções (impacto no usuário)</h2>
+  <div class="card">
+    <ol>
+      <li><strong>Alinhar toast à vida da nav</strong> — manter elevação (<code>~124px</code>) até <code>min-width: 1024px</code>, não 768. <span class="tag">+~4 pts tablet</span></li>
+      <li><strong>Corrigir <code>.acoes-massa-bar</code></strong> — z-index &gt; nav, offset bottom = nav + safe (ou esconder nav no modo massa).</li>
+      <li><strong>Deduplicar safe-area</strong> — inset só no body <em>ou</em> só no header/nav, não nos dois.</li>
+      <li><strong>Liberar largura antes de 768</strong> — soft max ~560–640px (ou 100% com teto) para 430–767.</li>
+      <li><strong>Offset sticky sob o header</strong> — Extrato filtros / grupos / <code>.orc-subnav</code> com <code>top: var(--header-h)</code>.</li>
+      <li><strong>Colapsar Banco/Pagamento</strong> para 1 coluna ≤480 (tirar grid inline do HTML).</li>
+      <li><strong>Manter affordance do Novo no tablet</strong> — FAB ou tratamento médio até 1023.</li>
+      <li><strong>Safe-area em modais/billing</strong> + alvo de toque do close.</li>
+      <li><strong>Harmonizar max-width ≥1280</strong> — não regredir 900→820 nas abas não-Resumo.</li>
+      <li><strong>Consumir ou limpar tokens <code>--bp-*</code></strong> e usar <code>--nav-clearance</code> se sticky CTAs voltarem.</li>
+    </ol>
+    <div class="callout" style="margin-top:12px">
+      Estimativa: itens 1–4 sozinhos elevam a nota global de <strong>76 → ~84–86</strong>
+      (tablet portrait e folds deixam de puxar a média para baixo).
+    </div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section id="manual">
+  <h2>8. Testes manuais obrigatórios</h2>
+  <div class="card">
+    <p class="muted">Checklist para validar no aparelho / DevTools — não executado nesta auditoria estática.</p>
+    <table>
+      <thead><tr><th>ID</th><th>Cenário</th><th>Passa se…</th></tr></thead>
+      <tbody>
+        <tr><td>M1</td><td>Novo em 360 / 390 / 430 — “Mais opções” acima do Registrar</td><td>Tracejado visível e clicável; painel abre sem cobrir CTA</td></tr>
+        <tr><td>M2</td><td>Toast em iPad portrait ~810px</td><td>Toast acima da nav, não atrás dela</td></tr>
+        <tr><td>M3</td><td>Extrato → seleção múltipla no celular</td><td>Barra de ações acima da nav, botões tocáveis</td></tr>
+        <tr><td>M4</td><td>Notch / gesture bar (Android 15 / iPhone)</td><td>Header e nav sem “buraco” duplo nem corte</td></tr>
+        <tr><td>M5</td><td>Fold / Pro Max ~430–700</td><td>Conteúdo usa largura útil (não coluna 500 centrada com faixas)</td></tr>
+        <tr><td>M6</td><td>1024 e 1280 — Extrato/Config</td><td>Largura não encolhe ao ir de 1024→1280</td></tr>
+        <tr><td>M7</td><td>Modal billing com notch</td><td>Close e conteúdo fora da safe-area</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 9 -->
+<section id="roadmap">
+  <h2>9. Roadmap para 90+</h2>
+  <div class="grid cols-3">
+    <div class="card">
+      <h3 style="margin-top:0">Sprint A — unificar chrome</h3>
+      <p class="muted">Toast lifecycle = nav lifecycle; dedupe safe-area; mass-actions.</p>
+      <p><strong>Meta:</strong> global ~84 · tablet ≥78</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Sprint B — larguras</h3>
+      <p class="muted">Soft max 430–767; harmonizar ≥1280; colapsar extras 2-col.</p>
+      <p><strong>Meta:</strong> global ~88 · large phone ≥82</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Sprint C — sticky &amp; modais</h3>
+      <p class="muted">Offsets de header; FAB tablet; safe-area overlays; tokens vivos.</p>
+      <p><strong>Meta:</strong> global ≥90 com smoke M1–M7 verdes</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Cobertura de teste hoje</h3>
+    <p>
+      <code>tests/responsive-passe4.test.js</code> é <strong>asserção estática de strings</strong>
+      (grid Resumo 1024, sidebar 200px, safe-area em nav/header/toast, Registrar não sticky,
+      320 + overflow-x, cap 1920). <em>Não</em> cobre toast×nav em 768–1023, double safe-area,
+      mass-actions nem largura de fold.
+    </p>
+  </div>
+</section>
+
+<footer>
+  Relatório gerado em 7 set 2026 · FinançasPro 11.3.14 (versionCode 45) ·
+  branch <code>auditoria/correcoes-pre-beta</code> @ <code>c212b83</code> ·
+  método: revisão estática de CSS/HTML/testes ·
+  arquivo: <code>docs/auditoria-enquadramento-dispositivos-2026-09-07.html</code>
+</footer>
+
+</div>
+</body>
+</html>

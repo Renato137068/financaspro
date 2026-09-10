@@ -1,6 +1,6 @@
 {
   "name": "financaspro-v11",
-  "version": "11.3.14",
+  "version": "11.3.18",
   "description": "FinançasPro — SaaS de Finanças Pessoais",
   "type": "module",
   "main": "index.html",
@@ -31,6 +31,7 @@
     "check:bundle": "node scripts/check-bundle-budget.cjs",
     "check:version": "node scripts/check-version-alignment.cjs",
     "check:pre-beta": "node scripts/pre-beta-check.cjs",
+    "check:pre-beta:static": "node scripts/pre-beta-check.cjs",
     "check:billing": "node scripts/check-billing-wiring.cjs",
     "test:report": "node scripts/test-report.cjs",
     "check:bundle:report": "node scripts/check-bundle-budget.cjs --report",
@@ -58,7 +59,6 @@
     "screenshots:capture": "node scripts/capture-screenshots.cjs",
     "test:e2e": "playwright test --config playwright.config.cjs",
     "test:e2e:smoke": "playwright test --config playwright.config.cjs e2e/smoke-boot.spec.cjs e2e/onboarding-primeiro-cta.spec.cjs e2e/billing-smoke.spec.cjs",
-    "test:ocr": "node scripts/probe-ocr.cjs",
     "test:e2e:anual": "playwright test --config playwright.config.cjs e2e/persistencia-anual.spec.cjs",
     "test:e2e:caminho": "playwright test --config playwright.config.cjs e2e/caminho-do-dinheiro.spec.cjs",
     "test:a11y": "playwright test --config playwright.config.cjs accessibility.spec.cjs",

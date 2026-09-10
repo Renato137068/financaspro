@@ -49,7 +49,7 @@ describe('Billing — tiers e limites', function() {
     expect(free.historyMonths).toBe(3);
     expect(free.maxGoals).toBe(1);
     expect(free.maxRecurring).toBe(3);
-    expect(free.ocrPerMonth).toBe(5);
+    expect(free.ocrPerMonth).toBe(5); // legado no JSON; runtime OCR é noop
     expect(billingHelpers.PLAN_LIMITS.PRO.historyMonths).toBe(Infinity);
     expect(billingHelpers.PLAN_LIMITS.PRO.maxAccounts).toBe(Infinity);
   });
@@ -115,10 +115,21 @@ describe('Billing — tiers e limites', function() {
   });
 
   test('getLifecycleAlert cobre PAST_DUE e trial acabando', function() {
-    var past = billingHelpers.getLifecycleAlert({ status: 'PAST_DUE' }, true);
+    var futuro = new Date(Date.now() + 3 * 86400000).toISOString();
+    var past = billingHelpers.getLifecycleAlert({
+      status: 'PAST_DUE',
+      currentPeriodEnd: futuro,
+    }, true);
     expect(past).toBeTruthy();
     expect(past.cta).toBe('portal');
     expect(past.severity).toBe('warn');
+    expect(past.message).toMatch(/fim do período/i);
+
+    var vencido = billingHelpers.getLifecycleAlert({
+      status: 'PAST_DUE',
+      currentPeriodEnd: new Date(Date.now() - 86400000).toISOString(),
+    }, true);
+    expect(vencido.message).toMatch(/reativar/i);
 
     var amanha = new Date(Date.now() + 86400000).toISOString();
     var trial = billingHelpers.getLifecycleAlert({
@@ -163,5 +174,99 @@ describe('Billing — tiers e limites', function() {
     expect(billingHelpers.entitlementAtivo({ status: 'ACTIVE', currentPeriodEnd: futuro })).toBe(true);
     expect(billingHelpers.entitlementAtivo({ status: 'ACTIVE' })).toBe(true);
     expect(billingHelpers.entitlementAtivo({ status: 'TRIALING', trialEndsAt: passado })).toBe(false);
+  });
+
+  test('entitlementAtivo: PAST_DUE mantém Pro só até currentPeriodEnd', function() {
+    var passado = new Date(Date.now() - 86400000).toISOString();
+    var futuro = new Date(Date.now() + 3 * 86400000).toISOString();
+    expect(billingHelpers.entitlementAtivo({ status: 'PAST_DUE', currentPeriodEnd: futuro })).toBe(true);
+    expect(billingHelpers.entitlementAtivo({ status: 'PAST_DUE', currentPeriodEnd: passado })).toBe(false);
+    expect(billingHelpers.entitlementAtivo({ status: 'PAST_DUE' })).toBe(false);
+  });
+
+  test('RISK-02: conta nuvem não ganha Pro só com config.plano forjado', function() {
+    var B = billingHelpers.BILLING;
+    var prevCloud = B.isCloudUser;
+    var prevTier = B._cache.tier;
+    var prevSub = B._cache.subscription;
+    var prevDados = global.DADOS;
+    try {
+      localStorage.removeItem(billingHelpers._ENTITLEMENT_KEY);
+      B._cache.tier = null;
+      B._cache.subscription = null;
+      B.isCloudUser = function() { return true; };
+      global.DADOS = {
+        getConfig: function() { return { plano: 'pro' }; },
+      };
+      expect(billingHelpers.getTier()).toBe('FREE');
+    } finally {
+      B.isCloudUser = prevCloud;
+      B._cache.tier = prevTier;
+      B._cache.subscription = prevSub;
+      global.DADOS = prevDados;
+      try { localStorage.removeItem(billingHelpers._ENTITLEMENT_KEY); } catch (e) { /* */ }
+    }
+  });
+
+  test('RISK-02: snapshot persistido mantém Pro offline após sync', function() {
+    var B = billingHelpers.BILLING;
+    var prevCloud = B.isCloudUser;
+    var prevTier = B._cache.tier;
+    var prevSub = B._cache.subscription;
+    try {
+      localStorage.removeItem(billingHelpers._ENTITLEMENT_KEY);
+      var futuro = new Date(Date.now() + 7 * 86400000).toISOString();
+      billingHelpers._persistEntitlement({
+        status: 'ACTIVE',
+        billingInterval: 'monthly',
+        currentPeriodEnd: futuro,
+        plan: { tier: 'PRO' },
+        stripeSubId: 'sub_test_xyz',
+      });
+      B._cache.tier = null;
+      B._cache.subscription = null;
+      B.isCloudUser = function() { return true; };
+      expect(billingHelpers.getTier()).toBe('PRO');
+      expect(billingHelpers.getBillingInterval()).toBe('monthly');
+    } finally {
+      B.isCloudUser = prevCloud;
+      B._cache.tier = prevTier;
+      B._cache.subscription = prevSub;
+      try { localStorage.removeItem(billingHelpers._ENTITLEMENT_KEY); } catch (e) { /* */ }
+    }
+  });
+
+  test('snapshot de entitlement expira (TTL) e online grace cai para FREE', function() {
+    var B = billingHelpers.BILLING;
+    var prevCloud = B.isCloudUser;
+    var prevTier = B._cache.tier;
+    var prevSub = B._cache.subscription;
+    try {
+      localStorage.setItem(billingHelpers._ENTITLEMENT_KEY, JSON.stringify({
+        tier: 'PRO',
+        status: 'ACTIVE',
+        currentPeriodEnd: new Date(Date.now() + 86400000).toISOString(),
+        savedAt: Date.now() - (B._ENTITLEMENT_MAX_AGE_MS + 1000),
+        v: 1,
+      }));
+      B._cache.tier = null;
+      B._cache.subscription = null;
+      B.isCloudUser = function() { return true; };
+      expect(billingHelpers.getTier()).toBe('FREE');
+
+      localStorage.setItem(billingHelpers._ENTITLEMENT_KEY, JSON.stringify({
+        tier: 'PRO',
+        status: 'ACTIVE',
+        currentPeriodEnd: new Date(Date.now() + 86400000).toISOString(),
+        savedAt: Date.now() - (B._ENTITLEMENT_ONLINE_GRACE_MS + 1000),
+        v: 1,
+      }));
+      expect(billingHelpers.getTier()).toBe('FREE');
+    } finally {
+      B.isCloudUser = prevCloud;
+      B._cache.tier = prevTier;
+      B._cache.subscription = prevSub;
+      try { localStorage.removeItem(billingHelpers._ENTITLEMENT_KEY); } catch (e) { /* */ }
+    }
   });
 });

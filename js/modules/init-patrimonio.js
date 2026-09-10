@@ -136,7 +136,7 @@ const INIT_PATRIMONIO = {
           '<button type="button" class="btn-secundario btn-sm" data-action="patrimonio-divida-nova">Adicionar</button>' +
         '</div>' +
         (dividas.length === 0
-          ? '<p class="pat-empty">Empréstimos, financiamentos e cartões.</p>'
+          ? '<p class="pat-empty">Empréstimos, financiamentos, consórcios e cartões.</p>'
           : '<div class="pat-list">' + dividas.map(function(d) { return INIT_PATRIMONIO._renderDivida(d); }).join('') + '</div>') +
       '</div>' +
     '</div>';

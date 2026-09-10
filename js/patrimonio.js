@@ -7,7 +7,7 @@ const PATRIMONIO = {
   // entra aqui: o snapshot de hoje fica livre, a curva ao longo do tempo e PRO.
 
   TIPOS_ATIVO: ['corrente', 'poupanca', 'investimento', 'imovel', 'veiculo', 'outro'],
-  TIPOS_DIVIDA: ['emprestimo', 'financiamento', 'cartao', 'outro'],
+  TIPOS_DIVIDA: ['emprestimo', 'financiamento', 'consorcio', 'cartao', 'outro'],
 
   init: function() {
     var config = DADOS.getConfig();
@@ -170,6 +170,7 @@ const PATRIMONIO = {
     var map = {
       emprestimo: 'Empréstimo',
       financiamento: 'Financiamento',
+      consorcio: 'Consórcio',
       cartao: 'Cartão / rotativo',
       outro: 'Outra dívida'
     };
@@ -186,7 +187,11 @@ const PATRIMONIO = {
 
   iconeDivida: function(tipo) {
     var map = {
-      emprestimo: 'banknote', financiamento: 'file-text', cartao: 'credit-card', outro: 'alert-circle'
+      emprestimo: 'banknote',
+      financiamento: 'file-text',
+      consorcio: 'users',
+      cartao: 'credit-card',
+      outro: 'alert-circle'
     };
     return map[tipo] || 'alert-circle';
   },

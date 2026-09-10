@@ -431,7 +431,10 @@ var UTILS = {
   },
 
   labelCategoria: function(key) {
-    return CONFIG.CATEGORIAS_MAP[key] || key;
+    if (typeof CONFIG !== 'undefined' && CONFIG.getCatLabel) {
+      return CONFIG.getCatLabel(key);
+    }
+    return (CONFIG && CONFIG.CATEGORIAS_MAP && CONFIG.CATEGORIAS_MAP[key]) || key;
   },
 
   formatarDataRelativa: function(data) {

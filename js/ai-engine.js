@@ -726,19 +726,24 @@ var AI_ENGINE = {
       + String(hoje.getMonth() + 1).padStart(2, '0') + '-'
       + String(hoje.getDate()).padStart(2, '0');
 
-    var despesasRealizadas = 0;
-    var despesasFuturas    = 0;
-    var receitas           = 0;
+    var despesasRealizadasC = 0;
+    var despesasFuturasC    = 0;
+    var receitasC           = 0;
 
     txMes.forEach(function(t) {
-      var valor = Number(t.valor) || 0;
-      if (t.tipo === 'receita') { receitas += valor; return; }
-      // Só despesa entra: transferência entre contas não é gasto.
+      var centavos = (typeof UTILS !== 'undefined' && UTILS.paraCentavos)
+        ? UTILS.paraCentavos(t.valor)
+        : Math.round((Number(t.valor) || 0) * 100);
+      if (t.tipo === 'receita') { receitasC += centavos; return; }
       if (t.tipo !== 'despesa') return;
 
-      if (String(t.data).slice(0, 10) > hojeIso) despesasFuturas += valor;
-      else despesasRealizadas += valor;
+      if (String(t.data).slice(0, 10) > hojeIso) despesasFuturasC += centavos;
+      else despesasRealizadasC += centavos;
     });
+
+    var despesasRealizadas = despesasRealizadasC / 100;
+    var despesasFuturas = despesasFuturasC / 100;
+    var receitas = receitasC / 100;
 
     // O ritmo mede o gasto do dia a dia — só o que já foi observado.
     var taxaDiaria = despesasRealizadas / diasDecorridos;

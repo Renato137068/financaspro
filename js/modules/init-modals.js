@@ -294,7 +294,7 @@ const INIT_MODALS = {
       '<i data-lucide="bell" aria-hidden="true"></i> Lembrete diário com notificação<br>' +
       '<i data-lucide="bar-chart" aria-hidden="true"></i> Insights e previsão financeira<br>' +
       '<i data-lucide="target" aria-hidden="true"></i> Orçamento 50/30/20<br>' +
-      '<i data-lucide="scan" aria-hidden="true"></i> OCR de comprovantes<br>' +
+      '<i data-lucide="paperclip" aria-hidden="true"></i> Anexos de comprovante (foto/PDF)<br>' +
       '<i data-lucide="layers" aria-hidden="true"></i> Código modular (INIT_*)</div>' +
       '<div style="margin-bottom:16px;"><strong>v10.0.0</strong><br>' +
       '<i data-lucide="zap" aria-hidden="true"></i> Performance 3x mais rápido<br>' +

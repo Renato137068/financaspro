@@ -90,6 +90,23 @@ describe('PLAY_BILLING', () => {
     }));
   });
 
+  test('purchase encaminha opts de troca de ciclo ao nativo', async () => {
+    const purchase = jest.fn(() => Promise.resolve({ purchaseToken: 'tok-upg' }));
+    const { PB } = loadPlayBilling({
+      window: {
+        Capacitor: { isNativePlatform: () => true },
+        __fpNativeBilling: { purchase },
+      },
+    });
+    await PB.purchase('financaspro.pro.yearly', {
+      oldProductId: 'financaspro.pro.monthly',
+    });
+    expect(purchase).toHaveBeenCalledWith(
+      'financaspro.pro.yearly',
+      expect.objectContaining({ oldProductId: 'financaspro.pro.monthly' }),
+    );
+  });
+
   test('restore devolve lista vazia sem plugin purchases', async () => {
     const { PB } = loadPlayBilling({
       window: {

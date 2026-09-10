@@ -14,7 +14,11 @@
   align-items: center;
   justify-content: center;
   z-index: calc(var(--z-overlay) + 20);
-  padding: var(--space-5);
+  padding:
+    max(var(--space-5), env(safe-area-inset-top, 0px))
+    max(var(--space-5), env(safe-area-inset-right, 0px))
+    max(var(--space-5), env(safe-area-inset-bottom, 0px))
+    max(var(--space-5), env(safe-area-inset-left, 0px));
   animation: fadeIn var(--transition-fast);
 }
 

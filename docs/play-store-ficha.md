@@ -31,7 +31,7 @@ O FinançasPro começa no seu aparelho: registre receitas e despesas e veja quan
 sobra no fim do mês — sem anúncios e sem vender seus dados.
 
 Para sincronizar entre dispositivos, exportar na nuvem e usar recursos Pro
-(OCR, previsão, equipe), entre com uma conta. O uso local básico continua
+(previsão, equipe, PDF), entre com uma conta. O uso local básico continua
 disponível offline.
 
 POR QUE ELE É DIFERENTE
@@ -59,7 +59,7 @@ NO PRO
 • Fatura do cartão projetada, com as parcelas futuras
 • Celular, tablet e navegador sincronizados
 • Modo casal — duas pessoas, uma vida financeira
-• OCR de comprovantes ilimitado e relatório em PDF
+• Relatório em PDF pronto para apresentar
 
 PLANOS (Google Play)
 • Gratuito — sem prazo e sem anúncios

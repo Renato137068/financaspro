@@ -278,10 +278,16 @@ const INIT_CONFIG = {
       }
     }
     
-    // Atualizar badge de plano
+    // Atualizar badge de plano (fonte: entitlement BILLING, não config.plano)
     var planBadge = document.getElementById('perfil-plan-badge');
     if (planBadge) {
-      var info = INIT_CONFIG._planoBadgeInfo(config.plano);
+      var planoFonte = config.plano;
+      if (typeof BILLING !== 'undefined' && BILLING.getTier) {
+        planoFonte = BILLING.planoFromTier
+          ? BILLING.planoFromTier(BILLING.getTier())
+          : String(BILLING.getTier() || 'FREE').toLowerCase();
+      }
+      var info = INIT_CONFIG._planoBadgeInfo(planoFonte);
       planBadge.textContent = info.label;
       planBadge.className = 'perfil-avatar-badge ' + info.className;
     }
@@ -642,8 +648,8 @@ const INIT_CONFIG = {
 
   /**
    * Preferências que a importação PODE tocar. Tudo fora da lista é ignorado
-   * (ex.: apiBaseUrl, flags de infra/plano forjadas, syncV2Enabled).
-   * `plano` permanece aqui — o aviso de override sensível já cobre a troca.
+   * (ex.: apiBaseUrl, flags de infra, syncV2Enabled).
+   * `plano` NÃO entra — entitlement vem da assinatura verificada (RISK-02).
    */
   _IMPORT_CONFIG_ALLOWED: [
     'nome', 'email', 'telefone', 'nascimento', 'endereco', 'cidade',
@@ -653,8 +659,7 @@ const INIT_CONFIG = {
     'ultimoExportoDados', 'ultimoAcessoApp',
     'metas', 'contasPagar', 'assinaturas', 'patrimonio', 'openFinance',
     'onboardingConcluido', 'feedbacks',
-    'saldosIniciais', 'faturasPagas', 'recorrentesProcessadas',
-    'plano'
+    'saldosIniciais', 'faturasPagas', 'recorrentesProcessadas'
   ],
 
   /** P1.1: config serializada no backup sem hash/salt/estado do PIN. */
@@ -709,8 +714,7 @@ const INIT_CONFIG = {
   _importTemOverridesSensiveis: function(data) {
     if (!data.config || typeof data.config !== 'object') return false;
     var cfg = data.config;
-    var atual = DADOS.getConfig();
-    if (cfg.plano && cfg.plano !== atual.plano) return true;
+    // plano do backup é ignorado no merge (RISK-02) — não precisa de aviso.
     if (cfg.pinAtivo || cfg.pinHash || cfg.pinSalt) return true;
     return false;
   },
@@ -841,7 +845,7 @@ const INIT_CONFIG = {
         INIT_CONFIG._pendingImport = data;
         if (INIT_CONFIG._importTemOverridesSensiveis(data)) {
           INIT_MODALS.confirm(
-            'O backup pode alterar plano e preferências. Seu PIN local não será substituído. Continuar?',
+            'O backup pode alterar preferências. Seu PIN local e o plano de assinatura não serão substituídos. Continuar?',
             function() { INIT_CONFIG.importarDados(INIT_CONFIG._pendingImport); }
           );
         } else {

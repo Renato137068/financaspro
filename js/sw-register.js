@@ -6,8 +6,9 @@
   var isHttp = location.protocol === 'http:' || location.protocol === 'https:';
   if (!isHttp) return;
 
-  // App nativo (Capacitor): SW quebra auth na nuvem — cacheia index.html antigo
-  // (sem Supabase na CSP) e intercepta fetch externo com fallback "Offline".
+  // App nativo (Capacitor): SW propositalmente desligado — ver docs/apk-offline.md.
+  // Cache de index.html antigo quebrava auth na nuvem (CSP sem Supabase) e
+  // interceptava fetch externo com fallback "Offline".
   // PWA/web continua com SW; no APK desregistramos e limpamos caches legados.
   var isNative = !!(window.Capacitor
     && typeof window.Capacitor.isNativePlatform === 'function'

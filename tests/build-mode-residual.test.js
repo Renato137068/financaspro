@@ -77,13 +77,19 @@ describe('PIN flag plano + tema', () => {
   });
 });
 
-describe('OCR SRI e Express inerte no Capacitor', () => {
-  test('OCR usa versão pinada + integrity', () => {
+describe('OCR desativado no produto', () => {
+  test('stub OCR sem Tesseract / câmera', () => {
     const ocr = fs.readFileSync(path.join(root, 'js/ocr.js'), 'utf8');
-    expect(ocr).toContain('tesseract.js@5.1.1');
-    expect(ocr).toContain('sha384-');
-    expect(ocr).toContain('crossOrigin');
-    expect(ocr).toContain('js/vendor/tesseract.min.js');
+    expect(ocr).toMatch(/no-op|desativado|removido/i);
+    expect(ocr).not.toContain('tesseract.js@5.1.1');
+    expect(ocr).not.toContain('btn-ocr-scan');
+  });
+
+  test('index não carrega ocr.js; lifecycle não chama OCR.init', () => {
+    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+    const life = fs.readFileSync(path.join(root, 'js/core/lifecycle.js'), 'utf8');
+    expect(html).not.toMatch(/src="js\/ocr\.js"/);
+    expect(life).not.toMatch(/OCR\.init/);
   });
 
   test('dados._apiAtiva é false em Capacitor nativo', () => {

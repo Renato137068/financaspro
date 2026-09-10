@@ -14,7 +14,6 @@ const src = fs.readFileSync(
 
 describe('play-rtdn — não aceita chamada não autenticada', () => {
   test('sem mecanismo configurado, recusa em vez de liberar geral', () => {
-    // Antes: `if (secret) {...}` — com a env vazia, qualquer POST passava.
     expect(src).toContain('nao-configurado');
     expect(src).toMatch(/status:\s*503/);
     expect(src).toMatch(/!secret && !saEsperada/);
@@ -37,20 +36,11 @@ describe('play-rtdn — comparação do segredo', () => {
   });
 });
 
-describe('play-rtdn — o segredo sai da URL', () => {
-  test('o header tem precedência sobre a query string', () => {
-    const i = src.indexOf('x-rtdn-secret');
-    const j = src.indexOf('searchParams.get("secret")');
-    expect(i).toBeGreaterThan(-1);
-    expect(j).toBeGreaterThan(-1);
-    expect(i).toBeLessThan(j);
-  });
-
-  test('a query string continua aceita, mas avisa que é deprecada', () => {
-    // Pub/Sub push não envia header customizado: remover hoje quebraria a
-    // integração existente. O aviso é o que puxa a migração.
-    expect(src).toMatch(/deprecado/i);
-    expect(src).toContain('console.warn');
+describe('play-rtdn — autenticação', () => {
+  test('aceita header x-rtdn-secret; rejeita query string', () => {
+    expect(src).toContain('x-rtdn-secret');
+    expect(src).not.toMatch(/searchParams\.get\(["']secret["']\)/);
+    expect(src).toMatch(/\?secret=.*removid|não reintroduzir/i);
   });
 
   test('OIDC é o caminho preferido e valida emissor, verificação e audiência', () => {
@@ -60,9 +50,11 @@ describe('play-rtdn — o segredo sai da URL', () => {
     expect(src).toMatch(/info\.aud !== audiencia/);
   });
 
-  test('OIDC é avaliado antes do segredo', () => {
+  test('OIDC é avaliado antes do segredo de header', () => {
     const oidc = src.indexOf('autorizado = await oidcConfere');
     const seg = src.indexOf('autorizado = await segredoConfere');
+    expect(oidc).toBeGreaterThan(-1);
+    expect(seg).toBeGreaterThan(-1);
     expect(oidc).toBeLessThan(seg);
   });
 });

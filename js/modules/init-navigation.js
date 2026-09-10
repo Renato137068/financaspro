@@ -153,6 +153,7 @@ const INIT_NAVIGATION = {
       'billing-restaurar': true,
       'billing-portal': true,
       'billing-cancelar': true,
+      'billing-reativar': true,
       'of-fechar': true,
       'of-conectar-sandbox': true,
       'of-conectar-belvo': true,
@@ -485,18 +486,22 @@ const INIT_NAVIGATION = {
     );
   },
 
-  carregarChunkOcr: function(callback) {
+  carregarChunkAnexos: function(callback) {
     this._ensureChunk(
-      'ocr',
-      function() { return typeof OCR !== 'undefined'; },
+      'anexos',
+      function() { return typeof INIT_ANEXOS !== 'undefined'; },
       function(justLoaded) {
-        if (justLoaded && typeof OCR !== 'undefined' && OCR.init) {
-          // Wrapper: passar OCR.init nu perde `this` (UTILS.tentar chama fn()).
-          UTILS.tentar('chunk.ocr.init', function() { OCR.init(); });
+        if (justLoaded && typeof INIT_ANEXOS !== 'undefined' && INIT_ANEXOS.init) {
+          UTILS.tentar('chunk.anexos.init', function() { INIT_ANEXOS.init(); });
         }
         if (typeof callback === 'function') callback();
       },
     );
+  },
+
+  /** @deprecated OCR removido — alias para anexos. */
+  carregarChunkOcr: function(callback) {
+    this.carregarChunkAnexos(callback);
   },
 
   _carregarSubOrcamento: function(sub, callback) {
@@ -653,7 +658,7 @@ function mudarAba(nomeAba, opcoes) {
   setTimeout(function() {
     try {
       if (nomeAba === 'novo') {
-        INIT_NAVIGATION.carregarChunkOcr(function() {
+        INIT_NAVIGATION.carregarChunkAnexos(function() {
           if (typeof INIT_FORM !== 'undefined') {
             if (INIT_FORM.renderizarSelects) INIT_FORM.renderizarSelects();
             if (INIT_FORM.renderQuickEntries) INIT_FORM.renderQuickEntries();

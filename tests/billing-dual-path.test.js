@@ -30,4 +30,25 @@ describe('Dual path Supabase × Express', function() {
     expect(block).toMatch(/_useSupabaseBilling\(\)/);
     expect(block).toMatch(/checkout-unavailable/);
   });
+
+  test('cancel/resume/portal usam isPlayManaged, não isAvailable', function() {
+    expect(billingSrc).toMatch(/isPlayManaged:\s*function/);
+    const cancel = billingSrc.slice(
+      billingSrc.indexOf('cancelSubscription:'),
+      billingSrc.indexOf('resumeSubscription:'),
+    );
+    const resume = billingSrc.slice(
+      billingSrc.indexOf('resumeSubscription:'),
+      billingSrc.indexOf('openPortal:'),
+    );
+    const portal = billingSrc.slice(
+      billingSrc.indexOf('openPortal:'),
+      billingSrc.indexOf('openPortal:') + 500,
+    );
+    expect(cancel).toMatch(/isPlayManaged\(/);
+    expect(cancel).not.toMatch(/PLAY_BILLING\.isAvailable/);
+    expect(resume).toMatch(/isPlayManaged\(/);
+    expect(resume).not.toMatch(/PLAY_BILLING\.isAvailable/);
+    expect(portal).toMatch(/isPlayManaged\(/);
+  });
 });

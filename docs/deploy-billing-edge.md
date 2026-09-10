@@ -157,6 +157,17 @@ a combinação correta para produção.
 
 ---
 
+## RTDN — autenticação (obrigatório após 9/9/2026)
+
+`?secret=` **não é mais aceito** (Edge nem Express): vazava em logs de proxy.
+Use só:
+
+1. **OIDC Pub/Sub** (`PLAY_RTDN_SERVICE_ACCOUNT` [+ `PLAY_RTDN_AUDIENCE`]) — preferido
+2. Header **`x-rtdn-secret`** (`PLAY_RTDN_SECRET`) — curl / staging
+
+Se a push subscription do Google ainda aponta `...?secret=...`, atualize o
+endpoint **sem** query e habilite autenticação OIDC da service account.
+
 ## Testar o RTDN
 
 O `play-rtdn` é por onde renovação, cancelamento, revogação e estorno chegam.

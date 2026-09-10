@@ -60,27 +60,10 @@ describe('refreshUsageBanner', function() {
     expect(banner.innerHTML).toMatch(/billing-portal-banner/);
   });
 
-  test('cota de OCR quase no fim mostra o banner', function() {
-    const { INIT, banner } = loadInitBilling({
-      getLifecycleAlert: function() { return null; },
-      isCloudUser: function() { return false; },
-      ocrRemaining: function() { return 1; },
-      shouldEnforceLimits: function() { return false; },
-    });
-    INIT.refreshUsageBanner();
-    expect(banner.hidden).toBe(false);
-    expect(banner.innerHTML).toMatch(/1 escaneamento/);
-    expect(banner.innerHTML).toMatch(/abrir-paywall/);
-    // O banner vende o que o Pro faz, não o limite que ele remove.
-    expect(banner.innerHTML).not.toMatch(/sem limite/i);
-    expect(banner.innerHTML).toMatch(/quantos comprovantes quiser/);
-  });
-
-  test('PRO não vê banner de cota — ocrRemaining é Infinity', function() {
+  test('PRO sem lifecycle alert não vê banner de cota OCR (recurso removido)', function() {
     const { INIT, banner } = loadInitBilling({
       getLifecycleAlert: function() { return null; },
       isCloudUser: function() { return true; },
-      ocrRemaining: function() { return Infinity; },
       shouldEnforceLimits: function() { return false; },
     });
     INIT.refreshUsageBanner();
@@ -93,7 +76,6 @@ describe('refreshUsageBanner', function() {
     const { INIT, banner } = loadInitBilling({
       getLifecycleAlert: function() { return null; },
       isCloudUser: function() { return false; },
-      ocrRemaining: function() { return 5; },
       shouldEnforceLimits: function() { return true; },
       getUsageLabel: function() { return ''; },
     });

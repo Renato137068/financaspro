@@ -1,13 +1,13 @@
-﻿/**
- * @file config.js — Application constants & configuration
+/**
+ * @file config.js � Application constants & configuration
  *
  * FP_BUILD_MODE:
- *   'cloud' — Play Store / sync Supabase (padrão)
- *   'local' — piloto offline sem login (scripts/set-build-mode.cjs local)
- * Runtime: localStorage fp-force-local=1 também força modo local (dev).
+ *   'cloud' � Play Store / sync Supabase (padr�o)
+ *   'local' � piloto offline sem login (scripts/set-build-mode.cjs local)
+ * Runtime: localStorage fp-force-local=1 tamb�m for�a modo local (dev).
  *
- * Credenciais cloud: defaults abaixo (anon key pública). Override no build via
- * SUPABASE_URL + SUPABASE_ANON_KEY → scripts/inject-supabase-env.cjs.
+ * Credenciais cloud: defaults abaixo (anon key p�blica). Override no build via
+ * SUPABASE_URL + SUPABASE_ANON_KEY ? scripts/inject-supabase-env.cjs.
  */
 
 var FP_BUILD_MODE = 'cloud';
@@ -25,7 +25,7 @@ function _fpWantLocal() {
   return false;
 }
 
-/* Preenchidos por inject-supabase-env.cjs quando as env vars existem; senão ''. */
+/* Preenchidos por inject-supabase-env.cjs quando as env vars existem; sen�o ''. */
 var _FP_ENV_URL = '';
 var _FP_ENV_ANON = '';
 
@@ -34,16 +34,12 @@ var _FP_CLOUD_ANON = _FP_ENV_ANON || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc
 var _fpLocal = _fpWantLocal();
 
 const CONFIG = {
-  APP_NAME: 'FinançasPro',
-  VERSION: '11.3.14',
+  APP_NAME: 'Finan�asPro',
+  VERSION: '11.3.18',
   BUILD_MODE: _fpLocal ? 'local' : 'cloud',
 
-  /** Open Finance em produção (Belvo). Enquanto false, o card some do Perfil. */
+  /** Open Finance em produ��o (Belvo). Enquanto false, o card some do Perfil. */
   FEATURE_OPEN_FINANCE: false,
-  /* Tesseract servido pelo próprio app. Ligado por
-     scripts/vendor-tesseract.cjs; harden-csp.cjs lê a mesma flag para
-     fechar a CSP em script-src 'self'. */
-  TESSERACT_LOCAL: false,
 
   STORAGE_TRANSACOES: 'fp-transacoes',
   STORAGE_CONFIG: 'fp-config',
@@ -58,30 +54,30 @@ const CONFIG = {
   API_REFRESH_TOKEN_STORAGE: 'fp-refresh-token',
   API_USER_STORAGE: 'fp-api-user',
 
-  // Supabase: vazios = local-first (sem login forçado). Cloud = Play Store.
+  // Supabase: vazios = local-first (sem login for�ado). Cloud = Play Store.
   SUPABASE_URL: _fpLocal ? '' : _FP_CLOUD_URL,
   SUPABASE_ANON_KEY: _fpLocal ? '' : _FP_CLOUD_ANON,
 
   TIPO_RECEITA: 'receita',
   TIPO_DESPESA: 'despesa',
-  // Movimentação entre contas do próprio usuário. Não é ganho nem gasto: só
+  // Movimenta��o entre contas do pr�prio usu�rio. N�o � ganho nem gasto: s�
   // muda de lugar. Como todos os agregadores do app filtram por 'receita' ou
-  // 'despesa', um tipo próprio é automaticamente ignorado por eles — receitas,
-  // despesas, orçamento 50/30/20 e relatórios seguem corretos sem alteração.
+  // 'despesa', um tipo pr�prio � automaticamente ignorado por eles � receitas,
+  // despesas, or�amento 50/30/20 e relat�rios seguem corretos sem altera��o.
   TIPO_TRANSFERENCIA: 'transferencia',
 
   CATEGORIAS_RECEITA_SLUGS: ['salario','freelance','investimentos','vendas','reembolsos','beneficios','presentes','aluguel_recebido','premios','outros'],
   CATEGORIAS_DESPESA_SLUGS: ['alimentacao','transporte','moradia','saude','educacao','lazer','assinaturas','seguros','impostos','servicos_financeiros','compras','vestuario','viagem','pet','familia','doacoes','beleza','outro'],
 
   CATEGORIAS_LABELS: {
-    salario: 'Salário', freelance: 'Freelance', investimentos: 'Investimentos',
-    vendas: 'Vendas', reembolsos: 'Reembolsos', beneficios: 'Benefícios', presentes: 'Presentes', aluguel_recebido: 'Aluguel Recebido', premios: 'Prêmios', outros: 'Outros',
-    alimentacao: 'Alimentação', transporte: 'Transporte', moradia: 'Moradia',
-    saude: 'Saúde', educacao: 'Educação', lazer: 'Lazer', outro: 'Outros',
-    entretenimento: 'Entretenimento', compras: 'Compras', vestuario: 'Vestuário',
+    salario: 'Sal�rio', freelance: 'Freelance', investimentos: 'Investimentos',
+    vendas: 'Vendas', reembolsos: 'Reembolsos', beneficios: 'Benef�cios', presentes: 'Presentes', aluguel_recebido: 'Aluguel Recebido', premios: 'Pr�mios', outros: 'Outros',
+    alimentacao: 'Alimenta��o', transporte: 'Transporte', moradia: 'Moradia',
+    saude: 'Sa�de', educacao: 'Educa��o', lazer: 'Lazer', outro: 'Outros',
+    entretenimento: 'Entretenimento', compras: 'Compras', vestuario: 'Vestu�rio',
     viagem: 'Viagem', pet: 'Pet', assinaturas: 'Assinaturas', seguros: 'Seguros',
-    impostos: 'Impostos e Taxas', servicos_financeiros: 'Serviços Financeiros',
-    familia: 'Família', doacoes: 'Doações', beleza: 'Beleza e Cuidados'
+    impostos: 'Impostos e Taxas', servicos_financeiros: 'Servi�os Financeiros',
+    familia: 'Fam�lia', doacoes: 'Doa��es', beleza: 'Beleza e Cuidados'
   },
 
   get CATEGORIAS_RECEITA() { return this.CATEGORIAS_RECEITA_SLUGS; },
@@ -108,7 +104,7 @@ const CONFIG = {
     viagem: 'plane', pet: 'paw', familia: 'users', doacoes: 'heart', beleza: 'sparkles'
   },
 
-  /** @deprecated Use _LUCIDE_ICONS � mantido para compatibilidade legada */
+  /** @deprecated Use _LUCIDE_ICONS ? mantido para compatibilidade legada */
   get _EMOJIS() { return this._LUCIDE_ICONS; },
 
   get CATEGORIAS_MAP() {
@@ -140,15 +136,65 @@ const CONFIG = {
     var mapped = this.CATEGORIAS_INTERNAS_MAP[s] || s;
     var lista = tipo === this.TIPO_RECEITA ? this.CATEGORIAS_RECEITA_SLUGS : this.CATEGORIAS_DESPESA_SLUGS;
     if (lista.indexOf(mapped) !== -1) return mapped;
+    // Categorias criadas pelo usu�rio: n�o colapsar em "outro(s)".
+    var custom = this.resolveCustomCategoria(slug, tipo);
+    if (custom) return custom;
     return tipo === this.TIPO_RECEITA ? 'outros' : 'outro';
   },
 
+  /** Slug est�vel a partir do nome exibido (custom). */
+  slugifyCategoria: function(nome) {
+    var raw = String(nome || '').trim().toLowerCase();
+    if (!raw) return '';
+    try {
+      raw = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    } catch (e) { /* IE/legado */ }
+    return raw.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  },
+
+  /**
+   * Se nome/slug bate com uma categoria custom do tipo, devolve o slug a gravar.
+   * @returns {string|null}
+   */
+  resolveCustomCategoria: function(nomeOuSlug, tipo) {
+    var lista = null;
+    try {
+      if (typeof DADOS !== 'undefined' && DADOS.getConfig) {
+        var cc = (DADOS.getConfig().categoriasCustom) || {};
+        lista = cc[tipo] || cc[String(tipo || '').toLowerCase()] || null;
+      }
+    } catch (e) { lista = null; }
+    if (!lista || !lista.length) return null;
+    var alvo = String(nomeOuSlug || '').trim().toLowerCase();
+    var slugAlvo = this.slugifyCategoria(nomeOuSlug);
+    for (var i = 0; i < lista.length; i++) {
+      var nome = lista[i];
+      if (!nome) continue;
+      if (String(nome).trim().toLowerCase() === alvo) return this.slugifyCategoria(nome) || null;
+      if (this.slugifyCategoria(nome) === slugAlvo && slugAlvo) return slugAlvo;
+    }
+    return null;
+  },
+
+  /** Nome amig�vel: whitelist, depois custom, depois capitaliza o slug. */
   getCatLabel: function(slug) {
-    return this.CATEGORIAS_LABELS[slug] || slug.charAt(0).toUpperCase() + slug.slice(1);
+    if (this.CATEGORIAS_LABELS[slug]) return this.CATEGORIAS_LABELS[slug];
+    var tipos = [this.TIPO_DESPESA, this.TIPO_RECEITA];
+    for (var t = 0; t < tipos.length; t++) {
+      try {
+        if (typeof DADOS === 'undefined' || !DADOS.getConfig) break;
+        var lista = ((DADOS.getConfig().categoriasCustom) || {})[tipos[t]] || [];
+        for (var i = 0; i < lista.length; i++) {
+          if (this.slugifyCategoria(lista[i]) === slug) return lista[i];
+        }
+      } catch (e) { /* */ }
+    }
+    var s = String(slug || '');
+    return s ? s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, ' ') : s;
   },
 
   DEFAULT_CONFIG: {
-    nome: 'Usuário',
+    nome: 'Usu�rio',
     moeda: 'BRL',
     tema: 'light',
     plano: 'free',
@@ -161,10 +207,10 @@ const CONFIG = {
     syncV2Enabled: true,
   },
 
-  /** Lote de transações por página no pull incremental (espelha backend). */
+  /** Lote de transa��es por p�gina no pull incremental (espelha backend). */
   SYNC_DELTA_BATCH_SIZE: 500,
 
-  /** Meses de histórico mantidos no localStorage (resto permanece no servidor). */
+  /** Meses de hist�rico mantidos no localStorage (resto permanece no servidor). */
   LOCAL_TX_WINDOW_MONTHS: 24,
 
   MOEDA_FORMATACAO: {

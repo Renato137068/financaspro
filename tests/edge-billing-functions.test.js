@@ -52,6 +52,26 @@ describe('Edge org-invite', function() {
   });
 });
 
+describe('Edge CORS allowlist', function() {
+  const src = shared('cors.ts');
+
+  test('não usa Access-Control-Allow-Origin: *', function() {
+    expect(src).not.toMatch(/Access-Control-Allow-Origin"\s*:\s*"\*"/);
+    expect(src).toMatch(/corsHeadersFor/);
+    expect(src).toMatch(/corsPreflight/);
+    expect(src).toMatch(/origin-not-allowed/);
+  });
+
+  test('funções de billing usam cors compartilhado', function() {
+    ['play-verify', 'stripe-cancel', 'stripe-resume', 'stripe-checkout', 'stripe-portal', 'welcome-trial', 'org-invite']
+      .forEach(function(name) {
+        const body = fn(name);
+        expect(body).toMatch(/corsHeadersFor|corsPreflight/);
+        expect(body).not.toMatch(/Access-Control-Allow-Origin"\s*:\s*"\*"/);
+      });
+  });
+});
+
 describe('Edge stripe-billing shared', function() {
   const src = shared('stripe-billing.ts');
   const constants = shared('billing-constants.ts');
@@ -65,5 +85,12 @@ describe('Edge stripe-billing shared', function() {
     expect(src).toMatch(/export async function createPortal/);
     expect(src).toMatch(/export async function cancelSubscription/);
     expect(src).toMatch(/cancel_at_period_end:\s*true/);
+  });
+
+  test('cancel/resume bloqueiam play: e não chamam Stripe em welcome:', function() {
+    expect(src).toMatch(/cancele-na-play-store/);
+    expect(src).toMatch(/reative-na-play-store/);
+    expect(src).toMatch(/isStripeManagedSubId/);
+    expect(src).toMatch(/welcome:/);
   });
 });

@@ -105,6 +105,14 @@ export async function createPortal(
   return { url: session.url };
 }
 
+/** play:/welcome: reutilizam stripeSubId — não são IDs Stripe. */
+function isStripeManagedSubId(id: string | null | undefined): boolean {
+  const s = String(id || "");
+  if (!s) return false;
+  if (s.startsWith("play:") || s.startsWith("welcome:")) return false;
+  return true;
+}
+
 /** Cancela no fim do período (cancel_at_period_end). */
 export async function cancelSubscription(
   sb: SupabaseClient,
@@ -114,14 +122,42 @@ export async function cancelSubscription(
   const existing = await findSubscription(sb, opts.orgId);
   if (!existing) throw httpError(404, "assinatura-nao-encontrada");
 
-  if (existing.stripeSubId) {
-    await stripe.subscriptions.update(existing.stripeSubId, {
+  if (String(existing.stripeSubId || "").startsWith("play:")) {
+    throw httpError(400, "cancele-na-play-store");
+  }
+
+  if (isStripeManagedSubId(existing.stripeSubId)) {
+    await stripe.subscriptions.update(existing.stripeSubId!, {
       cancel_at_period_end: true,
     });
   }
 
   const updated = await updateSubscription(sb, opts.orgId, { cancelAtPeriodEnd: true });
   return updated || { ...existing, cancelAtPeriodEnd: true };
+}
+
+/** Desfaz cancel_at_period_end — volta a renovar. */
+export async function resumeSubscription(
+  sb: SupabaseClient,
+  stripe: Stripe,
+  opts: { orgId: string },
+) {
+  const existing = await findSubscription(sb, opts.orgId);
+  if (!existing) throw httpError(404, "assinatura-nao-encontrada");
+  if (!existing.cancelAtPeriodEnd) return existing;
+
+  if (String(existing.stripeSubId || "").startsWith("play:")) {
+    throw httpError(400, "reative-na-play-store");
+  }
+
+  if (isStripeManagedSubId(existing.stripeSubId)) {
+    await stripe.subscriptions.update(existing.stripeSubId!, {
+      cancel_at_period_end: false,
+    });
+  }
+
+  const updated = await updateSubscription(sb, opts.orgId, { cancelAtPeriodEnd: false });
+  return updated || { ...existing, cancelAtPeriodEnd: false };
 }
 
 // ─── Webhook ────────────────────────────────────────────────────────────────

@@ -27,7 +27,7 @@ functions/
 | `PLAY_PACKAGE_NAME` | `com.financaspro.mobile` |
 | `PLAY_RTDN_SERVICE_ACCOUNT` | **preferido** — e-mail da service account do push do Pub/Sub (autenticação OIDC, nada secreto na URL) |
 | `PLAY_RTDN_AUDIENCE` | (opcional) audience configurada no push, se você definiu uma |
-| `PLAY_RTDN_SECRET` | alternativa — segredo compartilhado; envie no header `x-rtdn-secret`. Na query string (`?secret=`) ainda funciona, mas é deprecado |
+| `PLAY_RTDN_SECRET` | alternativa — segredo compartilhado **só** no header `x-rtdn-secret` (`?secret=` foi removido — vaza em logs) |
 | `STRIPE_SECRET_KEY` | chave secreta do Stripe (checkout + webhook) |
 | `STRIPE_WEBHOOK_SECRET` | signing secret do endpoint de webhook do Stripe |
 | `APP_URL` | origem permitida para success/cancel do checkout (anti-open-redirect) |
@@ -45,6 +45,7 @@ supabase functions deploy play-verify
 supabase functions deploy stripe-checkout
 supabase functions deploy stripe-portal
 supabase functions deploy stripe-cancel
+supabase functions deploy stripe-resume
 supabase functions deploy org-invite
 
 # Server-to-server (Pub/Sub e Stripe) — SEM JWT de usuário
@@ -86,10 +87,8 @@ gcloud pubsub subscriptions update <SUB> \
 supabase secrets set PLAY_RTDN_SERVICE_ACCOUNT=<SA>@<PROJETO>.iam.gserviceaccount.com
 ```
 
-O caminho antigo (`?secret=<PLAY_RTDN_SECRET>`) continua aceito para não derrubar
-integração existente, e registra um aviso no log a cada chamada. Com nenhum dos
-dois configurados a função passa a recusar tudo com 503 — antes ela aceitava
-qualquer POST quando o segredo estava vazio.
+`?secret=` **não é mais aceito** (nem Edge nem Express). Use OIDC ou
+`x-rtdn-secret`. Com nenhum mecanismo configurado a função recusa com 503.
 
 E o app chama, no lugar da API antiga, com o JWT do usuário logado:
 

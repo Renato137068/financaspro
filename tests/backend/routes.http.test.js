@@ -519,23 +519,39 @@ describe('webhook RTDN (Google Play)', () => {
   beforeEach(() => { segredoOriginal = CONFIG.playBilling.rtdnSecret; });
   afterEach(() => { CONFIG.playBilling.rtdnSecret = segredoOriginal; });
 
-  test('não exige autenticação de usuário (é server-to-server)', async () => {
+  test('sem segredo configurado, recusa (503) — fail-closed', async () => {
     CONFIG.playBilling.rtdnSecret = null;
     const res = await request(app).post(ROTA).send(envelope({ testNotification: { version: '1.0' } }));
+    expect(res.status).toBe(503);
+    expect(res.body).toMatchObject({ error: 'nao-configurado' });
+  });
+
+  test('não exige autenticação de usuário (é server-to-server)', async () => {
+    CONFIG.playBilling.rtdnSecret = 's3cr3t';
+    const res = await request(app)
+      .post(ROTA)
+      .set('x-rtdn-secret', 's3cr3t')
+      .send(envelope({ testNotification: { version: '1.0' } }));
     expect(res.status).toBe(200);
   });
 
   test('decodifica o envelope e delega ao serviço (token desconhecido → 200 sem ação)', async () => {
-    CONFIG.playBilling.rtdnSecret = null;
+    CONFIG.playBilling.rtdnSecret = 's3cr3t';
     const notif = { subscriptionNotification: { notificationType: 3, purchaseToken: 'a'.repeat(50) } };
-    const res = await request(app).post(ROTA).send(envelope(notif));
+    const res = await request(app)
+      .post(ROTA)
+      .set('x-rtdn-secret', 's3cr3t')
+      .send(envelope(notif));
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ ok: true, handled: false, reason: 'token-desconhecido' });
   });
 
   test('envelope sem data é reconhecido com 204 (Pub/Sub não reenvia)', async () => {
-    CONFIG.playBilling.rtdnSecret = null;
-    const res = await request(app).post(ROTA).send({ message: { messageId: 'x' } });
+    CONFIG.playBilling.rtdnSecret = 's3cr3t';
+    const res = await request(app)
+      .post(ROTA)
+      .set('x-rtdn-secret', 's3cr3t')
+      .send({ message: { messageId: 'x' } });
     expect(res.status).toBe(204);
   });
 
@@ -545,10 +561,19 @@ describe('webhook RTDN (Google Play)', () => {
     expect(res.status).toBe(403);
   });
 
-  test('com segredo configurado, aceita quando o ?secret confere', async () => {
+  test('com segredo configurado, rejeita ?secret= na query (não vaza em logs)', async () => {
     CONFIG.playBilling.rtdnSecret = 's3cr3t';
     const res = await request(app)
       .post(`${ROTA}?secret=s3cr3t`)
+      .send(envelope({ testNotification: {} }));
+    expect(res.status).toBe(403);
+  });
+
+  test('com segredo configurado, aceita quando o header x-rtdn-secret confere', async () => {
+    CONFIG.playBilling.rtdnSecret = 's3cr3t';
+    const res = await request(app)
+      .post(ROTA)
+      .set('x-rtdn-secret', 's3cr3t')
       .send(envelope({ testNotification: {} }));
     expect(res.status).toBe(200);
   });

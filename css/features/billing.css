@@ -9,23 +9,29 @@
 .billing-modal {
   max-width: 720px;
   width: calc(100% - 32px);
-  max-height: 90vh;
+  max-height: min(90vh, calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px));
   overflow-y: auto;
   padding: var(--space-6);
+  padding-top: max(var(--space-6), calc(env(safe-area-inset-top, 0px) + var(--space-4)));
   position: relative;
 }
 
 .billing-close {
   position: absolute;
-  top: 12px;
-  right: 14px;
+  top: max(8px, env(safe-area-inset-top, 0px));
+  right: max(8px, env(safe-area-inset-right, 0px));
   border: none;
   background: transparent;
   font-size: var(--font-size-3xl);
   line-height: 1;
   color: var(--color-text-secondary);
   cursor: pointer;
-  padding: 4px 8px;
+  padding: 8px;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: var(--radius-md);
 }
 

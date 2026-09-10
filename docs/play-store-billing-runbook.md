@@ -138,10 +138,9 @@ o usuário abrir o app — e é server-side puro, **não precisa de AAB novo**.
 - **Endpoint:** `https://nubvlksibmpryltkfpei.supabase.co/functions/v1/play-rtdn`
 - **Código:** `supabase/functions/play-rtdn/index.ts`
 
-A função aceita três formas de autenticação, nesta ordem de preferência:
-**OIDC do Pub/Sub** (recomendado), header `x-rtdn-secret`, e `?secret=` na query
-(deprecado — a URL vaza em log de proxy). Sem nenhuma configurada ela **recusa
-tudo com 503**, de propósito. O roteiro abaixo usa OIDC.
+A função aceita **OIDC do Pub/Sub** (recomendado) ou header `x-rtdn-secret`.
+Query `?secret=` **não é aceita** (vaza em logs). Sem mecanismo configurado
+ela **recusa tudo com 503**, de propósito. O roteiro abaixo usa OIDC.
 
 ### 3a. Criar o tópico Pub/Sub
 

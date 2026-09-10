@@ -159,6 +159,9 @@
   font-size: var(--font-size-sm);
   font-weight: 600;
   margin: var(--space-3) 0 var(--space-1);
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-sans);
+  text-align: left;
 }
 
 .meta-form .form-input {
@@ -168,6 +171,39 @@
   border-radius: var(--radius-md);
   background: var(--color-bg-page);
   color: var(--color-text-primary);
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-base);
+}
+
+.meta-form--aporte {
+  text-align: left;
+}
+
+.meta-aporte-lead {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  text-align: left;
+  line-height: 1.4;
+}
+
+.meta-aporte-restante {
+  margin: 0 0 var(--space-4);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  text-align: left;
+}
+
+.modal-box .meta-form p.campo-moeda-preview,
+.modal-box .meta-form--aporte .meta-aporte-lead,
+.modal-box .meta-form--aporte .meta-aporte-restante {
+  text-align: left;
+  margin-bottom: var(--space-2);
+}
+
+.modal-box .meta-form--aporte .meta-aporte-restante {
+  margin-bottom: var(--space-4);
 }
 
 /* .btn-sm canônico em css/components/buttons.css */

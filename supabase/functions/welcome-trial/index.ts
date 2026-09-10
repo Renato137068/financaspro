@@ -13,17 +13,12 @@
 // por isso convive com o trial do SKU sem conflitar com a política da Play.
 import { adminClient, findPlan, orgRoleOf } from "../_shared/db.ts";
 import { WELCOME_TRIAL_DAYS } from "../_shared/billing-constants.ts";
+import { corsHeadersFor, corsPreflight } from "../_shared/cors.ts";
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
-function json(body: unknown, status = 200): Response {
+function json(req: Request, body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...CORS, "Content-Type": "application/json" },
+    headers: { ...corsHeadersFor(req), "Content-Type": "application/json" },
   });
 }
 
@@ -33,23 +28,23 @@ function welcomeKey(userId: string): string {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
-  if (req.method !== "POST") return json({ error: "method-not-allowed" }, 405);
+  if (req.method === "OPTIONS") return corsPreflight(req);
+  if (req.method !== "POST") return json(req, { error: "method-not-allowed" }, 405);
 
   try {
     const jwt = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
-    if (!jwt) return json({ error: "nao-autenticado" }, 401);
+    if (!jwt) return json(req, { error: "nao-autenticado" }, 401);
 
     const sb = adminClient();
     const { data: { user }, error: authErr } = await sb.auth.getUser(jwt);
-    if (authErr || !user) return json({ error: "nao-autenticado" }, 401);
+    if (authErr || !user) return json(req, { error: "nao-autenticado" }, 401);
 
     const body = await req.json().catch(() => ({}));
     const orgId = body?.orgId;
-    if (!orgId) return json({ error: "parametros-invalidos" }, 400);
+    if (!orgId) return json(req, { error: "parametros-invalidos" }, 400);
 
     const role = await orgRoleOf(sb, orgId, user.id);
-    if (role !== "OWNER") return json({ error: "sem-permissao" }, 403);
+    if (role !== "OWNER") return json(req, { error: "sem-permissao" }, 403);
 
     // ── Idempotência, checada por USUÁRIO ────────────────────────────────
     // Sair da conta e entrar de novo não pode renovar o Pro, e criar uma org
@@ -61,7 +56,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (jaConcedido) {
-      return json({ error: "welcome-trial-ja-concedido", data: jaConcedido }, 409);
+      return json(req, { error: "welcome-trial-ja-concedido", data: jaConcedido }, 409);
     }
 
     // ── Nunca por cima de uma assinatura existente ───────────────────────
@@ -74,11 +69,11 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (subExistente) {
-      return json({ error: "assinatura-ja-existe" }, 409);
+      return json(req, { error: "assinatura-ja-existe" }, 409);
     }
 
     const plan = await findPlan(sb, "PRO");
-    if (!plan) return json({ error: "plano-nao-encontrado" }, 404);
+    if (!plan) return json(req, { error: "plano-nao-encontrado" }, 404);
 
     const agora = new Date();
     const fim = new Date(agora.getTime() + WELCOME_TRIAL_DAYS * 86400000);
@@ -111,7 +106,7 @@ Deno.serve(async (req) => {
     });
     if (grantErr) console.error("welcome-trial grant nao gravado", grantErr.message);
 
-    return json({
+    return json(req, {
       data: {
         tier: "PRO",
         status: "TRIALING",
@@ -123,6 +118,6 @@ Deno.serve(async (req) => {
     const status = (err as any)?.status ?? 500;
     const message = (err as Error)?.message ?? "erro-interno";
     if (status >= 500) console.error("welcome-trial erro", message);
-    return json({ error: message }, status);
+    return json(req, { error: message }, status);
   }
 });

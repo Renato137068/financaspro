@@ -121,15 +121,17 @@ export function createApp() {
 
   // Webhook RTDN (Real-time Developer Notifications) do Google Play — push do
   // Pub/Sub, server-to-server, sem cookie. Fica antes do csrfGuard, como o do
-  // Stripe. Autenticado por segredo compartilhado na URL (?secret=...).
+  // Stripe. Autenticado por header `x-rtdn-secret` (não usar ?secret= — vaza em logs).
   app.post('/api/v1/play-billing/rtdn', async (req, res, next) => {
     try {
       const secret = CONFIG.playBilling && CONFIG.playBilling.rtdnSecret;
-      if (secret) {
-        const provided = req.query.secret || req.headers['x-rtdn-secret'];
-        if (provided !== secret) {
-          return res.status(403).json({ error: 'forbidden' });
-        }
+      // Fail-closed: sem secret configurado, não aceita POST anônimo (paridade Edge).
+      if (!secret) {
+        return res.status(503).json({ error: 'nao-configurado' });
+      }
+      const provided = req.headers['x-rtdn-secret'];
+      if (provided !== secret) {
+        return res.status(403).json({ error: 'forbidden' });
       }
 
       const { messageId, notification } = decodeRtdnEnvelope(req.body);

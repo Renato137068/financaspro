@@ -115,6 +115,12 @@ const INIT_BILLING = {
     }).then(function() {
       self.refreshPlanoCard();
       if (self.refreshUsageBanner) self.refreshUsageBanner();
+      // Se o paywall estiver aberto, redesenha CTAs (Plano atual ↔ Reativar).
+      var ov = document.querySelector('.billing-overlay');
+      if (ov) {
+        self._renderPlans(ov);
+        self._renderFooter(ov);
+      }
     });
   },
 
@@ -255,25 +261,6 @@ const INIT_BILLING = {
       return;
     }
 
-    // Cota de OCR quase no fim: avisa enquanto ainda ha o que usar. O banner
-    // some sozinho quando a cota renova na virada do mes.
-    if (typeof BILLING.ocrRemaining === 'function') {
-      var remOcr = BILLING.ocrRemaining();
-      if (isFinite(remOcr) && remOcr <= 2) {
-        el.hidden = false;
-        el.className = 'fp-usage-banner' + (remOcr === 0 ? ' fp-usage-banner--warn' : '');
-        el.innerHTML =
-          '<div class="fp-usage-banner-text">' +
-            '<strong>' + (remOcr === 0
-              ? 'Você usou seus 5 escaneamentos do mês'
-              : (remOcr + ' escaneamento' + (remOcr === 1 ? '' : 's') + ' de comprovante restante' + (remOcr === 1 ? '' : 's'))) + '</strong> · ' +
-            'No Pro você fotografa quantos comprovantes quiser.' +
-          '</div>' +
-          '<button type="button" class="fp-usage-banner-cta" data-action="abrir-paywall">Ver o Pro</button>';
-        return;
-      }
-    }
-
     if (!BILLING.shouldEnforceLimits || !BILLING.shouldEnforceLimits()) {
       el.hidden = true;
       el.innerHTML = '';
@@ -382,6 +369,9 @@ const INIT_BILLING = {
       });
     }
 
+    // Atualiza cancelAtPeriodEnd da Play antes de decidir "Plano atual" vs "Reativar".
+    this._reconciliarPlay({ force: true });
+
     // Sempre abre o modal (soft paywall local / upsell). Sem nuvem ou sem
     // login, _renderPlans esconde "Assinar" e o footer pede conta — evita CTA
     // morto quando OCR/previsão esgotam usos grátis offline.
@@ -421,6 +411,7 @@ const INIT_BILLING = {
       if (action === 'billing-fechar') self._fecharPaywall();
       if (action === 'billing-interval') self._setInterval(btn.dataset.interval, ov);
       if (action === 'billing-assinar') self._assinar(btn.dataset.tier, ov);
+      if (action === 'billing-reativar') self._reativar(ov);
       if (action === 'billing-portal') self._portal();
       if (action === 'billing-restaurar') self._restaurarPlay(ov);
       if (action === 'billing-cancelar') self._cancelar(ov);
@@ -519,8 +510,44 @@ const INIT_BILLING = {
           priceLabel = playPrice + (self._interval === 'yearly' ? ' /ano' : ' /mês');
         }
         var desconto = self._interval === 'yearly' ? self._descontoAnual(plan) : null;
-        var isCurrent = tierAtual === plan.tier;
+        var intervalAtual = (typeof BILLING !== 'undefined' && BILLING.getBillingInterval)
+          ? (BILLING.getBillingInterval() || 'monthly')
+          : 'monthly';
+        var sameTier = tierAtual === plan.tier;
+        var sameInterval = intervalAtual === self._interval;
+        var subCache = (typeof BILLING !== 'undefined' && BILLING._cache)
+          ? BILLING._cache.subscription
+          : null;
+        // Cancelado no fim do período: ainda é Pro, mas NÃO é "plano atual"
+        // renovável — precisa CTA de reativar (senão mensal fica sem botão).
+        var cancelPending = !!(subCache && subCache.cancelAtPeriodEnd
+          && subCache.plan && subCache.plan.tier === plan.tier);
+        var isCurrent = sameTier && sameInterval && !cancelPending;
+        var isIntervalSwitch = sameTier && !sameInterval && !cancelPending;
         var features = Array.isArray(plan.features) ? plan.features : [];
+        // OCR removido do produto — esconde bullet legado do banco/seed.
+        features = features.filter(function(f) {
+          return !/ocr/i.test(String(f || ''));
+        });
+        var ctaHtml;
+        if (isCurrent) {
+          ctaHtml = '<span class="billing-plan-current-label">Plano atual</span>';
+        } else if (cancelPending && sameTier && sameInterval && canAssinar) {
+          ctaHtml = '<button type="button" class="btn-primario billing-plan-btn" data-action="billing-reativar" data-tier="' + UTILS.escapeHtml(plan.tier) + '">' +
+            'Reativar assinatura' +
+            '</button>';
+        } else if (canAssinar) {
+          var ctaLabel = tierAtual === 'FREE' || cancelPending
+            ? 'Assinar'
+            : (isIntervalSwitch
+              ? (self._interval === 'yearly' ? 'Mudar para anual' : 'Mudar para mensal')
+              : 'Mudar plano');
+          ctaHtml = '<button type="button" class="btn-primario billing-plan-btn" data-action="billing-assinar" data-tier="' + UTILS.escapeHtml(plan.tier) + '">' +
+            ctaLabel +
+            '</button>';
+        } else {
+          ctaHtml = '<span class="billing-plan-locked">Disponível após login na nuvem</span>';
+        }
         html += '<article class="billing-plan' + (plan.tier === 'PRO' ? ' billing-plan--featured' : '') + (isCurrent ? ' billing-plan--current' : '') + '">' +
           '<h3>' + UTILS.escapeHtml(plan.name || plan.tier) + '</h3>' +
           '<p class="billing-plan-price">' + UTILS.escapeHtml(priceLabel) +
@@ -531,13 +558,7 @@ const INIT_BILLING = {
               return '<li><i data-lucide="check" aria-hidden="true"></i> ' + UTILS.escapeHtml(frozen) + '</li>';
             }).join('') +
           '</ul>' +
-          (isCurrent
-            ? '<span class="billing-plan-current-label">Plano atual</span>'
-            : (canAssinar
-              ? '<button type="button" class="btn-primario billing-plan-btn" data-action="billing-assinar" data-tier="' + UTILS.escapeHtml(plan.tier) + '">' +
-                  (tierAtual === 'FREE' ? 'Assinar' : 'Mudar plano') +
-                '</button>'
-              : '<span class="billing-plan-locked">Disponível após login na nuvem</span>')) +
+          ctaHtml +
         '</article>';
       });
       container.innerHTML = html || '<p class="billing-empty">Nenhum plano pago disponível no momento.</p>';
@@ -601,8 +622,75 @@ const INIT_BILLING = {
       if (usePlay || webStripe) {
         html += ' <button type="button" class="btn-ghost billing-cancel-link" data-action="billing-cancelar">Cancelar assinatura</button>';
       }
+    } else if (sub && sub.cancelAtPeriodEnd && sub.plan && sub.plan.tier !== 'FREE') {
+      html += '<p class="billing-note billing-cancel-pending">Cancelamento agendado'
+        + (sub.currentPeriodEnd
+          ? (' — Pro até ' + new Date(sub.currentPeriodEnd).toLocaleDateString('pt-BR'))
+          : '')
+        + '. Reative acima para continuar renovando.</p>';
     }
     footer.innerHTML = html;
+  },
+
+  _reativar: function(ov) {
+    var self = this;
+    if (typeof BILLING === 'undefined' || !BILLING.isCloudUser()) {
+      this._abrirLogin();
+      return;
+    }
+
+    var btn = ov && ov.querySelector('[data-action="billing-reativar"]');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Abrindo…';
+    }
+
+    var done = function(msg) {
+      UTILS.mostrarToast(msg || 'Assinatura reativada', 'success');
+      if (ov) {
+        self._renderPlans(ov);
+        self._renderFooter(ov);
+      }
+      self.refreshPlanoCard();
+      if (typeof INIT_CONFIG !== 'undefined' && INIT_CONFIG.refreshPerfil) INIT_CONFIG.refreshPerfil();
+    };
+    var fail = function(err) {
+      UTILS.mostrarToast((err && err.message) || 'Não foi possível reativar', 'error');
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Reativar assinatura';
+      }
+    };
+
+    // Play: só se o entitlement atual é play:<token> (não basta ser Capacitor).
+    if (typeof BILLING !== 'undefined' && BILLING.isPlayManaged
+        && BILLING.isPlayManaged()) {
+      if (typeof BILLING._openPlaySubscriptions === 'function') {
+        BILLING._openPlaySubscriptions();
+      } else {
+        var url = 'https://play.google.com/store/account/subscriptions?package=com.financaspro.mobile';
+        if (typeof window !== 'undefined' && window.open) window.open(url, '_blank');
+      }
+      UTILS.mostrarToast('Na Play Store, toque em Reativar na assinatura Pro.', 'info');
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Reativar assinatura';
+      }
+      self._reconciliouNestaSessao = false;
+      return;
+    }
+
+    if (typeof BILLING.resumeSubscription === 'function') {
+      BILLING.resumeSubscription().then(function() {
+        done('Assinatura reativada — a renovação continua.');
+      }).catch(fail);
+      return;
+    }
+
+    // Stripe sem endpoint de resume: portal.
+    BILLING.openPortal().then(function() {
+      done('Abra o portal e confirme a renovação.');
+    }).catch(fail);
   },
 
   _assinar: function(tier, ov) {
@@ -649,7 +737,13 @@ const INIT_BILLING = {
         onError(new Error('Plano indisponível no Google Play'));
         return;
       }
-      PLAY_BILLING.purchase(productId).then(onSuccess).catch(onError);
+      var purchaseOpts = null;
+      var intervalAtual = (BILLING.getBillingInterval && BILLING.getBillingInterval()) || null;
+      if (BILLING.getTier() === tier && intervalAtual && intervalAtual !== this._interval) {
+        var oldProductId = PLAY_BILLING.productIdForTier(tier, intervalAtual);
+        if (oldProductId) purchaseOpts = { oldProductId: oldProductId };
+      }
+      PLAY_BILLING.purchase(productId, purchaseOpts).then(onSuccess).catch(onError);
       return;
     }
 

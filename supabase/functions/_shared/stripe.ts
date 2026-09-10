@@ -33,6 +33,8 @@ function normalizeOrigin(raw: string): string | null {
   }
 }
 
+export { normalizeOrigin as normalizeOriginSafe };
+
 export function allowedBillingOrigins(): string[] {
   const origins = new Set<string>();
   const appUrl = Deno.env.get("APP_URL");

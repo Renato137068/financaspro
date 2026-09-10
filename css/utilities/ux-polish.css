@@ -3,8 +3,10 @@
 :root {
   --tap-target-min: 44px;
   --focus-ring: 0 0 0 3px rgba(18, 105, 78, 0.18);
-  /* Folga do sticky "Registrar" acima da nav inferior + FAB */
-  --nav-clearance: calc(92px + env(safe-area-inset-bottom, 0px));
+  /* Folga acima da nav inferior + FAB (toast, ações em massa, sync toast) */
+  --nav-clearance: calc(100px + env(safe-area-inset-bottom, 0px));
+  /* Header sticky mobile — padding ~14+14 + título ~28 + folga */
+  --app-header-offset: calc(58px + env(safe-area-inset-top, 0px));
   --press-scale: 0.98;
 }
 
@@ -82,17 +84,6 @@ textarea:focus-visible {
   flex: 0 0 auto;
 }
 
-.btn-registrar {
-  bottom: var(--nav-clearance);
-}
-
-@media (min-width: 768px) {
-  .btn-registrar {
-    position: static;
-    margin-top: var(--space-5);
-  }
-}
-
 @media (max-width: 480px) {
   main {
     padding-left: 14px;
@@ -152,8 +143,7 @@ textarea:focus-visible {
    toque, TODO controle interativo recebe o mínimo. Fica restrita ao ponteiro
    grosso de propósito — no desktop, com mouse, forçar 44px em botões pequenos
    distorceria o layout sem ganho de acessibilidade. */
-.ocr-btn,
-.er-btn:not(.ocr-btn),
+.er-btn,
 .btn-insight,
 .ia-confirm-btn,
 .ia-alt-btn,
@@ -250,8 +240,7 @@ textarea:focus-visible {
 .sync-indicator[hidden]{ display:none !important; }
 .sync-indicator--subtle{ opacity:.88; }
 .sync-indicator--toast{
-  top:auto; bottom:calc(env(safe-area-inset-bottom, 0px) + 80px);
-  left:50%; right:auto; transform:translateX(-50%);
+  top:auto; bottom:var(--nav-clearance); left:50%; right:auto; transform:translateX(-50%);
 }
 .sync-indicator-main{
   display:inline-flex; align-items:center; gap:8px;
@@ -273,9 +262,9 @@ textarea:focus-visible {
 .sync-indicator-main:focus-visible{
   outline:none; box-shadow: 0 0 0 3px var(--color-overlay-md);
 }
-@media (min-width:900px){
+@media (min-width:1024px){
   .sync-indicator{ top:16px; right:18px; }
-  .sync-indicator--toast{ bottom:24px; }
+  .sync-indicator--toast{ bottom:calc(24px + env(safe-area-inset-bottom, 0px)); }
 }
 .sync-indicator .sync-dot{ width:8px; height:8px; border-radius:50%; background:var(--color-text-muted); flex:0 0 auto; }
 .sync-ok .sync-dot{ background:var(--color-success-on-light); }

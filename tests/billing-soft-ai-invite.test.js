@@ -5,38 +5,13 @@ const fs = require('fs');
 const path = require('path');
 const billingHelpers = require('../js/billing.js');
 
-describe('Cota mensal de OCR', function() {
-  test('FREE começa o mês com a cota cheia', function() {
-    var ok = billingHelpers.ocrQuota({ usesConsumed: 0, tier: 'FREE' });
-    expect(ok.remaining).toBe(5);
-  });
-
-  test('a cota se esgota dentro do mês', function() {
-    var fim = billingHelpers.ocrQuota({
-      usesConsumed: billingHelpers.OCR_FREE_PER_MONTH,
-      tier: 'FREE',
-    });
-    expect(fim.remaining).toBe(0);
-  });
-
-  test('consumir reduz o que resta', function() {
-    var out = billingHelpers.ocrQuota({ usesConsumed: 2, tier: 'FREE', consume: true });
-    expect(out.remaining).toBe(3);
-    expect(out.remainingAfter).toBe(2);
-  });
-
-  test('a virada do mês devolve a cota — não é um teto vitalício', function() {
-    // Registro gravado numa competência antiga não conta para a atual: é essa
-    // renovação que faz o usuário reencontrar o recurso todo mês, em vez de
-    // queimar cinco usos numa tarde e nunca mais lembrar que ele existe.
-    var out = billingHelpers.ocrQuota({ usesConsumed: 5, tier: 'FREE', mes: '2000-01' });
-    expect(out.remaining).toBe(5);
-  });
-
-  test('PRO não tem cota', function() {
-    var out = billingHelpers.ocrQuota({ usesConsumed: 99, tier: 'PRO', consume: true });
-    expect(out.remaining).toBe(Infinity);
-    expect(out.remainingAfter).toBe(Infinity);
+describe('OCR removido do produto', function() {
+  test('cota OCR é noop (Infinity) em qualquer tier', function() {
+    var free = billingHelpers.ocrQuota({ usesConsumed: 99, tier: 'FREE', consume: true });
+    expect(free.remaining).toBe(Infinity);
+    expect(free.remainingAfter).toBe(Infinity);
+    var pro = billingHelpers.ocrQuota({ usesConsumed: 0, tier: 'PRO' });
+    expect(pro.remaining).toBe(Infinity);
   });
 });
 

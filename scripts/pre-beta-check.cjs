@@ -518,8 +518,13 @@ function conferirLocal() {
     })(p);
   });
   if (maisRecente > tDist) {
-    falha('dist/ está mais antigo que o código-fonte (' + culpado + ')',
-      'npm run build — senão o AAB sai com o bundle anterior');
+    if (process.env.FP_PRE_BETA_STATIC === '1') {
+      aviso('dist/ pode estar desatualizado (' + culpado + ')',
+        'CI já roda build antes; localmente: npm run build');
+    } else {
+      falha('dist/ está mais antigo que o código-fonte (' + culpado + ')',
+        'npm run build — senão o AAB sai com o bundle anterior');
+    }
   } else {
     ok('dist/ está na frente do código-fonte');
   }
@@ -531,6 +536,8 @@ async function main() {
   console.log('\n\x1b[1mFinançasPro — checagem pré-beta\x1b[0m');
   console.log('\x1b[2mOrigem pública: ' + APP_URL + '\x1b[0m');
 
+  const soEstatico = process.env.FP_PRE_BETA_STATIC === '1';
+
   let cred;
   try {
     cred = lerCredenciaisDoApp();
@@ -541,6 +548,14 @@ async function main() {
   }
 
   conferirLocal();
+  conferirCancelPorFonte();
+
+  if (soEstatico) {
+    secao('2–8. Ambiente remoto');
+    pulado('FP_PRE_BETA_STATIC=1 — só checagens locais (CI)');
+    fecharRelatorio();
+    return;
+  }
 
   secao('2. Alcance do servidor');
   const alcance = await servidorResponde(cred);
@@ -560,6 +575,39 @@ async function main() {
   await conferirAssetlinks();
   await conferirPrivacidade();
 
+  fecharRelatorio();
+}
+
+function conferirCancelPorFonte() {
+  secao('1b. Billing — cancel/resume por fonte');
+  const billing = fs.readFileSync(path.join(RAIZ, 'js/billing.js'), 'utf8');
+  if (!/isPlayManaged:\s*function/.test(billing)) {
+    falha('faltou BILLING.isPlayManaged', 'rotear cancel/resume/portal pela chave play:');
+    return;
+  }
+  const cancelBlock = billing.slice(
+    billing.indexOf('cancelSubscription:'),
+    billing.indexOf('resumeSubscription:'),
+  );
+  if (/PLAY_BILLING\.isAvailable\(\)/.test(cancelBlock)) {
+    falha('cancelSubscription ainda usa PLAY_BILLING.isAvailable()',
+      'use isPlayManaged() — Capacitor ≠ assinatura Play');
+  } else if (!/isPlayManaged\(/.test(cancelBlock)) {
+    falha('cancelSubscription não consulta isPlayManaged', 'js/billing.js');
+  } else {
+    ok('cancel/resume roteiam por isPlayManaged (não só Capacitor)');
+  }
+
+  const ds = fs.readFileSync(path.join(RAIZ, 'docs/play-store-data-safety.md'), 'utf8');
+  if (/A\.1 Cenário CLOUD/i.test(ds) && /→ \*\*SIM\*\*/.test(ds)) {
+    ok('Data Safety documenta CLOUD como cenário do beta Play');
+  } else {
+    falha('Data Safety não destaca CLOUD/SIM para o beta',
+      'docs/play-store-data-safety.md');
+  }
+}
+
+function fecharRelatorio() {
   const falhas = achados.filter(function(a) { return a.nivel === 'falha'; });
   const avisos = achados.filter(function(a) { return a.nivel === 'aviso'; });
   const cegos = achados.filter(function(a) { return a.nivel === 'inconclusivo'; });
@@ -589,8 +637,6 @@ async function main() {
   }
   console.log('');
 
-  /* Códigos distintos de propósito: 1 é "achei problema", 2 é "não consegui
-     olhar". Confundir os dois num CI é como o script começou errado. */
   if (falhas.length) process.exit(1);
   if (cegos.length) process.exit(2);
 }

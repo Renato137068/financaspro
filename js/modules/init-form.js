@@ -366,6 +366,16 @@ const INIT_FORM = {
       panel.style.display = aberto ? 'none' : 'block';
       btn.setAttribute('aria-expanded', !aberto);
       if (arrow) arrow.classList.toggle('expanded', !aberto);
+      // Sticky "Registrar" cobria o painel — rola e deixa folga abaixo.
+      if (!aberto) {
+        setTimeout(function() {
+          try {
+            panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          } catch (e) {
+            panel.scrollIntoView(true);
+          }
+        }, 40);
+      }
     });
   },
 
@@ -1229,7 +1239,21 @@ const INIT_FORM = {
   renderizarSelects: function() {
     var config = DADOS.getConfig();
     var bancos = config.bancos || ['Nubank', 'Itaú', 'Caixa', 'Bradesco', 'Santander'];
-    var cartoes = config.cartoes || ['Crédito', 'Débito', 'XP', 'B3'];
+    // XP/B3 saíram do padrão (não são forma de pagamento do dia a dia).
+    // PIX entra como opção canônica; se o usuário já tinha na config, mantém.
+    var CARTAO_REMOVIDOS = { XP: 1, B3: 1, 'XP Investimentos': 1 };
+    var cartoesPadrao = ['PIX', 'Crédito', 'Débito', 'Outro'];
+    var cartoesRaw = config.cartoes && config.cartoes.length ? config.cartoes : cartoesPadrao;
+    var cartoes = [];
+    var visto = {};
+    cartoesRaw.forEach(function(c) {
+      var nome = typeof c === 'string' ? c : (c && c.nome) || '';
+      if (!nome || CARTAO_REMOVIDOS[nome] || visto[nome]) return;
+      visto[nome] = 1;
+      cartoes.push(nome);
+    });
+    if (!visto.PIX) cartoes.unshift('PIX');
+    if (!cartoes.length) cartoes = cartoesPadrao.slice();
 
     var seletorBanco = document.getElementById('novo-banco');
     if (seletorBanco) {
@@ -1249,11 +1273,12 @@ const INIT_FORM = {
     var seletorCartao = document.getElementById('novo-cartao');
     if (seletorCartao) {
       var valCartao = seletorCartao.value;
+      if (CARTAO_REMOVIDOS[valCartao]) valCartao = '';
       var cartaoOpts = cartoes.map(function(c) {
         var nome = typeof c === 'string' ? c : (c.nome || c);
         return '<option value="' + UTILS.escapeHtml(nome) + '">' + UTILS.escapeHtml(nome) + '</option>';
       }).join('');
-      seletorCartao.innerHTML = '<option value="">Sem cartão</option>' + cartaoOpts;
+      seletorCartao.innerHTML = '<option value="">Sem forma</option>' + cartaoOpts;
       seletorCartao.value = valCartao;
     }
   },

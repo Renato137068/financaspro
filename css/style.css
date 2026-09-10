@@ -130,12 +130,13 @@ main {
 /* ── Navegação inferior no celular ─────────────────────────── */
 
 .nav-bottom {
+  /* Offset único: o pill inteiro sobe pelo home indicator (sem padding extra). */
   bottom: calc(10px + env(safe-area-inset-bottom, 0px));
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-bottom: 0;
   left: 50%;
   transform: translateX(-50%);
   width: calc(100% - 24px);
-  max-width: 460px;
+  max-width: var(--nav-max-phone, 460px);
   border-radius: var(--radius-xl);
   border: 1px solid var(--border-soft);
   overflow: visible;
@@ -220,7 +221,10 @@ main {
 
 .sidebar { display: none; }
 
-@media (min-width: 768px) {
+/* Shell desktop (sidebar) só a partir de 1024px.
+   Em tablet 768–1023 o bottom nav de celular funciona melhor no toque
+   e evita o enquadramento “meio desktop” com coluna estreita. */
+@media (min-width: 1024px) {
   body {
     max-width: none;
     margin: 0;
@@ -239,6 +243,7 @@ main {
     top: 0;
     width: var(--sidebar-width);
     height: 100vh;
+    height: 100dvh;
     background: var(--color-bg-card);
     border-right: 1px solid var(--color-border-light);
     z-index: var(--z-nav);
@@ -305,13 +310,10 @@ main {
     padding: 32px 40px;
   }
 
-  /* Conteúdo com largura de leitura confortável, centrado no espaço à direita
-     da sidebar. Sem isto o layout de coluna única (feito para o celular) esticava
-     de borda a borda: o card de saldo virava uma faixa de ~1200px com o valor no
-     terço esquerdo. 820px mantém os grids de 2 colunas (receita/despesa) folgados
-     sem transformar a tela num campo vazio. */
+  /* Largura de leitura alinhada à faixa 1024–1279 (900px), para não “encolher”
+     ao passar de laptop para monitor. Resumo sobrescreve com grid mais largo. */
   main .aba {
-    max-width: 820px;
+    max-width: 900px;
     margin-inline: auto;
   }
 
@@ -319,6 +321,30 @@ main {
   #auth-overlay {
     left: 0 !important;
     width: 100% !important;
+  }
+}
+
+/* Tablet (ainda com bottom nav): largura confortável, sem esticar borda a borda */
+@media (min-width: 768px) and (max-width: 1023px) {
+  body {
+    max-width: var(--app-shell-tablet, 720px);
+    margin-inline: auto;
+  }
+
+  main {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  main .aba {
+    max-width: 680px;
+    margin-inline: auto;
+  }
+
+  /* Nav alinhada à coluna de conteúdo — evita pill “órfã” de 460px no centro. */
+  .nav-bottom {
+    max-width: min(var(--app-shell-tablet, 720px), calc(100% - 32px));
+    width: calc(100% - 32px);
   }
 }
 

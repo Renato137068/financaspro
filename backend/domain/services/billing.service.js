@@ -127,14 +127,42 @@ export const BillingService = {
     const sub = await BillingRepository.findSubscription(orgId);
     if (!sub) throw new AppError('Assinatura não encontrada', 404);
 
+    const sid = String(sub.stripeSubId || '');
+    if (sid.startsWith('play:')) {
+      throw new AppError('Cancele a assinatura na Google Play Store', 400);
+    }
+
     const stripe = await getStripe();
-    if (stripe && sub.stripeSubId) {
+    // welcome: e chaves não-Stripe: só marca cancelAtPeriodEnd no banco.
+    if (stripe && sid && !sid.startsWith('welcome:')) {
       await stripe.subscriptions.update(sub.stripeSubId, {
         cancel_at_period_end: true,
       });
     }
 
     return BillingRepository.updateSubscription(orgId, { cancelAtPeriodEnd: true });
+  },
+
+  async resume(orgId) {
+    const sub = await BillingRepository.findSubscription(orgId);
+    if (!sub) throw new AppError('Assinatura não encontrada', 404);
+    if (!sub.cancelAtPeriodEnd) {
+      return sub;
+    }
+
+    const sid = String(sub.stripeSubId || '');
+    if (sid.startsWith('play:')) {
+      throw new AppError('Reative a assinatura na Google Play Store', 400);
+    }
+
+    const stripe = await getStripe();
+    if (stripe && sid && !sid.startsWith('welcome:')) {
+      await stripe.subscriptions.update(sub.stripeSubId, {
+        cancel_at_period_end: false,
+      });
+    }
+
+    return BillingRepository.updateSubscription(orgId, { cancelAtPeriodEnd: false });
   },
 
   async createPortalSession(orgId, returnUrl) {

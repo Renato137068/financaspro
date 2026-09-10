@@ -1,82 +1,86 @@
 # Data safety + Conteúdo do app — folha de respostas (Play Console)
 
 > Preencha em **Painel → Política → Segurança dos dados** e **Conteúdo do app**.
-> As respostas abaixo assumem o **piloto em MODO LOCAL** (sem backend), que foi
-> configurado no app: nesse modo o app **não envia dados para servidores**.
 >
-> **Atualizado em 22/08/2026.** Até então o modo local era só o comportamento do
-> `DADOS._apiBaseUrl()`: a interface continuava oferecendo login, assinatura,
-> Open Finance e verificação em duas etapas, o que contradizia a resposta "não
-> coleta dados" abaixo. Agora essas superfícies têm `data-requer-nuvem` e somem
-> quando não há backend configurado (`INIT_CONFIG.aplicarVisibilidadeNuvem`).
-> As respostas do cenário PILOTO passaram a descrever o app de verdade.
+> **Build de beta na Play Store (padrão atual, 9 set 2026):** o APK/AAB
+> `11.3.x` é **CLOUD** — login Supabase + sync + Google Play Billing. Use a
+> seção **A.1 Cenário CLOUD / Play beta** abaixo. Não marque “não coleta dados”.
 >
-> **Se você configurar `CONFIG.API_BASE_URL`**, tudo isso reaparece — e aí vale
-> o cenário CLOUD, não o piloto. Não existe um segundo interruptor: a nuvem
-> aparece exatamente quando há uma API para falar.
+> O cenário **PILOTO local** (A.2) vale só se você gerar um AAB com
+> `android:bundle:local` / `fp-force-local` e **sem** login na loja. Esse não é
+> o binário que está indo para a faixa de testes agora.
 
 ## A) Segurança dos dados (Data safety)
 
-### Cenário do PILOTO (modo local — recomendado para amanhã)
+### A.1 Cenário CLOUD / Play beta (use este)
+
+- **O app coleta ou compartilha dados do usuário?** → **SIM**
+  - **Informações pessoais:** nome, e-mail (conta Supabase Auth).
+  - **Informações financeiras:** lançamentos, orçamentos, metas, contas que o
+    usuário registra; sincronizados com a nuvem quando há login.
+  - **Identificadores do app / compras:** tokens de compra Google Play
+    (verificação de assinatura Pro) enviados aos nossos backends (Supabase Edge
+    / API) para validar entitlement — **não** enviamos o número do cartão.
+- **Finalidade:** funcionalidade do app, sincronização entre aparelhos,
+  autenticação, processamento de assinatura.
+- **O app criptografa dados em trânsito?** → **SIM** (HTTPS / TLS).
+- **Dados criptografados em repouso no dispositivo?** → parcial: cifragem AES
+  local é **opcional** (Perfil); PIN **não** cifra o armazenamento. Seja
+  honesto no questionário: “dados podem ficar em texto no aparelho”.
+- **Compartilhado com terceiros?** → **SIM**, só provedores necessários:
+  - **Supabase** (Auth + banco + sync)
+  - **Google Play** (Billing / assinaturas no Android)
+  - **Stripe** (assinaturas em builds web / fora do fluxo Play; no APK da loja
+    o caminho principal de cobrança é Play Billing)
+  - Open Finance / Belvo: **desligado** nesta versão — não marque até liberar.
+- **O usuário pode pedir exclusão dos dados?** → **SIM**
+  - No app: Perfil → Zona de perigo → Excluir conta
+  - Na web (obrigatório Play):  
+    `https://SEU-DOMINIO/privacidade.html#exclusao-de-conta`  
+    (hoje o contato documentado em `privacidade.html` também aceita pedido por e-mail)
+- **Sessão:** o app guarda tokens de sessão (incl. refresh) em `localStorage`
+  no WebView — declare armazenamento no dispositivo / identificadores de conta
+  conforme o formulário atual do Console.
+
+### A.2 Cenário PILOTO (modo local — só se o AAB for local-only)
+
 - **O app coleta ou compartilha dados do usuário?** → **NÃO**
-  - Justificativa: no modo local, os dados financeiros ficam apenas no dispositivo
-    (localStorage). O app não transmite dados a servidores, não usa analytics de
-    terceiros e não conecta banco (Open Finance desativado no piloto local).
-- **O app criptografa dados em trânsito?** → não se aplica (sem tráfego de dados do usuário).
-- **O usuário pode pedir exclusão dos dados?** → SIM (Perfil → Zona de perigo →
-  Apagar todos os dados; ou desinstalar).
-- **URL de exclusão de conta** → no modo local **não se aplica** (não há conta).
-  No cenário CLOUD, informe:
-  `https://SEU-DOMINIO/privacidade.html#exclusao-de-conta`
+  - Justificativa: dados só no aparelho (`localStorage`); sem sync; superfícies
+    de nuvem ocultas (`data-requer-nuvem`).
+- **Criptografa em trânsito?** → não se aplica.
+- **Exclusão:** Perfil → Apagar dados / desinstalar. Sem conta na nuvem.
+- **Compras no app?** → **NÃO** (paywall some sem backend).
 
-> Importante: se você habilitar login na nuvem, Open Finance (Belvo) ou o envio de
-> diagnósticos, precisará **atualizar** o Data safety para o cenário abaixo.
-
-### Cenário CLOUD (quando ligar backend/login) — para referência futura
-- Coleta: **Informações financeiras** (transações, orçamento) e **Informações pessoais** (nome, e-mail).
-- Finalidade: funcionalidade do app e sincronização de conta.
-- Criptografado em trânsito: **SIM** (HTTPS).
-- Compartilhado com terceiros: Belvo (Open Finance) e Stripe (pagamentos), conforme o uso.
-- Exclusão: **dentro do app** em Perfil → Zona de perigo → Excluir minha conta
-  (chama `DELETE /api/v1/users/me`), e **pela web** em
-  `https://SEU-DOMINIO/privacidade.html#exclusao-de-conta`. O Google exige os
-  dois caminhos para apps que permitem criar conta — informe a URL no Play
-  Console, em Política → Segurança dos dados.
+> Se misturar AAB cloud com respostas de A.2, a Play pode rejeitar ou o usuário
+> pode denunciar inconsistência. Prefira A.1 para a faixa beta atual.
 
 ## B) Classificação etária (IARC)
-- Responda o questionário. App de finanças pessoais, sem conteúdo sensível →
-  classificação esperada **Livre**. Sem violência, sexo, drogas, jogos de azar.
+- App de finanças pessoais, sem conteúdo sensível → classificação esperada
+  **Livre**. Sem violência, sexo, drogas, jogos de azar.
 
 ## C) Público-alvo e conteúdo
-- **Faixa etária alvo**: **18 anos ou mais** (evita a política de Famílias, comum em finanças).
+- **Faixa etária alvo**: **18 anos ou mais**.
 - **O app é direcionado a crianças?** → NÃO.
 
 ## D) Anúncios
 - **O app contém anúncios?** → **NÃO**.
 
-## D2) Compras no app
-- **O app oferece compras no app?** → no piloto local, **NÃO**: o cartão de plano
-  e o paywall não aparecem sem backend configurado.
-- **Antes de ligar a nuvem no build Android, leia isto.** A política de pagamentos
-  do Google exige o Google Play Billing para assinaturas e serviços em nuvem
-  consumidos dentro do app, e proíbe direcionar o usuário a outro meio de
-  pagamento. O fluxo atual leva ao Stripe Checkout, que se encaixa no que é
-  proibido. A abertura de 30/06/2026 para link externo vale para **EUA, Reino
-  Unido e Espaço Econômico Europeu** — o Brasil ficou de fora. As saídas são:
-  manter o app gratuito na loja e cobrar só no site, integrar o Play Billing no
-  Android, ou publicar apenas como PWA. Confirme a política vigente na data da
-  submissão: essa área mudou duas vezes em 2026.
+## D2) Compras no app (Play beta cloud)
+- **O app oferece compras no app?** → **SIM** (assinatura Pro via
+  **Google Play Billing**).
+- Não direcione o usuário a Stripe Checkout **dentro** do APK da Play Store no
+  Brasil (política de pagamentos). Cobrança web/Stripe fica fora desse binário
+  ou só no site.
 
 ## E) Recursos financeiros (declaração)
 - Tipo: **gerenciador/orçamento de finanças pessoais**.
-- Empréstimos pessoais? NÃO. Pagamentos/transferências? NÃO. Cripto? NÃO.
-- Se conectar contas bancárias via Open Finance no futuro: marque **agregação de
-  informações financeiras** e mantenha o Data safety atualizado.
+- Empréstimos? NÃO. Pagamentos/transferências? NÃO. Cripto? NÃO.
+- Open Finance: **ainda não** — não marque agregação bancária até liberar.
 
 ## F) Política de privacidade
-- URL pública obrigatória → hospede o `privacidade.html` (já reescrito e self-contained)
-  e cole o link aqui e na ficha.
+- URL pública obrigatória → hospede `privacidade.html` e cole o link no Console
+  e na ficha. Deve bater com A.1 (Supabase + Play Billing + exclusão web).
 
 ## G) App content — outros
-- **Isenção de responsabilidade de governo/COVID etc.**: não se aplica.
-- **Permissões**: o app pede apenas `INTERNET`. Nenhuma permissão sensível a justificar.
+- **Permissões:** `INTERNET` (+ o que o Capacitor/Play Billing declarar no
+  manifesto). Nenhuma permissão de contato/SMS/localização para o produto atual.

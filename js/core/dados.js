@@ -1135,6 +1135,7 @@ var DADOS = {
             self._transacoesCache = data ? self._parseTransacoesJson(data) : [];
           } catch (e) {
             self._transacoesCache = [];
+            self._registrarFalhaLeitura(CONFIG.STORAGE_TRANSACOES, e);
           }
         });
       }
@@ -1427,7 +1428,13 @@ var DADOS = {
       }
       SYNC_ENGINE.enqueueTransaction('upsert', transacao);
     } else {
-      this._pushTransacaoApi(transacao, index >= 0 ? 'PATCH' : 'POST').catch(function() {});
+      this._pushTransacaoApi(transacao, index >= 0 ? 'PATCH' : 'POST').catch(function(err) {
+        if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
+          APP_STORE.dispatch(ACTIONS.SYNC_FALHAR, {
+            erro: (err && err.message) || 'push-tx',
+          });
+        }
+      });
     }
     return transacao;
   },
@@ -1445,7 +1452,13 @@ var DADOS = {
       } else {
         transacoes.splice(index, 1);
         this._storageSetTransacoes(transacoes);
-        this._deleteTransacaoApi(id).catch(function() {});
+        this._deleteTransacaoApi(id).catch(function(err) {
+          if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
+            APP_STORE.dispatch(ACTIONS.SYNC_FALHAR, {
+              erro: (err && err.message) || 'delete-tx',
+            });
+          }
+        });
       }
       if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
         APP_STORE.dispatch(ACTIONS.TRANSACAO_DELETAR, id);

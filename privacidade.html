@@ -24,7 +24,7 @@
 <body>
   <a href="index.html" class="voltar-app" aria-label="Voltar ao aplicativo">&larr; Voltar ao app</a>
   <h1>Política de Privacidade — FinançasPro</h1>
-  <p class="meta">Última atualização: 2 de setembro de 2026</p>
+  <p class="meta">Última atualização: 9 de setembro de 2026</p>
 
   <p>O FinançasPro é um aplicativo de controle financeiro pessoal. Esta política explica quais dados o app trata, como e por quê, e quais são os seus direitos. Ao usar o app, você concorda com os termos abaixo.</p>
 
@@ -34,7 +34,7 @@
     <li><strong>Dados de conta</strong> — ao criar uma conta, tratamos nome, e-mail e senha (hash gerenciado pelo Supabase Auth) para login, desbloqueio no aparelho e sincronização.</li>
     <li><strong>Conexão bancária via Open Finance</strong> — <strong>ainda não disponível nesta versão do app.</strong> O recurso está desligado e nenhum dado bancário é lido ou compartilhado. Quando for liberado, a integração será feita pelo provedor <strong>Belvo</strong>, será sempre opcional, os dados trafegarão criptografados e serão usados apenas para trazer suas transações ao app — e esta política será atualizada antes disso.</li>
     <li><strong>Dados de pagamento (opcional)</strong> — assinaturas no Android usam o <strong>Google Play Billing</strong>; em outras versões podem usar <strong>Stripe</strong>. O app não armazena números completos de cartão.</li>
-    <li><strong>Dados técnicos/diagnóstico (opcional)</strong> — se habilitado, registros de erros anônimos podem ser coletados para melhorar a estabilidade. Não incluem valores de transações.</li>
+    <li><strong>Dados técnicos/diagnóstico (opcional)</strong> — só se você habilitar envio de diagnósticos no app (quando disponível). Sem consentimento explícito, o app <strong>não</strong> envia telemetria para nossos servidores. Quando ativo, os registros visam estabilidade e não incluem valores de lançamentos.</li>
   </ul>
 
   <h2>2. Como usamos os dados</h2>
@@ -49,6 +49,11 @@
 
   <h2>3. Armazenamento local e nuvem</h2>
   <p>Os lançamentos ficam no aparelho (navegador/app). Com login ativo, também sincronizam com a nuvem para backup e uso em mais de um dispositivo. Sem login (ou após sair da conta), os dados locais permanecem só neste aparelho. Você pode exportá-los ou apagá-los em <strong>Perfil → Dados</strong>. Desinstalar o app remove os dados locais; a conta na nuvem só some com exclusão de conta.</p>
+  <p>A sessão de login (tokens de acesso e renovação) também fica armazenada neste aparelho, em armazenamento local do WebView/navegador, para você não precisar entrar de novo a cada abertura. Ao sair da conta, esses tokens são apagados.</p>
+
+  <h2>3.1 Controlador e contato (LGPD)</h2>
+  <p>O tratamento dos dados pessoais é feito pelo responsável pelo FinançasPro. Para exercer direitos (acesso, correção, exclusão, portabilidade) ou tirar dúvidas sobre esta política, use
+  <strong>renato.soares1370@gmail.com</strong>. Pedidos de exclusão de conta também podem seguir a seção 8 abaixo.</p>
 
   <h2>4. Compartilhamento</h2>
   <p>Não vendemos seus dados. Compartilhamos informações apenas com provedores estritamente necessários ao funcionamento — <strong>Supabase</strong> (autenticação e sync) e <strong>Google Play</strong> / <strong>Stripe</strong> (pagamentos) — sob contratos de proteção de dados. Cada um trata os dados conforme suas próprias políticas.</p>

@@ -1,6 +1,6 @@
 /**
  * import-config.test.js — Proteção de campos sensíveis na importação
- * Espelha a whitelist de INIT_CONFIG (P1.2).
+ * Espelha a whitelist de INIT_CONFIG (P1.2 / RISK-02).
  */
 
 var IMPORT_CONFIG_BLOCKED = [
@@ -15,8 +15,8 @@ var IMPORT_CONFIG_ALLOWED = [
   'ultimoExportoDados', 'ultimoAcessoApp',
   'metas', 'contasPagar', 'assinaturas', 'patrimonio', 'openFinance',
   'onboardingConcluido', 'feedbacks',
-  'saldosIniciais', 'faturasPagas', 'recorrentesProcessadas',
-  'plano'
+  'saldosIniciais', 'faturasPagas', 'recorrentesProcessadas'
+  // plano de propósito fora: entitlement vem da assinatura verificada
 ];
 
 function mergeImportedConfig(current, imported) {
@@ -33,7 +33,7 @@ function mergeImportedConfig(current, imported) {
 }
 
 describe('Import config — campos sensíveis', function() {
-  test('preserva PIN local ao importar backup', function() {
+  test('preserva PIN local e ignora plano forjado no backup', function() {
     var atual = {
       nome: 'Renato',
       pinAtivo: true,
@@ -50,7 +50,7 @@ describe('Import config — campos sensíveis', function() {
     };
     var merged = mergeImportedConfig(atual, backup);
     expect(merged.nome).toBe('Atacante');
-    expect(merged.plano).toBe('premium');
+    expect(merged.plano).toBe('free');
     expect(merged.pinHash).toBe('hash-local');
     expect(merged.pinSalt).toBe('salt-local');
     expect(merged.pinAtivo).toBe(true);

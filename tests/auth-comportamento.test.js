@@ -322,49 +322,16 @@ describe('Recuperação — o limite está no banco, não na tela', () => {
   });
 });
 
-describe('CSP — Tesseract servido pelo próprio app', () => {
-  const { limparCsp, tesseractLocal } = require('../scripts/harden-csp.cjs');
-  const csp = fs.readFileSync(path.join(root, 'index.html'), 'utf8')
-    .match(/<meta http-equiv="Content-Security-Policy"[^>]*>/)[0];
-  const diretiva = (html, nome) => ((html.match(new RegExp(nome + '[^;]*')) || [''])[0]);
-
-  test('vendorizado, ninguém de fora executa script na página', () => {
-    const out = limparCsp(csp, { openFinance: false, tesseractLocal: true });
-    expect(diretiva(out, 'script-src')).not.toContain('jsdelivr');
-    expect(diretiva(out, 'script-src')).toContain("'self'");
-  });
-
-  test('os .traineddata continuam permitidos — são dados, não script', () => {
-    const out = limparCsp(csp, { openFinance: false, tesseractLocal: true });
-    expect(diretiva(out, 'connect-src')).toContain('jsdelivr');
-  });
-
-  test('sem vendorizar, o CDN permanece — senão o OCR quebra', () => {
-    const out = limparCsp(csp, { openFinance: false, tesseractLocal: false });
-    expect(diretiva(out, 'script-src')).toContain('tesseract');
-  });
-
-  test('a flag ausente é lida como CDN, não como local', () => {
-    // Conservador de propósito: errar para o lado que não quebra o app.
-    expect(tesseractLocal('/caminho/que/nao/existe.js')).toBe(false);
-  });
-
-  test('o OCR escolhe os caminhos pela mesma flag', () => {
+describe('CSP — OCR removido do produto', () => {
+  test('ocr.js é stub sem Tesseract', () => {
     const ocr = fs.readFileSync(path.join(root, 'js/ocr.js'), 'utf8');
-    expect(ocr).toContain('CONFIG.TESSERACT_LOCAL');
-    expect(ocr).toMatch(/workerPath: local \?/);
-    expect(ocr).toMatch(/corePath: local \?/);
+    expect(ocr).not.toContain('CONFIG.TESSERACT_LOCAL');
+    expect(ocr).not.toMatch(/tesseract/i);
+    expect(ocr).toMatch(/no-op|desativado|removido/i);
   });
 
-  test('vendorizado, o loader não tenta o CDN que a CSP bloqueia', () => {
-    const ocr = fs.readFileSync(path.join(root, 'js/ocr.js'), 'utf8');
-    expect(ocr).toMatch(/src === localSrc && !OCR\._tesseractLocal\(\)/);
-  });
-
-  test('o script de vendorização registra integridade e permite desfazer', () => {
-    const sc = fs.readFileSync(path.join(root, 'scripts/vendor-tesseract.cjs'), 'utf8');
-    expect(sc).toContain('sha384');
-    expect(sc).toContain('--undo');
-    expect(sc).toContain('--check');
+  test('index não carrega script OCR', () => {
+    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+    expect(html).not.toMatch(/src=["']js\/ocr\.js["']/);
   });
 });

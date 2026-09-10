@@ -95,7 +95,7 @@
 
 .auth-card > p {
   margin: 0 0 var(--space-6);
-  color: var(--color-gray-500);
+  color: var(--color-text-secondary);
   font-size: var(--font-size-base);
   line-height: var(--line-height-normal);
   text-align: center;
@@ -118,7 +118,7 @@
   min-height: 48px;
   border: 0;
   background: transparent;
-  color: var(--color-gray-500);
+  color: var(--color-gray-600);
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
   font-weight: var(--font-weight-semibold);
@@ -460,7 +460,7 @@
 
 .auth-message {
   margin: 0 0 var(--space-5);
-  color: var(--color-gray-500);
+  color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
   text-align: left;
   line-height: var(--line-height-normal);
@@ -507,13 +507,13 @@
 .auth-greeting-email {
   margin: 0;
   font-size: var(--font-size-sm);
-  color: var(--color-gray-500);
+  color: var(--color-text-secondary);
 }
 
 .auth-field--underline label {
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-semibold);
-  color: var(--color-gray-500);
+  color: var(--color-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }

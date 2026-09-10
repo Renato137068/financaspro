@@ -76,6 +76,13 @@ jobs:
       - name: Wiring de monetizacao (estatico)
         run: npm run check:billing
 
+      - name: Gate pre-beta (estatico)
+        # Só checagens locais — rede/secrets ficam para o operador com FP_PRE_BETA_STATIC unset.
+        run: npm run check:pre-beta:static
+        env:
+          FP_PRE_BETA_STATIC: '1'
+          FP_SKIP_CLI: '1'
+
       - name: Testes
         run: npm run test:ci
         env:

@@ -63,7 +63,8 @@ const METAS = {
     }
     if (idx < 0) return null;
     metas[idx] = Object.assign({}, metas[idx], patch);
-    if (metas[idx].valorAtual >= metas[idx].valorAlvo) metas[idx].concluida = true;
+    // Reavalia conclusão: subir o alvo ou reduzir o guardado deve reabrir a meta.
+    metas[idx].concluida = metas[idx].valorAtual >= metas[idx].valorAlvo;
     DADOS.salvarConfig({ metas: metas });
     return metas[idx];
   },

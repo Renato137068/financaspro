@@ -75,17 +75,21 @@ var PLAY_BILLING = {
   },
 
   /**
-   * Ponto de extensão para plugin Capacitor/Google Play Billing Library.
-   * Enquanto o plugin nativo não estiver instalado, retorna erro explícito.
+   * Compra (ou troca de ciclo) via plugin nativo.
+   * @param {string} productId
+   * @param {{ oldProductId?: string, oldPurchaseToken?: string }=} opts
+   *   Quando troca mensal↔anual, passar o SKU antigo (e opcionalmente o token).
+   *   Sem token, o nativo consulta compras ativas e usa o replacement do Play.
    */
-  purchase: function(productId) {
+  purchase: function(productId, opts) {
     if (!this.isAvailable()) {
       return Promise.reject(new Error('play-billing-indisponivel'));
     }
     if (typeof window.__fpNativeBilling === 'object'
         && typeof window.__fpNativeBilling.purchase === 'function') {
       var self = this;
-      return window.__fpNativeBilling.purchase(productId).then(function(result) {
+      opts = opts || {};
+      return window.__fpNativeBilling.purchase(productId, opts).then(function(result) {
         return self.verifyOnServer(productId, result.purchaseToken);
       });
     }

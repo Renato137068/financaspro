@@ -13,7 +13,16 @@ export function adminClient(): SupabaseClient {
 }
 
 function playKey(token: string): string {
-  return `play:${String(token).slice(0, 120)}`;
+  // Token completo — truncar em 120 colidia RTDN×verify quando o prefixo era igual.
+  return `play:${String(token)}`;
+}
+
+/** Chaves candidatas (novo formato + legado truncado em 120). */
+function playKeyCandidates(token: string): string[] {
+  const t = String(token);
+  const keys = [playKey(t)];
+  if (t.length > 120) keys.push(`play:${t.slice(0, 120)}`);
+  return keys;
 }
 
 export async function findPlan(sb: SupabaseClient, tier: string) {
@@ -26,11 +35,14 @@ export async function findPlan(sb: SupabaseClient, tier: string) {
 }
 
 export async function findByPlayPurchaseToken(sb: SupabaseClient, token: string) {
-  const { data } = await sb
-    .from("Subscription").select("id, orgId, planId, stripeSubId")
-    .eq("stripeSubId", playKey(token))
-    .maybeSingle();
-  return data; // null se não existe
+  for (const key of playKeyCandidates(token)) {
+    const { data } = await sb
+      .from("Subscription").select("id, orgId, planId, stripeSubId")
+      .eq("stripeSubId", key)
+      .maybeSingle();
+    if (data) return data;
+  }
+  return null;
 }
 
 export async function upsertPlayEntitlement(

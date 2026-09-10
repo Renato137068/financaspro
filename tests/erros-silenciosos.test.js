@@ -151,10 +151,10 @@ describe('leitura de dados corrompidos não pode parecer "sem dados"', () => {
     expect(dados).toContain('_registrarFalhaLeitura');
   });
 
-  test('as três leituras registram a falha em vez de só logar', () => {
-    ['STORAGE_TRANSACOES', 'STORAGE_CONFIG', 'STORAGE_CONTAS'].forEach((chave) => {
-      expect(dados).toContain('_registrarFalhaLeitura(CONFIG.' + chave);
-    });
+  test('hydrate IDB de transações também registra falha de parse', () => {
+    expect(dados).toMatch(
+      /IDB_KV\.get\(CONFIG\.STORAGE_TRANSACOES\)[\s\S]{0,400}_registrarFalhaLeitura\(CONFIG\.STORAGE_TRANSACOES/,
+    );
   });
 
   test('a falha avisa o usuário — e sugere backup antes de gravar', () => {

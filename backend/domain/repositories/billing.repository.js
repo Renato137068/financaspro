@@ -153,10 +153,14 @@ export const BillingRepository = {
 
   /** Entitlement Google Play — reutiliza stripeSubId como chave `play:<token>`. */
   async findByPlayPurchaseToken(purchaseToken) {
-    const playKey = `play:${String(purchaseToken).slice(0, 120)}`;
-    const sub = await this.findByStripeSubId(playKey);
-    if (!sub) return null;
-    return { orgId: sub.orgId, subscription: sub };
+    const token = String(purchaseToken);
+    const keys = [`play:${token}`];
+    if (token.length > 120) keys.push(`play:${token.slice(0, 120)}`);
+    for (const playKey of keys) {
+      const sub = await this.findByStripeSubId(playKey);
+      if (sub) return { orgId: sub.orgId, subscription: sub };
+    }
+    return null;
   },
 
   async upsertPlayEntitlement(orgId, { productId, purchaseToken, tier, expiresAt, cancelAtPeriodEnd }) {
@@ -166,7 +170,7 @@ export const BillingRepository = {
       err.status = 404;
       throw err;
     }
-    const playKey = `play:${String(purchaseToken).slice(0, 120)}`;
+    const playKey = `play:${String(purchaseToken)}`;
     const end = expiresAt ? new Date(expiresAt) : new Date(Date.now() + 30 * 86400000);
     return this.upsertSubscription(orgId, {
       planId: plan.id,

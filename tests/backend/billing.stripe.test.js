@@ -162,6 +162,15 @@ describe('subscribe com Stripe configurado', () => {
 
 // ─── cancelamento e portal ───────────────────────────────────────────────────
 describe('cancel e portal com Stripe', () => {
+  test('cancel Play rejeita chamada Stripe (play:…)', async () => {
+    BillingRepository.findSubscription.mockResolvedValue({
+      id: 'sub-1',
+      stripeSubId: 'play:token-abc',
+    });
+    await expect(BillingService.cancel('org-1')).rejects.toMatchObject({ status: 400 });
+    expect(stripe.subscriptions.update).not.toHaveBeenCalled();
+  });
+
   test('cancelamento propaga para o Stripe como fim de período', async () => {
     BillingRepository.findSubscription.mockResolvedValue({ id: 'sub-1', stripeSubId: 'sub_stripe_1' });
 

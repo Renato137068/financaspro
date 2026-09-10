@@ -15,16 +15,11 @@
 //          --push-auth-service-account=SA@PROJETO.iam.gserviceaccount.com
 //
 //   2. Segredo compartilhado em header (x-rtdn-secret) — para chamadas que
-//      você mesmo dispara.
+//      você mesmo dispara (staging / curl). Nunca use query string.
 //
-//   3. Segredo em query string (?secret=) — DEPRECADO. O Pub/Sub push não
-//      envia headers customizados, então este era o único caminho; mas URL vai
-//      para log de proxy, de plataforma e de erro. Continua aceito para não
-//      derrubar integração existente, com aviso no log. Migre para o item 1.
+// Sem nenhum dos dois configurados a função RECUSA tudo (503). Query string
+// (?secret=) foi removida: ia para log de proxy/plataforma.
 //
-// Sem nenhum dos três configurados a função RECUSA tudo (503). Antes ela
-// aceitava qualquer POST quando PLAY_RTDN_SECRET estava vazio — falha aberta
-// num endpoint que mexe em assinatura.
 import { adminClient, claimEvent, releaseEvent } from "../_shared/db.ts";
 import { handleRtdn } from "../_shared/play-billing.ts";
 
@@ -117,18 +112,10 @@ Deno.serve(async (req) => {
 
     if (!autorizado && secret) {
       const doHeader = req.headers.get("x-rtdn-secret");
-      const daQuery = new URL(req.url).searchParams.get("secret");
       if (doHeader) {
         autorizado = await segredoConfere(doHeader, secret);
-      } else if (daQuery) {
-        autorizado = await segredoConfere(daQuery, secret);
-        if (autorizado) {
-          console.warn(
-            "play-rtdn: segredo recebido em query string (deprecado — vai para " +
-            "log de proxy e de plataforma). Migre para OIDC do Pub/Sub.",
-          );
-        }
       }
+      // ?secret= removido de propósito — não reintroduzir (vaza em logs).
     }
 
     if (!autorizado) {

@@ -362,8 +362,14 @@ var TRANSACOES = {
     var resumo = {};
     txMes.forEach(function(t) {
       if (!resumo[t.categoria]) resumo[t.categoria] = { receita: 0, despesa: 0 };
-      if (t.tipo === CONFIG.TIPO_RECEITA) resumo[t.categoria].receita += t.valor;
-      else if (t.tipo === CONFIG.TIPO_DESPESA) resumo[t.categoria].despesa += t.valor;
+      // Centavos — mesmo contrato do TRANSACTION_SERVICE.summarizeByCategory.
+      if (t.tipo === CONFIG.TIPO_RECEITA) {
+        resumo[t.categoria].receita =
+          (UTILS.paraCentavos(resumo[t.categoria].receita) + UTILS.paraCentavos(t.valor)) / 100;
+      } else if (t.tipo === CONFIG.TIPO_DESPESA) {
+        resumo[t.categoria].despesa =
+          (UTILS.paraCentavos(resumo[t.categoria].despesa) + UTILS.paraCentavos(t.valor)) / 100;
+      }
     });
     return resumo;
   },

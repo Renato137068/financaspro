@@ -1,7 +1,7 @@
 // FinançasPro - Service Worker (PWA offline-first, stale-while-revalidate)
 // Gerado por scripts/generate-sw-cache.cjs — não edite urlsParaCache manualmente
 
-const CACHE_NAME = 'financaspro-v11314-p3';
+const CACHE_NAME = 'financaspro-v11318-p3';
 const urlsParaCache = [
   "/",
   "/css/base.css",
@@ -124,7 +124,6 @@ const urlsParaCache = [
   "/js/modules/init-orcamento.js",
   "/js/modules/init-patrimonio.js",
   "/js/modules/init-relatorios.js",
-  "/js/ocr.js",
   "/js/onboarding.js",
   "/js/open-finance.js",
   "/js/orcamento.js",
@@ -241,7 +240,7 @@ self.addEventListener('fetch', (event) => {
           }
           return res;
         })
-        .catch(() => caches.match(event.request).then((cached) => cached || new Response('Offline', { status: 503 }))),
+        .catch(() => caches.match(event.request).then((cached) => cached || new Response('Sem conexão', { status: 503 }))),
     );
     return;
   }
@@ -264,7 +263,7 @@ self.addEventListener('fetch', (event) => {
       return networkFetch.then((res) => {
         if (res) return res;
         if (isNavigation) return caches.match('/index.html');
-        return new Response('Offline', { status: 503 });
+        return new Response('Sem conexão', { status: 503 });
       });
     }),
   );

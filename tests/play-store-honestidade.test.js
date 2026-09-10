@@ -22,7 +22,21 @@ describe('Honestidade Play Store / privacidade', () => {
     expect(priv).toMatch(/N[ãa]o<\/em>\s*criptografa|n[ãa]o criptografa/i);
     expect(priv).toMatch(/duas etapas/i);
     expect(priv).toMatch(/app autenticador/i);
-    expect(priv).toMatch(/2 de setembro de 2026/);
+    expect(priv).toMatch(/2 de setembro de 2026|9 de setembro de 2026/);
+    expect(priv).toMatch(/tokens de (acesso e )?renova|armazenamento local do WebView/i);
+  });
+
+  test('Data Safety do beta Play é cenário CLOUD (não “não coleta”)', () => {
+    const ds = fs.readFileSync(path.join(root, 'docs/play-store-data-safety.md'), 'utf8');
+    expect(ds).toMatch(/### A\.1 Cenário CLOUD/i);
+    expect(ds).toMatch(/Play Billing/i);
+    const start = ds.indexOf('### A.1');
+    const end = ds.indexOf('### A.2');
+    expect(start).toBeGreaterThan(-1);
+    expect(end).toBeGreaterThan(start);
+    const cloudBlock = ds.slice(start, end);
+    expect(cloudBlock).toMatch(/→ \*\*SIM\*\*/);
+    expect(cloudBlock).not.toMatch(/não envia dados para servidores/i);
   });
 
   test('assetlinks tem fingerprint SHA-256 do release', () => {
@@ -53,6 +67,8 @@ describe('Honestidade Play Store / privacidade', () => {
     expect(ficha).toMatch(/R\$ 129,99\/ano/);
     expect(ficha).not.toMatch(/R\$ 12,90|R\$ 79,90\/ano/);
     expect(ficha).toMatch(/nuvem/i);
+    // OCR foi removido do produto (07/09) — não vender na loja.
+    expect(ficha).not.toMatch(/\bOCR\b/i);
   });
 
   test('a ficha não promete no gratuito o que o app não entrega', () => {
