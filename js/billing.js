@@ -1283,9 +1283,6 @@ if (typeof module !== 'undefined' && module.exports) {
     entitlementAtivo: function(sub) {
       return BILLING._activeStatus(sub && sub.status, sub);
     },
-    isWelcomeTrial: function(sub) {
-      return BILLING.isWelcomeTrial(sub);
-    },
     getLifecycleAlert: function(sub, isCloud) {
       if (!isCloud || !sub) return null;
       var prev = BILLING._cache.subscription;
