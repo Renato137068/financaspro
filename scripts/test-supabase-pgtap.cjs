@@ -47,6 +47,52 @@ if (!hasPsql()) {
   process.exit(1);
 }
 
+/** Localiza o pgtap--<versão>.sql do cliente (pacote postgresql-<major>-pgtap). */
+function findPgtapSql() {
+  const shares = [];
+  const pc = spawnSync('pg_config', ['--sharedir'], { encoding: 'utf8' });
+  if (pc.status === 0 && pc.stdout.trim()) shares.push(pc.stdout.trim());
+  // Fallbacks por major (o servidor do CI é 16; cobre variações locais).
+  for (const maj of ['16', '17', '15', '14']) shares.push('/usr/share/postgresql/' + maj);
+  for (const s of shares) {
+    const extdir = path.join(s, 'extension');
+    try {
+      const control = fs.readFileSync(path.join(extdir, 'pgtap.control'), 'utf8');
+      const m = control.match(/default_version\s*=\s*'([^']+)'/);
+      if (m) {
+        const f = path.join(extdir, 'pgtap--' + m[1] + '.sql');
+        if (fs.existsSync(f)) return f;
+      }
+    } catch (e) { /* próximo caminho */ }
+  }
+  return null;
+}
+
+/**
+ * Garante o pgTAP no banco. A imagem postgres:alpine do CI não traz a extensão
+ * instalada no servidor (CREATE EXTENSION falha: sem pgtap.control), então
+ * carregamos o SQL do pgTAP direto pelo cliente — funciona em qualquer banco.
+ * Fallback para CREATE EXTENSION em ambientes onde a extensão existe no servidor.
+ */
+function ensurePgtap() {
+  if (sqlScalar("SELECT 1 FROM pg_proc WHERE proname = 'finish' AND pronamespace = 'public'::regnamespace LIMIT 1") === '1') {
+    console.log('[pgtap] pgTAP já presente');
+    return;
+  }
+  const file = findPgtapSql();
+  if (file) {
+    console.log('[pgtap] carregando pgTAP de', file);
+    psql(file, { file });
+    return;
+  }
+  const ext = spawnSync('psql', ['-v', 'ON_ERROR_STOP=1', '-c', 'CREATE EXTENSION IF NOT EXISTS pgtap', dbUrl], { encoding: 'utf8', stdio: 'inherit' });
+  if (ext.status === 0) {
+    console.log('[pgtap] pgTAP via CREATE EXTENSION (extensão do servidor)');
+    return;
+  }
+  throw new Error('[pgtap] pgTAP indisponível — instale postgresql-<major>-pgtap no runner ou a extensão no servidor');
+}
+
 console.log('[pgtap] preparando schema Prisma…');
 execSync('npx prisma migrate deploy', {
   cwd: root,
@@ -54,19 +100,16 @@ execSync('npx prisma migrate deploy', {
   env: Object.assign({}, process.env, { DATABASE_URL: dbUrl }),
 });
 
-console.log('[pgtap] seed de planos (quota tests)…');
-try {
-  execSync('node backend/prisma/seed-plans.js', {
-    cwd: root,
-    stdio: 'inherit',
-    env: Object.assign({}, process.env, { DATABASE_URL: dbUrl }),
-  });
-} catch (e) {
-  console.warn('[pgtap] seed-plans opcional falhou:', e.message);
-}
+// Sem seed global de planos: cada teste pgTAP que precisa (quota, rls) cria os
+// próprios planos com ids fixos (p_free/p_pro) na sua transação. O seed da app
+// usa ids UUID e colidia com esses fixtures na UNIQUE(tier) — o insert do teste
+// caía em `on conflict do nothing` e o planId fixo depois furava a FK.
+
+console.log('[pgtap] garantindo pgTAP no banco…');
+ensurePgtap();
 
 var bootstrap = path.join(root, 'supabase/tests/_ci_auth_stub.sql');
-console.log('[pgtap] bootstrap auth + pgtap…');
+console.log('[pgtap] bootstrap auth (schema/roles/auth.*)…');
 psql(bootstrap, { file: bootstrap });
 
 if (sqlScalar("SELECT count(*) FROM pg_proc WHERE proname = 'is_org_member'") === '0') {

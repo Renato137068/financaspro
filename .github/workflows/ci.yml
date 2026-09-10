@@ -89,9 +89,12 @@ jobs:
           INTEGRATION_TEST_DATABASE_URL: postgresql://financaspro:testpass@localhost:5432/financaspro_test
           SKIP_INTEGRATION: ${{ matrix.node-version == '18.x' && '1' || '' }}
 
-      - name: Instalar cliente PostgreSQL (pgTAP)
+      - name: Instalar cliente PostgreSQL + pgTAP (RLS/quota/MFA)
         if: matrix.node-version == '20.x'
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+        # postgres:16-alpine (service) não traz a extensão pgtap; instalamos o
+        # pacote no runner só pelo pgtap--<versão>.sql, que test-supabase-pgtap.cjs
+        # carrega no banco via psql -f (não precisa de CREATE EXTENSION no servidor).
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client postgresql-16-pgtap
 
       - name: Testes pgTAP Supabase (RLS, quota, MFA)
         if: matrix.node-version == '20.x'

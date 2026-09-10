@@ -67,8 +67,12 @@ select throws_like(
 );
 
 -- ─── Sem falhas recentes, o código certo entra ──────────────────────────────
+-- Limpar as tentativas é setup administrativo: a tabela é revogada de
+-- authenticated (acesso só via funções SECDEF), então roda como dono.
+reset role;
 delete from public."MfaRecoveryAttempt"
  where "userId" = '77777777-7777-7777-7777-777777777777';
+set local role authenticated;
 
 select ok(
   public.fp_mfa_recovery_consume((select codigo from cods limit 1)),

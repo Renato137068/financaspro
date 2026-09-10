@@ -53,6 +53,10 @@ select is(
   'gera 10 códigos de uma vez'
 );
 
+-- A tabela é revogada de `authenticated` de propósito (acesso só via funções
+-- SECURITY DEFINER). Ler o hash cru para conferir que nada fica em claro é ato
+-- administrativo: roda como dono, depois volta para authenticated.
+reset role;
 select is(
   (select count(*)::int
    from public."MfaRecoveryCode" m
@@ -60,6 +64,7 @@ select is(
   0,
   'nenhum código está guardado em claro (só o hash)'
 );
+set local role authenticated;
 
 -- ─── Código de OUTRA pessoa não vale ────────────────────────────────────────
 set local request.jwt.claims to '{"sub":"55555555-5555-5555-5555-555555555555","aal":"aal1"}';
