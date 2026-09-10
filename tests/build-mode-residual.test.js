@@ -83,6 +83,9 @@ describe('OCR desativado no produto', () => {
     expect(ocr).toMatch(/no-op|desativado|removido/i);
     expect(ocr).not.toContain('tesseract.js@5.1.1');
     expect(ocr).not.toContain('btn-ocr-scan');
+    expect(fs.existsSync(path.join(root, 'js/vendor/tesseract.min.js'))).toBe(false);
+    expect(fs.existsSync(path.join(root, 'scripts/probe-ocr.cjs'))).toBe(false);
+    expect(fs.existsSync(path.join(root, 'scripts/vendor-tesseract.cjs'))).toBe(false);
   });
 
   test('index não carrega ocr.js; lifecycle não chama OCR.init', () => {

@@ -37,6 +37,8 @@ describe('Honestidade Play Store / privacidade', () => {
     const cloudBlock = ds.slice(start, end);
     expect(cloudBlock).toMatch(/→ \*\*SIM\*\*/);
     expect(cloudBlock).not.toMatch(/não envia dados para servidores/i);
+    expect(cloudBlock).toContain('https://app.financaspro.com/privacidade.html#exclusao-de-conta');
+    expect(cloudBlock).not.toMatch(/SEU-DOMINIO/);
   });
 
   test('assetlinks tem fingerprint SHA-256 do release', () => {

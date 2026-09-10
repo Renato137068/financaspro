@@ -36,7 +36,7 @@
 - **O usuário pode pedir exclusão dos dados?** → **SIM**
   - No app: Perfil → Zona de perigo → Excluir conta
   - Na web (obrigatório Play):  
-    `https://SEU-DOMINIO/privacidade.html#exclusao-de-conta`  
+    `https://app.financaspro.com/privacidade.html#exclusao-de-conta`  
     (hoje o contato documentado em `privacidade.html` também aceita pedido por e-mail)
 - **Sessão:** o app guarda tokens de sessão (incl. refresh) em `localStorage`
   no WebView — declare armazenamento no dispositivo / identificadores de conta

@@ -1,5 +1,7 @@
 /**
  * sync-vendor.cjs — copia dependências browser para js/vendor/
+ *
+ * OCR/tesseract foi removido do produto (09/2026): não copiar nem avisar CDN.
  */
 const fs = require('fs');
 const path = require('path');
@@ -18,23 +20,8 @@ if (fs.existsSync(lucideSrc)) {
   console.warn('[vendor:sync] lucide não encontrado — execute npm ci primeiro');
 }
 
-// Preferência: copiar de node_modules se o pacote estiver instalado.
-const tessCandidates = [
-  path.join(root, 'node_modules', 'tesseract.js', 'dist', 'tesseract.min.js'),
-  path.join(root, 'node_modules', 'tesseract.js', 'dist', 'tesseract.min.cjs'),
-];
 const tessDest = path.join(vendorDir, 'tesseract.min.js');
-var copied = false;
-for (var i = 0; i < tessCandidates.length; i++) {
-  if (fs.existsSync(tessCandidates[i])) {
-    fs.copyFileSync(tessCandidates[i], tessDest);
-    console.log('[vendor:sync] tesseract.min.js copiado de node_modules');
-    copied = true;
-    break;
-  }
-}
-if (!copied && fs.existsSync(tessDest)) {
-  console.log('[vendor:sync] tesseract.min.js já presente (vendor)');
-} else if (!copied) {
-  console.warn('[vendor:sync] tesseract.min.js ausente — OCR usa CDN (npm i tesseract.js para vendor local)');
+if (fs.existsSync(tessDest)) {
+  fs.unlinkSync(tessDest);
+  console.log('[vendor:sync] removido residual tesseract.min.js');
 }

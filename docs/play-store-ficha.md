@@ -7,7 +7,7 @@
 - **Tags**: finanças pessoais, controle de gastos, orçamento, metas
 - **E-mail de contato**: (o e-mail do desenvolvedor — o mesmo da política de privacidade)
 - **Site** (opcional): —
-- **Política de privacidade (URL)**: (link público onde você hospedar `privacidade.html`)
+- **Política de privacidade (URL)**: `https://app.financaspro.com/privacidade.html`
 
 ## Assinatura da marca
 `Seu dinheiro, no seu aparelho.`
