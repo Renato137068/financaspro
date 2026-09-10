@@ -25,10 +25,23 @@
   (tarefas recorrentes, e-mail, reconciliação de billing).
 - **Postgres** externo no **Neon**; **Redis** externo no **Upstash**.
 
-## Pré-requisitos
-- Repo no **GitHub** (Railway faz deploy a partir dele).
-- Contas gratuitas: **Neon**, **Upstash**, **Railway** (login com GitHub).
-- `openssl` disponível (para gerar segredos).
+## Domínio `app.financaspro.com` (privacidade + App Links)
+
+O Play e o Capacitor esperam:
+
+- `https://app.financaspro.com/privacidade.html#exclusao-de-conta`
+- `https://app.financaspro.com/.well-known/assetlinks.json`
+
+Esses arquivos entram no `dist/` no `npm run build` (`copy-static.cjs`). O
+Express serve `assetlinks` por rota explícita + `dotfiles: 'allow'` (sem isso
+o SPA devolvia `index.html` e o Google não verificava o App Link).
+
+**Checklist ops:**
+
+1. Serviço Railway (ou host do `dist/`) no ar com o build atual
+2. DNS: `app.financaspro.com` → CNAME do serviço (não confundir com o WordPress do apex)
+3. Após deploy: `curl -sI` nas duas URLs → **200** (assetlinks = `application/json`)
+4. Play Console → política de privacidade = URL acima
 
 ---
 

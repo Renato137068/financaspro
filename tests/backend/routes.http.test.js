@@ -504,6 +504,20 @@ describe('política de cache dos estáticos', () => {
     const res = await request(app).get('/js/pin-guard.js');
     expect(res.headers['cache-control']).toBe('public, max-age=3600');
   });
+
+  test('assetlinks.json é JSON (não o SPA) e inclui o package do app', async () => {
+    const res = await request(app).get('/.well-known/assetlinks.json');
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toMatch(/json/);
+    expect(res.body[0].target.package_name).toBe('com.financaspro.mobile');
+    expect(res.body[0].target.sha256_cert_fingerprints.length).toBeGreaterThan(0);
+  });
+
+  test('privacidade.html é servida (exigência Play)', async () => {
+    const res = await request(app).get('/privacidade.html');
+    expect(res.status).toBe(200);
+    expect(res.text).toMatch(/exclusao-de-conta|Exclus/i);
+  });
 });
 
 // ─── webhook RTDN do Google Play ─────────────────────────────────────────────

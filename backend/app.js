@@ -176,7 +176,7 @@ export function createApp() {
   // da Play Store para qualquer um que alcançasse a porta. Bastava um `npm run
   // backend:dev` numa rede compartilhada ou atrás de um túnel de preview.
   // Aqui a lista é explícita: só sai o que o index.html realmente pede.
-  const PASTAS_PUBLICAS = ['js', 'css', 'icons', 'fonts', 'screenshots', 'assets'];
+  const PASTAS_PUBLICAS = ['js', 'css', 'icons', 'fonts', 'screenshots', 'assets', '.well-known'];
   const ARQUIVOS_PUBLICOS = new Set([
     'index.html', 'manifest.json', 'sw.js', 'privacidade.html', 'favicon.ico',
   ]);
@@ -199,8 +199,24 @@ export function createApp() {
     res.setHeader('Cache-Control', 'public, max-age=3600');
   }
 
+  // App Links e política: rotas explícitas (dotfiles do express.static
+  // ficam "ignore" por padrão e o SPA engolia assetlinks como index.html).
+  app.get('/.well-known/assetlinks.json', (req, res, next) => {
+    const file = path.join(STATIC_ROOT, '.well-known', 'assetlinks.json');
+    if (!fs.existsSync(file)) {
+      return res.status(404).type('application/json').send('{"error":"not-found"}');
+    }
+    res.type('application/json');
+    cabecalhosDeCache(res, file);
+    res.sendFile(file, (err) => { if (err) next(err); });
+  });
+
   if (CONFIG.isProd) {
-    app.use(express.static(STATIC_ROOT, { index: 'index.html', setHeaders: cabecalhosDeCache }));
+    app.use(express.static(STATIC_ROOT, {
+      index: 'index.html',
+      dotfiles: 'allow',
+      setHeaders: cabecalhosDeCache,
+    }));
   } else {
     // Nada de express.static na raiz aqui: só as pastas e os arquivos da
     // allowlist são alcançáveis. O que não estiver nela simplesmente não
@@ -208,7 +224,10 @@ export function createApp() {
     for (const pasta of PASTAS_PUBLICAS) {
       const dir = path.join(STATIC_ROOT, pasta);
       if (fs.existsSync(dir)) {
-        app.use('/' + pasta, express.static(dir, { setHeaders: cabecalhosDeCache }));
+        app.use('/' + pasta, express.static(dir, {
+          dotfiles: 'allow',
+          setHeaders: cabecalhosDeCache,
+        }));
       }
     }
     app.use((req, res, next) => {
