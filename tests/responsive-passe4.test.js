@@ -62,6 +62,8 @@ describe('P4 — extremos 320px e 1920px', function() {
   test('regras para 320px sem overflow', function() {
     expect(responsive).toMatch(/@media \(max-width: 320px\)/);
     expect(responsive).toMatch(/overflow-x:\s*clip/);
+    expect(extrato).toMatch(/@media \(max-width: 359px\)/);
+    expect(extrato).toMatch(/\.filtro-chip[\s\S]*font-size:\s*var\(--font-size-xs\)/);
   });
 
   test('teto de largura em 1920px', function() {

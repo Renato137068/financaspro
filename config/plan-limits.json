@@ -3,6 +3,7 @@
   "trialDays": 7,
   "welcomeTrialDays": 14,
   "ocrFreePerMonth": 5,
+  "$comment_ocr": "OCR removido do produto (09/2026). Campos ocr* ficam só para parity com colunas legadas no banco; o runtime trata OCR como noop (Infinity).",
   "FREE": {
     "maxUsers": 1,
     "maxTransPerMonth": null,

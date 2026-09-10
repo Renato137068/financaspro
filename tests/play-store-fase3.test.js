@@ -73,5 +73,6 @@ describe('Play Store Fase 3 — export e criptografia honestos', () => {
     const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
     expect(html).toMatch(/localStorage/i);
     expect(html).toMatch(/anexos/i);
+    expect(html).toMatch(/fp-transacoes|Lançamentos grandes no IndexedDB/i);
   });
 });

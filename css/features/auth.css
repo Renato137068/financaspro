@@ -370,6 +370,18 @@
   background: var(--color-white) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  /* Card sempre claro: com data-theme=dark os tokens de texto viram claros e
+     caem abaixo do AA sobre branco. Trava a tinta do tema claro neste overlay. */
+  --color-text-primary: #121915;
+  --color-text-secondary: #3f4f47;
+  --color-text-muted: #55665c;
+  --color-gray-500: #55605a;
+  --color-gray-600: #55605a;
+  --color-gray-700: #3c4541;
+  --color-gray-800: #242a27;
+  --color-primary-text: #0b5c42;
+  --color-primary-600: #0b5c42;
+  --color-primary-500: #12694e;
 }
 
 .auth-shell {
@@ -574,7 +586,7 @@
 .auth-link-btn--center {
   align-self: center;
   margin-top: var(--space-2);
-  color: var(--color-gray-500);
+  color: var(--color-text-secondary);
   font-weight: var(--font-weight-medium);
 }
 

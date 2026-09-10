@@ -1394,6 +1394,57 @@
   }
 }
 
+/* Narrow phones (320–359): chips e meta do Extrato não devem estourar a linha. */
+@media (max-width: 359px) {
+  .filtros-tipo {
+    gap: 6px;
+  }
+
+  .filtro-chip {
+    min-height: 36px;
+    padding: 6px 10px;
+    font-size: var(--font-size-xs);
+  }
+
+  .filtro-chip--avancados {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .filtro-cat-chip {
+    padding: 6px 10px;
+    font-size: var(--font-size-xs);
+  }
+
+  .ext-tx {
+    padding: var(--space-3);
+    gap: var(--space-2);
+  }
+
+  .ext-tx-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .ext-tx-desc {
+    font-size: var(--font-size-sm);
+  }
+
+  .ext-tx-meta {
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .ext-tx-meta-tag {
+    font-size: 0.65rem;
+    padding: 1px 6px;
+  }
+
+  .ext-tx-valor {
+    font-size: var(--font-size-sm);
+  }
+}
+
 /* Legacy classes for compatibility */
 
 .extrato-grupo-titulo {

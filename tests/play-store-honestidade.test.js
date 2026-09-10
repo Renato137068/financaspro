@@ -24,6 +24,7 @@ describe('Honestidade Play Store / privacidade', () => {
     expect(priv).toMatch(/app autenticador/i);
     expect(priv).toMatch(/2 de setembro de 2026|9 de setembro de 2026/);
     expect(priv).toMatch(/tokens de (acesso e )?renova|armazenamento local do WebView/i);
+    expect(priv).toMatch(/fp-transacoes/);
   });
 
   test('Data Safety do beta Play é cenário CLOUD (não “não coleta”)', () => {

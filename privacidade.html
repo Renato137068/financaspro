@@ -62,7 +62,7 @@
   <p>Usamos HTTPS, tokens de sessão, hash de senhas (Supabase Auth) e boas práticas de desenvolvimento. No Android, a tela de login e o PIN usam proteção contra captura de tela (FLAG_SECURE).</p>
   <ul>
     <li><strong>PIN local</strong> — oculta saldos ao abrir o app neste aparelho. <em>Não</em> criptografa o armazenamento contra quem tenha acesso técnico ao aparelho.</li>
-    <li><strong>Cifrar dados no dispositivo</strong> (opcional) — AES-GCM sobre dados em localStorage e anexos no IndexedDB. Sem senha/frase própria, a chave fica neste dispositivo; protege backups e olhares casuais, não XSS nem perícia forense completa.</li>
+    <li><strong>Cifrar dados no dispositivo</strong> (opcional) — AES-GCM sobre dados em <em>localStorage</em> e <em>anexos</em> no IndexedDB. Lançamentos migrados para o blob IndexedDB (<code>fp-transacoes</code>) <strong>não</strong> entram nessa cifragem nesta versão. Sem senha/frase própria, a chave fica neste dispositivo; protege backups e olhares casuais, não XSS nem perícia forense completa.</li>
     <li><strong>Biometria</strong> (Android, opcional) — desbloqueia a sessão neste aparelho; ao sair da conta, a biometria é desativada.</li>
     <li><strong>Verificação em duas etapas (TOTP)</strong> — opcional, via app autenticador (Google Authenticator, Authy etc.), no Perfil. No login, após a senha (ou biometria), o app pede o código de 6 dígitos. Requer MFA habilitado no projeto Supabase.</li>
   </ul>
