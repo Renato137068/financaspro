@@ -150,12 +150,25 @@ test('o selo de armazenamento explica onde os dados ficam', async function({ pag
   // mais lia. O selo do rodapé, que já aparecia em todas as telas, passou a
   // responder ao toque. É o lugar mais barato de colocar a promessa onde ela
   // é vista, e por isso vale um teste: se ele voltar a ser decoração, reprova.
+  // Novo UX (js/utilities/sync-indicator.js): o selo é SILENCIOSO nos estados
+  // saudáveis (local/ok) para não poluir cada abertura — deixou de ser um badge
+  // permanente. Mas continua sendo um explicador de verdade, não decoração: o
+  // botão interno guarda o rótulo de acesso e, ao ser acionado, abre a promessa
+  // (neste aparelho) com a contrapartida honesta (backup).
   const selo = page.locator('#sync-indicator');
-  await expect(selo).toBeVisible();
-  expect(await selo.evaluate((e) => e.tagName)).toBe('BUTTON');
-  expect(await selo.getAttribute('aria-label')).toMatch(/onde ficam os seus dados/i);
+  await expect(selo).toBeAttached();
+  await expect(selo).toBeHidden();
 
-  await selo.click();
+  const main = page.locator('#sync-indicator-main');
+  expect(await main.getAttribute('aria-label')).toMatch(/onde ficam os seus dados/i);
+
+  // O selo está oculto de propósito no estado local; aciona o explicador
+  // diretamente pelo botão (o clique roda mesmo com o selo silencioso).
+  await page.evaluate(() => {
+    const b = document.getElementById('sync-indicator-main');
+    if (b) b.click();
+  });
+
   const modal = page.locator('.modal-overlay');
   await expect(modal).toBeVisible();
   const texto = await modal.innerText();

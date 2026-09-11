@@ -58,6 +58,16 @@ test.describe('Auth cloud', function() {
     var email = 'e2e-' + Date.now() + '@financaspro.test';
     await page.goto(BASE + '/');
 
+    // Este teste cobre o caminho LEGADO de nuvem via API Express. No build com
+    // Supabase configurado (o padrão), supabase-sync.js assume o transporte e
+    // desliga o _apiAtiva() da API Express de propósito — então o fluxo de login
+    // via Express não se aplica. Cobrir o login Supabase exigiria os secrets
+    // E2E_SUPABASE, que não estão neste CI. Roda só quando o Supabase está off.
+    var supabaseAtivo = await page.evaluate(function() {
+      return !!(window.SUPA_AUTH && window.SUPA_AUTH.isActive && window.SUPA_AUTH.isActive());
+    });
+    test.skip(supabaseAtivo, 'App em modo Supabase — auth via API Express desativada');
+
     // O app é local-first: o overlay de login NÃO abre no boot — só sob demanda
     // (ex.: ação premium chama setupAuthUI). Esperamos o app subir em modo cloud
     // (_apiAtiva) e abrimos o overlay pela mesma função pública que a UI usa.
