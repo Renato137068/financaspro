@@ -89,7 +89,7 @@ for (const file of listarCss(cssDir)) {
   const final = novo.replace(/\u0000C(\d+)\u0000/g, (_m, i) => comentarios[Number(i)]);
 
   if (trocas > 0) {
-    if (!dryRun) fs.writeFileSync(file, final);
+    if (!dryRun) fs.writeFileSync(file, final, 'utf8');
     console.log(`[hex→token] ${path.relative(root, file)}: ${trocas}`);
     totalTrocas += trocas;
     arquivos++;
