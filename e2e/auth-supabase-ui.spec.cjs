@@ -57,6 +57,15 @@ test.describe('Auth Supabase — UI estática', function() {
 });
 
 test.describe('Auth Supabase — login real (CI secrets)', function() {
+  // O login real precisa do transporte Supabase ATIVO. A config global do
+  // Playwright injeta fp-force-local=1 (modo piloto, sem Supabase) em toda a
+  // suíte; sem desligar isso, o app sobe em modo local e o fluxo de login
+  // Supabase nem existe — o teste passaria por engano ou travaria. Zerar o
+  // storageState remove a flag e devolve o comportamento cloud, exatamente
+  // como auth-offline-entrada.spec.cjs faz. (Sem secrets, os testes abaixo
+  // são pulados, então isto é inócuo até o Supabase de staging existir.)
+  test.use({ storageState: { cookies: [], origins: [] } });
+
   test('login sem MFA', async function({ page }) {
     test.skip(
       !process.env.E2E_SUPABASE || !process.env.E2E_EMAIL || !process.env.E2E_PASSWORD,
