@@ -24,6 +24,11 @@ const CONTAS_PAGAR = {
   },
 
   criar: function(dados) {
+    if (typeof BILLING !== 'undefined' && !BILLING.guardQuota('bill', 1)) {
+      var errConta = new Error('Limite de contas a pagar do plano gratuito');
+      errConta.code = 'quota';
+      throw errConta;
+    }
     var descricao = (dados.descricao || '').trim();
     var valor = UTILS.parseMoeda(dados.valor);
     var vencimento = dados.vencimento;

@@ -1,0 +1,347 @@
+{
+  "seed": 20260827,
+  "users": 400,
+  "personas": {
+    "A": {
+      "id": "A",
+      "nome": "Organizado",
+      "peso": 0.18,
+      "txMin": 80,
+      "txMax": 140
+    },
+    "B": {
+      "id": "B",
+      "nome": "Desorganizado",
+      "peso": 0.16,
+      "txMin": 60,
+      "txMax": 120
+    },
+    "C": {
+      "id": "C",
+      "nome": "Intensivo",
+      "peso": 0.14,
+      "txMin": 200,
+      "txMax": 400
+    },
+    "D": {
+      "id": "D",
+      "nome": "Casual",
+      "peso": 0.12,
+      "txMin": 5,
+      "txMax": 20
+    },
+    "E": {
+      "id": "E",
+      "nome": "Erroneo",
+      "peso": 0.14,
+      "txMin": 40,
+      "txMax": 90
+    },
+    "F": {
+      "id": "F",
+      "nome": "Negocio",
+      "peso": 0.13,
+      "txMin": 150,
+      "txMax": 280
+    },
+    "G": {
+      "id": "G",
+      "nome": "Historico",
+      "peso": 0.13,
+      "txMin": 300,
+      "txMax": 600
+    }
+  },
+  "simMs": 15796,
+  "stats": {
+    "created": 50226,
+    "edited": 6461,
+    "deleted": 6013,
+    "transfers": 3074,
+    "rejected": 293,
+    "queries": 13143,
+    "txFinal": 47487,
+    "duplicateAttempts": 104,
+    "expectedRejections": 87,
+    "unexpectedRejections": 110,
+    "byPersona": {
+      "G": 44,
+      "B": 66,
+      "A": 78,
+      "F": 45,
+      "D": 47,
+      "C": 57,
+      "E": 63
+    },
+    "performance": {
+      "100": {
+        "ms": 49,
+        "msPerOp": 0.32666666666666666,
+        "reps": 50
+      },
+      "500": {
+        "ms": 67,
+        "msPerOp": 0.44666666666666666,
+        "reps": 50
+      },
+      "1000": {
+        "ms": 106,
+        "msPerOp": 0.7066666666666667,
+        "reps": 50
+      },
+      "5000": {
+        "ms": 223,
+        "msPerOp": 3.716666666666667,
+        "reps": 20
+      },
+      "10000": {
+        "ms": 458,
+        "msPerOp": 7.633333333333334,
+        "reps": 20
+      }
+    },
+    "ops": 78917
+  },
+  "findings": [
+    {
+      "id": "FP-AUD-0001",
+      "seed": 20260827,
+      "ts": "2026-08-28T00:53:26.795Z",
+      "categoria": "logica",
+      "severidade": "P2",
+      "persona": "E",
+      "userId": 19,
+      "tela": "nucleo-financeiro",
+      "acao": "operacao-rejeitada-inesperada",
+      "esperado": null,
+      "obtido": null,
+      "evidencia": {
+        "i": 35,
+        "tipo": "despesa",
+        "valor": 470.54,
+        "data": "2026-07-04"
+      },
+      "causaProvavel": "Valor invalido",
+      "recomendacao": "",
+      "reproducao": ""
+    },
+    {
+      "id": "FP-AUD-0002",
+      "seed": 20260827,
+      "ts": "2026-08-28T00:53:26.795Z",
+      "categoria": "logica",
+      "severidade": "P2",
+      "persona": "E",
+      "userId": 19,
+      "tela": "nucleo-financeiro",
+      "acao": "operacao-rejeitada-inesperada",
+      "esperado": null,
+      "obtido": null,
+      "evidencia": {
+        "i": 39,
+        "tipo": "despesa",
+        "valor": 761.97,
+        "data": "2024-02-29"
+      },
+      "causaProvavel": "Valor invalido",
+      "recomendacao": "",
+      "reproducao": ""
+    },
+    {
+      "id": "FP-AUD-0003",
+      "seed": 20260827,
+      "ts": "2026-08-28T00:53:26.796Z",
+      "categoria": "logica",
+      "severidade": "P2",
+      "persona": "E",
+      "userId": 19,
+      "tela": "nucleo-financeiro",
+      "acao": "operacao-rejeitada-inesperada",
+      "esperado": null,
+      "obtido": null,
+      "evidencia": {
+        "i": 65,
+        "tipo": "despesa",
+        "valor": 14.3,
+        "data": "2025-07-22"
+      },
+      "causaProvavel": "Valor invalido",
+      "recomendacao": "",
+      "reproducao": ""
+    },
+    {
+      "id": "FP-AUD-0004",
+      "seed": 20260827,
+      "ts": "2026-08-28T00:53:26.796Z",
+      "categoria": "logica",
+      "severidade": "P2",
+      "persona": "E",
+      "userId": 19,
+      "tela": "nucleo-financeiro",
+      "acao": "operacao-rejeitada-inesperada",
+      "esperado": null,
+      "obtido": null,
+      "evidencia": {
+        "i": 67,
+        "tipo": "despesa",
+        "valor": 231.62,
+        "data": "2026-02-25"
+      },
+      "causaProvavel": "Valor invalido",
+      "recomendacao": "",
+      "reproducao": ""
+    },
+    {
+      "id": "FP-AUD-0005",
+      "seed": 20260827,
+      "ts": "2026-08-28T00:53:26.796Z",
+      "categoria": "logica",
+      "severidade": "P2",
+      "persona": "E",
+      "userId": 19,
+      "tela": "nucleo-financeiro",
+      "acao": "operacao-rejeitada-inesperada",
+      "esperado": null,
+      "obtido": null,
+      "evidencia": {
+        "i": 73,
+        "tipo": "despesa",
+        "valor": 102.58,
+        "data": "2025-11-01"
+      },
+      "causaProvavel": "Valor invalido",
+      "recomendacao": "",
+      "reproducao": ""
+    }
+  ],
+  "uniqueFindings": [
+    {
+      "id": "FP-AUD-0001",
+      "seed": 20260827,
+      "ts": "2026-08-28T00:53:26.795Z",
+      "categoria": "logica",
+      "severidade": "P2",
+      "persona": "E",
+      "userId": 19,
+      "tela": "nucleo-financeiro",
+      "acao": "operacao-rejeitada-inesperada",
+      "esperado": null,
+      "obtido": null,
+      "evidencia": {
+        "i": 35,
+        "tipo": "despesa",
+        "valor": 470.54,
+        "data": "2026-07-04"
+      },
+      "causaProvavel": "Valor invalido",
+      "recomendacao": "",
+      "reproducao": "",
+      "ocorrencias": 5
+    }
+  ],
+  "productOpportunities": [
+    {
+      "id": "PROD-01",
+      "area": "produto",
+      "titulo": "Transferência explícita no fluxo Novo",
+      "impacto": "alto",
+      "descricao": "Usuários movendo dinheiro entre contas podem criar receita+despesa e poluir orçamento se não acharem transferência."
+    },
+    {
+      "id": "PROD-02",
+      "area": "escala",
+      "titulo": "Migração de fp-transacoes para IndexedDB",
+      "impacto": "alto",
+      "descricao": "Teto ~5 MB localStorage (~35k tx). Persona G com milhares de registros atingirá limite."
+    },
+    {
+      "id": "PROD-03",
+      "area": "ux",
+      "titulo": "Undo em exclusões já existe — expandir para edições",
+      "impacto": "medio",
+      "descricao": "Desfazer só em delete; edições acidentais não têm janela de reversão."
+    },
+    {
+      "id": "PROD-04",
+      "area": "ux",
+      "titulo": "Estado vazio contextual por aba",
+      "impacto": "medio",
+      "descricao": "Casual (persona D) precisa de CTA claro em cada aba sem dados."
+    },
+    {
+      "id": "PROD-05",
+      "area": "dados",
+      "titulo": "Reconciliador visível ao usuário",
+      "impacto": "medio",
+      "descricao": "FINANCE_RECONCILER só em modo teste; usuário não vê divergências saldo vs extrato."
+    },
+    {
+      "id": "PROD-06",
+      "area": "performance",
+      "titulo": "Virtualização do extrato",
+      "impacto": "alto",
+      "descricao": "Persona C/G com centenas+ linhas pode degradar scroll e filtros no mobile."
+    },
+    {
+      "id": "PROD-07",
+      "area": "sync",
+      "titulo": "Conflito multi-aba documentado",
+      "impacto": "alto",
+      "descricao": "Duas abas editando simultaneamente dependem de last-write-wins no localStorage."
+    },
+    {
+      "id": "PROD-08",
+      "area": "cartoes",
+      "titulo": "Ciclo de fatura completo",
+      "impacto": "medio",
+      "descricao": "Cartões sem fechamento/vencimento realista — usuário de negócio espera visão de fatura."
+    }
+  ],
+  "uxObservations": [
+    {
+      "id": "UX-01",
+      "severidade": "P2",
+      "tela": "extrato",
+      "titulo": "Ordenação em 2 controles recente",
+      "descricao": "Mudança recente pode confundir usuários habituados aos 4 chips; falta onboarding/tooltip."
+    },
+    {
+      "id": "UX-02",
+      "severidade": "P2",
+      "tela": "orcamento",
+      "titulo": "Curva de aprendizado 50/30/20",
+      "descricao": "Persona desorganizada (B) pode não entender limites vs regra global."
+    },
+    {
+      "id": "UX-03",
+      "severidade": "P3",
+      "tela": "config",
+      "titulo": "Muitos cartões de configuração",
+      "descricao": "Perfil denso; usuário casual pode não achar função específica."
+    },
+    {
+      "id": "UX-04",
+      "severidade": "P2",
+      "tela": "novo",
+      "titulo": "Formulário longo no mobile",
+      "descricao": "Muitos campos verticais; persona intensiva prefere atalhos/entrada rápida."
+    },
+    {
+      "id": "UX-05",
+      "severidade": "P2",
+      "tela": "dashboard",
+      "titulo": "Realizado vs projetado",
+      "descricao": "Lançamentos futuros no mês podem confundir saldo do card vs saldo das contas."
+    }
+  ],
+  "summary": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 1,
+    "P3": 0,
+    "bugs": 1,
+    "performance": 0
+  },
+  "generatedAt": "2026-08-28T00:53:42.345Z",
+  "nota": "Fixture DADOS em load-sources.js simplifica persistência; clientKey P0 pode ser falso positivo — validar com persist-queue.test.js e dados.js real."
+}

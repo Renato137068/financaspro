@@ -88,6 +88,7 @@ export function serializeRecurring(row) {
       : null,
     nextDue: row.nextDue instanceof Date ? row.nextDue.toISOString() : row.nextDue,
     active: row.active !== false,
+    accountId: row.accountId ?? null,
     createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt,
     updatedAt: row.updatedAt instanceof Date ? row.updatedAt.toISOString() : row.updatedAt,
   };

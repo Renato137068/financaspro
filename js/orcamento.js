@@ -16,6 +16,10 @@ var ORCAMENTO = {
   },
 
   definirLimite: function(categoria, limite) {
+    var isNovo = !this._cache[categoria] || !(this._cache[categoria].limite > 0);
+    if (isNovo && typeof BILLING !== 'undefined' && !BILLING.guardQuota('budget', 1)) {
+      throw new Error('Limite de orçamentos atingido');
+    }
     if (typeof BUDGET_SERVICE !== 'undefined') {
       this._cache = BUDGET_SERVICE.setBudget(this._cache, categoria, limite);
     } else {
@@ -66,7 +70,8 @@ var ORCAMENTO = {
 
   calcularGastoMes: function(categoria, mes, ano) {
     if (typeof BUDGET_SERVICE !== 'undefined') {
-      return BUDGET_SERVICE.calculateSpent(TRANSACOES.obter({}), categoria, mes, ano);
+      var txsMes = TRANSACOES.obter({ mes: mes, ano: ano });
+      return BUDGET_SERVICE.calculateSpent(txsMes, categoria, null, null);
     }
     var transacoes = TRANSACOES.obter({ mes: mes, ano: ano, categoria: categoria });
     // Soma em centavos inteiros — acumular reais em float faz mil parcelas de
@@ -82,7 +87,8 @@ var ORCAMENTO = {
 
   obterStatus: function(categoria, mes, ano) {
     if (typeof BUDGET_SERVICE !== 'undefined') {
-      return BUDGET_SERVICE.getStatus(this._cache, TRANSACOES.obter({}), categoria, mes, ano);
+      var txsMes = TRANSACOES.obter({ mes: mes, ano: ano });
+      return BUDGET_SERVICE.getStatus(this._cache, txsMes, categoria, null, null);
     }
     var limite = this.obterLimite(categoria);
     if (!limite) {
@@ -225,7 +231,8 @@ var ORCAMENTO = {
 
   obterStatusTodos: function(mes, ano) {
     if (typeof BUDGET_SERVICE !== 'undefined') {
-      return BUDGET_SERVICE.getAllStatus(this._cache, TRANSACOES.obter({}), mes, ano);
+      var txsMes = TRANSACOES.obter({ mes: mes, ano: ano });
+      return BUDGET_SERVICE.getAllStatus(this._cache, txsMes, null, null);
     }
     var categorias = Object.keys(this._cache);
     var self = this;

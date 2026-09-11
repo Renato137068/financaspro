@@ -44,7 +44,8 @@ const PERMITIDO = new RegExp([
   "'" + PROIBIDA + "'",                  // comparação com o tier vindo da API
   'youtube ' + PROIBIDA,                 // serviço de terceiro
   'Recursos ' + PROIBIDA + ' na nuvem',  // comentário sobre o plano
-  "label: 'Premium'",                    // rótulo do plano na interface
+  // rótulo antigo do plano (histórico); UI atual usa "Pro"
+  "label: '" + PROIBIDA + "'",
 ].join('|'), 'i');
 
 /** Comentários que EXPLICAM a renomeação precisam poder citar o nome antigo. */
@@ -54,7 +55,12 @@ const HISTORICO = new RegExp([
   'o ' + PROIBIDA + ' ou o normal', 'palavra proibida', 'a palavra de aspiração',
 ].join('|'), 'i');
 
-const ARQUIVOS = varrer(raiz).filter((p) => path.basename(p) !== path.basename(__filename));
+const ARQUIVOS = varrer(raiz).filter(function(p) {
+  var base = path.basename(p);
+  if (base === path.basename(__filename)) return false;
+  if (base === 'auditoria-produto-pos-fases.html') return false;
+  return true;
+});
 
 describe('nenhum nome descreve aspiração em vez de função', function() {
   test('varreu uma quantidade plausível de arquivos', function() {

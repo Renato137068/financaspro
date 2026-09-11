@@ -19,11 +19,16 @@ const INIT_PATRIMONIO = {
       else if (action === 'patrimonio-ativo-excluir') self.confirmarExcluirAtivo(btn.dataset.patrimonioId);
       else if (action === 'patrimonio-divida-excluir') self.confirmarExcluirDivida(btn.dataset.patrimonioId);
       else if (action === 'patrimonio-importar-conta') {
-        self.abrirFormAtivo({
+        var presetImport = {
           nome: btn.dataset.nome,
           tipo: btn.dataset.tipo,
           contaId: btn.dataset.contaId
-        });
+        };
+        if (btn.dataset.saldo != null && btn.dataset.saldo !== '') {
+          var saldoPrefill = Number(btn.dataset.saldo);
+          if (isFinite(saldoPrefill)) presetImport.valor = Math.max(0, saldoPrefill);
+        }
+        self.abrirFormAtivo(presetImport);
       }
     });
   },
@@ -75,6 +80,9 @@ const INIT_PATRIMONIO = {
     var ativos = PATRIMONIO.listarAtivos();
     var dividas = PATRIMONIO.listarDividas();
     var sugestoes = PATRIMONIO.sugerirDeContas();
+    var recon = typeof PATRIMONIO.reconciliarContas === 'function'
+      ? PATRIMONIO.reconciliarContas()
+      : { overlaps: [] };
 
     var html = '<div class="pat-hero' + (liquido >= 0 ? ' pat-hero--positivo' : ' pat-hero--negativo') + '">' +
       '<span class="pat-hero-label">Patrimônio líquido</span>' +
@@ -85,12 +93,29 @@ const INIT_PATRIMONIO = {
       '</div>' +
     '</div>';
 
+    if (recon.overlaps && recon.overlaps.length > 0) {
+      html += '<div class="pat-aviso-dupla" role="status">' +
+        '<strong>Possível contagem dupla</strong>' +
+        '<p>' + UTILS.formatarMoeda(recon.totalSobreposto) +
+        ' em ativos de conta também entram em Minhas contas. ' +
+        'Patrimônio líquido sem essa sobreposição: ' +
+        UTILS.formatarMoeda(recon.liquidoSemSobreposicao) + '.</p>' +
+        '<p class="pat-aviso-hint">Só um aviso — nada foi alterado automaticamente.</p>' +
+      '</div>';
+    }
+
     if (sugestoes.length > 0) {
       html += '<div class="pat-sugestoes"><p class="pat-sugestoes-title">Contas do app sem saldo cadastrado:</p>';
       sugestoes.forEach(function(s) {
+        var saldoAttr = (s.saldoLedger != null && !isNaN(s.saldoLedger))
+          ? ' data-saldo="' + UTILS.escapeHtml(String(s.saldoLedger)) + '"'
+          : '';
         html += '<button type="button" class="pat-sugestao-chip" data-action="patrimonio-importar-conta" ' +
           'data-nome="' + UTILS.escapeHtml(s.nome) + '" data-tipo="' + UTILS.escapeHtml(s.tipo) + '" ' +
-          'data-conta-id="' + UTILS.escapeHtml(s.contaId) + '">+ ' + UTILS.escapeHtml(s.nome) + '</button>';
+          'data-conta-id="' + UTILS.escapeHtml(s.contaId) + '"' + saldoAttr + '>+ ' +
+          UTILS.escapeHtml(s.nome) +
+          (s.saldoLedger != null ? ' (' + UTILS.formatarMoeda(s.saldoLedger) + ')' : '') +
+          '</button>';
       });
       html += '</div>';
     }
@@ -111,7 +136,7 @@ const INIT_PATRIMONIO = {
           '<button type="button" class="btn-secundario btn-sm" data-action="patrimonio-divida-nova">Adicionar</button>' +
         '</div>' +
         (dividas.length === 0
-          ? '<p class="pat-empty">Empréstimos, financiamentos e cartões.</p>'
+          ? '<p class="pat-empty">Empréstimos, financiamentos, consórcios e cartões.</p>'
           : '<div class="pat-list">' + dividas.map(function(d) { return INIT_PATRIMONIO._renderDivida(d); }).join('') + '</div>') +
       '</div>' +
     '</div>';
@@ -183,6 +208,9 @@ const INIT_PATRIMONIO = {
         '<input type="text" id="pat-ativo-valor" class="form-input campo-moeda" placeholder="0,00" inputmode="decimal" autocomplete="off" value="' +
           (preset.valor !== undefined ? String(preset.valor).replace('.', ',') : '') + '">' +
         '<p class="campo-moeda-preview" id="pat-ativo-preview" hidden></p>' +
+        (preset.contaId && preset.valor !== undefined
+          ? '<p class="pat-form-hint">Valor pré-preenchido com o saldo de Minhas contas — edite se quiser um snapshot diferente.</p>'
+          : '') +
         '<input type="hidden" id="pat-ativo-conta-id" value="' + UTILS.escapeHtml(preset.contaId || '') + '">' +
       '</div>';
 

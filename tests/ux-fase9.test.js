@@ -13,6 +13,9 @@ describe('Fase 9 — UX e acessibilidade', () => {
     expect(html).toContain('auth-register-password-hint');
     expect(html).toContain('aria-describedby="auth-register-password-hint"');
     expect(html).not.toContain('Minimo de 6 caracteres');
+    expect(html).toContain('auth-password-toggle');
+    expect(html).not.toContain('auth-trust');
+    expect(html).toContain('auth-footer-note');
   });
 
   test('password-policy compartilhado com validations', () => {
@@ -26,6 +29,32 @@ describe('Fase 9 — UX e acessibilidade', () => {
   test('authController valida senha antes do register', () => {
     const auth = fs.readFileSync(path.join(root, 'js/authController.js'), 'utf8');
     expect(auth).toContain('VALIDATIONS.validarSenha');
+  });
+
+  test('login em duas etapas e biometria no app nativo', () => {
+    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+    const auth = fs.readFileSync(path.join(root, 'js/authController.js'), 'utf8');
+    const bio = fs.readFileSync(path.join(root, 'js/auth-biometric.js'), 'utf8');
+    expect(html).toContain('auth-login-step-email');
+    expect(html).toContain('auth-biometric-btn');
+    expect(html).toContain('auth-greeting-name');
+    expect(auth).toContain('showLoginStep');
+    expect(auth).toContain('offerEnableAfterLogin');
+    expect(html).toContain('auth-exit-btn');
+    expect(auth).toContain('setupLogoutButton');
+    expect(auth).toContain('sairDaConta');
+    expect(bio).toContain('tryLogin');
+    expect(bio).toContain('offerEnableAfterLogin');
+    expect(html).toContain('auth-biometric-hint');
+    expect(html).toContain('auth-resend-email-btn');
+    expect(auth).toContain('authLimparAoSair');
+    expect(auth).toContain('Entrando…');
+    expect(fs.readFileSync(path.join(root, 'js/core/supabase.js'), 'utf8'))
+      .toContain('resendSignupEmail');
+    expect(fs.readFileSync(path.join(root, 'css/critical-inline.css'), 'utf8'))
+      .toContain('body.auth-overlay-open > header');
+    expect(fs.readFileSync(path.join(root, 'css/features/auth.css'), 'utf8'))
+      .toMatch(/\.auth-biometric-btn\s*\{[\s\S]*?border:\s*2px\s+solid/);
   });
 });
 
@@ -51,6 +80,20 @@ describe('Fase 9 — feedback de sincronização', () => {
     expect(ind).toContain('Salvando');
     expect(ind).toContain('conflito');
     expect(ind).toContain('Falha ao sincronizar');
+    expect(ind).toContain('sync-indicator-dismiss');
+    expect(ind).toContain('fp-sync-indicator-dismissed');
+  });
+
+  test('mudarAba reseta rolagem ao trocar de aba', () => {
+    const nav = fs.readFileSync(path.join(root, 'js/modules/init-navigation.js'), 'utf8');
+    expect(nav).toMatch(/scrollTo\s*\(/);
+    expect(nav).toContain('scrollTop = 0');
+  });
+
+  test('convite de onboarding usa role status e etapa explícita', () => {
+    const onb = fs.readFileSync(path.join(root, 'js/onboarding.js'), 'utf8');
+    expect(onb).toContain("role', 'status'");
+    expect(onb).toContain('Etapa 1 de 2');
   });
 });
 

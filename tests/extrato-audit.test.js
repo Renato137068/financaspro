@@ -18,7 +18,8 @@ function carregarExtrato(extra) {
     CONFIG: {
       TIPO_RECEITA: 'receita',
       TIPO_DESPESA: 'despesa',
-      TIPO_TRANSFERENCIA: 'transferencia'
+      TIPO_TRANSFERENCIA: 'transferencia',
+      getCatLabel: function(s) { return s; }
     },
     UTILS: {
       escapeHtml: function(s) {
@@ -150,5 +151,45 @@ describe('P2.3 — transferência não conta como saída', function() {
     expect(document.getElementById('kpi-saidas').textContent).toBe('R$ 200,00');
     expect(document.getElementById('kpi-entradas').textContent).toBe('R$ 1000,00');
     expect(document.getElementById('saldo-valor').textContent).toBe('R$ 800,00');
+  });
+});
+
+describe('Filtros avançados colapsáveis', function() {
+  test('markup: painel avançado oculto por padrão com aria no botão', function() {
+    expect(html).toMatch(/id="extrato-filtros-avancados"[^>]*hidden/);
+    expect(html).toMatch(/id="btn-filtros-avancados"[^>]*data-action="toggle-filtros-avancados"/);
+    expect(html).toMatch(/aria-controls="extrato-filtros-avancados"/);
+    expect(html).toMatch(/id="filtros-categoria"/);
+    expect(html).toMatch(/class="ordenacao-container"/);
+  });
+
+  test('toggleFiltrosAvancados alterna hidden e aria-expanded', function() {
+    document.body.innerHTML =
+      '<button id="btn-filtros-avancados" aria-expanded="false"></button>' +
+      '<div id="extrato-filtros-avancados" hidden></div>';
+    var mod = carregarExtrato();
+    mod.toggleFiltrosAvancados();
+    expect(document.getElementById('extrato-filtros-avancados').hasAttribute('hidden')).toBe(false);
+    expect(document.getElementById('btn-filtros-avancados').getAttribute('aria-expanded')).toBe('true');
+    mod.toggleFiltrosAvancados();
+    expect(document.getElementById('extrato-filtros-avancados').hasAttribute('hidden')).toBe(true);
+    expect(document.getElementById('btn-filtros-avancados').getAttribute('aria-expanded')).toBe('false');
+  });
+
+  test('atualizarBadgeFiltrosAvancados reflete categoria e ordenação', function() {
+    document.body.innerHTML =
+      '<button id="btn-filtros-avancados"></button>' +
+      '<span id="filtro-avancados-count" hidden>0</span>';
+    var mod = carregarExtrato();
+    mod.state.filtroCat = null;
+    mod.state.ordenacao = 'data-desc';
+    mod.atualizarBadgeFiltrosAvancados();
+    expect(document.getElementById('filtro-avancados-count').hidden).toBe(true);
+
+    mod.state.filtroCat = 'alimentacao';
+    mod.state.ordenacao = 'valor-desc';
+    mod.atualizarBadgeFiltrosAvancados();
+    expect(document.getElementById('filtro-avancados-count').textContent).toBe('2');
+    expect(document.getElementById('filtro-avancados-count').hidden).toBe(false);
   });
 });

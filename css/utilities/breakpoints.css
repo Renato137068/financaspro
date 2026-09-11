@@ -7,7 +7,7 @@
 /* ── Breakpoint Variables ─────────────────────────────────────── */
 
 :root {
-  /* Mobile-first breakpoints */
+  /* Mobile-first breakpoints (referência documental + consumo em max-width) */
   --bp-mobile-small: 360px;   /* Micro mobile */
   --bp-mobile: 420px;          /* Small mobile */
   --bp-mobile-large: 480px;   /* Large mobile */
@@ -15,44 +15,36 @@
   --bp-desktop: 1024px;       /* Desktop */
   --bp-desktop-large: 1280px;  /* Large desktop */
   --bp-desktop-xl: 1440px;    /* Extra large desktop */
+
+  /* Shell / nav — usados por base.css e style.css */
+  --app-shell-phone: 500px;
+  --app-shell-fold: 640px;
+  --app-shell-tablet: 720px;
+  --nav-max-phone: 460px;
 }
 
 /* ── Standard Media Queries ───────────────────────────────────── */
 
-/* Micro mobile (≤ 360px) */
-@media (max-width: 360px) {
-  /* Adjustments for very small screens */
-}
+/* Micro mobile (≤ 360px) — ver form-novo.css (grid cats 2 col) */
+@media (max-width: 360px) {}
 
-/* Small mobile (≤ 420px) */
-@media (max-width: 420px) {
-  /* Adjustments for small mobile screens */
-}
+/* Small mobile (≤ 420px) — ver auth.css / responsive.css */
+@media (max-width: 420px) {}
 
-/* Large mobile (≤ 480px) */
-@media (max-width: 480px) {
-  /* Adjustments for large mobile screens */
-}
+/* Large mobile (≤ 480px) — ver responsive.css / forms extras */
+@media (max-width: 480px) {}
 
-/* Tablet (≥ 768px) */
-@media (min-width: 768px) {
-  /* Tablet and above */
-}
+/* Tablet (≥ 768px) — shell em style.css; nav alarga até --app-shell-tablet */
+@media (min-width: 768px) {}
 
-/* Desktop (≥ 1024px) */
-@media (min-width: 1024px) {
-  /* Desktop and above */
-}
+/* Desktop (≥ 1024px) — sidebar shell em style.css */
+@media (min-width: 1024px) {}
 
-/* Large desktop (≥ 1280px) */
-@media (min-width: 1280px) {
-  /* Large desktop and above */
-}
+/* Large desktop (≥ 1280px) — caps de leitura em style.css */
+@media (min-width: 1280px) {}
 
-/* Extra large desktop (≥ 1440px) */
-@media (min-width: 1440px) {
-  /* Extra large desktop */
-}
+/* Extra large desktop (≥ 1440px) — teto 1920 em style.css */
+@media (min-width: 1440px) {}
 
 /* ── Helper Classes ───────────────────────────────────────────── */
 

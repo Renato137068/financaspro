@@ -78,6 +78,11 @@ var INSIGHTS = {
 
     if (!Array.isArray(txs) || txs.length === 0) return insights;
 
+    // Insights basicos (variacao, top categoria, risco de orcamento) sao de
+    // todos; projecao, corte e assinaturas esquecidas sao conselho, e conselho
+    // e a mercadoria. Sem cota: ou o plano tem, ou nao tem.
+    var proAi = typeof BILLING === 'undefined' || BILLING.canUse('aiFeatures');
+
     // ── 1. Variação de despesas (AI_ENGINE.agregarPorMes) ──────────
     var agregado = AI_ENGINE.agregarPorMes(txs);
     var chaves   = Object.keys(agregado).sort();
@@ -119,8 +124,8 @@ var INSIGHTS = {
       } catch (e) { /* orçamento indisponível não pode derrubar o dashboard */ }
     }
 
-    // ── 2. Projeção de fim de mês ──────────────────────────────────
-    if (typeof AI_ENGINE.projetarFimMes === 'function') {
+    // ── 2. Projeção de fim de mês (Pro / soft local) ──────────────
+    if (proAi && typeof AI_ENGINE.projetarFimMes === 'function') {
       var proj = AI_ENGINE.projetarFimMes(txs);
       if (!proj.dadosInsuficientes && proj.projecaoReceitas > 0) {
         if (proj.saldoProjetado >= 0) {
@@ -139,18 +144,37 @@ var INSIGHTS = {
       }
     }
 
-    // ── 2b. Assinaturas esquecidas (impacto anualizado) ───────────
+    // ── 2b. Assinaturas esquecidas ────────────────────────────────
+    //
+    // O gatilho de conversão mais forte do app: o número costuma ser maior que
+    // o preço do plano, então o Pro se paga na própria tela. Por isso o FREE vê
+    // o TOTAL em reais e não vê QUAIS são — é o valor que cria o desejo, e
+    // escondê-lo faria o usuário nem saber que há dinheiro parado ali.
     if (typeof AI_ENGINE.mensagemAssinaturasEsquecidas === 'function') {
       var assin = AI_ENGINE.mensagemAssinaturasEsquecidas(txs);
       if (assin && assin.itens && assin.itens.length) {
-        var maior = assin.itens[0];
-        insights.push({
-          tipo:      'assinaturas',
-          msg:       '<i data-lucide="repeat" aria-hidden="true"></i> ' + assin.quantidade +
-                     ' cobrança(s) recorrente(s) somam R$ ' + assin.totalAnual.toFixed(2).replace('.', ',') +
-                     '/ano. Maior: "' + esc(maior.nome) + '" (R$ ' + maior.custoAnual.toFixed(2).replace('.', ',') + '/ano). Ainda usa?',
-          gravidade: assin.totalAnual >= 600 ? 'alta' : 'media'
-        });
+        var totalFmt = assin.totalAnual.toFixed(2).replace('.', ',');
+        if (proAi) {
+          var maior = assin.itens[0];
+          insights.push({
+            tipo:      'assinaturas',
+            msg:       '<i data-lucide="repeat" aria-hidden="true"></i> ' + assin.quantidade +
+                       ' cobrança(s) recorrente(s) somam R$ ' + totalFmt +
+                       '/ano. Maior: "' + esc(maior.nome) + '" (R$ ' + maior.custoAnual.toFixed(2).replace('.', ',') + '/ano). Ainda usa?',
+            gravidade: assin.totalAnual >= 600 ? 'alta' : 'media'
+          });
+        } else {
+          insights.push({
+            tipo:       'assinaturas-teaser',
+            msg:        '<i data-lucide="repeat" aria-hidden="true"></i> Encontramos ' + assin.quantidade +
+                        ' cobrança(s) recorrente(s) somando R$ ' + totalFmt + '/ano.',
+            gravidade:  assin.totalAnual >= 600 ? 'alta' : 'media',
+            acao:       'abrirPaywall',
+            botao:      'Ver quais',
+            parametros: { message: 'Você tem R$ ' + totalFmt +
+                                   '/ano em cobranças recorrentes. O Pro mostra quais são — e costuma se pagar já na primeira que você cancela.' }
+          });
+        }
       }
     }
 
@@ -199,10 +223,10 @@ var INSIGHTS = {
       });
     }
 
-    // ── 4. Saúde financeira abaixo do ideal ───────────────────────
+    // ── 4. Saúde financeira abaixo do ideal (Pro) ─────────────────
     var config = typeof DADOS !== 'undefined' ? DADOS.getConfig() : {};
-    var saude  = AI_ENGINE.calcularSaude(txs, config);
-    if (saude.score < 50) {
+    var saude = proAi ? AI_ENGINE.calcularSaude(txs, config) : { score: 100, nivel: '', detalhes: [] };
+    if (proAi && saude.score < 50) {
       insights.push({
         tipo:      'saude',
         msg:       '<i data-lucide="heart-pulse" aria-hidden="true"></i> Saúde financeira: ' + saude.score + '/100 (' + saude.nivel + '). ' +
@@ -212,7 +236,7 @@ var INSIGHTS = {
     }
 
     // ── 5. Reforço positivo ────────────────────────────────────────
-    if (saude.score >= 70) {
+    if (proAi && saude.score >= 70) {
       insights.push({
         tipo:      'reforco',
         msg:       '<i data-lucide="party-popper" aria-hidden="true"></i> Parabéns! Saúde financeira em ' + saude.score + '/100 — continue assim!',
@@ -238,7 +262,8 @@ var INSIGHTS = {
       });
     }
 
-    // ── 6. Recorrências não configuradas (AI_ENGINE) ───────────────
+    // ── 6. Recorrências não configuradas (Pro) ─────────────────────
+    if (proAi) {
     var padroesRec = AI_ENGINE.detectarPadroesRecorrentes(txs);
     padroesRec.slice(0, 2).forEach(function(p) {
       insights.push({
@@ -250,8 +275,10 @@ var INSIGHTS = {
         botao:      '<i data-lucide="refresh-cw" aria-hidden="true"></i> Marcar recorrente'
       });
     });
+    }
 
-    // ── 7. Tendência de poupança (AI_ENGINE.prever) ────────────────
+    // ── 7. Tendência de poupança (Pro) ─────────────────────────────
+    if (proAi) {
     var prev = AI_ENGINE.prever(txs, 1);
     if (prev.taxaPoupancaMedia < 0 && prev.tendencia !== 'insuficiente') {
       insights.push({
@@ -272,9 +299,10 @@ var INSIGHTS = {
         gravidade: 'baixa'
       });
     }
+    }
 
-    // ── 8. Corte sugerido para atingir meta de 20% ────────────────
-    if (typeof AI_ENGINE.sugestaoCorte === 'function') {
+    // ── 8. Corte sugerido para atingir meta de 20% (Pro) ───────────
+    if (proAi && typeof AI_ENGINE.sugestaoCorte === 'function') {
       var corte = AI_ENGINE.sugestaoCorte(txs, 0.20);
       if (corte && corte.corteNecessario > 0 && corte.categoriaAlvo) {
         var catLabel = esc((typeof CONFIG !== 'undefined' && CONFIG.getCatLabel) ? CONFIG.getCatLabel(corte.categoriaAlvo) : corte.categoriaAlvo);
@@ -286,7 +314,8 @@ var INSIGHTS = {
       }
     }
 
-    // ── 9. Anomalia no último lançamento ──────────────────────────
+    // ── 9. Anomalia no último lançamento (Pro) ─────────────────────
+    if (proAi) {
     var anomalias = AI_ENGINE.detectarAnomalias(txs);
     if (anomalias.length > 0) {
       var a = anomalias[0];
@@ -299,9 +328,10 @@ var INSIGHTS = {
         gravidade: 'media'
       });
     }
+    }
 
-    // ── 10. Categoria com maior variação MoM ─────────────────────
-    if (typeof AI_ENGINE.compararCategoriasMoM === 'function') {
+    // ── 10. Categoria com maior variação MoM (Pro) ─────────────────
+    if (proAi && typeof AI_ENGINE.compararCategoriasMoM === 'function') {
       var compCats = AI_ENGINE.compararCategoriasMoM(txs, mesKey);
       var maiorVar = compCats.filter(function(c) { return c.variacao !== null && Math.abs(c.variacao) >= 30 && c.atual > 20; });
       if (maiorVar.length > 0) {

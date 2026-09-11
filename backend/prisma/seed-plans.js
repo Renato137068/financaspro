@@ -27,22 +27,21 @@ const PLANS = [
   {
     name:             'Pro',
     tier:             'PRO',
-    priceMonthly:     16.90,
-    // 169,00 = 12 x 16,90 menos ~17%, a mesma proporcao do Business. Antes eram
-    // 119,00, que dao 41% de desconto -- desalinhado do outro plano e bem alem
-    // do que o seletor anunciava.
-    priceYearly:      169.00,
-    maxUsers:         5,
+    priceMonthly:     16.99,
+    // 129,99 = ~36% de desconto sobre 12 x 16,99 (203,88). Tiers do Play
+    // (nao aceita 16,90). Pro e individual/casal (2 membros); colaboracao
+    // de time e o gancho exclusivo do Business.
+    priceYearly:      129.99,
+    maxUsers:         2,
     maxTransPerMonth: 0,
     maxAccounts:      20,
     maxBudgets:       0,
     features:         [
       'Tudo do Gratuito',
       'Transações ilimitadas',
-      'Até 5 membros de equipe',
+      'Casal — até 2 membros',
       'IA e previsão financeira',
       'Exportação de relatórios',
-      'OCR de comprovantes',
       'Alertas automáticos',
     ],
     ...stripeIds('PRO'),
@@ -50,8 +49,8 @@ const PLANS = [
   {
     name:             'Business',
     tier:             'BUSINESS',
-    priceMonthly:     99.90,
-    priceYearly:      999.00,
+    priceMonthly:     79.90,
+    priceYearly:      799.00,
     maxUsers:         0,
     maxTransPerMonth: 0,
     maxAccounts:      0,

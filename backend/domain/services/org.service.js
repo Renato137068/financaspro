@@ -4,7 +4,7 @@ import { AppError } from '../errors.js';
 import { enqueue, QUEUES } from '../../lib/queue.js';
 import prisma from '../../lib/db.js';
 import logger from '../../lib/logger.js';
-import { assertOrgMemberCapacity } from '../../middleware/plan.js';
+import { assertOrgMemberCapacity, getOrgPlanTier, PLAN_LIMITS } from '../../middleware/plan.js';
 
 function slugify(name) {
   return name
@@ -102,6 +102,12 @@ export const OrgService = {
 
     await assertOrgMemberCapacity(orgId);
 
+    // FREE não tem teamFeatures; PRO/BUSINESS liberam convites (limites via maxUsers).
+    const tier = await getOrgPlanTier(orgId);
+    if (!PLAN_LIMITS[tier]?.teamFeatures) {
+      throw new AppError('Convite de membros disponível a partir do plano Pro', 402);
+    }
+
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
@@ -193,5 +199,17 @@ export const OrgService = {
 
   async listInvitations(orgId) {
     return OrgRepository.listInvitations(orgId);
+  },
+
+  async revokeInvitation(orgId, invitationId, actorUserId) {
+    const org = await OrgRepository.findById(orgId);
+    if (!org) throw new AppError('Organização não encontrada', 404);
+    const membership = await OrgRepository.findMember(orgId, actorUserId);
+    if (!membership || !['OWNER', 'ADMIN'].includes(membership.role)) {
+      throw new AppError('Sem permissão para revogar convites', 403);
+    }
+    const result = await OrgRepository.deleteInvitation(orgId, invitationId);
+    if (!result.count) throw new AppError('Convite não encontrado', 404);
+    return { ok: true };
   },
 };

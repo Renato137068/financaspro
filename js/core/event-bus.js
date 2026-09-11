@@ -231,14 +231,39 @@ const EVENT_HANDLERS = {
         INIT_EXTRATO.setOrdenacao(ordenacao);
       }
     },
+
+    'ordenacao-campo': function(ctx) {
+      var campo = ctx.dataset.ordenacaoCampo || 'data';
+      if (typeof INIT_EXTRATO !== 'undefined' && typeof INIT_EXTRATO.setOrdenacaoCampo === 'function') {
+        INIT_EXTRATO.setOrdenacaoCampo(campo);
+      }
+    },
+
+    'toggle-ordenacao-dir': function() {
+      if (typeof INIT_EXTRATO !== 'undefined' && typeof INIT_EXTRATO.toggleOrdenacaoDir === 'function') {
+        INIT_EXTRATO.toggleOrdenacaoDir();
+      }
+    },
     
     'limpar-filtros': function() {
       if (typeof INIT_EXTRATO !== 'undefined' && typeof INIT_EXTRATO.limparFiltros === 'function') {
         INIT_EXTRATO.limparFiltros();
       }
     },
+
+    'toggle-filtros-avancados': function() {
+      if (typeof INIT_EXTRATO !== 'undefined' && typeof INIT_EXTRATO.toggleFiltrosAvancados === 'function') {
+        INIT_EXTRATO.toggleFiltrosAvancados();
+      }
+    },
     
     'abrir-busca-avancada': function() {
+      // Engrenagem legado: abre o mesmo painel unificado de "Mais filtros"
+      if (typeof INIT_EXTRATO !== 'undefined' && typeof INIT_EXTRATO.toggleFiltrosAvancados === 'function') {
+        var panel = document.getElementById('extrato-filtros-avancados');
+        if (panel && panel.hidden) INIT_EXTRATO.toggleFiltrosAvancados();
+        return;
+      }
       var container = document.getElementById('busca-avancada-container');
       if (container) {
         container.style.display = container.style.display === 'none' ? 'block' : 'none';

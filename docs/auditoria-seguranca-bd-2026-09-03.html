@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FinançasPro — Auditoria de Segurança e Banco de Dados</title>
+<style>
+:root{--bg:#0a0e14;--card:#121820;--line:#243044;--txt:#eef2f8;--mut:#8fa3be;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--info:#38bdf8;--chip:#0c1018}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font:15px/1.6 system-ui,-apple-system,sans-serif;padding:32px 20px 72px}
+.wrap{max-width:960px;margin:0 auto}
+h1{font-size:26px;margin-bottom:8px}
+.sub{color:var(--mut);margin-bottom:28px;font-size:14px}
+.sub code{background:var(--chip);padding:1px 6px;border-radius:5px;font-size:12px}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);margin:36px 0 14px;border-top:1px solid var(--line);padding-top:22px}
+h2:first-of-type{border-top:none;padding-top:0}
+/* Hero notas */
+.hero{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.big{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;position:relative;overflow:hidden}
+.big span.lbl{color:var(--mut);font-size:13px;letter-spacing:.02em}
+.big b{display:block;font-size:52px;line-height:1;margin:10px 0 4px;font-variant-numeric:tabular-nums}
+.big small{color:var(--mut);font-size:12px}
+.ring{position:absolute;right:18px;top:18px;width:56px;height:56px;border-radius:50%}
+/* Barras de subnota */
+.bars{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px 18px;margin-bottom:8px}
+.bar{display:grid;grid-template-columns:230px 1fr 44px;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid #1a2332}
+.bar:last-child{border-bottom:none}
+.bar .name{font-size:13px}
+.bar .track{background:#0c1018;border-radius:6px;height:8px;overflow:hidden}
+.bar .fill{height:100%;border-radius:6px}
+.bar .val{text-align:right;font-weight:700;font-variant-numeric:tabular-nums;font-size:13px}
+/* Tabela achados */
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:10px}
+th,td{padding:11px 13px;text-align:left;border-bottom:1px solid #1a2332;font-size:13px;vertical-align:top}
+th{background:var(--chip);color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+tr:last-child td{border-bottom:none}
+.sev{font-weight:700;font-size:11px;padding:2px 8px;border-radius:20px;white-space:nowrap}
+.s-alta{background:rgba(239,68,68,.15);color:#fca5a5}
+.s-media{background:rgba(245,158,11,.15);color:#fcd34d}
+.s-baixa{background:rgba(56,189,248,.15);color:#7dd3fc}
+.s-ok{background:rgba(34,197,94,.15);color:#86efac}
+/* Cards de texto */
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:12px}
+.card h3{font-size:14px;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.card p{font-size:13px;color:#cdd8e8;margin-bottom:6px}
+.card p:last-child{margin-bottom:0}
+.card code,.mono{background:var(--chip);padding:1px 6px;border-radius:5px;font-size:12px;color:#cbd5e1;font-family:ui-monospace,monospace}
+.tag{display:inline-block;font-size:11px;color:var(--mut);border:1px solid var(--line);border-radius:6px;padding:1px 7px;margin-right:6px}
+ul.plus{list-style:none;margin:4px 0 0}
+ul.plus li{font-size:13px;color:#cdd8e8;padding:4px 0 4px 22px;position:relative}
+ul.plus li::before{content:"✓";position:absolute;left:0;color:var(--ok);font-weight:700}
+ul.fix{list-style:none;margin:6px 0 0}
+ul.fix li{font-size:13px;color:#cdd8e8;padding:4px 0 4px 22px;position:relative}
+ul.fix li::before{content:"→";position:absolute;left:0;color:var(--info);font-weight:700}
+.foot{color:var(--mut);font-size:12px;margin-top:28px;border-top:1px solid var(--line);padding-top:16px}
+@media(max-width:660px){.hero{grid-template-columns:1fr}.bar{grid-template-columns:130px 1fr 40px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Auditoria de Segurança e Banco de Dados</h1>
+  <p class="sub">FinançasPro <code>v11.3.13</code> · 03/09/2026 · método: revisão estática do código (Supabase RLS/migrations, Edge Functions, cliente web, PWA, Android). Escopo: <b>segurança + banco de dados</b>. Não houve teste dinâmico contra o projeto em produção.</p>
+
+  <div class="hero">
+    <div class="big">
+      <span class="ring" style="background:conic-gradient(var(--ok) 317deg,#1a2332 0)"></span>
+      <span class="lbl">Segurança (geral)</span>
+      <b class="up" style="color:var(--ok)">85 → 88</b>
+      <small>Arquitetura madura. Achados ALTO (cache do SW) e M3 <span style="color:var(--ok);font-weight:700">corrigidos</span> em 03/09; restam 2 médios (M1, M2).</small>
+    </div>
+    <div class="big">
+      <span class="ring" style="background:conic-gradient(var(--ok) 331deg,#1a2332 0)"></span>
+      <span class="lbl">Banco de dados (geral)</span>
+      <b class="up" style="color:var(--ok)">90 → 92</b>
+      <small>RLS deny-by-default sólida, <span class="mono">SECURITY DEFINER</span> com search_path fixo, 2FA no banco. Buraco em <span class="mono">fp_plan_limit_config</span> fechado + guard de cobertura (M3).</small>
+    </div>
+  </div>
+
+  <p class="sub" style="margin-bottom:4px">Veredito: base <b>acima da média do mercado</b> para um app financeiro. O modelo de segurança repousa corretamente sobre RLS, e o banco é o ponto mais forte. O maior risco real era o <b>service worker guardando dados financeiros em texto puro no cache</b> — <b style="color:var(--ok)">corrigido em 03/09/2026</b> (SW agora é network-only para a origem Supabase; ver H1 abaixo). Restam melhorias médias e baixas, nenhuma crítica.</p>
+
+  <!-- ============ SUBNOTAS SEGURANÇA ============ -->
+  <h2>Subnotas — Segurança</h2>
+  <div class="bars">
+    <div class="bar"><span class="name">Autenticação &amp; sessão</span><div class="track"><div class="fill" style="width:90%;background:var(--ok)"></div></div><span class="val">90</span></div>
+    <div class="bar"><span class="name">2FA / MFA (AAL2 real)</span><div class="track"><div class="fill" style="width:88%;background:var(--ok)"></div></div><span class="val">88</span></div>
+    <div class="bar"><span class="name">Webhooks &amp; billing</span><div class="track"><div class="fill" style="width:87%;background:var(--ok)"></div></div><span class="val">87</span></div>
+    <div class="bar"><span class="name">Android / mobile</span><div class="track"><div class="fill" style="width:88%;background:var(--ok)"></div></div><span class="val">88</span></div>
+    <div class="bar"><span class="name">PIN / tela de bloqueio</span><div class="track"><div class="fill" style="width:88%;background:var(--ok)"></div></div><span class="val">88</span></div>
+    <div class="bar"><span class="name">XSS / codificação de saída</span><div class="track"><div class="fill" style="width:86%;background:var(--ok)"></div></div><span class="val">86</span></div>
+    <div class="bar"><span class="name">Segredos &amp; configuração</span><div class="track"><div class="fill" style="width:84%;background:var(--ok)"></div></div><span class="val">84</span></div>
+    <div class="bar"><span class="name">Cripto local at-rest</span><div class="track"><div class="fill" style="width:82%;background:var(--ok)"></div></div><span class="val">82</span></div>
+    <div class="bar"><span class="name">CSP &amp; hardening web</span><div class="track"><div class="fill" style="width:78%;background:var(--warn)"></div></div><span class="val">78</span></div>
+    <div class="bar"><span class="name">Service worker / isolamento de cache <span class="sev s-ok" style="margin-left:6px">CORRIGIDO</span></span><div class="track"><div class="fill" style="width:90%;background:var(--ok)"></div></div><span class="val">62→90</span></div>
+  </div>
+
+  <!-- ============ SUBNOTAS BANCO ============ -->
+  <h2>Subnotas — Banco de dados</h2>
+  <div class="bars">
+    <div class="bar"><span class="name">Funções SECURITY DEFINER</span><div class="track"><div class="fill" style="width:95%;background:var(--ok)"></div></div><span class="val">95</span></div>
+    <div class="bar"><span class="name">RLS (dono / org, deny-by-default)</span><div class="track"><div class="fill" style="width:93%;background:var(--ok)"></div></div><span class="val">93</span></div>
+    <div class="bar"><span class="name">Integridade &amp; exclusão LGPD</span><div class="track"><div class="fill" style="width:90%;background:var(--ok)"></div></div><span class="val">90</span></div>
+    <div class="bar"><span class="name">Enforcement de quota (triggers)</span><div class="track"><div class="fill" style="width:88%;background:var(--ok)"></div></div><span class="val">88</span></div>
+    <div class="bar"><span class="name">Cobertura de testes (pgTAP)</span><div class="track"><div class="fill" style="width:85%;background:var(--ok)"></div></div><span class="val">85</span></div>
+    <div class="bar"><span class="name">Garantia de RLS em tabelas novas <span class="sev s-ok" style="margin-left:6px">CORRIGIDO</span></span><div class="track"><div class="fill" style="width:92%;background:var(--ok)"></div></div><span class="val">78→92</span></div>
+  </div>
+
+  <!-- ============ ACHADOS ============ -->
+  <h2>Achados priorizados</h2>
+  <table>
+    <thead><tr><th style="width:64px">Sev.</th><th style="width:34px">#</th><th>Achado &amp; correção</th></tr></thead>
+    <tbody>
+      <tr style="background:rgba(34,197,94,.05)">
+        <td><span class="sev s-ok">CORRIGIDO</span></td><td class="mono">H1</td>
+        <td>
+          <b>Service worker guardava respostas REST do Supabase (dados financeiros) em texto puro no Cache Storage.</b>
+          Em <span class="mono">sw.js</span>, todo GET cross-origin com resposta <span class="mono">ok</span> era gravado no cache. As consultas de sincronização são GET PostgREST — <span class="mono">SB.from('Transaction').select('*')</span> etc. (<span class="mono">supabase-sync.js:114-119</span>). Consequências: (a) transações, contas e orçamentos ficavam <b>não cifrados</b> no cache, fora do escopo do <span class="mono">LOCAL_CRYPTO</span> (que só cobre chaves <span class="mono">fp-</span> do localStorage); (b) a chave de cache é a URL, idêntica entre usuários — num aparelho compartilhado e offline, <span class="mono">caches.match</span> podia servir os dados de um usuário para outro.
+          <p style="margin-top:8px;padding:9px 12px;background:rgba(34,197,94,.1);border-left:3px solid var(--ok);border-radius:6px;font-size:12.5px">
+            <b style="color:var(--ok)">✓ Corrigido em 03/09/2026.</b>
+            A origem do Supabase (e todo cross-origin fora de uma allowlist explícita <span class="mono">CACHEABLE_CROSS_ORIGIN</span>) passou a ser <b>network-only</b> — só asset estático imutável de CDN (<span class="mono">cdn.jsdelivr.net</span>) é cacheável. O sufixo do cache foi bumpado <span class="mono">-p2 → -p3</span>, então o handler de <span class="mono">activate</span> <b>purga automaticamente</b> qualquer cache antigo já envenenado. Editado na fonte (<span class="mono">scripts/generate-sw-cache.cjs</span>) e regenerado em <span class="mono">sw.js</span>/<span class="mono">dist/sw.js</span>. Teste <span class="mono">auth-sw-native.test.js</span> reescrito para afirmar que a allowlist não contém o Supabase — <b>22 passed</b>. Limpeza de cache no logout tornou-se desnecessária: dado do usuário não é mais cacheado.
+          </p>
+        </td>
+      </tr>
+      <tr>
+        <td><span class="sev s-media">MÉDIA</span></td><td class="mono">M1</td>
+        <td>
+          <b>Consumo de código de recuperação do 2FA sem rate-limit / lockout.</b>
+          <span class="mono">fp_mfa_recovery_consume</span> roda em AAL1 (correto — é para quem perdeu o autenticador) e, ao acertar, <b>remove o fator TOTP</b> (<span class="mono">20260903090000_mfa_recovery_codes.sql:104-140</span>). Não há contador de tentativas nem bloqueio. Um atacante que já tenha a senha (sessão AAL1) poderia tentar força bruta para derrubar o 2FA. Mitigado na prática por 64 bits de entropia por código, mas o caminho não tem freio.
+          <ul class="fix">
+            <li>Adicionar contador de falhas por usuário + backoff (tabela ou coluna), espelhando o lockout do PIN.</li>
+            <li>Registrar cada consumo/tentativa no <span class="mono">AuditLog</span>.</li>
+          </ul>
+        </td>
+      </tr>
+      <tr>
+        <td><span class="sev s-media">MÉDIA</span></td><td class="mono">M2</td>
+        <td>
+          <b>CSP confia em origens de script de terceiros e usa <span class="mono">style-src 'unsafe-inline'</span>.</b>
+          <span class="mono">script-src</span> inclui <span class="mono">cdn.jsdelivr.net</span> (Tesseract/OCR) numa página que guarda token de sessão — cada origem de script é confiança de execução de código. O <span class="mono">harden-csp.cjs</span> já remove Belvo e origens de dev no build, o que é ótimo, mas a CDN do OCR permanece.
+          <ul class="fix">
+            <li>Servir o Tesseract localmente — já existe <span class="mono">js/vendor/tesseract.min.js</span>; concluir a migração e remover jsdelivr do <span class="mono">script-src</span>/<span class="mono">worker-src</span>.</li>
+            <li>Migrar estilos inline para classes e remover <span class="mono">'unsafe-inline'</span> de <span class="mono">style-src</span> (ou usar nonce/hash).</li>
+          </ul>
+        </td>
+      </tr>
+      <tr style="background:rgba(34,197,94,.05)">
+        <td><span class="sev s-ok">CORRIGIDO</span></td><td class="mono">M3</td>
+        <td>
+          <b>Não havia garantia automática de que toda tabela nova nascesse com RLS.</b>
+          O modelo inteiro depende de RLS, mas <span class="mono">20260828120000_rls_policies.sql</span> habilita RLS numa <b>lista explícita</b> de tabelas. Como o schema é do Prisma, uma tabela futura fora dessa lista ficaria sem RLS — legível/gravável pela anon key. Não existia teste/guard que falhasse o CI nesse caso.
+          <p style="margin-top:8px;padding:9px 12px;background:rgba(34,197,94,.1);border-left:3px solid var(--ok);border-radius:6px;font-size:12.5px">
+            <b style="color:var(--ok)">✓ Corrigido em 03/09/2026.</b>
+            Criado <span class="mono">supabase/tests/rls_coverage.test.sql</span> (pgTAP): falha o CI se qualquer tabela base de <span class="mono">public</span> estiver sem RLS, salvo allowlist explícita (<span class="mono">_prisma_migrations</span>); tabelas de extensão são excluídas via <span class="mono">pg_depend</span>. Auto-descoberto pelo runner de pgTAP.
+          </p>
+          <p style="margin-top:8px;padding:9px 12px;background:rgba(245,158,11,.1);border-left:3px solid var(--warn);border-radius:6px;font-size:12.5px">
+            <b style="color:var(--warn)">⚠ O guard já pegou um buraco real.</b> A tabela <span class="mono">fp_plan_limit_config</span> (limites de plano, criada em <span class="mono">20260901150000</span>) tinha nascido <b>sem RLS</b>. No Supabase isso a deixava <b>gravável</b> por <span class="mono">authenticated</span> via PostgREST — um usuário FREE poderia rodar <span class="mono">update … set max_trans_per_month = null</span> e <b>furar a própria quota</b> (os triggers leem os limites dessa tabela). Fechado em <span class="mono">20260903120000_fp_plan_limit_config_rls.sql</span>: RLS ligada + SELECT público, sem escrita pelo cliente (mesmo padrão de <span class="mono">Plan</span>). Severidade real do buraco: <b>MÉDIA→ALTA</b> (bypass de monetização, não vazamento de dado alheio).
+          </p>
+        </td>
+      </tr>
+      <tr>
+        <td><span class="sev s-baixa">BAIXA</span></td><td class="mono">L1</td>
+        <td>
+          <b>Segredo do RTDN do Play viaja em query string.</b> <span class="mono">play-rtdn/index.ts:41</span> aceita <span class="mono">?secret=</span> (além do header <span class="mono">x-rtdn-secret</span>). Query strings vazam em logs de proxy/servidor. → Preferir exclusivamente o header e documentar o Pub/Sub para enviá-lo.
+        </td>
+      </tr>
+      <tr>
+        <td><span class="sev s-baixa">BAIXA</span></td><td class="mono">L2</td>
+        <td>
+          <b>Backend Express legado permanece no repo com segredos de dev de fallback.</b> <span class="mono">backend/config.js</span> tem <span class="mono">'dev-access-secret'</span> etc. (protegidos por <span class="mono">isProd</span>, e o backend não é implantado). Código morto que manipula segredos é risco de deploy acidental. → Isolar em pasta claramente arquivada ou remover.
+        </td>
+      </tr>
+      <tr>
+        <td><span class="sev s-baixa">BAIXA</span></td><td class="mono">L3</td>
+        <td>
+          <b>Cifragem local no modo "dispositivo" guarda a chave junto do dado.</b> <span class="mono">local-crypto.js</span> deriva de <span class="mono">financaspro_ckey_dev</span> no mesmo localStorage — não protege contra XSS nem perícia. <b>O código já documenta isso honestamente</b> e a UI avisa; fica como nota. → Incentivar o modo passphrase para quem quer proteção real at-rest.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ============ PONTOS FORTES ============ -->
+  <h2>O que está bem-feito (e é raro ver)</h2>
+
+  <div class="card">
+    <h3>🛡️ Banco de dados — o ponto mais forte</h3>
+    <ul class="plus">
+      <li>RLS <b>negado por padrão</b>, padrão "dono OU membro da org" consistente em todas as tabelas de dados.</li>
+      <li>Todas as funções auxiliares são <span class="mono">SECURITY DEFINER</span> <b>com <span class="mono">search_path</span> fixo</b> — fecha o vetor clássico de sequestro de search_path.</li>
+      <li>Tabelas internas (<span class="mono">AuditLog</span>, <span class="mono">Session</span>, <span class="mono">VerificationToken</span>, webhooks) com RLS ligada e <b>sem policy</b> = deny-all; só o <span class="mono">service_role</span> escreve.</li>
+      <li>Quota do plano FREE imposta por <b>trigger no Postgres</b> (não só no app), espelhando <span class="mono">plan-limits.json</span> com teste de paridade.</li>
+      <li>Exclusão de conta pelo próprio usuário (<span class="mono">fp_delete_own_account</span>) para LGPD/Play, com <span class="mono">grant</span> só para <span class="mono">authenticated</span>.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>🔐 2FA imposto no banco, não só na tela</h3>
+    <p>A migration <span class="mono">require_aal2</span> resolve o erro que quase todo app comete: <span class="mono">signInWithPassword</span> devolve sessão AAL1 válida mesmo com TOTP ativo. Uma policy <b>RESTRICTIVE</b> combinada por AND (<span class="mono">fp_mfa_ok()</span>) nega leitura/escrita a sessões AAL1 quando a conta tem fator verificado. Isso torna o 2FA <b>real</b> contra quem fala direto com o PostgREST.</p>
+  </div>
+
+  <div class="card">
+    <h3>💳 Webhooks e billing</h3>
+    <ul class="plus">
+      <li>Stripe: assinatura verificada com <span class="mono">constructEventAsync</span> (Web Crypto) antes de processar.</li>
+      <li>Play RTDN: segredo compartilhado <b>+</b> reverificação server-to-server na Google Play API (não confia no payload do push).</li>
+      <li>Idempotência por <span class="mono">event.id</span>/<span class="mono">messageId</span> com claim/release; escrita de billing só via <span class="mono">service_role</span>.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>🔑 Autenticação, PIN e segredos</h3>
+    <ul class="plus">
+      <li>Anti-enumeração de usuários em cadastro e login (mesma resposta para e-mail novo e repetido).</li>
+      <li>Troca de senha expulsa as outras sessões (<span class="mono">signOut scope:'others'</span>).</li>
+      <li>PIN: PBKDF2-SHA256 310k, salt por usuário, comparação tempo-constante, recusa de PINs fracos, backoff exponencial — e a UI é honesta sobre ser "tranca de conveniência".</li>
+      <li>Nenhum <span class="mono">service_role</span>/<span class="mono">sk_live</span>/chave privada commitada; anon key é pública por design (segurança fica na RLS); <span class="mono">.env</span> e keystores no <span class="mono">.gitignore</span>.</li>
+      <li>Refresh token biométrico no Android Keystore; rotação de token tratada.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>📱 Android &amp; web</h3>
+    <ul class="plus">
+      <li><span class="mono">allowBackup="false"</span> (bloqueia backup adb dos dados locais), <span class="mono">FileProvider</span> não exportado, só permissão <span class="mono">INTERNET</span>, sem cleartext.</li>
+      <li>CSP com <span class="mono">object-src 'none'</span>, <span class="mono">base-uri 'self'</span>, <span class="mono">form-action 'self'</span>, sem <span class="mono">'unsafe-eval'</span> em script; <span class="mono">nosniff</span> + Referrer-Policy.</li>
+      <li>Saída de texto do usuário (descrição, categoria, nome de banco) escapada com <span class="mono">UTILS.escapeHtml</span> de forma consistente.</li>
+      <li>Cobertura de testes de segurança: pgTAP para RLS/MFA/quota + testes JS de CSP, política de senha e estáticos de segurança.</li>
+    </ul>
+  </div>
+
+  <!-- ============ PLANO ============ -->
+  <h2>Ordem sugerida de correção</h2>
+  <table>
+    <thead><tr><th>Prio</th><th>Item</th><th>Esforço</th><th>Ganho</th></tr></thead>
+    <tbody>
+      <tr style="background:rgba(34,197,94,.06)"><td><span class="sev s-ok">✓ FEITO</span></td><td><s style="color:var(--mut)">H1 — SW network-only para a origem Supabase</s> — concluído 03/09</td><td>Baixo</td><td>Alto (fechou o único vazamento de dado at-rest)</td></tr>
+      <tr style="background:rgba(34,197,94,.06)"><td><span class="sev s-ok">✓ FEITO</span></td><td><s style="color:var(--mut)">M3 — teste pgTAP "toda tabela tem RLS"</s> — concluído 03/09; pegou e fechou o buraco de <span class="mono">fp_plan_limit_config</span></td><td>Baixo</td><td>Alto (evitou regressão + fechou bypass de quota)</td></tr>
+      <tr><td><span class="sev s-media">3</span></td><td>M2 — self-host do Tesseract, remover CDN do script-src</td><td>Médio</td><td>Médio</td></tr>
+      <tr><td><span class="sev s-media">4</span></td><td>M1 — rate-limit no consumo de código de recuperação</td><td>Médio</td><td>Médio</td></tr>
+      <tr><td><span class="sev s-baixa">5</span></td><td>L1/L2/L3 — endurecimentos e limpeza</td><td>Baixo</td><td>Baixo</td></tr>
+    </tbody>
+  </table>
+
+  <p class="foot">
+    Metodologia: revisão manual de <span class="mono">supabase/migrations/*</span>, <span class="mono">supabase/functions/*</span>, <span class="mono">js/core/*</span> (config, supabase, supabase-sync, dados, local-crypto), <span class="mono">js/pin.js</span>, <span class="mono">js/auth-biometric.js</span>, <span class="mono">sw.js</span>, CSP do <span class="mono">index.html</span> e <span class="mono">AndroidManifest.xml</span>. Notas são avaliação qualitativa ponderada por impacto, não pontuação de ferramenta automatizada. Nenhum teste dinâmico/pentest foi executado contra o ambiente em produção — recomendado antes de escala. Nenhuma vulnerabilidade CRÍTICA (RCE, bypass total de RLS, vazamento de segredo commitado) foi encontrada.
+  </p>
+</div>
+</body>
+</html>

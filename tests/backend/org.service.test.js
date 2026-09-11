@@ -50,7 +50,7 @@ async function orgCom(membros = [], { planTier = 'PRO' } = {}) {
     data: {
       id: planId, name: planTier, tier: planTier,
       priceMonthly: 0, priceYearly: 0,
-      maxUsers: planTier === 'PRO' ? 5 : 1,
+      maxUsers: planTier === 'PRO' ? 2 : 1,
       maxAccounts: 20, maxBudgets: 5, maxTransPerMonth: 100,
     },
   });
@@ -224,5 +224,42 @@ describe('OrgService.acceptInvitation — aceite atômico', () => {
 
     await expect(OrgService.acceptInvitation(inv.token, 'convidado'))
       .rejects.toMatchObject({ status: 409 });
+  });
+});
+
+describe('OrgService.revokeInvitation', () => {
+  test('OWNER revoga convite pendente', async () => {
+    await orgCom();
+    const inv = await prisma.invitation.create({
+      data: {
+        orgId: 'o1', email: 'novo@example.com', role: 'MEMBER',
+        token: 'tok-revogar', expiresAt: new Date(Date.now() + 86400_000),
+      },
+    });
+
+    await expect(OrgService.revokeInvitation('o1', inv.id, 'dono'))
+      .resolves.toEqual({ ok: true });
+
+    const still = await prisma.invitation.findUnique({ where: { id: inv.id } });
+    expect(still).toBeNull();
+  });
+
+  test('membro comum não revoga', async () => {
+    await orgCom([{ userId: 'membro', role: 'MEMBER' }]);
+    const inv = await prisma.invitation.create({
+      data: {
+        orgId: 'o1', email: 'x@example.com', role: 'MEMBER',
+        token: 'tok-negado', expiresAt: new Date(Date.now() + 86400_000),
+      },
+    });
+
+    await expect(OrgService.revokeInvitation('o1', inv.id, 'membro'))
+      .rejects.toMatchObject({ status: 403 });
+  });
+
+  test('convite inexistente devolve 404', async () => {
+    await orgCom();
+    await expect(OrgService.revokeInvitation('o1', '00000000-0000-4000-8000-000000000099', 'dono'))
+      .rejects.toMatchObject({ status: 404 });
   });
 });

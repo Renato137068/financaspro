@@ -333,7 +333,7 @@ const LIFECYCLE_BOOT = {
     }, { critical: true });
 
     LIFECYCLE.register('dados', function() {
-      if (typeof DADOS !== 'undefined') DADOS.init();
+      if (typeof DADOS !== 'undefined') return DADOS.init();
     }, { depends: ['dom-utils'], critical: true });
 
     LIFECYCLE.register('store', function() {
@@ -428,6 +428,12 @@ const LIFECYCLE_BOOT = {
 
       // Backup e sessão
       if (typeof verificarBackupAutomatico === 'function') verificarBackupAutomatico();
+      // Modo Supabase: liga a tela de login (no modo local ela fica desativada).
+      if (typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.isActive()
+          && typeof setupAuthUI === 'function') {
+        setupAuthUI();
+      }
+      if (typeof setupLogoutButton === 'function') setupLogoutButton();
       if (typeof atualizarBarraSessao === 'function') atualizarBarraSessao();
 
       // Onboarding (adiado para não competir com auth/PIN)
@@ -454,10 +460,33 @@ const LIFECYCLE_BOOT = {
         if (typeof CONTAS_PAGAR !== 'undefined') CONTAS_PAGAR.notificarVencimentos();
       }, 2500);
 
+      // RISK-04: reconciliação Play perto do boot (Android + nuvem).
+      // Carrega o chunk `conta` (PLAY_BILLING + INIT_BILLING) e força 1×/sessão
+      // — não depende de o usuário abrir Config. RTDN continua primário.
+      setTimeout(function() {
+        try {
+          if (typeof BILLING === 'undefined' || !BILLING.isCloudUser || !BILLING.isCloudUser()) return;
+          var native = typeof window !== 'undefined' && window.Capacitor
+            && typeof window.Capacitor.isNativePlatform === 'function'
+            && window.Capacitor.isNativePlatform();
+          if (!native) return;
+          if (typeof INIT_NAVIGATION === 'undefined' || !INIT_NAVIGATION.carregarChunkConta) return;
+          INIT_NAVIGATION.carregarChunkConta(function() {
+            if (typeof INIT_BILLING !== 'undefined' && INIT_BILLING._reconciliarPlay) {
+              INIT_BILLING._reconciliarPlay({ force: true });
+            }
+          });
+        } catch (e) {
+          if (typeof OBS !== 'undefined' && OBS.captureError) {
+            OBS.captureError(e, { contexto: 'lifecycle.play-reconcile-boot' });
+          }
+        }
+      }, 2800);
+
       // Fase 8: IA Nativa
       if (typeof ALERTAS !== 'undefined' && ALERTAS.init) ALERTAS.init();
       if (typeof PREVISAO !== 'undefined' && PREVISAO.init) PREVISAO.init();
-      if (typeof OCR !== 'undefined' && OCR.init) OCR.init();
+      // OCR/câmera removidos do produto — stub em js/ocr.js não injeta UI.
       if (typeof INSIGHTS !== 'undefined' && INSIGHTS.mostrarOrcamento) {
         setTimeout(function() { INSIGHTS.mostrarOrcamento(); }, 200);
       }

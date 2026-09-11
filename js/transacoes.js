@@ -25,6 +25,7 @@ var TRANSACOES = {
   _cache: null,
   _cacheTimestamp: null,
   _cacheTTL: 30000, // 30 segundos
+  _monthIndex: null,
 
   /**
    * Inicializa cache de transações a partir do localStorage.
@@ -62,7 +63,17 @@ var TRANSACOES = {
    */
   invalidateCache: function() {
     this._cacheTimestamp = null;
+    this._monthIndex = null;
     this._refreshCache();
+  },
+
+  /** Índice ano-mês → transações; reconstruído quando o cache muda. */
+  _ensureMonthIndex: function() {
+    if (this._monthIndex) return this._monthIndex;
+    if (typeof TRANSACTION_SERVICE !== 'undefined' && TRANSACTION_SERVICE.buildMonthIndex) {
+      this._monthIndex = TRANSACTION_SERVICE.buildMonthIndex(this._cache || []);
+    }
+    return this._monthIndex;
   },
 
   /**
@@ -99,6 +110,15 @@ var TRANSACOES = {
     if (typeof CONFIG !== 'undefined' && typeof CONFIG.normalizeCategoriaFinal === 'function') {
       categoria = CONFIG.normalizeCategoriaFinal(categoria, tipo);
     }
+    var bancoNome = banco ? String(banco).trim() : '';
+    var accountId = opts.accountId || null;
+    var contasRef = (typeof DADOS !== 'undefined' && DADOS.getContas) ? DADOS.getContas() : [];
+    if (!accountId && bancoNome && typeof FINANCE_CONTRACT !== 'undefined') {
+      accountId = FINANCE_CONTRACT.resolveAccountId(bancoNome, contasRef);
+    }
+    if (accountId && !bancoNome && typeof FINANCE_CONTRACT !== 'undefined') {
+      bancoNome = FINANCE_CONTRACT.accountLabel(accountId, contasRef) || '';
+    }
     var transacao = typeof TRANSACTION_SERVICE !== 'undefined'
       ? TRANSACTION_SERVICE.createTransaction({
         tipo: tipo,
@@ -106,8 +126,9 @@ var TRANSACOES = {
         categoria: categoria,
         data: data,
         descricao: descricao,
-        banco: banco,
+        banco: bancoNome,
         cartao: cartao,
+        accountId: accountId || undefined,
         id: opts.id
       }, { idFactory: UTILS.gerarId })
       : (function() {
@@ -130,6 +151,7 @@ var TRANSACOES = {
     if (opts.clientKey) transacao.clientKey = opts.clientKey;
     DADOS.salvarTransacao(transacao);
     this._cache = DADOS.getTransacoes();
+    this._monthIndex = null;
     if (typeof APP_STATE !== 'undefined') APP_STATE.setState({ transacoes: this._cache });
     return transacao;
   },
@@ -160,25 +182,33 @@ var TRANSACOES = {
     if (!valor || valor <= 0) throw new Error('Valor deve ser maior que 0');
     if (!dados.data) throw new Error('Data obrigatória');
 
+    var contasRef = (typeof DADOS !== 'undefined' && DADOS.getContas) ? DADOS.getContas() : [];
+    var accountId = dados.accountId || null;
+    var contaDestinoId = dados.contaDestinoId || null;
+    if (typeof FINANCE_CONTRACT !== 'undefined') {
+      if (!accountId) accountId = FINANCE_CONTRACT.resolveAccountId(origem, contasRef);
+      if (!contaDestinoId) contaDestinoId = FINANCE_CONTRACT.resolveAccountId(destino, contasRef);
+    }
+
     var transacao = {
       id: UTILS.gerarId(),
       tipo: CONFIG.TIPO_TRANSFERENCIA,
       valor: valor,
-      // Categoria fixa: transferência não entra em nenhum orçamento, mas o
-      // campo é obrigatório em todo o resto do app (validação, filtros,
-      // exportação) e deixá-lo vazio quebraria essas telas.
       categoria: CONFIG.TIPO_TRANSFERENCIA,
       data: dados.data,
       descricao: this._sanitizarDescricao(dados.descricao)
         || ('Transferência: ' + origem + ' → ' + destino),
       banco: origem,
       contaDestino: destino,
+      accountId: accountId || undefined,
+      contaDestinoId: contaDestinoId || undefined,
       cartao: '',
       dataCriacao: new Date().toISOString()
     };
 
     DADOS.salvarTransacao(transacao);
     this._cache = DADOS.getTransacoes();
+    this._monthIndex = null;
     if (typeof APP_STATE !== 'undefined') APP_STATE.setState({ transacoes: this._cache });
     return transacao;
   },
@@ -192,6 +222,9 @@ var TRANSACOES = {
     this._refreshCache();
     filtros = filtros || {};
     if (typeof TRANSACTION_SERVICE !== 'undefined') {
+      if (filtros.mes && filtros.ano && !filtros.monthIndex) {
+        filtros = Object.assign({}, filtros, { monthIndex: this._ensureMonthIndex() });
+      }
       return TRANSACTION_SERVICE.filterTransactions(this._cache || [], filtros);
     }
     var resultado = this._cache.slice();
@@ -213,6 +246,32 @@ var TRANSACOES = {
     return resultado;
   },
 
+  /**
+   * Últimas N transações por data, sem varrer/sortear o histórico inteiro
+   * quando TRANSACTION_SERVICE.topByDate está disponível.
+   * @param {number} [limite]
+   * @param {{ordenarPor?:string}} [opts]
+   */
+  obterRecentes: function(limite, opts) {
+    limite = limite || 3;
+    opts = opts || {};
+    this._refreshCache();
+    var cache = this._cache || [];
+    if (typeof TRANSACTION_SERVICE !== 'undefined' && TRANSACTION_SERVICE.topByDate) {
+      return TRANSACTION_SERVICE.topByDate(cache, limite, opts.ordenarPor || 'data-desc');
+    }
+    var ordenar = opts.ordenarPor === 'data-asc' ? 'data-asc' : 'data-desc';
+    var copy = cache.slice();
+    copy.sort(function(a, b) {
+      var da = String(a.data || '').slice(0, 10);
+      var db = String(b.data || '').slice(0, 10);
+      if (da === db) return 0;
+      if (ordenar === 'data-asc') return da < db ? -1 : 1;
+      return da > db ? -1 : 1;
+    });
+    return copy.slice(0, limite);
+  },
+
   obterPorId: function(id) {
     for (var i = 0; i < this._cache.length; i++) {
       if (this._cache[i].id === id) return this._cache[i];
@@ -227,6 +286,19 @@ var TRANSACOES = {
       updates = Object.assign({}, updates, { descricao: this._sanitizarDescricao(updates.descricao) });
     }
     var updated = Object.assign({}, transacao, updates);
+    if (updates && (updates.banco != null || updates.accountId != null)) {
+      var contasRef = (typeof DADOS !== 'undefined' && DADOS.getContas) ? DADOS.getContas() : [];
+      if (typeof FINANCE_CONTRACT !== 'undefined') {
+        if (updates.accountId) {
+          updated.accountId = updates.accountId;
+          if (!updates.banco) {
+            updated.banco = FINANCE_CONTRACT.accountLabel(updates.accountId, contasRef) || updated.banco;
+          }
+        } else if (updates.banco != null) {
+          updated.accountId = FINANCE_CONTRACT.resolveAccountId(updates.banco, contasRef) || undefined;
+        }
+      }
+    }
     var validacao = UTILS.validarTransacao(updated);
     if (!validacao.valido) throw new Error(validacao.erro);
     DADOS.salvarTransacao(updated);
@@ -245,13 +317,22 @@ var TRANSACOES = {
    * Resumo agregado do mês.
    * @param {number} mes
    * @param {number} ano
+   * @param {{ate?:string}} [opts] data de corte inclusive (YYYY-MM-DD)
    * @returns {ResumoMes}
    */
-  obterResumoMes: function(mes, ano) {
+  obterResumoMes: function(mes, ano, opts) {
+    this._refreshCache();
+    opts = opts || {};
+    var cache = this._cache || [];
     if (typeof TRANSACTION_SERVICE !== 'undefined') {
-      return TRANSACTION_SERVICE.summarizeMonth(this._cache || [], mes, ano);
+      if (!opts.monthIndex) opts.monthIndex = this._ensureMonthIndex();
+      return TRANSACTION_SERVICE.summarizeMonth(cache, mes, ano, opts);
     }
     var txMes = this.obter({ mes: mes, ano: ano });
+    if (opts.ate) {
+      var ate = String(opts.ate).slice(0, 10);
+      txMes = txMes.filter(function(t) { return String(t.data || '').slice(0, 10) <= ate; });
+    }
     // Centavos inteiros, igual ao TRANSACTION_SERVICE: os dois caminhos têm de
     // produzir o mesmo número, senão o total do mês muda conforme o service
     // estar carregado ou não.
@@ -270,16 +351,25 @@ var TRANSACOES = {
     };
   },
 
-  obterResumoPorCategoria: function(mes, ano) {
+  obterResumoPorCategoria: function(mes, ano, opts) {
+    this._refreshCache();
+    opts = opts || {};
     if (typeof TRANSACTION_SERVICE !== 'undefined') {
-      return TRANSACTION_SERVICE.summarizeByCategory(this._cache || [], mes, ano);
+      if (!opts.monthIndex) opts.monthIndex = this._ensureMonthIndex();
+      return TRANSACTION_SERVICE.summarizeByCategory(this._cache || [], mes, ano, opts);
     }
     var txMes = this.obter({ mes: mes, ano: ano });
     var resumo = {};
     txMes.forEach(function(t) {
       if (!resumo[t.categoria]) resumo[t.categoria] = { receita: 0, despesa: 0 };
-      if (t.tipo === CONFIG.TIPO_RECEITA) resumo[t.categoria].receita += t.valor;
-      else if (t.tipo === CONFIG.TIPO_DESPESA) resumo[t.categoria].despesa += t.valor;
+      // Centavos — mesmo contrato do TRANSACTION_SERVICE.summarizeByCategory.
+      if (t.tipo === CONFIG.TIPO_RECEITA) {
+        resumo[t.categoria].receita =
+          (UTILS.paraCentavos(resumo[t.categoria].receita) + UTILS.paraCentavos(t.valor)) / 100;
+      } else if (t.tipo === CONFIG.TIPO_DESPESA) {
+        resumo[t.categoria].despesa =
+          (UTILS.paraCentavos(resumo[t.categoria].despesa) + UTILS.paraCentavos(t.valor)) / 100;
+      }
     });
     return resumo;
   },
@@ -296,8 +386,11 @@ var TRANSACOES = {
 
   obterResumoCategoriaMes: function(categoria, mes, ano) {
     var transacoes = UTILS.filtrarPorMes(this._cache, mes, ano);
-    return transacoes.filter(function(t) { return t.categoria === categoria && t.tipo === 'despesa'; })
-      .reduce(function(acc, t) { return acc + t.valor; }, 0);
+    return transacoes.filter(function(t) {
+      return t.categoria === categoria && t.tipo === 'despesa';
+    }).reduce(function(acc, t) {
+      return acc + UTILS.paraCentavos(t.valor);
+    }, 0) / 100;
   }
 };
 

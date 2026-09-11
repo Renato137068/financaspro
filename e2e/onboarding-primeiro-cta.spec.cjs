@@ -4,13 +4,18 @@
  * Valida instalação limpa em dist/ (produção) e código-fonte (dev estático).
  */
 const { test, expect } = require('@playwright/test');
-const { waitForAppBoot } = require('./helpers.cjs');
+const { waitForAppBoot, forcarModoLocal } = require('./helpers.cjs');
 
 async function limparInstalacao(page) {
   await page.addInitScript(function() {
     localStorage.clear();
     sessionStorage.clear();
   });
+  /* Depois do clear, senao a flag some junto. Instalacao limpa aqui significa
+     "primeiro acesso ao app", nao "primeiro acesso mais tela de login": o que
+     esta spec mede e o CTA principal, e o overlay de auth do build cloud
+     esconderia o <main> inteiro antes de ela chegar a clicar em nada. */
+  await forcarModoLocal(page);
 }
 
 async function bootInstalacaoLimpa(page, baseURL) {

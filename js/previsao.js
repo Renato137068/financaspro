@@ -81,8 +81,9 @@ var PREVISAO = {
       el.innerHTML =
         '<div class="previsao-vazia previsao-upsell">' +
           '<i data-lucide="sparkles" aria-hidden="true"></i>' +
-          '<p>Previsão com IA disponível no plano Pro.</p>' +
-          '<button type="button" class="btn-primario btn-sm" data-action="abrir-plano">Ver planos</button>' +
+          '<p>Saiba como seu mês vai fechar enquanto ainda dá tempo de reagir. ' +
+            'A previsão de fim de mês e do fluxo dos próximos meses está no Pro.</p>' +
+          '<button type="button" class="btn-primario btn-sm" data-action="abrir-paywall">Ver o Pro</button>' +
         '</div>';
       if (typeof renderLucideIcons === 'function') renderLucideIcons(el);
       return;

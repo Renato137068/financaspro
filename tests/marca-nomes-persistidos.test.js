@@ -51,9 +51,13 @@ describe('o nome do produto está unificado', function() {
     }
   });
 
-  test('a assinatura é a mesma no manifest e na meta description', function() {
-    const assinatura = 'Seu dinheiro, no seu aparelho.';
-    expect(ler('manifest.json')).toContain(assinatura);
-    expect(ler('index.html')).toContain(assinatura);
+  test('a tagline está no manifest; meta description alinha com o manifest', function() {
+    const tagline = 'Seu dinheiro, no seu aparelho.';
+    const manifest = JSON.parse(ler('manifest.json'));
+    expect(manifest.name).toContain(tagline);
+    const html = ler('index.html');
+    expect(html).toMatch(/meta name="description"/);
+    expect(manifest.description).toMatch(/Controle de gastos/);
+    expect(html).toContain('Controle de gastos');
   });
 });

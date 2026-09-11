@@ -1,5 +1,6 @@
 // backend/config.js — configuração centralizada (ESM)
 import 'dotenv/config';
+import { randomBytes } from 'node:crypto';
 
 const env = process.env.NODE_ENV || 'development';
 const isProd = env === 'production';
@@ -8,6 +9,26 @@ function required(key) {
   const value = process.env[key];
   if (!value && isProd) throw new Error(`Variável de ambiente obrigatória ausente: ${key}`);
   return value;
+}
+
+/**
+ * Segredo de desenvolvimento — sorteado a cada boot, nunca literal no repo.
+ *
+ * O guard de produção já recusa `dev-access-secret` e exige 32+ caracteres,
+ * mas ele só roda quando NODE_ENV === 'production'. O caso que sobrava era
+ * outro, e é o fácil de acontecer: subir o backend com NODE_ENV ausente ou
+ * 'development' num host exposto. Aí o guard passa batido e os tokens eram
+ * assinados com um segredo publicado no repositório — qualquer pessoa forja
+ * um JWT para qualquer usuário.
+ *
+ * Com valor aleatório por processo esse caminho fecha sozinho. O efeito
+ * colateral é desejável: reiniciar o backend em dev invalida as sessões,
+ * o que deixa claro que aquilo não é ambiente para valer.
+ */
+const segredosSorteados = [];
+function segredoDeDesenvolvimento(nomeDaVariavel) {
+  segredosSorteados.push(nomeDaVariavel);
+  return randomBytes(48).toString('base64url');
 }
 
 const CONFIG = {
@@ -25,10 +46,10 @@ const CONFIG = {
   auth: {
     accessSecret: isProd
       ? required('JWT_ACCESS_SECRET')
-      : (process.env.JWT_ACCESS_SECRET || 'dev-access-secret'),
+      : (process.env.JWT_ACCESS_SECRET || segredoDeDesenvolvimento('JWT_ACCESS_SECRET')),
     refreshSecret: isProd
       ? required('JWT_REFRESH_SECRET')
-      : (process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret'),
+      : (process.env.JWT_REFRESH_SECRET || segredoDeDesenvolvimento('JWT_REFRESH_SECRET')),
     accessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m',
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
     cookieSameSite: process.env.COOKIE_SAME_SITE || 'Lax',
@@ -127,7 +148,19 @@ const CONFIG = {
   playBilling: {
     packageName: process.env.PLAY_PACKAGE_NAME || 'com.financaspro.mobile',
     serviceAccountJson: process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON || null,
+    // Segredo compartilhado do webhook RTDN. Envie só no header `x-rtdn-secret`
+    // (?secret= removido — vaza em logs). Preferível: OIDC do Pub/Sub
+    // (ver supabase/functions/play-rtdn).
+    rtdnSecret: process.env.PLAY_RTDN_SECRET || null,
   },
 };
+
+if (segredosSorteados.length && env !== 'test') {
+  console.warn(
+    '[config] ' + segredosSorteados.join(' e ') + ' não definido(s): usando segredo '
+    + 'aleatório desta execução. As sessões caem a cada reinício, e este processo '
+    + 'NÃO está pronto para produção.',
+  );
+}
 
 export default CONFIG;

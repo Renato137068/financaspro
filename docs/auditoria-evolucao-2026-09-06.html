@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Auditoria evolução — FinançasPro 11.3.14 vc39 · 6 set 2026</title>
+<style>
+:root {
+  --ink:#0f1a15; --muted:#5c6b63; --line:#dce5df; --bg:#f4f7f5; --card:#fff;
+  --brand:#12694e; --p0:#b42318; --p1:#b54708; --p2:#a15c07; --p3:#175cd3; --ok:#067647;
+  --up:#067647; --radius:14px; --shadow:0 8px 24px rgba(15,26,21,.06);
+  font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);line-height:1.55}
+.wrap{max-width:1100px;margin:0 auto;padding:28px 20px 96px}
+.hero{background:linear-gradient(145deg,#0b3d2e,#12694e 55%,#1a8a66);color:#e8f2ee;border-radius:20px;padding:32px 28px;margin-bottom:22px;box-shadow:var(--shadow)}
+.hero h1{margin:0 0 8px;font-size:1.55rem;letter-spacing:-.02em}
+.hero p{margin:0;opacity:.92;max-width:72ch}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.pill{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);padding:5px 11px;border-radius:999px;font-size:.8rem}
+h2{font-size:1.2rem;margin:36px 0 12px;letter-spacing:-.01em}
+h3{font-size:1.02rem;margin:18px 0 8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);margin-bottom:14px}
+.grid{display:grid;gap:12px}
+@media(min-width:720px){.cols-4{grid-template-columns:repeat(4,1fr)}.cols-2{grid-template-columns:repeat(2,1fr)}}
+.stat{text-align:center}.stat .n{font-size:2rem;font-weight:750;letter-spacing:-.03em}.stat .l{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-top:4px}
+.n.ok{color:var(--ok)}.n.p0{color:var(--p0)}.n.p1{color:var(--p1)}.n.delta{color:var(--up);font-size:1.1rem}
+.ring{width:110px;height:110px;border-radius:50%;margin:0 auto 8px;display:grid;place-items:center;position:relative;background:conic-gradient(var(--brand) calc(83 * 1%),#dfe8e3 0)}
+.ring.old{background:conic-gradient(#8aa396 calc(68 * 1%),#dfe8e3 0);opacity:.9}
+.ring::after{content:"";position:absolute;inset:11px;background:var(--card);border-radius:50%}
+.ring span{position:relative;z-index:1;font-size:1.55rem;font-weight:750}
+table{width:100%;border-collapse:collapse;font-size:.86rem}
+th,td{padding:9px 11px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);background:#fafcfa}
+.sev{display:inline-block;font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:999px}
+.sev.p0{background:#fee4e2;color:var(--p0)}.sev.p1{background:#fef0c7;color:var(--p1)}
+.sev.p2{background:#fef7c3;color:#854d0e}.sev.p3{background:#d1e9ff;color:var(--p3)}
+.sev.ok{background:#dcfce7;color:var(--ok)}.sev.fix{background:#e0f2fe;color:#0369a1}
+.callout{border-left:4px solid var(--brand);background:#eef6f2;padding:12px 14px;border-radius:0 10px 10px 0;margin:12px 0}
+.callout.warn{border-left-color:var(--p1);background:#fff8eb}
+.muted{color:var(--muted);font-size:.9rem}
+code{font-size:.82em;background:#eef2ef;padding:1px 5px;border-radius:4px}
+.toc a{color:var(--brand);text-decoration:none}
+.bar{height:8px;background:#e8eee9;border-radius:99px;overflow:hidden;margin:4px 0 0}
+.bar>i{display:block;height:100%;background:var(--brand);border-radius:99px}
+.bar.old>i{background:#8aa396}
+.score-row{display:grid;grid-template-columns:1fr 52px 52px 48px;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:.9rem}
+.score-row:last-child{border-bottom:0}
+.delta-pos{color:var(--up);font-weight:700}.delta-0{color:var(--muted)}
+.compare{display:flex;gap:24px;flex-wrap:wrap;justify-content:center;align-items:flex-end;padding:8px 0 4px}
+footer{margin-top:48px;color:var(--muted);font-size:.8rem}
+ul.tight>li{margin:3px 0}
+.chart{display:flex;align-items:flex-end;gap:10px;height:140px;padding:8px 4px 0;border-bottom:1px solid var(--line)}
+.chart .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
+.chart .col b{font-size:.75rem}
+.chart .col .stem{width:100%;max-width:56px;border-radius:8px 8px 0 0;background:var(--brand)}
+.chart .col .stem.old{background:#8aa396}
+.chart .col span{font-size:.68rem;color:var(--muted);text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>Auditoria — evolução pós-correção</h1>
+  <p>
+    Reavaliação após correção de RISK-01 / RISK-03 / RISK-04, AAB vc39 e
+    <code>supabase db push</code> no projeto live. Compara com o baseline de
+    <strong>5 set 2026 (nota 68)</strong>. Evidências reexecutadas em 6 set 2026 —
+    resultados não inventados.
+  </p>
+  <div class="meta">
+    <span class="pill">Data: 6 set 2026</span>
+    <span class="pill">11.3.14 · versionCode 39</span>
+    <span class="pill">HEAD: 016b43b</span>
+    <span class="pill">Branch: claude/ui-ux-auditoria</span>
+    <span class="pill">Baseline: docs/auditoria-pre-lancamento-2026-09-05.html</span>
+  </div>
+</header>
+
+<section class="card toc">
+  <strong>Índice</strong>
+  <ol>
+    <li><a href="#resumo">Resumo e delta</a></li>
+    <li><a href="#evolucao">Evolução das notas</a></li>
+    <li><a href="#riscos">Status dos riscos</a></li>
+    <li><a href="#evidencias">Evidências desta sessão</a></li>
+    <li><a href="#respostas">Respostas diretas</a></li>
+    <li><a href="#manual">Ainda manual</a></li>
+    <li><a href="#roadmap">Roadmap para 90+</a></li>
+  </ol>
+</section>
+
+<section id="resumo">
+  <h2>1. Resumo executivo</h2>
+  <div class="compare">
+    <div class="stat">
+      <div class="ring old"><span>68</span></div>
+      <div class="l">Baseline 5/set</div>
+    </div>
+    <div class="stat" style="padding:0 8px;align-self:center">
+      <div class="n delta">+15</div>
+      <div class="l">Delta</div>
+    </div>
+    <div class="stat">
+      <div class="ring"><span>83</span></div>
+      <div class="l">Atual 6/set</div>
+    </div>
+  </div>
+
+  <div class="grid cols-4" style="margin-top:12px">
+    <div class="card stat"><div class="n ok">0</div><div class="l">P0 Blocker</div><p class="muted" style="font-size:.75rem;margin:6px 0 0">era 1</p></div>
+    <div class="card stat"><div class="n p1">2</div><div class="l">P1 Critical</div><p class="muted" style="font-size:.75rem;margin:6px 0 0">era 4</p></div>
+    <div class="card stat"><div class="n ok">56</div><div class="l">Billing/lazy/SQL</div><p class="muted" style="font-size:.75rem;margin:6px 0 0">suites críticas desta rodada</p></div>
+    <div class="card stat"><div class="n ok">25</div><div class="l">Ledger core</div><p class="muted" style="font-size:.75rem;margin:6px 0 0">invariantes/precisão</p></div>
+  </div>
+
+  <div class="callout">
+    <strong>Veredito:</strong> o blocker de publicação por fail-open Free
+    (<strong>foi removido no código e no AAB</strong> (<code>billing.js</code> eager;
+    dist confirma <code>guardQuota</code> em <code>app.bundle.js</code>).
+    Quotas SQL de profundidade estão <strong>aplicadas no Supabase live</strong>.
+    Reconcile Play roda no boot (Android + nuvem).
+    <strong>Ainda não é 90+</strong>: RTDN produção não reconfirmado nesta sessão
+    (RISK-05) e spoof de plano offline permanece (RISK-02, local-first).
+  </div>
+
+  <div class="callout warn">
+    <strong>Antes de cobrança real / produção Play:</strong>
+    confirmar Pub/Sub → <code>play-rtdn</code> com cancelamento de teste
+    (<span class="sev p1">TESTE MANUAL NECESSÁRIO</span>.
+  </div>
+</section>
+
+<section id="evolucao">
+  <h2>2. Evolução das notas (0–100)</h2>
+  <div class="card">
+    <div class="chart" aria-label="Nota geral baseline vs atual">
+      <div class="col"><div class="stem old" style="height:68%"></div><b>68</b><span>Geral<br>5/set</span></div>
+      <div class="col"><div class="stem" style="height:83%"></div><b>83</b><span>Geral<br>6/set</span></div>
+      <div class="col"><div class="stem old" style="height:52%"></div><b>52</b><span>Free/Pro<br>antes</span></div>
+      <div class="col"><div class="stem" style="height:80%"></div><b>80</b><span>Free/Pro<br>agora</span></div>
+      <div class="col"><div class="stem old" style="height:58%"></div><b>58</b><span>Prep.<br>antes</span></div>
+      <div class="col"><div class="stem" style="height:78%"></div><b>78</b><span>Prep.<br>agora</span></div>
+    </div>
+    <p class="muted" style="margin:10px 0 0">Fonte: julgamento estruturado sobre evidências automatizadas + revisão de código pós-fix. Não é média simples das categorias.</p>
+  </div>
+
+  <div class="card">
+    <div class="score-row" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)">
+      <span>Categoria</span><span>Antes</span><span>Agora</span><span>Δ</span>
+    </div>
+    <div class="score-row"><span>Funcionalidade</span><span>82</span><span>84</span><span class="delta-pos">+2</span></div>
+    <div class="bar"><i style="width:84%"></i></div>
+    <div class="score-row"><span>Cálculos financeiros</span><span>88</span><span>88</span><span class="delta-0">0</span></div>
+    <div class="bar"><i style="width:88%"></i></div>
+    <div class="score-row"><span>Integridade dos dados</span><span>80</span><span>86</span><span class="delta-pos">+6</span></div>
+    <div class="bar"><i style="width:86%"></i></div>
+    <div class="score-row"><span>Segurança</span><span>62</span><span>74</span><span class="delta-pos">+12</span></div>
+    <div class="bar"><i style="width:74%"></i></div>
+    <div class="score-row"><span>Autenticação</span><span>78</span><span>78</span><span class="delta-0">0</span></div>
+    <div class="bar"><i style="width:78%"></i></div>
+    <div class="score-row"><span>Free/Pro</span><span>52</span><span>80</span><span class="delta-pos">+28</span></div>
+    <div class="bar"><i style="width:80%"></i></div>
+    <div class="score-row"><span>Monetização</span><span>68</span><span>78</span><span class="delta-pos">+10</span></div>
+    <div class="bar"><i style="width:78%"></i></div>
+    <div class="score-row"><span>UX</span><span>80</span><span>80</span><span class="delta-0">0</span></div>
+    <div class="bar"><i style="width:80%"></i></div>
+    <div class="score-row"><span>UI</span><span>82</span><span>82</span><span class="delta-0">0</span></div>
+    <div class="bar"><i style="width:82%"></i></div>
+    <div class="score-row"><span>Responsividade</span><span>78</span><span>78</span><span class="delta-0">0</span></div>
+    <div class="bar"><i style="width:78%"></i></div>
+    <div class="score-row"><span>Performance</span><span>85</span><span>85</span><span class="delta-0">0</span></div>
+    <div class="bar"><i style="width:85%"></i></div>
+    <div class="score-row"><span>Código</span><span>72</span><span>76</span><span class="delta-pos">+4</span></div>
+    <div class="bar"><i style="width:76%"></i></div>
+    <div class="score-row"><span>Estabilidade</span><span>78</span><span>80</span><span class="delta-pos">+2</span></div>
+    <div class="bar"><i style="width:80%"></i></div>
+    <div class="score-row"><span>Preparação para lançamento</span><span>58</span><span>78</span><span class="delta-pos">+20</span></div>
+    <div class="bar"><i style="width:78%"></i></div>
+    <p style="margin:18px 0 0;font-size:1.15rem">
+      <strong>Nota geral: 83/100</strong>
+      <span class="muted">(+15 vs baseline · sem P0; RTDN ainda segura o salto para 90+)</span>
+    </p>
+  </div>
+</section>
+
+<section id="riscos">
+  <h2>3. Status dos riscos (baseline → agora)</h2>
+  <div class="card" style="overflow-x:auto">
+    <table>
+      <thead><tr><th>ID</th><th>Antes</th><th>Agora</th><th>O que mudou</th><th>Evidência</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>RISK-01 Fail-open Free</td>
+          <td><span class="sev p0">P0</span></td>
+          <td><span class="sev ok">RESOLVIDO</span></td>
+          <td><code>billing.js</code> saiu do lazy <code>conta</code> → eager <code>app.bundle</code></td>
+          <td><code>bundle-app.cjs</code>; <code>lazy-chunks</code> PASS; dist <code>guardQuota</code> no app</td>
+        </tr>
+        <tr>
+          <td>RISK-03 Quotas SQL</td>
+          <td><span class="sev p1">P1</span></td>
+          <td><span class="sev ok">RESOLVIDO*</span></td>
+          <td>Triggers UserConfig + RecurringTransaction; migration aplicada live</td>
+          <td><code>20260905180000_quota_v3…</code>; <code>db push</code> 5–6/set; OCR/anexos ainda só cliente</td>
+        </tr>
+        <tr>
+          <td>RISK-04 Revoke timing</td>
+          <td><span class="sev p1">P1</span></td>
+          <td><span class="sev fix">MITIGADO</span></td>
+          <td>Boot ~2,8s carrega chunk e <code>_reconciliarPlay({force:true})</code> 1×/sessão</td>
+          <td><code>lifecycle.js</code>; runbook; smoke AAB ainda manual</td>
+        </tr>
+        <tr>
+          <td>RISK-05 RTDN live</td>
+          <td><span class="sev p1">P1</span></td>
+          <td><span class="sev p1">P1</span></td>
+          <td>Sem reconfirmação nesta sessão (Pub/Sub / logs Edge)</td>
+          <td><span class="sev p3">TESTE MANUAL</span></td>
+        </tr>
+        <tr>
+          <td>RISK-02 Spoof offline</td>
+          <td><span class="sev p1">P1</span></td>
+          <td><span class="sev p1">P1</span></td>
+          <td>Inalterado — trust no aparelho (local-first)</td>
+          <td><code>billing.js</code> getTier / config.plano</td>
+        </tr>
+        <tr>
+          <td>VERSION drift</td>
+          <td><span class="sev p3">P3</span></td>
+          <td><span class="sev ok">RESOLVIDO</span></td>
+          <td><code>CONFIG.VERSION</code> = 11.3.14; check cobre config.js</td>
+          <td><code>check-version</code> OK nesta sessão</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="muted">*RESOLVIDO para o escopo cloud syncável (metas/bills/assinaturas/categorias/recorrentes tabelados). OCR e anexos continuam client-side.</p>
+  </div>
+</section>
+
+<section id="evidencias">
+  <h2>4. Evidências reexecutadas (6 set 2026)</h2>
+  <div class="card">
+    <table>
+      <thead><tr><th>Check</th><th>Resultado</th></tr></thead>
+      <tbody>
+        <tr><td><code>check-version-alignment</code></td><td><span class="sev ok">OK</span> 11.3.14 (package ↔ Android ↔ CONFIG)</td></tr>
+        <tr><td><code>check-billing-wiring</code></td><td><span class="sev ok">OK</span> (incl. RISK-01/04 guards)</td></tr>
+        <tr><td><code>check-xss-sinks</code></td><td><span class="sev ok">OK</span> 108 arquivos</td></tr>
+        <tr><td>Jest billing / lazy / plan-limits / quotas / play / SQL triggers</td><td><span class="sev ok">56/56 PASS</span></td></tr>
+        <tr><td>Jest invariantes + precisão (frontend config)</td><td><span class="sev ok">25 PASS</span> (2 suites reportadas no run)</td></tr>
+        <tr><td>auth-hardening</td><td><span class="sev ok">12/12 PASS</span></td></tr>
+        <tr><td>Suítes previamente vermelhas (marca / play-store-fase / …)</td><td><span class="sev p2">ainda falham</span> (ex.: ENOENT <code>tests/_csp-sample.html</code>) — drift CI, não ledger</td></tr>
+        <tr><td>dist <code>app.bundle.js</code> contém <code>guardQuota</code></td><td><span class="sev ok">Sim</span></td></tr>
+        <tr><td>AAB <code>financaspro-11.3.14-vc39.aab</code></td><td><span class="sev ok">Presente</span> (~4,5 MB)</td></tr>
+        <tr><td>Commits</td><td><code>4e4f14c</code>, <code>016b43b</code> em <code>origin/claude/ui-ux-auditoria</code></td></tr>
+        <tr><td>Supabase <code>db push</code></td><td><span class="sev ok">Aplicado</span> (quota v2 + welcome trial + quota v3) — sessão anterior 5–6/set</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="respostas">
+  <h2>5. Respostas diretas (atualizadas)</h2>
+  <div class="card">
+    <table>
+      <tr><td>1. App funcional?</td><td><strong>Sim</strong></td></tr>
+      <tr><td>2. Cálculos corretos?</td><td><strong>Sim (automatizado)</strong> — núcleo ledger PASS nesta sessão</td></tr>
+      <tr><td>3. Dados seguros?</td><td><strong>Melhor</strong> — RLS + quotas SQL live; offline = trust no device</td></tr>
+      <tr><td>4. Vazamento entre usuários?</td><td><strong>Não evidenciado no código</strong> · pentest vivo = manual</td></tr>
+      <tr><td>5. Banco consistente?</td><td><strong>Sim no desenho</strong> · quotas profundidade no live; pgTAP CI = manual</td></tr>
+      <tr><td>6. Free/Pro protegido?</td><td><strong>Sim no AAB (código)</strong> · smoke device Free = manual residual</td></tr>
+      <tr><td>7. Monetização segura?</td><td><strong>Melhor</strong> · boot reconcile · RTDN = P1 aberto</td></tr>
+      <tr><td>8. UX pronta?</td><td><strong>Quase</strong> (botões ~92) · QA device completo = manual</td></tr>
+      <tr><td>9. Uso intenso?</td><td><strong>OK em scripts anteriores</strong> (1k/5k) — não reestressado hoje</td></tr>
+      <tr><td>10. O que impede lançamento aberto?</td><td><strong>RTDN confirmado + smoke AAB vc39 + upload Play</strong> (não mais o P0 Free)</td></tr>
+      <tr><td>11. O que pode esperar?</td><td>P2 CI drift, OCR localStorage, polish teclado</td></tr>
+      <tr><td>12. Nota atual?</td><td><strong>83/100</strong> (era 68)</td></tr>
+      <tr><td>13. Roadmap 90+?</td><td>Ver §7</td></tr>
+    </table>
+  </div>
+</section>
+
+<section id="manual">
+  <h2>6. Testes manuais restantes</h2>
+  <div class="card">
+    <ol>
+      <li><strong>RISK-05:</strong> cancelar assinatura de teste → log Edge <code>play-rtdn</code> HTTP 200</li>
+      <li>AAB vc39: Free nunca abre Config → quotas ainda bloqueiam (regressão RISK-01)</li>
+      <li>AAB vc39: Pro cancelado → após reopen (~3s) perde Pro sem abrir Config</li>
+      <li>Upload Play Console versionCode <strong>39</strong></li>
+      <li>Pentest RLS 2 usuários reais</li>
+      <li>E2E login/MFA Supabase</li>
+      <li>Corrigir 8 testes CI vermelhos (drift paths)</li>
+    </ol>
+  </div>
+</section>
+
+<section id="roadmap">
+  <h2>7. Roadmap para 90+/100</h2>
+  <div class="card">
+    <ol>
+      <li><strong>Feito:</strong> eager billing, boot reconcile, SQL v3, CONFIG.VERSION, AAB vc39, db push</li>
+      <li><strong>Próximo (maior ganho):</strong> confirmar RTDN live + smoke cancelamento (→ Monetização ~88, Prep ~88, geral ~88–90)</li>
+      <li>Upload vc39 + beta fechado com checklist device</li>
+      <li>CI verde (8 falhas de drift) + E2E auth</li>
+      <li>Decisão explícita RISK-02 (aceitar local-first ou endurecer)</li>
+    </ol>
+  </div>
+  <div class="card">
+    <h3>Checklist pré-beta fechado</h3>
+    <ul class="tight">
+      <li>☑ RISK-01 corrigido no código/AAB</li>
+      <li>☑ Quotas SQL profundidade no live</li>
+      <li>☑ Reconcile no boot</li>
+      <li>☐ RTDN confirmado</li>
+      <li>☐ AAB vc39 instalado em 2+ devices</li>
+      <li>☐ Paywall + compra teste license</li>
+      <li>☐ CRUD lançamento + reload</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  Relatório gerado em 6 set 2026. Baseline:
+  <a href="./auditoria-pre-lancamento-2026-09-05.html">auditoria-pre-lancamento-2026-09-05.html</a>.
+  Sem alteração de código nesta etapa de relatório.
+</footer>
+
+</div>
+</body>
+</html>

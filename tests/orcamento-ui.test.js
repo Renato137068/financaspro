@@ -219,3 +219,57 @@ describe('P1.3 — progressbar ARIA', function() {
     expect(nec.getAttribute('aria-label')).toMatch(/Necessidades/);
   });
 });
+
+describe('Sub-abas Orçamento', function() {
+  function montarSubAbasDom() {
+    window.scrollTo = function() {};
+    document.body.innerHTML =
+      '<div id="aba-orcamento">' +
+        '<button type="button" data-orc-sub="planejamento" class="orc-tab ativo" aria-selected="true">Planejamento</button>' +
+        '<button type="button" data-orc-sub="metas" class="orc-tab" aria-selected="false">Metas</button>' +
+        '<div id="orc-sub-panel-planejamento" class="orc-sub-panel ativo"></div>' +
+        '<div id="orc-sub-panel-metas" class="orc-sub-panel" hidden></div>' +
+      '</div>';
+  }
+
+  test('mudarSubAba ativa painel metas e desativa planejamento', function() {
+    montarSubAbasDom();
+    var sb = carregar();
+    sb.INIT_ORCAMENTO.mudarSubAba('metas');
+    expect(document.getElementById('orc-sub-panel-metas').classList.contains('ativo')).toBe(true);
+    expect(document.getElementById('orc-sub-panel-metas').hasAttribute('hidden')).toBe(false);
+    expect(document.getElementById('orc-sub-panel-planejamento').classList.contains('ativo')).toBe(false);
+    expect(document.getElementById('orc-sub-panel-planejamento').hasAttribute('hidden')).toBe(true);
+    expect(document.querySelector('[data-orc-sub="metas"]').getAttribute('aria-selected')).toBe('true');
+    expect(document.querySelector('[data-orc-sub="metas"]').getAttribute('tabindex')).toBe('0');
+    expect(document.querySelector('[data-orc-sub="planejamento"]').getAttribute('tabindex')).toBe('-1');
+  });
+
+  test('nome inválido cai em planejamento', function() {
+    montarSubAbasDom();
+    var sb = carregar();
+    sb.INIT_ORCAMENTO.mudarSubAba('xyz');
+    expect(document.getElementById('orc-sub-panel-planejamento').classList.contains('ativo')).toBe(true);
+  });
+});
+
+describe('Polimento painel Planejamento', function() {
+  var htmlPath = path.join(__dirname, '..', 'index.html');
+  var htmlOrc = fs.readFileSync(htmlPath, 'utf8');
+
+  test('subtítulo curto no dashboard; sem perfil-header redundante', function() {
+    expect(htmlOrc).toMatch(/orc-panel-subtitle[^>]*>Planejamento 50\/30\/20 — divida sua renda/);
+    var dashBlock = htmlOrc.match(/id="orc-dashboard"[\s\S]*?<!-- Header Estratégico -->/);
+    expect(dashBlock).toBeTruthy();
+    expect(dashBlock[0]).not.toMatch(/perfil-header perfil-header-compact/);
+    expect(dashBlock[0]).not.toMatch(/<h2 class="perfil-nome">Orçamento<\/h2>/);
+  });
+
+  test('subnav usa orc-tab / orc-tablist (não filtro-chip)', function() {
+    expect(htmlOrc).toMatch(/class="orc-tablist"/);
+    expect(htmlOrc).toMatch(/class="orc-tab ativo"/);
+    var subnav = htmlOrc.match(/orc-subnav[\s\S]*?<\/nav>/);
+    expect(subnav).toBeTruthy();
+    expect(subnav[0]).not.toMatch(/filtro-chip/);
+  });
+});

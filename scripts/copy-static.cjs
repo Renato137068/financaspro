@@ -67,6 +67,18 @@ function copyScreenshots() {
 copyRecursive(path.join(root, 'js'), path.join(dist, 'js'));
 copyRecursive(path.join(root, 'css'), path.join(dist, 'css'));
 copyRecursive(path.join(root, 'icons'), path.join(dist, 'icons'));
+
+// Stubs/código morto: não embarcar no APK (órfãos do check-dist-orphans).
+[
+  'ocr.js',
+  path.join('vendor', 'tesseract.min.js'),
+].forEach(function(name) {
+  var p = path.join(dist, 'js', name);
+  if (fs.existsSync(p)) {
+    fs.unlinkSync(p);
+    console.log('[copy-static] removido stub não servido:', name);
+  }
+});
 // fonts/ NÃO é copiado: o Vite já emite as woff2 em dist/assets com hash no
 // nome, referenciadas pelo CSS bundlado. Copiar a pasta crua acrescentaria
 // 154 KB de arquivos que nada referencia.
@@ -77,6 +89,9 @@ if (fs.existsSync(path.join(root, 'privacidade.html'))) {
 }
 if (fs.existsSync(path.join(root, 'celular.html'))) {
   copyFileSafe(path.join(root, 'celular.html'), path.join(dist, 'celular.html'));
+}
+if (fs.existsSync(path.join(root, '.well-known'))) {
+  copyRecursive(path.join(root, '.well-known'), path.join(dist, '.well-known'));
 }
 
 copyScreenshots();
@@ -93,7 +108,7 @@ function patchIndexHtml(filePath) {
     /<link rel="icon" href="[^"]*"[^>]*>/,
     '<link rel="icon" href="icons/logo.svg" type="image/svg+xml">'
   );
-  html = patchCspMeta(html);
+  html = patchCspMeta(html, { prod: true });
   fs.writeFileSync(filePath, html);
 }
 

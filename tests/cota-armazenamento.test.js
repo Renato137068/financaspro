@@ -42,7 +42,7 @@ function carregarDadosReal() {
     setTimeout: (...a) => global.setTimeout(...a),
     clearTimeout: (...a) => global.clearTimeout(...a),
     fetch: (...a) => global.fetch(...a),
-    UTILS: { mostrarToast: () => {}, gerarId: () => 'id' },
+    UTILS: { mostrarToast: () => {}, mostrarBanner: () => {}, gerarId: () => 'id' },
   };
   sandbox.globalThis = sandbox;
   const ctx = vm.createContext(sandbox);

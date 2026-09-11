@@ -51,6 +51,7 @@ const ALCANCAVEL_EM_RUNTIME = [
   /^js\/lazy\/[a-z0-9-]+\.bundle\.js$/,
   // js/lucide-init.js → fallback quando um ícone fica fora do subset
   /^js\/vendor\/lucide-full\.min\.js$/,
+  // OCR removido: não declarar tesseract como alcançável.
 ];
 
 /** Extrai referências literais de um HTML (src/href) e do precache do SW. */

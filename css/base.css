@@ -9,10 +9,45 @@ body {
   font-family: var(--font-family-sans);
   background: var(--color-bg-page);
   color: var(--color-text-primary);
-  max-width: 500px;
+  max-width: var(--app-shell-phone, 500px);
   margin: 0 auto;
   padding-bottom: 90px;
   line-height: var(--line-height-normal);
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Folds / Pro Max: usa mais largura útil sem virar “tablet híbrido”. */
+@media (min-width: 481px) and (max-width: 767px) {
+  body {
+    max-width: var(--app-shell-fold, 640px);
+  }
+
+  .nav-bottom {
+    max-width: min(var(--app-shell-fold, 640px), calc(100% - 24px));
+  }
+}
+
+/* Landscape em celular/tablet com bottom nav: aproveita a largura horizontal. */
+@media (max-width: 1023px) and (orientation: landscape) {
+  body {
+    max-width: min(900px, 100%);
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .nav-bottom {
+    max-width: min(720px, calc(100% - 24px));
+    width: calc(100% - 24px);
+  }
+
+  .nav-btn {
+    min-height: 52px;
+  }
+
+  header {
+    padding-top: calc(10px + env(safe-area-inset-top, 0px));
+    padding-bottom: 10px;
+  }
 }
 
 /* ── Header ───────────────────────────────────────────────── */
@@ -44,18 +79,21 @@ main {
 
 .aba {
   display: none;
-  animation: fadeIn var(--transition-fast);
 }
 
+/* Entrada sem transform residual — ver keyframes abaEnter abaixo. */
 .aba.ativo {
   display: block;
+  animation: abaEnter 220ms ease;
 }
 
 /* ── Animações globais ────────────────────────────────────── */
 
+/* fadeIn sem transform: senão position:fixed filhos (barra de massa, toasts
+   internos) ficam presos ao containing block da aba e caem sob a nav. */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @keyframes slideUp {
@@ -108,12 +146,6 @@ main {
   80%       { transform: translateX(4px); }
 }
 
-/* Slide in da direita (tab slide) */
-@keyframes slideInRight {
-  from { opacity: 0; transform: translateX(12px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
-
 /* Pop (ícone de categoria selecionado) */
 @keyframes popIn {
   0%   { transform: scale(0.6); opacity: 0; }
@@ -147,13 +179,21 @@ main {
 
 /* ── Transição de abas melhorada ──────────────────────────── */
 
-.aba.ativo {
-  animation: slideInRight 220ms ease both;
+/* Só opacity: `transform` + fill-mode `both` deixa matrix residual na aba
+   e prende position:fixed (barra de massa, etc.) ao containing block errado. */
+@keyframes abaEnter {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @keyframes slideInLeft {
-  from { opacity: 0; transform: translateX(-12px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @keyframes float {
@@ -172,8 +212,9 @@ main {
 }
 
 .anim-stagger-in { animation: staggerIn 220ms ease both; }
-.aba-slide-left   { animation: slideInLeft  250ms ease both; }
-.aba-slide-right  { animation: slideInRight 250ms ease both; }
+/* Sem fill `both`: evita matrix residual se keyframes voltarem a usar transform. */
+.aba-slide-left   { animation: slideInLeft  250ms ease; }
+.aba-slide-right  { animation: slideInRight 250ms ease; }
 
 /* ── Valor hero: feedback visual de tipo ──────────────────── */
 

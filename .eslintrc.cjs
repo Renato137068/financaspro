@@ -116,6 +116,7 @@ module.exports = {
     FINANCE_CONTRACT: 'readonly',
     FINANCE_RECONCILER: 'readonly',
     FocusTrap: 'readonly',
+    TablistKeyboard: 'readonly',
     INIT_2FA: 'readonly',
     INIT_ANEXOS: 'readonly',
     INIT_ASSINATURAS: 'readonly',

@@ -11,7 +11,7 @@ const INIT_CONFIG = {
       return { label: 'Business', className: 'perfil-avatar-badge--business' };
     }
     if (raw === 'premium' || raw === 'pro' || raw === 'paid' || raw === 'plus') {
-      return { label: 'Premium', className: 'perfil-avatar-badge--premium' };
+      return { label: 'Pro', className: 'perfil-avatar-badge--premium' };
     }
     return { label: 'Grátis', className: 'perfil-avatar-badge--gratis' };
   },
@@ -28,6 +28,7 @@ const INIT_CONFIG = {
     // gravou. Além de morta, teria deixado a sessão real intacta se rodasse.
     this._bindToggles();
     this._bindKeyboardNavigation();
+    this._bindSairOutrosAparelhos();
     this._updateDynamicValues();
     this._bindEditarPerfilEvents();
     this._bindBancosEvents();
@@ -51,21 +52,23 @@ const INIT_CONFIG = {
    * fora dos mercados onde o link externo foi liberado -- o Brasil nao esta
    * entre eles.
    *
-   * A condicao deriva de `DADOS._apiAtiva()` em vez de um flag proprio: assim
+   * A condicao deriva de `DADOS._nuvemAtiva()` em vez de um flag proprio: assim
    * nao ha um segundo interruptor para esquecer de virar. Configure
-   * `CONFIG.API_BASE_URL` e a nuvem reaparece sozinha.
+   * `CONFIG.API_BASE_URL` ou Supabase e a nuvem reaparece sozinha.
    */
   aplicarVisibilidadeNuvem: function() {
     var temNuvem = typeof DADOS !== 'undefined'
-      && typeof DADOS._apiAtiva === 'function'
-      && DADOS._apiAtiva();
+      && typeof DADOS._nuvemAtiva === 'function'
+      && DADOS._nuvemAtiva();
+    var openFinanceOn = typeof CONFIG !== 'undefined' && CONFIG.FEATURE_OPEN_FINANCE;
 
     var alvos = document.querySelectorAll('[data-requer-nuvem]');
     for (var i = 0; i < alvos.length; i++) {
       var el = alvos[i];
-      el.hidden = !temNuvem;
-      // `hidden` sozinho perde para qualquer `display` do CSS dos cards.
-      el.style.display = temNuvem ? '' : 'none';
+      var isOpenFinance = el.getAttribute('data-action') === 'abrir-open-finance';
+      var visivel = temNuvem && (!isOpenFinance || openFinanceOn);
+      el.hidden = !visivel;
+      el.style.display = visivel ? '' : 'none';
     }
     return temNuvem;
   },
@@ -84,7 +87,20 @@ const INIT_CONFIG = {
     if (chkPin) chkPin.checked = !!config.pinAtivo;
     var pinStatus = document.getElementById('perfil-pin-status');
     if (pinStatus) pinStatus.textContent = config.pinAtivo ? 'PIN ativo' : 'PIN desativado';
+    // Subtítulo do card: deixa explícito que o PIN só oculta saldos.
+    var pinToggleStatus = document.getElementById('perfil-pin-toggle-status');
+    if (pinToggleStatus) {
+      pinToggleStatus.textContent = config.pinAtivo
+        ? 'Ativo — oculta saldos'
+        : 'Desativado';
+    }
+    // Verde = proteção ativa. Com o PIN desativado o selo vira neutro: mostrar
+    // uma proteção DESLIGADA em verde lê como "tudo certo", que é o oposto.
+    var pinPill = document.getElementById('security-pin-status');
+    if (pinPill) pinPill.classList.toggle('security-indicator--neutro', !config.pinAtivo);
     this._refreshCryptoToggle();
+    this._refreshExportHint();
+    this._refreshSairOutrosBtn();
     this._updateAppFooter();
     this._updateLembreteStatus();
     if (typeof INIT_BILLING !== 'undefined' && INIT_BILLING.refreshPlanoCard) {
@@ -95,6 +111,9 @@ const INIT_CONFIG = {
     }
     if (typeof INIT_OPEN_FINANCE !== 'undefined' && INIT_OPEN_FINANCE.refreshCard) {
       INIT_OPEN_FINANCE.refreshCard();
+    }
+    if (typeof AUTH_BIOMETRIC !== 'undefined' && AUTH_BIOMETRIC.refreshBiometricUI) {
+      AUTH_BIOMETRIC.refreshBiometricUI();
     }
   },
 
@@ -259,10 +278,16 @@ const INIT_CONFIG = {
       }
     }
     
-    // Atualizar badge de plano
+    // Atualizar badge de plano (fonte: entitlement BILLING, não config.plano)
     var planBadge = document.getElementById('perfil-plan-badge');
     if (planBadge) {
-      var info = INIT_CONFIG._planoBadgeInfo(config.plano);
+      var planoFonte = config.plano;
+      if (typeof BILLING !== 'undefined' && BILLING.getTier) {
+        planoFonte = BILLING.planoFromTier
+          ? BILLING.planoFromTier(BILLING.getTier())
+          : String(BILLING.getTier() || 'FREE').toLowerCase();
+      }
+      var info = INIT_CONFIG._planoBadgeInfo(planoFonte);
       planBadge.textContent = info.label;
       planBadge.className = 'perfil-avatar-badge ' + info.className;
     }
@@ -297,6 +322,77 @@ const INIT_CONFIG = {
     bind('btn-refazer-onboarding', 'click', function() {
       if (typeof ONBOARDING !== 'undefined' && ONBOARDING.reiniciar) {
         ONBOARDING.reiniciar();
+      }
+    });
+  },
+
+  /**
+   * Hint do export: offline = só este aparelho; nuvem = backup local complementar.
+   */
+  _refreshExportHint: function() {
+    var el = document.getElementById('perfil-export-hint');
+    if (!el) return;
+    var naNuvem = typeof BILLING !== 'undefined' && BILLING.isCloudUser && BILLING.isCloudUser();
+    el.textContent = naNuvem
+      ? 'JSON com lançamentos, contas e preferências. A nuvem continua sendo a fonte da verdade da conta.'
+      : 'JSON com lançamentos, contas e preferências deste aparelho.';
+  },
+
+  _refreshSairOutrosBtn: function() {
+    var btn = document.getElementById('btn-sair-outros');
+    if (!btn) return;
+    var naNuvem = typeof BILLING !== 'undefined' && BILLING.isCloudUser && BILLING.isCloudUser();
+    btn.disabled = !naNuvem;
+    var st = document.getElementById('perfil-sessoes-status');
+    if (st) {
+      st.textContent = naNuvem
+        ? 'Desconectar todos, menos este'
+        : 'Requer login na nuvem';
+    }
+  },
+
+  /**
+   * Desconecta sessões nos outros aparelhos (Supabase scope: others).
+   */
+  _bindSairOutrosAparelhos: function() {
+    var btn = document.getElementById('btn-sair-outros');
+    if (!btn || btn._fpBoundSairOutros) return;
+    btn._fpBoundSairOutros = true;
+    var self = this;
+    self._refreshSairOutrosBtn();
+    btn.addEventListener('click', function() {
+      var naNuvem = typeof BILLING !== 'undefined' && BILLING.isCloudUser && BILLING.isCloudUser();
+      btn.disabled = !naNuvem;
+      if (!naNuvem) {
+        if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+          UTILS.mostrarToast('Requer login na nuvem', 'info');
+        }
+        return;
+      }
+      var go = function() {
+        if (typeof SUPA_AUTH === 'undefined' || !SUPA_AUTH.signOutOthers) {
+          if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+            UTILS.mostrarToast('Indisponível neste modo.', 'warning');
+          }
+          return;
+        }
+        SUPA_AUTH.signOutOthers().then(function() {
+          if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+            UTILS.mostrarToast('Outros aparelhos desconectados.', 'success');
+          }
+        }).catch(function(err) {
+          if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+            UTILS.mostrarToast((err && err.message) || 'Não foi possível desconectar.', 'error');
+          }
+        });
+      };
+      var msg = 'Desconectar todos os outros aparelhos? Este permanece conectado.';
+      if (typeof INIT_MODALS !== 'undefined' && INIT_MODALS.fpConfirm) {
+        INIT_MODALS.fpConfirm(msg, go);
+      } else if (typeof fpConfirm === 'function') {
+        fpConfirm(msg, go);
+      } else if (window.confirm(msg)) {
+        go();
       }
     });
   },
@@ -552,8 +648,8 @@ const INIT_CONFIG = {
 
   /**
    * Preferências que a importação PODE tocar. Tudo fora da lista é ignorado
-   * (ex.: apiBaseUrl, flags de infra/plano forjadas, syncV2Enabled).
-   * `plano` permanece aqui — o aviso de override sensível já cobre a troca.
+   * (ex.: apiBaseUrl, flags de infra, syncV2Enabled).
+   * `plano` NÃO entra — entitlement vem da assinatura verificada (RISK-02).
    */
   _IMPORT_CONFIG_ALLOWED: [
     'nome', 'email', 'telefone', 'nascimento', 'endereco', 'cidade',
@@ -563,8 +659,7 @@ const INIT_CONFIG = {
     'ultimoExportoDados', 'ultimoAcessoApp',
     'metas', 'contasPagar', 'assinaturas', 'patrimonio', 'openFinance',
     'onboardingConcluido', 'feedbacks',
-    'saldosIniciais', 'faturasPagas', 'recorrentesProcessadas',
-    'plano'
+    'saldosIniciais', 'faturasPagas', 'recorrentesProcessadas'
   ],
 
   /** P1.1: config serializada no backup sem hash/salt/estado do PIN. */
@@ -619,8 +714,7 @@ const INIT_CONFIG = {
   _importTemOverridesSensiveis: function(data) {
     if (!data.config || typeof data.config !== 'object') return false;
     var cfg = data.config;
-    var atual = DADOS.getConfig();
-    if (cfg.plano && cfg.plano !== atual.plano) return true;
+    // plano do backup é ignorado no merge (RISK-02) — não precisa de aviso.
     if (cfg.pinAtivo || cfg.pinHash || cfg.pinSalt) return true;
     return false;
   },
@@ -702,6 +796,14 @@ const INIT_CONFIG = {
         }, 100);
         break;
 
+      case 'abrirPaywall':
+        // Teaser de insight (assinaturas esquecidas, por ora) levando ao
+        // paywall com o contexto que o gerou — o número em reais vai junto.
+        if (typeof INIT_BILLING !== 'undefined' && INIT_BILLING.abrirPaywall) {
+          INIT_BILLING.abrirPaywall(parametros.message);
+        }
+        break;
+
       case 'ver-detalhes':
         break;
 
@@ -743,7 +845,7 @@ const INIT_CONFIG = {
         INIT_CONFIG._pendingImport = data;
         if (INIT_CONFIG._importTemOverridesSensiveis(data)) {
           INIT_MODALS.confirm(
-            'O backup pode alterar plano e preferências. Seu PIN local não será substituído. Continuar?',
+            'O backup pode alterar preferências. Seu PIN local e o plano de assinatura não serão substituídos. Continuar?',
             function() { INIT_CONFIG.importarDados(INIT_CONFIG._pendingImport); }
           );
         } else {
@@ -1209,12 +1311,19 @@ const INIT_CONFIG = {
     
     var html = '';
     cartoes.forEach(function(cartao, index) {
-      html += '<div class="banco-item" data-index="' + index + '" data-tipo="cartao">' +
+      var info = (typeof CARTOES !== 'undefined' && CARTOES.obter)
+        ? CARTOES.obter(cartao.nome) : null;
+      var semCiclo = info && !info.temCiclo;
+      html += '<div class="banco-item' + (semCiclo ? ' banco-item--aviso' : '') + '" data-index="' + index + '" data-tipo="cartao">' +
         '<div class="banco-item-info">' +
           '<div class="banco-item-icon" aria-hidden="true"><i data-lucide="credit-card"></i></div>' +
           '<div class="banco-item-details">' +
-            '<div class="banco-item-nome">' + UTILS.escapeHtml(cartao.nome) + '</div>' +
-            '<div class="banco-item-tipo">' + UTILS.escapeHtml(cartao.bandeira) + (cartao.limite ? ' • Limite: R$ ' + parseFloat(cartao.limite).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '') + '</div>' +
+            '<div class="banco-item-nome">' + UTILS.escapeHtml(cartao.nome) +
+              (semCiclo ? ' <span class="banco-item-badge-aviso">Sem ciclo</span>' : '') +
+            '</div>' +
+            '<div class="banco-item-tipo">' + UTILS.escapeHtml(cartao.bandeira) + (cartao.limite ? ' • Limite: R$ ' + parseFloat(cartao.limite).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '') +
+              (semCiclo ? ' · Informe fechamento e vencimento para calcular faturas' : '') +
+            '</div>' +
           '</div>' +
         '</div>' +
         '<div class="banco-item-actions">' +
@@ -1238,6 +1347,7 @@ const INIT_CONFIG = {
       UTILS.mostrarToast(validacao.message, 'error');
       return;
     }
+    if (typeof BILLING !== 'undefined' && !BILLING.guardQuota('account', 1)) return;
     
     var config = DADOS.getConfig();
     var bancos = config.bancos || [];
@@ -1278,6 +1388,7 @@ const INIT_CONFIG = {
       UTILS.mostrarToast(validacao.message, 'error');
       return;
     }
+    if (typeof BILLING !== 'undefined' && !BILLING.guardQuota('account', 1)) return;
     
     var config = DADOS.getConfig();
     var cartoes = config.cartoes || [];

@@ -1,21 +1,24 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# Capacitor core + plugins (@PluginMethod reflection)
+-keep @com.getcapacitor.annotation.CapacitorPlugin class * { *; }
+-keepclassmembers class * {
+    @com.getcapacitor.PluginMethod *;
+}
+-keep class com.getcapacitor.** { *; }
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# App plugins (billing, biometria, FLAG_SECURE)
+-keep class com.financaspro.app.** { *; }
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Google Play Billing
+-keep class com.android.billingclient.** { *; }
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Biometric plugin (@capgo/capacitor-native-biometric)
+# O pacote Java é ee.forgr.biometric — ver android/app/src/main/assets/
+# capacitor.plugins.json. A regra apontava para io.capgo.**, que não existe no
+# build: guardava zero classes. A classe anotada com @CapacitorPlugin sobrevivia
+# pela regra genérica acima, mas as auxiliares do pacote não estavam cobertas —
+# e a biometria é a saída offline do app, então ela precisa funcionar no AAB
+# minificado, não só no debug.
+-keep class ee.forgr.** { *; }
+
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile

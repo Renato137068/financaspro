@@ -210,13 +210,21 @@
   background: none;
   border: none;
   cursor: pointer;
-  padding: 2px 0;
+  padding: 8px 4px;
+  min-height: var(--tap-target-min, 44px);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   flex-shrink: 0;
-  transition: opacity var(--transition-fast);
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
   font-family: var(--font-family-sans);
 }
 
 .secao-link:hover { opacity: 0.75; }
+
+.secao-link:active {
+  transform: scale(var(--press-scale, 0.98));
+}
 
 /* ── Indicador card (renda + dias) ───────────────────────── */
 
@@ -230,7 +238,7 @@
 .indicador-card {
   background: var(--color-bg-card);
   padding: var(--space-4);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   display: flex;
   flex-wrap: wrap;
@@ -389,6 +397,16 @@
   max-width: 260px;
   margin-left: auto;
   margin-right: auto;
+}
+
+.empty-state .btn-empty-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: min(100%, 320px);
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
 /* ── Donut chart ─────────────────────────────────────────── */

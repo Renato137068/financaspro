@@ -245,7 +245,14 @@ var SYNC_ENGINE = {
     var delay = delayMs != null ? delayMs : 300;
     this._flushTimer = setTimeout(function() {
       self._flushTimer = null;
-      self.flush().catch(function() {});
+      self.flush().catch(function(err) {
+        // flush() já despacha SYNC_FALHAR em falha de rede; isto cobre throws inesperados.
+        if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
+          APP_STORE.dispatch(ACTIONS.SYNC_FALHAR, {
+            erro: (err && err.message) || 'flush-inesperado',
+          });
+        }
+      });
     }, delay);
   },
 

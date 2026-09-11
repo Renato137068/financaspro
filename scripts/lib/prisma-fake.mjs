@@ -57,6 +57,12 @@ function matchField(value, condition) {
       case 'contains':
         if (!String(value ?? '').includes(String(operand))) return false;
         break;
+      case 'startsWith':
+        if (!String(value ?? '').startsWith(String(operand))) return false;
+        break;
+      case 'endsWith':
+        if (!String(value ?? '').endsWith(String(operand))) return false;
+        break;
       default:
         throw new Error(`prisma-fake: operador não suportado "${op}"`);
     }

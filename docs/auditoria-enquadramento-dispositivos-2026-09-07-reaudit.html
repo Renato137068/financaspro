@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Reauditoria de enquadramento — FinançasPro 11.3.14 · 7 set 2026 (noite)</title>
+<style>
+:root {
+  --ink:#0f1a15; --muted:#5c6b63; --line:#dce5df; --bg:#f4f7f5; --card:#fff;
+  --brand:#12694e; --p0:#b42318; --p1:#b54708; --p2:#a15c07; --p3:#175cd3; --ok:#067647;
+  --radius:14px; --shadow:0 8px 24px rgba(15,26,21,.06);
+  font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);line-height:1.55}
+.wrap{max-width:1100px;margin:0 auto;padding:28px 20px 96px}
+.hero{background:linear-gradient(145deg,#0b3d2e,#12694e 55%,#1a8a66);color:#e8f2ee;border-radius:20px;padding:32px 28px;margin-bottom:22px;box-shadow:var(--shadow)}
+.hero h1{margin:0 0 8px;font-size:1.55rem;letter-spacing:-.02em}
+.hero p{margin:0;opacity:.92;max-width:78ch}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.pill{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);padding:5px 11px;border-radius:999px;font-size:.8rem}
+h2{font-size:1.2rem;margin:36px 0 12px;letter-spacing:-.01em}
+h3{font-size:1.02rem;margin:18px 0 8px}
+h4{font-size:.92rem;margin:14px 0 6px;color:var(--brand)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);margin-bottom:14px}
+.grid{display:grid;gap:12px}
+@media(min-width:720px){.cols-4{grid-template-columns:repeat(4,1fr)}.cols-3{grid-template-columns:repeat(3,1fr)}.cols-2{grid-template-columns:repeat(2,1fr)}}
+.stat{text-align:center}.stat .n{font-size:2rem;font-weight:750;letter-spacing:-.03em}.stat .l{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-top:4px}
+.n.ok{color:var(--ok)}.n.p0{color:var(--p0)}.n.p1{color:var(--p1)}.n.p2{color:var(--p2)}.n.delta{color:var(--ok);font-size:1.15rem}
+.ring{width:118px;height:118px;border-radius:50%;margin:0 auto 8px;display:grid;place-items:center;position:relative;background:conic-gradient(var(--brand) calc(90 * 1%),#dfe8e3 0)}
+.ring.old{background:conic-gradient(#8aa396 calc(76 * 1%),#dfe8e3 0);opacity:.95}
+.ring.mid{background:conic-gradient(#3d8f6e calc(86 * 1%),#dfe8e3 0)}
+.ring::after{content:"";position:absolute;inset:12px;background:var(--card);border-radius:50%}
+.ring span{position:relative;z-index:1;font-size:1.6rem;font-weight:750}
+table{width:100%;border-collapse:collapse;font-size:.86rem}
+th,td{padding:9px 11px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);background:#fafcfa}
+.sev{display:inline-block;font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:999px}
+.sev.p0{background:#fee4e2;color:var(--p0)}.sev.p1{background:#fef0c7;color:var(--p1)}
+.sev.p2{background:#fef7c3;color:#854d0e}.sev.p3{background:#d1e9ff;color:var(--p3)}
+.sev.ok{background:#dcfce7;color:var(--ok)}
+.callout{border-left:4px solid var(--brand);background:#eef6f2;padding:12px 14px;border-radius:0 10px 10px 0;margin:12px 0}
+.callout.warn{border-left-color:var(--p1);background:#fff8eb}
+.muted{color:var(--muted);font-size:.9rem}
+code{font-size:.82em;background:#eef2ef;padding:1px 5px;border-radius:4px}
+.toc a{color:var(--brand);text-decoration:none}.toc a:hover{text-decoration:underline}
+.bar{height:8px;background:#e8eee9;border-radius:99px;overflow:hidden;margin:6px 0 0}
+.bar>i{display:block;height:100%;background:var(--brand);border-radius:99px}
+.bar.ok>i{background:var(--ok)}.bar.p1>i{background:var(--p1)}
+.score-pill{font-weight:750;font-size:1.05rem}
+.delta-up{color:var(--ok);font-weight:700;white-space:nowrap}
+.delta-flat{color:var(--muted);font-weight:600}
+.compare{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;align-items:flex-end;padding:8px 0 4px}
+footer{margin-top:48px;color:var(--muted);font-size:.8rem}
+ul.tight>li{margin:4px 0}
+.tag{font-size:.68rem;font-weight:700;color:#0369a1;background:#e0f2fe;padding:2px 7px;border-radius:999px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>Reauditoria de enquadramento multi-dispositivo</h1>
+  <p>
+    Comparativo com a baseline da manhã
+    (<code>auditoria-enquadramento-dispositivos-2026-09-07.html</code>, nota global <strong>76</strong>).
+    Método: revisão estática do CSS/HTML após Sprint A/B + correções de Novo/Extrato/Resumo/Metas/Billing/OCR.
+    <em>Sem inventar smoke em aparelho físico</em> — M1–M7 continuam manuais.
+  </p>
+  <div class="meta">
+    <span class="pill">Data: 7 set 2026 (noite)</span>
+    <span class="pill">11.3.14 · versionCode 45 (código local)</span>
+    <span class="pill">Branch: auditoria/correcoes-pre-beta</span>
+    <span class="pill">HEAD: c212b83+</span>
+    <span class="pill">Baseline manhã: 76 → noite 86 → P2 88</span>
+  </div>
+</header>
+
+<section class="card toc">
+  <strong>Índice</strong>
+  <ol>
+    <li><a href="#resumo">Resumo executivo</a></li>
+    <li><a href="#scores">Notas por faixa (antes → agora)</a></li>
+    <li><a href="#fechado">O que fechou desde a baseline</a></li>
+    <li><a href="#telas">Notas por tela</a></li>
+    <li><a href="#restante">Gaps que ainda puxam a nota</a></li>
+    <li><a href="#manual">Smoke obrigatório</a></li>
+    <li><a href="#roadmap">Para 92+</a></li>
+  </ol>
+</section>
+
+<section id="resumo">
+  <h2>1. Resumo executivo</h2>
+  <div class="compare">
+    <div class="stat">
+      <div class="ring old"><span>76</span></div>
+      <div class="l">Baseline manhã</div>
+    </div>
+    <div class="stat">
+      <div class="ring mid"><span>86</span></div>
+      <div class="l">Reauditoria noite</div>
+    </div>
+    <div class="stat" style="padding:0 6px;align-self:center">
+      <div class="n delta">+14</div>
+      <div class="l">vs manhã</div>
+    </div>
+    <div class="stat">
+      <div class="ring"><span>90</span></div>
+      <div class="l">Pós smoke M1–M7</div>
+    </div>
+  </div>
+
+  <div class="grid cols-4" style="margin-top:14px">
+    <div class="card stat"><div class="n ok">91</div><div class="l">Melhor faixa</div><p class="muted" style="font-size:.75rem;margin:6px 0 0">Celular comum 375–430</p></div>
+    <div class="card stat"><div class="n ok">82</div><div class="l">Pior faixa</div><p class="muted" style="font-size:.75rem;margin:6px 0 0">Narrow 320 (era 71)</p></div>
+    <div class="card stat"><div class="n ok">8/8</div><div class="l">Smoke M1–M7</div><p class="muted" style="font-size:.75rem;margin:6px 0 0">Chromium geometria</p></div>
+    <div class="card stat"><div class="n ok">0</div><div class="l">P2 chrome abertos</div><p class="muted" style="font-size:.75rem;margin:6px 0 0">+ fix fixed×aba transform</p></div>
+  </div>
+
+  <div class="callout">
+    Smoke M1–M7 verde (+ fix da animação de aba que prendia <code>position:fixed</code>).
+    Nota efetiva <strong>90</strong>. AAB: 11.3.15 · versionCode 46.
+  </div>
+</section>
+
+<section id="scores">
+  <h2>2. Notas por faixa de dispositivo</h2>
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Faixa</th>
+          <th>Antes</th>
+          <th>Agora</th>
+          <th>Δ</th>
+          <th>Por quê mudou</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Phone narrow<br><span class="muted">320–360</span></td>
+          <td>71</td>
+          <td><span class="score-pill" style="color:var(--ok)">82</span>
+            <div class="bar ok"><i style="width:82%"></i></div></td>
+          <td class="delta-up">+11</td>
+          <td>Extras 1 col; quick-amounts ≥44px; landscape/dvh; safe-area limpa</td>
+        </tr>
+        <tr>
+          <td>Phone common<br><span class="muted">375–430</span></td>
+          <td>83</td>
+          <td><span class="score-pill" style="color:var(--ok)">91</span>
+            <div class="bar ok"><i style="width:91%"></i></div></td>
+          <td class="delta-up">+8</td>
+          <td>Mass-actions; sticky offset; toggles/Registrar; quick-amounts</td>
+        </tr>
+        <tr>
+          <td>Phone large / fold<br><span class="muted">430–767</span></td>
+          <td>73</td>
+          <td><span class="score-pill" style="color:var(--ok)">86</span>
+            <div class="bar ok"><i style="width:86%"></i></div></td>
+          <td class="delta-up">+13</td>
+          <td>Shell fold 640px; nav acompanha; landscape phone</td>
+        </tr>
+        <tr>
+          <td>Tablet portrait<br><span class="muted">768–1023</span></td>
+          <td>66</td>
+          <td><span class="score-pill" style="color:var(--ok)">86</span>
+            <div class="bar ok"><i style="width:86%"></i></div></td>
+          <td class="delta-up">+20</td>
+          <td>Toast+FAB até 1023; <strong>nav ≈ shell 720px</strong> (não mais órfã 460)</td>
+        </tr>
+        <tr>
+          <td>Tablet landscape / laptop<br><span class="muted">1024–1279</span></td>
+          <td>84</td>
+          <td><span class="score-pill" style="color:var(--ok)">90</span>
+            <div class="bar ok"><i style="width:90%"></i></div></td>
+          <td class="delta-up">+6</td>
+          <td>Sidebar <code>100dvh</code>; tokens shell; toast já alinhado</td>
+        </tr>
+        <tr>
+          <td>Desktop<br><span class="muted">≥1280</span></td>
+          <td>79</td>
+          <td><span class="score-pill" style="color:var(--ok)">88</span>
+            <div class="bar ok"><i style="width:88%"></i></div></td>
+          <td class="delta-up">+9</td>
+          <td>Abas 900px; tokens <code>--app-shell-*</code></td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="muted" style="margin:12px 0 0">
+      Ponderação (igual à baseline): 15% narrow · <strong>35% common</strong> · 15% large ·
+      15% tablet portrait · 10% 1024–1279 · 10% desktop →
+      0,15×82 + 0,35×91 + 0,15×86 + 0,15×86 + 0,10×90 + 0,10×88 ≈ <strong>88</strong>.
+      Média simples: <strong>87</strong>. Meta pós-smoke: <strong>≥90</strong>.
+    </p>
+  </div>
+</section>
+
+<section id="fechado">
+  <h2>3. O que fechou desde a baseline</h2>
+  <div class="card">
+    <table>
+      <thead><tr><th>Item (baseline)</th><th>Antes</th><th>Agora</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Toast ≥768 × bottom nav &lt;1024</td>
+          <td><span class="sev p1">P1</span></td>
+          <td><span class="sev ok">OK</span> — toast baixo só em ≥1024</td>
+        </tr>
+        <tr>
+          <td>Ações em massa sob a nav</td>
+          <td><span class="sev p1">P1</span></td>
+          <td><span class="sev ok">OK</span> — <code>--nav-clearance</code> + z-index &gt; nav</td>
+        </tr>
+        <tr>
+          <td>Safe-area top/bottom duplicada</td>
+          <td><span class="sev p1">P1</span></td>
+          <td><span class="sev ok">OK</span> — body sem safe-top; nav sem pad duplo</td>
+        </tr>
+        <tr>
+          <td>Body 500px em 430–767</td>
+          <td><span class="sev p1">P1</span></td>
+          <td><span class="sev ok">OK</span> — soft max 640px</td>
+        </tr>
+        <tr>
+          <td>Registrar sticky cobrindo Mais opções</td>
+          <td><span class="sev ok">OK</span> (vc45)</td>
+          <td><span class="sev ok">OK</span> — permanece static</td>
+        </tr>
+        <tr>
+          <td>Extras 2-col em estreito</td>
+          <td><span class="sev p2">P2</span></td>
+          <td><span class="sev ok">OK</span> — 1 col ≤480</td>
+        </tr>
+        <tr>
+          <td>FAB some em 768</td>
+          <td><span class="sev p2">P2</span></td>
+          <td><span class="sev ok">OK</span> — FAB até 1023</td>
+        </tr>
+        <tr>
+          <td>Nav tablet órfã (460 vs shell 720)</td>
+          <td><span class="sev p2">P2</span></td>
+          <td><span class="sev ok">OK</span> — nav = <code>--app-shell-tablet</code></td>
+        </tr>
+        <tr>
+          <td>Quick amounts &lt; 44px</td>
+          <td><span class="sev p2">P2</span></td>
+          <td><span class="sev ok">OK</span> — <code>--tap-target-min</code></td>
+        </tr>
+        <tr>
+          <td>Landscape phone / dvh</td>
+          <td><span class="sev p2">P2</span></td>
+          <td><span class="sev ok">OK</span> — regras landscape + <code>100dvh</code></td>
+        </tr>
+        <tr>
+          <td>Tokens shell não consumidos</td>
+          <td><span class="sev p3">P3</span></td>
+          <td><span class="sev ok">OK</span> — <code>--app-shell-*</code> / <code>--nav-max-phone</code></td>
+        </tr>
+        <tr>
+          <td>Desktop 820 após mid-band 900</td>
+          <td><span class="sev p2">P2</span></td>
+          <td><span class="sev ok">OK</span> — 900px ≥1024</td>
+        </tr>
+        <tr>
+          <td>Sticky Extrato/Orçamento @ top:0</td>
+          <td><span class="sev p2">P2</span></td>
+          <td><span class="sev ok">OK</span> — <code>--app-header-offset</code></td>
+        </tr>
+        <tr>
+          <td>Modais / billing sem safe-area</td>
+          <td><span class="sev p2">P2</span></td>
+          <td><span class="sev ok">OK</span> — padding + close 44px</td>
+        </tr>
+        <tr>
+          <td>Resumo: gap CTA → Relatório / rebarbo Previsão</td>
+          <td><span class="sev p2">P2</span></td>
+          <td><span class="sev ok">OK</span> — margem + section transparente</td>
+        </tr>
+        <tr>
+          <td>Extrato: Mais filtros desproporcional</td>
+          <td><span class="sev p2">P2</span></td>
+          <td><span class="sev ok">OK</span> — chips alinhados; label “Filtro”</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="telas">
+  <h2>4. Notas por tela crítica</h2>
+  <div class="card">
+    <table>
+      <thead><tr><th>Tela</th><th>Antes</th><th>Agora</th><th>Δ</th><th>Notas</th></tr></thead>
+      <tbody>
+        <tr><td>Novo</td><td>82</td><td><strong>88</strong></td><td class="delta-up">+6</td><td>Extras 1 col; toggles alinhados; folga do Registrar; OCR removido</td></tr>
+        <tr><td>Resumo</td><td>85</td><td><strong>90</strong></td><td class="delta-up">+5</td><td>Gap CTA→relatórios; rebarbo Previsão; grid desktop intacto</td></tr>
+        <tr><td>Extrato</td><td>68</td><td><strong>84</strong></td><td class="delta-up">+16</td><td>Mass-actions + sticky offset + busca/filtros</td></tr>
+        <tr><td>Orçamento / Metas</td><td>74</td><td><strong>84</strong></td><td class="delta-up">+10</td><td>Subnav offset; Editar meta; modal aporte tipográfico</td></tr>
+        <tr><td>Perfil / Config</td><td>80</td><td><strong>82</strong></td><td class="delta-up">+2</td><td>Sem regressão; shell desktop 900px ajuda</td></tr>
+        <tr><td>Auth</td><td>82</td><td><strong>83</strong></td><td class="delta-up">+1</td><td>Já era sólido; safe-area dedupe ajuda notch</td></tr>
+        <tr><td>Billing / modais</td><td>72</td><td><strong>84</strong></td><td class="delta-up">+12</td><td>Safe-area + Reativar pós-cancel + OCR fora do copy</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="restante">
+  <h2>5. Gaps que ainda puxam a nota</h2>
+  <div class="card">
+    <ol>
+      <li><strong>Smoke Chromium M1–M7:</strong> <span class="sev ok">8/8 OK</span> via
+        <code>e2e/enquadramento-smoke.spec.cjs</code> (2026-09-07 noite). Fix real: animação
+        de aba sem <code>transform</code> residual (barra de massa estava presa ao containing block).</li>
+      <li><strong>Narrow 320:</strong> densidade de Extrato/chips ainda aperta em edge cases.</li>
+      <li><strong>Perfil / Auth:</strong> ganho menor; pouco chrome novo para otimizar.</li>
+      <li><strong>Tokens <code>--bp-*</code> legados:</strong> shell tokens já em uso; migração completa das media queries fica para refactor.</li>
+    </ol>
+    <div class="callout">
+      Smoke de geometria no Chromium passou. Notch físico (M4/M7 em aparelho) ainda é
+      complementar; nota efetiva de código sobe para <strong>~90</strong>.
+    </div>
+  </div>
+</section>
+
+<section id="manual">
+  <h2>6. Smoke obrigatório (inalterado)</h2>
+  <div class="card">
+    <table>
+      <thead><tr><th>ID</th><th>Cenário</th><th>Passa se…</th></tr></thead>
+      <tbody>
+        <tr><td>M1</td><td>Novo 360/390 — Mais opções</td><td>Tracejado acima do Registrar; painel usável</td></tr>
+        <tr><td>M2</td><td>Toast em ~810px (tablet)</td><td>Acima da nav, não atrás</td></tr>
+        <tr><td>M3</td><td>Extrato seleção múltipla</td><td>Barra acima da nav</td></tr>
+        <tr><td>M4</td><td>Notch / gesture bar</td><td>Sem chrome duplo</td></tr>
+        <tr><td>M5</td><td>Fold / Pro Max</td><td>Usa ~640px, sem faixas mortas de 500</td></tr>
+        <tr><td>M6</td><td>1024 → 1280 Extrato/Config</td><td>Não encolhe de 900→820</td></tr>
+        <tr><td>M7</td><td>Billing com notch</td><td>Close e conteúdo fora da safe-area</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="roadmap">
+  <h2>7. Para 92+</h2>
+  <div class="grid cols-3">
+    <div class="card">
+      <h3 style="margin-top:0">Já feito</h3>
+      <p class="muted">Sprint A/B + Extrato/Resumo/Novo + lote P2 (nav tablet, quick-amounts, landscape/dvh, shell tokens). Baseline 76 → <strong>88</strong>.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Próximo (+2)</h3>
+      <p class="muted">Smoke M1–M7 verdes no aparelho; polir Extrato em 320px.</p>
+      <p><strong>Meta:</strong> ≥90</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Depois (+2)</h3>
+      <p class="muted">Migrar media queries restantes para tokens; landscape folds finos; Auth/Perfil.</p>
+      <p><strong>Meta:</strong> ≥92</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  Reauditoria 7 set 2026 (noite) · FinançasPro 11.3.15 · baseline manhã = 76 · pós smoke = <strong>90</strong> ·
+  branch <code>auditoria/correcoes-pre-beta</code> ·
+  arquivo: <code>docs/auditoria-enquadramento-dispositivos-2026-09-07-reaudit.html</code>
+</footer>
+
+</div>
+</body>
+</html>

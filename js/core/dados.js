@@ -80,6 +80,19 @@ var DADOS = {
 
   /** Aviso de cota é uma vez por sessão — repetido, vira ruído ignorável. */
   _avisouCota: false,
+  _avisouSyncMultiAba: false,
+  _modalConflitoAberto: false,
+  _storageSyncBound: false,
+  _transacoesBackend: null,
+  _transacoesCache: null,
+  _idbWriteChain: Promise.resolve(),
+  _initPromise: null,
+  _ignorarStorageSync: false,
+  TX_BACKEND_KEY: 'fp-tx-backend',
+  TX_SYNC_PING_KEY: 'fp-tx-sync-ping',
+  TX_IDB_SENTINEL: '{"_idb":1}',
+  LIMIAR_MIGRAR_TX_COUNT: 2500,
+  LIMIAR_MIGRAR_TX_BYTES: 3 * 1024 * 1024,
 
   /** Idem para o desvio de relógio: uma vez por sessão. */
   _avisouRelogio: false,
@@ -173,12 +186,26 @@ var DADOS = {
     if (uso.percentual < this._LIMIAR_AVISO * 100) return uso;
 
     this._avisouCota = true;
+    var msgCota = 'Armazenamento em ' + uso.percentual + '%. Exporte um backup e '
+      + 'considere apagar lançamentos antigos.';
     if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
-      UTILS.mostrarToast(
-        'Armazenamento em ' + uso.percentual + '%. Exporte um backup e '
-        + 'considere apagar lançamentos antigos.',
-        'warning',
-      );
+      UTILS.mostrarToast(msgCota, 'warning');
+    }
+    if (typeof UTILS !== 'undefined' && UTILS.mostrarBanner) {
+      UTILS.mostrarBanner({
+        id: 'fp-banner-cota',
+        tipo: 'warning',
+        mensagem: msgCota,
+        acao: 'Exportar backup',
+        fecharAoAcao: false,
+        onAcao: function() {
+          if (typeof CONFIG_USER !== 'undefined' && CONFIG_USER.exportarDados) {
+            CONFIG_USER.exportarDados();
+          } else if (typeof exportarDados === 'function') {
+            exportarDados();
+          }
+        },
+      });
     }
     return uso;
   },
@@ -292,20 +319,31 @@ var DADOS = {
           throw new Error('Falha ao decifrar dados existentes — migração abortada');
         }
       }
-      // 2. Alterna o flag e invalida o cache em memória.
-      LOCAL_CRYPTO.setEnabled(enable);
-      self._plainCache = {};
 
-      // 3. Regrava no novo formato (encrypt só funciona com o flag já ligado).
-      var writes = items.map(function(it) {
-        if (it.plain == null) return Promise.resolve();
-        if (enable) {
-          return LOCAL_CRYPTO.encrypt(it.plain).then(function(enc) { localStorage.setItem(it.key, enc); });
+      // Anexos: ao DESLIGAR, decifrar enquanto o flag ainda está ligado.
+      var anexosAntes = (!enable && typeof ANEXOS !== 'undefined' && ANEXOS.migrarCriptografia)
+        ? ANEXOS.migrarCriptografia(false)
+        : Promise.resolve();
+
+      return anexosAntes.then(function() {
+        LOCAL_CRYPTO.setEnabled(enable);
+        self._plainCache = {};
+
+        var writes = items.map(function(it) {
+          if (it.plain == null) return Promise.resolve();
+          if (enable) {
+            return LOCAL_CRYPTO.encrypt(it.plain).then(function(enc) { localStorage.setItem(it.key, enc); });
+          }
+          localStorage.setItem(it.key, it.plain);
+          return Promise.resolve();
+        });
+        return Promise.all(writes);
+      }).then(function() {
+        // Anexos: ao LIGAR, cifrar com o flag já ativo.
+        if (enable && typeof ANEXOS !== 'undefined' && ANEXOS.migrarCriptografia) {
+          return ANEXOS.migrarCriptografia(true);
         }
-        localStorage.setItem(it.key, it.plain);
-        return Promise.resolve();
       });
-      return Promise.all(writes);
     }).then(function() {
       return LOCAL_CRYPTO.isEnabled();
     });
@@ -317,7 +355,29 @@ var DADOS = {
   },
 
   _apiAtiva: function() {
+    // APK/Capacitor: auth e sync só via Supabase — Express fica inerte no mobile.
+    try {
+      if (typeof window !== 'undefined' && window.Capacitor
+          && window.Capacitor.isNativePlatform
+          && window.Capacitor.isNativePlatform()) {
+        return false;
+      }
+    } catch (e) { /* noop */ }
     return !!this._apiBaseUrl();
+  },
+
+  /** Supabase Auth + Postgres (RLS) ativos no cliente. */
+  _supabaseAtivo: function() {
+    var url = (CONFIG.SUPABASE_URL || '').trim();
+    var key = (CONFIG.SUPABASE_ANON_KEY || '').trim();
+    if (!url || !key) return false;
+    return typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.isActive && SUPA_AUTH.isActive();
+  },
+
+  /** Nuvem = Supabase OU API Express configurada (billing, login, sync). */
+  _nuvemAtiva: function() {
+    if (this._supabaseAtivo()) return true;
+    return this._apiAtiva();
   },
 
   _syncV2Ativo: function() {
@@ -890,20 +950,286 @@ var DADOS = {
   },
 
   init: function() {
-    if (this._initialized) return;
-    this._initialized = true;
-    this._limparTokensLegados();
-    if (!this._storageGetRaw(CONFIG.STORAGE_TRANSACOES)) {
-      this._storageSetRaw(CONFIG.STORAGE_TRANSACOES, JSON.stringify([]));
-    }
-    if (!this._storageGetRaw(CONFIG.STORAGE_CONFIG)) {
-      var defaults = Object.assign({}, CONFIG.DEFAULT_CONFIG, { _schemaVer: this.SCHEMA_VERSION });
-      this._storageSetRaw(CONFIG.STORAGE_CONFIG, JSON.stringify(defaults));
+    if (this._initialized) return Promise.resolve();
+    if (this._initPromise) return this._initPromise;
+    var self = this;
+    this._initPromise = this._prepararStorageTransacoes().then(function() {
+      self._limparTokensLegados();
+      if (self._transacoesBackend !== 'idb' && !self._storageGetRaw(CONFIG.STORAGE_TRANSACOES)) {
+        self._storageSetRaw(CONFIG.STORAGE_TRANSACOES, JSON.stringify([]));
+      }
+      if (!self._storageGetRaw(CONFIG.STORAGE_CONFIG)) {
+        var defaults = Object.assign({}, CONFIG.DEFAULT_CONFIG, { _schemaVer: self.SCHEMA_VERSION });
+        self._storageSetRaw(CONFIG.STORAGE_CONFIG, JSON.stringify(defaults));
+      } else {
+        self._migrarSchema();
+      }
+      if (typeof APP_STORE !== 'undefined') APP_STORE.hydrateFromDados();
+      self.setupStorageSync();
+      if (typeof SESSION_LOG !== 'undefined') {
+        SESSION_LOG.registrar('init_dados', { backend: self._transacoesBackend || 'localStorage' });
+      }
+      self.sincronizarComApi();
+      self._initialized = true;
+    });
+    return this._initPromise;
+  },
+
+  _mostrarBannerMultiAba: function(mensagem) {
+    if (this._modalConflitoAberto) return;
+    if (this._avisouSyncMultiAba || typeof UTILS === 'undefined' || !UTILS.mostrarBanner) return;
+    this._avisouSyncMultiAba = true;
+    UTILS.mostrarBanner({
+      id: 'fp-banner-multiaba',
+      tipo: 'info',
+      mensagem: mensagem || 'Outra aba alterou seus dados. A tela foi atualizada.',
+      acao: 'Recarregar',
+      fecharAoAcao: false,
+      onAcao: function() { window.location.reload(); },
+    });
+  },
+
+  _aplicarCacheTransacoes: function(lista) {
+    this._transacoesCache = Array.isArray(lista) ? lista : [];
+    if (typeof TRANSACOES !== 'undefined') TRANSACOES.init();
+    if (typeof ORCAMENTO !== 'undefined') ORCAMENTO.init();
+    if (typeof CONTAS !== 'undefined') CONTAS.init();
+    if (typeof RENDER !== 'undefined') RENDER.init();
+  },
+
+  _persistirTransacoesLista: function(lista) {
+    this._ignorarStorageSync = true;
+    if (this._transacoesBackend === 'idb') {
+      this._transacoesCache = lista;
+      var json = JSON.stringify(lista);
+      var self = this;
+      this._idbWriteChain = this._idbWriteChain.then(function() {
+        return IDB_KV.set(CONFIG.STORAGE_TRANSACOES, json);
+      });
     } else {
-      this._migrarSchema();
+      localStorage.setItem(CONFIG.STORAGE_TRANSACOES, JSON.stringify(lista));
     }
-    if (typeof APP_STORE !== 'undefined') APP_STORE.hydrateFromDados();
-    this.sincronizarComApi();
+    var self = this;
+    setTimeout(function() { self._ignorarStorageSync = false; }, 0);
+  },
+
+  _mostrarModalConflitos: function(conflitos, onResolve) {
+    var self = this;
+    if (!conflitos || !conflitos.length || typeof document === 'undefined') {
+      if (onResolve) onResolve({});
+      return;
+    }
+    if (typeof INIT_MODALS !== 'undefined' && INIT_MODALS.fpConfirm) {
+      self._modalConflitoAberto = true;
+      var html = 'Outra aba alterou <strong>' + conflitos.length + '</strong> lançamento(s) que você também modificou.<br><br><ul style="text-align:left;margin:0;padding-left:1.2em">';
+      conflitos.forEach(function(c) {
+        var titulo = (c.local && c.local.descricao) ? c.local.descricao : 'Lançamento';
+        var locVal = (typeof UTILS !== 'undefined' && UTILS.formatarMoeda)
+          ? UTILS.formatarMoeda(c.local.valor) : String(c.local.valor);
+        var remVal = (typeof UTILS !== 'undefined' && UTILS.formatarMoeda)
+          ? UTILS.formatarMoeda(c.remote.valor) : String(c.remote.valor);
+        html += '<li><strong>' + UTILS.escapeHtml(titulo) + '</strong><br>';
+        html += 'Esta aba: ' + UTILS.escapeHtml(locVal) + ' · Outra aba: ' + UTILS.escapeHtml(remVal) + '</li>';
+      });
+      html += '</ul><br>Qual versão manter?';
+      INIT_MODALS.fpConfirm(html, function() {
+        var res = {};
+        conflitos.forEach(function(c) { res[c.id] = 'local'; });
+        self._modalConflitoAberto = false;
+        onResolve(res);
+      }, function() {
+        var res = {};
+        conflitos.forEach(function(c) { res[c.id] = 'remote'; });
+        self._modalConflitoAberto = false;
+        onResolve(res);
+      }, { okLabel: 'Manter desta aba', cancelLabel: 'Usar outra aba', danger: false, trustedHtml: true });
+      return;
+    }
+    var res = {};
+    conflitos.forEach(function(c) { res[c.id] = 'remote'; });
+    onResolve(res);
+  },
+
+  _mesclarTransacoesComConflitos: function(locais, remotas, pending) {
+    var conflitos = (typeof SYNC_MERGE !== 'undefined' && SYNC_MERGE.detectarConflitos)
+      ? SYNC_MERGE.detectarConflitos(locais, pending, remotas) : [];
+    if (!conflitos.length) {
+      var merged = (typeof SYNC_MERGE !== 'undefined')
+        ? SYNC_MERGE.mergeDelta(locais, pending, remotas)
+        : remotas;
+      if (typeof SESSION_LOG !== 'undefined') {
+        SESSION_LOG.registrar('merge_multiaba', { conflitos: 0, total: merged.length });
+      }
+      return Promise.resolve({ lista: merged, conflitos: 0 });
+    }
+    if (typeof SESSION_LOG !== 'undefined') {
+      SESSION_LOG.registrar('conflito_multiaba', { qtd: conflitos.length });
+    }
+    var self = this;
+    return new Promise(function(resolve) {
+      self._mostrarModalConflitos(conflitos, function(resolucoes) {
+        var resultado = (typeof SYNC_MERGE !== 'undefined' && SYNC_MERGE.aplicarResolucoes)
+          ? SYNC_MERGE.aplicarResolucoes(locais, pending, remotas, resolucoes)
+          : remotas;
+        if (typeof SESSION_LOG !== 'undefined') {
+          SESSION_LOG.registrar('conflito_resolvido', { qtd: conflitos.length });
+        }
+        resolve({ lista: resultado, conflitos: conflitos.length });
+      });
+    });
+  },
+
+  _pendingTxIds: function() {
+    if (typeof PERSIST_QUEUE === 'undefined' || !PERSIST_QUEUE.getSnapshot) return [];
+    var snap = PERSIST_QUEUE.getSnapshot();
+    return (snap.items || []).filter(function(it) {
+      return it && (it.status === 'pending' || it.status === 'saving');
+    }).map(function(it) { return it.txId; }).filter(Boolean);
+  },
+
+  _parseTransacoesJson: function(data) {
+    if (!data || data === this.TX_IDB_SENTINEL) return [];
+    var parsed = JSON.parse(data);
+    return Array.isArray(parsed) ? parsed : [];
+  },
+
+  _deveMigrarTransacoesParaIdb: function(data, lista) {
+    if (typeof IDB_KV === 'undefined' || !IDB_KV.isReady || !IDB_KV.isReady()) return false;
+    if (!Array.isArray(lista)) return false;
+    if (lista.length >= this.LIMIAR_MIGRAR_TX_COUNT) return true;
+    if (data && data.length * 2 >= this.LIMIAR_MIGRAR_TX_BYTES) return true;
+    var uso = this.usoArmazenamento();
+    return uso.disponivel && uso.percentual >= this._LIMIAR_AVISO * 100;
+  },
+
+  _ativarBackendIdbTransacoes: function(lista) {
+    this._transacoesBackend = 'idb';
+    this._transacoesCache = Array.isArray(lista) ? lista : [];
+    try {
+      localStorage.setItem(this.TX_BACKEND_KEY, 'idb');
+      localStorage.setItem(CONFIG.STORAGE_TRANSACOES, this.TX_IDB_SENTINEL);
+    } catch (e) { /* noop */ }
+    var json = JSON.stringify(this._transacoesCache);
+    var self = this;
+    this._idbWriteChain = this._idbWriteChain.then(function() {
+      return IDB_KV.set(CONFIG.STORAGE_TRANSACOES, json);
+    }).then(function() {
+      self._pingTransacoesSync();
+    });
+    return this._idbWriteChain;
+  },
+
+  _prepararStorageTransacoes: function() {
+    var self = this;
+    if (typeof IDB_KV === 'undefined') {
+      self._transacoesBackend = 'localStorage';
+      return Promise.resolve();
+    }
+    return IDB_KV.init().then(function() {
+      var backend = null;
+      try { backend = localStorage.getItem(self.TX_BACKEND_KEY); } catch (e) { backend = null; }
+      if (backend === 'idb' && IDB_KV.isReady()) {
+        self._transacoesBackend = 'idb';
+        return IDB_KV.get(CONFIG.STORAGE_TRANSACOES).then(function(data) {
+          try {
+            self._transacoesCache = data ? self._parseTransacoesJson(data) : [];
+          } catch (e) {
+            self._transacoesCache = [];
+            self._registrarFalhaLeitura(CONFIG.STORAGE_TRANSACOES, e);
+          }
+        });
+      }
+      self._transacoesBackend = 'localStorage';
+      var raw = self._storageGetRaw(CONFIG.STORAGE_TRANSACOES);
+      if (!raw) return;
+      try {
+        var lista = self._parseTransacoesJson(raw);
+        if (self._deveMigrarTransacoesParaIdb(raw, lista)) {
+          return self._ativarBackendIdbTransacoes(lista);
+        }
+      } catch (e) {
+        console.warn('Migração IDB ignorada:', e);
+      }
+    });
+  },
+
+  _pingTransacoesSync: function() {
+    try {
+      this._ignorarStorageSync = true;
+      localStorage.setItem(this.TX_SYNC_PING_KEY, String(Date.now()));
+    } catch (e) { /* noop */ }
+    finally {
+      var self = this;
+      setTimeout(function() { self._ignorarStorageSync = false; }, 0);
+    }
+  },
+
+  _hidratarTransacoesIdb: function() {
+    var self = this;
+    if (this._transacoesBackend !== 'idb' || typeof IDB_KV === 'undefined') {
+      return Promise.resolve(false);
+    }
+    var antes = (this._transacoesCache || []).slice();
+    var pending = this._pendingTxIds();
+    return IDB_KV.get(CONFIG.STORAGE_TRANSACOES).then(function(data) {
+      var novas;
+      try {
+        novas = data ? self._parseTransacoesJson(data) : [];
+      } catch (e) {
+        novas = [];
+      }
+      return self._mesclarTransacoesComConflitos(antes, novas, pending).then(function(result) {
+        var merged = result.lista;
+        self._aplicarCacheTransacoes(merged);
+        if (JSON.stringify(merged) !== JSON.stringify(novas)) {
+          self._persistirTransacoesLista(merged);
+        }
+        return result.conflitos > 0;
+      });
+    });
+  },
+
+  _mesclarTransacoesRemotas: function(remoteJson) {
+    if (!remoteJson || remoteJson === this.TX_IDB_SENTINEL) return;
+    var form = typeof document !== 'undefined' ? document.getElementById('form-transacao') : null;
+    if (form && form.dataset && form.dataset.editId) {
+      this._mostrarBannerMultiAba(
+        'Outra aba alterou dados enquanto você edita um lançamento. Recarregue antes de salvar.'
+      );
+      return;
+    }
+    var self = this;
+    try {
+      var remotas = this._parseTransacoesJson(remoteJson);
+      if (!remotas.length && remoteJson !== '[]') return;
+      var locais = this._transacoesBackend === 'idb'
+        ? (this._transacoesCache || []).slice()
+        : this._parseTransacoesJson(this._storageGetRaw(CONFIG.STORAGE_TRANSACOES));
+      var pending = this._pendingTxIds();
+      this._mesclarTransacoesComConflitos(locais, remotas, pending).then(function(result) {
+        self._persistirTransacoesLista(result.lista);
+        self._aplicarCacheTransacoes(result.lista);
+      }).catch(function(e) {
+        console.warn('Merge multi-aba falhou:', e);
+      });
+    } catch (e) {
+      console.warn('Merge multi-aba falhou:', e);
+    }
+  },
+
+  _mostrarDicaMultiAba: function() {
+    try {
+      if (sessionStorage.getItem('_avisoMultiAbaDoc')) return;
+      sessionStorage.setItem('_avisoMultiAbaDoc', '1');
+    } catch (e) {
+      return;
+    }
+    if (typeof UTILS === 'undefined' || !UTILS.mostrarBanner) return;
+    UTILS.mostrarBanner({
+      id: 'fp-banner-multiaba-doc',
+      tipo: 'info',
+      mensagem: 'Dica: evite editar em duas abas ao mesmo tempo. A última gravação prevalece — o app avisa quando outra aba altera seus dados.',
+    });
   },
 
   _migrarSchema: function() {
@@ -978,10 +1304,13 @@ var DADOS = {
   },
 
   getTransacoesRaw: function() {
+    if (this._transacoesBackend === 'idb') {
+      return Array.isArray(this._transacoesCache) ? this._transacoesCache : [];
+    }
     try {
       var data = this._storageGetRaw(CONFIG.STORAGE_TRANSACOES);
       if (!data) return [];
-      var parsed = JSON.parse(data);
+      var parsed = this._parseTransacoesJson(data);
       if (!Array.isArray(parsed)) {
         this._registrarFalhaLeitura(CONFIG.STORAGE_TRANSACOES,
           new Error('conteúdo não é uma lista'));
@@ -995,12 +1324,33 @@ var DADOS = {
   },
 
   _storageSetTransacoes: function(transacoes) {
+    var json = JSON.stringify(transacoes);
+    if (this._transacoesBackend === 'idb' && typeof IDB_KV !== 'undefined') {
+      this._transacoesCache = transacoes;
+      var self = this;
+      this._idbWriteChain = this._idbWriteChain.then(function() {
+        return IDB_KV.set(CONFIG.STORAGE_TRANSACOES, json);
+      }).then(function() {
+        self._pingTransacoesSync();
+      });
+      return;
+    }
     var check = UTILS.verificarStorageDisponivel(transacoes, CONFIG.STORAGE_TRANSACOES);
     if (!check.disponivel) {
+      if (typeof IDB_KV !== 'undefined' && this._deveMigrarTransacoesParaIdb(json, transacoes)) {
+        this._ativarBackendIdbTransacoes(transacoes);
+        return;
+      }
       console.error('Storage indisponível:', check.erro);
       throw new Error(check.erro);
     }
-    this._storageSetRaw(CONFIG.STORAGE_TRANSACOES, JSON.stringify(transacoes));
+    try {
+      this._ignorarStorageSync = true;
+      this._storageSetRaw(CONFIG.STORAGE_TRANSACOES, json);
+    } finally {
+      var self = this;
+      setTimeout(function() { self._ignorarStorageSync = false; }, 0);
+    }
   },
 
   getTransacoes: function() {
@@ -1078,7 +1428,13 @@ var DADOS = {
       }
       SYNC_ENGINE.enqueueTransaction('upsert', transacao);
     } else {
-      this._pushTransacaoApi(transacao, index >= 0 ? 'PATCH' : 'POST').catch(function() {});
+      this._pushTransacaoApi(transacao, index >= 0 ? 'PATCH' : 'POST').catch(function(err) {
+        if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
+          APP_STORE.dispatch(ACTIONS.SYNC_FALHAR, {
+            erro: (err && err.message) || 'push-tx',
+          });
+        }
+      });
     }
     return transacao;
   },
@@ -1096,7 +1452,13 @@ var DADOS = {
       } else {
         transacoes.splice(index, 1);
         this._storageSetTransacoes(transacoes);
-        this._deleteTransacaoApi(id).catch(function() {});
+        this._deleteTransacaoApi(id).catch(function(err) {
+          if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
+            APP_STORE.dispatch(ACTIONS.SYNC_FALHAR, {
+              erro: (err && err.message) || 'delete-tx',
+            });
+          }
+        });
       }
       if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
         APP_STORE.dispatch(ACTIONS.TRANSACAO_DELETAR, id);
@@ -1140,10 +1502,20 @@ var DADOS = {
   },
 
   limparTodos: function() {
+    this._transacoesCache = [];
+    this._transacoesBackend = 'localStorage';
+    try {
+      localStorage.removeItem(this.TX_BACKEND_KEY);
+      localStorage.removeItem(this.TX_SYNC_PING_KEY);
+    } catch (e) { /* noop */ }
+    if (typeof IDB_KV !== 'undefined') {
+      IDB_KV.remove(CONFIG.STORAGE_TRANSACOES);
+    }
     this._storageRemoveRaw(CONFIG.STORAGE_TRANSACOES);
     this._storageRemoveRaw(CONFIG.STORAGE_CONFIG);
     this._initialized = false;
-    this.init();
+    this._initPromise = null;
+    return this.init();
   },
 
   getRecorrentes: function() {
@@ -1189,19 +1561,40 @@ var DADOS = {
   // Sync entre abas: atualiza quando outra aba muda o localStorage.
   // Debounce de 300ms evita múltiplos re-inits em rajadas de escrita.
   setupStorageSync: function() {
+    if (this._storageSyncBound) return;
+    this._storageSyncBound = true;
     var self = this;
     window.addEventListener('storage', function(e) {
-      if (e.key !== CONFIG.STORAGE_TRANSACOES && e.key !== CONFIG.STORAGE_CONFIG) return;
+      if (!e.key || self._ignorarStorageSync) return;
+
+      if (e.key === self.TX_SYNC_PING_KEY) {
+        clearTimeout(self._storageDebounceTimer);
+        self._storageDebounceTimer = setTimeout(function() {
+          self._hidratarTransacoesIdb().then(function(teveConflito) {
+            if (!teveConflito) self._mostrarBannerMultiAba();
+          });
+        }, 300);
+        return;
+      }
+
+      if (e.key !== CONFIG.STORAGE_TRANSACOES
+        && e.key !== CONFIG.STORAGE_CONFIG
+        && e.key !== CONFIG.STORAGE_CONTAS) return;
 
       clearTimeout(self._storageDebounceTimer);
       self._storageDebounceTimer = setTimeout(function() {
+        if (e.key === CONFIG.STORAGE_TRANSACOES && e.newValue) {
+          self._mesclarTransacoesRemotas(e.newValue);
+        }
         if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
           APP_STORE.dispatch(ACTIONS.SYNC_CONCLUIR);
         } else {
           if (typeof TRANSACOES !== 'undefined') TRANSACOES.init();
           if (typeof ORCAMENTO !== 'undefined') ORCAMENTO.init();
+          if (typeof CONTAS !== 'undefined') CONTAS.init();
           if (typeof RENDER !== 'undefined') RENDER.init();
         }
+        self._mostrarBannerMultiAba();
       }, 300);
     });
   },

@@ -3,10 +3,31 @@
  */
 const { expect } = require('@playwright/test');
 
+/**
+ * Faz o build de produção rodar como piloto local (sem Supabase).
+ *
+ * `fp-force-local` é lido por _fpWantLocal() no momento em que config.js é
+ * avaliado, e o addInitScript roda antes disso. Com isto, o MESMO artefato que
+ * vai para a loja atende as specs "sem backend" — antes era preciso buildar em
+ * modo local, e a suíte end-to-end acabava validando um artefato diferente do
+ * que era publicado.
+ */
+async function forcarModoLocal(page) {
+  await page.addInitScript(function() {
+    localStorage.setItem('fp-force-local', '1');
+  });
+}
+
 async function seedOfflineStorage(page) {
   var now = new Date();
   var y = now.getFullYear();
   var m = String(now.getMonth() + 1).padStart(2, '0');
+
+  /* Estas specs testam o app "sem backend": dashboard offline, nuvem escondida
+     no Perfil, paywall que não abre. Contra um build `cloud` elas reprovavam em
+     bloco — não por bug do app, mas porque o Supabase subia a tela de login na
+     frente. As specs cloud (auth-offline-entrada) não chamam este seed. */
+  await forcarModoLocal(page);
 
   await page.addInitScript(function(payload) {
     // Não sobrescrever em reload — senão o smoke "criar → reload → persistir"
@@ -45,6 +66,12 @@ async function dismissOverlays(page) {
     if (ov) ov.remove();
     var auth = document.getElementById('auth-overlay');
     if (auth) auth.style.display = 'none';
+    /* Esconder o overlay não basta: critical-inline.css some com header, main,
+       nav e skip-link enquanto `auth-overlay-open` estiver no body
+       (display:none !important). Sem tirar a classe, #aba-resumo continua com
+       altura zero e o boot "falha" por um motivo que não é do app — foi o que
+       fez toda a suíte reprovar contra o build cloud. */
+    document.body.classList.remove('auth-overlay-open');
     var sk = document.getElementById('dashboard-skeleton');
     if (sk) sk.remove();
 
@@ -98,6 +125,15 @@ async function prepareOfflinePage(page, opts) {
 
   await seedOfflineStorage(page);
   await page.goto('/?offline=1');
+
+  // Scripts carregados → dispensar overlays (auth/onboarding) ANTES de exigir
+  // aba visível. Sem isso o auth-overlay deixa #aba-resumo "hidden" e o boot
+  // estoura timeout mesmo com data-dashboard-ready=1.
+  await page.waitForFunction(function() {
+    return typeof window.mudarAba === 'function' && typeof window.RENDER !== 'undefined';
+  }, { timeout: (opts && opts.timeout) || 25000 });
+  await dismissOverlays(page);
+
   await waitForAppBoot(page, opts);
   await dismissOverlays(page);
 
@@ -107,6 +143,7 @@ async function prepareOfflinePage(page, opts) {
 }
 
 module.exports = {
+  forcarModoLocal: forcarModoLocal,
   seedOfflineStorage: seedOfflineStorage,
   dismissOverlays: dismissOverlays,
   waitForAppBoot: waitForAppBoot,

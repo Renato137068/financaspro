@@ -46,7 +46,14 @@ npx cap sync android
 ```
 
 - `npm run build` gera o `dist/` (bundle único + CSP de produção sem localhost).
+- Opcional: `SUPABASE_URL` + `SUPABASE_ANON_KEY` no ambiente → `inject-supabase-env.cjs` sobrescreve o projeto cloud (anon key continua pública).
 - `npx cap sync android` copia o `dist/` para dentro do projeto Android.
+- Após publicar o site, sirva `dist/.well-known/assetlinks.json` em
+  `https://app.financaspro.com/.well-known/assetlinks.json` (App Links). Se usar
+  Play App Signing, acrescente o SHA-256 do certificado da Play no JSON
+  (`npm run` → `node scripts/print-android-sha256.cjs` para o de upload).
+
+Atalho AAB: `npm run android:bundle` (cloud) ou `npm run android:bundle:local` (piloto offline).
 
 ## Passo 4 — Gerar o AAB assinado
 
@@ -84,10 +91,11 @@ Se der erro de JDK/SDK, confirme que o **Android Studio** está instalado e que 
 ## Lembretes de segurança
 - Faça **backup da keystore** (`financaspro-upload.jks`) e da senha. Sem ela você não
   consegue publicar atualizações do mesmo app.
-- O app está em **modo local** no piloto: funciona offline, sem login. Avise os
-  testers que os dados ficam no aparelho.
-- Quando tiver um backend hospedado, defina `CONFIG.API_BASE_URL` (em `js/core/config.js`)
-  para a URL HTTPS e rebuilde — aí login e sincronização passam a funcionar.
+- O AAB padrão (`npm run android:bundle`) é **cloud** (Supabase + login). Use a ficha
+  e a política de privacidade alinhadas a sync na nuvem.
+- Piloto **100% local** (sem login): `npm run android:bundle:local` — esvazia Supabase
+  no build e restaura `cloud` depois. Avise os testers que os dados ficam só no aparelho.
+- Dev rápido: `localStorage.setItem('fp-force-local','1')` + reload (sem rebuild).
 
 ## Checagem rápida antes de subir (opcional)
 ```

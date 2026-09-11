@@ -366,6 +366,16 @@ const INIT_FORM = {
       panel.style.display = aberto ? 'none' : 'block';
       btn.setAttribute('aria-expanded', !aberto);
       if (arrow) arrow.classList.toggle('expanded', !aberto);
+      // Sticky "Registrar" cobria o painel — rola e deixa folga abaixo.
+      if (!aberto) {
+        setTimeout(function() {
+          try {
+            panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          } catch (e) {
+            panel.scrollIntoView(true);
+          }
+        }, 40);
+      }
     });
   },
 
@@ -912,7 +922,11 @@ const INIT_FORM = {
         exata: exata,
         prefixo: prefixo,
         valorProximo: valorProximo,
-        mesmoBanco: !!(banco && tx.banco === banco),
+        mesmoBanco: !!(banco && (
+          (typeof CONTAS !== 'undefined' && CONTAS.mesmaConta)
+            ? CONTAS.mesmaConta(banco, tx.accountId || tx.banco)
+            : tx.banco === banco
+        )),
         mesmoCartao: !!(cartao && tx.cartao === cartao),
         diaMesProximo: diaMesProximo,
         recente: recente,
@@ -1225,27 +1239,46 @@ const INIT_FORM = {
   renderizarSelects: function() {
     var config = DADOS.getConfig();
     var bancos = config.bancos || ['Nubank', 'Itaú', 'Caixa', 'Bradesco', 'Santander'];
-    var cartoes = config.cartoes || ['Crédito', 'Débito', 'XP', 'B3'];
+    // XP/B3 saíram do padrão (não são forma de pagamento do dia a dia).
+    // PIX entra como opção canônica; se o usuário já tinha na config, mantém.
+    var CARTAO_REMOVIDOS = { XP: 1, B3: 1, 'XP Investimentos': 1 };
+    var cartoesPadrao = ['PIX', 'Crédito', 'Débito', 'Outro'];
+    var cartoesRaw = config.cartoes && config.cartoes.length ? config.cartoes : cartoesPadrao;
+    var cartoes = [];
+    var visto = {};
+    cartoesRaw.forEach(function(c) {
+      var nome = typeof c === 'string' ? c : (c && c.nome) || '';
+      if (!nome || CARTAO_REMOVIDOS[nome] || visto[nome]) return;
+      visto[nome] = 1;
+      cartoes.push(nome);
+    });
+    if (!visto.PIX) cartoes.unshift('PIX');
+    if (!cartoes.length) cartoes = cartoesPadrao.slice();
 
     var seletorBanco = document.getElementById('novo-banco');
     if (seletorBanco) {
-      var valBanco = seletorBanco.value;
-      var bancoOpts = bancos.map(function(b) {
-        var nome = typeof b === 'string' ? b : (b.nome || b);
-        return '<option value="' + UTILS.escapeHtml(nome) + '">' + UTILS.escapeHtml(nome) + '</option>';
-      }).join('');
-      seletorBanco.innerHTML = '<option value="">Sem banco</option>' + bancoOpts;
-      seletorBanco.value = valBanco;
+      if (typeof CONTAS !== 'undefined' && CONTAS.renderBancoSelect) {
+        CONTAS.renderBancoSelect('novo-banco');
+      } else {
+        var valBanco = seletorBanco.value;
+        var bancoOpts = bancos.map(function(b) {
+          var nome = typeof b === 'string' ? b : (b.nome || b);
+          return '<option value="' + UTILS.escapeHtml(nome) + '">' + UTILS.escapeHtml(nome) + '</option>';
+        }).join('');
+        seletorBanco.innerHTML = '<option value="">Sem banco</option>' + bancoOpts;
+        seletorBanco.value = valBanco;
+      }
     }
 
     var seletorCartao = document.getElementById('novo-cartao');
     if (seletorCartao) {
       var valCartao = seletorCartao.value;
+      if (CARTAO_REMOVIDOS[valCartao]) valCartao = '';
       var cartaoOpts = cartoes.map(function(c) {
         var nome = typeof c === 'string' ? c : (c.nome || c);
         return '<option value="' + UTILS.escapeHtml(nome) + '">' + UTILS.escapeHtml(nome) + '</option>';
       }).join('');
-      seletorCartao.innerHTML = '<option value="">Sem cartão</option>' + cartaoOpts;
+      seletorCartao.innerHTML = '<option value="">Sem forma</option>' + cartaoOpts;
       seletorCartao.value = valCartao;
     }
   },
@@ -1562,6 +1595,10 @@ const INIT_FORM = {
   },
 
   processarTransacao: function(tipo, valor, categoria, data, descricao, banco, cartao, nota) {
+    var accountId = null;
+    if (banco && typeof FINANCE_CONTRACT !== 'undefined' && typeof DADOS !== 'undefined' && DADOS.getContas) {
+      accountId = FINANCE_CONTRACT.resolveAccountId(banco, DADOS.getContas());
+    }
     var form = document.getElementById('form-transacao');
     var editId = form && form.dataset.editId;
     var chkParcelado = document.getElementById('chk-parcelado');
@@ -1571,6 +1608,25 @@ const INIT_FORM = {
     if (editId) {
       INIT_FORM._submitBusy = true;
       INIT_FORM._setRegistrarBusy(true, 'Salvando…');
+      var anterior = TRANSACOES.obterPorId(editId);
+      if (!anterior) {
+        INIT_FORM._submitBusy = false;
+        INIT_FORM._setRegistrarBusy(false);
+        UTILS.mostrarToast('Transação não encontrada', 'error');
+        return Promise.reject(new Error('Transação não encontrada'));
+      }
+      var snapshot = {
+        tipo: anterior.tipo,
+        valor: anterior.valor,
+        categoria: anterior.categoria,
+        data: anterior.data,
+        descricao: anterior.descricao,
+        banco: anterior.banco,
+        cartao: anterior.cartao,
+        accountId: anterior.accountId,
+        contaDestino: anterior.contaDestino,
+        contaDestinoId: anterior.contaDestinoId
+      };
       try {
         TRANSACOES.atualizar(editId, {
           tipo: tipo,
@@ -1579,7 +1635,8 @@ const INIT_FORM = {
           data: data,
           descricao: descFinal,
           banco: banco,
-          cartao: cartao
+          cartao: cartao,
+          accountId: accountId || undefined
         });
         var discoEdit = (typeof DADOS !== 'undefined' && DADOS.aguardarDisco)
           ? DADOS.aguardarDisco()
@@ -1593,6 +1650,23 @@ const INIT_FORM = {
             APRENDIZADO.registrar(descricao, categoria, tipo, banco, cartao, valor);
           }
           INIT_FORM.mostrarSucesso('Transação atualizada!');
+          UTILS.agendarExclusao('edit-tx-' + editId, function() {}, {
+            mensagem: 'Alteração salva',
+            rotuloAcao: 'Desfazer',
+            duracaoMs: 5000,
+            tipo: 'info',
+            aoDesfazer: function() {
+              TRANSACOES.atualizar(editId, snapshot);
+              if (typeof DADOS !== 'undefined' && DADOS.aguardarDisco) {
+                return DADOS.aguardarDisco().then(function() {
+                  if (typeof INIT_EXTRATO !== 'undefined') INIT_EXTRATO.filtrarExtrato();
+                  if (typeof RENDER !== 'undefined') RENDER.init();
+                });
+              }
+              if (typeof INIT_EXTRATO !== 'undefined') INIT_EXTRATO.filtrarExtrato();
+              if (typeof RENDER !== 'undefined') RENDER.init();
+            }
+          });
           INIT_FORM._finalizarTransacao();
         }).catch(function(err) {
           UTILS.mostrarToast((err && err.message) || 'Falha ao salvar', 'error');
@@ -1607,6 +1681,16 @@ const INIT_FORM = {
         return Promise.reject(errEdit);
       }
     }
+
+    var parcelCount = 1;
+    if (chkParcelado && chkParcelado.checked && tipo === 'despesa') {
+      parcelCount = parseInt(document.getElementById('num-parcelas').value, 10) || 2;
+    }
+    // Sem quota de transacao, de proposito. O teto de 100/mes parava de
+    // aceitar os gastos do usuario por volta do dia 15 -- o gratuito virava
+    // inutil justamente no mes em que ele mais precisava, e o mes ficava com
+    // dados pela metade, o que estragava orcamento, insight e comparativo
+    // junto. Limite de volume num app de habito e churn, nao conversao.
 
     INIT_FORM._submitBusy = true;
     INIT_FORM._setRegistrarBusy(true, 'Salvando…');
@@ -1628,7 +1712,8 @@ const INIT_FORM = {
         chain = chain.then(function() {
           return INIT_FORM._enfileirarLancamento({
             tipo: tipo, valor: vp, categoria: categoria,
-            data: dataParcela, descricao: descParcela, banco: banco, cartao: cartao
+            data: dataParcela, descricao: descParcela, banco: banco, cartao: cartao,
+            accountId: accountId || undefined
           }).then(function(item) {
             if (p === 0) firstTxId = item.txId;
             return item;
@@ -1638,18 +1723,28 @@ const INIT_FORM = {
     }
     // RECORRÊNCIA
     else if (chkRecorrente && chkRecorrente.checked) {
+      // Aluguel, salario e internet cabem no gratuito. A quarta recorrente
+      // indica alguem que ja organizou a vida dentro do app -- e o lancamento
+      // avulso continua livre, entao ninguem fica sem registrar o gasto.
+      if (typeof BILLING !== 'undefined' && !BILLING.guardQuota('recurring', 1)) {
+        INIT_FORM._submitBusy = false;
+        INIT_FORM._setRegistrarBusy(false);
+        return Promise.reject(new Error('Limite de recorrentes do plano gratuito'));
+      }
       var freqEl = document.querySelector('.rec-chip.ativo');
       var freq = freqEl ? freqEl.dataset.freq : 'mensal';
       var recData = {
         tipo: tipo, valor: valor, categoria: categoria,
-        descricao: descFinal, frequencia: freq, dataInicio: data, ativo: true
+        descricao: descFinal, frequencia: freq, dataInicio: data, ativo: true,
+        banco: banco, cartao: cartao, accountId: accountId || undefined
       };
       DADOS.salvarRecorrente(recData);
       sucessoMsg = 'Recorrência ' + freq + ' criada!';
       chain = chain.then(function() {
         return INIT_FORM._enfileirarLancamento({
           tipo: tipo, valor: valor, categoria: categoria,
-          data: data, descricao: descFinal + ' (recorrente)', banco: banco, cartao: cartao
+          data: data, descricao: descFinal + ' (recorrente)', banco: banco, cartao: cartao,
+          accountId: accountId || undefined
         }).then(function(item) {
           firstTxId = item.txId;
           return item;
@@ -1661,7 +1756,8 @@ const INIT_FORM = {
       chain = chain.then(function() {
         return INIT_FORM._enfileirarLancamento({
           tipo: tipo, valor: valor, categoria: categoria,
-          data: data, descricao: descFinal, banco: banco, cartao: cartao
+          data: data, descricao: descFinal, banco: banco, cartao: cartao,
+          accountId: accountId || undefined
         }).then(function(item) {
           firstTxId = item.txId;
           return item;
@@ -1675,6 +1771,10 @@ const INIT_FORM = {
         INIT_FORM.mostrarFeedbackAprendizado('Aprendizado atualizado com sucesso.');
       }
       if (firstTxId && typeof INIT_ANEXOS !== 'undefined') INIT_ANEXOS.salvarPendentes(firstTxId);
+      // Passo 3 do funil. Só o marco, sem nada do lançamento em si.
+      if (typeof FUNIL !== 'undefined') {
+        FUNIL.marco(FUNIL.E.PRIMEIRO_LANCAMENTO, { dia: FUNIL.diasDeUso() });
+      }
       INIT_FORM.mostrarSucesso(sucessoMsg);
       INIT_FORM._finalizarTransacao();
     }).catch(function(err) {
@@ -1704,7 +1804,8 @@ const INIT_FORM = {
       : ('ck-' + Date.now());
     var tx = TRANSACOES.criar(
       payload.tipo, payload.valor, payload.categoria, payload.data,
-      payload.descricao, payload.banco, payload.cartao, { clientKey: clientKey }
+      payload.descricao, payload.banco, payload.cartao,
+      { clientKey: clientKey, accountId: payload.accountId || undefined }
     );
     var wait = (typeof DADOS !== 'undefined' && DADOS.aguardarDisco)
       ? DADOS.aguardarDisco()
@@ -1722,6 +1823,9 @@ const INIT_FORM = {
     }
     if (typeof SCORE !== 'undefined') {
       SCORE.limparCache();
+    }
+    if (typeof INIT_BILLING !== 'undefined' && INIT_BILLING.refreshPlanoCard) {
+      INIT_BILLING.refreshPlanoCard();
     }
     INIT_FORM.renderSmartDescriptionSuggestions();
     INIT_FORM.renderPaymentContextChips();

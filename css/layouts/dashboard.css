@@ -15,6 +15,45 @@
   padding: var(--space-1) 0 var(--space-5);
 }
 
+.dashboard-onboarding {
+  margin-bottom: var(--space-5);
+}
+
+.dashboard-onboarding-card {
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-card);
+  box-shadow: var(--elevacao-1);
+}
+
+.dashboard-onboarding-title {
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-size-lg);
+  color: var(--color-text-primary);
+}
+
+.dashboard-onboarding-steps {
+  margin: 0 0 var(--space-4);
+  padding-left: 1.25rem;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+.dashboard-onboarding-steps li {
+  margin: var(--space-2) 0;
+}
+
+.dashboard-onboarding-cta {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  box-sizing: border-box;
+}
+
 .greeting-text {
   display: flex;
   flex-direction: column;
@@ -98,6 +137,14 @@
   flex: 1;
   position: relative;
   z-index: 1;
+}
+
+.saldo-projetado-hint {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-xs);
+  line-height: 1.35;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.82));
+  opacity: 0.92;
 }
 
 .saldo-label {
@@ -224,13 +271,21 @@
   background: none;
   border: none;
   cursor: pointer;
-  padding: 0;
+  padding: 8px 4px;
+  min-height: var(--tap-target-min, 44px);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   letter-spacing: 0.02em;
-  transition: color var(--transition-fast);
+  transition: color var(--transition-fast), transform var(--transition-fast);
   font-family: var(--font-family-sans);
 }
 
 .secao-link:hover { color: var(--color-primary-text); }
+
+.secao-link:active {
+  transform: scale(var(--press-scale, 0.98));
+}
 
 /* ── Toggle Collapsible ─────────────────────────────────────── */
 
@@ -276,14 +331,86 @@
   gap: var(--space-2);
 }
 
+/* Item do mini-limites do painel: nome, valores e selo de % na mesma linha (com
+   espaço entre eles — antes saíam colados, "AlimentaçãoR$ 248,90"), barra
+   embaixo. As classes não tinham estilo próprio. */
+.orcamento-item-resumo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.orcamento-info {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.orcamento-nome {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.orcamento-valores {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  margin-right: auto;
+}
+
 /* ── Botão CTA principal do dashboard ──────────────────────── */
+
+#aba-resumo > #secao-relatorios {
+  padding: 0;
+  box-shadow: none;
+  border: none;
+  background: transparent;
+}
+
+#aba-resumo > #secao-relatorios .dashboard-section-toggle {
+  width: 100%;
+  margin-bottom: 0;
+}
+
+#aba-resumo > #secao-relatorios .rel-panel {
+  margin-top: 0;
+  padding: var(--space-4);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-light);
+  border-top: none;
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+  box-shadow: var(--shadow-xs);
+}
+
+#aba-resumo > #secao-relatorios .rel-panel[style*="display: none"],
+#aba-resumo > #secao-relatorios .rel-panel[style*="display:none"] {
+  display: none !important;
+  padding: 0;
+  border: none;
+  box-shadow: none;
+}
 
 #aba-resumo > .btn-primario {
   width: 100%;
   margin-top: var(--space-2);
+  margin-bottom: var(--space-4);
   padding: var(--space-4);
   font-size: var(--font-size-base);
   border-radius: var(--radius-xl);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  line-height: 1.2;
+}
+
+#aba-resumo > .btn-primario i[data-lucide],
+#aba-resumo > .btn-primario svg {
+  display: block;
+  flex-shrink: 0;
+  width: 1.15em;
+  height: 1.15em;
 }
 
 /* ── Previsão mini ──────────────────────────────────────────── */
@@ -545,12 +672,12 @@
 .cartao-barra {
   height: 6px;
   border-radius: var(--radius-sm);
-  background: var(--color-bg-subtle, var(--color-border));
+  background: var(--color-border);
   overflow: hidden;
   margin-bottom: var(--space-2);
 }
 
-.cartao-barra-fill { height: 100%; border-radius: var(--radius-sm); transition: width var(--transition-base, .2s); }
+.cartao-barra-fill { height: 100%; border-radius: var(--radius-sm); transition: width var(--transition-normal); }
 .cartao-barra-fill.ok        { background: var(--color-success); }
 .cartao-barra-fill.alerta    { background: var(--color-warning); }
 .cartao-barra-fill.estourado { background: var(--color-danger); }

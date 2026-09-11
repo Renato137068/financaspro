@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Reauditoria de monetização FinançasPro — 52 → 79 após P0 e metade do P1, 05/09/2026">
+<title>Reauditoria de Monetização</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#F4F6F4; --surface:#FFFFFF; --surface-2:#EDF0ED;
+  --ink:#131B18; --ink-2:#3A4741; --muted:#5D6B65; --faint:#8A9791;
+  --line:#DBE1DD; --line-2:#C7D0CB;
+  --pine:#0F6B4F; --pine-soft:#E2F0EA;
+  --ember:#A93C24; --ember-soft:#F8E6E1;
+  --gold:#8A6612; --gold-soft:#F6EDD6;
+  --slate:#3E4F5C; --slate-soft:#E5EBEF;
+  --shadow:0 1px 2px rgba(19,27,24,.05), 0 8px 24px -14px rgba(19,27,24,.28);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0B120F; --surface:#121A17; --surface-2:#18211D;
+    --ink:#E6EDE9; --ink-2:#C2CDC7; --muted:#93A29B; --faint:#6E7C76;
+    --line:#222D28; --line-2:#2E3B35;
+    --pine:#57C79B; --pine-soft:#12281F;
+    --ember:#E88A6D; --ember-soft:#2B1712;
+    --gold:#D8AC46; --gold-soft:#2A2211;
+    --slate:#9DB6C6; --slate-soft:#151E24;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -18px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0B120F; --surface:#121A17; --surface-2:#18211D;
+  --ink:#E6EDE9; --ink-2:#C2CDC7; --muted:#93A29B; --faint:#6E7C76;
+  --line:#222D28; --line-2:#2E3B35;
+  --pine:#57C79B; --pine-soft:#12281F;
+  --ember:#E88A6D; --ember-soft:#2B1712;
+  --gold:#D8AC46; --gold-soft:#2A2211;
+  --slate:#9DB6C6; --slate-soft:#151E24;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -18px rgba(0,0,0,.8);
+}
+*{box-sizing:border-box}
+body{background:var(--ground); color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  font-size:16px; line-height:1.62; margin:0; -webkit-font-smoothing:antialiased}
+.wrap{max-width:1060px; margin:0 auto; padding:0 24px 96px}
+h1,h2,h3{font-family:Newsreader,Georgia,serif; font-weight:500; text-wrap:balance;
+  letter-spacing:-.01em; margin:0}
+h1{font-size:clamp(2rem,4.2vw,2.95rem); line-height:1.1}
+h2{font-size:clamp(1.4rem,2.5vw,1.9rem); line-height:1.2}
+h3{font-size:1.08rem; font-weight:600}
+p{margin:0 0 1em; max-width:70ch}
+ul,ol{margin:0 0 1.1em; padding-left:1.15em; max-width:70ch}
+li{margin:.32em 0}
+a{color:var(--pine); text-underline-offset:2px}
+a:focus-visible,button:focus-visible{outline:2px solid var(--pine); outline-offset:3px}
+code,.mono{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.85em}
+code{background:var(--surface-2); padding:.1em .32em; border-radius:3px; color:var(--ink-2)}
+strong{font-weight:600}
+
+.masthead{padding:56px 0 34px; border-bottom:2px solid var(--ink)}
+.eyebrow{font-family:"IBM Plex Mono",monospace; font-size:.72rem; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muted); margin:0 0 14px}
+.lede{font-family:Newsreader,serif; font-size:1.2rem; line-height:1.5; color:var(--ink-2);
+  max-width:60ch; margin:16px 0 26px}
+.meta{display:flex; flex-wrap:wrap; border-top:1px solid var(--line); padding-top:16px}
+.meta div{padding-right:22px; margin-right:22px; border-right:1px solid var(--line)}
+.meta div:last-child{border-right:0}
+.meta dt{font-family:"IBM Plex Mono",monospace; font-size:.68rem; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--faint); margin:0 0 2px}
+.meta dd{margin:0; font-size:.9rem; font-weight:500}
+
+/* delta hero */
+.delta{display:flex; align-items:center; gap:clamp(16px,4vw,44px); flex-wrap:wrap;
+  margin:36px 0 8px; padding:26px 0; border-bottom:1px solid var(--line)}
+.dnum{font-family:Newsreader,serif; line-height:.88; font-variant-numeric:tabular-nums;
+  text-align:center}
+.dnum b{display:block; font-size:clamp(2.6rem,7vw,4.4rem); font-weight:500}
+.dnum span{display:block; font-family:"IBM Plex Mono",monospace; font-size:.66rem;
+  letter-spacing:.12em; text-transform:uppercase; color:var(--faint); margin-top:10px}
+.dnum.old b{color:var(--muted)}
+.dnum.new b{color:var(--pine)}
+.darrow{font-size:1.6rem; color:var(--faint); align-self:center}
+.dtext{flex:1 1 300px; max-width:46ch; font-size:.96rem; color:var(--ink-2)}
+.dtext p{margin:0 0 .7em}
+.dtext p:last-child{margin:0}
+
+section{padding:48px 0 8px; border-top:1px solid var(--line)}
+section:first-of-type{border-top:0}
+.sechead{display:flex; align-items:baseline; gap:14px; margin-bottom:18px}
+.secnum{font-family:"IBM Plex Mono",monospace; font-size:.76rem; color:var(--pine);
+  font-weight:600; padding-top:.35em}
+.sub{font-family:"IBM Plex Mono",monospace; font-size:.7rem; letter-spacing:.13em;
+  text-transform:uppercase; color:var(--faint); margin:32px 0 10px}
+
+.call{border:1px solid var(--line); background:var(--surface); padding:18px 20px; margin:22px 0}
+.call.bad{border-left:3px solid var(--ember); background:var(--ember-soft)}
+.call.warn{border-left:3px solid var(--gold); background:var(--gold-soft)}
+.call.good{border-left:3px solid var(--pine); background:var(--pine-soft)}
+.call h3{font-family:"IBM Plex Sans",sans-serif; font-size:1rem; margin-bottom:6px}
+.call p:last-child{margin-bottom:0}
+
+.tw{overflow-x:auto; margin:20px 0 26px; border:1px solid var(--line);
+  background:var(--surface); box-shadow:var(--shadow)}
+table{border-collapse:collapse; width:100%; font-size:.86rem; min-width:600px}
+thead th{background:var(--surface-2); text-align:left; padding:10px 13px; font-weight:600;
+  font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted);
+  border-bottom:1px solid var(--line-2); white-space:nowrap}
+td{padding:11px 13px; border-bottom:1px solid var(--line); vertical-align:top; line-height:1.45}
+tbody tr:last-child td{border-bottom:0}
+td.n,th.n{text-align:right; font-family:"IBM Plex Mono",monospace;
+  font-variant-numeric:tabular-nums; white-space:nowrap}
+td.was{color:var(--muted); text-decoration:line-through; text-decoration-thickness:1px}
+td.now{color:var(--pine); font-weight:500}
+
+/* notas */
+.sgrid{margin:22px 0 10px}
+.srow{display:grid; grid-template-columns:1fr 44px 44px 190px 52px; gap:12px; align-items:center;
+  padding:10px 0; border-bottom:1px solid var(--line)}
+@media (max-width:720px){ .srow{grid-template-columns:1fr 40px 40px 44px; }
+  .srow .track{display:none} }
+.srow.total{border-top:2px solid var(--ink); border-bottom:0; margin-top:6px;
+  padding-top:15px; font-weight:600}
+.srow .sl{font-size:.94rem}
+.srow .sa{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums;
+  text-align:right; font-size:.88rem; color:var(--muted)}
+.srow .sb{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums;
+  text-align:right; font-size:.95rem; font-weight:600; color:var(--pine)}
+.srow .track{position:relative; height:9px; background:var(--surface-2); border-radius:1px}
+.srow .track i{position:absolute; top:0; bottom:0; border-radius:1px}
+.srow .track .i-old{left:0; width:var(--a); background:var(--line-2)}
+.srow .track .i-new{left:var(--a); width:var(--d); background:var(--pine); opacity:.85}
+.srow .sd{font-family:"IBM Plex Mono",monospace; font-size:.76rem; text-align:right;
+  color:var(--pine)}
+.srow .sn{grid-column:1/-1; font-size:.82rem; color:var(--muted); margin-top:-5px; padding-bottom:3px}
+
+.pill{display:inline-block; font-family:"IBM Plex Mono",monospace; font-size:.68rem;
+  padding:2px 7px; border-radius:2px; white-space:nowrap; border:1px solid transparent}
+.p-ok{background:var(--pine-soft); color:var(--pine); border-color:var(--pine)}
+.p-open{background:var(--gold-soft); color:var(--gold); border-color:var(--gold)}
+.p-no{background:var(--surface-2); color:var(--faint); border-color:var(--line-2)}
+
+.foot{border-top:2px solid var(--ink); margin-top:56px; padding-top:20px;
+  font-size:.84rem; color:var(--muted)}
+@media (prefers-reduced-motion:reduce){ *{animation:none!important; transition:none!important} }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="eyebrow">Reauditoria de monetização · FinançasPro v11.3.13 → v12</p>
+  <h1>O funil parou de apontar para o lado errado</h1>
+  <p class="lede">Reavaliação após a implementação do P0 completo e de metade do P1. Mesmas onze dimensões da auditoria de 04/09, medidas sobre o código que está no working tree agora.</p>
+  <dl class="meta">
+    <div><dt>Data</dt><dd>05 set 2026</dd></div>
+    <div><dt>Baseline</dt><dd>52/100 · 04 set</dd></div>
+    <div><dt>Agora</dt><dd>79/100</dd></div>
+    <div><dt>Escopo</dt><dd>P0 completo + P1 parcial</dd></div>
+    <div><dt>Em produção</dt><dd>nada ainda</dd></div>
+  </dl>
+</header>
+
+<div class="delta">
+  <div class="dnum old"><b>52</b><span>04 set</span></div>
+  <div class="darrow" aria-hidden="true">→</div>
+  <div class="dnum new"><b>79</b><span>05 set</span></div>
+  <div class="dtext">
+    <p><strong>O achado central foi resolvido.</strong> Não existem mais dois planos gratuitos concorrentes: <code>shouldEnforceLimits()</code> deixou de consultar <code>isCloudUser()</code>, e o FREE passou a ser o mesmo com e sem login. Criar conta parou de ser uma perda líquida.</p>
+    <p>O teto de 27 pontos que sobra não é preguiça — é a parte que <b>nenhum código resolve</b>: nada está em produção e nenhuma hipótese foi validada com usuário real.</p>
+  </div>
+</div>
+
+<section id="mudou">
+  <div class="sechead"><span class="secnum">01</span><h2>O que mudou, em uma tabela</h2></div>
+  <p>Os limites do plano gratuito, antes e depois. A coluna da esquerda era o que existia no modo local — que, na prática, era o plano mais generoso do produto.</p>
+
+  <div class="tw"><table>
+    <thead><tr><th>Limite do FREE</th><th class="n">Local (antes)</th><th class="n">Nuvem (antes)</th><th class="n">Agora</th><th>Efeito pretendido</th></tr></thead>
+    <tbody>
+      <tr><td><b>Lançamentos/mês</b></td><td class="n was">∞</td><td class="n was">100</td><td class="n now">∞</td><td>Tira o único limite capaz de matar o hábito no meio do mês.</td></tr>
+      <tr><td><b>Contas e cartões</b></td><td class="n was">∞</td><td class="n was">3</td><td class="n now">5</td><td>Destrava o onboarding do usuário típico (2 contas + 2 cartões + carteira).</td></tr>
+      <tr><td><b>Exportar CSV</b></td><td class="n was">livre</td><td class="n was">✗</td><td class="n now">livre</td><td>Portabilidade vira argumento de aquisição, não item de paywall.</td></tr>
+      <tr><td><b>Exportar PDF</b></td><td class="n was">livre</td><td class="n was">✗</td><td class="n now">PRO</td><td>Relatório apresentável é uso profissional, sem peso no dia a dia.</td></tr>
+      <tr><td><b>OCR</b></td><td class="n was">5 vitalícios</td><td class="n was">✗</td><td class="n now">5/mês</td><td>A cota renova: o recurso reaparece toda virada de mês em vez de sumir.</td></tr>
+      <tr><td><b>Histórico de análise</b></td><td class="n was">∞</td><td class="n was">∞</td><td class="n now">3 meses</td><td>Cria o gatilho que chega sozinho a todo usuário retido, no 4º mês.</td></tr>
+      <tr><td><b>Metas</b></td><td class="n was">∞</td><td class="n was">∞</td><td class="n now">1</td><td>A segunda meta é intenção declarada de longo prazo.</td></tr>
+      <tr><td><b>Recorrentes</b></td><td class="n was">∞</td><td class="n was">∞</td><td class="n now">3</td><td>Aluguel, salário e internet cabem; a quarta indica vida já organizada no app.</td></tr>
+      <tr><td><b>Contas a pagar · gastos fixos</b></td><td class="n was">∞</td><td class="n was">∞</td><td class="n now">5 · 5</td><td>Cobre o mês típico sem virar gerenciador completo de vencimentos.</td></tr>
+      <tr><td><b>Categorização que aprende</b></td><td class="n was">livre</td><td class="n was">livre</td><td class="n now">PRO</td><td>A automação que o usuário sente todo dia — e que sustenta a renovação.</td></tr>
+      <tr><td><b>Assinaturas esquecidas</b></td><td class="n was">livre</td><td class="n was">✗</td><td class="n now">teaser</td><td>O total em reais aparece; quais são, no Pro. O número costuma superar o preço.</td></tr>
+      <tr><td><b>Preço do Pro</b></td><td class="n was" colspan="2">R$ 16,90/mês · R$ 129/ano</td><td class="n now">R$ 12,90 · R$ 79,90</td><td>Abaixo do Mobills (R$ 99,90/ano), com −48% no anual.</td></tr>
+      <tr><td><b>Teste grátis</b></td><td class="n was" colspan="2">7 dias, com cartão</td><td class="n now">+14 dias sem cartão</td><td>Trial reverso: o hábito se forma <i>com</i> o Pro, e depois ele é perdido.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="bug">
+  <div class="sechead"><span class="secnum">02</span><h2>Um rombo de receita achado no caminho</h2></div>
+
+  <div class="call bad">
+    <h3>O Pro de boas-vindas viraria Pro vitalício</h3>
+    <p><code>_activeStatus()</code> aceitava <code>TRIALING</code> sem olhar <code>trialEndsAt</code>. Para assinatura do Stripe isso funcionava, porque o webhook vira o status quando o trial acaba. Mas o Pro de boas-vindas é entitlement próprio, sem loja por trás e sem webhook nenhum: <strong>os 14 dias de cortesia dariam PRO para sempre</strong>, em silêncio, para todo usuário que criasse conta.</p>
+    <p style="margin-bottom:0">O mesmo buraco existia em <code>backend/middleware/plan.js</code> e em <code>fp_plan_tier</code> no Postgres. Corrigido nas três camadas, com a data como fonte da verdade — o que também protege contra webhook do Stripe atrasado ou perdido. Cinco testes travam a regra.</p>
+  </div>
+
+  <p>Vale registrar por quê isso quase passou: a feature nova (trial sem cartão) não tinha bug nenhum. O bug estava numa função de três linhas escrita para outro contexto, onde a premissa "todo trial tem um webhook que o encerra" era verdadeira. Trocar a premissa sem reler quem dependia dela é como esse tipo de furo nasce.</p>
+
+  <div class="call warn">
+    <h3>Uma segunda correção de honestidade</h3>
+    <p style="margin-bottom:0">O aviso de fim de trial dizia <i>"a cobrança do Pro começa automaticamente"</i>. Para quem nunca deu cartão, isso é alarme falso — e alarme falso em app financeiro custa exatamente o ativo da marca. Agora a origem da assinatura (<code>welcome:</code> vs <code>sub_</code> / <code>play:</code>) decide a copy, e a cortesia avisa <i>"Nada será cobrado — você volta ao plano gratuito"</i>.</p>
+  </div>
+</section>
+<section id="notas">
+  <div class="sechead"><span class="secnum">03</span><h2>As notas, dimensão a dimensão</h2></div>
+  <p>Barra cinza é a nota de 04/09; a verde é o que foi ganho desde então.</p>
+  <div class="sgrid">
+<div class="srow"><span class="sl">Estratégia de monetização</span><span class="sa">52</span><span class="sb">78</span><span class="track" aria-hidden="true"><i class="i-old" style="--a:52%"></i><i class="i-new" style="--a:52%;--d:26%"></i></span><span class="sd">+26</span><span class="sn">O eixo mudou: o limite virou profundidade e automação, não volume de uso. Falta validar com dado real.</span></div>
+<div class="srow"><span class="sl">Divisão FREE / PRO</span><span class="sa">38</span><span class="sb">85</span><span class="track" aria-hidden="true"><i class="i-old" style="--a:38%"></i><i class="i-new" style="--a:38%;--d:47%"></i></span><span class="sd">+47</span><span class="sn">O maior salto. Dois planos gratuitos viraram um só, e as features de alto valor saíram de graça.</span></div>
+<div class="srow"><span class="sl">Valor do FREE</span><span class="sa">72</span><span class="sb">86</span><span class="track" aria-hidden="true"><i class="i-old" style="--a:72%"></i><i class="i-new" style="--a:72%;--d:14%"></i></span><span class="sd">+14</span><span class="sn">Mais generoso em tudo que é diário; perde profundidade, de propósito. E agora é o mesmo com e sem login.</span></div>
+<div class="srow"><span class="sl">Valor do PRO</span><span class="sa">45</span><span class="sb">74</span><span class="track" aria-hidden="true"><i class="i-old" style="--a:45%"></i><i class="i-new" style="--a:45%;--d:29%"></i></span><span class="sd">+29</span><span class="sn">Ganhou histórico, categorização que aprende, assinaturas esquecidas e OCR sem teto. Faltam dois must-have.</span></div>
+<div class="srow"><span class="sl">Potencial de conversão</span><span class="sa">30</span><span class="sb">72</span><span class="track" aria-hidden="true"><i class="i-old" style="--a:30%"></i><i class="i-new" style="--a:30%;--d:42%"></i></span><span class="sd">+42</span><span class="sn">Trial reverso, gate que chega sozinho no 4º mês e teaser com valor em reais. Faltam 6 dos 8 gatilhos.</span></div>
+<div class="srow"><span class="sl">Pricing</span><span class="sa">40</span><span class="sb">82</span><span class="track" aria-hidden="true"><i class="i-old" style="--a:40%"></i><i class="i-new" style="--a:40%;--d:42%"></i></span><span class="sd">+42</span><span class="sn">R$ 79,90/ano fica abaixo do líder, com −48% sobre o mensal. Falta o vitalício de fundador.</span></div>
+<div class="srow"><span class="sl">Paywall</span><span class="sa">62</span><span class="sb">80</span><span class="track" aria-hidden="true"><i class="i-old" style="--a:62%"></i><i class="i-new" style="--a:62%;--d:18%"></i></span><span class="sd">+18</span><span class="sn">Vende capacidade, não remoção de limite. Ainda sem saída para quem esgota um gate offline.</span></div>
+<div class="srow"><span class="sl">UX de monetização</span><span class="sa">58</span><span class="sb">74</span><span class="track" aria-hidden="true"><i class="i-old" style="--a:58%"></i><i class="i-new" style="--a:58%;--d:16%"></i></span><span class="sd">+16</span><span class="sn">Banner só quando algo encosta no teto; gráfico com silhueta. Falta cadeado consistente nos pontos bloqueados.</span></div>
+<div class="srow"><span class="sl">Diferenciação</span><span class="sa">70</span><span class="sb">76</span><span class="track" aria-hidden="true"><i class="i-old" style="--a:70%"></i><i class="i-new" style="--a:70%;--d:6%"></i></span><span class="sd">+6</span><span class="sn">O modo local ficou coerente em vez de canibal. Pouco mudou: é vantagem de produto, não de monetização.</span></div>
+<div class="srow"><span class="sl">Potencial de retenção</span><span class="sa">74</span><span class="sb">82</span><span class="track" aria-hidden="true"><i class="i-old" style="--a:74%"></i><i class="i-new" style="--a:74%;--d:8%"></i></span><span class="sd">+8</span><span class="sn">Lançamentos ilimitados tiram o maior risco de churn; 5 contas destravam o onboarding. Falta o fechamento mensal.</span></div>
+<div class="srow"><span class="sl">Potencial de LTV</span><span class="sa">42</span><span class="sb">76</span><span class="track" aria-hidden="true"><i class="i-old" style="--a:42%"></i><i class="i-new" style="--a:42%;--d:34%"></i></span><span class="sd">+34</span><span class="sn">O histórico entrou na monetização — a alavanca que cresce sozinha. Falta o comparativo anual.</span></div>
+<div class="srow total"><span class="sl">Nota geral</span><span class="sa">52</span><span class="sb">79</span><span class="track" aria-hidden="true"><i class="i-old" style="--a:52%"></i><i class="i-new" style="--a:52%;--d:27%"></i></span><span class="sd">+27</span><span class="sn">Julgamento ponderado pelas dimensões que travam receita — divisão FREE/PRO, conversão e LTV pesam mais que diferenciação e UX.</span></div>  </div>
+  <p style="font-size:.88rem;color:var(--muted);margin-top:18px">Três dimensões explicam quase toda a diferença: <b>divisão FREE/PRO (+47)</b>, porque os dois planos gratuitos viraram um; <b>conversão (+42)</b>, porque agora existe um gatilho que chega sozinho; e <b>pricing (+42)</b>, porque o preço saiu de acima do líder para abaixo dele. <b>Diferenciação (+6)</b> mal se mexeu, e isso está certo: ela é vantagem de produto, não de monetização.</p>
+</section>
+
+<section id="evidencia">
+  <div class="sechead"><span class="secnum">04</span><h2>O que sustenta essas notas</h2></div>
+  <p>Nenhum número acima vem de uso real — não há usuário em produção. O que existe é verificação de que o modelo está implementado como projetado, e é isso que as notas medem.</p>
+
+  <div class="tw"><table>
+    <thead><tr><th>Verificação</th><th class="n">Resultado</th><th>O que ela prova</th></tr></thead>
+    <tbody>
+      <tr><td>Suítes de billing (frontend)</td><td class="n">15 suítes · 113 testes</td><td>Limites, quotas, janela de histórico, trial reverso e copy do paywall.</td></tr>
+      <tr><td>Suítes de plano e billing (backend)</td><td class="n">5 suítes</td><td>Paridade Express ↔ JSON, capacidade de contas, ausência de teto de transações.</td></tr>
+      <tr><td>Paridade JS ↔ JSON ↔ SQL</td><td class="n">verde</td><td>As 12 colunas numéricas batem nas três fontes.</td></tr>
+      <tr><td><code>npm run check:billing</code></td><td class="n">verde</td><td>Guardas de reintrodução: falha se o gate voltar a olhar <code>isCloudUser</code>, se "tira os limites" reaparecer na copy, ou se o teto de lançamentos voltar.</td></tr>
+      <tr><td><code>eslint js/</code></td><td class="n">1 erro</td><td>Pré-existente no HEAD (<code>console.log</code> em <code>supabase-sync.js</code>), não introduzido aqui.</td></tr>
+      <tr><td>Tokens de CSS e contraste</td><td class="n">verde</td><td>O CSS novo usa os tokens do design system; 31 pares dentro do WCAG AA.</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="call good">
+    <h3>Dois testes que valem mais que os outros</h3>
+    <p>O do gráfico verifica que o mês bloqueado <b>não vaza o valor em lugar nenhum</b> — nem no <code>&lt;title&gt;</code> do SVG, nem na tabela acessível. Se vazasse, o limite não existiria de verdade, só pareceria existir.</p>
+    <p style="margin-bottom:0">E o de paridade do backend passou a derivar os campos do próprio JSON canônico. A lista fixa anterior tinha envelhecido em silêncio: quando <code>reportExport</code> virou <code>exportCsv</code>/<code>exportPdf</code>, o teste seguiu verde comparando <code>undefined</code> com <code>undefined</code> dos dois lados.</p>
+  </div>
+</section>
+
+<section id="aberto">
+  <div class="sechead"><span class="secnum">05</span><h2>O que ainda está aberto</h2></div>
+  <p>Metade do P1 e todo o sprint de lançamento. Nada aqui é surpresa — é o cronograma seguindo seu curso.</p>
+
+  <div class="tw"><table>
+    <thead><tr><th>Item</th><th class="n">Estado</th><th>Por que importa</th></tr></thead>
+    <tbody>
+      <tr><td><b>Consentimento e endpoint da telemetria</b></td><td class="n"><span class="pill p-open">aberto</span></td><td>O funil emite 6 dos 10 eventos, mas <code>obsAnalyticsEnabled</code> e <code>obsEndpoint</code> continuam desligados: hoje tudo fica no buffer local. Sem isso, o lançamento ainda é cego.</td></tr>
+      <tr><td><b>Janela em relatórios e comparativo</b></td><td class="n"><span class="pill p-open">parcial</span></td><td>Só o gráfico de 6 meses respeita os 3 meses. Relatórios e comparação mês a mês ainda mostram tudo.</td></tr>
+      <tr><td><b><code>maxDevices: 1</code></b></td><td class="n"><span class="pill p-open">declarado</span></td><td>Está na tabela de planos, mas o sync não o consulta — o segundo aparelho ainda sincroniza de graça.</td></tr>
+      <tr><td><b>Paywall offline com saída</b></td><td class="n"><span class="pill p-open">aberto</span></td><td>Quem esgota um gate sem conta ainda cai num modal sem caminho direto para o checkout.</td></tr>
+      <tr><td><b>6 dos 8 gatilhos contextuais</b></td><td class="n"><span class="pill p-open">aberto</span></td><td>Funcionam a janela de histórico e as assinaturas esquecidas. Faltam 6ª conta, 2ª meta, 4ª recorrente, projeção negativa, 2º aparelho e marco de 30 dias.</td></tr>
+      <tr><td><b>Comparativo ano a ano</b></td><td class="n"><span class="pill p-no">não existe</span></td><td>É um dos "obrigatórios" do Pro e o que sustenta a renovação anual. Precisa ser construído, não só liberado.</td></tr>
+      <tr><td><b>Fatura projetada · patrimônio histórico</b></td><td class="n"><span class="pill p-no">não existem</span></td><td>As flags estão no contrato de plano como declaração futura; as features ainda não foram feitas.</td></tr>
+      <tr><td><b>Vitalício de fundador</b></td><td class="n"><span class="pill p-open">aberto</span></td><td>Atende o segmento que compra software mas não aluga — real e documentado no mercado brasileiro.</td></tr>
+      <tr><td><b>Marcação visual de PRO</b></td><td class="n"><span class="pill p-open">aberto</span></td><td>Cada ponto bloqueado ainda se anuncia à sua maneira.</td></tr>
+      <tr><td><b>Deploy das Edge Functions e migrations</b></td><td class="n"><span class="pill p-no">nada</span></td><td>Inclusive a migration que corrige <code>fp_plan_tier</code> — sem ela, subir a <code>welcome-trial</code> reintroduz o Pro vitalício.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="teto">
+  <div class="sechead"><span class="secnum">06</span><h2>Por que 79 e não mais</h2></div>
+  <p>Terminar o P1 inteiro levaria a nota a algo em torno de <b>85</b>. Acima disso, não é código que falta.</p>
+  <ul>
+    <li><strong>Nada foi validado.</strong> Que 3 meses seja a janela certa, que R$ 79,90 seja o preço certo, que 14 dias bastem — são hipóteses fundamentadas, não medições. A primeira coorte real pode desmentir qualquer uma.</li>
+    <li><strong>Nada está em produção.</strong> Um modelo de monetização que nunca cobrou de ninguém não tem nota acima de 85, por melhor que seja o desenho.</li>
+    <li><strong>O funil ainda não fala.</strong> Enquanto a telemetria não estiver ligada com consentimento e endpoint, a próxima reauditoria vai ser tão opinativa quanto esta.</li>
+  </ul>
+
+  <div class="call good">
+    <h3>Próximo passo, se for um só</h3>
+    <p style="margin-bottom:0">Ligar a telemetria — consentimento na primeira abertura e <code>obsEndpoint</code> configurado. Não é a mudança de maior impacto no funil, é a que torna todas as outras mensuráveis. Depois dela, o beta fechado de 20 pessoas do sprint 4 deixa de ser uma checagem de bugs e passa a ser a primeira medição real do modelo.</p>
+  </div>
+</section>
+
+<footer class="foot">
+  <p><b>Método.</b> Revisão do código no working tree da branch <code>claude/ui-ux-auditoria</code> em 05/09/2026, mais a execução das suítes de billing (frontend e backend), <code>check:billing</code>, <code>eslint js/</code>, <code>check-css-tokens</code> e <code>check-contrast</code>. As notas 0–100 são julgamento estruturado sobre o desenho e a implementação do modelo — não medem resultado comercial, que ainda não existe. Nada foi commitado nem publicado.</p>
+  <p style="margin-bottom:0">Reauditoria de monetização · FinançasPro · 05 de setembro de 2026 · baseline: auditoria de 04/09 (52/100)</p>
+</footer>
+
+</div>
+
+</body>
+</html>

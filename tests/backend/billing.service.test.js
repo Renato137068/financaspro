@@ -104,6 +104,41 @@ describe('BillingService.cancel', () => {
   });
 });
 
+describe('BillingService.resume', () => {
+  test('404 sem assinatura', async () => {
+    BillingRepository.findSubscription.mockResolvedValue(null);
+    await expect(BillingService.resume('org-1')).rejects.toMatchObject({ status: 404 });
+  });
+
+  test('assinatura que não estava cancelando volta como está, sem escrever', async () => {
+    const sub = { id: 'sub-1', cancelAtPeriodEnd: false };
+    BillingRepository.findSubscription.mockResolvedValue(sub);
+
+    await expect(BillingService.resume('org-1')).resolves.toBe(sub);
+    expect(BillingRepository.updateSubscription).not.toHaveBeenCalled();
+  });
+
+  test('assinatura do Play manda reativar na loja (400)', async () => {
+    BillingRepository.findSubscription.mockResolvedValue({
+      id: 'sub-1', cancelAtPeriodEnd: true, stripeSubId: 'play:token-x',
+    });
+
+    await expect(BillingService.resume('org-1')).rejects.toMatchObject({ status: 400 });
+    expect(BillingRepository.updateSubscription).not.toHaveBeenCalled();
+  });
+
+  test('reativa a renovação (desfaz cancelAtPeriodEnd) sem Stripe configurado', async () => {
+    BillingRepository.findSubscription.mockResolvedValue({
+      id: 'sub-1', cancelAtPeriodEnd: true, stripeSubId: null,
+    });
+    BillingRepository.updateSubscription.mockResolvedValue({ id: 'sub-1', cancelAtPeriodEnd: false });
+
+    await BillingService.resume('org-1');
+
+    expect(BillingRepository.updateSubscription).toHaveBeenCalledWith('org-1', { cancelAtPeriodEnd: false });
+  });
+});
+
 describe('BillingService.createPortalSession', () => {
   test('400 quando a org não tem customer Stripe', async () => {
     BillingRepository.findSubscription.mockResolvedValue({ id: 'sub-1', stripeCustomerId: null });

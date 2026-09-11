@@ -58,7 +58,10 @@ function medir() {
     const src = semComentarios(fs.readFileSync(file, 'utf8'));
     const rel = path.relative(root, file).replace(/\\/g, '/');
 
-    const h = (src.match(/#[0-9a-fA-F]{3,6}\b/g) || []).length;
+    // O lookahead evita falso-positivo com seletores de ID cujo nome começa
+    // com dígitos hex (ex.: #aba-novo, #aba-resumo → "#aba" não é cor). Uma
+    // cor real é seguida por ; , ) espaço ou fim — nunca por letra/dígito/-.
+    const h = (src.match(/#[0-9a-fA-F]{3,6}(?![\w-])/g) || []).length;
     // Só px cru: rem/em/% e var() seguem a escala ou são intencionais.
     const f = (src.match(/font-size:\s*\d+px/g) || []).length;
 

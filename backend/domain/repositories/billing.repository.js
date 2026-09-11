@@ -59,6 +59,14 @@ export const BillingRepository = {
     });
   },
 
+  /** Assinaturas do Google Play (chave `play:<token>`). */
+  async findPlayLinkedSubscriptions() {
+    return prisma.subscription.findMany({
+      where: { stripeSubId: { startsWith: 'play:' } },
+      select: { orgId: true, stripeSubId: true, status: true, currentPeriodEnd: true },
+    });
+  },
+
   async recordUsage(subscriptionId, metric, value, periodStart, periodEnd) {
     return prisma.usageRecord.create({
       data: { subscriptionId, metric, value, periodStart, periodEnd },
@@ -145,20 +153,24 @@ export const BillingRepository = {
 
   /** Entitlement Google Play — reutiliza stripeSubId como chave `play:<token>`. */
   async findByPlayPurchaseToken(purchaseToken) {
-    const playKey = `play:${String(purchaseToken).slice(0, 120)}`;
-    const sub = await this.findByStripeSubId(playKey);
-    if (!sub) return null;
-    return { orgId: sub.orgId, subscription: sub };
+    const token = String(purchaseToken);
+    const keys = [`play:${token}`];
+    if (token.length > 120) keys.push(`play:${token.slice(0, 120)}`);
+    for (const playKey of keys) {
+      const sub = await this.findByStripeSubId(playKey);
+      if (sub) return { orgId: sub.orgId, subscription: sub };
+    }
+    return null;
   },
 
-  async upsertPlayEntitlement(orgId, { productId, purchaseToken, tier, expiresAt }) {
+  async upsertPlayEntitlement(orgId, { productId, purchaseToken, tier, expiresAt, cancelAtPeriodEnd }) {
     const plan = await this.findPlan(tier);
     if (!plan) {
       const err = new Error('plano-nao-encontrado');
       err.status = 404;
       throw err;
     }
-    const playKey = `play:${String(purchaseToken).slice(0, 120)}`;
+    const playKey = `play:${String(purchaseToken)}`;
     const end = expiresAt ? new Date(expiresAt) : new Date(Date.now() + 30 * 86400000);
     return this.upsertSubscription(orgId, {
       planId: plan.id,
@@ -168,7 +180,7 @@ export const BillingRepository = {
       stripeCustomerId: null,
       currentPeriodStart: new Date(),
       currentPeriodEnd: end,
-      cancelAtPeriodEnd: false,
+      cancelAtPeriodEnd: !!cancelAtPeriodEnd,
     });
   },
 
@@ -182,5 +194,21 @@ export const BillingRepository = {
       expiresAt: sub.currentPeriodEnd,
       source: 'google_play',
     };
+  },
+
+  /**
+   * Revoga o entitlement do Play (cancelamento/reembolso/expiração via RTDN).
+   * Só age se a assinatura atual da org for de fato do Play — nunca mexe numa
+   * assinatura Stripe. Encerra o período em `expiresAt` (ou agora).
+   */
+  async revokePlayEntitlement(orgId, { expiresAt } = {}) {
+    const sub = await this.findSubscription(orgId);
+    if (!sub || !sub.stripeSubId || !String(sub.stripeSubId).startsWith('play:')) return null;
+    const end = expiresAt ? new Date(expiresAt) : new Date();
+    return this.updateSubscription(orgId, {
+      status: 'CANCELED',
+      cancelAtPeriodEnd: true,
+      currentPeriodEnd: end,
+    });
   },
 };

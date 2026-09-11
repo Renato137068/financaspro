@@ -1,0 +1,1152 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Auditoria estratégica de monetização FREE vs PRO — FinançasPro v11.3.13, 04/09/2026">
+<title>Monetização do FinançasPro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#F4F6F4; --surface:#FFFFFF; --surface-2:#EDF0ED;
+  --ink:#131B18; --ink-2:#3A4741; --muted:#5D6B65; --faint:#8A9791;
+  --line:#DBE1DD; --line-2:#C7D0CB;
+  --pine:#0F6B4F; --pine-soft:#E2F0EA;
+  --ember:#A93C24; --ember-soft:#F8E6E1;
+  --gold:#8A6612; --gold-soft:#F6EDD6;
+  --slate:#3E4F5C; --slate-soft:#E5EBEF;
+  --shadow:0 1px 2px rgba(19,27,24,.05), 0 8px 24px -14px rgba(19,27,24,.28);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0B120F; --surface:#121A17; --surface-2:#18211D;
+    --ink:#E6EDE9; --ink-2:#C2CDC7; --muted:#93A29B; --faint:#6E7C76;
+    --line:#222D28; --line-2:#2E3B35;
+    --pine:#57C79B; --pine-soft:#12281F;
+    --ember:#E88A6D; --ember-soft:#2B1712;
+    --gold:#D8AC46; --gold-soft:#2A2211;
+    --slate:#9DB6C6; --slate-soft:#151E24;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -18px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0B120F; --surface:#121A17; --surface-2:#18211D;
+  --ink:#E6EDE9; --ink-2:#C2CDC7; --muted:#93A29B; --faint:#6E7C76;
+  --line:#222D28; --line-2:#2E3B35;
+  --pine:#57C79B; --pine-soft:#12281F;
+  --ember:#E88A6D; --ember-soft:#2B1712;
+  --gold:#D8AC46; --gold-soft:#2A2211;
+  --slate:#9DB6C6; --slate-soft:#151E24;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -18px rgba(0,0,0,.8);
+}
+*{box-sizing:border-box}
+body{
+  background:var(--ground); color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:16px; line-height:1.62; margin:0;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1240px; margin:0 auto; padding:0 24px 96px;
+  display:grid; grid-template-columns:1fr; gap:0}
+@media (min-width:1180px){
+  .wrap{grid-template-columns:216px minmax(0,1fr); gap:56px; padding-right:40px}
+}
+h1,h2,h3,h4{font-family:Newsreader,Georgia,"Times New Roman",serif; font-weight:500;
+  text-wrap:balance; letter-spacing:-.01em; margin:0}
+h1{font-size:clamp(2.1rem,4.4vw,3.1rem); line-height:1.1}
+h2{font-size:clamp(1.5rem,2.6vw,2rem); line-height:1.18}
+h3{font-size:1.18rem; line-height:1.3; font-weight:600}
+h4{font-size:1rem; font-weight:600; font-family:"IBM Plex Sans",sans-serif; letter-spacing:.01em}
+p{margin:0 0 1em; max-width:70ch}
+ul,ol{margin:0 0 1.1em; padding-left:1.15em; max-width:70ch}
+li{margin:.32em 0}
+a{color:var(--pine); text-decoration:underline; text-underline-offset:2px; text-decoration-thickness:1px}
+a:focus-visible,button:focus-visible{outline:2px solid var(--pine); outline-offset:3px; border-radius:3px}
+code,.mono{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.86em}
+code{background:var(--surface-2); padding:.1em .34em; border-radius:3px; color:var(--ink-2)}
+strong{font-weight:600}
+
+/* ---------- masthead ---------- */
+.masthead{grid-column:1/-1; padding:56px 0 40px; border-bottom:2px solid var(--ink)}
+.eyebrow{font-family:"IBM Plex Mono",monospace; font-size:.72rem; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muted); margin:0 0 14px}
+.masthead h1{max-width:20ch}
+.lede{font-family:Newsreader,serif; font-size:1.24rem; line-height:1.5; color:var(--ink-2);
+  max-width:62ch; margin:18px 0 26px}
+.meta{display:flex; flex-wrap:wrap; gap:0; border-top:1px solid var(--line); padding-top:16px}
+.meta div{padding:2px 22px 2px 0; margin-right:22px; border-right:1px solid var(--line)}
+.meta div:last-child{border-right:0}
+.meta dt{font-family:"IBM Plex Mono",monospace; font-size:.68rem; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--faint); margin:0 0 2px}
+.meta dd{margin:0; font-size:.9rem; font-weight:500}
+
+/* ---------- toc ---------- */
+.toc{display:none}
+@media (min-width:1180px){
+  .toc{display:block; position:sticky; top:0; align-self:start; max-height:100vh;
+    overflow-y:auto; padding:40px 0 40px; font-size:.82rem}
+  .toc p{font-family:"IBM Plex Mono",monospace; font-size:.66rem; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--faint); margin:0 0 10px}
+  .toc ol{list-style:none; margin:0; padding:0}
+  .toc li{margin:0}
+  .toc a{display:flex; gap:9px; padding:3px 0; color:var(--muted); text-decoration:none; line-height:1.35}
+  .toc a:hover{color:var(--pine)}
+  .toc a span{font-family:"IBM Plex Mono",monospace; font-size:.68rem; color:var(--faint);
+    min-width:1.4em; padding-top:1px}
+}
+.main{grid-column:1/-1; min-width:0}
+@media (min-width:1180px){ .main{grid-column:2} .toc{grid-column:1} }
+
+/* ---------- sections ---------- */
+section{padding:52px 0 8px; border-top:1px solid var(--line)}
+section:first-of-type{border-top:0}
+.sechead{display:flex; align-items:baseline; gap:14px; margin-bottom:22px}
+.secnum{font-family:"IBM Plex Mono",monospace; font-size:.78rem; color:var(--pine);
+  font-weight:600; padding-top:.35em; letter-spacing:.04em}
+.sub{font-family:"IBM Plex Mono",monospace; font-size:.7rem; letter-spacing:.13em;
+  text-transform:uppercase; color:var(--faint); margin:38px 0 12px}
+
+/* ---------- verdict ---------- */
+.verdict{background:var(--surface); border:1px solid var(--line); border-left:3px solid var(--pine);
+  padding:26px 28px; margin:28px 0; box-shadow:var(--shadow)}
+.verdict h3{margin-bottom:8px}
+.scorewrap{display:flex; align-items:center; gap:26px; flex-wrap:wrap; margin:22px 0 30px}
+.bigscore{font-family:Newsreader,serif; font-size:4.6rem; line-height:.9; font-weight:500;
+  font-variant-numeric:tabular-nums}
+.bigscore em{font-style:normal; font-size:1.4rem; color:var(--muted)}
+.scorenote{max-width:44ch; font-size:.94rem; color:var(--ink-2)}
+.scorenote p{margin:0}
+
+/* ---------- callouts ---------- */
+.call{border:1px solid var(--line); background:var(--surface); padding:18px 20px; margin:22px 0}
+.call.bad{border-left:3px solid var(--ember); background:var(--ember-soft)}
+.call.warn{border-left:3px solid var(--gold); background:var(--gold-soft)}
+.call.good{border-left:3px solid var(--pine); background:var(--pine-soft)}
+.call p:last-child{margin-bottom:0}
+.call h4{margin-bottom:6px}
+
+/* ---------- tables ---------- */
+.tw{overflow-x:auto; margin:20px 0 28px; border:1px solid var(--line); background:var(--surface);
+  box-shadow:var(--shadow)}
+table{border-collapse:collapse; width:100%; font-size:.86rem; min-width:560px}
+thead th{background:var(--surface-2); text-align:left; padding:11px 13px; font-weight:600;
+  font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted);
+  border-bottom:1px solid var(--line-2); white-space:nowrap; position:sticky; top:0; z-index:1}
+td{padding:11px 13px; border-bottom:1px solid var(--line); vertical-align:top; line-height:1.45}
+tbody tr:last-child td{border-bottom:0}
+td.n,th.n{text-align:right; font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums;
+  font-size:.8rem; color:var(--ink-2); white-space:nowrap}
+.nm b{display:block; font-weight:600; line-height:1.3}
+.nm .area{display:block; font-family:"IBM Plex Mono",monospace; font-size:.66rem;
+  letter-spacing:.08em; text-transform:uppercase; color:var(--faint); margin-top:2px}
+td.cur{color:var(--muted); font-size:.8rem; max-width:22ch}
+td.idx{width:112px; position:relative; white-space:nowrap}
+.bar{display:inline-block; height:6px; width:var(--w); max-width:64px; background:var(--pine);
+  opacity:.75; vertical-align:middle; border-radius:1px}
+.iv{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; font-size:.8rem;
+  margin-left:7px; font-weight:500}
+.matriz table{min-width:940px}
+.matriz td.n,.matriz th.n{padding-left:6px;padding-right:6px}
+.matriz td.cur{max-width:15ch;font-size:.76rem}
+.matriz .tag{font-size:.7rem;padding:2px 5px}
+
+/* ---------- tags ---------- */
+.tag{display:inline-block; font-size:.74rem; font-weight:500; padding:2px 7px; border-radius:2px;
+  white-space:nowrap; line-height:1.5; border:1px solid transparent}
+.t-free{background:var(--pine-soft); color:var(--pine); border-color:var(--pine)}
+.t-lim{background:var(--gold-soft); color:var(--gold); border-color:var(--gold)}
+.t-pro{background:var(--slate-soft); color:var(--slate); border-color:var(--slate)}
+.t-prox{background:var(--ember-soft); color:var(--ember); border-color:var(--ember)}
+.t-rem{background:var(--surface-2); color:var(--faint); border-color:var(--line-2)}
+
+/* ---------- reasoning chain ---------- */
+.chain{list-style:none; padding:0; margin:16px 0 26px; max-width:none}
+.chain li{border:1px solid var(--line); background:var(--surface); padding:18px 20px; margin:0 0 12px}
+.chain .ct{font-weight:600; font-size:1.02rem; margin-bottom:6px; display:flex; gap:10px; align-items:baseline}
+.chain .cn{font-family:"IBM Plex Mono",monospace; font-size:.72rem; color:var(--ember); font-weight:600}
+.chain p{font-size:.93rem; margin-bottom:.7em}
+.flow{display:flex; flex-wrap:wrap; gap:0; margin-top:12px; font-size:.78rem;
+  font-family:"IBM Plex Mono",monospace; border-top:1px dashed var(--line-2); padding-top:12px}
+.flow span{padding-right:12px; margin-right:12px; border-right:1px solid var(--line); color:var(--muted)}
+.flow span:last-child{border-right:0; margin-right:0; padding-right:0}
+.flow b{color:var(--ink); font-weight:600}
+
+/* ---------- funnel ---------- */
+.funnel{margin:24px 0 30px; border:1px solid var(--line); background:var(--surface)}
+.fstep{display:grid; grid-template-columns:auto 1fr auto; gap:16px; align-items:center;
+  padding:13px 18px; border-bottom:1px solid var(--line)}
+.fstep:last-child{border-bottom:0}
+.fstep .fl{font-family:"IBM Plex Mono",monospace; font-size:.7rem; color:var(--faint); min-width:2.2em}
+.fstep .fn{font-weight:600; font-size:.94rem}
+.fstep .fd{font-size:.84rem; color:var(--muted); display:block; font-weight:400; margin-top:1px}
+.fstep .fg{font-family:"IBM Plex Mono",monospace; font-size:.74rem; padding:3px 8px; border-radius:2px; white-space:nowrap}
+.g-hi{background:var(--ember-soft); color:var(--ember)}
+.g-md{background:var(--gold-soft); color:var(--gold)}
+.g-lo{background:var(--pine-soft); color:var(--pine)}
+
+/* ---------- scenario cards ---------- */
+.cards{display:grid; gap:16px; margin:24px 0 30px}
+@media (min-width:760px){ .cards{grid-template-columns:repeat(3,1fr)} }
+.card{border:1px solid var(--line); background:var(--surface); padding:20px; display:flex;
+  flex-direction:column; gap:10px}
+.card.pick{border:1px solid var(--pine); border-top:3px solid var(--pine)}
+.card h4{font-size:1.02rem; font-family:Newsreader,serif; font-weight:600}
+.card .kv{display:flex; justify-content:space-between; font-size:.8rem; padding:3px 0;
+  border-bottom:1px dotted var(--line-2)}
+.card .kv:last-child{border-bottom:0}
+.card .kv b{font-family:"IBM Plex Mono",monospace; font-weight:500}
+.pickmark{font-family:"IBM Plex Mono",monospace; font-size:.66rem; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--pine); font-weight:600}
+
+/* ---------- price ---------- */
+.price{display:grid; gap:16px; margin:24px 0}
+@media (min-width:700px){ .price{grid-template-columns:repeat(3,1fr)} }
+.pcard{border:1px solid var(--line); background:var(--surface); padding:22px}
+.pcard.hero{border:1px solid var(--pine); background:var(--pine-soft)}
+.pcard .pn{font-family:"IBM Plex Mono",monospace; font-size:.7rem; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--muted); margin-bottom:8px}
+.pcard .pv{font-family:Newsreader,serif; font-size:2.2rem; line-height:1; font-weight:500;
+  font-variant-numeric:tabular-nums}
+.pcard .pv small{font-size:.9rem; color:var(--muted); font-family:"IBM Plex Sans",sans-serif}
+.pcard .pd{font-size:.85rem; color:var(--ink-2); margin-top:10px}
+
+/* ---------- final spec ---------- */
+.spec{border:2px solid var(--ink); background:var(--surface); padding:0; margin:26px 0}
+.spec header{background:var(--ink); color:var(--ground); padding:14px 20px;
+  font-family:"IBM Plex Mono",monospace; font-size:.78rem; letter-spacing:.1em; text-transform:uppercase}
+.spec .sb{padding:22px 24px}
+.spec .tw{margin:0; border:0; box-shadow:none}
+.spec .tw table{border:1px solid var(--line)}
+
+/* ---------- score grid ---------- */
+.sgrid{margin:22px 0 28px}
+.srow{display:grid; grid-template-columns:1fr 56px 150px; gap:14px; align-items:center;
+  padding:9px 0; border-bottom:1px solid var(--line)}
+.srow:last-child{border-bottom:0}
+.srow.total{border-top:2px solid var(--ink); border-bottom:0; margin-top:6px; padding-top:14px; font-weight:600}
+.srow .sl{font-size:.92rem}
+.srow .sv{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums;
+  text-align:right; font-size:.95rem; font-weight:500}
+.srow .sbar{height:8px; background:var(--surface-2); position:relative; border-radius:1px; overflow:hidden}
+.srow .sbar i{position:absolute; inset:0 auto 0 0; width:var(--w); background:var(--pine); opacity:.8}
+.srow.low .sbar i{background:var(--ember)}
+.srow.mid .sbar i{background:var(--gold)}
+.srow .sn{grid-column:1/-1; font-size:.82rem; color:var(--muted); margin-top:-4px; padding-bottom:4px}
+
+/* ---------- roadmap ---------- */
+.rm{margin:22px 0 30px}
+.rmh{display:flex; align-items:baseline; gap:12px; margin:28px 0 12px; padding-bottom:8px;
+  border-bottom:2px solid var(--line-2)}
+.rmh .p{font-family:"IBM Plex Mono",monospace; font-size:.74rem; font-weight:600; padding:3px 9px; border-radius:2px}
+.p0{background:var(--ember-soft); color:var(--ember)}
+.p1{background:var(--gold-soft); color:var(--gold)}
+.p2{background:var(--slate-soft); color:var(--slate)}
+.p3{background:var(--surface-2); color:var(--muted)}
+.rmh h3{font-family:"IBM Plex Sans",sans-serif; font-size:.98rem}
+.rmh .rt{margin-left:auto; font-size:.78rem; color:var(--faint); font-family:"IBM Plex Mono",monospace}
+
+hr.rule{border:0; border-top:1px solid var(--line); margin:34px 0}
+.foot{grid-column:1/-1; border-top:2px solid var(--ink); margin-top:60px; padding-top:22px;
+  font-size:.84rem; color:var(--muted)}
+.foot a{color:var(--muted)}
+@media (prefers-reduced-motion:reduce){ *{animation:none!important; transition:none!important} }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="eyebrow">Auditoria de monetização · FinançasPro v11.3.13</p>
+  <h1>Você tem dois planos grátis, e o melhor deles não pede nada em troca</h1>
+  <p class="lede">Auditoria completa da divisão FREE / PRO, feita sobre o código real: 51 funcionalidades mapeadas, limites atuais conferidos linha a linha, comparação com o mercado brasileiro e uma estrutura final pronta para virar issue de desenvolvimento.</p>
+  <dl class="meta">
+    <div><dt>Data</dt><dd>04 set 2026</dd></div>
+    <div><dt>Versão</dt><dd>11.3.13 / vc36</dd></div>
+    <div><dt>Estágio</dt><dd>Pré-lançamento</dd></div>
+    <div><dt>Objetivo</dt><dd>Aquisição + receita</dd></div>
+    <div><dt>Nota geral</dt><dd>52 / 100</dd></div>
+  </dl>
+</header>
+
+<nav class="toc" aria-label="Índice">
+  <p>Índice</p>
+  <ol>
+    <li><a href="#s1"><span>01</span>O produto</a></li>
+    <li><a href="#s2"><span>02</span>Gating atual</a></li>
+    <li><a href="#s3"><span>03</span>Os 10 problemas</a></li>
+    <li><a href="#s4"><span>04</span>Matriz de valor</a></li>
+    <li><a href="#s5"><span>05</span>Rankings</a></li>
+    <li><a href="#s6"><span>06</span>Limites do FREE</a></li>
+    <li><a href="#s7"><span>07</span>Paywall</a></li>
+    <li><a href="#s8"><span>08</span>Funil</a></li>
+    <li><a href="#s9"><span>09</span>Psicologia</a></li>
+    <li><a href="#s10"><span>10</span>Preço</a></li>
+    <li><a href="#s11"><span>11</span>Concorrentes</a></li>
+    <li><a href="#s12"><span>12</span>Novo FREE</a></li>
+    <li><a href="#s13"><span>13</span>Novo PRO</a></li>
+    <li><a href="#s14"><span>14</span>Must-have do PRO</a></li>
+    <li><a href="#s15"><span>15</span>UX da monetização</a></li>
+    <li><a href="#s16"><span>16</span>Trade-off</a></li>
+    <li><a href="#s17"><span>17</span>Cenários</a></li>
+    <li><a href="#s18"><span>18</span>Modelo final</a></li>
+    <li><a href="#s19"><span>19</span>Notas</a></li>
+    <li><a href="#s20"><span>20</span>Roadmap</a></li>
+  </ol>
+</nav>
+
+<main class="main">
+
+<section id="veredicto">
+  <div class="scorewrap">
+    <div class="bigscore">52<em> / 100</em></div>
+    <div class="scorenote">
+      <p>Sua reauditoria de ontem deu <b>91/100</b>, e ela está certa — mas mediu outra coisa. Ela mediu se o <i>encanamento</i> de billing funciona: trial coerente, Stripe, dunning, gates sem bypass. Funciona. Esta auditoria mede se a <b>estratégia comercial</b> por trás desse encanamento converte. E aí a resposta é não.</p>
+    </div>
+  </div>
+
+  <div class="verdict">
+    <h3>O achado central</h3>
+    <p>O FinançasPro tem hoje <strong>dois produtos gratuitos</strong>, e o mais generoso é o que não exige cadastro. No modo 100&nbsp;% local, <code>shouldEnforceLimits()</code> retorna <code>false</code>: lançamentos ilimitados, contas ilimitadas, orçamentos ilimitados, exportação livre, alertas avançados livres. Na nuvem FREE — depois de o usuário criar conta, confiar os dados a você e entrar no seu funil — ele recebe 100 lançamentos/mês, 3 contas, 5 orçamentos, sem exportação, sem alertas avançados, sem IA.</p>
+    <p style="margin-bottom:0"><strong>Criar conta piora a vida do usuário.</strong> O funil que você desenhou (local → nuvem → pago) tem o incentivo econômico apontando para o lado contrário. E como o modal de paywall esconde o botão “Assinar” para quem não está logado, quem fica no local — a escolha racional — nunca chega a ver uma oferta de compra.</p>
+  </div>
+
+  <p>As outras quatro conclusões que sustentam a nota:</p>
+  <ul>
+    <li><strong>Os limites estão nas variáveis erradas.</strong> Limitar <i>volume de uso</i> (100 lançamentos, 3 contas) num app de hábito quebra o hábito. O limite certo nesta categoria é de <i>profundidade</i>: histórico, projeção, automação, multi-dispositivo.</li>
+    <li><strong>As features que justificam pagar estão liberadas.</strong> Metas, patrimônio, cartão com fatura, contas a pagar, assinaturas, recorrentes, anexos — <code>grep BILLING</code> nesses oito módulos retorna zero. São exatamente as funcionalidades do usuário avançado, que é quem paga.</li>
+    <li><strong>O preço está acima do líder de mercado.</strong> R$ 129/ano contra R$ 99,90/ano do Mobills, que tem mais de 6 milhões de downloads e Open Finance maduro. Um app desconhecido cobrando 30&nbsp;% mais caro que o líder não converte.</li>
+    <li><strong>Não há instrumentação do funil.</strong> <code>OBS</code> existe, é opt-in e não tem endpoint configurado. Você vai lançar sem saber onde as pessoas param.</li>
+  </ul>
+
+  <div class="call good">
+    <h4>O que já está certo e não deve ser mexido</h4>
+    <p style="margin-bottom:0">Honestidade de copy (vocês corrigiram “sem cadastro” e qualificaram “na nuvem”), o posicionamento de privacidade — <i>seu dinheiro, no seu aparelho</i> — que é um diferencial real num mercado onde todo mundo pede Open Finance no primeiro toque, e a arquitetura de billing, que suporta qualquer estrutura que você decidir daqui.</p>
+  </div>
+</section>
+<section id="s1">
+  <div class="sechead"><span class="secnum">01</span><h2>O produto, antes de qualquer recomendação</h2></div>
+
+  <p>FinançasPro v11.3.13 — PWA + app Android (Capacitor/Play Billing), JavaScript vanilla, ~33 mil linhas em 90+ módulos. Persistência em <code>localStorage</code> com sincronização opcional via Supabase. Assinatura de marca: <i>“Seu dinheiro, no seu aparelho.”</i></p>
+
+  <p><strong>Problema principal que resolve:</strong> saber quanto realmente sobra. Não é “anotar gastos” — isso é o meio. O módulo <code>compromissos.js</code> deixa isso explícito no próprio comentário de cabeçalho: o app existe para responder “posso comprar isso hoje?”, separando saldo de <i>disponível de verdade</i>. Esse é o núcleo, e ele é bom.</p>
+
+  <p><strong>Público-alvo real</strong> (inferido do produto, não de persona declarada): brasileiro de classe média que usa 2–4 cartões, tem renda mensal fixa ou semi-fixa, já tentou planilha, e desconfia de app que pede login do banco. O 50/30/20 como tela principal, o parcelamento como cidadão de primeira classe e a criptografia local apontam todos para o mesmo perfil.</p>
+
+  <p class="sub">Inventário — 51 funcionalidades em 9 áreas</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th>Área</th><th>Funcionalidades</th></tr></thead>
+      <tbody>
+        <tr><td><b>Núcleo de lançamento</b></td><td>Transação manual (valor, categoria, data, conta, cartão, parcelas, recorrência, tag, nota) · entrada em linguagem natural (<code>parser.js</code>) · valores rápidos · auto-categorização por regex · categorizador fuzzy com Levenshtein · aprendizado por histórico (90 dias) · score de confiança · OCR de comprovantes · anexos em IndexedDB (2&nbsp;MB, 3/transação) · rascunho automático</td></tr>
+        <tr><td><b>Organização</b></td><td>Contas (corrente, poupança, investimento, digital, carteira) · cartões com ciclo de fatura e parcelamento futuro · categorias personalizadas · recorrentes materializados no cliente · contas a pagar com vencimento · assinaturas / gastos fixos · comprometido vs disponível</td></tr>
+        <tr><td><b>Planejamento</b></td><td>Orçamento 50/30/20 com regra editável · orçamento por categoria com alerta de risco e teto diário · metas com valor alvo e prazo · patrimônio líquido (ativos − dívidas)</td></tr>
+        <tr><td><b>Análise</b></td><td>Dashboard mensal · extrato com filtros, busca, busca avançada, ordenação e KPIs · gráficos donut / 6 meses / comparativo · relatórios mensais · tendência vs mês anterior</td></tr>
+        <tr><td><b>Inteligência</b></td><td>Insights automáticos · previsão por regressão linear · projeção de fim de mês · detecção de anomalias · detecção de padrões recorrentes · detector de assinaturas esquecidas · sugestão de corte · comparação de categorias mês a mês · score de saúde financeira 0–100</td></tr>
+        <tr><td><b>Alertas</b></td><td>Saldo negativo · estouro de orçamento · anomalia · padrão · assinatura esquecida · lembrete diário via Notification API</td></tr>
+        <tr><td><b>Dados e plataforma</b></td><td>Sync Supabase com realtime, fila de persistência e merge de conflito · Open Finance (sandbox + Belvo) · exportação CSV/Excel e PDF · backup JSON e importação · PWA offline · app Android</td></tr>
+        <tr><td><b>Segurança</b></td><td>PIN local com guarda pré-paint · biometria via Keystore · 2FA · criptografia at-rest local · FLAG_SECURE em telas sensíveis · política de senha</td></tr>
+        <tr><td><b>SaaS</b></td><td>Organizações e equipe (convidar, revogar, remover) · planos FREE/PRO/BUSINESS · Stripe + Play Billing · trial 7 dias · portal · dunning</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="sub">Onde está o <i>aha moment</i></p>
+  <p>Não é o dashboard. É o momento em que o usuário lança a terceira ou quarta despesa e o app já sabe a categoria sozinho — a combinação de <code>auto-categorizer</code> + <code>categorizador</code> + <code>aprendizado</code>. É a primeira vez que ele sente que o app trabalha <i>por</i> ele. Depois disso vem o segundo momento, mais forte e mais lento: virar o mês e ver a comparação com o mês anterior. Esse segundo é o que cria hábito — e é o que hoje não tem nenhum papel na monetização.</p>
+</section>
+
+<section id="s2">
+  <div class="sechead"><span class="secnum">02</span><h2>O gating que está no código hoje</h2></div>
+
+  <p>Levantado de <code>js/billing.js</code>, <code>config/plan-limits.json</code> e de todas as chamadas a <code>canUse</code>, <code>guardQuota</code> e <code>shouldEnforceLimits</code>. Repare na primeira coluna.</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>Recurso / limite</th><th>Local (sem login)</th><th>Nuvem FREE</th><th>PRO</th><th>BUSINESS</th></tr></thead>
+      <tbody>
+        <tr><td><b>Lançamentos por mês</b></td><td><span class="tag t-free">Ilimitado</span></td><td><span class="tag t-prox">100</span></td><td>Ilimitado</td><td>Ilimitado</td></tr>
+        <tr><td><b>Contas + cartões</b></td><td><span class="tag t-free">Ilimitado</span></td><td><span class="tag t-prox">3</span></td><td>20</td><td>Ilimitado</td></tr>
+        <tr><td><b>Orçamentos</b></td><td><span class="tag t-free">Ilimitado</span></td><td><span class="tag t-prox">5</span></td><td>Ilimitado</td><td>Ilimitado</td></tr>
+        <tr><td><b>Exportação CSV / PDF</b></td><td><span class="tag t-free">Livre</span></td><td><span class="tag t-prox">Bloqueado</span></td><td>Sim</td><td>Sim</td></tr>
+        <tr><td><b>Alertas avançados</b></td><td><span class="tag t-free">Livre</span></td><td><span class="tag t-prox">Só básicos + teaser</span></td><td>Sim</td><td>Sim</td></tr>
+        <tr><td><b>OCR e previsão (IA)</b></td><td><span class="tag t-lim">5 usos vitalícios</span></td><td><span class="tag t-prox">Bloqueado</span></td><td>Sim</td><td>Sim</td></tr>
+        <tr><td><b>Insights avançados</b></td><td><span class="tag t-lim">Consome uso de IA</span></td><td><span class="tag t-prox">Só básicos</span></td><td>Sim</td><td>Sim</td></tr>
+        <tr><td><b>Open Finance</b></td><td>—</td><td><span class="tag t-prox">Bloqueado</span></td><td>Sim</td><td>Sim</td></tr>
+        <tr><td><b>Membros</b></td><td>1</td><td>1</td><td>2</td><td>Ilimitado</td></tr>
+        <tr><td><b>Metas, patrimônio, cartão com fatura, contas a pagar, assinaturas, recorrentes, anexos, compromissos</b></td><td colspan="4"><span class="tag t-free">Totalmente livres — zero referência a BILLING nos oito módulos</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="call bad">
+    <h4>Leia a tabela na diagonal</h4>
+    <p style="margin-bottom:0">A coluna “Local” é mais generosa que a coluna “Nuvem FREE” em <b>sete das nove linhas com limite</b>. A única moeda que a nuvem FREE oferece a mais é a sincronização — que é justamente o que você quer vender no PRO. Ou seja: o plano intermediário do funil não tem proposta de valor própria. Ele só tira coisas.</p>
+  </div>
+
+  <p>Preços vigentes: <b>PRO R$ 16,90/mês ou R$ 129/ano</b> (−36&nbsp;%), <b>BUSINESS R$ 79,90/mês ou R$ 799/ano</b>, trial de 7 dias em todos os caminhos (Play, Stripe, Edge, ficha da loja) — esse alinhamento está correto e comprovado por teste.</p>
+</section>
+
+<section id="s3">
+  <div class="sechead"><span class="secnum">03</span><h2>Os dez problemas estruturais</h2></div>
+  <p>Cada um segue a mesma cadeia: valor para o usuário → retenção → conversão → receita → risco.</p>
+
+  <ol class="chain">
+    <li>
+      <div class="ct"><span class="cn">P1</span> O modo local canibaliza o produto inteiro</div>
+      <p>O usuário que nunca cria conta tem uma experiência melhor do que o usuário que cria. Não é uma escolha de produto — é uma consequência não intencional de <code>shouldEnforceLimits()</code> retornar <code>false</code> fora da nuvem. E o modal de paywall, corretamente, esconde o botão “Assinar” para quem não está logado. Resultado: o segmento mais satisfeito do seu produto é o único que nunca pode comprar.</p>
+      <div class="flow"><span>Valor: <b>altíssimo</b></span><span>Retenção: <b>alta</b></span><span>Conversão: <b>zero estrutural</b></span><span>Receita: <b>teto em ~0</b></span><span>Risco de corrigir: <b>médio</b></span></div>
+    </li>
+    <li>
+      <div class="ct"><span class="cn">P2</span> Três contas quebram o setup, não motivam upgrade</div>
+      <p><code>_countAccountsForLimit()</code> soma bancos + cartões + contas. O brasileiro-alvo deste app tem conta corrente, poupança, Nubank e o cartão do banco: quatro. Ele estoura o limite <i>durante o onboarding</i>, antes de ter lançado uma única despesa. Limite de capacidade aplicado na fase de configuração é churn, não conversão — ninguém paga por um app que ainda não usou.</p>
+      <div class="flow"><span>Valor: <b>destruído no dia 1</b></span><span>Retenção: <b>−−</b></span><span>Conversão: <b>negativa</b></span><span>Receita: <b>perde antes de começar</b></span><span>Risco de corrigir: <b>nenhum</b></span></div>
+    </li>
+    <li>
+      <div class="ct"><span class="cn">P3</span> 100 lançamentos/mês erra os dois públicos ao mesmo tempo</div>
+      <p>O usuário casual lança 30–50 por mês: nunca encosta no limite, nunca vê motivo para pagar. O usuário intenso — exatamente quem pagaria — lança 150–250 e bate o teto por volta do dia 15. Aí o app <b>para de aceitar os gastos dele no meio do mês</b>. Isso não é um paywall, é uma parede: destrói o hábito que levou três meses para se formar e ainda deixa o mês com dados incompletos, o que torna todo o resto do app (orçamento, insights, comparativo) inútil naquele mês.</p>
+      <div class="flow"><span>Valor: <b>anulado no pior momento</b></span><span>Retenção: <b>ruptura de hábito</b></span><span>Conversão: <b>gera raiva, não compra</b></span><span>Receita: <b>churn &gt; upgrade</b></span><span>Risco de corrigir: <b>custo de storage</b></span></div>
+    </li>
+    <li>
+      <div class="ct"><span class="cn">P4</span> As features que justificam pagar estão de graça</div>
+      <p>Metas, patrimônio, cartão com ciclo de fatura, parcelamento futuro, contas a pagar, assinaturas, recorrentes, anexos: nenhum desses oito módulos consulta o <code>BILLING</code>. São as funcionalidades do usuário avançado — quem tem meta de viagem, três cartões e patrimônio para acompanhar é precisamente quem tem disposição a pagar. Você deu tudo isso de graça e cobrou por <i>não ter limite de linha</i>.</p>
+      <div class="flow"><span>Valor: <b>alto</b></span><span>Retenção: <b>alta</b></span><span>Conversão: <b>desperdiçada</b></span><span>Receita: <b>maior perda do modelo</b></span><span>Risco de corrigir: <b>baixo (pré-lançamento)</b></span></div>
+    </li>
+    <li>
+      <div class="ct"><span class="cn">P5</span> O PRO é vendido como remoção de dano, não como capacidade</div>
+      <p>O título do modal é <i>“O Pro tira os limites na nuvem”</i>. Isso posiciona a assinatura como pedágio: o usuário paga para desfazer um obstáculo que você criou. É a pior enquadratura possível, porque coloca você e ele em lados opostos. A alternativa é vender capacidade nova — <i>“o Pro cuida do seu mês por você”</i> — onde previsão, automação, Open Finance e modo casal são coisas que ele <b>ganha</b>, não coisas que ele <b>recupera</b>.</p>
+      <div class="flow"><span>Valor percebido: <b>−30 a −40&nbsp;%</b></span><span>Retenção: <b>neutra</b></span><span>Conversão: <b>−−</b></span><span>Receita: <b>preço-teto mais baixo</b></span><span>Risco de corrigir: <b>nenhum (copy)</b></span></div>
+    </li>
+    <li>
+      <div class="ct"><span class="cn">P6</span> Trial de 7 dias com cartão, em app mensal, sem marca</div>
+      <p>Duas falhas somadas. Primeira: 7 dias não cobrem um <b>fechamento de mês</b>, que é justamente onde o valor do app aparece. O usuário testa o Pro numa janela em que ele ainda está cadastrando dados, não colhendo insight. Segunda: exigir cartão para um app financeiro desconhecido, pré-lançamento, é a maior fricção possível — a taxa de início de trial em apps assim costuma ficar em um dígito.</p>
+      <div class="flow"><span>Valor: <b>não chega a ser sentido</b></span><span>Retenção: <b>neutra</b></span><span>Conversão: <b>funil estrangulado na entrada</b></span><span>Receita: <b>−−</b></span><span>Risco de corrigir: <b>baixo</b></span></div>
+    </li>
+    <li>
+      <div class="ct"><span class="cn">P7</span> Preço acima do líder de mercado, sem vantagem percebida</div>
+      <p>R$ 129/ano contra R$ 99,90/ano do Mobills — 6&nbsp;milhões de downloads, Open Finance maduro, marca conhecida. Você está cobrando 30&nbsp;% a mais sendo desconhecido. Preço premium exige percepção de superioridade, e privacidade — embora seja um diferencial real — é um diferencial que o usuário só valoriza <i>depois</i> de já confiar em você.</p>
+      <div class="flow"><span>Valor: <b>bom</b></span><span>Retenção: <b>neutra</b></span><span>Conversão: <b>−−</b></span><span>Receita: <b>ARPU alto × volume ~0</b></span><span>Risco de corrigir: <b>nenhum, ainda não lançou</b></span></div>
+    </li>
+    <li>
+      <div class="ct"><span class="cn">P8</span> O plano Business não tem cliente</div>
+      <p>R$ 79,90/mês por “membros ilimitados e múltiplas organizações” num app cuja tela principal é o orçamento 50/30/20 pessoal. Não existe ICP para isso. Como âncora de preço também não funciona: âncora só ancora quando é plausível, e uma terceira coluna sem persona só polui o modal e obriga o usuário a processar uma decisão a mais no momento em que você quer que ele decida uma coisa só.</p>
+      <div class="flow"><span>Valor: <b>nulo</b></span><span>Retenção: <b>neutra</b></span><span>Conversão: <b>atrito cognitivo</b></span><span>Receita: <b>≈0</b></span><span>Risco de remover: <b>nenhum</b></span></div>
+    </li>
+    <li>
+      <div class="ct"><span class="cn">P9</span> A maior alavanca de LTV está intocada: o tempo</div>
+      <p>Um app de finanças fica exponencialmente mais valioso conforme acumula histórico — é o único ativo que o usuário constrói e não consegue reconstruir em outro lugar. Hoje não há <b>nenhum</b> limite de histórico, e não existe comparativo ano a ano. Isso deixa de lado o gate mais natural, mais justo e menos irritante da categoria: quem tem 8 meses de dados tem 8 meses de motivo para não sair e um motivo concreto para pagar.</p>
+      <div class="flow"><span>Valor: <b>cresce com o tempo</b></span><span>Retenção: <b>maior lock-in possível</b></span><span>Conversão: <b>gatilho natural</b></span><span>Receita: <b>LTV subaproveitado</b></span><span>Risco: <b>baixo se dado bruto nunca some</b></span></div>
+    </li>
+    <li>
+      <div class="ct"><span class="cn">P10</span> Você vai lançar cego</div>
+      <p><code>OBS</code> tem <code>track()</code> e catálogo de eventos, mas é opt-in e <code>obsEndpoint</code> não está configurado. Sem funil instrumentado, cada decisão desta auditoria vira fé. Para um pré-lançamento isso é P0 — mais urgente que qualquer mudança de preço, porque é o que permite corrigir o preço depois com dado em vez de opinião.</p>
+      <div class="flow"><span>Valor: <b>indireto</b></span><span>Retenção: <b>—</b></span><span>Conversão: <b>impossível otimizar</b></span><span>Receita: <b>decisões no escuro</b></span><span>Risco de corrigir: <b>LGPD — consentimento explícito</b></span></div>
+    </li>
+  </ol>
+</section>
+<section id="s4">
+  <div class="sechead"><span class="secnum">04</span><h2>Matriz de valor — 51 funcionalidades</h2></div>
+  <p>Cada funcionalidade recebeu nota 0–100 em sete dimensões. O índice geral é a média ponderada: valor percebido 20&nbsp;%, retenção 20&nbsp;%, potencial de conversão 20&nbsp;%, frequência de uso 15&nbsp;%, diferenciação 10&nbsp;%, aquisição 10&nbsp;%, baixo custo de manutenção 5&nbsp;%. Retenção e conversão pesam igual de propósito: o modelo precisa das duas, e otimizar só uma é o erro que produziu o estado atual.</p>
+  <p style="font-size:.88rem;color:var(--muted)"><b>Custo</b> é lido ao contrário das outras: nota alta significa <i>barato de manter</i>. Open Finance tem 20 porque cada conexão bancária custa dinheiro por usuário por mês.</p>
+  <div class="tw matriz">
+    <table>
+      <thead><tr>
+        <th>Funcionalidade</th><th>Situação atual</th><th>Recomendação</th>
+        <th class="n" title="Valor percebido">VP</th><th class="n" title="Frequência de uso">FU</th>
+        <th class="n" title="Importância para retenção">RET</th><th class="n" title="Importância para aquisição">AQ</th>
+        <th class="n" title="Potencial de conversão">CONV</th><th class="n" title="Baixo custo de manutenção">CST</th>
+        <th class="n" title="Diferenciação competitiva">DIF</th><th class="n">Índice</th>
+      </tr></thead>
+      <tbody>
+<tr><td class="nm"><b>Open Finance / conexão bancária</b><span class="area">Plataforma</span></td><td class="cur">PRO</td><td><span class="tag t-prox">🔴 PRO exclusivo</span></td><td class="n">95</td><td class="n">60</td><td class="n">90</td><td class="n">88</td><td class="n">92</td><td class="n">20</td><td class="n">70</td><td class="idx"><span class="bar" style="--w:81.2%"></span><span class="iv">81.2</span></td></tr>
+<tr><td class="nm"><b>Cartão de crédito com ciclo de fatura</b><span class="area">Núcleo</span></td><td class="cur">FREE total</td><td><span class="tag t-lim">🟡 FREE (mês atual) · PRO projeção</span></td><td class="n">92</td><td class="n">80</td><td class="n">88</td><td class="n">78</td><td class="n">68</td><td class="n">55</td><td class="n">82</td><td class="idx"><span class="bar" style="--w:80.4%"></span><span class="iv">80.4</span></td></tr>
+<tr><td class="nm"><b>Projeção de fim de mês</b><span class="area">Inteligência</span></td><td class="cur">FREE local / PRO nuvem</td><td><span class="tag t-pro">🟠 PRO</span></td><td class="n">90</td><td class="n">70</td><td class="n">80</td><td class="n">55</td><td class="n">85</td><td class="n">60</td><td class="n">75</td><td class="idx"><span class="bar" style="--w:77.5%"></span><span class="iv">77.5</span></td></tr>
+<tr><td class="nm"><b>Sync multi-dispositivo</b><span class="area">Plataforma</span></td><td class="cur">FREE nuvem (com quotas)</td><td><span class="tag t-prox">🔴 PRO (1 aparelho no FREE)</span></td><td class="n">90</td><td class="n">70</td><td class="n">88</td><td class="n">65</td><td class="n">88</td><td class="n">35</td><td class="n">50</td><td class="idx"><span class="bar" style="--w:77.0%"></span><span class="iv">77.0</span></td></tr>
+<tr><td class="nm"><b>Categorização que aprende com você</b><span class="area">Inteligência</span></td><td class="cur">FREE total</td><td><span class="tag t-pro">🟠 PRO</span></td><td class="n">82</td><td class="n">85</td><td class="n">88</td><td class="n">40</td><td class="n">70</td><td class="n">65</td><td class="n">78</td><td class="idx"><span class="bar" style="--w:75.8%"></span><span class="iv">75.8</span></td></tr>
+<tr><td class="nm"><b>Comprometido vs disponível de verdade</b><span class="area">Núcleo</span></td><td class="cur">FREE total</td><td><span class="tag t-free">🟢 FREE</span></td><td class="n">88</td><td class="n">90</td><td class="n">90</td><td class="n">65</td><td class="n">40</td><td class="n">60</td><td class="n">88</td><td class="idx"><span class="bar" style="--w:75.4%"></span><span class="iv">75.4</span></td></tr>
+<tr><td class="nm"><b>Histórico analítico acima de 3 meses</b><span class="area">Análise</span></td><td class="cur">FREE total (sem limite)</td><td><span class="tag t-prox">🔴 PRO exclusivo</span></td><td class="n">88</td><td class="n">55</td><td class="n">92</td><td class="n">35</td><td class="n">90</td><td class="n">80</td><td class="n">55</td><td class="idx"><span class="bar" style="--w:75.2%"></span><span class="iv">75.2</span></td></tr>
+<tr><td class="nm"><b>Modo casal (2 membros)</b><span class="area">Plataforma</span></td><td class="cur">PRO</td><td><span class="tag t-prox">🔴 PRO exclusivo</span></td><td class="n">85</td><td class="n">55</td><td class="n">88</td><td class="n">60</td><td class="n">80</td><td class="n">45</td><td class="n">68</td><td class="idx"><span class="bar" style="--w:73.9%"></span><span class="iv">73.9</span></td></tr>
+<tr><td class="nm"><b>Orçamento 50/30/20</b><span class="area">Planejamento</span></td><td class="cur">FREE total</td><td><span class="tag t-free">🟢 FREE</span></td><td class="n">90</td><td class="n">75</td><td class="n">90</td><td class="n">88</td><td class="n">30</td><td class="n">75</td><td class="n">65</td><td class="idx"><span class="bar" style="--w:72.3%"></span><span class="iv">72.3</span></td></tr>
+<tr><td class="nm"><b>Fatura projetada / parcelas futuras</b><span class="area">Inteligência</span></td><td class="cur">FREE total</td><td><span class="tag t-pro">🟠 PRO</span></td><td class="n">88</td><td class="n">55</td><td class="n">75</td><td class="n">50</td><td class="n">78</td><td class="n">55</td><td class="n">80</td><td class="idx"><span class="bar" style="--w:72.2%"></span><span class="iv">72.2</span></td></tr>
+<tr><td class="nm"><b>Previsão financeira (regressão)</b><span class="area">Inteligência</span></td><td class="cur">5 usos local / PRO nuvem</td><td><span class="tag t-prox">🔴 PRO exclusivo</span></td><td class="n">88</td><td class="n">40</td><td class="n">70</td><td class="n">60</td><td class="n">88</td><td class="n">55</td><td class="n">78</td><td class="idx"><span class="bar" style="--w:71.8%"></span><span class="iv">71.8</span></td></tr>
+<tr><td class="nm"><b>Contas a pagar com vencimento</b><span class="area">Automação</span></td><td class="cur">FREE total</td><td><span class="tag t-lim">🟡 FREE 5 · PRO ilimitado</span></td><td class="n">84</td><td class="n">70</td><td class="n">88</td><td class="n">60</td><td class="n">62</td><td class="n">70</td><td class="n">48</td><td class="idx"><span class="bar" style="--w:71.6%"></span><span class="iv">71.6</span></td></tr>
+<tr><td class="nm"><b>Insights avançados (corte, MoM)</b><span class="area">Inteligência</span></td><td class="cur">FREE local / PRO nuvem</td><td><span class="tag t-pro">🟠 PRO</span></td><td class="n">85</td><td class="n">60</td><td class="n">75</td><td class="n">45</td><td class="n">80</td><td class="n">60</td><td class="n">70</td><td class="idx"><span class="bar" style="--w:71.5%"></span><span class="iv">71.5</span></td></tr>
+<tr><td class="nm"><b>Transações recorrentes</b><span class="area">Automação</span></td><td class="cur">FREE total</td><td><span class="tag t-lim">🟡 FREE 3 · PRO ilimitado</span></td><td class="n">85</td><td class="n">60</td><td class="n">92</td><td class="n">55</td><td class="n">65</td><td class="n">65</td><td class="n">50</td><td class="idx"><span class="bar" style="--w:71.2%"></span><span class="iv">71.2</span></td></tr>
+<tr><td class="nm"><b>Dashboard mensal</b><span class="area">Núcleo</span></td><td class="cur">FREE total</td><td><span class="tag t-free">🟢 FREE</span></td><td class="n">92</td><td class="n">100</td><td class="n">95</td><td class="n">85</td><td class="n">10</td><td class="n">85</td><td class="n">30</td><td class="idx"><span class="bar" style="--w:70.2%"></span><span class="iv">70.2</span></td></tr>
+<tr><td class="nm"><b>Detector de assinaturas esquecidas</b><span class="area">Inteligência</span></td><td class="cur">FREE local / PRO nuvem</td><td><span class="tag t-pro">🟠 PRO</span></td><td class="n">90</td><td class="n">30</td><td class="n">60</td><td class="n">70</td><td class="n">85</td><td class="n">60</td><td class="n">85</td><td class="idx"><span class="bar" style="--w:70.0%"></span><span class="iv">70.0</span></td></tr>
+<tr><td class="nm"><b>Orçamento por categoria</b><span class="area">Planejamento</span></td><td class="cur">FREE (5 na nuvem)</td><td><span class="tag t-lim">🟡 FREE 5 · PRO ilimitado</span></td><td class="n">82</td><td class="n">70</td><td class="n">85</td><td class="n">55</td><td class="n">60</td><td class="n">75</td><td class="n">45</td><td class="idx"><span class="bar" style="--w:69.7%"></span><span class="iv">69.7</span></td></tr>
+<tr><td class="nm"><b>Alertas avançados</b><span class="area">Alertas</span></td><td class="cur">FREE local / PRO nuvem</td><td><span class="tag t-pro">🟠 PRO</span></td><td class="n">82</td><td class="n">60</td><td class="n">75</td><td class="n">40</td><td class="n">78</td><td class="n">60</td><td class="n">65</td><td class="idx"><span class="bar" style="--w:69.5%"></span><span class="iv">69.5</span></td></tr>
+<tr><td class="nm"><b>PWA offline / app instalável</b><span class="area">Plataforma</span></td><td class="cur">FREE total</td><td><span class="tag t-free">🟢 FREE</span></td><td class="n">85</td><td class="n">95</td><td class="n">90</td><td class="n">70</td><td class="n">10</td><td class="n">70</td><td class="n">75</td><td class="idx"><span class="bar" style="--w:69.2%"></span><span class="iv">69.2</span></td></tr>
+<tr><td class="nm"><b>Contas e carteiras</b><span class="area">Núcleo</span></td><td class="cur">FREE (3 na nuvem)</td><td><span class="tag t-lim">🟡 FREE 5 · PRO ilimitado</span></td><td class="n">80</td><td class="n">85</td><td class="n">85</td><td class="n">60</td><td class="n">50</td><td class="n">85</td><td class="n">30</td><td class="idx"><span class="bar" style="--w:69.0%"></span><span class="iv">69.0</span></td></tr>
+<tr><td class="nm"><b>Metas financeiras</b><span class="area">Planejamento</span></td><td class="cur">FREE total</td><td><span class="tag t-lim">🟡 FREE 1 · PRO ilimitado</span></td><td class="n">82</td><td class="n">50</td><td class="n">85</td><td class="n">70</td><td class="n">65</td><td class="n">70</td><td class="n">45</td><td class="idx"><span class="bar" style="--w:68.9%"></span><span class="iv">68.9</span></td></tr>
+<tr><td class="nm"><b>OCR de comprovantes</b><span class="area">Inteligência</span></td><td class="cur">5 usos vitalícios local / bloqueado nuvem</td><td><span class="tag t-lim">🟡 FREE 5/mês · PRO ilimitado</span></td><td class="n">88</td><td class="n">45</td><td class="n">55</td><td class="n">75</td><td class="n">82</td><td class="n">45</td><td class="n">72</td><td class="idx"><span class="bar" style="--w:68.7%"></span><span class="iv">68.7</span></td></tr>
+<tr><td class="nm"><b>Gráficos (donut, 6M, comparativo)</b><span class="area">Análise</span></td><td class="cur">FREE total</td><td><span class="tag t-lim">🟡 FREE 3 meses · PRO 12M+</span></td><td class="n">85</td><td class="n">80</td><td class="n">82</td><td class="n">75</td><td class="n">40</td><td class="n">70</td><td class="n">40</td><td class="idx"><span class="bar" style="--w:68.4%"></span><span class="iv">68.4</span></td></tr>
+<tr><td class="nm"><b>Auto-categorização (regras)</b><span class="area">Núcleo</span></td><td class="cur">FREE total</td><td><span class="tag t-free">🟢 FREE</span></td><td class="n">80</td><td class="n">95</td><td class="n">85</td><td class="n">65</td><td class="n">25</td><td class="n">80</td><td class="n">55</td><td class="idx"><span class="bar" style="--w:68.2%"></span><span class="iv">68.2</span></td></tr>
+<tr><td class="nm"><b>Entrada em linguagem natural</b><span class="area">Núcleo</span></td><td class="cur">FREE total</td><td><span class="tag t-free">🟢 FREE</span></td><td class="n">78</td><td class="n">70</td><td class="n">80</td><td class="n">72</td><td class="n">35</td><td class="n">70</td><td class="n">75</td><td class="idx"><span class="bar" style="--w:67.3%"></span><span class="iv">67.3</span></td></tr>
+<tr><td class="nm"><b>Lançar transação (manual)</b><span class="area">Núcleo</span></td><td class="cur">FREE (100/mês na nuvem)</td><td><span class="tag t-free">🟢 FREE ilimitado</span></td><td class="n">85</td><td class="n">100</td><td class="n">98</td><td class="n">80</td><td class="n">5</td><td class="n">90</td><td class="n">20</td><td class="idx"><span class="bar" style="--w:67.1%"></span><span class="iv">67.1</span></td></tr>
+<tr><td class="nm"><b>Extrato com filtros e busca</b><span class="area">Núcleo</span></td><td class="cur">FREE total</td><td><span class="tag t-free">🟢 FREE</span></td><td class="n">85</td><td class="n">90</td><td class="n">88</td><td class="n">60</td><td class="n">20</td><td class="n">80</td><td class="n">35</td><td class="idx"><span class="bar" style="--w:65.6%"></span><span class="iv">65.6</span></td></tr>
+<tr><td class="nm"><b>Alertas básicos (saldo, orçamento)</b><span class="area">Alertas</span></td><td class="cur">FREE total</td><td><span class="tag t-free">🟢 FREE</span></td><td class="n">80</td><td class="n">85</td><td class="n">88</td><td class="n">50</td><td class="n">30</td><td class="n">75</td><td class="n">40</td><td class="idx"><span class="bar" style="--w:65.1%"></span><span class="iv">65.1</span></td></tr>
+<tr><td class="nm"><b>Comparativo ano a ano</b><span class="area">Análise</span></td><td class="cur">Não existe</td><td><span class="tag t-prox">🔴 PRO exclusivo (construir)</span></td><td class="n">82</td><td class="n">25</td><td class="n">80</td><td class="n">30</td><td class="n">82</td><td class="n">70</td><td class="n">60</td><td class="idx"><span class="bar" style="--w:65.1%"></span><span class="iv">65.1</span></td></tr>
+<tr><td class="nm"><b>Detecção de anomalias</b><span class="area">Inteligência</span></td><td class="cur">FREE local / PRO nuvem</td><td><span class="tag t-pro">🟠 PRO</span></td><td class="n">78</td><td class="n">50</td><td class="n">65</td><td class="n">40</td><td class="n">75</td><td class="n">55</td><td class="n">72</td><td class="idx"><span class="bar" style="--w:65.0%"></span><span class="iv">65.0</span></td></tr>
+<tr><td class="nm"><b>Insights básicos</b><span class="area">Inteligência</span></td><td class="cur">FREE total</td><td><span class="tag t-free">🟢 FREE</span></td><td class="n">75</td><td class="n">80</td><td class="n">78</td><td class="n">55</td><td class="n">35</td><td class="n">70</td><td class="n">50</td><td class="idx"><span class="bar" style="--w:63.6%"></span><span class="iv">63.6</span></td></tr>
+<tr><td class="nm"><b>Assinaturas / gastos fixos</b><span class="area">Automação</span></td><td class="cur">FREE total</td><td><span class="tag t-lim">🟡 FREE 5 · PRO ilimitado</span></td><td class="n">78</td><td class="n">45</td><td class="n">72</td><td class="n">55</td><td class="n">60</td><td class="n">75</td><td class="n">55</td><td class="idx"><span class="bar" style="--w:63.5%"></span><span class="iv">63.5</span></td></tr>
+<tr><td class="nm"><b>Patrimônio líquido</b><span class="area">Planejamento</span></td><td class="cur">FREE total</td><td><span class="tag t-lim">🟡 FREE snapshot · PRO evolução</span></td><td class="n">80</td><td class="n">30</td><td class="n">70</td><td class="n">45</td><td class="n">72</td><td class="n">70</td><td class="n">65</td><td class="idx"><span class="bar" style="--w:63.4%"></span><span class="iv">63.4</span></td></tr>
+<tr><td class="nm"><b>Score de saúde financeira</b><span class="area">Engajamento</span></td><td class="cur">FREE total</td><td><span class="tag t-free">🟢 FREE</span></td><td class="n">75</td><td class="n">55</td><td class="n">70</td><td class="n">72</td><td class="n">45</td><td class="n">75</td><td class="n">60</td><td class="idx"><span class="bar" style="--w:63.2%"></span><span class="iv">63.2</span></td></tr>
+<tr><td class="nm"><b>Categorias personalizadas</b><span class="area">Núcleo</span></td><td class="cur">FREE total</td><td><span class="tag t-lim">🟡 FREE 5 · PRO ilimitado</span></td><td class="n">78</td><td class="n">60</td><td class="n">80</td><td class="n">45</td><td class="n">55</td><td class="n">80</td><td class="n">30</td><td class="idx"><span class="bar" style="--w:63.1%"></span><span class="iv">63.1</span></td></tr>
+<tr><td class="nm"><b>Lembrete diário</b><span class="area">Engajamento</span></td><td class="cur">FREE total</td><td><span class="tag t-free">🟢 FREE</span></td><td class="n">72</td><td class="n">85</td><td class="n">90</td><td class="n">40</td><td class="n">25</td><td class="n">80</td><td class="n">35</td><td class="idx"><span class="bar" style="--w:61.6%"></span><span class="iv">61.6</span></td></tr>
+<tr><td class="nm"><b>Relatórios mensais</b><span class="area">Análise</span></td><td class="cur">FREE local / PRO nuvem</td><td><span class="tag t-lim">🟡 FREE mês atual · PRO histórico</span></td><td class="n">78</td><td class="n">45</td><td class="n">65</td><td class="n">40</td><td class="n">70</td><td class="n">70</td><td class="n">45</td><td class="idx"><span class="bar" style="--w:61.4%"></span><span class="iv">61.4</span></td></tr>
+<tr><td class="nm"><b>PIN local</b><span class="area">Segurança</span></td><td class="cur">FREE total</td><td><span class="tag t-free">🟢 FREE</span></td><td class="n">78</td><td class="n">60</td><td class="n">70</td><td class="n">65</td><td class="n">25</td><td class="n">80</td><td class="n">55</td><td class="idx"><span class="bar" style="--w:59.6%"></span><span class="iv">59.6</span></td></tr>
+<tr><td class="nm"><b>Biometria</b><span class="area">Segurança</span></td><td class="cur">FREE total</td><td><span class="tag t-free">🟢 FREE</span></td><td class="n">75</td><td class="n">55</td><td class="n">68</td><td class="n">55</td><td class="n">30</td><td class="n">60</td><td class="n">55</td><td class="idx"><span class="bar" style="--w:56.9%"></span><span class="iv">56.9</span></td></tr>
+<tr><td class="nm"><b>Criptografia local dos dados</b><span class="area">Segurança</span></td><td class="cur">FREE total</td><td><span class="tag t-free">🟢 FREE</span></td><td class="n">80</td><td class="n">15</td><td class="n">60</td><td class="n">70</td><td class="n">30</td><td class="n">60</td><td class="n">85</td><td class="idx"><span class="bar" style="--w:54.8%"></span><span class="iv">54.8</span></td></tr>
+<tr><td class="nm"><b>Anexos de comprovantes</b><span class="area">Núcleo</span></td><td class="cur">FREE total</td><td><span class="tag t-lim">🟡 FREE 10 · PRO ilimitado</span></td><td class="n">65</td><td class="n">40</td><td class="n">60</td><td class="n">35</td><td class="n">55</td><td class="n">60</td><td class="n">50</td><td class="idx"><span class="bar" style="--w:53.5%"></span><span class="iv">53.5</span></td></tr>
+<tr><td class="nm"><b>Modo escuro</b><span class="area">UX</span></td><td class="cur">FREE total</td><td><span class="tag t-free">🟢 FREE</span></td><td class="n">70</td><td class="n">90</td><td class="n">65</td><td class="n">45</td><td class="n">5</td><td class="n">90</td><td class="n">10</td><td class="idx"><span class="bar" style="--w:51.5%"></span><span class="iv">51.5</span></td></tr>
+<tr><td class="nm"><b>Exportação PDF / relatório formatado</b><span class="area">Dados</span></td><td class="cur">Livre local / PRO nuvem</td><td><span class="tag t-pro">🟠 PRO</span></td><td class="n">72</td><td class="n">25</td><td class="n">40</td><td class="n">35</td><td class="n">65</td><td class="n">70</td><td class="n">40</td><td class="idx"><span class="bar" style="--w:50.1%"></span><span class="iv">50.1</span></td></tr>
+<tr><td class="nm"><b>Backup JSON + importar</b><span class="area">Dados</span></td><td class="cur">FREE total</td><td><span class="tag t-free">🟢 FREE</span></td><td class="n">75</td><td class="n">20</td><td class="n">55</td><td class="n">50</td><td class="n">20</td><td class="n">85</td><td class="n">60</td><td class="idx"><span class="bar" style="--w:48.2%"></span><span class="iv">48.2</span></td></tr>
+<tr><td class="nm"><b>Exportação CSV</b><span class="area">Dados</span></td><td class="cur">Livre local / PRO nuvem</td><td><span class="tag t-free">🟢 FREE</span></td><td class="n">70</td><td class="n">30</td><td class="n">45</td><td class="n">40</td><td class="n">40</td><td class="n">85</td><td class="n">35</td><td class="idx"><span class="bar" style="--w:47.2%"></span><span class="iv">47.2</span></td></tr>
+<tr><td class="nm"><b>Busca avançada</b><span class="area">Núcleo</span></td><td class="cur">FREE total</td><td><span class="tag t-free">🟢 FREE</span></td><td class="n">60</td><td class="n">35</td><td class="n">50</td><td class="n">25</td><td class="n">45</td><td class="n">70</td><td class="n">40</td><td class="idx"><span class="bar" style="--w:46.2%"></span><span class="iv">46.2</span></td></tr>
+<tr><td class="nm"><b>Onboarding / tour guiado</b><span class="area">Engajamento</span></td><td class="cur">FREE total</td><td><span class="tag t-free">🟢 FREE</span></td><td class="n">60</td><td class="n">15</td><td class="n">75</td><td class="n">60</td><td class="n">20</td><td class="n">70</td><td class="n">30</td><td class="idx"><span class="bar" style="--w:45.8%"></span><span class="iv">45.8</span></td></tr>
+<tr><td class="nm"><b>Verificação em duas etapas (2FA)</b><span class="area">Segurança</span></td><td class="cur">FREE total</td><td><span class="tag t-free">🟢 FREE</span></td><td class="n">55</td><td class="n">10</td><td class="n">40</td><td class="n">30</td><td class="n">35</td><td class="n">55</td><td class="n">40</td><td class="idx"><span class="bar" style="--w:37.2%"></span><span class="iv">37.2</span></td></tr>
+<tr><td class="nm"><b>Atalhos de teclado</b><span class="area">UX</span></td><td class="cur">FREE total</td><td><span class="tag t-free">🟢 FREE</span></td><td class="n">45</td><td class="n">25</td><td class="n">40</td><td class="n">15</td><td class="n">20</td><td class="n">85</td><td class="n">45</td><td class="idx"><span class="bar" style="--w:35.0%"></span><span class="iv">35.0</span></td></tr>
+<tr><td class="nm"><b>Equipe ilimitada / multi-org (Business)</b><span class="area">Plataforma</span></td><td class="cur">BUSINESS R$ 79,90</td><td><span class="tag t-rem">⚪ Remover do paywall</span></td><td class="n">30</td><td class="n">10</td><td class="n">25</td><td class="n">10</td><td class="n">15</td><td class="n">35</td><td class="n">20</td><td class="idx"><span class="bar" style="--w:20.2%"></span><span class="iv">20.2</span></td></tr>
+<tr><td class="nm"><b>Diagnóstico / replay de sessão</b><span class="area">Suporte</span></td><td class="cur">FREE total (visível)</td><td><span class="tag t-rem">⚪ Esconder atrás de suporte</span></td><td class="n">25</td><td class="n">5</td><td class="n">15</td><td class="n">10</td><td class="n">5</td><td class="n">60</td><td class="n">30</td><td class="idx"><span class="bar" style="--w:16.8%"></span><span class="iv">16.8</span></td></tr>      </tbody>
+    </table>
+  </div>
+  <p style="font-size:.88rem;color:var(--muted)">Legenda: <span class="tag t-free">🟢 FREE</span> permanece grátis · <span class="tag t-lim">🟡 limite</span> grátis com teto · <span class="tag t-pro">🟠 PRO</span> deve migrar para pago · <span class="tag t-prox">🔴 PRO exclusivo</span> pilar da assinatura · <span class="tag t-rem">⚪</span> remover ou reestruturar.</p>
+</section>
+
+<section id="s5">
+  <div class="sechead"><span class="secnum">05</span><h2>Os rankings que decidem o modelo</h2></div>
+
+  <p class="sub">Top 10 — devem continuar FREE, sem limite algum</p>
+  <p>Ordenados por retenção, aquisição e frequência. São o motor de hábito: bloquear qualquer um deles derruba a base antes que ela chegue ao paywall.</p>
+  <div class="tw"><table>
+    <thead><tr><th class="n">#</th><th>Funcionalidade</th><th class="n">RET</th><th class="n">AQ</th><th class="n">FU</th><th>Por quê</th></tr></thead>
+    <tbody>
+      <tr><td class="n">1</td><td><b>Dashboard mensal</b></td><td class="n">95</td><td class="n">85</td><td class="n">100</td><td>É a tela que o usuário abre. Sem ela não há produto.</td></tr>
+      <tr><td class="n">2</td><td><b>Lançar transação</b></td><td class="n">98</td><td class="n">80</td><td class="n">100</td><td>O ato que forma o hábito. Qualquer atrito aqui é churn direto.</td></tr>
+      <tr><td class="n">3</td><td><b>PWA offline / app instalável</b></td><td class="n">90</td><td class="n">70</td><td class="n">95</td><td>Funcionar no metrô sem sinal é parte da promessa da marca.</td></tr>
+      <tr><td class="n">4</td><td><b>Orçamento 50/30/20</b></td><td class="n">90</td><td class="n">88</td><td class="n">75</td><td>Maior gancho de aquisição do app — é o que faz alguém baixar.</td></tr>
+      <tr><td class="n">5</td><td><b>Comprometido vs disponível</b></td><td class="n">90</td><td class="n">65</td><td class="n">90</td><td>Seu diferencial de produto. Precisa ser sentido para virar boca a boca.</td></tr>
+      <tr><td class="n">6</td><td><b>Auto-categorização (regras)</b></td><td class="n">85</td><td class="n">65</td><td class="n">95</td><td>É o <i>aha moment</i>. Cobrar por ele mata a ativação.</td></tr>
+      <tr><td class="n">7</td><td><b>Extrato com filtros e busca</b></td><td class="n">88</td><td class="n">60</td><td class="n">90</td><td>Consultar o próprio dado é direito, não recurso premium.</td></tr>
+      <tr><td class="n">8</td><td><b>Alertas de saldo e orçamento</b></td><td class="n">88</td><td class="n">50</td><td class="n">85</td><td>Traz o usuário de volta ao app sozinho. Retenção pura.</td></tr>
+      <tr><td class="n">9</td><td><b>Entrada em linguagem natural</b></td><td class="n">80</td><td class="n">72</td><td class="n">70</td><td>Reduz o custo por lançamento, que é a métrica de sobrevivência da categoria.</td></tr>
+      <tr><td class="n">10</td><td><b>Lembrete diário</b></td><td class="n">90</td><td class="n">40</td><td class="n">85</td><td>Motor de hábito mais barato que existe. Nunca cobre por notificação.</td></tr>
+    </tbody>
+  </table></div>
+
+  <p class="sub">Top 10 — deveriam ser PRO</p>
+  <p>Ordenados por potencial de conversão e valor percebido. Todos compartilham a mesma característica: <b>fazem trabalho no lugar do usuário</b> ou <b>revelam algo que ele não conseguiria ver sozinho</b>. Nenhum deles impede o uso básico do app.</p>
+  <div class="tw"><table>
+    <thead><tr><th class="n">#</th><th>Funcionalidade</th><th class="n">CONV</th><th class="n">VP</th><th>Hoje</th><th>Lógica do bloqueio</th></tr></thead>
+    <tbody>
+      <tr><td class="n">1</td><td><b>Open Finance</b></td><td class="n">92</td><td class="n">95</td><td>PRO</td><td>Custo marginal real por usuário/mês. É o único item onde o gate se justifica pela economia, não só pela estratégia. Manter.</td></tr>
+      <tr><td class="n">2</td><td><b>Histórico acima de 3 meses</b></td><td class="n">90</td><td class="n">88</td><td>Livre</td><td>O gate mais justo da categoria: cresce com o compromisso do usuário, chega quando ele já está retido, e o dado bruto nunca é confiscado.</td></tr>
+      <tr><td class="n">3</td><td><b>Sync multi-dispositivo</b></td><td class="n">88</td><td class="n">90</td><td>FREE nuvem</td><td>Custo de infraestrutura + valor claro. 1 aparelho grátis, N no Pro é o padrão que o usuário já entende de outros apps.</td></tr>
+      <tr><td class="n">4</td><td><b>Previsão financeira</b></td><td class="n">88</td><td class="n">88</td><td>5 usos</td><td>Responde “vou fechar o mês no vermelho?”. É pergunta de quem já se importa — ou seja, de quem paga.</td></tr>
+      <tr><td class="n">5</td><td><b>Projeção de fim de mês</b></td><td class="n">85</td><td class="n">90</td><td>Livre local</td><td>Mesma lógica, com frequência de uso muito maior. Ótimo gatilho recorrente de paywall contextual.</td></tr>
+      <tr><td class="n">6</td><td><b>Detector de assinaturas esquecidas</b></td><td class="n">85</td><td class="n">90</td><td>Livre local</td><td>Único recurso do app que <b>se paga sozinho</b>: uma assinatura esquecida de R$ 30 cobre o ano inteiro do Pro. Use isso na copy.</td></tr>
+      <tr><td class="n">7</td><td><b>Modo casal (2 membros)</b></td><td class="n">80</td><td class="n">85</td><td>PRO</td><td>Dobra o lock-in: quando duas pessoas usam, sair custa uma conversa. Manter, e promover muito mais.</td></tr>
+      <tr><td class="n">8</td><td><b>Insights avançados</b></td><td class="n">80</td><td class="n">85</td><td>Livre local</td><td>Sugestão de corte e comparação mês a mês são conselho, não registro. Conselho é a mercadoria.</td></tr>
+      <tr><td class="n">9</td><td><b>Fatura projetada / parcelas futuras</b></td><td class="n">78</td><td class="n">88</td><td>Livre</td><td>Ver o compromisso dos próximos 12 meses é dor real de quem parcela — e o brasileiro parcela.</td></tr>
+      <tr><td class="n">10</td><td><b>Comparativo ano a ano</b></td><td class="n">82</td><td class="n">82</td><td>Não existe</td><td>Ainda não construído. É o recurso que transforma 12 meses de disciplina em recompensa visível — e renova a assinatura anual sozinho.</td></tr>
+    </tbody>
+  </table></div>
+
+  <p class="sub">Top 5 — devem ter limite no FREE, não bloqueio</p>
+  <div class="tw"><table>
+    <thead><tr><th>Funcionalidade</th><th>Limite recomendado</th><th>Por que limite e não bloqueio</th></tr></thead>
+    <tbody>
+      <tr><td><b>Contas e cartões</b></td><td>5 no FREE · ilimitado no PRO</td><td>Bloquear impede o setup. 5 cobre o usuário típico (2 contas + 2 cartões + carteira) e só aperta em quem tem vida financeira complexa — que é quem paga.</td></tr>
+      <tr><td><b>Metas financeiras</b></td><td>1 ativa no FREE</td><td>Uma meta prova o conceito e engaja. Quem quer três metas simultâneas já entendeu o valor e está no perfil de assinante.</td></tr>
+      <tr><td><b>Orçamento por categoria</b></td><td>5 categorias no FREE</td><td>O 50/30/20 completo continua livre; o controle granular por categoria é comportamento de usuário avançado.</td></tr>
+      <tr><td><b>OCR de comprovantes</b></td><td>5 por mês (renovável)</td><td>Hoje são 5 usos <b>vitalícios</b> — o usuário queima em uma tarde e nunca mais experimenta. Cota mensal mantém a lembrança viva e cria desejo todo mês.</td></tr>
+      <tr><td><b>Transações recorrentes</b></td><td>3 no FREE</td><td>Aluguel, salário e internet cabem. A quarta recorrente indica alguém que já organizou a vida no app — momento perfeito para o paywall.</td></tr>
+    </tbody>
+  </table></div>
+
+  <p class="sub">Top 5 — nunca bloquear, sob nenhum cenário</p>
+  <div class="tw"><table>
+    <thead><tr><th>Funcionalidade</th><th class="n">RET</th><th class="n">CONV</th><th>Motivo</th></tr></thead>
+    <tbody>
+      <tr><td><b>Lançar transação (quantidade)</b></td><td class="n">98</td><td class="n">5</td><td>Limite de volume num app de hábito é a única mudança capaz de matar o produto. Elimine os 100/mês.</td></tr>
+      <tr><td><b>Ver e buscar o próprio extrato</b></td><td class="n">88</td><td class="n">20</td><td>O dado é do usuário. Cobrar para ele consultar o que digitou destrói confiança — e confiança é a sua marca.</td></tr>
+      <tr><td><b>Exportar CSV e backup JSON</b></td><td class="n">55</td><td class="n">20</td><td>Portabilidade é argumento de <i>aquisição</i> (“você pode sair quando quiser”), não item de paywall. Também é a leitura correta da LGPD.</td></tr>
+      <tr><td><b>PIN, biometria e criptografia local</b></td><td class="n">70</td><td class="n">28</td><td>Segurança atrás de paywall é péssimo sinal num app financeiro, e contradiz frontalmente “seu dinheiro, no seu aparelho”.</td></tr>
+      <tr><td><b>Modo escuro e PWA offline</b></td><td class="n">78</td><td class="n">8</td><td>Conversão desprezível, uso altíssimo. Cobrar aqui gera irritação sem receita.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+<section id="s6">
+  <div class="sechead"><span class="secnum">06</span><h2>Os limites do FREE, um a um</h2></div>
+  <p>Princípio único que governa a tabela: <b>limite por profundidade e automação, nunca por volume de uso</b>. O usuário FREE precisa conseguir registrar a vida financeira inteira dele. O PRO é quem faz o trabalho por ele.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Recurso</th><th>FREE hoje</th><th>FREE recomendado</th><th>PRO</th><th>Lógica</th></tr></thead>
+    <tbody>
+      <tr><td><b>Lançamentos/mês</b></td><td>100 (nuvem)</td><td class="mono"><b>Ilimitado</b></td><td>Ilimitado</td><td>Volume de uso nunca deve ser limitado num app de hábito. Elimina o pior gargalo do modelo.</td></tr>
+      <tr><td><b>Contas + cartões</b></td><td>3 (nuvem)</td><td class="mono"><b>5</b></td><td>Ilimitado</td><td>5 cobre o usuário típico. Estourar em 6+ indica vida financeira complexa = disposição a pagar.</td></tr>
+      <tr><td><b>Categorias personalizadas</b></td><td>Ilimitado</td><td class="mono"><b>5</b></td><td>Ilimitado</td><td>As ~15 padrão atendem quase todo mundo. Quem cria a sexta é organizador nato.</td></tr>
+      <tr><td><b>Orçamentos por categoria</b></td><td>5 (nuvem)</td><td class="mono"><b>5</b></td><td>Ilimitado</td><td>Já está certo. Manter — o 50/30/20 completo continua livre por fora dessa cota.</td></tr>
+      <tr><td><b>Metas</b></td><td>Ilimitado</td><td class="mono"><b>1 ativa</b></td><td>Ilimitado</td><td>Uma meta prova o valor; a segunda é desejo genuíno. Gatilho de conversão limpo.</td></tr>
+      <tr><td><b>Histórico analítico</b></td><td>Ilimitado</td><td class="mono"><b>3 meses</b></td><td>Ilimitado + ano a ano</td><td><b>A alavanca principal.</b> Gráficos, relatórios e comparativos limitados a 3 meses. Os dados brutos <i>nunca</i> somem, continuam no extrato e exportáveis.</td></tr>
+      <tr><td><b>Relatórios</b></td><td>Livre local</td><td class="mono"><b>Mês atual</b></td><td>Qualquer período</td><td>Consequência natural do limite de histórico.</td></tr>
+      <tr><td><b>Exportação CSV</b></td><td>Livre local / bloqueado nuvem</td><td class="mono"><b>Livre</b></td><td>Livre</td><td>Portabilidade é confiança e argumento de aquisição. Desbloquear na nuvem.</td></tr>
+      <tr><td><b>Exportação PDF</b></td><td>Livre local / bloqueado nuvem</td><td class="mono"><b>Bloqueado</b></td><td>Livre</td><td>PDF é relatório apresentável — uso profissional, valor percebido alto, sem impacto no uso diário.</td></tr>
+      <tr><td><b>Backup / importar JSON</b></td><td>Livre</td><td class="mono"><b>Livre</b></td><td>Livre</td><td>Nunca bloquear. LGPD + confiança.</td></tr>
+      <tr><td><b>Dispositivos sincronizados</b></td><td>Ilimitado no FREE nuvem</td><td class="mono"><b>1</b></td><td>Ilimitado</td><td>Custo real de infraestrutura, valor óbvio, padrão que o usuário já conhece de outros apps.</td></tr>
+      <tr><td><b>Backup na nuvem</b></td><td>—</td><td class="mono"><b>Incluído (1 aparelho)</b></td><td>Incluído</td><td><b>Novo:</b> dá ao login um benefício próprio. Criar conta passa a ser recompensa, não punição.</td></tr>
+      <tr><td><b>OCR de comprovantes</b></td><td>5 vitalícios / bloqueado nuvem</td><td class="mono"><b>5 por mês</b></td><td>Ilimitado</td><td>Cota renovável mantém a memória do recurso viva e recria o desejo todo mês.</td></tr>
+      <tr><td><b>Anexos</b></td><td>Ilimitado</td><td class="mono"><b>10 no total</b></td><td>Ilimitado</td><td>Armazenamento tem custo. 10 é suficiente para o usuário entender o recurso.</td></tr>
+      <tr><td><b>Recorrentes</b></td><td>Ilimitado</td><td class="mono"><b>3</b></td><td>Ilimitado</td><td>Aluguel + salário + internet cabem. A quarta indica alguém já organizado no app.</td></tr>
+      <tr><td><b>Contas a pagar ativas</b></td><td>Ilimitado</td><td class="mono"><b>5</b></td><td>Ilimitado</td><td>Cobre o mês típico sem virar gerenciador completo de vencimentos.</td></tr>
+      <tr><td><b>Assinaturas monitoradas</b></td><td>Ilimitado</td><td class="mono"><b>5</b></td><td>Ilimitado</td><td>Cadastro manual livre até 5; o <i>detector automático</i> é PRO.</td></tr>
+      <tr><td><b>Alertas</b></td><td>Avançados livres local</td><td class="mono"><b>Saldo + orçamento</b></td><td>Todos</td><td>Anomalia, padrão, projeção e assinatura esquecida são inteligência, não notificação.</td></tr>
+      <tr><td><b>Consultas de IA (previsão)</b></td><td>5 vitalícios</td><td class="mono"><b>Bloqueado, com prévia</b></td><td>Ilimitado</td><td>Mostrar o card da previsão embaçado com o valor real do mês seguinte oculto converte mais que 5 usos silenciosos.</td></tr>
+      <tr><td><b>Membros</b></td><td>1</td><td class="mono"><b>1</b></td><td>2</td><td>Manter.</td></tr>
+      <tr><td><b>Open Finance</b></td><td>Bloqueado</td><td class="mono"><b>Bloqueado</b></td><td>Conforme provedor</td><td>Manter. Único gate com justificativa de custo direto.</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="call warn">
+    <h4>Limite artificial a evitar</h4>
+    <p style="margin-bottom:0">Nenhum limite deve <b>apagar, esconder ou impedir a entrada</b> de um dado que o usuário já tem. O limite de histórico restringe a <i>análise</i> (gráficos, relatórios, comparativos), não o <i>registro</i>: o extrato de janeiro continua lá, buscável e exportável, mesmo em outubro. Essa distinção é o que separa um limite justo de um sequestro de dados — e num app de finanças, sequestro de dados é o fim da confiança.</p>
+  </div>
+</section>
+
+<section id="s7">
+  <div class="sechead"><span class="secnum">07</span><h2>Estratégia de paywall</h2></div>
+
+  <p class="sub">Quando <i>não</i> mostrar</p>
+  <ul>
+    <li><b>Nos 7 primeiros dias e nos 10 primeiros lançamentos.</b> Antes disso o usuário não tem base para julgar valor; qualquer oferta é ruído e ensina que o app pede dinheiro.</li>
+    <li><b>Durante o onboarding e a configuração de contas.</b> Você o está pedindo trabalho — cobrar no meio é a pior troca possível.</li>
+    <li><b>Na abertura do app.</b> Interstitial na inicialização é o padrão que mais gera desinstalação em apps financeiros.</li>
+    <li><b>Depois de duas recusas seguidas do mesmo contexto.</b> Silencie aquele gatilho específico por 30 dias.</li>
+    <li><b>Enquanto o usuário lança uma despesa.</b> Nunca interrompa o ato que forma o hábito.</li>
+  </ul>
+
+  <p class="sub">Quando mostrar — os oito gatilhos contextuais</p>
+  <div class="tw"><table>
+    <thead><tr><th>Momento</th><th>Formato</th><th>Mensagem</th><th>Por que converte</th></tr></thead>
+    <tbody>
+      <tr><td><b>Vira o 4º mês de uso</b></td><td>Card no dashboard</td><td>“Você tem 4 meses de dados. O comparativo completo está no Pro.”</td><td>Loss aversion sobre um ativo que ele construiu, no momento de maior orgulho.</td></tr>
+      <tr><td><b>Tenta ver gráfico de 6 meses</b></td><td>Gráfico com os 3 meses extras esmaecidos</td><td>“Mais 3 meses de histórico já estão salvos. Veja com o Pro.”</td><td>Efeito de demonstração: ele vê a forma do que está perdendo.</td></tr>
+      <tr><td><b>Cadastra a 6ª conta/cartão</b></td><td>Modal com contexto</td><td>“Sua vida financeira tem mais de 5 contas. O Pro acompanha todas.”</td><td>Chega quando o usuário já está profundamente configurado.</td></tr>
+      <tr><td><b>Cria a 2ª meta</b></td><td>Modal</td><td>“Duas metas ao mesmo tempo é coisa de quem planeja. O Pro libera quantas quiser.”</td><td>Sinal explícito de intenção de longo prazo.</td></tr>
+      <tr><td><b>Detector encontra assinatura esquecida</b></td><td>Card com valor real, item oculto</td><td>“Encontramos 3 cobranças recorrentes somando R$ 412/ano. Veja quais no Pro.”</td><td><b>O gatilho mais forte do app.</b> O número é maior que o preço da assinatura — o Pro se paga na tela.</td></tr>
+      <tr><td><b>Fim do mês, projeção negativa</b></td><td>Card no dashboard</td><td>“No ritmo atual seu mês fecha negativo. O Pro mostra quanto e onde cortar.”</td><td>Máxima intenção: dor presente, solução imediata.</td></tr>
+      <tr><td><b>Instala em 2º aparelho</b></td><td>Tela de sync</td><td>“Este é seu segundo aparelho. O Pro mantém os dois em dia.”</td><td>Necessidade declarada por ação, não suposta.</td></tr>
+      <tr><td><b>Fim do Pro de boas-vindas</b></td><td>Tela dedicada</td><td>Resumo do que ele usou nos 14 dias + o que muda amanhã</td><td>Reciprocidade + loss aversion sobre uso real, não sobre lista de features.</td></tr>
+    </tbody>
+  </table></div>
+
+  <p class="sub">O que deve ser experimentado antes de bloquear</p>
+  <p>Três recursos precisam ser <b>usados de verdade</b> pelo menos uma vez, senão o usuário nunca saberá o que está recusando: a <b>previsão de fim de mês</b> (uma vez por mês, completa), o <b>OCR</b> (5 por mês) e o <b>comparativo mês a mês</b> (sempre disponível para os 3 meses do FREE). Um paywall sobre um recurso que a pessoa nunca viu funcionar não é paywall — é uma porta fechada com um cartaz.</p>
+
+  <div class="call bad">
+    <h4>Erro a não repetir: o paywall sem saída</h4>
+    <p style="margin-bottom:0">Hoje, quando o usuário local esgota os 5 usos de IA, o modal abre <b>sem botão de assinar</b> — só um convite a criar conta. É correto pela política da Play, mas do ponto de vista comercial é um beco: o usuário sente o limite, forma a intenção, e não encontra o que comprar. A correção é o botão “Entrar e assinar” levar direto ao fluxo de conta <i>com a intenção preservada</i>, caindo no checkout logo depois do cadastro.</p>
+  </div>
+</section>
+
+<section id="s8">
+  <div class="sechead"><span class="secnum">08</span><h2>Funil e onde ele vaza</h2></div>
+  <p>Estimativas de referência para app de finanças pessoais no Brasil, sem marca, tráfego orgânico de loja. Servem para dimensionar os gargalos, não como previsão.</p>
+
+  <div class="funnel">
+    <div class="fstep"><span class="fl">01</span><span><span class="fn">Download</span><span class="fd">Play Store · orgânico</span></span><span class="fg g-lo">baseline 100&nbsp;%</span></div>
+    <div class="fstep"><span class="fl">02</span><span><span class="fn">Abriu o app</span><span class="fd">~75 % · perda normal de loja</span></span><span class="fg g-lo">saudável</span></div>
+    <div class="fstep"><span class="fl">03</span><span><span class="fn">Primeiro lançamento</span><span class="fd">~40 % · onboarding + primeira conta</span></span><span class="fg g-md">gargalo 2 — limite de 3 contas mata aqui</span></div>
+    <div class="fstep"><span class="fl">04</span><span><span class="fn">Aha moment: app categoriza sozinho</span><span class="fd">~30 % · 3º ou 4º lançamento</span></span><span class="fg g-lo">forte hoje</span></div>
+    <div class="fstep"><span class="fl">05</span><span><span class="fn">Criou conta / entrou na nuvem</span><span class="fd">~8 % · sem incentivo para logar</span></span><span class="fg g-hi">gargalo 1 — o maior de todos</span></div>
+    <div class="fstep"><span class="fl">06</span><span><span class="fn">Retenção D30</span><span class="fd">~12 % da base · virou o mês uma vez</span></span><span class="fg g-md">gargalo 3 — falta ritual de fechamento</span></div>
+    <div class="fstep"><span class="fl">07</span><span><span class="fn">Encontrou um recurso PRO</span><span class="fd">~5 % · só quem está na nuvem</span></span><span class="fg g-hi">gargalo 4 — herdado do gargalo 1</span></div>
+    <div class="fstep"><span class="fl">08</span><span><span class="fn">Viu o paywall com botão de compra</span><span class="fd">~4 % · exige estar logado</span></span><span class="fg g-hi">gargalo 5</span></div>
+    <div class="fstep"><span class="fl">09</span><span><span class="fn">Iniciou trial</span><span class="fd">~1 % · exige cartão</span></span><span class="fg g-hi">gargalo 6</span></div>
+    <div class="fstep"><span class="fl">10</span><span><span class="fn">Assinou</span><span class="fd">&lt;&nbsp;0,5 % da base</span></span><span class="fg g-hi">resultado composto</span></div>
+  </div>
+
+  <h3>Os três gargalos que importam</h3>
+  <p><b>Gargalo 1 — criar conta (≈8 %).</b> É o multiplicador de todos os outros. Enquanto logar for uma perda líquida, o funil inteiro opera sobre 8&nbsp;% da base. Correção: FREE idêntico dentro e fora da nuvem, mais um benefício exclusivo do login (backup na nuvem + 14 dias de Pro de boas-vindas). Login deixa de ser pedágio e vira presente.</p>
+  <p><b>Gargalo 6 — iniciar trial (≈1 %).</b> Cartão exigido antes de qualquer valor entregue. Correção: <b>trial reverso</b> — 14 dias de Pro completo concedidos no cadastro, sem cartão. O usuário forma hábito <i>com</i> os recursos pagos e depois os perde; a conversão passa a ser sobre algo que ele já viveu.</p>
+  <p><b>Gargalo 3 — retenção D30 (≈12 %).</b> Não existe momento de fechamento de mês. O app não celebra nem convoca. Correção: no dia 1 de cada mês, uma tela de <i>Fechamento</i> com o resumo do mês anterior, a variação e o score de saúde — grátis, sempre. É o ritual que transforma uso em hábito, e é onde o gatilho de histórico vai morar depois.</p>
+</section>
+
+<section id="s9">
+  <div class="sechead"><span class="secnum">09</span><h2>Psicologia do paywall</h2></div>
+  <div class="tw"><table>
+    <thead><tr><th>Princípio</th><th>Uso hoje</th><th class="n">Nota</th><th>Como usar bem</th></tr></thead>
+    <tbody>
+      <tr><td><b>Valor percebido</b></td><td>Paywall lista limites removidos, não capacidades ganhas</td><td class="n">35</td><td>Trocar “tira os limites” por “cuida do seu mês”. Vender previsão, automação e casal — coisas que ele ganha.</td></tr>
+      <tr><td><b>Reciprocidade</b></td><td>Nenhum uso. O app dá muito, mas nunca “em nome” de nada</td><td class="n">20</td><td>Pro de boas-vindas de 14 dias, sem cartão, nomeado como presente. Dar primeiro é o que autoriza pedir depois.</td></tr>
+      <tr><td><b>Loss aversion</b></td><td>Limite de 100 lançamentos gera perda <i>irritante</i>, não motivadora</td><td class="n">30</td><td>A perda certa é o histórico e a inteligência que ele já provou. Perder análise dói e converte; perder o direito de registrar dói e faz desinstalar.</td></tr>
+      <tr><td><b>Efeito de demonstração</b></td><td>Teaser de alertas avançados existe e é bom</td><td class="n">60</td><td>Estender: gráfico de 6 meses com os 3 extras esmaecidos, card de previsão com o número oculto, assinaturas esquecidas com o <b>total em reais visível</b> e os itens escondidos.</td></tr>
+      <tr><td><b>Progressão</b></td><td>Score de saúde existe, mas não conversa com o Pro</td><td class="n">45</td><td>Conectar: “seu score subiu 12 pontos em 3 meses — veja a curva completa dos 12 meses no Pro”.</td></tr>
+      <tr><td><b>Hábito</b></td><td>Lembrete diário e streak existem; nenhum é usado no funil</td><td class="n">50</td><td>Marco de 30 dias seguidos é o melhor momento de oferta que o app tem, e hoje passa em branco.</td></tr>
+      <tr><td><b>Escassez</b></td><td>Não usada</td><td class="n">—</td><td>Usar só uma vez, com verdade: preço de fundador para os primeiros 500 assinantes. Escassez falsa em app financeiro destrói a credibilidade que é seu ativo.</td></tr>
+      <tr><td><b>Antecipação de valor</b></td><td>Trial de 7 dias curto demais para conter um fechamento de mês</td><td class="n">30</td><td>14 dias no mínimo; idealmente atravessando uma virada de mês.</td></tr>
+      <tr><td><b>Upgrade contextual</b></td><td>Já existe e é bem-feito tecnicamente (<code>abrirPaywall(msg)</code>)</td><td class="n">70</td><td>Manter a infraestrutura, trocar os momentos. Os oito gatilhos da seção 07.</td></tr>
+    </tbody>
+  </table></div>
+  <div class="call good">
+    <h4>A frase que o modelo precisa produzir</h4>
+    <p style="margin-bottom:0">“O app já me ajuda bastante de graça, mas o Pro realmente vale a pena.” Ela só aparece quando as duas metades são verdade ao mesmo tempo. O FREE proposto aqui é <b>mais generoso</b> que o atual em tudo que o usuário faz todo dia — lançamentos ilimitados, mais contas, exportação livre, backup na nuvem — e o PRO fica <b>claramente melhor</b> em tudo que ele faria uma vez por mês. É a única configuração em que as duas metades coexistem.</p>
+  </div>
+</section>
+<section id="s10">
+  <div class="sechead"><span class="secnum">10</span><h2>Preço</h2></div>
+  <p>Preço atual: R$ 16,90/mês, R$ 129/ano. O anual equivale a R$ 10,75/mês. O problema não é a margem — é o posicionamento relativo.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Critério</th><th>Leitura</th></tr></thead>
+    <tbody>
+      <tr><td><b>Valor entregue</b></td><td>Alto no papel, baixo na percepção — porque o PRO é apresentado como remoção de limite. O usuário não compra “sem limites”; compra “resolve meu problema”.</td></tr>
+      <tr><td><b>Público-alvo</b></td><td>Classe média brasileira. R$ 16,90/mês entra na mesma faixa mental de uma assinatura de streaming, e concorre com ela na hora do corte — ironicamente, no mesmo app que ensina a cortar assinaturas.</td></tr>
+      <tr><td><b>Concorrentes</b></td><td>Mobills a R$ 99,90/ano é a âncora do mercado. Você está 30&nbsp;% acima, sendo desconhecido.</td></tr>
+      <tr><td><b>Frequência de uso</b></td><td>Diária no registro, mensal no valor. Isso favorece o <b>anual</b>: o benefício se acumula por ciclos mensais, e o preço mensal recoloca a decisão de compra doze vezes por ano.</td></tr>
+      <tr><td><b>Custos</b></td><td>Supabase + Stripe/Play (15–30&nbsp;% de taxa) + Open Finance (o único custo variável relevante). Margem confortável mesmo abaixo de R$ 10/mês, desde que Open Finance seja PRO.</td></tr>
+      <tr><td><b>CAC provável</b></td><td>Orgânico de loja ≈ R$ 0. Se houver mídia paga em finanças no Brasil, R$ 8–25 por instalação — o que exige LTV acima de R$ 120 e joga todo o peso no plano anual.</td></tr>
+      <tr><td><b>Posicionamento</b></td><td>“Privacidade + offline” é ótimo diferencial, mas não é diferencial <i>premium</i>: é o que o usuário quer <b>de graça</b>. Não sustenta preço acima do mercado.</td></tr>
+    </tbody>
+  </table></div>
+
+  <p class="sub">Preço recomendado</p>
+  <div class="price">
+    <div class="pcard"><p class="pn">Mensal</p><p class="pv">R$ 12,90<small>/mês</small></p><p class="pd">Abaixo da barreira dos R$ 15 e ainda acima da faixa de “app barato demais”. Existe sobretudo para fazer o anual parecer óbvio.</p></div>
+    <div class="pcard hero"><p class="pn">Anual · principal</p><p class="pv">R$ 79,90<small>/ano</small></p><p class="pd">R$ 6,66/mês, <b>−48 %</b> sobre o mensal. Fica abaixo do Mobills (R$ 99,90) e transforma preço em argumento em vez de objeção. É o plano que você promove.</p></div>
+    <div class="pcard"><p class="pn">Fundador · lançamento</p><p class="pv">R$ 149,90<small> uma vez</small></p><p class="pd">Vitalício, limitado aos primeiros 500. Resolve a objeção anti-assinatura — real e documentada no mercado brasileiro — e financia o começo.</p></div>
+  </div>
+
+  <p><b>Lógica do desconto anual (48 %).</b> É agressivo de propósito. Num app pré-lançamento sem marca, o inimigo não é a margem: é a decisão repetida. Cada mês em que o usuário reavalia R$ 12,90 é um mês em que ele pode cancelar. Comprar 12 meses de uma vez elimina 11 pontos de churn e ainda dá caixa antecipado. E R$ 79,90 fica confortavelmente abaixo da âncora mental de R$ 100.</p>
+
+  <p><b>Por que o vitalício.</b> Quando o Organizze encerrou o plano gratuito, a reação registrada nos fóruns brasileiros foi migração para alternativas com <i>pagamento único</i>, não para outra assinatura. Existe um segmento real que compra software, mas não aluga. R$ 149,90 = 22 meses de anual: você antecipa quase dois anos de LTV de usuários que provavelmente não assinariam nunca. Limite a 500 e feche — é preço de lançamento, não modelo de negócio.</p>
+
+  <p class="sub">Teste grátis: trocar por trial reverso</p>
+  <div class="call good">
+    <p><b>Hoje:</b> 7 dias com cartão, no Play e no Stripe. <b>Recomendado:</b> manter os 7 dias no SKU da loja (é exigência da plataforma) e adicionar, por cima, um <b>Pro de boas-vindas de 14 dias concedido no cadastro, sem cartão</b>, como entitlement do backend — a infraestrutura de <code>subscription.status = TRIALING</code> já existe e suporta isso.</p>
+    <p style="margin-bottom:0">O usuário passa duas semanas com previsão, OCR ilimitado, histórico completo e alertas avançados. No 12º dia recebe um resumo do que <i>ele mesmo</i> usou; no 15º, vira FREE. A conversão deixa de ser sobre uma lista de features e passa a ser sobre um hábito que ele já tem.</p>
+  </div>
+
+  <p class="sub">Lançamento e promoções</p>
+  <ul>
+    <li><b>Semanas 1–4:</b> só o vitalício de fundador (500 vagas) + anual. Sem mensal — concentra a decisão e cria o núcleo de usuários engajados.</li>
+    <li><b>Semana 5 em diante:</b> abre o mensal. O anual passa a ser o plano promovido, com o mensal servindo de contraste.</li>
+    <li><b>Janeiro:</b> a única sazonalidade que importa nesta categoria. Campanha de resolução de ano novo com o comparativo anual como herói.</li>
+    <li><b>Nunca:</b> cupons recorrentes, contagem regressiva falsa, “últimas horas” que reaparece. Em app financeiro, cada truque desses cobra juros na confiança.</li>
+  </ul>
+</section>
+
+<section id="s11">
+  <div class="sechead"><span class="secnum">11</span><h2>Concorrentes</h2></div>
+  <div class="tw"><table>
+    <thead><tr><th>App</th><th>Free</th><th>Pago</th><th>Preço</th><th>Principais bloqueios</th><th>Estratégia</th></tr></thead>
+    <tbody>
+      <tr><td><b>Mobills</b><br><span class="mono" style="font-size:.7rem;color:var(--faint)">líder BR, 6M+ downloads</span></td><td>Registro manual básico, 1 cartão</td><td>Premium: multi-cartão, relatórios, gráficos detalhados, sync bancário, metas, lembretes. PRO: assessor de IA no WhatsApp</td><td><b>R$ 99,90/ano</b><br>(~R$ 8,33/mês)</td><td>2º cartão, gráficos detalhados, filtros, integração bancária</td><td>Anual barato para dominar volume; upsell de IA por cima</td></tr>
+      <tr><td><b>Organizze</b><br><span class="mono" style="font-size:.7rem;color:var(--faint)">desde 2011</span></td><td><b>Não existe</b> — free descontinuado</td><td>Manual · Conectado · Conectado Plus</td><td><b>R$ 19,90 a R$ 59,90/mês</b> no anual</td><td>Tudo. Só há trial de 7 dias</td><td>Premium puro. Segmenta por nº de contas conectadas</td></tr>
+      <tr><td><b>Wallet (BudgetBakers)</b></td><td>Multi-conta, orçamentos, relatórios <b>com anúncios</b></td><td>Sem anúncios, sync bancário, compartilhamento</td><td>~US$ 6,99/mês</td><td>Anúncios, conexão bancária</td><td>Free generoso monetizado por publicidade</td></tr>
+      <tr><td><b>Spendee</b></td><td><b>1 carteira</b>, entrada manual, gráficos básicos</td><td>Carteiras ilimitadas, compartilhadas, sync bancário</td><td>US$ 1,99–5,99/mês</td><td>2ª carteira</td><td>Limite estrutural único e muito cedo</td></tr>
+      <tr><td><b>Goodbudget</b></td><td>20 envelopes, <b>1 conta</b>, 2 dispositivos</td><td>Ilimitado, 5 dispositivos, histórico maior</td><td>US$ 10/mês</td><td>Contas, dispositivos, <b>histórico</b></td><td>Limita capacidade e histórico — o modelo mais próximo do recomendado aqui</td></tr>
+      <tr><td><b>Monefy / AndroMoney</b></td><td>Funcional completo</td><td>Sync, temas, multi-conta</td><td><b>US$ 2,49–3,99 uma vez</b></td><td>Poucos</td><td>Pagamento único — prova que o segmento anti-assinatura existe</td></tr>
+      <tr><td><b>FinançasPro hoje</b></td><td>Local: quase tudo ilimitado · Nuvem: 100 tx, 3 contas</td><td>Sem limites na nuvem, IA, Open Finance, casal</td><td><b>R$ 16,90/mês · R$ 129/ano</b></td><td>Volume de uso, exportação, IA</td><td>Freemium com incentivo invertido</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Onde você está mais generoso</h3>
+  <p>Em quase tudo que os concorrentes cobram: <b>contas ilimitadas</b> (Spendee dá 1, Goodbudget dá 1), <b>metas, patrimônio, cartão com fatura, contas a pagar, recorrentes</b> (Mobills cobra por praticamente todos), <b>histórico ilimitado</b> (Goodbudget cobra), e <b>sem anúncios no free</b> (Wallet monetiza justamente aí). O modo local é, hoje, mais generoso que o plano pago de vários concorrentes.</p>
+
+  <h3>Onde você está mais restritivo</h3>
+  <p>Em um lugar só, e é o pior possível: <b>volume de lançamentos</b>. Nenhum concorrente relevante limita quantas transações você registra por mês. É a única restrição do seu modelo que o mercado não pratica — e é a que ataca diretamente o hábito.</p>
+
+  <h3>Oportunidade de diferenciação</h3>
+  <ul>
+    <li><b>Privacidade como padrão, não como recurso.</b> Todo concorrente relevante começa pedindo conexão bancária. Você é o único que funciona inteiro sem isso. Isso é campanha de aquisição, não item de paywall.</li>
+    <li><b>Comprometido vs disponível.</b> Nenhum dos apps acima responde “posso comprar isso hoje?” com essa clareza. É seu ativo de produto mais defensável e quase ninguém sabe que existe.</li>
+    <li><b>Parcelamento como cidadão de primeira classe.</b> Realidade brasileira que apps importados tratam mal e que os nacionais tratam de forma incompleta.</li>
+    <li><b>Vitalício de fundador.</b> Mobills e Organizze não podem oferecer — capturam mal o segmento que Monefy e AndroMoney atendem.</li>
+  </ul>
+
+  <h3>O que não copiar</h3>
+  <ul>
+    <li><b>Matar o free (Organizze).</b> Eles podem — têm 14 anos de marca. Você não tem nada além do free para conquistar as primeiras mil pessoas.</li>
+    <li><b>Anúncios no free (Wallet).</b> Contradiz frontalmente “sem anúncios e sem vender seus dados”, que é a sua ficha na loja e sua assinatura de marca.</li>
+    <li><b>Limitar a 1 conta (Spendee).</b> É o mesmo erro do seu limite de 3, agravado.</li>
+    <li><b>Preço do Organizze.</b> R$ 35/mês exige Open Finance robusto e uma década de reputação.</li>
+  </ul>
+
+  <h3>O que funciona melhor no mercado</h3>
+  <p>O anual barato do Mobills (R$ 99,90) é a jogada mais eficaz visível na categoria: derruba a barreira de decisão, financia o caixa antecipadamente e trava o usuário por doze meses num mercado onde a retenção é o problema central. É exatamente o movimento replicado na recomendação de preço — com R$ 79,90, um degrau abaixo.</p>
+</section>
+<section id="s12">
+  <div class="sechead"><span class="secnum">12</span><h2>Nova estrutura FREE</h2></div>
+  <p>Uma regra estrutural acima de tudo: <b>o FREE é o mesmo com ou sem login</b>. O modo local deixa de ser um plano paralelo mais generoso. Quem entra na nuvem ganha algo <i>a mais</i> (backup + 14 dias de Pro), nunca algo a menos.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Recurso</th><th>FREE</th><th>Limite</th></tr></thead>
+    <tbody>
+      <tr><td>Lançar receitas e despesas</td><td>Sim</td><td class="mono">Ilimitado</td></tr>
+      <tr><td>Entrada em linguagem natural</td><td>Sim</td><td class="mono">Ilimitado</td></tr>
+      <tr><td>Auto-categorização por regras</td><td>Sim</td><td class="mono">Ilimitado</td></tr>
+      <tr><td>Contas e cartões</td><td>Sim</td><td class="mono">5</td></tr>
+      <tr><td>Cartão com ciclo de fatura</td><td>Sim</td><td class="mono">Fatura do mês atual</td></tr>
+      <tr><td>Categorias personalizadas</td><td>Sim</td><td class="mono">5</td></tr>
+      <tr><td>Orçamento 50/30/20 completo</td><td>Sim</td><td class="mono">Sem limite</td></tr>
+      <tr><td>Orçamento por categoria</td><td>Sim</td><td class="mono">5 categorias</td></tr>
+      <tr><td>Metas financeiras</td><td>Sim</td><td class="mono">1 ativa</td></tr>
+      <tr><td>Patrimônio líquido</td><td>Sim</td><td class="mono">Snapshot atual (sem evolução)</td></tr>
+      <tr><td>Contas a pagar</td><td>Sim</td><td class="mono">5 ativas</td></tr>
+      <tr><td>Assinaturas / gastos fixos</td><td>Sim</td><td class="mono">5 cadastradas manualmente</td></tr>
+      <tr><td>Transações recorrentes</td><td>Sim</td><td class="mono">3</td></tr>
+      <tr><td>Comprometido vs disponível</td><td>Sim</td><td class="mono">Sem limite</td></tr>
+      <tr><td>Dashboard e extrato completos</td><td>Sim</td><td class="mono">Todo o histórico, sempre</td></tr>
+      <tr><td>Busca e filtros (inclui avançada)</td><td>Sim</td><td class="mono">Sem limite</td></tr>
+      <tr><td>Gráficos e relatórios</td><td>Sim</td><td class="mono">Últimos 3 meses</td></tr>
+      <tr><td>Fechamento mensal (resumo do mês anterior)</td><td>Sim</td><td class="mono">Sem limite</td></tr>
+      <tr><td>Insights básicos (variação, top categoria, risco)</td><td>Sim</td><td class="mono">Sem limite</td></tr>
+      <tr><td>Score de saúde financeira</td><td>Sim</td><td class="mono">Valor atual</td></tr>
+      <tr><td>Alertas de saldo e orçamento</td><td>Sim</td><td class="mono">Sem limite</td></tr>
+      <tr><td>Lembrete diário</td><td>Sim</td><td class="mono">Sem limite</td></tr>
+      <tr><td>OCR de comprovantes</td><td>Sim</td><td class="mono">5 por mês (renova)</td></tr>
+      <tr><td>Anexos de comprovantes</td><td>Sim</td><td class="mono">10 no total</td></tr>
+      <tr><td>Exportar CSV</td><td>Sim</td><td class="mono">Sem limite</td></tr>
+      <tr><td>Backup e importação JSON</td><td>Sim</td><td class="mono">Sem limite</td></tr>
+      <tr><td>Backup na nuvem <span class="tag t-free">novo</span></td><td>Com login</td><td class="mono">1 aparelho</td></tr>
+      <tr><td>PIN, biometria, 2FA, criptografia local</td><td>Sim</td><td class="mono">Sem limite</td></tr>
+      <tr><td>Modo escuro, PWA offline, atalhos</td><td>Sim</td><td class="mono">Sem limite</td></tr>
+      <tr><td>Pro de boas-vindas <span class="tag t-free">novo</span></td><td>Ao criar conta</td><td class="mono">14 dias, sem cartão</td></tr>
+    </tbody>
+  </table></div>
+  <div class="call good">
+    <p style="margin-bottom:0"><b>Teste de sanidade:</b> um usuário FREE consegue registrar 100&nbsp;% da vida financeira dele, para sempre, em 5 contas, e ver o mês atual inteiro com orçamento, alertas e insights. Ele nunca é impedido de usar o app — só de <i>enxergar mais fundo no tempo</i> e de <i>ser ajudado automaticamente</i>. Isso é um free honesto.</p>
+  </div>
+</section>
+
+<section id="s13">
+  <div class="sechead"><span class="secnum">13</span><h2>Nova estrutura PRO</h2></div>
+  <p>Nada aqui existe só para engordar a lista. Cada item ou <b>faz trabalho no lugar do usuário</b>, ou <b>mostra o que ele não veria sozinho</b>, ou <b>tem custo marginal real</b>.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Recurso</th><th>Categoria</th><th>Benefício para o usuário</th></tr></thead>
+    <tbody>
+      <tr><td><b>Histórico e relatórios ilimitados</b></td><td>Profundidade</td><td>Ver a própria evolução desde o primeiro dia, com gráficos de qualquer período.</td></tr>
+      <tr><td><b>Comparativo ano a ano</b></td><td>Profundidade</td><td>“Gastei R$ 3.200 a menos com transporte que ano passado.” Transforma disciplina em recompensa visível.</td></tr>
+      <tr><td><b>Previsão de fim de mês e fluxo futuro</b></td><td>Inteligência</td><td>Saber se vai fechar no vermelho enquanto ainda dá para reagir.</td></tr>
+      <tr><td><b>Detector de assinaturas esquecidas</b></td><td>Inteligência</td><td>Encontra cobranças recorrentes que ele esqueceu. Costuma economizar mais do que o preço do plano.</td></tr>
+      <tr><td><b>Alertas avançados</b></td><td>Inteligência</td><td>Gasto fora do padrão, hábito novo detectado, risco de estouro antes de acontecer.</td></tr>
+      <tr><td><b>Insights avançados</b></td><td>Inteligência</td><td>Onde cortar, quanto cortar, comparação mês a mês por categoria.</td></tr>
+      <tr><td><b>Categorização que aprende com você</b></td><td>Automação</td><td>Depois de algumas semanas, quase nada precisa ser categorizado à mão.</td></tr>
+      <tr><td><b>Fatura projetada e parcelas futuras</b></td><td>Automação</td><td>Ver o que já está comprometido nos próximos 12 meses de cartão.</td></tr>
+      <tr><td><b>OCR ilimitado</b></td><td>Automação</td><td>Fotografar o comprovante em vez de digitar, sempre que quiser.</td></tr>
+      <tr><td><b>Contas, metas, orçamentos, recorrentes e assinaturas ilimitados</b></td><td>Capacidade</td><td>O app acompanha a vida financeira inteira, por mais complexa que seja.</td></tr>
+      <tr><td><b>Patrimônio com evolução histórica</b></td><td>Profundidade</td><td>A curva do patrimônio líquido ao longo do tempo — o número que realmente importa no longo prazo.</td></tr>
+      <tr><td><b>Sync multi-dispositivo</b></td><td>Plataforma</td><td>Celular, tablet e navegador sempre em dia.</td></tr>
+      <tr><td><b>Modo casal (2 membros)</b></td><td>Plataforma</td><td>Duas pessoas, uma vida financeira, sem planilha compartilhada.</td></tr>
+      <tr><td><b>Open Finance</b></td><td>Plataforma</td><td>Lançamentos entram sozinhos, para quem quiser abrir mão do modo manual.</td></tr>
+      <tr><td><b>Exportação PDF e relatório mensal por e-mail</b></td><td>Saída</td><td>Relatório pronto para apresentar — a contador, a cônjuge, a si mesmo.</td></tr>
+      <tr><td><b>Anexos ilimitados</b></td><td>Capacidade</td><td>Guardar todo comprovante que importa.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="s14">
+  <div class="sechead"><span class="secnum">14</span><h2>Os must-have do PRO</h2></div>
+  <p>Se apenas estes existissem, o PRO ainda se venderia.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Classe</th><th>Recurso</th><th>Papel na decisão de compra</th></tr></thead>
+    <tbody>
+      <tr><td><b>🔥 Obrigatória</b></td><td><b>Histórico e comparativos ilimitados</b></td><td>É o gatilho que chega sozinho, no 4º mês, para todo usuário retido. Sem ele o modelo não tem motor.</td></tr>
+      <tr><td><b>🔥 Obrigatória</b></td><td><b>Previsão e projeção de fim de mês</b></td><td>Responde a pergunta mais ansiosa do usuário. É o argumento emocional da venda.</td></tr>
+      <tr><td><b>🔥 Obrigatória</b></td><td><b>Detector de assinaturas esquecidas</b></td><td>Único recurso que se paga na tela. É o argumento racional da venda.</td></tr>
+      <tr><td><b>🔥 Obrigatória</b></td><td><b>Sync multi-dispositivo</b></td><td>Necessidade declarada por ação. Conversão alta e custo justificado.</td></tr>
+      <tr><td><b>⭐ Forte diferencial</b></td><td><b>Modo casal</b></td><td>Dobra o lock-in e o valor percebido pelo mesmo preço. Muito subaproveitado hoje.</td></tr>
+      <tr><td><b>⭐ Forte diferencial</b></td><td><b>Categorização que aprende</b></td><td>A automação que o usuário sente todo dia. Sustenta a renovação.</td></tr>
+      <tr><td><b>⭐ Forte diferencial</b></td><td><b>Fatura projetada / parcelas futuras</b></td><td>Dor especificamente brasileira, mal resolvida pelos concorrentes.</td></tr>
+      <tr><td><b>💎 Premium avançado</b></td><td><b>Open Finance</b></td><td>Alto valor, alto custo. Vende, mas não deve ser o pilar — contradiz parcialmente o posicionamento de privacidade.</td></tr>
+      <tr><td><b>💎 Premium avançado</b></td><td><b>Patrimônio com evolução</b></td><td>Fideliza o usuário de horizonte longo, que é o de maior LTV.</td></tr>
+      <tr><td><b>🟢 Nice-to-have</b></td><td><b>PDF, anexos ilimitados, relatório por e-mail</b></td><td>Engrossam a proposta sem sustentá-la. Nunca devem liderar a comunicação.</td></tr>
+    </tbody>
+  </table></div>
+  <div class="call warn">
+    <h4>Sobre o Business</h4>
+    <p style="margin-bottom:0">Recomendação: <b>remover do paywall</b> (<code>SHOW_BUSINESS_PLAN: false</code>) e manter a infraestrutura intacta no backend. Duas colunas convertem melhor que três quando a terceira não tem persona. Se aparecer demanda real de escritórios de contabilidade ou de consultores financeiros, ela volta — como plano B2B, com preço por assento e uma proposta própria, não como um degrau esquisito acima de um app pessoal.</p>
+  </div>
+</section>
+
+<section id="s15">
+  <div class="sechead"><span class="secnum">15</span><h2>UX da monetização</h2></div>
+  <div class="tw"><table>
+    <thead><tr><th>Pergunta</th><th>Resposta hoje</th></tr></thead>
+    <tbody>
+      <tr><td>O usuário sabe que existe um PRO?</td><td>Se estiver logado, sim (card no perfil + banner de uso). Fora da nuvem, só depois de esgotar 5 usos de IA — o que pode nunca acontecer.</td></tr>
+      <tr><td>Ele entende o benefício?</td><td>Parcialmente. A lista do modal é composta por remoções de limite (“sem limites de uso”, “ilimitados na nuvem”), não por capacidades.</td></tr>
+      <tr><td>Recursos bloqueados estão identificados?</td><td>Só os de exportação (<code>aria-disabled</code> + tooltip). Metas, patrimônio, previsão e alertas não têm marcação alguma.</td></tr>
+      <tr><td>O CTA é claro?</td><td>Sim — “Assinar” / “Mudar plano”, bem implementado, com foco preso e Esc funcionando.</td></tr>
+      <tr><td>O paywall explica valor ou preço?</td><td>Preço, principalmente. Cada plano é um preço com uma lista de bullets abaixo.</td></tr>
+      <tr><td>O upgrade parece compra ou punição?</td><td>Punição. O título literal é “O Pro tira os limites na nuvem”.</td></tr>
+      <tr><td>Ele sabe o que ganha ao pagar?</td><td>Em termos genéricos. Faltam números concretos — quantos meses de histórico, quantas assinaturas esquecidas foram detectadas, quanto ele economizaria.</td></tr>
+      <tr><td>Excesso de banners?</td><td>Não. O banner de uso é único, contextual e some sozinho. Bem calibrado.</td></tr>
+      <tr><td>Paywalls irritantes?</td><td>Não. Nunca interrompe o lançamento, respeita o onboarding. Este é um ponto genuinamente forte.</td></tr>
+      <tr><td>Oportunidades perdidas?</td><td>Muitas: marco de 30 dias, virada de mês, 4º mês de dados, 2º aparelho, 6ª conta, 2ª meta. Nenhuma é usada.</td></tr>
+    </tbody>
+  </table></div>
+  <div class="sgrid">
+    <div class="srow low"><span class="sl">Descoberta do PRO</span><span class="sv">55</span><span class="sbar" style="--w:55%"><i style="--w:55%"></i></span><span class="sn">Invisível para o usuário local, que é a maioria.</span></div>
+    <div class="srow low"><span class="sl">Clareza do valor</span><span class="sv">45</span><span class="sbar"><i style="--w:45%"></i></span><span class="sn">Vende ausência de limite, não presença de capacidade.</span></div>
+    <div class="srow mid"><span class="sl">Qualidade do paywall</span><span class="sv">60</span><span class="sbar"><i style="--w:60%"></i></span><span class="sn">Execução técnica boa (acessível, contextual, com Play details). Conteúdo fraco.</span></div>
+    <div class="srow mid"><span class="sl">UX de upgrade</span><span class="sv">68</span><span class="sbar"><i style="--w:68%"></i></span><span class="sn">Checkout, portal, restore e dunning funcionam bem.</span></div>
+    <div class="srow low"><span class="sl">Persuasão</span><span class="sv">40</span><span class="sbar"><i style="--w:40%"></i></span><span class="sn">Só um teaser (alertas). Sem reciprocidade, progressão ou demonstração.</span></div>
+    <div class="srow"><span class="sl">Transparência</span><span class="sv">88</span><span class="sbar"><i style="--w:88%"></i></span><span class="sn">Ponto mais alto. Copy honesta, sem dark patterns, trial coerente em todos os canais.</span></div>
+    <div class="srow"><span class="sl">Experiência do FREE</span><span class="sv">70</span><span class="sbar"><i style="--w:70%"></i></span><span class="sn">Excelente offline, pobre na nuvem. A inconsistência é o problema, não a generosidade.</span></div>
+  </div>
+</section>
+
+<section id="s16">
+  <div class="sechead"><span class="secnum">16</span><h2>O trade-off, e onde fica o equilíbrio</h2></div>
+  <p>A leitura convencional — mais FREE aumenta aquisição e reduz conversão — é verdadeira só quando o FREE e o PRO competem pela <b>mesma necessidade</b>. Não é o seu caso, e é isso que abre a saída.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Necessidade</th><th>Frequência</th><th>Quem atende</th><th>Concorrem?</th></tr></thead>
+    <tbody>
+      <tr><td>Registrar o que gastei</td><td>Diária</td><td>FREE</td><td><b>Não</b> — dar mais aqui não reduz conversão, aumenta a base retida.</td></tr>
+      <tr><td>Ver como está o mês</td><td>Diária</td><td>FREE</td><td><b>Não</b> — é o que gera hábito.</td></tr>
+      <tr><td>Fechar o mês e comparar</td><td>Mensal</td><td>FREE (3 meses) → PRO</td><td><b>Sim, no tempo</b> — o mesmo recurso vira PRO conforme o histórico cresce.</td></tr>
+      <tr><td>Entender o futuro</td><td>Mensal</td><td>PRO</td><td><b>Não</b> — o FREE nem tenta atender.</td></tr>
+      <tr><td>Ser ajudado automaticamente</td><td>Contínua</td><td>PRO</td><td><b>Não</b> — automação é categoria própria.</td></tr>
+      <tr><td>Acompanhar em 2 aparelhos / a dois</td><td>Contínua</td><td>PRO</td><td><b>Não</b></td></tr>
+    </tbody>
+  </table></div>
+  <p><b>Conclusão.</b> Só uma linha concorre de fato, e ela concorre <b>no tempo</b>, não em recurso. Isso significa que você pode ser <i>mais</i> generoso no que é diário e <i>mais</i> firme no que é mensal e automático, ao mesmo tempo — as duas coisas se reforçam em vez de se anular. O ponto de equilíbrio é exatamente esse: <b>generosidade total no registro, firmeza total na análise profunda e na automação</b>.</p>
+</section>
+<section id="s17">
+  <div class="sechead"><span class="secnum">17</span><h2>Três cenários</h2></div>
+  <div class="cards">
+    <div class="card">
+      <h4>A · Freemium agressivo</h4>
+      <p style="font-size:.88rem;color:var(--muted);margin:0">FREE limitado a 50 lançamentos/mês, 3 contas, 1 mês de histórico. PRO com tudo mais, R$ 16,90/mês.</p>
+      <div>
+        <div class="kv"><span>Aquisição</span><b>baixa</b></div>
+        <div class="kv"><span>Ativação</span><b>muito baixa</b></div>
+        <div class="kv"><span>Retenção</span><b>baixa</b></div>
+        <div class="kv"><span>Conversão</span><b>alta sobre base mínima</b></div>
+        <div class="kv"><span>ARPU</span><b>alto</b></div>
+        <div class="kv"><span>LTV</span><b>médio</b></div>
+        <div class="kv"><span>Risco</span><b>alto</b></div>
+      </div>
+      <p style="font-size:.85rem;margin:0"><b>Por quê não:</b> exige marca para funcionar. Pré-lançamento sem base, uma nota 1 estrela na Play por “app que trava depois de 50 lançamentos” custa mais que dez assinaturas.</p>
+    </div>
+    <div class="card pick">
+      <p class="pickmark">Recomendado</p>
+      <h4>B · Freemium equilibrado</h4>
+      <p style="font-size:.88rem;color:var(--muted);margin:0">FREE com registro ilimitado, 5 contas, 3 meses de análise. PRO com profundidade, inteligência e automação. R$ 12,90 / R$ 79,90.</p>
+      <div>
+        <div class="kv"><span>Aquisição</span><b>alta</b></div>
+        <div class="kv"><span>Ativação</span><b>alta</b></div>
+        <div class="kv"><span>Retenção</span><b>alta</b></div>
+        <div class="kv"><span>Conversão</span><b>média, crescente no tempo</b></div>
+        <div class="kv"><span>ARPU</span><b>médio</b></div>
+        <div class="kv"><span>LTV</span><b>alto</b></div>
+        <div class="kv"><span>Risco</span><b>baixo</b></div>
+      </div>
+      <p style="font-size:.85rem;margin:0"><b>Por quê:</b> a conversão cresce sozinha conforme a base envelhece, porque o gatilho principal é o tempo. É o único cenário em que o resultado do mês 12 é muito melhor que o do mês 3 sem esforço adicional de marketing.</p>
+    </div>
+    <div class="card">
+      <h4>C · Freemium generoso</h4>
+      <p style="font-size:.88rem;color:var(--muted);margin:0">Tudo livre menos Open Finance, casal e sync multi-dispositivo. PRO só para o usuário avançado.</p>
+      <div>
+        <div class="kv"><span>Aquisição</span><b>muito alta</b></div>
+        <div class="kv"><span>Ativação</span><b>muito alta</b></div>
+        <div class="kv"><span>Retenção</span><b>muito alta</b></div>
+        <div class="kv"><span>Conversão</span><b>muito baixa</b></div>
+        <div class="kv"><span>ARPU</span><b>baixo</b></div>
+        <div class="kv"><span>LTV</span><b>baixo</b></div>
+        <div class="kv"><span>Risco</span><b>médio (custo de infra)</b></div>
+      </div>
+      <p style="font-size:.85rem;margin:0"><b>Por quê não:</b> é essencialmente o estado atual do modo local. Já sabemos o resultado — conversão estrutural perto de zero, e o custo de nuvem cresce com uma base que não paga.</p>
+    </div>
+  </div>
+  <div class="call good">
+    <h4>Escolhido: cenário B</h4>
+    <p style="margin-bottom:0">Alinha com o objetivo declarado (aquisição + receita em equilíbrio), é o único que aproveita o ativo que o produto acumula sozinho — histórico — e é reversível: se a conversão vier acima do esperado em 90 dias, apertar os limites do FREE depois é barato. O contrário, afrouxar depois de irritar a base inicial, não é.</p>
+  </div>
+</section>
+
+<section id="s18">
+  <div class="sechead"><span class="secnum">18</span><h2>Modelo final — a especificação</h2></div>
+  <p>Esta é a seção para entregar ao desenvolvedor.</p>
+
+  <div class="spec">
+    <header>🏆 Estrutura FREE — idêntica com e sem login</header>
+    <div class="sb">
+      <p style="margin-bottom:14px">Lançamentos ilimitados · linguagem natural · auto-categorização · <b>5</b> contas e cartões · fatura do mês atual · <b>5</b> categorias personalizadas · 50/30/20 completo · <b>5</b> orçamentos por categoria · <b>1</b> meta · patrimônio (snapshot) · <b>5</b> contas a pagar · <b>5</b> assinaturas manuais · <b>3</b> recorrentes · comprometido vs disponível · dashboard e extrato completos com busca · gráficos e relatórios dos <b>últimos 3 meses</b> · fechamento mensal · insights básicos · score de saúde · alertas de saldo e orçamento · lembrete diário · OCR <b>5/mês</b> · <b>10</b> anexos · exportar CSV · backup e importação JSON · backup na nuvem em <b>1</b> aparelho · PIN, biometria, 2FA e criptografia local · modo escuro · PWA offline · <b>14 dias de Pro de boas-vindas ao criar conta, sem cartão</b>.</p>
+    </div>
+  </div>
+
+  <div class="spec">
+    <header>💎 Estrutura PRO</header>
+    <div class="sb">
+      <p style="margin-bottom:14px">Histórico e relatórios <b>ilimitados</b> · <b>comparativo ano a ano</b> (a construir) · previsão de fim de mês e fluxo futuro · detector de assinaturas esquecidas · alertas avançados (anomalia, padrão, projeção) · insights avançados (sugestão de corte, comparação MoM) · categorização que aprende · fatura projetada e parcelas futuras · OCR ilimitado · contas, metas, orçamentos, recorrentes, assinaturas e anexos <b>ilimitados</b> · patrimônio com evolução histórica · sync multi-dispositivo · <b>modo casal (2 membros)</b> · Open Finance · exportação PDF e relatório mensal por e-mail.</p>
+    </div>
+  </div>
+
+  <div class="spec">
+    <header>🔒 Limites do FREE — valores exatos para plan-limits.json</header>
+    <div class="sb">
+      <div class="tw"><table>
+        <thead><tr><th>Chave</th><th>FREE hoje</th><th>FREE novo</th><th>PRO</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">maxTransPerMonth</td><td class="mono">100</td><td class="mono"><b>null</b></td><td class="mono">null</td></tr>
+          <tr><td class="mono">maxAccounts</td><td class="mono">3</td><td class="mono"><b>5</b></td><td class="mono"><b>null</b></td></tr>
+          <tr><td class="mono">maxBudgets</td><td class="mono">5</td><td class="mono">5</td><td class="mono">null</td></tr>
+          <tr><td class="mono">maxCustomCategories</td><td class="mono">—</td><td class="mono"><b>5</b></td><td class="mono">null</td></tr>
+          <tr><td class="mono">maxGoals</td><td class="mono">—</td><td class="mono"><b>1</b></td><td class="mono">null</td></tr>
+          <tr><td class="mono">maxRecurring</td><td class="mono">—</td><td class="mono"><b>3</b></td><td class="mono">null</td></tr>
+          <tr><td class="mono">maxBillsToPay</td><td class="mono">—</td><td class="mono"><b>5</b></td><td class="mono">null</td></tr>
+          <tr><td class="mono">maxSubscriptions</td><td class="mono">—</td><td class="mono"><b>5</b></td><td class="mono">null</td></tr>
+          <tr><td class="mono">maxAttachments</td><td class="mono">—</td><td class="mono"><b>10</b></td><td class="mono">null</td></tr>
+          <tr><td class="mono">historyMonths</td><td class="mono">—</td><td class="mono"><b>3</b></td><td class="mono">null</td></tr>
+          <tr><td class="mono">maxDevices</td><td class="mono">—</td><td class="mono"><b>1</b></td><td class="mono">null</td></tr>
+          <tr><td class="mono">ocrPerMonth</td><td class="mono">5 vitalícios</td><td class="mono"><b>5</b> (renova)</td><td class="mono">null</td></tr>
+          <tr><td class="mono">maxUsers</td><td class="mono">1</td><td class="mono">1</td><td class="mono">2</td></tr>
+          <tr><td class="mono">aiFeatures</td><td class="mono">false</td><td class="mono">false</td><td class="mono">true</td></tr>
+          <tr><td class="mono">advancedAlerts</td><td class="mono">false</td><td class="mono">false</td><td class="mono">true</td></tr>
+          <tr><td class="mono">reportExport</td><td class="mono">false</td><td class="mono"><b>csv</b></td><td class="mono"><b>all</b></td></tr>
+          <tr><td class="mono">openFinance</td><td class="mono">false</td><td class="mono">false</td><td class="mono">true</td></tr>
+          <tr><td class="mono">learnedCategorization</td><td class="mono">—</td><td class="mono"><b>false</b></td><td class="mono"><b>true</b></td></tr>
+          <tr><td class="mono">futureInvoiceProjection</td><td class="mono">—</td><td class="mono"><b>false</b></td><td class="mono"><b>true</b></td></tr>
+          <tr><td class="mono">netWorthHistory</td><td class="mono">—</td><td class="mono"><b>false</b></td><td class="mono"><b>true</b></td></tr>
+          <tr><td class="mono">welcomeTrialDays</td><td class="mono">—</td><td class="mono"><b>14</b> (sem cartão)</td><td class="mono">—</td></tr>
+          <tr><td class="mono">trialDays</td><td class="mono">7</td><td class="mono">7 (SKU da loja)</td><td class="mono">7</td></tr>
+        </tbody>
+      </table></div>
+      <p style="margin:16px 0 0;font-size:.88rem"><b>Mudança arquitetural obrigatória:</b> <code>shouldEnforceLimits()</code> passa a retornar <code>true</code> independentemente de <code>isCloudUser()</code>. Os limites valem no modo local também — é o que torna o funil coerente. Em contrapartida, os limites novos são materialmente mais generosos que os atuais em tudo que o usuário faz todo dia.</p>
+    </div>
+  </div>
+
+  <div class="spec">
+    <header>💰 Preço recomendado</header>
+    <div class="sb">
+      <p style="margin-bottom:0"><b>Mensal R$ 12,90</b> · <b>Anual R$ 79,90</b> (−48 %, plano promovido) · <b>Fundador R$ 149,90 vitalício</b>, primeiras 500 vagas · <b>Business: retirar do paywall</b>, manter backend. Trial: 14 dias de Pro de boas-vindas sem cartão no cadastro + os 7 dias do SKU da loja para quem chega direto pela assinatura.</p>
+    </div>
+  </div>
+
+  <div class="spec">
+    <header>🎯 Gatilhos de upgrade — ordem de implementação</header>
+    <div class="sb">
+      <ol style="margin:0">
+        <li><b>Fim do Pro de boas-vindas (dia 12 e dia 14)</b> — resumo do uso real + o que muda. Maior conversão esperada.</li>
+        <li><b>Virada para o 4º mês</b> — card de histórico no dashboard.</li>
+        <li><b>Detector de assinaturas esquecidas</b> — total em reais visível, itens ocultos.</li>
+        <li><b>Projeção de fim de mês negativa</b> — card com o problema, número no Pro.</li>
+        <li><b>Tentativa de ver gráfico além de 3 meses</b> — meses extras esmaecidos no próprio gráfico.</li>
+        <li><b>6ª conta ou cartão</b> · <b>2ª meta</b> · <b>4ª recorrente</b> — modal contextual no ato.</li>
+        <li><b>Instalação em 2º aparelho</b> — na tela de sincronização.</li>
+        <li><b>Marco de 30 dias seguidos de uso</b> — parabéns + oferta anual.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="spec">
+    <header>🚫 O que não fazer</header>
+    <div class="sb">
+      <ul style="margin:0">
+        <li><b>Não limite o número de lançamentos.</b> É a única mudança capaz de matar o produto sozinha.</li>
+        <li><b>Não apague nem esconda dados já registrados.</b> O limite de histórico restringe análise, nunca o extrato ou a exportação.</li>
+        <li><b>Não bloqueie exportação CSV nem backup JSON.</b> Portabilidade é aquisição e é a leitura correta da LGPD.</li>
+        <li><b>Não coloque segurança atrás de paywall.</b> PIN, biometria e criptografia local são a marca.</li>
+        <li><b>Não mostre paywall nos 7 primeiros dias</b> nem durante o onboarding.</li>
+        <li><b>Não coloque anúncios.</b> A ficha da loja promete o contrário.</li>
+        <li><b>Não use escassez falsa.</b> Contagem regressiva que reinicia num app financeiro custa a confiança que você levou um ano construindo.</li>
+        <li><b>Não deixe paywall sem saída.</b> Todo paywall precisa de um caminho de compra, inclusive offline (login → checkout, com a intenção preservada).</li>
+        <li><b>Não venda “remoção de limites”.</b> Venda o que o Pro faz por ele.</li>
+        <li><b>Não lance sem instrumentação.</b> Sem funil medido, a próxima auditoria também vai ser opinião.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="s19">
+  <div class="sechead"><span class="secnum">19</span><h2>Nota final</h2></div>
+  <div class="sgrid">
+    <div class="srow low"><span class="sl">Estratégia de monetização</span><span class="sv">52</span><span class="sbar"><i style="--w:52%"></i></span><span class="sn">Execução técnica excelente sobre uma estrutura comercial invertida.</span></div>
+    <div class="srow low"><span class="sl">Divisão FREE / PRO</span><span class="sv">38</span><span class="sbar"><i style="--w:38%"></i></span><span class="sn">Dois planos grátis concorrentes; features de alto valor liberadas; limites nas variáveis erradas.</span></div>
+    <div class="srow"><span class="sl">Valor do FREE</span><span class="sv">72</span><span class="sbar"><i style="--w:72%"></i></span><span class="sn">Ótimo offline, pobre na nuvem. A média esconde uma inconsistência grave.</span></div>
+    <div class="srow mid"><span class="sl">Valor do PRO</span><span class="sv">45</span><span class="sbar"><i style="--w:45%"></i></span><span class="sn">O que ele entrega de exclusivo é pouco: IA, Open Finance, casal, sync. O resto já é grátis.</span></div>
+    <div class="srow low"><span class="sl">Potencial de conversão</span><span class="sv">30</span><span class="sbar"><i style="--w:30%"></i></span><span class="sn">O funil só alcança quem cria conta, e criar conta é uma perda líquida.</span></div>
+    <div class="srow low"><span class="sl">Pricing</span><span class="sv">40</span><span class="sbar"><i style="--w:40%"></i></span><span class="sn">Acima do líder sendo desconhecido; anual pouco agressivo; Business sem persona.</span></div>
+    <div class="srow mid"><span class="sl">Paywall</span><span class="sv">62</span><span class="sbar"><i style="--w:62%"></i></span><span class="sn">Implementação exemplar — acessível, contextual, com Play details e restore. Conteúdo fraco.</span></div>
+    <div class="srow mid"><span class="sl">UX de monetização</span><span class="sv">58</span><span class="sbar"><i style="--w:58%"></i></span><span class="sn">Não incomoda, o que é raro. Mas também não persuade e quase não é descoberto.</span></div>
+    <div class="srow"><span class="sl">Diferenciação</span><span class="sv">70</span><span class="sbar"><i style="--w:70%"></i></span><span class="sn">Privacidade, offline-first, comprometido vs disponível e parcelamento são reais e defensáveis.</span></div>
+    <div class="srow"><span class="sl">Potencial de retenção</span><span class="sv">74</span><span class="sbar"><i style="--w:74%"></i></span><span class="sn">Produto denso e bem construído. Falta o ritual de fechamento de mês.</span></div>
+    <div class="srow mid"><span class="sl">Potencial de LTV</span><span class="sv">42</span><span class="sbar"><i style="--w:42%"></i></span><span class="sn">O ativo que mais cresce com o tempo — o histórico — não participa da monetização.</span></div>
+    <div class="srow total"><span class="sl">Nota geral</span><span class="sv">52</span><span class="sbar"><i style="--w:52%"></i></span><span class="sn">Um produto de 80 com uma estratégia de monetização de 40. O teto é alto justamente por isso: a correção é de configuração e de copy, não de engenharia.</span></div>
+  </div>
+</section>
+
+<section id="s20">
+  <div class="sechead"><span class="secnum">20</span><h2>Roadmap</h2></div>
+
+  <div class="rm">
+    <div class="rmh"><span class="p p0">P0</span><h3>Imediato — antes de qualquer publicação na loja</h3><span class="rt">~1 sprint</span></div>
+    <div class="tw"><table>
+      <thead><tr><th>Problema</th><th>Solução</th><th>Impacto</th><th>Dificuldade</th></tr></thead>
+      <tbody>
+        <tr><td>Local é mais generoso que a nuvem FREE</td><td><code>shouldEnforceLimits()</code> deixa de depender de <code>isCloudUser()</code>; limites novos valem em todo lugar</td><td><b>Muito alto</b> — destrava o funil inteiro</td><td>Baixa</td></tr>
+        <tr><td>100 lançamentos/mês quebram o hábito</td><td><code>maxTransPerMonth: null</code> no FREE; remover <code>guardQuota('transaction')</code></td><td><b>Muito alto</b> — remove o maior risco de churn</td><td>Trivial</td></tr>
+        <tr><td>3 contas quebram o setup</td><td><code>maxAccounts: 5</code></td><td><b>Alto</b> — recupera ativação</td><td>Trivial</td></tr>
+        <tr><td>Preço acima do líder</td><td>R$ 12,90 / R$ 79,90; criar SKUs e produtos Stripe</td><td><b>Alto</b></td><td>Baixa</td></tr>
+        <tr><td>Business polui o paywall</td><td><code>SHOW_BUSINESS_PLAN: false</code></td><td>Médio</td><td>Trivial</td></tr>
+        <tr><td>Lançamento sem instrumentação</td><td>Ligar <code>OBS</code> com consentimento explícito e <code>obsEndpoint</code>; instrumentar os 10 passos do funil</td><td><b>Muito alto</b> — habilita todo o resto</td><td>Média</td></tr>
+        <tr><td>Copy vende punição</td><td>Reescrever título e bullets do paywall em torno de capacidade</td><td><b>Alto</b></td><td>Trivial</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="rmh"><span class="p p1">P1</span><h3>Alta prioridade — primeiras 4–6 semanas pós-lançamento</h3><span class="rt">~2 sprints</span></div>
+    <div class="tw"><table>
+      <thead><tr><th>Problema</th><th>Solução</th><th>Impacto</th><th>Dificuldade</th></tr></thead>
+      <tbody>
+        <tr><td>Não há gatilho de conversão que chegue sozinho</td><td>Implementar <code>historyMonths: 3</code> — limite de janela em gráficos, relatórios e comparativos, sem tocar no extrato</td><td><b>Muito alto</b> — é o motor do modelo</td><td>Média</td></tr>
+        <tr><td>Trial exige cartão e é curto</td><td>Pro de boas-vindas: 14 dias concedidos no cadastro via entitlement, sem cartão</td><td><b>Muito alto</b></td><td>Média</td></tr>
+        <tr><td>Features de alto valor liberadas</td><td>Gate em: categorização aprendida, fatura projetada, patrimônio histórico, detector de assinaturas</td><td><b>Alto</b></td><td>Média</td></tr>
+        <tr><td>Login não tem benefício próprio</td><td>Backup na nuvem em 1 aparelho como benefício do FREE logado</td><td><b>Alto</b></td><td>Baixa</td></tr>
+        <tr><td>Faltam gatilhos contextuais</td><td>Implementar os 8 gatilhos da seção 07</td><td><b>Alto</b></td><td>Média</td></tr>
+        <tr><td>Paywall offline sem saída</td><td>“Entrar e assinar” preservando a intenção até o checkout</td><td>Médio</td><td>Baixa</td></tr>
+        <tr><td>OCR queima e nunca volta</td><td>Cota mensal renovável em vez de vitalícia</td><td>Médio</td><td>Baixa</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="rmh"><span class="p p2">P2</span><h3>Média prioridade — meses 2–4</h3><span class="rt">~3 sprints</span></div>
+    <div class="tw"><table>
+      <thead><tr><th>Problema</th><th>Solução</th><th>Impacto</th><th>Dificuldade</th></tr></thead>
+      <tbody>
+        <tr><td>Retenção D30 fraca</td><td>Tela de <b>Fechamento mensal</b> no dia 1: resumo, variação, score. Grátis, sempre</td><td><b>Alto</b> — cria o ritual que falta</td><td>Média</td></tr>
+        <tr><td>Comparativo anual não existe</td><td>Construir e posicionar como recurso-herói do PRO</td><td><b>Alto</b> — sustenta a renovação anual</td><td>Média</td></tr>
+        <tr><td>Bloqueios invisíveis</td><td>Marcação visual consistente para recurso PRO em toda a interface</td><td>Médio</td><td>Baixa</td></tr>
+        <tr><td>Modo casal subaproveitado</td><td>Promover no onboarding e no paywall; convite por link</td><td>Médio</td><td>Baixa</td></tr>
+        <tr><td>Segmento anti-assinatura</td><td>Vitalício de fundador, 500 vagas</td><td>Médio</td><td>Média</td></tr>
+        <tr><td>Score de saúde não conversa com o PRO</td><td>Curva histórica do score como teaser</td><td>Médio</td><td>Baixa</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="rmh"><span class="p p3">P3</span><h3>Futuro — experimentação</h3><span class="rt">após 1.000 usuários ativos</span></div>
+    <div class="tw"><table>
+      <thead><tr><th>Oportunidade</th><th>Como</th><th>Impacto</th><th>Dificuldade</th></tr></thead>
+      <tbody>
+        <tr><td>Preço ainda não validado</td><td>Teste A/B de preço por coorte de instalação</td><td>Alto</td><td>Média</td></tr>
+        <tr><td>Janela de histórico é palpite</td><td>Testar 3 vs 6 meses e medir conversão × churn</td><td>Alto</td><td>Baixa</td></tr>
+        <tr><td>Relatório mensal por e-mail</td><td>Reengajamento automático + vitrine do PRO</td><td>Médio</td><td>Média</td></tr>
+        <tr><td>Assistente por WhatsApp</td><td>Onde o Mobills está indo; reduz drasticamente o custo por lançamento</td><td>Alto</td><td>Alta</td></tr>
+        <tr><td>Plano família (4 membros)</td><td>Degrau de preço acima do casal</td><td>Médio</td><td>Média</td></tr>
+        <tr><td>Business com persona real</td><td>Só se houver demanda observada de contadores/consultores</td><td>Baixo</td><td>Alta</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <p><b>Método.</b> Revisão estática do código-fonte em <code>Downloads/financaspro</code> (v11.3.13 / vc36): <code>js/billing.js</code>, <code>config/plan-limits.json</code>, <code>js/modules/init-billing.js</code> e todas as chamadas a <code>canUse</code>, <code>guardQuota</code> e <code>shouldEnforceLimits</code>; leitura de <code>docs/levantamento-pro-vs-local.md</code>, <code>docs/play-store-ficha.md</code> e das duas auditorias de monetização de 03/09/2026. Notas 0–100 são julgamento estruturado, não medição: sem funil instrumentado, nenhuma delas pode ser validada empiricamente ainda — razão pela qual ligar a instrumentação é P0.</p>
+  <p><b>Fontes de mercado:</b> <a href="https://www.mobills.com.br/pricing/">Mobills — planos e preços</a> · <a href="https://mobills.zendesk.com/hc/pt-br/articles/39727734628251-Tudo-sobre-o-Mobills-PRO">Mobills PRO</a> · <a href="https://www.organizze.com.br/planos/">Organizze — planos</a> · <a href="https://tecnoblog.net/comunidade/t/organizze-vai-descontinuar-versao-gratuita/49852">Tecnoblog — Organizze descontinua a versão gratuita</a> · <a href="https://getfinny.app/blog/best-free-expense-tracker-apps-2026">Finny — apps de controle de gastos gratuitos em 2026</a> · <a href="https://zapgastos.com/blog/mobills-ou-organizze/">ZapGastos — Mobills ou Organizze</a></p>
+  <p style="margin-bottom:0">Auditoria de monetização · FinançasPro v11.3.13 · 04 de setembro de 2026</p>
+</footer>
+
+</div>
+
+</body>
+</html>

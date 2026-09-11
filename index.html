@@ -3,28 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5, user-scalable=yes">
-  <meta name="description" content="Seu dinheiro, no seu aparelho. Controle de gastos sem cadastro, sem banco conectado e sem internet.">
+  <meta name="description" content="Controle de gastos com dados no aparelho e sincronização opcional na nuvem. Sem anúncios e sem conectar ao banco.">
   <meta name="theme-color" content="#12694E">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="FinançasPro">
   <meta name="format-detection" content="telephone=no">
-  <!-- CSP — por que o jsDelivr aparece com CAMINHO e não só com host:
-       `https://cdn.jsdelivr.net` sozinho libera QUALQUER pacote do npm, o que
-       transforma a única dependência de CDN do app (tesseract.js, carregado sob
-       demanda por js/ocr.js) numa porta aberta para código arbitrário de
-       terceiros. Restringir ao prefixo do pacote mantém o OCR funcionando e
-       fecha o resto. `tesseract.js-core` entra porque o worker e o wasm vêm
-       desse pacote irmão.
-
-       Próximo passo (exige testar o OCR numa máquina com acesso ao CDN): fixar
-       a versão exata e adicionar SRI ao <script> em js/ocr.js. Para a versão
-       que `@5` resolve hoje, 5.1.1, o hash é
-         sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR/D3A991F
-       (calculado a partir do tarball publicado no npm, que é exatamente o que
-       o jsDelivr serve em /npm/tesseract.js@5.1.1/dist/tesseract.min.js). -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net/npm/tesseract.js@5/ https://cdn.jsdelivr.net/npm/tesseract.js-core@5/ https://cdn.belvo.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; connect-src 'self' http://localhost:4000 http://127.0.0.1:4000 https://cdn.jsdelivr.net https://api.belvo.com https://sandbox.belvo.com https://widget.belvo.io; frame-src https://widget.belvo.io; object-src 'none'; base-uri 'self'; form-action 'self';">
+  <!-- CSP: Belvo widget (Open Finance). OCR/Tesseract removidos do produto. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.belvo.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; connect-src 'self' http://localhost:4000 http://127.0.0.1:4000 https://api.belvo.com https://sandbox.belvo.com https://widget.belvo.io https://nubvlksibmpryltkfpei.supabase.co wss://nubvlksibmpryltkfpei.supabase.co; frame-src https://widget.belvo.io; object-src 'none'; base-uri 'self'; form-action 'self';">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
   <link rel="icon" href="icons/logo.svg" type="image/svg+xml">
@@ -39,16 +26,19 @@
   <link rel="stylesheet" href="css/fonts.css">
   <link rel="stylesheet" href="css/design-system.css">
   <link rel="stylesheet" href="css/critical-inline.css">
-  <link rel="stylesheet" href="css/style.css?v=modular-v3">
+  <link rel="stylesheet" href="css/style.css?v=modular-v8">
   <link rel="stylesheet" href="css/features/brand.css">
   <title>FinançasPro</title>
   <script defer src="js/utilities/observability.js"></script>
+  <script defer src="js/utilities/funil.js"></script>
   <script defer src="js/utilities/local-crypto.js"></script>
   <script defer src="js/utilities/focus-trap.js"></script>
+  <script defer src="js/utilities/tablist-keyboard.js"></script>
   <script defer src="js/utilities/aria-live.js"></script>
   <script defer src="js/utilities/finance-reconciler.js"></script>
   <!-- pin-guard NAO usa defer: precisa rodar antes do primeiro paint p/ evitar leak visual -->
   <script src="js/pin-guard.js"></script>
+  <script defer src="js/fp-secure-screen.js"></script>
   <script defer src="js/vendor/lucide.min.js"></script>
   <script defer src="js/lucide-init.js"></script>
 </head>
@@ -59,31 +49,93 @@
      conteúdo. Precisa ser o primeiro elemento focável do documento. -->
 <a href="#main-content" class="skip-link">Pular para o conteúdo principal</a>
 
-<div id="auth-overlay" class="auth-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="auth-dialog-title" aria-describedby="auth-message">
-  <div class="auth-card">
-    <div class="auth-brand">
-      <div class="auth-logo brand-logo-badge" aria-hidden="true"><img src="icons/logo.svg" alt="" class="brand-mark"></div>
-      <div>
-        <p class="auth-kicker">FinançasPro</p>
-        <h2 id="auth-dialog-title">Suas finanças, sob controle</h2>
-      </div>
+<div id="auth-overlay" class="auth-overlay auth-overlay--bank" style="display:none" role="dialog" aria-modal="true" aria-labelledby="auth-dialog-title" aria-describedby="auth-message">
+  <div class="auth-shell">
+    <div class="auth-top-bar">
+      <img src="icons/logo.svg" alt="FinançasPro" class="auth-top-logo brand-mark" width="40" height="40">
+      <button type="button" id="auth-exit-btn" class="auth-exit-btn" hidden>Sair</button>
     </div>
-    <p id="auth-message">Controle gastos, metas e contas em um só lugar. Grátis para começar.</p>
-    <div id="auth-env-warning" class="auth-env-warning" style="display:none"></div>
-    <div class="auth-tabs" role="tablist" aria-label="Tipo de autenticação">
-      <button type="button" class="auth-tab ativo" role="tab" id="auth-tab-login" aria-selected="true" aria-controls="auth-login-form" data-auth-tab="login">Entrar</button>
-      <button type="button" class="auth-tab" role="tab" id="auth-tab-register" aria-selected="false" aria-controls="auth-register-form" data-auth-tab="register">Criar conta</button>
-    </div>
-    <form id="auth-login-form" class="auth-form" role="tabpanel" aria-labelledby="auth-tab-login">
-      <div class="auth-field">
-        <label for="auth-login-email">Email</label>
-        <input type="email" id="auth-login-email" autocomplete="email" placeholder="voce@email.com" required>
+    <div class="auth-card">
+      <div class="auth-brand auth-brand--compact">
+        <h2 id="auth-dialog-title" class="auth-screen-title">Entrar</h2>
       </div>
-      <div class="auth-field">
-        <label for="auth-login-password">Senha</label>
-        <input type="password" id="auth-login-password" autocomplete="current-password" placeholder="Sua senha" required>
+      <p id="auth-message" class="auth-message">Digite seu e-mail para continuar.</p>
+      <div id="auth-env-warning" class="auth-env-warning" style="display:none"></div>
+      <div class="auth-tabs" role="tablist" aria-label="Tipo de autenticação">
+        <button type="button" class="auth-tab ativo" role="tab" id="auth-tab-login" aria-selected="true" aria-controls="auth-login-flow" data-auth-tab="login" tabindex="0">Entrar</button>
+        <button type="button" class="auth-tab" role="tab" id="auth-tab-register" aria-selected="false" aria-controls="auth-register-form" data-auth-tab="register" tabindex="-1">Criar conta</button>
       </div>
-      <button type="submit" class="btn-primario">Entrar</button>
+      <div id="auth-login-flow" role="tabpanel" aria-labelledby="auth-tab-login">
+        <form id="auth-login-step-email" class="auth-form auth-step" data-auth-step="email" autocomplete="on">
+          <div class="auth-field auth-field--underline">
+            <label for="auth-login-email">E-mail</label>
+            <input type="email" id="auth-login-email" name="username" autocomplete="username"
+                   inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false"
+                   placeholder="voce@email.com" required>
+          </div>
+          <button type="submit" class="btn-primario auth-btn-primary">Continuar</button>
+        </form>
+        <form id="auth-login-form" class="auth-form auth-step" data-auth-step="password" hidden autocomplete="on">
+          <div class="auth-user-block">
+            <div class="auth-user-avatar" aria-hidden="true"><i data-lucide="user"></i></div>
+            <h3 id="auth-greeting-name" class="auth-greeting-name">Olá!</h3>
+            <p id="auth-greeting-email" class="auth-greeting-email"></p>
+          </div>
+          <div class="auth-field auth-field--underline">
+            <label for="auth-login-password">Senha</label>
+            <div class="auth-password-wrap">
+              <input type="password" id="auth-login-password" name="password" autocomplete="current-password"
+                     autocapitalize="off" autocorrect="off" spellcheck="false"
+                     placeholder="Sua senha" required>
+              <button type="button" class="auth-password-toggle" data-target="auth-login-password"
+                      aria-label="Mostrar senha" aria-pressed="false">
+                <i data-lucide="eye" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+          <button type="button" id="auth-forgot-password" class="auth-link-btn">Esqueci minha senha</button>
+          <button type="submit" class="btn-primario auth-btn-primary">Entrar</button>
+          <button type="button" id="auth-change-email" class="auth-link-btn auth-link-btn--center">Usar outro e-mail</button>
+        </form>
+        <button type="button" id="auth-biometric-btn" class="auth-biometric-btn" hidden>
+          <i data-lucide="fingerprint" aria-hidden="true"></i>
+          <span>Entrar com biometria</span>
+        </button>
+        <p id="auth-biometric-hint" class="auth-biometric-hint" hidden>
+          Entre com senha uma vez para ativar biometria nas próximas vezes.
+        </p>
+        <!-- Só aparece quando há sessão guardada NESTE aparelho e o servidor
+             está fora de alcance. Sem ela, quem perdeu o sinal ficava trancado
+             fora dos próprios lançamentos, que estão todos aqui no aparelho. -->
+        <button type="button" id="auth-offline-btn" class="auth-biometric-btn" hidden>
+          <i data-lucide="cloud-off" aria-hidden="true"></i>
+          <span>Continuar sem conexão</span>
+        </button>
+        <p id="auth-offline-hint" class="auth-biometric-hint" hidden>
+          Seus lançamentos ficam neste aparelho. A sincronização volta sozinha
+          quando houver internet.
+        </p>
+        <button type="button" id="auth-resend-email-btn" class="auth-link-btn auth-link-btn--center" hidden>
+          Reenviar e-mail de confirmação
+        </button>
+      </div>
+    <form id="auth-reset-password-form" class="auth-form auth-form--reset" hidden style="display:none" aria-labelledby="auth-reset-title">
+      <h3 id="auth-reset-title" class="auth-totp-title">Definir nova senha</h3>
+      <p class="auth-totp-hint">Escolha uma senha forte para sua conta na nuvem.</p>
+      <div class="auth-field auth-field--underline">
+        <label for="auth-reset-password">Nova senha</label>
+        <div class="auth-password-wrap">
+          <input type="password" id="auth-reset-password" name="new-password" autocomplete="new-password"
+                 minlength="8" maxlength="128" autocapitalize="off" autocorrect="off" spellcheck="false"
+                 aria-describedby="auth-reset-password-hint" placeholder="Mín. 8 caracteres" required>
+          <button type="button" class="auth-password-toggle" data-target="auth-reset-password"
+                  aria-label="Mostrar senha" aria-pressed="false">
+            <i data-lucide="eye" aria-hidden="true"></i>
+          </button>
+        </div>
+        <p id="auth-reset-password-hint" class="auth-field-hint">Mínimo 8 caracteres, com pelo menos um número ou caractere especial.</p>
+      </div>
+      <button type="submit" class="btn-primario auth-btn-primary">Salvar nova senha</button>
     </form>
     <form id="auth-totp-form" class="auth-form" hidden style="display:none" aria-labelledby="auth-totp-title">
       <h3 id="auth-totp-title" class="auth-totp-title">Verificação em duas etapas</h3>
@@ -93,34 +145,40 @@
         <input type="text" id="auth-totp-code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="000000" required>
       </div>
       <button type="submit" class="btn-primario">Confirmar</button>
+      <button type="button" id="auth-totp-recovery" class="auth-link-btn auth-link-btn--center">Não tenho o autenticador</button>
       <button type="button" class="btn-ghost auth-totp-back" id="auth-totp-back">Voltar</button>
     </form>
-    <form id="auth-register-form" class="auth-form" role="tabpanel" aria-labelledby="auth-tab-register" hidden>
+    <form id="auth-register-form" class="auth-form" role="tabpanel" aria-labelledby="auth-tab-register" hidden autocomplete="on">
       <div class="auth-field">
         <label for="auth-register-name">Nome</label>
-        <input type="text" id="auth-register-name" autocomplete="name" placeholder="Seu nome" required>
+        <input type="text" id="auth-register-name" name="name" autocomplete="name"
+               autocapitalize="words" placeholder="Seu nome" required>
       </div>
       <div class="auth-field">
         <label for="auth-register-email">Email</label>
-        <input type="email" id="auth-register-email" autocomplete="email" placeholder="voce@email.com" required>
+        <input type="email" id="auth-register-email" name="email" autocomplete="email"
+               inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false"
+               placeholder="voce@email.com" required>
       </div>
       <div class="auth-field">
         <label for="auth-register-password">Senha</label>
-        <input type="password" id="auth-register-password" autocomplete="new-password" minlength="8" maxlength="128" aria-describedby="auth-register-password-hint" placeholder="Mín. 8 caracteres" required>
+        <div class="auth-password-wrap">
+          <input type="password" id="auth-register-password" name="new-password" autocomplete="new-password"
+                 minlength="8" maxlength="128" autocapitalize="off" autocorrect="off" spellcheck="false"
+                 aria-describedby="auth-register-password-hint" placeholder="Mín. 8 caracteres" required>
+          <button type="button" class="auth-password-toggle" data-target="auth-register-password"
+                  aria-label="Mostrar senha" aria-pressed="false">
+            <i data-lucide="eye" aria-hidden="true"></i>
+          </button>
+        </div>
         <p id="auth-register-password-hint" class="auth-field-hint">Mínimo 8 caracteres, com pelo menos um número ou caractere especial (!@#…).</p>
       </div>
       <button type="submit" class="btn-primario">Criar conta</button>
     </form>
-    <div class="auth-trust" aria-hidden="true">
-      <span class="chip"><i data-lucide="lock"></i> Seus dados são seus</span>
-      <span class="chip"><i data-lucide="landmark"></i> Open Finance</span>
-      <span class="chip"><i data-lucide="shield-check"></i> Sem anúncios</span>
+      <p class="auth-footer-note">Seus lançamentos ficam neste aparelho. Com login, sincronizam com a nuvem (Supabase) para backup entre dispositivos. A cifragem local é opcional em Perfil.</p>
     </div>
   </div>
 </div>
-
-<!-- SKIP LINK (a11y) -->
-<a href="#main-content" class="skip-link">Ir para o conteúdo principal</a>
 
 <!-- HEADER -->
 <header>
@@ -184,6 +242,24 @@
       <div class="sk-tx-item"><div class="skeleton sk-tx-icon"></div><div class="sk-tx-body"><div class="skeleton sk-tx-line"></div><div class="skeleton sk-tx-line-short"></div></div><div class="skeleton sk-tx-val"></div></div>
     </div>
     <div id="dashboard-greeting" class="dashboard-greeting"></div>
+    <p class="dashboard-method-tagline" id="dashboard-method-tagline">Método 50/30/20 — Necessidades, Desejos e Poupança</p>
+
+    <section id="dashboard-onboarding" class="dashboard-onboarding perfil-section" hidden aria-label="Primeiros passos">
+      <div class="dashboard-onboarding-card">
+        <h2 class="dashboard-onboarding-title">Comece em 3 passos</h2>
+        <ol class="dashboard-onboarding-steps">
+          <li>Registre sua primeira receita ou despesa na aba <strong>Novo</strong>.</li>
+          <li>Defina sua renda e veja o orçamento <strong>50/30/20</strong> em <strong>Orçamento</strong>.</li>
+          <li>Consulte o <strong>Extrato</strong> e faça backup dos dados em <strong>Perfil › Dados</strong>.</li>
+        </ol>
+        <button type="button" class="btn-primario dashboard-onboarding-cta" data-mudar-aba="novo">
+          <i data-lucide="plus" aria-hidden="true"></i> Registrar primeira transação
+        </button>
+      </div>
+    </section>
+
+    <div id="fp-usage-banner" class="fp-usage-banner" hidden></div>
+
     <div id="card-saldo-principal" class="card-saldo-principal"></div>
     <span class="sr-only" aria-live="polite" id="saldo-anuncio"></span>
     <div id="dashboard-alertas" class="dashboard-alertas"></div>
@@ -217,7 +293,7 @@
     <section class="dashboard-section perfil-section" id="secao-orcamento-resumo">
       <div class="secao-header">
         <h2 class="secao-titulo">Limites de orçamento</h2>
-        <button class="secao-link" type="button" data-mudar-aba="orcamento">Gerenciar <i data-lucide="chevron-right" aria-hidden="true"></i></button>
+        <button class="secao-link" type="button" data-mudar-aba="orcamento" data-orc-sub="planejamento">Gerenciar <i data-lucide="chevron-right" aria-hidden="true"></i></button>
       </div>
       <div id="resumo-orcamentos"></div>
     </section>
@@ -230,7 +306,7 @@
       <div id="resumo-list"></div>
     </section>
 
-    <button class="btn-primario" data-action="mudar-aba" data-aba="novo" style="margin-top:16px;">
+    <button class="btn-primario" data-action="mudar-aba" data-aba="novo">
       <i data-lucide="plus" aria-hidden="true"></i> Registrar Transação
     </button>
 
@@ -309,15 +385,15 @@
     <section class="dashboard-section perfil-section" id="secao-metas-resumo" style="display:none">
       <div class="secao-header">
         <h2 class="secao-titulo">Metas em andamento</h2>
-        <button class="secao-link" type="button" data-mudar-aba="orcamento">Ver todas <i data-lucide="chevron-right" aria-hidden="true"></i></button>
+        <button class="secao-link" type="button" data-mudar-aba="orcamento" data-orc-sub="metas">Ver todas <i data-lucide="chevron-right" aria-hidden="true"></i></button>
       </div>
       <div id="dashboard-metas-resumo" class="metas-resumo-grid"></div>
     </section>
 
     <section class="dashboard-section perfil-section" id="secao-assinaturas-resumo" style="display:none">
       <div class="secao-header">
-        <h2 class="secao-titulo"><i data-lucide="tv" aria-hidden="true"></i> Assinaturas</h2>
-        <button class="secao-link" type="button" data-mudar-aba="orcamento">Gerenciar <i data-lucide="chevron-right" aria-hidden="true"></i></button>
+        <h2 class="secao-titulo"><i data-lucide="tv" aria-hidden="true"></i> Gastos fixos</h2>
+        <button class="secao-link" type="button" data-mudar-aba="orcamento" data-orc-sub="assinaturas">Gerenciar <i data-lucide="chevron-right" aria-hidden="true"></i></button>
       </div>
       <div id="dashboard-assinaturas-resumo"></div>
     </section>
@@ -325,7 +401,7 @@
     <section class="dashboard-section perfil-section" id="secao-patrimonio-resumo" style="display:none">
       <div class="secao-header">
         <h2 class="secao-titulo"><i data-lucide="landmark" aria-hidden="true"></i> Patrimônio</h2>
-        <button class="secao-link" type="button" data-mudar-aba="orcamento">Gerenciar <i data-lucide="chevron-right" aria-hidden="true"></i></button>
+        <button class="secao-link" type="button" data-mudar-aba="orcamento" data-orc-sub="patrimonio">Gerenciar <i data-lucide="chevron-right" aria-hidden="true"></i></button>
       </div>
       <div id="dashboard-patrimonio-resumo"></div>
     </section>
@@ -467,7 +543,7 @@
       <div id="extras-panel" class="extras-panel" style="display:none">
 
         <!-- Banco e Cartão -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="extras-banco-pagamento">
           <div class="form-group">
             <label for="novo-banco"><i data-lucide="building"></i> Banco</label>
             <select id="novo-banco" class="form-select">
@@ -480,13 +556,12 @@
             </select>
           </div>
           <div class="form-group">
-            <label for="novo-cartao"><i data-lucide="credit-card"></i> Cartão</label>
+            <label for="novo-cartao"><i data-lucide="wallet"></i> Pagamento</label>
             <select id="novo-cartao" class="form-select">
-              <option value="">Sem cartão</option>
+              <option value="">Sem forma</option>
+              <option value="PIX">PIX</option>
               <option value="Crédito">Crédito</option>
               <option value="Débito">Débito</option>
-              <option value="XP">XP Investimentos</option>
-              <option value="B3">B3</option>
               <option value="Outro">Outro</option>
             </select>
           </div>
@@ -568,6 +643,12 @@
       <button type="submit" class="btn-primario btn-registrar">
         <i data-lucide="check" aria-hidden="true"></i> Registrar
       </button>
+
+      <p class="novo-acoes-secundarias">
+        <button type="button" class="btn-link-secundario" data-action="conta-transferir">
+          <i data-lucide="arrow-left-right" aria-hidden="true"></i> Transferir entre contas
+        </button>
+      </p>
     </form>
 
     <!-- ANIMAÇÃO DE SUCESSO (overlay) -->
@@ -590,7 +671,7 @@
       <div class="perfil-card-icon-wrapper" aria-hidden="true"><i data-lucide="clipboard-list"></i></div>
       <div class="perfil-info">
         <h2 class="perfil-nome">Extrato</h2>
-        <div class="perfil-meta"><span>Histórico, filtros e exportação</span></div>
+        <div class="perfil-meta"><span id="extrato-meta-subtitle">Histórico, filtros e exportação</span></div>
       </div>
     </div>
     <!-- Header -->
@@ -652,37 +733,10 @@
 
     <!-- Busca e filtros -->
     <div class="perfil-section">
-      <h2 class="perfil-section-title">Filtros</h2>
     <!-- Busca -->
     <div class="extrato-busca">
       <i data-lucide="search" class="busca-icon" aria-hidden="true"></i>
       <input type="text" id="extrato-busca" class="extrato-busca-input" placeholder="Buscar transações..." aria-label="Buscar transações por descrição ou categoria" autocomplete="off">
-      <button class="btn-busca-avancada" id="btn-busca-avancada" data-action="abrir-busca-avancada" aria-label="Abrir busca avançada">
-        <i data-lucide="settings" aria-hidden="true"></i>
-      </button>
-    </div>
-
-    <!-- Busca Avançada (oculta por padrão) -->
-    <div class="busca-avancada-container" id="busca-avancada-container" style="display:none">
-      <div class="busca-avancada-content">
-        <div class="busca-avancada-row">
-          <label for="valor-min">Valor mínimo:</label>
-          <input type="number" id="valor-min" class="busca-avancada-input" placeholder="R$ 0,00" step="0.01">
-        </div>
-        <div class="busca-avancada-row">
-          <label for="valor-max">Valor máximo:</label>
-          <input type="number" id="valor-max" class="busca-avancada-input" placeholder="R$ 0,00" step="0.01">
-        </div>
-        <div class="busca-avancada-row">
-          <label for="data-inicio">Data início:</label>
-          <input type="date" id="data-inicio" class="busca-avancada-input">
-        </div>
-        <div class="busca-avancada-row">
-          <label for="data-fim">Data fim:</label>
-          <input type="date" id="data-fim" class="busca-avancada-input">
-        </div>
-        <button class="btn-aplicar-busca-avancada" id="btn-aplicar-busca-avancada" data-action="aplicar-busca-avancada">Aplicar filtros</button>
-      </div>
     </div>
 
     <!-- Filtros -->
@@ -691,36 +745,69 @@
         <button class="filtro-chip ativo" data-filtro="todos" data-action="filtro-tipo" aria-pressed="true">Todas</button>
         <button class="filtro-chip" data-filtro="receita" data-action="filtro-tipo" aria-pressed="false">Receitas</button>
         <button class="filtro-chip" data-filtro="despesa" data-action="filtro-tipo" aria-pressed="false">Despesas</button>
-      </div>
-      <div class="filtros-categoria" id="filtros-categoria" role="group" aria-label="Filtro por categoria"></div>
-      
-      <!-- Ordenação -->
-      <div class="ordenacao-container" role="group" aria-label="Ordenar por">
-        <button class="ordenacao-btn ativo" data-ordenacao="data-desc" data-action="ordenar" aria-pressed="true" title="Data (mais recente)" aria-label="Ordenar por data, mais recente primeiro">
-          <i data-lucide="calendar" aria-hidden="true"></i> Data <i data-lucide="arrow-down" aria-hidden="true"></i>
-        </button>
-        <button class="ordenacao-btn" data-ordenacao="data-asc" data-action="ordenar" aria-pressed="false" title="Data (mais antiga)" aria-label="Ordenar por data, mais antiga primeiro">
-          <i data-lucide="calendar" aria-hidden="true"></i> Data <i data-lucide="arrow-up" aria-hidden="true"></i>
-        </button>
-        <button class="ordenacao-btn" data-ordenacao="valor-desc" data-action="ordenar" aria-pressed="false" title="Valor (maior)" aria-label="Ordenar por valor, maior primeiro">
-          <i data-lucide="dollar-sign" aria-hidden="true"></i> Valor <i data-lucide="arrow-down" aria-hidden="true"></i>
-        </button>
-        <button class="ordenacao-btn" data-ordenacao="valor-asc" data-action="ordenar" aria-pressed="false" title="Valor (menor)" aria-label="Ordenar por valor, menor primeiro">
-          <i data-lucide="dollar-sign" aria-hidden="true"></i> Valor <i data-lucide="arrow-up" aria-hidden="true"></i>
+        <button type="button" class="filtro-chip filtro-chip--avancados" id="btn-filtros-avancados"
+          data-action="toggle-filtros-avancados"
+          aria-expanded="false" aria-controls="extrato-filtros-avancados">
+          <i data-lucide="sliders-horizontal" aria-hidden="true"></i> Filtro
+          <span class="filtro-avancados-count" id="filtro-avancados-count" hidden>0</span>
         </button>
       </div>
 
-      <!-- Botão limpar filtros -->
-      <button class="btn-limpar-filtros" data-action="limpar-filtros" aria-label="Limpar todos os filtros">
-        <i data-lucide="rotate-ccw" aria-hidden="true"></i> Limpar filtros
-      </button>
+      <div class="extrato-filtros-avancados" id="extrato-filtros-avancados" hidden>
+        <!-- Valor / período (antes na engrenagem da busca) -->
+        <div class="busca-avancada-container" id="busca-avancada-container">
+          <div class="busca-avancada-content">
+            <div class="busca-avancada-row">
+              <label for="valor-min">Valor mínimo:</label>
+              <input type="number" id="valor-min" class="busca-avancada-input" placeholder="R$ 0,00" step="0.01">
+            </div>
+            <div class="busca-avancada-row">
+              <label for="valor-max">Valor máximo:</label>
+              <input type="number" id="valor-max" class="busca-avancada-input" placeholder="R$ 0,00" step="0.01">
+            </div>
+            <div class="busca-avancada-row">
+              <label for="data-inicio">Data início:</label>
+              <input type="date" id="data-inicio" class="busca-avancada-input">
+            </div>
+            <div class="busca-avancada-row">
+              <label for="data-fim">Data fim:</label>
+              <input type="date" id="data-fim" class="busca-avancada-input">
+            </div>
+            <button class="btn-aplicar-busca-avancada" id="btn-aplicar-busca-avancada" data-action="aplicar-busca-avancada">Aplicar período e valor</button>
+          </div>
+        </div>
+
+        <div class="filtros-categoria" id="filtros-categoria" role="group" aria-label="Filtro por categoria"></div>
+
+        <!-- Ordenação -->
+        <div class="ordenacao-container" role="group" aria-label="Ordenar por">
+          <div class="ordenacao-campo-grupo" role="group" aria-label="Campo de ordenação">
+            <button type="button" class="ordenacao-campo-btn ativo" data-ordenacao-campo="data" data-action="ordenacao-campo" aria-pressed="true">Data</button>
+            <button type="button" class="ordenacao-campo-btn" data-ordenacao-campo="valor" data-action="ordenacao-campo" aria-pressed="false">Valor</button>
+          </div>
+          <button type="button" class="ordenacao-dir-btn" data-action="toggle-ordenacao-dir" aria-pressed="true" aria-label="Ordenação descendente" title="Maior ou mais recente primeiro">
+            <i data-lucide="arrow-down" aria-hidden="true"></i>
+          </button>
+        </div>
+        <p class="ordenacao-hint" id="ordenacao-hint">Data mais recente primeiro. Toque em Data, Valor ou na seta para mudar.</p>
+
+        <!-- Botão limpar filtros -->
+        <button class="btn-limpar-filtros" data-action="limpar-filtros" aria-label="Limpar todos os filtros">
+          <i data-lucide="rotate-ccw" aria-hidden="true"></i> Limpar filtros
+        </button>
+      </div>
     </div>
     </div>
 
     <!-- Lista de transações -->
     <div class="perfil-section">
       <h2 class="perfil-section-title">Transações</h2>
-    <div id="lista-transacoes"></div>
+    <p class="extrato-lista-meta" id="extrato-lista-meta" aria-live="polite" hidden></p>
+    <div class="extrato-lista-viewport" id="extrato-lista-viewport">
+      <div id="extrato-virtual-spacer-top" class="extrato-virtual-spacer" aria-hidden="true"></div>
+      <div id="lista-transacoes"></div>
+      <div id="extrato-virtual-spacer-bottom" class="extrato-virtual-spacer" aria-hidden="true"></div>
+    </div>
 
     <!-- Barra de ações em massa (oculta por padrão) -->
     <div class="acoes-massa-bar" id="acoes-massa-bar" style="display:none">
@@ -758,40 +845,55 @@
 
   <!-- ABA 4: ORÇAMENTO -->
   <div id="aba-orcamento" class="aba">
+    <nav class="orc-subnav" aria-label="Seções do orçamento">
+      <div class="orc-tablist" role="tablist" aria-label="Seções do orçamento">
+        <button type="button" class="orc-tab ativo" role="tab"
+          id="orc-sub-tab-planejamento" data-action="orc-sub-aba" data-orc-sub="planejamento"
+          aria-selected="true" aria-controls="orc-sub-panel-planejamento" tabindex="0">Planejamento</button>
+        <button type="button" class="orc-tab" role="tab"
+          id="orc-sub-tab-metas" data-action="orc-sub-aba" data-orc-sub="metas"
+          aria-selected="false" aria-controls="orc-sub-panel-metas" tabindex="-1">Metas</button>
+        <button type="button" class="orc-tab" role="tab"
+          id="orc-sub-tab-assinaturas" data-action="orc-sub-aba" data-orc-sub="assinaturas"
+          aria-selected="false" aria-controls="orc-sub-panel-assinaturas" tabindex="-1">Gastos fixos</button>
+        <button type="button" class="orc-tab" role="tab"
+          id="orc-sub-tab-patrimonio" data-action="orc-sub-aba" data-orc-sub="patrimonio"
+          aria-selected="false" aria-controls="orc-sub-panel-patrimonio" tabindex="-1">Patrimônio</button>
+      </div>
+    </nav>
+
+    <div id="orc-sub-panel-planejamento" class="orc-sub-panel ativo" role="tabpanel" aria-labelledby="orc-sub-tab-planejamento">
     <!-- Renda mensal (se não definida) -->
     <div class="orc-renda-setup" id="orc-renda-setup">
-      <div class="perfil-header perfil-header-compact perfil-header-compact--flat">
-        <div class="perfil-card-icon-wrapper" aria-hidden="true"><i data-lucide="target"></i></div>
-        <div class="perfil-info">
+      <div class="orc-renda-setup-head">
+        <div class="orc-renda-icon" aria-hidden="true"><i data-lucide="target"></i></div>
+        <div class="orc-renda-copy">
           <p class="orc-renda-title">Qual sua renda mensal?</p>
           <p class="orc-renda-desc">Informe para calcular seu orçamento 50/30/20</p>
         </div>
       </div>
-      <div class="orc-renda-input">
+      <div class="orc-renda-field">
         <label class="sr-only" for="orc-renda-valor">Renda mensal em reais</label>
-        <span class="orc-renda-prefix">R$</span>
-        <input type="text" id="orc-renda-valor" placeholder="0,00" inputmode="numeric">
+        <div class="orc-renda-group">
+          <span class="orc-renda-prefix" aria-hidden="true">R$</span>
+          <input type="text" id="orc-renda-valor" class="orc-renda-input" placeholder="0,00" inputmode="decimal" autocomplete="off">
+        </div>
+        <button type="button" class="btn-primario orc-renda-submit" data-action="salvar-renda-orcamento">Definir renda</button>
       </div>
-      <button class="btn-primario" data-action="salvar-renda-orcamento">Definir Renda</button>
     </div>
 
     <!-- Dashboard -->
     <div id="orc-dashboard" style="display:none">
       <div id="orc-live-region" class="sr-only" aria-live="polite" aria-atomic="true"></div>
-      <div class="perfil-header perfil-header-compact">
-        <div class="perfil-card-icon-wrapper" aria-hidden="true"><i data-lucide="target"></i></div>
-        <div class="perfil-info">
-          <h2 class="perfil-nome">Orçamento</h2>
-          <div class="perfil-meta"><span>Planejamento 50/30/20 do mês</span></div>
-        </div>
-      </div>
+      <p class="orc-panel-subtitle">Planejamento 50/30/20 — divida sua renda em Necessidades, Desejos e Poupança</p>
       <!-- Header Estratégico -->
       <div class="orc-header">
         <!-- KPI Principal -->
         <div class="orc-kpi-main">
           <div class="orc-kpi-main-content">
-            <div class="orc-kpi-label">Saldo disponível do orçamento</div>
-            <div class="orc-kpi-value" id="orc-saldo-disponivel">R$ 0,00</div>
+            <div class="orc-kpi-label" title="Renda do mês menos despesas lançadas">Saldo disponível do orçamento</div>
+            <div class="orc-kpi-value" id="orc-saldo-disponivel" aria-describedby="orc-kpi-saldo-hint">R$ 0,00</div>
+            <p id="orc-kpi-saldo-hint" class="orc-kpi-hint">Renda informada menos despesas do mês</p>
             <div class="orc-kpi-meta">
               <span class="orc-kpi-percent" id="orc-percent-restante">0%</span>
               <span class="orc-kpi-separator">•</span>
@@ -808,28 +910,28 @@
           <div class="orc-kpi-card">
             <div class="orc-kpi-card-icon"><i data-lucide="clipboard-list" aria-hidden="true"></i></div>
             <div class="orc-kpi-card-content">
-              <span class="orc-kpi-card-label">Total planejado</span>
+              <span class="orc-kpi-card-label" title="Soma da renda usada como base do 50/30/20">Total planejado</span>
               <span class="orc-kpi-card-value" id="orc-total-planejado">R$ 0,00</span>
             </div>
           </div>
           <div class="orc-kpi-card">
             <div class="orc-kpi-card-icon"><i data-lucide="check-circle" aria-hidden="true"></i></div>
             <div class="orc-kpi-card-content">
-              <span class="orc-kpi-card-label">Total realizado</span>
+              <span class="orc-kpi-card-label" title="Soma das despesas lançadas no mês">Total realizado</span>
               <span class="orc-kpi-card-value" id="orc-total-realizado">R$ 0,00</span>
             </div>
           </div>
           <div class="orc-kpi-card">
             <div class="orc-kpi-card-icon"><i data-lucide="alert-triangle" aria-hidden="true"></i></div>
             <div class="orc-kpi-card-content">
-              <span class="orc-kpi-card-label">Críticas</span>
+              <span class="orc-kpi-card-label" title="Categorias acima do limite ou em risco">Críticas</span>
               <span class="orc-kpi-card-value" id="orc-categorias-criticas">0</span>
             </div>
           </div>
           <div class="orc-kpi-card">
             <div class="orc-kpi-card-icon"><i data-lucide="trending-up" aria-hidden="true"></i></div>
             <div class="orc-kpi-card-content">
-              <span class="orc-kpi-card-label">Economia</span>
+              <span class="orc-kpi-card-label" title="Quanto ainda cabe na fatia de poupança (20%)">Economia</span>
               <span class="orc-kpi-card-value" id="orc-economia-mes">R$ 0,00</span>
             </div>
           </div>
@@ -1006,15 +1108,18 @@
 
           <!-- Empty State para Categorias -->
           <div class="orc-categorias-empty" id="orc-categorias-empty" style="display:none">
-            <div class="orc-empty-icon"><i data-lucide="bar-chart"></i></div>
-            <p class="orc-empty-title">Nenhuma categoria configurada</p>
-            <p class="orc-empty-desc">Configure seus orçamentos por categoria para começar seu planejamento financeiro.</p>
+            <div class="orc-empty-icon"><i data-lucide="bar-chart" aria-hidden="true"></i></div>
+            <p class="orc-empty-title">Nenhuma categoria com gasto neste mês</p>
+            <p class="orc-empty-desc">Lance uma despesa no Extrato ou em Novo para ver o detalhamento por categoria. Depois você pode ajustar limites em Configurações › Orçamento.</p>
+            <button type="button" class="btn-primario" data-mudar-aba="novo">Registrar primeiro lançamento</button>
           </div>
         </div>
       </div>
     </div>
+    </div><!-- /orc-sub-panel-planejamento -->
 
     <!-- Metas financeiras (visível mesmo sem renda definida) -->
+    <div id="orc-sub-panel-metas" class="orc-sub-panel" role="tabpanel" hidden aria-labelledby="orc-sub-tab-metas">
     <div class="metas-section perfil-section" id="metas-section">
       <div class="orc-secao-header">
         <h3 class="perfil-section-title">Metas financeiras</h3>
@@ -1022,17 +1127,21 @@
       </div>
       <div id="metas-list" class="metas-list"></div>
     </div>
+    </div><!-- /orc-sub-panel-metas -->
 
     <!-- Assinaturas -->
+    <div id="orc-sub-panel-assinaturas" class="orc-sub-panel" role="tabpanel" hidden aria-labelledby="orc-sub-tab-assinaturas">
     <div class="assinaturas-section perfil-section" id="assinaturas-section">
       <div class="orc-secao-header">
-        <h3 class="perfil-section-title"><i data-lucide="tv" aria-hidden="true"></i> Assinaturas</h3>
+        <h3 class="perfil-section-title"><i data-lucide="tv" aria-hidden="true"></i> Gastos fixos</h3>
         <button type="button" class="btn-secundario btn-sm" data-action="assinatura-nova">Nova assinatura</button>
       </div>
       <div id="assinaturas-list" class="assinaturas-list"></div>
     </div>
+    </div><!-- /orc-sub-panel-assinaturas -->
 
     <!-- Patrimônio líquido -->
+    <div id="orc-sub-panel-patrimonio" class="orc-sub-panel" role="tabpanel" hidden aria-labelledby="orc-sub-tab-patrimonio">
     <div class="patrimonio-section perfil-section" id="patrimonio-section">
       <div class="orc-secao-header">
         <h3 class="perfil-section-title"><i data-lucide="landmark" aria-hidden="true"></i> Patrimônio líquido</h3>
@@ -1043,6 +1152,7 @@
       </div>
       <div id="patrimonio-panel" class="patrimonio-panel"></div>
     </div>
+    </div><!-- /orc-sub-panel-patrimonio -->
   </div>
 
   <!-- ABA 5: CONFIGURAÇÕES (PERFIL) -->
@@ -1113,6 +1223,17 @@
           <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
         </button>
 
+        <button type="button" class="perfil-card" data-action="abrir-equipe" data-requer-nuvem aria-label="Gerenciar membros da equipe">
+          <div class="perfil-card-icon-wrapper">
+            <i data-lucide="users" aria-hidden="true"></i>
+          </div>
+          <div class="perfil-card-content">
+            <span class="perfil-card-title">Equipe</span>
+            <span class="perfil-card-subtitle" id="perfil-equipe-subtitle">Convide até 2 pessoas no Pro (modo casal)</span>
+          </div>
+          <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+        </button>
+
         <button type="button" class="perfil-card" data-action="abrir-config-bancos" aria-label="Gerenciar bancos e cartões">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="landmark" aria-hidden="true"></i>
@@ -1148,9 +1269,25 @@
           <div class="perfil-card-content">
             <span class="perfil-card-title">Proteção por PIN</span>
             <span class="perfil-card-subtitle" id="perfil-pin-toggle-status">Desativado</span>
+            <span class="perfil-card-hint">Oculta saldos ao abrir o app neste aparelho. Não criptografa dados contra acesso técnico.</span>
           </div>
           <label class="perfil-switch">
             <input type="checkbox" id="chk-pin" aria-label="Ativar proteção por PIN">
+            <span class="perfil-switch-slider"></span>
+          </label>
+        </div>
+
+        <div class="perfil-card perfil-card-toggle" id="perfil-biometric-card" data-requer-nuvem hidden>
+          <div class="perfil-card-icon-wrapper">
+            <i data-lucide="fingerprint" aria-hidden="true"></i>
+          </div>
+          <div class="perfil-card-content">
+            <span class="perfil-card-title">Entrar com biometria</span>
+            <span class="perfil-card-subtitle" id="perfil-biometric-status">Disponível no app Android</span>
+            <span class="perfil-card-hint">Desbloqueia sua conta com digital ou reconhecimento facial neste aparelho.</span>
+          </div>
+          <label class="perfil-switch">
+            <input type="checkbox" id="chk-biometric" aria-label="Ativar login com biometria">
             <span class="perfil-switch-slider"></span>
           </label>
         </div>
@@ -1169,6 +1306,28 @@
           </label>
         </div>
 
+        <div class="perfil-card perfil-recovery-card" id="perfil-recovery-card" hidden>
+          <div class="perfil-card-icon-wrapper">
+            <i data-lucide="key-round" aria-hidden="true"></i>
+          </div>
+          <div class="perfil-card-content">
+            <span class="perfil-card-title">Códigos de recuperação</span>
+            <span class="perfil-card-subtitle" id="perfil-recovery-status">—</span>
+          </div>
+          <button type="button" class="btn-ghost perfil-recovery-btn" id="btn-recovery-gerar">Gerar novos</button>
+        </div>
+
+        <div class="perfil-card" id="perfil-sessoes-card" data-requer-nuvem>
+          <div class="perfil-card-icon-wrapper">
+            <i data-lucide="monitor-smartphone" aria-hidden="true"></i>
+          </div>
+          <div class="perfil-card-content">
+            <span class="perfil-card-title">Sessões em outros aparelhos</span>
+            <span class="perfil-card-subtitle" id="perfil-sessoes-status">Desconectar todos, menos este</span>
+          </div>
+          <button type="button" class="btn-ghost perfil-recovery-btn" id="btn-sair-outros">Desconectar</button>
+        </div>
+
         <div class="perfil-card perfil-card-toggle" id="perfil-crypto-card">
           <div class="perfil-card-icon-wrapper">
             <i data-lucide="shield" aria-hidden="true"></i>
@@ -1180,7 +1339,7 @@
                  a chave. Sem passphrase do usuário ela fica neste dispositivo,
                  e o rótulo precisa refletir isso em vez de sugerir uma garantia
                  que o desenho não dá. -->
-            <span class="perfil-card-hint">Embaralha os dados guardados no navegador. Protege backups e olhares casuais, não um invasor com acesso ao aparelho.</span>
+            <span class="perfil-card-hint">AES-GCM em localStorage e anexos. Lançamentos grandes no IndexedDB ficam em texto — até haver cifragem desse blob. Protege o armazenamento no aparelho contra acesso técnico; não cobre XSS.</span>
           </div>
           <label class="perfil-switch">
             <input type="checkbox" id="chk-crypto" aria-label="Cifrar dados armazenados no dispositivo">
@@ -1288,6 +1447,51 @@
           <div class="perfil-card-content">
             <span class="perfil-card-title">Exportar backup</span>
             <span class="perfil-card-subtitle" id="perfil-ultimo-backup">Nunca exportado</span>
+            <span class="perfil-card-hint" id="perfil-export-hint">JSON com lançamentos, contas e preferências deste aparelho.</span>
+          </div>
+          <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+        </button>
+
+        <button type="button" class="perfil-card" data-action="verificar-numeros" aria-label="Verificar se saldo e comprometido batem">
+          <div class="perfil-card-icon-wrapper">
+            <i data-lucide="badge-check" aria-hidden="true"></i>
+          </div>
+          <div class="perfil-card-content">
+            <span class="perfil-card-title">Verificar números</span>
+            <span class="perfil-card-subtitle">Confere se disponível = saldo − comprometido</span>
+          </div>
+          <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+        </button>
+
+        <button type="button" class="perfil-card" data-action="exportar-diagnostico" aria-label="Exportar relatório de diagnóstico técnico">
+          <div class="perfil-card-icon-wrapper">
+            <i data-lucide="stethoscope" aria-hidden="true"></i>
+          </div>
+          <div class="perfil-card-content">
+            <span class="perfil-card-title">Exportar diagnóstico</span>
+            <span class="perfil-card-subtitle">JSON técnico sem descrições (suporte)</span>
+          </div>
+          <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+        </button>
+
+        <button type="button" class="perfil-card" data-action="replay-sessao" aria-label="Ver timeline de eventos da sessão atual">
+          <div class="perfil-card-icon-wrapper">
+            <i data-lucide="history" aria-hidden="true"></i>
+          </div>
+          <div class="perfil-card-content">
+            <span class="perfil-card-title">Replay da sessão</span>
+            <span class="perfil-card-subtitle">Timeline de sync, conflitos e diagnóstico</span>
+          </div>
+          <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+        </button>
+
+        <button type="button" class="perfil-card" data-action="exportar-replay-sessao" aria-label="Exportar replay da sessão como HTML para suporte">
+          <div class="perfil-card-icon-wrapper">
+            <i data-lucide="file-text" aria-hidden="true"></i>
+          </div>
+          <div class="perfil-card-content">
+            <span class="perfil-card-title">Exportar replay HTML</span>
+            <span class="perfil-card-subtitle">Anexar timeline ao ticket de suporte</span>
           </div>
           <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
         </button>
@@ -1303,6 +1507,10 @@
           <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
         </button>
       </div>
+      <p class="perfil-dica" id="perfil-dica-multiaba">
+        <i data-lucide="layers" aria-hidden="true"></i>
+        Evite editar em duas abas ao mesmo tempo — a última gravação prevalece. O app avisa quando outra aba altera seus dados.
+      </p>
       <input type="file" id="import-file" accept=".json" style="display:none" aria-hidden="true">
     </div>
 
@@ -1327,7 +1535,7 @@
           </div>
           <div class="perfil-card-content">
             <span class="perfil-card-title">Novidades</span>
-            <span class="perfil-card-subtitle" id="perfil-changelog-version">v11.0.0 — PWA e Android</span>
+            <span class="perfil-card-subtitle" id="perfil-changelog-version">v11.3.13 — PWA e Android</span>
           </div>
           <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
         </button>
@@ -1356,7 +1564,8 @@
     <!-- ZONA DE PERIGO -->
     <div class="perfil-section perfil-section-danger">
       <h2 class="perfil-section-title perfil-section-title-danger"><i data-lucide="alert-triangle" aria-hidden="true"></i> Zona de perigo</h2>
-      <button class="perfil-danger-btn" data-action="limpar-dados">
+      <div class="perfil-danger-actions">
+      <button type="button" class="perfil-danger-btn" data-action="limpar-dados">
         <i data-lucide="trash-2" aria-hidden="true"></i>
         Apagar todos os dados
       </button>
@@ -1364,15 +1573,16 @@
            app para quem permite criar conta; a API ja tinha DELETE /users/me,
            mas nada no frontend chamava. Some junto com o resto da nuvem quando
            nao ha backend, porque ai nao existe conta para excluir. -->
-      <button class="perfil-danger-btn" data-action="excluir-conta" data-requer-nuvem>
+      <button type="button" class="perfil-danger-btn" data-action="excluir-conta" data-requer-nuvem>
         <i data-lucide="user-x" aria-hidden="true"></i>
         Excluir minha conta
       </button>
+      </div>
     </div>
 
     <!-- SISTEMA -->
     <div class="perfil-system-info">
-      <p id="perfil-app-footer">FinançasPro v11.0.0 · Dados salvos localmente</p>
+      <p id="perfil-app-footer">FinançasPro v11.3.13 · Dados salvos localmente</p>
       <p>Feito com <i data-lucide="heart" aria-hidden="true"></i> para suas finanças</p>
     </div>
 
@@ -1576,13 +1786,13 @@
     <span class="nav-emoji" aria-hidden="true"><i data-lucide="bar-chart"></i></span>
     <span>Resumo</span>
   </button>
-  <button class="nav-btn" data-aba="novo" data-action="mudar-aba" aria-label="Registrar nova transação">
-    <span class="nav-emoji" aria-hidden="true"><i data-lucide="plus"></i></span>
-    <span>Novo</span>
-  </button>
   <button class="nav-btn" data-aba="extrato" data-action="mudar-aba" aria-label="Ver extrato de transações">
     <span class="nav-emoji" aria-hidden="true"><i data-lucide="clipboard-list"></i></span>
     <span>Extrato</span>
+  </button>
+  <button class="nav-btn" data-aba="novo" data-action="mudar-aba" aria-label="Registrar nova transação">
+    <span class="nav-emoji" aria-hidden="true"><i data-lucide="plus"></i></span>
+    <span>Novo</span>
   </button>
   <button class="nav-btn" data-aba="orcamento" data-action="mudar-aba" aria-label="Gerenciar orçamento">
     <span class="nav-emoji" aria-hidden="true"><i data-lucide="target"></i></span>
@@ -1606,11 +1816,18 @@
 <script defer src="js/core/events-catalog.js"></script>
 <script defer src="js/core/event-bus.js"></script>
 <script defer src="js/core/sync-merge.js"></script>
+<script defer src="js/core/session-log.js"></script>
 <script defer src="js/core/finance-contract.js"></script>
 <script defer src="js/core/sync-engine.js"></script>
 <script defer src="js/core/persist-queue.js"></script>
+<script defer src="js/core/idb-kv.js"></script>
 <script defer src="js/core/dados.js"></script>
 <script defer src="js/core/store.js"></script>
+<!-- Supabase Auth (inerte se CONFIG.SUPABASE_URL/ANON_KEY vazios) -->
+<script defer src="js/vendor/supabase.js"></script>
+<script defer src="js/core/supabase.js"></script>
+<script defer src="js/core/supabase-billing.js"></script>
+<script defer src="js/core/supabase-sync.js"></script>
 <script defer src="js/core/lifecycle.js"></script>
 <!-- Domínio: categorização e parsing -->
 <script defer src="js/categories.js"></script>
@@ -1662,7 +1879,6 @@
 <script defer src="js/ai-engine.js"></script>
 <script defer src="js/previsao.js"></script>
 <script defer src="js/alertas.js"></script>
-<script defer src="js/ocr.js"></script>
 <script defer src="js/insights.js"></script>
 <!-- Auth e configuração -->
 <script defer src="js/config-user.js"></script>
@@ -1671,6 +1887,7 @@
 <script defer src="js/play-billing.js"></script>
 <script defer src="js/fp-native-billing-bridge.js"></script>
 <script defer src="js/open-finance.js"></script>
+<script defer src="js/auth-biometric.js"></script>
 <script defer src="js/authController.js"></script>
 <!-- Onboarding antes do bootstrap: garante ONBOARDING no post-init (dev e prod) -->
 <script defer src="js/onboarding.js"></script>

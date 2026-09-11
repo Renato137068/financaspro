@@ -7,6 +7,16 @@ var OPEN_FINANCE = {
   _cloudConnections: null,
   _providers: null,
 
+  _requirePlan: function() {
+    if (typeof BILLING !== 'undefined' && BILLING.canUse && !BILLING.canUse('openFinance')) {
+      if (typeof INIT_BILLING !== 'undefined' && INIT_BILLING.abrirPaywall) {
+        INIT_BILLING.abrirPaywall('Conecte seus bancos e deixe os lançamentos entrarem sozinhos — no Pro.');
+      }
+      return false;
+    }
+    return true;
+  },
+
   isCloudActive: function() {
     return typeof DADOS !== 'undefined' && typeof DADOS._apiAtiva === 'function' && DADOS._apiAtiva();
   },
@@ -74,6 +84,9 @@ var OPEN_FINANCE = {
 
   connectBelvo: function() {
     var self = this;
+    if (!this._requirePlan()) {
+      return Promise.reject(new Error('Open Finance requer plano Pro'));
+    }
     if (!this.isCloudActive()) {
       return Promise.reject(new Error('Conexão Belvo requer login na nuvem'));
     }
@@ -126,6 +139,9 @@ var OPEN_FINANCE = {
 
   connectSandbox: function(bankLabel) {
     var self = this;
+    if (!this._requirePlan()) {
+      return Promise.reject(new Error('Open Finance requer plano Pro'));
+    }
     bankLabel = (bankLabel || 'Banco Demo').trim() || 'Banco Demo';
 
     if (this.isCloudActive()) {

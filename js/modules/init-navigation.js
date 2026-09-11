@@ -18,7 +18,27 @@ const INIT_NAVIGATION = {
     }
     this.setupNavigation();
     this.setupActionBindings();
+    this.initTablists();
     this._initialized = true;
+  },
+
+  /**
+   * Teclado WAI-ARIA em tablists (Orçamento e demais)
+   */
+  initTablists: function() {
+    if (typeof TablistKeyboard === 'undefined') return;
+
+    var orcList = document.querySelector('#aba-orcamento [role="tablist"]');
+    if (orcList) {
+      TablistKeyboard.init(orcList, {
+        onSelect: function(tab, meta) {
+          var sub = tab.getAttribute('data-orc-sub');
+          if (sub && typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.mudarSubAba) {
+            INIT_ORCAMENTO.mudarSubAba(sub, { focusTab: !!(meta && meta.focus) });
+          }
+        }
+      });
+    }
   },
 
   /**
@@ -51,12 +71,13 @@ const INIT_NAVIGATION = {
       var muda = e.target.closest('[data-mudar-aba]');
       if (muda) {
         var aba = muda.dataset.mudarAba;
+        var orcSub = muda.dataset.orcSub || null;
         if (typeof ONBOARDING !== 'undefined' && ONBOARDING.registrarInteracao) {
           ONBOARDING.registrarInteracao({ aba: aba });
         }
         if (aba && typeof mudarAba === 'function') {
           try {
-            mudarAba(aba);
+            mudarAba(aba, orcSub ? { orcSub: orcSub } : null);
           } catch (err) {
             console.error('[INIT_NAVIGATION] Erro ao mudar aba:', err);
           }
@@ -132,20 +153,41 @@ const INIT_NAVIGATION = {
       'billing-restaurar': true,
       'billing-portal': true,
       'billing-cancelar': true,
+      'billing-reativar': true,
       'of-fechar': true,
       'of-conectar-sandbox': true,
       'of-conectar-belvo': true,
       'of-sync': true,
-      'of-desconectar': true
+      'of-desconectar': true,
+      'ordenar': true,
+      'ordenacao-campo': true,
+      'toggle-ordenacao-dir': true,
+      'limpar-filtros': true,
+      'toggle-filtros-avancados': true,
+      'abrir-busca-avancada': true,
+      'aplicar-busca-avancada': true
     };
 
     var actions = {
       'mudar-aba': function() {
         var aba = target.dataset.aba;
+        var orcSub = target.dataset.orcSub || null;
         if (typeof ONBOARDING !== 'undefined' && ONBOARDING.registrarInteracao) {
           ONBOARDING.registrarInteracao({ aba: aba });
         }
-        if (aba && typeof mudarAba === 'function') mudarAba(aba);
+        if (aba && typeof mudarAba === 'function') {
+          mudarAba(aba, orcSub ? { orcSub: orcSub } : null);
+        }
+      },
+      'orc-sub-aba': function() {
+        var sub = target.dataset.orcSub || 'planejamento';
+        self._carregarSubOrcamento(sub, function() {
+          if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.mudarSubAba) {
+            INIT_ORCAMENTO.mudarSubAba(sub);
+          } else if (typeof mudarSubAbaOrcamento === 'function') {
+            mudarSubAbaOrcamento(sub);
+          }
+        });
       },
       'abrir-entrada-rapida': function() { safeCall('abrirEntradaRapida'); },
       'navegar-periodo': function() { 
@@ -162,7 +204,31 @@ const INIT_NAVIGATION = {
         UTILS.comCarregamento(target, function() { return safeCall('exportarExcel'); }, 'Gerando...');
       },
       'exportar-pdf': function() {
+        if (target.getAttribute('aria-disabled') === 'true') {
+          self.carregarChunkConta(function() {
+            if (typeof INIT_BILLING !== 'undefined') {
+              INIT_BILLING.abrirPaywall('O relatório em PDF, pronto para apresentar, está no Pro.');
+            }
+          });
+          return;
+        }
         UTILS.comCarregamento(target, function() { return safeCall('exportarExtrato'); }, 'Gerando...');
+      },
+      'abrir-paywall': function() {
+        self.carregarChunkConta(function() {
+          if (typeof INIT_BILLING !== 'undefined') INIT_BILLING.abrirPaywall();
+        });
+      },
+      'billing-portal-banner': function() {
+        self.carregarChunkConta(function() {
+          if (typeof BILLING !== 'undefined' && BILLING.openPortal) {
+            BILLING.openPortal().catch(function(err) {
+              if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+                UTILS.mostrarToast((err && err.message) || 'Portal indisponível', 'error');
+              }
+            });
+          }
+        });
       },
       'salvar-renda-orcamento': function() { safeCall('salvarRendaOrcamento'); },
       'editar-renda-orcamento': function() { safeCall('editarRendaOrcamento'); },
@@ -185,6 +251,11 @@ const INIT_NAVIGATION = {
           INIT_CONFIG.abrirEditarPerfil();
         }
       },
+      'abrir-equipe': function() {
+        if (typeof INIT_BILLING !== 'undefined' && INIT_BILLING.abrirEquipe) {
+          INIT_BILLING.abrirEquipe();
+        }
+      },
       'abrir-editar-renda': function() { safeCall('abrirEditarRenda'); },
       'abrir-config-bancos': function() { 
         if (typeof INIT_CONFIG !== 'undefined' && typeof INIT_CONFIG.abrirConfigBancos === 'function') {
@@ -194,20 +265,61 @@ const INIT_NAVIGATION = {
       'gerenciar-categorias': function() { 
         safeCall('abrirGerenciarCategorias', [target.dataset.tipo]); 
       },
+      'verificar-numeros': function() {
+        if (typeof FINANCE_RECONCILER === 'undefined' || !FINANCE_RECONCILER.verificarPainel) {
+          UTILS.mostrarToast('Verificação indisponível agora.', 'error');
+          return;
+        }
+        var r = FINANCE_RECONCILER.verificarPainel();
+        if (r.ok) {
+          UTILS.mostrarToast('Seus números batem: disponível = saldo − comprometido.', 'success');
+        } else {
+          UTILS.mostrarToast(r.detalhes[0] || 'Encontramos divergências nos totais.', 'warning');
+        }
+      },
+      'conta-transferir': function() {
+        if (typeof CONTAS !== 'undefined' && CONTAS.abrirFormTransferencia) {
+          CONTAS.abrirFormTransferencia();
+        }
+      },
       'exportar-dados': function() {
         UTILS.comCarregamento(target, function() { return safeCall('exportarDados'); }, 'Exportando...');
+      },
+      'exportar-diagnostico': function() {
+        if (typeof HEALTH_SERVICE !== 'undefined' && HEALTH_SERVICE.exportarDiagnostico) {
+          HEALTH_SERVICE.exportarDiagnostico();
+          UTILS.mostrarToast('Diagnóstico exportado', 'success');
+        } else {
+          UTILS.mostrarToast('Diagnóstico indisponível', 'error');
+        }
+      },
+      'replay-sessao': function() {
+        if (typeof HEALTH_SERVICE !== 'undefined' && HEALTH_SERVICE.mostrarReplaySessao) {
+          HEALTH_SERVICE.mostrarReplaySessao();
+        } else {
+          UTILS.mostrarToast('Replay indisponível', 'error');
+        }
+      },
+      'exportar-replay-sessao': function() {
+        if (typeof HEALTH_SERVICE !== 'undefined' && HEALTH_SERVICE.exportarReplaySessao) {
+          if (HEALTH_SERVICE.exportarReplaySessao()) {
+            UTILS.mostrarToast('Replay HTML exportado', 'success');
+          }
+        } else {
+          UTILS.mostrarToast('Exportação indisponível', 'error');
+        }
       },
       'abrir-import': function() { self.abrirImport(); },
       'abrir-changelog': function() { safeCall('abrirChangelog'); },
       'abrir-feedback': function() { safeCall('abrirFeedback'); },
       'abrir-plano': function() {
-        if (typeof DADOS !== 'undefined' && DADOS._apiAtiva && !DADOS._apiAtiva()) return;
+        if (typeof DADOS !== 'undefined' && DADOS._nuvemAtiva && !DADOS._nuvemAtiva()) return;
         if (typeof INIT_BILLING !== 'undefined' && INIT_BILLING.abrirPaywall) {
           INIT_BILLING.abrirPaywall();
         }
       },
       'abrir-open-finance': function() {
-        if (typeof DADOS !== 'undefined' && DADOS._apiAtiva && !DADOS._apiAtiva()) return;
+        if (typeof DADOS !== 'undefined' && DADOS._nuvemAtiva && !DADOS._nuvemAtiva()) return;
         if (typeof INIT_OPEN_FINANCE !== 'undefined' && INIT_OPEN_FINANCE.abrir) {
           INIT_OPEN_FINANCE.abrir();
         }
@@ -243,7 +355,20 @@ const INIT_NAVIGATION = {
    * "Apagar todos os dados".
    */
   excluirConta: function() {
-    if (typeof DADOS === 'undefined' || !DADOS._apiAtiva()) return;
+    if (typeof DADOS === 'undefined' || !DADOS._nuvemAtiva || !DADOS._nuvemAtiva()) {
+      if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+        UTILS.mostrarToast('Faça login na nuvem para excluir a conta.', 'warning');
+      }
+      return;
+    }
+
+    var sessao = DADOS.getSessao ? DADOS.getSessao() : null;
+    if (!sessao || !sessao.user) {
+      if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+        UTILS.mostrarToast('Faça login na nuvem para excluir a conta.', 'warning');
+      }
+      return;
+    }
 
     var confirmar = (typeof INIT_MODALS !== 'undefined' && INIT_MODALS.confirm)
       ? INIT_MODALS.confirm.bind(INIT_MODALS)
@@ -254,16 +379,48 @@ const INIT_NAVIGATION = {
       + 'Não há como desfazer. Os dados salvos neste aparelho continuam aqui.',
       function() {
         confirmar('Confirma a exclusão definitiva da conta?', function() {
-          DADOS._apiFetch('/api/v1/users/me', { method: 'DELETE' })
+          var promessa;
+          if (DADOS._supabaseAtivo && DADOS._supabaseAtivo()) {
+            var email = sessao.user.email;
+            var senha = window.prompt('Digite sua senha para confirmar a exclusão da conta:');
+            if (!senha) return;
+            promessa = (typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.reauthWithPassword && SUPA_AUTH.deleteAccount)
+              ? SUPA_AUTH.reauthWithPassword(email, senha).then(function() {
+                return SUPA_AUTH.deleteAccount();
+              })
+              : Promise.reject(new Error('Supabase indisponível'));
+          } else if (DADOS._apiAtiva && DADOS._apiAtiva()) {
+            var senha = window.prompt('Digite sua senha para confirmar a exclusão da conta:');
+            if (!senha) return;
+            promessa = DADOS._apiFetch('/api/v1/users/me', {
+              method: 'DELETE',
+              body: JSON.stringify({ password: senha }),
+            });
+          } else {
+            if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+              UTILS.mostrarToast('Nuvem indisponível no momento.', 'error');
+            }
+            return;
+          }
+
+          promessa
             .then(function() {
-              DADOS.encerrarSessao();
-              UTILS.mostrarToast('Conta excluída', 'info');
+              if (typeof authLimparAoSair === 'function') {
+                authLimparAoSair();
+              } else {
+                DADOS.encerrarSessao();
+              }
+              if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+                UTILS.mostrarToast('Conta excluída', 'info');
+              }
               if (typeof INIT_CONFIG !== 'undefined' && INIT_CONFIG.refreshPerfil) {
                 INIT_CONFIG.refreshPerfil();
               }
             })
             .catch(function() {
-              UTILS.mostrarToast('Não foi possível excluir agora. Tente de novo.', 'error');
+              if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+                UTILS.mostrarToast('Não foi possível excluir agora. Tente de novo.', 'error');
+              }
             });
         });
       },
@@ -293,12 +450,11 @@ const INIT_NAVIGATION = {
    * onReady(justLoaded): justLoaded=true só na primeira carga real do chunk.
    */
   /**
-   * Garante o chunk 'conta' (billing + 2FA + Open Finance) e roda o callback.
+   * Garante o chunk 'conta' (paywall UI + Play + 2FA + Open Finance) e callback.
    *
-   * Os três eram inicializados no boot. Ao virarem lazy, o `init()` de cada um
-   * precisa acontecer na primeira carga — senão o módulo existe mas nunca se
-   * liga aos elementos da tela, e o resultado é uma aba que parece funcionar
-   * e não faz nada.
+   * BILLING (quotas/canUse) é eager no app.bundle — não depende deste chunk.
+   * Aqui só entra a UI de planos/compra e os módulos exclusivos da aba Config.
+   * Sem init() na 1ª carga, a aba parece funcionar e não faz nada.
    *
    * Em DEV os módulos vêm eager: isReady() já é verdadeiro e o callback roda
    * na hora, sem nenhuma requisição.
@@ -309,7 +465,7 @@ const INIT_NAVIGATION = {
       function() { return typeof INIT_BILLING !== 'undefined'; },
       function(justLoaded) {
         if (justLoaded) {
-          // Mesma ordem do lifecycle original.
+          // BILLING.init() já rodou no lifecycle; re-chamar é idempotente (sync).
           // Um init que falha não pode impedir os outros — mas precisa deixar
           // rastro: sem isso, "a aba de configurações não mostra o plano" vira
           // um relato sem nenhuma pista de investigação.
@@ -328,6 +484,62 @@ const INIT_NAVIGATION = {
         if (typeof callback === 'function') callback();
       },
     );
+  },
+
+  carregarChunkAnexos: function(callback) {
+    this._ensureChunk(
+      'anexos',
+      function() { return typeof INIT_ANEXOS !== 'undefined'; },
+      function(justLoaded) {
+        if (justLoaded && typeof INIT_ANEXOS !== 'undefined' && INIT_ANEXOS.init) {
+          UTILS.tentar('chunk.anexos.init', function() { INIT_ANEXOS.init(); });
+        }
+        if (typeof callback === 'function') callback();
+      },
+    );
+  },
+
+  /** @deprecated OCR removido — alias para anexos. */
+  carregarChunkOcr: function(callback) {
+    this.carregarChunkAnexos(callback);
+  },
+
+  _carregarSubOrcamento: function(sub, callback) {
+    var self = this;
+    var finish = function() {
+      if (typeof callback === 'function') callback();
+    };
+    if (sub === 'metas') {
+      this._ensureChunk('metas', function() { return typeof INIT_METAS !== 'undefined'; }, function(justLoaded) {
+        if (justLoaded) {
+          if (typeof METAS !== 'undefined' && METAS.init) METAS.init();
+          if (typeof INIT_METAS !== 'undefined' && INIT_METAS.init) INIT_METAS.init();
+        }
+        finish();
+      });
+      return;
+    }
+    if (sub === 'assinaturas') {
+      this._ensureChunk('assinaturas', function() { return typeof INIT_ASSINATURAS !== 'undefined'; }, function(justLoaded) {
+        if (justLoaded) {
+          if (typeof ASSINATURAS !== 'undefined' && ASSINATURAS.init) ASSINATURAS.init();
+          if (typeof INIT_ASSINATURAS !== 'undefined' && INIT_ASSINATURAS.init) INIT_ASSINATURAS.init();
+        }
+        finish();
+      });
+      return;
+    }
+    if (sub === 'patrimonio') {
+      this._ensureChunk('patrimonio', function() { return typeof INIT_PATRIMONIO !== 'undefined'; }, function(justLoaded) {
+        if (justLoaded) {
+          if (typeof PATRIMONIO !== 'undefined' && PATRIMONIO.init) PATRIMONIO.init();
+          if (typeof INIT_PATRIMONIO !== 'undefined' && INIT_PATRIMONIO.init) INIT_PATRIMONIO.init();
+        }
+        finish();
+      });
+      return;
+    }
+    finish();
   },
 
   _ensureChunk: function(chunk, isReady, onReady) {
@@ -353,7 +565,9 @@ const INIT_NAVIGATION = {
     if (!aberto) {
       this._ensureChunk('previsao', function() { return typeof PREVISAO !== 'undefined'; }, function(justLoaded) {
         if (typeof PREVISAO === 'undefined') return;
-        if (justLoaded && PREVISAO.init) UTILS.tentar('PREVISAO.init', PREVISAO.init);
+        if (justLoaded && PREVISAO.init) {
+          UTILS.tentar('PREVISAO.init', function() { PREVISAO.init(); });
+        }
         PREVISAO.renderizar();
       });
     }
@@ -390,7 +604,7 @@ const INIT_NAVIGATION = {
  * Função global de mudança de aba (mantida para compatibilidade)
  * @param {string} nomeAba - Nome da aba a ser ativada
  */
-function mudarAba(nomeAba) {
+function mudarAba(nomeAba, opcoes) {
   // Mostrar/esconder abas
   var abas = document.querySelectorAll('[id^="aba-"]');
   for (var i = 0; i < abas.length; i++) {
@@ -428,20 +642,34 @@ function mudarAba(nomeAba) {
     ariaLive.announce('Aba ' + (tabLabels[nomeAba] || nomeAba));
   }
 
+  // Reset de rolagem: trocar de aba sempre começa no topo (auditoria UI/UX P1-01)
+  try {
+    if (typeof window !== 'undefined' && window.scrollTo) {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    }
+    var mainScroll = document.querySelector('.app-main, main, #app-content, .conteudo-principal');
+    if (mainScroll) mainScroll.scrollTop = 0;
+    if (alvo) alvo.scrollTop = 0;
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+  } catch (scrollErr) { /* noop */ }
+
   // Renderers opcionais
   setTimeout(function() {
     try {
       if (nomeAba === 'novo') {
-        if (typeof INIT_FORM !== 'undefined') {
-          if (INIT_FORM.renderizarSelects) INIT_FORM.renderizarSelects();
-          if (INIT_FORM.renderQuickEntries) INIT_FORM.renderQuickEntries();
-          var tipoAtual = (document.getElementById('novo-tipo') || {}).value || 'despesa';
-          if (INIT_FORM.renderCategoriasBtns) INIT_FORM.renderCategoriasBtns(tipoAtual);
-        } else if (typeof renderQuickEntries === 'function') {
-          renderQuickEntries();
-        }
-        var vi = document.getElementById('novo-valor');
-        if (vi) vi.focus();
+        INIT_NAVIGATION.carregarChunkAnexos(function() {
+          if (typeof INIT_FORM !== 'undefined') {
+            if (INIT_FORM.renderizarSelects) INIT_FORM.renderizarSelects();
+            if (INIT_FORM.renderQuickEntries) INIT_FORM.renderQuickEntries();
+            var tipoAtual = (document.getElementById('novo-tipo') || {}).value || 'despesa';
+            if (INIT_FORM.renderCategoriasBtns) INIT_FORM.renderCategoriasBtns(tipoAtual);
+          } else if (typeof renderQuickEntries === 'function') {
+            renderQuickEntries();
+          }
+          var vi = document.getElementById('novo-valor');
+          if (vi) vi.focus();
+        });
       }
       if (nomeAba === 'extrato') {
         if (typeof INIT_EXTRATO !== 'undefined' && INIT_EXTRATO.filtrarExtrato) {
@@ -451,27 +679,47 @@ function mudarAba(nomeAba) {
         }
       }
       if (nomeAba === 'orcamento') {
-        if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.renderDashboard) {
-          INIT_ORCAMENTO.renderDashboard();
-        } else if (typeof renderOrcamentoDashboard === 'function') {
-          renderOrcamentoDashboard();
-        }
-        if (typeof INIT_METAS !== 'undefined' && INIT_METAS.renderOrcamento) {
-          INIT_METAS.renderOrcamento();
-        }
-        if (typeof INIT_ASSINATURAS !== 'undefined' && INIT_ASSINATURAS.render) {
-          INIT_ASSINATURAS.render();
-        }
-        if (typeof INIT_PATRIMONIO !== 'undefined' && INIT_PATRIMONIO.render) {
-          INIT_PATRIMONIO.render();
+        var orcSubPref = (opcoes && opcoes.orcSub) ? opcoes.orcSub : null;
+        INIT_NAVIGATION._carregarSubOrcamento(orcSubPref || 'planejamento', function() {
+          if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.restaurarSubAba) {
+            INIT_ORCAMENTO.restaurarSubAba(orcSubPref);
+          } else if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.mudarSubAba) {
+            INIT_ORCAMENTO.mudarSubAba(orcSubPref || 'planejamento');
+          }
+          if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.renderDashboard) {
+            INIT_ORCAMENTO.renderDashboard();
+          } else if (typeof renderOrcamentoDashboard === 'function') {
+            renderOrcamentoDashboard();
+          }
+          if (orcSubPref === 'metas' && typeof INIT_METAS !== 'undefined' && INIT_METAS.renderOrcamento) {
+            INIT_METAS.renderOrcamento();
+          }
+          if (orcSubPref === 'assinaturas' && typeof INIT_ASSINATURAS !== 'undefined' && INIT_ASSINATURAS.render) {
+            INIT_ASSINATURAS.render();
+          }
+          if (orcSubPref === 'patrimonio' && typeof INIT_PATRIMONIO !== 'undefined' && INIT_PATRIMONIO.render) {
+            INIT_PATRIMONIO.render();
+          }
+        });
+      }
+      if (nomeAba === 'resumo' || nomeAba === 'extrato') {
+        var refreshBillingUi = function() {
+          if (typeof INIT_BILLING !== 'undefined') {
+            if (INIT_BILLING.refreshUsageBanner) INIT_BILLING.refreshUsageBanner();
+            if (INIT_BILLING.refreshExportButtons) INIT_BILLING.refreshExportButtons();
+          }
+        };
+        if (typeof DADOS !== 'undefined' && DADOS._nuvemAtiva && DADOS._nuvemAtiva()
+            && typeof INIT_BILLING === 'undefined') {
+          INIT_NAVIGATION.carregarChunkConta(refreshBillingUi);
+        } else {
+          refreshBillingUi();
         }
       }
       if (nomeAba === 'config') {
-        // Billing, 2FA e Open Finance saem do bundle eager (chunk 'conta') —
-        // são ~45 KB que só interessam a quem abre esta aba. O chunk precisa
-        // chegar ANTES do refreshPerfil: ele chama refreshPlanoCard, refreshUI
-        // e refreshCard atrás de `typeof X !== 'undefined'`, e sem os módulos
-        // essas guardas silenciariam a ausência em vez de acusá-la.
+        // Paywall/Play/2FA/Open Finance: chunk 'conta' (~UI). BILLING (quotas)
+        // já está no eager. O chunk precisa chegar ANTES do refreshPerfil:
+        // refreshPlanoCard/refreshUI checam `typeof X !== 'undefined'`.
         INIT_NAVIGATION.carregarChunkConta(function() {
           if (typeof INIT_CONFIG !== 'undefined' && INIT_CONFIG.refreshPerfil) {
             INIT_CONFIG.refreshPerfil();

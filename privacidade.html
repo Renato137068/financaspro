@@ -17,41 +17,55 @@
   li{ margin:6px 0; }
   a{ color:var(--verde); }
   .box{ background:#f0f5f2; border:1px solid var(--linha); border-radius:12px; padding:14px 16px; font-size:14.5px; }
+  .voltar-app{ display:inline-flex; align-items:center; gap:8px; margin:0 0 20px; padding:11px 18px; min-height:44px; background:var(--verde); color:#fff; text-decoration:none; border-radius:999px; font-weight:700; font-size:15px; }
+  .voltar-app:hover{ opacity:.92; }
 </style>
 </head>
 <body>
+  <a href="index.html" class="voltar-app" aria-label="Voltar ao aplicativo">&larr; Voltar ao app</a>
   <h1>Política de Privacidade — FinançasPro</h1>
-  <p class="meta">Última atualização: 10 de julho de 2026</p>
+  <p class="meta">Última atualização: 9 de setembro de 2026</p>
 
   <p>O FinançasPro é um aplicativo de controle financeiro pessoal. Esta política explica quais dados o app trata, como e por quê, e quais são os seus direitos. Ao usar o app, você concorda com os termos abaixo.</p>
 
   <h2>1. Dados que o app trata</h2>
   <ul>
-    <li><strong>Dados financeiros que você registra</strong> — transações, categorias, orçamentos, metas, contas e configurações. No modo padrão (e na versão piloto), esses dados ficam <strong>armazenados localmente no seu dispositivo</strong> e não são enviados a servidores.</li>
-    <li><strong>Dados de conta (opcional)</strong> — se você criar uma conta na versão conectada à nuvem, tratamos nome, e-mail e senha (armazenada com hash no servidor) para permitir login e sincronização.</li>
-    <li><strong>Conexão bancária via Open Finance (opcional)</strong> — se você optar por conectar uma conta bancária, a integração é feita por meio do provedor <strong>Belvo</strong>. Os dados bancários trafegam de forma criptografada e são usados apenas para trazer suas transações ao app. Você pode desconectar a qualquer momento.</li>
-    <li><strong>Dados de pagamento (opcional)</strong> — assinaturas são processadas pelo <strong>Stripe</strong>; o app não armazena números completos de cartão.</li>
-    <li><strong>Dados técnicos/diagnóstico (opcional)</strong> — se habilitado, registros de erros anônimos podem ser coletados para melhorar a estabilidade. Não incluem valores de transações.</li>
+    <li><strong>Dados financeiros que você registra</strong> — transações, categorias, orçamentos, metas, contas, anexos e configurações. Uma cópia fica no seu aparelho. Com login na nuvem (padrão no app Android/Play Store), uma cópia sincronizada também fica nos servidores do provedor de autenticação e banco (<strong>Supabase</strong>).</li>
+    <li><strong>Dados de conta</strong> — ao criar uma conta, tratamos nome, e-mail e senha (hash gerenciado pelo Supabase Auth) para login, desbloqueio no aparelho e sincronização.</li>
+    <li><strong>Conexão bancária via Open Finance</strong> — <strong>ainda não disponível nesta versão do app.</strong> O recurso está desligado e nenhum dado bancário é lido ou compartilhado. Quando for liberado, a integração será feita pelo provedor <strong>Belvo</strong>, será sempre opcional, os dados trafegarão criptografados e serão usados apenas para trazer suas transações ao app — e esta política será atualizada antes disso.</li>
+    <li><strong>Dados de pagamento (opcional)</strong> — assinaturas no Android usam o <strong>Google Play Billing</strong>; em outras versões podem usar <strong>Stripe</strong>. O app não armazena números completos de cartão.</li>
+    <li><strong>Dados técnicos/diagnóstico (opcional)</strong> — só se você habilitar envio de diagnósticos no app (quando disponível). Sem consentimento explícito, o app <strong>não</strong> envia telemetria para nossos servidores. Quando ativo, os registros visam estabilidade e não incluem valores de lançamentos.</li>
   </ul>
 
   <h2>2. Como usamos os dados</h2>
   <ul>
     <li>Exibir resumos, gráficos, orçamento, metas e insights financeiros.</li>
     <li>Sincronizar dados entre dispositivos, quando você usa login na nuvem.</li>
-    <li>Trazer transações bancárias, quando você conecta uma conta via Open Finance.</li>
+    <li>Trazer transações bancárias, se e quando o Open Finance for liberado e você conectar uma conta.</li>
     <li>Processar assinaturas, quando habilitado.</li>
     <li>Melhorar a estabilidade e a segurança do serviço.</li>
   </ul>
   <p>Não usamos seus dados financeiros para publicidade. O app <strong>não exibe anúncios</strong> e não vende dados.</p>
 
-  <h2>3. Armazenamento local</h2>
-  <p>No modo offline ou sem login, seus dados permanecem apenas no dispositivo. Você pode exportá-los ou apagá-los em <strong>Perfil → Dados</strong>. Desinstalar o app remove os dados locais.</p>
+  <h2>3. Armazenamento local e nuvem</h2>
+  <p>Os lançamentos ficam no aparelho (navegador/app). Com login ativo, também sincronizam com a nuvem para backup e uso em mais de um dispositivo. Sem login (ou após sair da conta), os dados locais permanecem só neste aparelho. Você pode exportá-los ou apagá-los em <strong>Perfil → Dados</strong>. Desinstalar o app remove os dados locais; a conta na nuvem só some com exclusão de conta.</p>
+  <p>A sessão de login (tokens de acesso e renovação) também fica armazenada neste aparelho, em armazenamento local do WebView/navegador, para você não precisar entrar de novo a cada abertura. Ao sair da conta, esses tokens são apagados.</p>
+
+  <h2>3.1 Controlador e contato (LGPD)</h2>
+  <p>O tratamento dos dados pessoais é feito pelo responsável pelo FinançasPro. Para exercer direitos (acesso, correção, exclusão, portabilidade) ou tirar dúvidas sobre esta política, use
+  <strong>renato.soares1370@gmail.com</strong>. Pedidos de exclusão de conta também podem seguir a seção 8 abaixo.</p>
 
   <h2>4. Compartilhamento</h2>
-  <p>Não vendemos seus dados. Compartilhamos informações apenas com provedores estritamente necessários ao funcionamento — hospedagem, <strong>Belvo</strong> (Open Finance) e <strong>Stripe</strong> (pagamentos) — sob contratos de proteção de dados. Cada um trata os dados conforme suas próprias políticas.</p>
+  <p>Não vendemos seus dados. Compartilhamos informações apenas com provedores estritamente necessários ao funcionamento — <strong>Supabase</strong> (autenticação e sync) e <strong>Google Play</strong> / <strong>Stripe</strong> (pagamentos) — sob contratos de proteção de dados. Cada um trata os dados conforme suas próprias políticas.</p>
 
   <h2>5. Segurança</h2>
-  <p>Usamos HTTPS, autenticação por tokens em cookies, hash de senhas e boas práticas de desenvolvimento. Você pode ativar um <strong>PIN local</strong> e, opcionalmente, criptografia local dos dados nas configurações do app.</p>
+  <p>Usamos HTTPS, tokens de sessão, hash de senhas (Supabase Auth) e boas práticas de desenvolvimento. No Android, a tela de login e o PIN usam proteção contra captura de tela (FLAG_SECURE).</p>
+  <ul>
+    <li><strong>PIN local</strong> — oculta saldos ao abrir o app neste aparelho. <em>Não</em> criptografa o armazenamento contra quem tenha acesso técnico ao aparelho.</li>
+    <li><strong>Cifrar dados no dispositivo</strong> (opcional) — AES-GCM sobre dados em <em>localStorage</em> e <em>anexos</em> no IndexedDB. Lançamentos migrados para o blob IndexedDB (<code>fp-transacoes</code>) <strong>não</strong> entram nessa cifragem nesta versão. Sem senha/frase própria, a chave fica neste dispositivo; protege backups e olhares casuais, não XSS nem perícia forense completa.</li>
+    <li><strong>Biometria</strong> (Android, opcional) — desbloqueia a sessão neste aparelho; ao sair da conta, a biometria é desativada.</li>
+    <li><strong>Verificação em duas etapas (TOTP)</strong> — opcional, via app autenticador (Google Authenticator, Authy etc.), no Perfil. No login, após a senha (ou biometria), o app pede o código de 6 dígitos. Requer MFA habilitado no projeto Supabase.</li>
+  </ul>
 
   <h2>6. Retenção e exclusão</h2>
   <p>Dados locais permanecem no dispositivo até você apagá-los ou desinstalar o app. Dados de conta na nuvem são mantidos enquanto a conta existir; você pode solicitar a exclusão da conta e dos dados associados a qualquer momento.</p>
@@ -65,7 +79,7 @@
        no Play Console. O caminho no app ja existia (Perfil -> Zona de perigo, e
        DELETE /api/v1/users/me na API); faltava a URL. Ao publicar esta pagina,
        informe no Play Console:
-         https://SEU-DOMINIO/privacidade.html#exclusao-de-conta -->
+         https://app.financaspro.com/privacidade.html#exclusao-de-conta -->
   <h2 id="exclusao-de-conta">8. Como excluir sua conta e seus dados</h2>
   <p><strong>Pelo app:</strong> abra <em>Perfil → Zona de perigo → Excluir conta</em>. A
   exclusão é imediata e não precisa de aprovação nossa.</p>
@@ -77,7 +91,10 @@
   <p><strong>O que é mantido, e por quê:</strong> registros de auditoria são
   <em>anonimizados</em> — perdem o vínculo com você, mas permanecem pelo prazo da política de
   retenção, porque são a prova de que as operações aconteceram. Registros fiscais de
-  pagamentos, quando existirem, são mantidos pelo prazo que a legislação exige.</p>
+  pagamentos, quando existirem, são mantidos pelo prazo que a legislação exige.
+  Guardamos também o <em>identificador interno</em> de quem já recebeu o período
+  gratuito de boas-vindas — só o identificador, sem nome, e-mail ou dado financeiro —
+  para que o benefício não possa ser renovado indefinidamente criando contas novas.</p>
   <p><strong>Dados que ficam só no aparelho</strong> não passam por nós: desinstalar o app
   ou usar <em>Perfil → Apagar dados locais</em> remove tudo, sem pedido nenhum.</p>
 

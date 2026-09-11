@@ -25,7 +25,7 @@
 }
 
 [data-theme="dark"] body {
-  background: #101613;
+  background: var(--color-bg-dark-page);
 }
 
 [data-theme="dark"] header {
@@ -81,7 +81,7 @@
 }
 
 [data-theme="dark"] .alerta-card {
-  background: #2a2210;
+  background: var(--color-warning-surface-dark);
   border-color: var(--color-warning-text);
 }
 
@@ -136,6 +136,16 @@
   color: var(--color-success-light);
 }
 
+[data-theme="dark"] .auth-biometric-btn {
+  background: var(--color-bg-dark-card);
+  border-color: var(--color-primary-500);
+  color: var(--color-success-light);
+}
+
+[data-theme="dark"] .auth-biometric-btn:hover {
+  background: rgba(18, 105, 78, 0.18);
+}
+
 [data-theme="dark"] .btn-danger-outline {
   border-color: var(--color-danger-light);
   color: var(--color-danger-light);
@@ -152,7 +162,7 @@
 }
 
 [data-theme="dark"] .tipo-btn[data-tipo="despesa"].ativo {
-  background: #2a0f0f;
+  background: var(--color-danger-surface-dark);
   border-color: var(--color-danger-light);
   color: var(--color-danger-light);
 }
@@ -163,17 +173,7 @@
   color: var(--color-success-light);
 }
 
-[data-theme="dark"] .filtro-btn {
-  background: var(--color-bg-dark-card);
-  border-color: var(--color-border);
-  color: var(--color-text-secondary);
-}
-
-[data-theme="dark"] .filtro-btn.ativo {
-  background: var(--color-primary-500);
-  border-color: var(--color-primary-500);
-  color: white;
-}
+/* .filtro-btn legado: oculto via buttons.css (display:none) */
 
 [data-theme="dark"] .filtro-cat-chip {
   background: var(--color-bg-dark-card);
@@ -274,7 +274,7 @@
 [data-theme="dark"] .ext-tx:hover       { background: rgba(18, 105, 78, 0.12); }
 [data-theme="dark"] .ext-tx:active      { background: rgba(18, 105, 78, 0.2); }
 [data-theme="dark"] .ext-tx.aberto      { background: rgba(18, 105, 78, 0.15); }
-[data-theme="dark"] .ext-tx-expanded    { background: #0a1510; }
+[data-theme="dark"] .ext-tx-expanded    { background: var(--color-bg-dark-inset); }
 [data-theme="dark"] .ext-tx-actions-bar { border-top-color: var(--color-border); }
 
 [data-theme="dark"] .ext-btn-edit  { background: rgba(18, 105, 78, 0.15); color: var(--color-success-light); }
@@ -294,7 +294,7 @@
 
 [data-theme="dark"] .btn-export-excel {
   background: rgba(22, 163, 74, 0.1);
-  border-color: #16a34a;
+  border-color: var(--color-success-emphasis);
   color: var(--color-success-light);
 }
 
@@ -309,7 +309,7 @@
    ═══════════════════════════════════════════════════════════ */
 
 [data-theme="dark"] .nav-bottom {
-  background: rgba(22, 34, 25, 0.85);
+  background: var(--nav-bottom-bg, rgba(18, 28, 20, 0.92));
   box-shadow: var(--elevacao-1);
   border-color: rgba(255, 255, 255, 0.09);
   backdrop-filter: blur(8px);
@@ -381,9 +381,12 @@
   border-color: rgba(255, 255, 255, 0.09);
 }
 
-[data-theme="dark"] .orc-renda-input input {
+[data-theme="dark"] .orc-renda-group {
   background: var(--color-bg-dark-page);
   border-color: var(--color-border);
+}
+
+[data-theme="dark"] .orc-renda-input {
   color: var(--color-text-primary);
 }
 [data-theme="dark"] .orc-cat-bar   { background: rgba(255, 255, 255, 0.08); }
@@ -461,9 +464,10 @@
    FORM NOVO — Aba de lançamento
    ═══════════════════════════════════════════════════════════ */
 
-/* Fundo OPACO: rgba translúcido não vencia a cascata contra
-   form-novo.css (.valor-hero { background: var(--color-bg-card) })
-   e deixava o cartão branco com texto claro (contraste ~1,1:1). */
+/* Fundo OPACO e igual ao do formulário nos dois temas. Sem a borda (removida em
+   form-novo.css) ele deixa de parecer um card dentro do card, mas o fundo
+   precisa continuar opaco: translúcido não vence a cascata e deixaria o texto
+   claro sobre superfície clara (contraste ~1,1:1). Há teste de a11y garantindo. */
 [data-theme="dark"] .valor-hero,
 [data-theme="dark"] .valor-hero.tipo-despesa,
 [data-theme="dark"] .valor-hero.tipo-receita {
@@ -560,82 +564,14 @@
    AUTH
    ═══════════════════════════════════════════════════════════ */
 
-[data-theme="dark"] .auth-overlay {
-  background: var(--color-gray-900);
-}
-
-[data-theme="dark"] .auth-card {
-  background: rgba(30, 41, 59, 0.95);
-  color: var(--color-text-primary);
-  border: 1px solid rgba(71, 85, 105, 0.4);
-  box-shadow:
-    0 20px 50px rgba(0, 0, 0, 0.4),
-    0 8px 25px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-
-[data-theme="dark"] .auth-card:hover {
-  box-shadow:
-    0 25px 60px rgba(0, 0, 0, 0.5),
-    0 12px 35px rgba(0, 0, 0, 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-
-[data-theme="dark"] .auth-card h2 { color: var(--color-text-primary); }
-[data-theme="dark"] .auth-card > p { color: var(--color-gray-400); }
-
-[data-theme="dark"] .auth-logo {
-  background: var(--color-success);
-  box-shadow: 0 12px 28px rgba(47, 156, 109, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .auth-tabs {
-  background: rgba(51, 65, 85, 0.4);
-  border: 1px solid rgba(71, 85, 105, 0.3);
-}
-
-[data-theme="dark"] .auth-tab { color: var(--color-gray-400); }
-
-[data-theme="dark"] .auth-tab.ativo {
-  background: rgba(30, 41, 59, 0.9);
-  color: var(--color-success-text);
-  box-shadow: var(--elevacao-1);
-}
-
-[data-theme="dark"] .auth-tab:hover:not(.ativo) {
-  background: rgba(51, 65, 85, 0.3);
-  color: var(--color-gray-300);
-}
-
-[data-theme="dark"] .auth-field label { color: var(--color-gray-300); }
-
-[data-theme="dark"] .auth-form input {
-  background: rgba(30, 41, 59, 0.8);
-  border: 2px solid var(--color-border);
-  color: var(--color-text-primary);
-  box-shadow: var(--elevacao-1);
-}
-
-[data-theme="dark"] .auth-form input::placeholder { color: var(--color-gray-500); }
-
-[data-theme="dark"] .auth-form input:focus {
-  border-color: var(--color-success);
-  box-shadow: 0 0 0 4px rgba(47, 156, 109, 0.15), 0 4px 12px rgba(47, 156, 109, 0.25);
-}
-
-[data-theme="dark"] .auth-form input:hover:not(:focus) {
-  border-color: rgba(100, 116, 139, 0.5);
-  box-shadow: var(--elevacao-1);
-}
-
-[data-theme="dark"] .auth-form .btn-primario {
-  background: var(--color-success);
-  box-shadow: var(--elevacao-2);
-}
-
-[data-theme="dark"] .auth-form .btn-primario:hover {
-  box-shadow: var(--elevacao-2);
-}
+/*
+ * A tela de login usa o layout "bank" (auth-overlay--bank), que é sempre claro
+ * por design (fundo branco forçado em auth.css) — como a maioria dos apps
+ * bancários. O bloco de tema escuro que existia aqui era do layout antigo (card
+ * centralizado) e, no layout novo, só escurecia o container deixando a saudação
+ * ilegível. Removido: o login segue claro nos dois temas, com as cores do
+ * auth.css. (.auth-env-warning tem seu próprio ajuste dark mais acima.)
+ */
 
 /* ═══════════════════════════════════════════════════════════
    FASE 2 UX — Novos elementos
@@ -669,6 +605,6 @@
 
 /* Indicador de sincronização — variante escura (auditoria #4) */
 [data-theme="dark"] .sync-indicator{
-  background:rgba(20,28,24,.95); color: var(--color-text-primary); border-color:#22302a;
+  background:rgba(20,28,24,.95); color: var(--color-text-primary); border-color:var(--color-border-dark-strong);
   box-shadow: var(--elevacao-1);
 }

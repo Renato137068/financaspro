@@ -10,24 +10,30 @@
 .orcamento-item {
   background: var(--color-bg-card);
   padding: var(--space-4);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-xl);
   margin-bottom: var(--space-3);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-superficie);
+  border: 1px solid var(--color-border-light);
 }
 
 .orcamento-item--link {
   cursor: pointer;
-  transition: box-shadow var(--transition-fast), transform var(--transition-fast);
+  transition: box-shadow var(--transition-fast), transform var(--transition-fast), border-color var(--transition-fast);
 }
 
 .orcamento-item--link:hover {
-  box-shadow: 0 3px 10px var(--color-overlay-md);
-  transform: translateY(-1px);
+  box-shadow: var(--shadow-card-hover);
+  border-color: var(--color-primary-200);
+  transform: translateY(-2px);
 }
 
 .orcamento-item--link:focus-visible {
   outline: 2px solid var(--color-primary-500);
   outline-offset: 2px;
+}
+
+.orcamento-item--link:active {
+  transform: scale(0.98);
 }
 
 .orcamento-header {
@@ -97,10 +103,87 @@
 .orc-renda-setup {
   background: var(--color-bg-card);
   border-radius: var(--radius-xl);
-  padding: var(--space-6) var(--space-5);
-  text-align: center;
+  padding: var(--space-5);
   margin: var(--space-2) 0;
   box-shadow: var(--shadow-md);
+}
+
+.orc-renda-setup-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.orc-renda-copy {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.orc-renda-title {
+  margin: 0 0 var(--space-1);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  line-height: var(--line-height-tight);
+}
+
+.orc-renda-desc {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+}
+
+.orc-renda-field {
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.orc-renda-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-page);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.orc-renda-group:focus-within {
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 3px var(--color-overlay-sm);
+}
+
+.orc-renda-prefix {
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-base);
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.orc-renda-input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-sans);
+}
+
+.orc-renda-input:focus {
+  outline: none;
+}
+
+.orc-renda-submit {
+  width: 100%;
+  margin-top: var(--space-4);
+  min-height: 52px;
 }
 
 .orc-renda-setup h3 {
@@ -116,53 +199,6 @@
   margin-bottom: var(--space-6);
   line-height: var(--line-height-normal);
 }
-
-.orc-renda-input {
-  display: flex;
-  gap: var(--space-3);
-  max-width: 360px;
-  margin: 0 auto;
-}
-
-.orc-renda-input input {
-  flex: 1;
-  /* Item flex nao encolhe abaixo do proprio tamanho intrinseco enquanto
-     min-width for `auto`, e um <input> tem largura intrinseca de cerca de 20
-     caracteres (~270px). Num telefone de 320px o pai tem 246px, entao o campo
-     vazava 27px para fora da tela -- e em 280px (Fold fechado), 75px. O
-     `flex: 1` nao resolve sozinho: e preciso soltar o piso. */
-  min-width: 0;
-  padding: var(--space-4);
-  border: 2px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-semibold);
-  background: var(--color-bg-page);
-  color: var(--color-text-primary);
-  transition: border-color var(--transition-fast);
-  font-family: var(--font-family-sans);
-}
-
-.orc-renda-input input:focus {
-  outline: none;
-  border-color: var(--color-primary-500);
-}
-
-.orc-renda-input button {
-  padding: var(--space-4) var(--space-6);
-  background: var(--color-primary-500);
-  color: var(--color-text-inverse);
-  border: none;
-  border-radius: var(--radius-lg);
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-semibold);
-  cursor: pointer;
-  transition: transform var(--transition-fast), opacity var(--transition-fast);
-  white-space: nowrap;
-  font-family: var(--font-family-sans);
-}
-
-.orc-renda-input button:active { transform: scale(0.96); }
 
 /* ── Header Estratégico ─────────────────────────────── */
 
@@ -190,6 +226,7 @@
   background: var(--color-bg-card);
   border-radius: var(--radius-2xl);
   border: 1px solid var(--color-border-light);
+  position: relative;
 }
 
 .orc-kpi-main-content {
@@ -204,6 +241,16 @@
   color: var(--color-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+.orc-kpi-hint {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  line-height: 1.35;
 }
 
 .orc-kpi-value {
@@ -259,32 +306,33 @@
 }
 
 .orc-kpi-card {
-  background: var(--color-bg-page);
+  background: var(--color-bg-card);
   border-radius: var(--radius-xl);
   padding: var(--space-4);
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  border: 1px solid var(--color-border);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-superficie);
+  transition: all var(--transition-fast);
   cursor: default;
 }
 
 .orc-kpi-card:hover {
   transform: translateY(-2px);
-  box-shadow: var(--elevacao-2);
-  border-color: rgba(47, 156, 109, 0.2);
+  box-shadow: var(--shadow-card-hover);
+  border-color: var(--color-primary-200);
 }
 
 .orc-kpi-card-icon {
   font-size: var(--font-size-2xl);
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-bg-primary);
-  border-radius: var(--radius-xl);
+  background: var(--color-bg-page);
+  border-radius: var(--radius-lg);
   flex-shrink: 0;
   color: var(--color-primary-text);
 }
@@ -581,8 +629,13 @@
 }
 
 .orc-progress-fill.otimo {
-  background: var(--color-info-on-light);
+  background: var(--color-success);
   box-shadow: var(--elevacao-1);
+}
+
+/* Poupança em progresso: verde (não âmbar de alerta de limite). */
+#orc-pou-bar.attention {
+  background: var(--color-success);
 }
 
 /* Card Meta */
@@ -960,6 +1013,11 @@
   margin: 0 auto;
 }
 
+.orc-categorias-empty .btn-primario {
+  margin-top: var(--space-4);
+  min-height: 44px;
+}
+
 .orc-insight {
   display: flex;
   align-items: flex-start;
@@ -1222,21 +1280,42 @@
 @media (max-width: 768px) {
   /* Header */
   .orc-header {
-    padding: var(--space-4);
-    border-radius: var(--radius-2xl);
+    padding: var(--space-3);
+    border-radius: var(--radius-xl);
+    margin: var(--space-3) 0;
+    gap: var(--space-3);
+  }
+
+  [id="aba-orcamento"] > .perfil-header-compact {
+    padding: 0;
+  }
+
+  [id="aba-orcamento"] > .perfil-header-compact .perfil-card-icon-wrapper {
+    width: 40px;
+    height: 40px;
+  }
+
+  [id="aba-orcamento"] > .perfil-header-compact .perfil-nome {
+    font-size: var(--font-size-lg);
   }
 
   .orc-kpi-main {
-    flex-direction: column;
     align-items: flex-start;
     gap: var(--space-3);
     padding: var(--space-4);
   }
 
+  /* Conteúdo ocupa a largura e o indicador de tendência fica no fluxo, à
+     direita — antes era position:absolute e cobria o título
+     "SALDO DISPONÍVEL DO ORÇAMENTO". */
+  .orc-kpi-main-content {
+    flex: 1;
+    min-width: 0;
+  }
+
   .orc-kpi-trend-indicator {
-    position: absolute;
-    top: var(--space-4);
-    right: var(--space-4);
+    position: static;
+    flex-shrink: 0;
   }
 
   .orc-kpi-value {
@@ -1471,7 +1550,7 @@
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-4);
-  background: var(--color-bg-input);
+  background: var(--color-bg-card);
   border: 2px solid var(--color-border);
   border-radius: var(--radius-lg);
   transition: all var(--transition-fast);
@@ -1575,7 +1654,7 @@
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-3) var(--space-4);
-  background: var(--color-bg-input);
+  background: var(--color-bg-card);
   border: 2px solid var(--color-border);
   border-radius: var(--radius-md);
   transition: all var(--transition-fast);
@@ -1610,7 +1689,7 @@
   justify-content: center;
   gap: var(--space-2);
   padding: var(--space-3);
-  background: var(--color-bg-input);
+  background: var(--color-bg-card);
   border-radius: var(--radius-md);
   margin-top: var(--space-2);
 }
@@ -1785,3 +1864,102 @@
   from { opacity: 0.7; }
   to   { opacity: 1; }
 }
+
+/* ── Sub-abas Orçamento (Planejamento | Metas | Assinaturas | Patrimônio) ── */
+
+.orc-subnav {
+  position: sticky;
+  top: var(--app-header-offset, 58px);
+  z-index: var(--z-sticky);
+  margin: 0 0 var(--space-4);
+  padding: var(--space-2) 0;
+  background: var(--color-bg-page);
+}
+
+@media (min-width: 1024px) {
+  .orc-subnav {
+    top: 0;
+  }
+}
+
+.orc-tablist {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: 0;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 4px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-xl);
+}
+
+.orc-tablist::-webkit-scrollbar {
+  display: none;
+}
+
+.orc-tab {
+  flex-shrink: 0;
+  min-height: var(--tap-target-min, 44px);
+  padding: 8px 14px;
+  border: none;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  font-family: var(--font-family-sans);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  white-space: nowrap;
+}
+
+.orc-tab:hover {
+  color: var(--color-text-primary);
+  background: var(--color-gray-100);
+}
+
+.orc-tab.ativo,
+.orc-tab[aria-selected="true"] {
+  background: var(--color-primary-50);
+  color: var(--color-primary-text);
+  box-shadow: inset 0 -2px 0 var(--color-primary-500);
+}
+
+.orc-tab:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+}
+
+.orc-sub-panel:not(.ativo) {
+  display: none;
+}
+
+.orc-sub-panel.ativo {
+  display: block;
+}
+
+[data-theme="dark"] .orc-subnav {
+  background: var(--color-bg-page);
+}
+
+[data-theme="dark"] .orc-tablist {
+  background: var(--color-bg-dark-card, var(--color-bg-card));
+  border-color: var(--color-border);
+}
+
+[data-theme="dark"] .orc-tab.ativo,
+[data-theme="dark"] .orc-tab[aria-selected="true"] {
+  background: rgba(18, 105, 78, 0.2);
+  color: var(--color-success-light, var(--color-primary-text));
+}
+
+.orc-panel-subtitle {
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+}
+

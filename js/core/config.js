@@ -1,10 +1,45 @@
-﻿/**
- * @file config.js � Application constants & configuration
+/**
+ * @file config.js — Application constants & configuration
+ *
+ * FP_BUILD_MODE:
+ *   'cloud' — Play Store / sync Supabase (padrão)
+ *   'local' — piloto offline sem login (scripts/set-build-mode.cjs local)
+ * Runtime: localStorage fp-force-local=1 também força modo local (dev).
+ *
+ * Credenciais cloud: defaults abaixo (anon key pública). Override no build via
+ * SUPABASE_URL + SUPABASE_ANON_KEY ? scripts/inject-supabase-env.cjs.
  */
+
+var FP_BUILD_MODE = 'cloud';
+
+function _fpWantLocal() {
+  if (FP_BUILD_MODE === 'local') return true;
+  try {
+    if (typeof localStorage !== 'undefined' && localStorage.getItem('fp-force-local') === '1') {
+      return true;
+    }
+  } catch (e) { /* noop */ }
+  try {
+    if (typeof window !== 'undefined' && window.__FP_FORCE_LOCAL__ === true) return true;
+  } catch (e2) { /* noop */ }
+  return false;
+}
+
+/* Preenchidos por inject-supabase-env.cjs quando as env vars existem; senão ''. */
+var _FP_ENV_URL = '';
+var _FP_ENV_ANON = '';
+
+var _FP_CLOUD_URL = _FP_ENV_URL || 'https://nubvlksibmpryltkfpei.supabase.co';
+var _FP_CLOUD_ANON = _FP_ENV_ANON || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51YnZsa3NpYm1wcnlsdGtmcGVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MzQ1NjEsImV4cCI6MjA5MjExMDU2MX0.lVA2ms3WvWPZ1fStgQC9-32CCLqNFVtSr8LNYZrfwq0';
+var _fpLocal = _fpWantLocal();
 
 const CONFIG = {
   APP_NAME: 'FinançasPro',
-  VERSION: '11.0.0',
+  VERSION: '11.3.18',
+  BUILD_MODE: _fpLocal ? 'local' : 'cloud',
+
+  /** Open Finance em produção (Belvo). Enquanto false, o card some do Perfil. */
+  FEATURE_OPEN_FINANCE: false,
 
   STORAGE_TRANSACOES: 'fp-transacoes',
   STORAGE_CONFIG: 'fp-config',
@@ -19,6 +54,10 @@ const CONFIG = {
   API_REFRESH_TOKEN_STORAGE: 'fp-refresh-token',
   API_USER_STORAGE: 'fp-api-user',
 
+  // Supabase: vazios = local-first (sem login forçado). Cloud = Play Store.
+  SUPABASE_URL: _fpLocal ? '' : _FP_CLOUD_URL,
+  SUPABASE_ANON_KEY: _fpLocal ? '' : _FP_CLOUD_ANON,
+
   TIPO_RECEITA: 'receita',
   TIPO_DESPESA: 'despesa',
   // Movimentação entre contas do próprio usuário. Não é ganho nem gasto: só
@@ -31,14 +70,14 @@ const CONFIG = {
   CATEGORIAS_DESPESA_SLUGS: ['alimentacao','transporte','moradia','saude','educacao','lazer','assinaturas','seguros','impostos','servicos_financeiros','compras','vestuario','viagem','pet','familia','doacoes','beleza','outro'],
 
   CATEGORIAS_LABELS: {
-    salario: 'Salario', freelance: 'Freelance', investimentos: 'Investimentos',
-    vendas: 'Vendas', reembolsos: 'Reembolsos', beneficios: 'Beneficios', presentes: 'Presentes', aluguel_recebido: 'Aluguel Recebido', premios: 'Premios', outros: 'Outros',
-    alimentacao: 'Alimentacao', transporte: 'Transporte', moradia: 'Moradia',
-    saude: 'Saude', educacao: 'Educacao', lazer: 'Lazer', outro: 'Outros',
-    entretenimento: 'Entretenimento', compras: 'Compras', vestuario: 'Vestuario',
+    salario: 'Salário', freelance: 'Freelance', investimentos: 'Investimentos',
+    vendas: 'Vendas', reembolsos: 'Reembolsos', beneficios: 'Benefícios', presentes: 'Presentes', aluguel_recebido: 'Aluguel Recebido', premios: 'Prêmios', outros: 'Outros',
+    alimentacao: 'Alimentação', transporte: 'Transporte', moradia: 'Moradia',
+    saude: 'Saúde', educacao: 'Educação', lazer: 'Lazer', outro: 'Outros',
+    entretenimento: 'Entretenimento', compras: 'Compras', vestuario: 'Vestuário',
     viagem: 'Viagem', pet: 'Pet', assinaturas: 'Assinaturas', seguros: 'Seguros',
-    impostos: 'Impostos e Taxas', servicos_financeiros: 'Servicos Financeiros',
-    familia: 'Familia', doacoes: 'Doacoes', beleza: 'Beleza e Cuidados'
+    impostos: 'Impostos e Taxas', servicos_financeiros: 'Serviços Financeiros',
+    familia: 'Família', doacoes: 'Doações', beleza: 'Beleza e Cuidados'
   },
 
   get CATEGORIAS_RECEITA() { return this.CATEGORIAS_RECEITA_SLUGS; },
@@ -65,7 +104,7 @@ const CONFIG = {
     viagem: 'plane', pet: 'paw', familia: 'users', doacoes: 'heart', beleza: 'sparkles'
   },
 
-  /** @deprecated Use _LUCIDE_ICONS � mantido para compatibilidade legada */
+  /** @deprecated Use _LUCIDE_ICONS ? mantido para compatibilidade legada */
   get _EMOJIS() { return this._LUCIDE_ICONS; },
 
   get CATEGORIAS_MAP() {
@@ -97,11 +136,63 @@ const CONFIG = {
     var mapped = this.CATEGORIAS_INTERNAS_MAP[s] || s;
     var lista = tipo === this.TIPO_RECEITA ? this.CATEGORIAS_RECEITA_SLUGS : this.CATEGORIAS_DESPESA_SLUGS;
     if (lista.indexOf(mapped) !== -1) return mapped;
+    // Categorias criadas pelo usuário: não colapsar em "outro(s)".
+    var custom = this.resolveCustomCategoria(slug, tipo);
+    if (custom) return custom;
     return tipo === this.TIPO_RECEITA ? 'outros' : 'outro';
   },
 
+  /** Slug estável a partir do nome exibido (custom). */
+  slugifyCategoria: function(nome) {
+    var raw = String(nome || '').trim().toLowerCase();
+    if (!raw) return '';
+    try {
+      raw = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    } catch (e) { /* IE/legado */ }
+    return raw.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  },
+
+  /**
+   * Se nome/slug bate com uma categoria custom do tipo, devolve o slug a gravar.
+   * @returns {string|null}
+   */
+  resolveCustomCategoria: function(nomeOuSlug, tipo) {
+    var lista = null;
+    try {
+      if (typeof DADOS !== 'undefined' && DADOS.getConfig) {
+        var cc = (DADOS.getConfig().categoriasCustom) || {};
+        lista = cc[tipo] || cc[String(tipo || '').toLowerCase()] || null;
+      }
+    } catch (e) { lista = null; }
+    if (!lista || !lista.length) return null;
+    var alvo = String(nomeOuSlug || '').trim().toLowerCase();
+    var slugAlvo = this.slugifyCategoria(nomeOuSlug);
+    for (var i = 0; i < lista.length; i++) {
+      var nome = lista[i];
+      if (!nome) continue;
+      if (String(nome).trim().toLowerCase() === alvo) return this.slugifyCategoria(nome) || null;
+      if (this.slugifyCategoria(nome) === slugAlvo && slugAlvo) return slugAlvo;
+    }
+    return null;
+  },
+
+  /** Nome amigável: whitelist, depois custom, senão a própria chave crua. */
   getCatLabel: function(slug) {
-    return this.CATEGORIAS_LABELS[slug] || slug.charAt(0).toUpperCase() + slug.slice(1);
+    if (this.CATEGORIAS_LABELS[slug]) return this.CATEGORIAS_LABELS[slug];
+    var tipos = [this.TIPO_DESPESA, this.TIPO_RECEITA];
+    for (var t = 0; t < tipos.length; t++) {
+      try {
+        if (typeof DADOS === 'undefined' || !DADOS.getConfig) break;
+        var lista = ((DADOS.getConfig().categoriasCustom) || {})[tipos[t]] || [];
+        for (var i = 0; i < lista.length; i++) {
+          if (this.slugifyCategoria(lista[i]) === slug) return lista[i];
+        }
+      } catch (e) { /* */ }
+    }
+    // Slug desconhecido (sem rótulo na whitelist nem custom): devolve a chave
+    // como veio, sem fabricar um nome capitalizado. Preserva o contrato de
+    // labelCategoria (chave desconhecida volta crua).
+    return String(slug || '');
   },
 
   DEFAULT_CONFIG: {

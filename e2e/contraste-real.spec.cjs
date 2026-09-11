@@ -110,3 +110,49 @@ for (const tema of ['light', 'dark']) {
     expect([...new Set(falhas)], `texto abaixo do mínimo WCAG AA no tema ${tema}`).toEqual([]);
   });
 }
+
+test.describe('contraste real — overlays críticos', function() {
+  for (const tema of ['light', 'dark']) {
+    test(`auth overlay — tema ${tema}`, async function({ page }) {
+      await prepareOfflinePage(page);
+      await page.evaluate(function(t) {
+        document.documentElement.setAttribute('data-theme', t);
+        var ov = document.getElementById('auth-overlay');
+        if (ov) ov.style.display = '';
+        document.body.classList.add('auth-overlay-open');
+      }, tema);
+      await expect(page.locator('#auth-overlay')).toBeVisible();
+      await page.waitForTimeout(400);
+      const falhas = await page.evaluate(SONDA);
+      const msgs = falhas.map(function(x) {
+        return `auth · ${x.classe} · ${x.razao}:1 (min ${x.minimo}) — ${x.cor} sobre ${x.fundo} «${x.texto}»`;
+      });
+      expect([...new Set(msgs)], `auth overlay abaixo do AA no tema ${tema}`).toEqual([]);
+    });
+  }
+
+  test.describe('paywall (fonte 4322)', function() {
+    test.use({ baseURL: 'http://127.0.0.1:4322' });
+
+    for (const tema of ['light', 'dark']) {
+      test(`paywall — tema ${tema}`, async function({ page }) {
+        await prepareOfflinePage(page);
+        await page.waitForFunction(function() {
+          return typeof INIT_BILLING !== 'undefined'
+            && typeof INIT_BILLING.abrirPaywall === 'function';
+        }, { timeout: 30000 });
+        await page.evaluate(function(t) {
+          document.documentElement.setAttribute('data-theme', t);
+          INIT_BILLING.abrirPaywall('Contraste paywall');
+        }, tema);
+        await expect(page.locator('.billing-modal, .billing-overlay').first()).toBeVisible({ timeout: 10000 });
+        await page.waitForTimeout(400);
+        const falhas = await page.evaluate(SONDA);
+        const msgs = falhas.map(function(x) {
+          return `paywall · ${x.classe} · ${x.razao}:1 (min ${x.minimo}) — ${x.cor} sobre ${x.fundo} «${x.texto}»`;
+        });
+        expect([...new Set(msgs)], `paywall abaixo do AA no tema ${tema}`).toEqual([]);
+      });
+    }
+  });
+});

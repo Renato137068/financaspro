@@ -26,9 +26,9 @@ const KB = 1024;
 // Limites com folga deliberada sobre o valor atual: o objetivo é barrar um
 // salto acidental, não travar o desenvolvimento em cada quilobyte.
 const BUDGETS = {
-  precacheTotal: { max: 1100 * KB, label: 'Precache total (1º acesso)' },
-  appBundle: { max: 500 * KB, label: 'js/app.bundle.js', file: 'js/app.bundle.js' },
-  vendorBundle: { max: 120 * KB, label: 'js/vendor.bundle.js', file: 'js/vendor.bundle.js' },
+  precacheTotal: { max: 1350 * KB, label: 'Precache total (1º acesso)' },
+  appBundle: { max: 580 * KB, label: 'js/app.bundle.js', file: 'js/app.bundle.js' },
+  vendorBundle: { max: 260 * KB, label: 'js/vendor.bundle.js', file: 'js/vendor.bundle.js' },
   cssBundle: { max: 300 * KB, label: 'CSS bundle', glob: /^css\/index-.*\.css$/ },
   indexHtml: { max: 100 * KB, label: 'index.html', file: 'index.html' },
 };

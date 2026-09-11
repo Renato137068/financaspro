@@ -27,6 +27,13 @@ const METAS = {
   },
 
   criar: function(dados) {
+    // Uma meta prova o conceito e engaja; a segunda e desejo declarado, e o
+    // melhor momento de oferta que o modulo tem.
+    if (typeof BILLING !== 'undefined' && !BILLING.guardQuota('goal', 1)) {
+      var errMeta = new Error('Limite de metas do plano gratuito');
+      errMeta.code = 'quota';
+      throw errMeta;
+    }
     var titulo = (dados.titulo || '').trim();
     var valorAlvo = UTILS.parseMoeda(dados.valorAlvo);
     if (!titulo) throw new Error('Informe o nome da meta');
@@ -56,7 +63,8 @@ const METAS = {
     }
     if (idx < 0) return null;
     metas[idx] = Object.assign({}, metas[idx], patch);
-    if (metas[idx].valorAtual >= metas[idx].valorAlvo) metas[idx].concluida = true;
+    // Reavalia conclusão: subir o alvo ou reduzir o guardado deve reabrir a meta.
+    metas[idx].concluida = metas[idx].valorAtual >= metas[idx].valorAlvo;
     DADOS.salvarConfig({ metas: metas });
     return metas[idx];
   },

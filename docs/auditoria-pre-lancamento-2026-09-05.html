@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Auditoria pré-lançamento — FinançasPro 11.3.14</title>
+<style>
+:root {
+  --ink:#0f1a15; --muted:#5c6b63; --line:#dce5df; --bg:#f4f7f5; --card:#fff;
+  --brand:#12694e; --p0:#b42318; --p1:#b54708; --p2:#a15c07; --p3:#175cd3; --ok:#067647;
+  --radius:14px; --shadow:0 8px 24px rgba(15,26,21,.06);
+  font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);line-height:1.55}
+.wrap{max-width:1100px;margin:0 auto;padding:28px 20px 96px}
+.hero{background:linear-gradient(145deg,#0b3d2e,#12694e 55%,#1a8a66);color:#e8f2ee;border-radius:20px;padding:32px 28px;margin-bottom:22px;box-shadow:var(--shadow)}
+.hero h1{margin:0 0 8px;font-size:1.55rem;letter-spacing:-.02em}
+.hero p{margin:0;opacity:.92;max-width:70ch}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.pill{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);padding:5px 11px;border-radius:999px;font-size:.8rem}
+h2{font-size:1.2rem;margin:36px 0 12px;letter-spacing:-.01em}
+h3{font-size:1.02rem;margin:18px 0 8px}
+h4{font-size:.92rem;margin:14px 0 6px;color:var(--brand)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);margin-bottom:14px}
+.grid{display:grid;gap:12px}
+@media(min-width:720px){.cols-4{grid-template-columns:repeat(4,1fr)}.cols-3{grid-template-columns:repeat(3,1fr)}.cols-2{grid-template-columns:repeat(2,1fr)}}
+.stat{text-align:center}.stat .n{font-size:2rem;font-weight:750;letter-spacing:-.03em}.stat .l{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-top:4px}
+.n.ok{color:var(--ok)}.n.p0{color:var(--p0)}.n.p1{color:var(--p1)}.n.p2{color:var(--p2)}
+.ring{width:110px;height:110px;border-radius:50%;margin:0 auto 8px;display:grid;place-items:center;position:relative;background:conic-gradient(var(--brand) calc(68 * 1%),#dfe8e3 0)}
+.ring::after{content:"";position:absolute;inset:11px;background:var(--card);border-radius:50%}
+.ring span{position:relative;z-index:1;font-size:1.55rem;font-weight:750}
+table{width:100%;border-collapse:collapse;font-size:.86rem}
+th,td{padding:9px 11px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);background:#fafcfa}
+.sev{display:inline-block;font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:999px}
+.sev.p0{background:#fee4e2;color:var(--p0)}.sev.p1{background:#fef0c7;color:var(--p1)}
+.sev.p2{background:#fef7c3;color:#854d0e}.sev.p3{background:#d1e9ff;color:var(--p3)}.sev.p4{background:#f3f4f6;color:#4b5563}
+.sev.ok{background:#dcfce7;color:var(--ok)}
+.callout{border-left:4px solid var(--brand);background:#eef6f2;padding:12px 14px;border-radius:0 10px 10px 0;margin:12px 0}
+.callout.block{border-left-color:var(--p0);background:#fef3f2}
+.callout.warn{border-left-color:var(--p1);background:#fff8eb}
+.muted{color:var(--muted);font-size:.9rem}
+code{font-size:.82em;background:#eef2ef;padding:1px 5px;border-radius:4px}
+.toc a{color:var(--brand);text-decoration:none}.toc a:hover{text-decoration:underline}
+.bar{height:8px;background:#e8eee9;border-radius:99px;overflow:hidden;margin:6px 0 0}
+.bar>i{display:block;height:100%;background:var(--brand);border-radius:99px}
+.bug{border:1px solid var(--line);border-radius:12px;padding:14px;margin:10px 0;background:#fcfdfc}
+.bug h4{margin:0 0 8px}
+footer{margin-top:48px;color:var(--muted);font-size:.8rem}
+ul.tight>li{margin:3px 0}
+.score-row{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line);font-size:.9rem}
+.score-row:last-child{border-bottom:0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>Auditoria pré-lançamento — FinançasPro</h1>
+  <p>
+    Diagnóstico completo <strong>sem alteração de código de produção</strong>.
+    Escopo: arquitetura, inventário, fluxos, cálculos, dados, segurança, Free/Pro,
+    monetização, UX, performance e preparação para beta.
+  </p>
+  <div class="meta">
+    <span class="pill">Data: 5 set 2026</span>
+    <span class="pill">Versão: 11.3.14 · versionCode 38</span>
+    <span class="pill">Branch: claude/ui-ux-auditoria</span>
+    <span class="pill">Modo: diagnóstico only</span>
+  </div>
+</header>
+
+<section class="card toc">
+  <strong>Índice</strong>
+  <ol>
+    <li><a href="#resumo">Resumo executivo</a></li>
+    <li><a href="#arquitetura">Arquitetura</a></li>
+    <li><a href="#funcionalidades">Funcionalidades</a></li>
+    <li><a href="#fluxos">Fluxos testados</a></li>
+    <li><a href="#evidencias">Evidências automatizadas</a></li>
+    <li><a href="#bugs">Bugs e riscos</a></li>
+    <li><a href="#seguranca">Segurança</a></li>
+    <li><a href="#calculos">Cálculos</a></li>
+    <li><a href="#freepro">Free vs Pro</a></li>
+    <li><a href="#monetizacao">Monetização</a></li>
+    <li><a href="#ux">UX/UI</a></li>
+    <li><a href="#manual">Testes manuais necessários</a></li>
+    <li><a href="#risco">Matriz de risco</a></li>
+    <li><a href="#score">Scores</a></li>
+    <li><a href="#top20">Top problemas</a></li>
+    <li><a href="#roadmap">Roadmap + checklists</a></li>
+  </ol>
+</section>
+
+<!-- 1 -->
+<section id="resumo">
+  <h2>1. Resumo executivo</h2>
+  <div class="grid cols-4">
+    <div class="card stat">
+      <div class="ring"><span>68</span></div>
+      <div class="l">Nota geral / 100</div>
+      <p class="muted" style="font-size:.8rem;margin:8px 0 0">Penalizada por falha de enforcement Free no AAB (fail-open)</p>
+    </div>
+    <div class="card stat"><div class="n p0">1</div><div class="l">P0 / Blocker</div></div>
+    <div class="card stat"><div class="n p1">4</div><div class="l">P1 Critical</div></div>
+    <div class="card stat"><div class="n ok">1833</div><div class="l">Testes front OK</div><p class="muted" style="font-size:.75rem;margin:6px 0 0">8 falhas / 1848</p></div>
+  </div>
+
+  <div class="callout block">
+    <strong>BLOCKER — NÃO PUBLICAR</strong> beta aberto / Play production sem corrigir
+    <strong>RISK-01</strong>: no AAB, <code>billing.js</code> é lazy chunk <code>conta</code>;
+    várias chamadas <code>typeof BILLING !== 'undefined' &amp;&amp; !guardQuota</code> <em>falham abertas</em>
+    até o usuário abrir Config (ou Resumo/Extrato em modo nuvem). Offline Free pode ultrapassar limites.
+  </div>
+
+  <div class="card">
+    <h3>Respostas diretas</h3>
+    <table>
+      <tr><td>1. App funcional?</td><td><strong>Sim</strong> — núcleo financeiro maduro; 149 testes críticos OK.</td></tr>
+      <tr><td>2. Cálculos corretos?</td><td><strong>Sim (automatizado)</strong> — invariantes, precisão, caminho do dinheiro passam. Achados massivos só P2 de rejeição esperável.</td></tr>
+      <tr><td>3. Dados seguros?</td><td><strong>Parcial</strong> — RLS cloud forte; offline é local-first (sem RLS).</td></tr>
+      <tr><td>4. Vazamento entre usuários?</td><td><strong>Baixo no cloud com RLS+AAL2</strong> (estático). <span class="sev p3">TESTE MANUAL</span> pentest vivo.</td></tr>
+      <tr><td>5. Banco consistente?</td><td><strong>Bom no desenho</strong>; quotas SQL cobrem só Account/Budget.</td></tr>
+      <tr><td>6. Free/Pro protegido?</td><td><strong>Não no AAB até Config</strong> — RISK-01.</td></tr>
+      <tr><td>7. Monetização segura?</td><td><strong>Lógica de revoke OK</strong>; timing depende de RTDN/Config — RISK-04/05.</td></tr>
+      <tr><td>8. UX pronta?</td><td><strong>Quase</strong> — auditoria de botões 92/100; fluxos claros.</td></tr>
+      <tr><td>9. Uso intenso?</td><td><strong>Sim até ~5–10k txs</strong> no núcleo (bench).</td></tr>
+      <tr><td>10. Impede lançamento?</td><td>RISK-01 (+ RTDN live + E2E auth real).</td></tr>
+      <tr><td>11. Pode esperar?</td><td>P2–P4, drift VERSION UI, testes de suíte quebrados.</td></tr>
+      <tr><td>12. Nota atual?</td><td><strong>68/100</strong></td></tr>
+      <tr><td>13. Rumo a 90+?</td><td>Corrigir fail-open Free → RTDN live → E2E Supabase → fechar quotas SQL → limpar suíte.</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- 2 -->
+<section id="arquitetura">
+  <h2>2. Arquitetura identificada</h2>
+  <div class="card">
+    <pre style="white-space:pre-wrap;font-size:.82rem;margin:0;background:#f7faf8;padding:12px;border-radius:10px">index.html / Capacitor WebView (com.financaspro.mobile)
+    ↓
+DADOS (localStorage + IndexedDB) ←→ SYNC / supabase-sync
+    ↓                                    ↓
+Express+Prisma (legacy)          Supabase Auth + Edge (Stripe/Play)
+    ↓                                    ↓
+              PostgreSQL + RLS + Subscription entitlement</pre>
+    <ul class="tight" style="margin-top:12px">
+      <li><strong>Frontend:</strong> HTML/CSS/JS puro + Vite; PWA (<code>sw.js</code>)</li>
+      <li><strong>Native:</strong> Capacitor 8 Android; Play Billing; biometria Capgo; FLAG_SECURE</li>
+      <li><strong>Cloud:</strong> Supabase Auth/DB/Edge · path Express ainda no repo</li>
+      <li><strong>Build mode:</strong> <code>FP_BUILD_MODE</code> cloud (default) / local</li>
+      <li><strong>Verdade financeira:</strong> <code>DADOS</code> / módulos <code>TRANSACOES</code>, <code>ORCAMENTO</code>, <code>CONTAS</code>, <code>COMPROMISSOS</code>…</li>
+      <li><strong>UI state:</strong> <code>APP_STORE</code> (não é ledger)</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 3 -->
+<section id="funcionalidades">
+  <h2>3. Funcionalidades mapeadas (matriz)</h2>
+  <div class="card" style="overflow-x:auto">
+    <table>
+      <thead><tr><th>Módulo</th><th>Funcionalidade</th><th>Free/Pro</th><th>Persistência</th><th>API/Cloud</th><th>Criticidade</th></tr></thead>
+      <tbody>
+        <tr><td>Auth</td><td>Cadastro/login/logout/reset/MFA/PIN/bio</td><td>Free</td><td>Supabase session LS + Keystore</td><td>Supabase Auth</td><td>P0</td></tr>
+        <tr><td>Lançamentos</td><td>CRUD receita/despesa/parcela/recorrente</td><td>Free (ilimitado qtd)</td><td>DADOS/IDB</td><td>sync</td><td>P0</td></tr>
+        <tr><td>Transferências</td><td>Entre contas</td><td>Free</td><td>DADOS</td><td>sync</td><td>P0</td></tr>
+        <tr><td>Contas/cartões</td><td>CRUD + fatura</td><td>Free ≤5 contas</td><td>DADOS</td><td>SQL quota Account</td><td>P0</td></tr>
+        <tr><td>Extrato</td><td>Filtros, busca, export CSV/PDF</td><td>CSV Free; PDF Pro</td><td>DADOS</td><td>—</td><td>P1</td></tr>
+        <tr><td>Orçamento 50/30/20</td><td>Limites por categoria</td><td>Free ≤5 budgets</td><td>DADOS</td><td>SQL quota Budget</td><td>P0</td></tr>
+        <tr><td>Metas</td><td>CRUD + aportes</td><td>Free ≤1</td><td>DADOS</td><td>client gate*</td><td>P1</td></tr>
+        <tr><td>Contas a pagar</td><td>CRUD + pago</td><td>Free ≤5</td><td>DADOS</td><td>client gate*</td><td>P1</td></tr>
+        <tr><td>Assinaturas</td><td>Gastos fixos</td><td>Free ≤5</td><td>DADOS</td><td>client gate*</td><td>P1</td></tr>
+        <tr><td>Patrimônio</td><td>Ativos/dívidas</td><td>snapshot Free; histórico Pro</td><td>DADOS</td><td>client</td><td>P2</td></tr>
+        <tr><td>OCR</td><td>Nota fiscal</td><td>Free 5/mês</td><td>counter LS</td><td>client only</td><td>P1</td></tr>
+        <tr><td>IA/insights/previsão</td><td>Análises</td><td>Pro (flags)</td><td>—</td><td>client gate*</td><td>P1</td></tr>
+        <tr><td>Open Finance</td><td>Belvo</td><td>Pro</td><td>cloud</td><td>API</td><td>P2</td></tr>
+        <tr><td>Billing</td><td>Play/Stripe/trial</td><td>—</td><td>Subscription</td><td>Edge</td><td>P0</td></tr>
+        <tr><td>Backup</td><td>JSON import/export</td><td>Free</td><td>local</td><td>—</td><td>P1</td></tr>
+      </tbody>
+    </table>
+    <p class="muted">* client gate = depende de <code>BILLING</code> carregado (ver RISK-01).</p>
+  </div>
+</section>
+
+<!-- 4 -->
+<section id="fluxos">
+  <h2>4. Fluxos testados / mapeados</h2>
+  <div class="grid cols-2">
+    <div class="card">
+      <h3>Cobertura automatizada</h3>
+      <ul class="tight">
+        <li>Invariantes financeiras / caminho do dinheiro / precisão / parcelas</li>
+        <li>Billing gates, Play purchase mock, plan parity JSON↔JS↔SQL</li>
+        <li>Auth hardening (enumeração, AAL2, senha), biometria (estático)</li>
+        <li>Auditoria massiva 200 users · 41 205 ops · seed 20260905</li>
+        <li>Perf 1k/5k txs · XSS sinks · billing wiring · versionName↔package</li>
+        <li>Auditoria botões P0–P3 (nota UI botões 92)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Fluxos E2E mapeados (parcialmente manuais)</h3>
+      <ul class="tight">
+        <li>Cadastro → login → MFA → dashboard</li>
+        <li>Receita/despesa → extrato → resumo → orçamento</li>
+        <li>Editar/excluir → consistência multi-tela</li>
+        <li>Free → paywall → Play/Stripe → Pro</li>
+        <li>Cancelamento Play → revoke (RTDN/Config)</li>
+        <li>Offline intenso / troca de mês / reload</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section id="evidencias">
+  <h2>5. Evidências automatizadas (esta sessão)</h2>
+  <div class="card">
+    <table>
+      <tr><th>Suite / script</th><th>Resultado</th></tr>
+      <tr><td>10 suites críticas (finanças+billing+auth)</td><td><span class="sev ok">149/149 PASS</span></td></tr>
+      <tr><td>Frontend Jest completo</td><td><span class="sev p2">1833 PASS · 8 FAIL · 7 skip</span></td></tr>
+      <tr><td>Falhas: suite-integrity, auth-recuperacao, play-store-fase2/3, marca-nome-unico</td><td>drift de testes / produto — não crash de ledger</td></tr>
+      <tr><td><code>auditoria-massiva-usuarios</code> 200 users</td><td>41 205 ops · achados P2 rejeição (persona Errôneo) · <strong>0 P0</strong></td></tr>
+      <tr><td>Perf 1000 / 5000 txs</td><td>obter mês ~0.09–0.34 ms/op · OK</td></tr>
+      <tr><td><code>check-xss-sinks</code></td><td><span class="sev ok">OK</span> 108 arquivos</td></tr>
+      <tr><td><code>check-billing-wiring</code></td><td><span class="sev ok">OK</span></td></tr>
+      <tr><td><code>check-version</code></td><td><span class="sev ok">OK</span> package↔Android 11.3.14 (não checa <code>CONFIG.VERSION</code>)</td></tr>
+      <tr><td>Drift <code>js/core/config.js</code> VERSION</td><td><span class="sev p3">11.3.13</span> vs 11.3.14</td></tr>
+    </table>
+    <p class="muted">Log massivo: <code>docs/audit-runs/massive-audit-20260905.json</code></p>
+  </div>
+</section>
+
+<!-- 6 bugs -->
+<section id="bugs">
+  <h2>6. Bugs / riscos encontrados</h2>
+
+  <div class="bug">
+    <h4><span class="sev p0">P0</span> RISK-01 — Fail-open Free até carregar chunk <code>conta</code></h4>
+    <p><strong>Módulo:</strong> Billing / quotas · <strong>Impacto:</strong> Free ultrapassa limites no AAB</p>
+    <p><strong>Descrição:</strong> <code>billing.js</code> entra no lazy chunk <code>conta</code>. Call sites usam
+      <code>typeof BILLING !== 'undefined' &amp;&amp; !BILLING.guardQuota(...)</code> — se o módulo não carregou, a guarda é ignorada.</p>
+    <p><strong>Como reproduzir:</strong> <span class="sev p3">TESTE MANUAL NECESSÁRIO</span> — instalar AAB, nunca abrir Config, criar 6+ contas/orçamentos/metas offline.</p>
+    <p><strong>Esperado:</strong> bloqueio Free. <strong>Encontrado (código):</strong> caminho permite até Config/Resumo nuvem.</p>
+    <p><strong>Evidência:</strong> <code>scripts/bundle-app.cjs</code>; <code>js/assinaturas.js</code>, <code>init-form.js</code>, <code>previsao.js</code>; <code>tests/lazy-chunks.test.js</code></p>
+    <p><strong>Recomendação:</strong> carregar <code>billing.js</code> no bundle crítico OU fail-closed quando ausente.</p>
+  </div>
+
+  <div class="bug">
+    <h4><span class="sev p1">P1</span> RISK-02 — Spoof de plano offline</h4>
+    <p><strong>Descrição:</strong> <code>getTier()</code> lê <code>config.plano</code> local; usuário pode setar <code>pro</code> e desligar quotas offline.</p>
+    <p><strong>Impacto:</strong> esperado em app local-first; aceitável se produto assume trust no aparelho. Documentar honestamente.</p>
+    <p><strong>Evidência:</strong> <code>js/billing.js</code> getTier / shouldEnforceLimits</p>
+  </div>
+
+  <div class="bug">
+    <h4><span class="sev p1">P1</span> RISK-03 — Quotas SQL incompletas</h4>
+    <p><strong>Descrição:</strong> Triggers cobrem Account/Budget; goals/bills/OCR/AI/PDF sem trigger equivalente.</p>
+    <p><strong>Evidência:</strong> <code>supabase/migrations/20260901150000_quota_enforcement.sql</code>, quota_v2 sem novos triggers</p>
+  </div>
+
+  <div class="bug">
+    <h4><span class="sev p1">P1</span> RISK-04 — Revoke Play depende de RTDN ou Config</h4>
+    <p><strong>Descrição:</strong> Lógica <code>!entitled → revoke</code> existe; reconciliação só no chunk Config (≤1×/6h). Sem RTDN live, Pro pode persistir após cancelamento.</p>
+    <p><strong>Evidência:</strong> <code>play-billing.ts</code>, <code>init-billing.js</code> _reconciliarPlay, runbook</p>
+    <p><span class="sev p3">TESTE MANUAL NECESSÁRIO</span> — cancelar assinatura Play e não abrir Config.</p>
+  </div>
+
+  <div class="bug">
+    <h4><span class="sev p1">P1</span> RISK-05 — RTDN produção não verificável só pelo repo</h4>
+    <p><span class="sev p3">TESTE MANUAL NECESSÁRIO</span> — Pub/Sub + OIDC + logs Edge no projeto GCP/Supabase.</p>
+  </div>
+
+  <div class="bug">
+    <h4><span class="sev p2">P2</span> BUG-06 — Cap OCR só em localStorage</h4>
+    <p>Limpar storage reseta contador Free 5/mês. Evidência: <code>billing.js</code> _OCR_USES_KEY</p>
+  </div>
+
+  <div class="bug">
+    <h4><span class="sev p2">P2</span> RISK-08 — Sessão Supabase em localStorage</h4>
+    <p>XSS ⇒ roubo de sessão. Mitigações CSP/escape existem; residual. <span class="sev p3">TESTE MANUAL</span> CSP build prod.</p>
+  </div>
+
+  <div class="bug">
+    <h4><span class="sev p2">P2</span> TEST-FAIL — 8 testes frontend vermelhos</h4>
+    <p>suite-integrity (paths), auth-recuperacao, play-store-fase2/3, marca-nome-unico — drift, não regressão de ledger nesta amostra.</p>
+  </div>
+
+  <div class="bug">
+    <h4><span class="sev p3">P3</span> VERSION drift UI</h4>
+    <p><code>CONFIG.VERSION = 11.3.13</code> enquanto package/Android/SW = 11.3.14. <code>check-version</code> não cobre config.js.</p>
+  </div>
+
+  <div class="bug">
+    <h4><span class="sev p3">P3</span> RISK-12 — SA JSON local no disco</h4>
+    <p>Arquivo gitignored; risco operacional se máquina vazada. Não está no git.</p>
+  </div>
+</section>
+
+<!-- 7 -->
+<section id="seguranca">
+  <h2>7. Segurança</h2>
+  <div class="card">
+    <h3>Pontos fortes</h3>
+    <ul class="tight">
+      <li>RLS owner/org + billing write-only service_role</li>
+      <li>AAL2 RESTRICTIVE em tabelas financeiras</li>
+      <li>fp_plan_limit_config sem write client</li>
+      <li>Anon key no client = esperado; sem Stripe secret no front</li>
+      <li>Biometria desligada no logout (código + testes estáticos)</li>
+      <li>XSS sink scan limpo nesta sessão</li>
+    </ul>
+    <h3>Pontos fracos</h3>
+    <ul class="tight">
+      <li>Offline = trust no dispositivo</li>
+      <li>Fail-open Free (RISK-01)</li>
+      <li>Tokens em localStorage</li>
+      <li>Pentest dinâmico / E2E Supabase real: <span class="sev p3">TESTE MANUAL</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- 8 -->
+<section id="calculos">
+  <h2>8. Cálculos financeiros</h2>
+  <div class="card">
+    <p><strong>Veredito automatizado:</strong> núcleo saudável.</p>
+    <ul class="tight">
+      <li>Suites invariantes / caminho do dinheiro / precisão / parcelas: <span class="sev ok">PASS</span></li>
+      <li>Massiva 200 users: 0 bugs P0/P1 de saldo; rejeições P2 em persona “Errôneo” (valores extremos)</li>
+      <li>Módulos: <code>TRANSACOES</code>, <code>ORCAMENTO</code>, <code>CONTAS.saldos</code>, <code>COMPROMISSOS.disponivel</code>, <code>CARTOES.fatura</code>, <code>RECORRENTES.processar</code></li>
+    </ul>
+    <div class="callout">
+      Exemplo canônico coberto por testes: saldo = receitas − despesas ± transferências;
+      disponível = saldo − comprometido (cartões/contas a pagar). Reloader pós-CRUD coberto em regressões de extrato/dashboard.
+    </div>
+    <p class="muted">Validação visual multi-tela pós-CRUD em device: <span class="sev p3">TESTE MANUAL NECESSÁRIO</span></p>
+  </div>
+</section>
+
+<!-- 9 -->
+<section id="freepro">
+  <h2>9. Free vs Pro</h2>
+  <div class="card">
+    <p>Fonte canônica: <code>config/plan-limits.json</code> (paridade testada com JS e SQL numérico).</p>
+    <div class="grid cols-2">
+      <div>
+        <h4>Free (destaques)</h4>
+        <ul class="tight">
+          <li>Lançamentos ilimitados; histórico 3 meses</li>
+          <li>≤5 contas, orçamentos, bills, assinaturas; 1 meta; 3 recorrentes</li>
+          <li>OCR 5/mês; CSV sim; PDF/IA/OF/alertas avançados não</li>
+          <li>Welcome trial Pro 14d; SKU trial 7d</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Pro</h4>
+        <ul class="tight">
+          <li>Capacidade/profundidade ilimitadas</li>
+          <li>IA, PDF, Open Finance, alertas avançados, team (2 users)</li>
+          <li>Business existe no mapa mas oculto na vitrine</li>
+        </ul>
+      </div>
+    </div>
+    <p><strong>Conclusão:</strong> regras bem definidas; <em>enforcement no AAB</em> comprometido por RISK-01 até carregar billing.</p>
+  </div>
+</section>
+
+<!-- 10 -->
+<section id="monetizacao">
+  <h2>10. Monetização</h2>
+  <div class="card">
+    <ol>
+      <li>Free → paywall → Play (<code>financaspro.pro.*</code>) / Stripe checkout</li>
+      <li>Entitlement em <code>Subscription</code> (service_role)</li>
+      <li>Verify: <code>play-verify</code> · RTDN: <code>play-rtdn</code> · revoke se <code>!entitled</code></li>
+      <li>Rede terciária: reconciliar ao abrir Config (lazy)</li>
+    </ol>
+    <p>Riscos de “pagou e não recebeu” / “cancelou e ficou Pro”: timing RTDN + fail de verify — <span class="sev p3">TESTE MANUAL</span> obrigatório antes do prod.</p>
+  </div>
+</section>
+
+<!-- 11 -->
+<section id="ux">
+  <h2>11. UX / UI / responsividade</h2>
+  <div class="card">
+    <ul class="tight">
+      <li>Auditoria de botões pós-implementação: <strong>92/100</strong> (touch 44px, Extrato unificado, orc-tab, FAB↔nav)</li>
+      <li>Estados empty/loading presentes no Resumo/Extrato</li>
+      <li>Hierarquia Primary/Secondary tokens <code>--btn-*</code></li>
+      <li>Dark smoke + 390/768/1280 OK na auditoria de botões</li>
+      <li>QA visual completa de todas as telas em device físico: <span class="sev p3">TESTE MANUAL</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- 12 -->
+<section id="manual">
+  <h2>12. Testes que não puderam ser automatizados nesta etapa</h2>
+  <div class="card">
+    <ol>
+      <li>AAB Free offline sem abrir Config — confirmar ultrapassagem de quotas (RISK-01)</li>
+      <li>Play cancel + RTDN on/off — duração do Pro</li>
+      <li>Pub/Sub → play-rtdn em produção</li>
+      <li>E2E login Supabase real + MFA TOTP + recovery</li>
+      <li>Logout → biometria no aparelho</li>
+      <li>Forgot-password: paridade UX e-mail conhecido/desconhecido</li>
+      <li>Migrations aplicadas no projeto Supabase live</li>
+      <li>Play Console: versionCode 38 upload, Data safety, listings</li>
+      <li>Pentest RLS com dois usuários reais</li>
+      <li>Teclado cobrindo sticky Registrar em device</li>
+    </ol>
+  </div>
+</section>
+
+<!-- 13 -->
+<section id="risco">
+  <h2>13. Matriz de risco</h2>
+  <div class="card" style="overflow-x:auto">
+    <table>
+      <thead><tr><th>ID</th><th>Sev</th><th>Título</th><th>Bloqueia beta?</th></tr></thead>
+      <tbody>
+        <tr><td>RISK-01</td><td><span class="sev p0">P0</span></td><td>Fail-open Free (lazy billing)</td><td>Sim — beta aberto / store</td></tr>
+        <tr><td>RISK-02</td><td><span class="sev p1">P1</span></td><td>Spoof plano offline</td><td>Documentar / aceitar local-first</td></tr>
+        <tr><td>RISK-03</td><td><span class="sev p1">P1</span></td><td>Quotas SQL parciais</td><td>Antes de escala cloud</td></tr>
+        <tr><td>RISK-04</td><td><span class="sev p1">P1</span></td><td>Revoke Play timing</td><td>Antes de cobrança real</td></tr>
+        <tr><td>RISK-05</td><td><span class="sev p1">P1</span></td><td>RTDN live unknown</td><td>Antes de cobrança real</td></tr>
+        <tr><td>BUG-06+</td><td><span class="sev p2">P2</span></td><td>OCR LS, sessão LS, testes vermelhos</td><td>Não</td></tr>
+        <tr><td>VERSION</td><td><span class="sev p3">P3</span></td><td>CONFIG.VERSION 11.3.13</td><td>Não</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 14 -->
+<section id="score">
+  <h2>14–16. Scores e nota geral</h2>
+  <div class="card">
+    <div class="score-row"><span>Funcionalidade</span><strong>82</strong></div><div class="bar"><i style="width:82%"></i></div>
+    <div class="score-row"><span>Cálculos financeiros</span><strong>88</strong></div><div class="bar"><i style="width:88%"></i></div>
+    <div class="score-row"><span>Integridade dos dados</span><strong>80</strong></div><div class="bar"><i style="width:80%"></i></div>
+    <div class="score-row"><span>Segurança</span><strong>62</strong></div><div class="bar"><i style="width:62%"></i></div>
+    <div class="score-row"><span>Autenticação</span><strong>78</strong></div><div class="bar"><i style="width:78%"></i></div>
+    <div class="score-row"><span>Free/Pro</span><strong>52</strong></div><div class="bar"><i style="width:52%"></i></div>
+    <div class="score-row"><span>Monetização</span><strong>68</strong></div><div class="bar"><i style="width:68%"></i></div>
+    <div class="score-row"><span>UX</span><strong>80</strong></div><div class="bar"><i style="width:80%"></i></div>
+    <div class="score-row"><span>UI</span><strong>82</strong></div><div class="bar"><i style="width:82%"></i></div>
+    <div class="score-row"><span>Responsividade</span><strong>78</strong></div><div class="bar"><i style="width:78%"></i></div>
+    <div class="score-row"><span>Performance</span><strong>85</strong></div><div class="bar"><i style="width:85%"></i></div>
+    <div class="score-row"><span>Código</span><strong>72</strong></div><div class="bar"><i style="width:72%"></i></div>
+    <div class="score-row"><span>Estabilidade</span><strong>78</strong></div><div class="bar"><i style="width:78%"></i></div>
+    <div class="score-row"><span>Preparação para lançamento</span><strong>58</strong></div><div class="bar"><i style="width:58%"></i></div>
+    <p style="margin:16px 0 0;font-size:1.1rem"><strong>Nota geral: 68/100</strong>
+      <span class="muted">(não é média simples — Free/Pro P0 + monetização timing puxam para baixo)</span></p>
+  </div>
+</section>
+
+<!-- 17 -->
+<section id="top20">
+  <h2>17. Top problemas (priorizados)</h2>
+  <div class="card">
+    <ol>
+      <li>Fail-open Free / lazy billing (P0)</li>
+      <li>RTDN Play não confirmado em prod (P1)</li>
+      <li>Reconcile só na aba Config (P1)</li>
+      <li>Quotas SQL só Account/Budget (P1)</li>
+      <li>Spoof plano offline (P1 / aceitar?)</li>
+      <li>OCR counter localStorage (P2)</li>
+      <li>Sessão em localStorage (P2)</li>
+      <li>8 testes CI vermelhos (P2)</li>
+      <li>E2E auth Supabase real ausente (P2)</li>
+      <li>CONFIG.VERSION drift (P3)</li>
+      <li>Business SKU oculto mas mapeado (P3)</li>
+      <li>Welcome trial race client (P2)</li>
+      <li>ACTIVE ignora currentPeriodEnd no client (P2)</li>
+      <li>Express quota race (legado) (P3)</li>
+      <li>SA JSON no disco (ops) (P3)</li>
+      <li>Pentest RLS vivo (gap) (P2)</li>
+      <li>Forgot-password oracle check (P3)</li>
+      <li>QA teclado/FAB device (P3)</li>
+      <li>pgTAP CI no projeto live (P2)</li>
+      <li>Play Console Data safety / listing (ops)</li>
+    </ol>
+  </div>
+</section>
+
+<!-- 18 -->
+<section id="roadmap">
+  <h2>18–20. Roadmap e checklists</h2>
+  <div class="card">
+    <h3>Roadmap para 90+/100</h3>
+    <ol>
+      <li><strong>Semana 0:</strong> Fail-closed / eager <code>billing.js</code> no AAB + teste AAB Free</li>
+      <li><strong>Semana 1:</strong> Confirmar RTDN live + teste cancelamento Play</li>
+      <li><strong>Semana 1:</strong> Triggers SQL para goals/bills/recurring/OCR</li>
+      <li><strong>Semana 2:</strong> E2E Supabase login/MFA; corrigir 8 testes vermelhos</li>
+      <li><strong>Semana 2:</strong> Alinhar CONFIG.VERSION; reconciliar Pro também no boot (bundle crítico)</li>
+      <li><strong>Semana 3:</strong> Beta fechado com checklist abaixo</li>
+    </ol>
+  </div>
+  <div class="grid cols-2">
+    <div class="card">
+      <h3>Checklist pré-beta (fechado)</h3>
+      <ul class="tight">
+        <li>☐ RISK-01 corrigido ou testers avisados</li>
+        <li>☐ AAB vc38 instalado em 2+ devices</li>
+        <li>☐ Login/cadastro/MFA smoke</li>
+        <li>☐ CRUD lançamento + reload</li>
+        <li>☐ Paywall abre; compra teste license</li>
+        <li>☐ Backup JSON round-trip</li>
+        <li>☐ Dark mode + offline básico</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Checklist pré-publicação</h3>
+      <ul class="tight">
+        <li>☐ RISK-01 + RTDN + quotas SQL</li>
+        <li>☐ E2E auth + pentest RLS 2 users</li>
+        <li>☐ Privacy policy / Data safety</li>
+        <li>☐ CI verde (incl. suite-integrity)</li>
+        <li>☐ versionName/Code/SW/CONFIG alinhados</li>
+        <li>☐ Monitoramento Edge (4xx/5xx)</li>
+        <li>☐ Plano de rollback AAB</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>
+  FinançasPro · Auditoria pré-lançamento · 5 set 2026 · Diagnóstico only — nenhum código de produção alterado nesta etapa.<br>
+  Evidências: Jest frontend, auditoria-massiva-20260905.json, check-xss, check-billing, check-version, perf-transacoes-bench, revisão estática RLS/billing.
+</footer>
+
+</div>
+</body>
+</html>

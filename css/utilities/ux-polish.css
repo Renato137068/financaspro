@@ -3,6 +3,21 @@
 :root {
   --tap-target-min: 44px;
   --focus-ring: 0 0 0 3px rgba(18, 105, 78, 0.18);
+  /* Folga acima da nav inferior + FAB (toast, ações em massa, sync toast) */
+  --nav-clearance: calc(100px + env(safe-area-inset-bottom, 0px));
+  /* Header sticky mobile — padding ~14+14 + título ~28 + folga */
+  --app-header-offset: calc(58px + env(safe-area-inset-top, 0px));
+  --press-scale: 0.98;
+}
+
+/* Pressed state canônico em cards/linhas clicáveis */
+.perfil-card:not(.perfil-card-toggle):active,
+.ext-tx:active,
+.orcamento-item--link:active,
+.orc-kpi-card:active,
+.orc-regra-card:active,
+.kpi-card:active {
+  transform: scale(var(--press-scale));
 }
 
 button,
@@ -15,6 +30,7 @@ textarea {
 
 button:focus-visible,
 [role="button"]:focus-visible,
+[role="tab"]:focus-visible,
 a:focus-visible,
 input:focus-visible,
 select:focus-visible,
@@ -32,14 +48,17 @@ textarea:focus-visible {
 .btn-busca-avancada,
 .data-chip,
 .filtro-chip,
+.orc-tab,
 .ordenacao-btn,
+.ordenacao-campo-btn,
+.ordenacao-dir-btn,
 .cat-btn {
   min-width: var(--tap-target-min);
   min-height: var(--tap-target-min);
 }
 
 .extrato-busca-input {
-  padding-right: 64px;
+  padding-right: var(--space-4);
 }
 .ext-tx {
   min-height: 72px;
@@ -63,17 +82,6 @@ textarea:focus-visible {
 .btn-editar,
 .btn-deletar {
   flex: 0 0 auto;
-}
-
-.btn-registrar {
-  bottom: calc(92px + env(safe-area-inset-bottom, 0px));
-}
-
-@media (min-width: 768px) {
-  .btn-registrar {
-    position: static;
-    margin-top: var(--space-5);
-  }
 }
 
 @media (max-width: 480px) {
@@ -118,6 +126,7 @@ textarea:focus-visible {
 
 [data-theme="dark"] button:focus-visible,
 [data-theme="dark"] [role="button"]:focus-visible,
+[data-theme="dark"] [role="tab"]:focus-visible,
 [data-theme="dark"] a:focus-visible,
 [data-theme="dark"] input:focus-visible,
 [data-theme="dark"] select:focus-visible,
@@ -134,14 +143,22 @@ textarea:focus-visible {
    toque, TODO controle interativo recebe o mínimo. Fica restrita ao ponteiro
    grosso de propósito — no desktop, com mouse, forçar 44px em botões pequenos
    distorceria o layout sem ganho de acessibilidade. */
+.er-btn,
+.btn-insight,
+.ia-confirm-btn,
+.ia-alt-btn,
 .alerta-dispensar,
 .alerta-btn,
 .filtro-chip,
+.orc-tab,
 .ordenacao-btn,
+.ordenacao-campo-btn,
+.ordenacao-dir-btn,
 .btn-busca-avancada,
 .periodo-nav,
 .perfil-action-btn,
 .btn-remover-banco,
+.btn-sm,
 .btn-small,
 .anexo-remover {
   min-width: var(--tap-target-min);
@@ -204,29 +221,56 @@ textarea:focus-visible {
    Indicador de sincronização (#4) + Toast com ação Desfazer (#12)
    Adicionado pela auditoria de melhorias.
    ============================================================ */
+/* Topo seguro: não cobre nav inferior, CTAs nem cards do meio da tela. */
 .sync-indicator{
-  position:fixed; z-index:1200; left:50%; transform:translateX(-50%);
-  bottom:calc(env(safe-area-inset-bottom, 0px) + 74px);
-  display:inline-flex; align-items:center; gap:8px;
-  padding:6px 12px; border-radius:var(--radius-full);
-  font-size:var(--font-size-xs); font-weight:600; line-height:1;
-  background:rgba(255,255,255,.95); color:var(--color-text-primary);
+  position:fixed; z-index:1100;
+  top:calc(env(safe-area-inset-top, 0px) + 10px);
+  right:12px; left:auto; transform:none;
+  display:inline-flex; align-items:center; gap:2px;
+  max-width:min(320px, calc(100vw - 24px));
+  padding:0; border-radius:var(--radius-full);
+  font-size:var(--font-size-xs); font-weight:600; line-height:1.2;
+  background:var(--color-bg-card); color:var(--color-text-primary);
   border:1px solid var(--color-border); box-shadow: var(--elevacao-1);
   backdrop-filter:blur(6px); user-select:none;
-  opacity:.96; transition:opacity .25s ease, box-shadow .18s ease;
-  /* Deixou de ser decoração: é o botão que explica onde os dados ficam. */
-  cursor:pointer; font-family:inherit; text-align:left;
+  opacity:.94; transition:opacity .25s ease, box-shadow .18s ease, transform .2s ease;
+  font-family:inherit;
 }
-.sync-indicator:hover{ opacity:1; box-shadow: var(--elevacao-2); }
-.sync-indicator:focus-visible{
-  outline:none; box-shadow: 0 0 0 3px var(--color-overlay-md), var(--elevacao-1);
+.sync-indicator--hidden,
+.sync-indicator[hidden]{ display:none !important; }
+.sync-indicator--subtle{ opacity:.88; }
+.sync-indicator--toast{
+  top:auto; bottom:var(--nav-clearance); left:50%; right:auto; transform:translateX(-50%);
 }
-@media (min-width:900px){ .sync-indicator{ bottom:18px; left:auto; right:18px; transform:none; } }
+.sync-indicator-main{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:7px 10px 7px 12px; border:0; background:transparent;
+  color:inherit; cursor:pointer; font:inherit; text-align:left;
+  border-radius:var(--radius-full); min-height:36px; max-width:100%;
+}
+.sync-indicator-main .sync-text{
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.sync-indicator-dismiss{
+  flex:0 0 auto; width:32px; height:32px; margin-right:4px;
+  border:0; border-radius:var(--radius-full); background:transparent;
+  color:var(--color-text-muted); cursor:pointer; font-size:var(--font-size-lg); line-height:1;
+}
+.sync-indicator-dismiss:hover,
+.sync-indicator-dismiss:focus-visible{ color:var(--color-text-primary); background:var(--color-bg-primary); }
+.sync-indicator-main:hover{ opacity:1; }
+.sync-indicator-main:focus-visible{
+  outline:none; box-shadow: 0 0 0 3px var(--color-overlay-md);
+}
+@media (min-width:1024px){
+  .sync-indicator{ top:16px; right:18px; }
+  .sync-indicator--toast{ bottom:calc(24px + env(safe-area-inset-bottom, 0px)); }
+}
 .sync-indicator .sync-dot{ width:8px; height:8px; border-radius:50%; background:var(--color-text-muted); flex:0 0 auto; }
 .sync-ok .sync-dot{ background:var(--color-success-on-light); }
 .sync-sincronizando .sync-dot{ background:var(--color-warning-on-light); animation:sync-pulse 1s ease-in-out infinite; }
-.sync-salvando .sync-dot{ background:#3c86a8; animation:sync-pulse 1s ease-in-out infinite; }
-.sync-pendente .sync-dot{ background:#9a6206; }
+.sync-salvando .sync-dot{ background:var(--color-info); animation:sync-pulse 1s ease-in-out infinite; }
+.sync-pendente .sync-dot{ background:var(--color-warning-on-light); }
 .sync-falha .sync-dot{ background:var(--color-danger-on-light); }
 .sync-conflito .sync-dot{ background:var(--color-info-on-light); }
 .sync-offline .sync-dot{ background:var(--color-warning-on-light); }
@@ -242,6 +286,40 @@ textarea:focus-visible {
 }
 .toast-acao .toast-acao-btn:hover{ background:rgba(0,168,98,.12); }
 .toast-acao .toast-acao-btn:focus-visible{ outline:2px solid var(--color-primary-500); outline-offset:2px; }
+
+.fp-banner{
+  position:fixed; z-index:1090;
+  top:calc(env(safe-area-inset-top, 0px) + 56px);
+  left:50%; transform:translateX(-50%);
+  width:min(520px, calc(100vw - 24px));
+  display:flex; align-items:center; gap:12px;
+  padding:12px 14px; border-radius:var(--radius-lg);
+  background:var(--color-bg-card); color:var(--color-text-primary);
+  border:1px solid var(--color-border); box-shadow:var(--elevacao-2);
+}
+.fp-banner--info{ border-color:var(--color-border); }
+.fp-banner--warning{
+  border-color:rgba(245,158,11,.45);
+  background:var(--color-bg-card);
+}
+.fp-banner-texto{ flex:1 1 auto; margin:0; font-size:var(--font-size-sm); line-height:1.35; }
+.fp-banner-actions{ display:inline-flex; align-items:center; gap:6px; flex:0 0 auto; }
+.fp-banner-btn{
+  border:0; border-radius:var(--radius-md); cursor:pointer;
+  background:var(--color-primary-500); color:var(--color-text-inverse);
+  font-size:var(--font-size-xs); font-weight:var(--font-weight-semibold);
+  padding:8px 12px; min-height:var(--tap-target-min);
+}
+.fp-banner-dismiss{
+  border:0; background:transparent; cursor:pointer;
+  color:var(--color-text-muted); font-size:var(--font-size-xl); line-height:1;
+  width:var(--tap-target-min); height:var(--tap-target-min);
+  border-radius:var(--radius-full);
+}
+.fp-banner-btn:focus-visible,
+.fp-banner-dismiss:focus-visible{
+  outline:2px solid var(--color-primary-500); outline-offset:2px;
+}
 
 /* Respeita preferências de movimento reduzido */
 @media (prefers-reduced-motion: reduce){

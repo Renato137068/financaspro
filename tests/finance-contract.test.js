@@ -79,4 +79,14 @@ describe('FINANCE_CONTRACT — recorrentes', () => {
     expect(pt.frequencia).toBe('mensal');
     expect(pt.dataInicio).toBe('2026-08-01');
   });
+
+  test('recorrentePtToEn propaga accountId a partir do banco', () => {
+    const nubankId = '3f2504e0-4f89-41d3-9a0c-0305e82c3301';
+    const contasRec = [{ id: nubankId, nome: 'Nubank' }];
+    const en = FC.recorrentePtToEn({
+      tipo: 'despesa', valor: 1500, descricao: 'Aluguel', categoria: 'moradia',
+      frequencia: 'mensal', dataInicio: '2026-06-05', banco: 'Nubank',
+    }, contasRec);
+    expect(en.accountId).toBe(nubankId);
+  });
 });

@@ -52,19 +52,80 @@ var CONTAS = {
   // ───────────────────────────────────────────────────────────────────────
   // SALDOS
   //
-  // Nota sobre o modelo: as transações referenciam a conta pelo NOME
-  // (campo `banco`), não por id. Existe também um cadastro de contas com id
-  // (`fp-contas`, gerido pelo CRUD acima e sincronizado com o backend), mas
-  // nada liga transação a ele — nenhuma tela usa. Unificar os dois exige
-  // migrar transações já gravadas e é trabalho para a fase de cartões.
-  //
-  // Até lá, o saldo é calculado sobre o modelo que realmente tem dados: o
-  // nome. Assim a resposta é correta hoje, sem migração e sem risco.
+  // Nota sobre o modelo: transações usam NOME (`banco`) e, no write-path novo,
+  // também `accountId` (UUID de fp-contas). Saldos preferem id→nome com fallback
+  // ao nome — txs antigas sem id continuam válidas sem migração big-bang.
   // ───────────────────────────────────────────────────────────────────────
 
   /** Chave de agrupamento: nome normalizado, ou '' para lançamentos sem conta. */
   _chaveConta: function(valor) {
     return UTILS.nomeDeConta(valor);
+  },
+
+  _nomeDaTx: function(t, campoNome, campoId) {
+    campoNome = campoNome || 'banco';
+    campoId = campoId || 'accountId';
+    if (!t) return '';
+    var id = t[campoId];
+    if (id) {
+      var c = this.getById(id);
+      if (c && c.nome) return this._chaveConta(c.nome);
+      if (typeof FINANCE_CONTRACT !== 'undefined' && DADOS && DADOS.getContas) {
+        var label = FINANCE_CONTRACT.accountLabel(id, DADOS.getContas());
+        if (label && label !== id) return this._chaveConta(label);
+      }
+    }
+    return this._chaveConta(t[campoNome]);
+  },
+
+  propagarRename: function(accountId, nomeAntigo, nomeNovo) {
+    if (!accountId || !nomeAntigo || !nomeNovo) return { txs: 0 };
+    var oldKey = this._chaveConta(nomeAntigo);
+    var newKey = this._chaveConta(nomeNovo);
+    if (!oldKey || !newKey || oldKey === newKey) return { txs: 0 };
+
+    var raw = DADOS.getTransacoesRaw ? DADOS.getTransacoesRaw() : DADOS.getTransacoes();
+    var n = 0;
+    for (var i = 0; i < raw.length; i++) {
+      var t = raw[i];
+      if (!t || t.deletedAt) continue;
+      var mudou = false;
+      if (t.accountId === accountId || this._chaveConta(t.banco) === oldKey) {
+        t.banco = nomeNovo;
+        t.accountId = accountId;
+        mudou = true;
+      }
+      if (t.contaDestinoId === accountId || this._chaveConta(t.contaDestino) === oldKey) {
+        t.contaDestino = nomeNovo;
+        t.contaDestinoId = accountId;
+        mudou = true;
+      }
+      if (mudou) {
+        DADOS.salvarTransacao(t);
+        n++;
+      }
+    }
+
+    var cfg = DADOS.getConfig();
+    var ini = Object.assign({}, cfg.saldosIniciais || {});
+    if (ini[oldKey] != null) {
+      ini[newKey] = ini[oldKey];
+      delete ini[oldKey];
+    }
+    var bancos = (cfg.bancos || []).map(function(b) {
+      if (typeof b === 'string') {
+        return CONTAS._chaveConta(b) === oldKey ? nomeNovo : b;
+      }
+      if (b && CONTAS._chaveConta(b.nome) === oldKey) {
+        return Object.assign({}, b, { nome: nomeNovo });
+      }
+      return b;
+    });
+    DADOS.salvarConfig({ saldosIniciais: ini, bancos: bancos });
+    if (typeof TRANSACOES !== 'undefined' && TRANSACOES.invalidateCache) {
+      TRANSACOES.invalidateCache();
+    }
+    return { txs: n };
   },
 
   /**
@@ -149,7 +210,7 @@ var CONTAS = {
         return;
       }
 
-      var reg = garantir(CONTAS._chaveConta(t.banco));
+      var reg = garantir(CONTAS._nomeDaTx(t, 'banco', 'accountId'));
       var cent = UTILS.paraCentavos(t.valor);
 
       if (t.tipo === CONFIG.TIPO_RECEITA) {
@@ -161,7 +222,7 @@ var CONTAS = {
         // conhecer transferência: os demais agregadores filtram por receita ou
         // despesa e a ignoram de graça. Aqui não dá para ignorar — é
         // exatamente o saldo por conta que a transferência muda.
-        var destino = CONTAS._chaveConta(t.contaDestino);
+        var destino = CONTAS._nomeDaTx(t, 'contaDestino', 'contaDestinoId');
         reg.saidasCent += cent;
         if (destino) garantir(destino).entradasCent += cent;
       }
@@ -244,6 +305,74 @@ var CONTAS = {
     if (val) sel.value = val;
   },
 
+  /**
+   * Select do form unificado (#novo-banco): fp-contas (value=id) + nomes legados
+   * de config.bancos que ainda não existem no cadastro.
+   */
+  renderBancoSelect: function(selectId) {
+    var sel = document.getElementById(selectId);
+    if (!sel) return;
+    var val = sel.value;
+    var contas = this._cache.length ? this._cache : (typeof DADOS !== 'undefined' ? DADOS.getContas() : []);
+    var config = typeof DADOS !== 'undefined' && DADOS.getConfig ? DADOS.getConfig() : {};
+    var bancosLegado = config.bancos || [];
+    var nomesVistos = {};
+    var opts = ['<option value="">Sem banco</option>'];
+    var self = this;
+
+    contas.forEach(function(c) {
+      if (!c || !c.nome) return;
+      nomesVistos[c.nome.toLowerCase()] = true;
+      opts.push('<option value="' + UTILS.escapeHtml(c.id) + '">' +
+        UTILS.escapeHtml(c.nome) + ' (' + self.tipoLabel(c.tipo) + ')</option>');
+    });
+
+    bancosLegado.forEach(function(b) {
+      var nome = typeof b === 'string' ? b : (b.nome || b);
+      if (!nome) return;
+      if (nomesVistos[nome.toLowerCase()]) return;
+      nomesVistos[nome.toLowerCase()] = true;
+      opts.push('<option value="' + UTILS.escapeHtml(nome) + '">' + UTILS.escapeHtml(nome) + '</option>');
+    });
+
+    sel.innerHTML = opts.join('');
+    if (val) {
+      var resolved = this.resolveBancoSelectValue(val);
+      if (resolved) sel.value = resolved;
+    }
+  },
+
+  /** Restaura seleção por UUID, nome ou rótulo legado. */
+  resolveBancoSelectValue: function(ref) {
+    if (!ref) return '';
+    var s = String(ref).trim();
+    if (typeof FINANCE_CONTRACT !== 'undefined' && FINANCE_CONTRACT.isUuid(s)) return s;
+    var contas = this._cache.length ? this._cache : (typeof DADOS !== 'undefined' ? DADOS.getContas() : []);
+    if (typeof FINANCE_CONTRACT !== 'undefined') {
+      var id = FINANCE_CONTRACT.resolveAccountId(s, contas);
+      if (id) return id;
+    }
+    for (var i = 0; i < contas.length; i++) {
+      if (contas[i] && contas[i].nome && contas[i].nome.toLowerCase() === s.toLowerCase()) {
+        return contas[i].id;
+      }
+    }
+    return s;
+  },
+
+  /** Compara duas refs de conta (id, nome ou legado). */
+  mesmaConta: function(a, b) {
+    if (!a || !b) return false;
+    if (a === b) return true;
+    var contas = this._cache.length ? this._cache : (typeof DADOS !== 'undefined' ? DADOS.getContas() : []);
+    if (typeof FINANCE_CONTRACT !== 'undefined') {
+      var idA = FINANCE_CONTRACT.resolveAccountId(a, contas);
+      var idB = FINANCE_CONTRACT.resolveAccountId(b, contas);
+      if (idA && idB) return idA === idB;
+    }
+    return UTILS.nomeDeConta(a) === UTILS.nomeDeConta(b);
+  },
+
   _listenerAttached: false,
 
   /**
@@ -295,17 +424,6 @@ var CONTAS = {
     }).join('');
 
     if (typeof renderLucideIcons === 'function') renderLucideIcons(el);
-    this._bindTransferencia();
-  },
-
-  _transferenciaBound: false,
-
-  _bindTransferencia: function() {
-    if (this._transferenciaBound) return;
-    var btn = document.querySelector('[data-action="conta-transferir"]');
-    if (!btn) return;
-    this._transferenciaBound = true;
-    btn.addEventListener('click', function() { CONTAS.abrirFormTransferencia(); });
   },
 
   /** Nomes de conta conhecidos, para os selects do formulário. */
@@ -461,12 +579,14 @@ var CONTAS = {
       '</div>';
     ov.setAttribute('aria-label', (id ? 'Editar' : 'Nova') + ' conta ou cartão');
     document.body.appendChild(ov);
+    var inp = document.getElementById('mc-nome');
     if (typeof FocusTrap !== 'undefined') {
       CONTAS._focusTrap = new FocusTrap(ov);
-      CONTAS._focusTrap.activate();
+      CONTAS._focusTrap.activate(inp || undefined);
+    } else if (inp) {
+      inp.focus();
     }
-    var inp = document.getElementById('mc-nome');
-    if (inp) { inp.focus(); inp.select(); }
+    if (inp) inp.select();
     ov.addEventListener('click', function(e) {
       if (e.target === ov) { CONTAS.fecharModal(); return; }
       var btn = e.target.closest('[data-modal-action]');
@@ -494,8 +614,14 @@ var CONTAS = {
       return;
     }
     var dados = { nome: nomeEl.value.trim(), tipo: tipoEl ? tipoEl.value : 'corrente' };
+    var old = id ? this.getById(id) : null;
+    var nomeAntigo = old ? old.nome : null;
     if (id) dados.id = id;
-    this.salvar(dados);
+    var salvo = this.salvar(dados);
+    if (id && nomeAntigo && nomeAntigo !== dados.nome) {
+      var r = this.propagarRename(salvo.id || id, nomeAntigo, dados.nome);
+      if (r.txs > 0 && typeof this.renderSaldos === 'function') this.renderSaldos();
+    }
     this.fecharModal();
     this.renderLista();
     this.renderSelect('novo-conta');

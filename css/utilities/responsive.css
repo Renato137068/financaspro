@@ -3,11 +3,62 @@
  * Depende de: design-system.css
  */
 
+html {
+  overflow-x: clip;
+}
+
+/* ── Mobile estreito (320px) ───────────────────────────────── */
+
+@media (max-width: 320px) {
+  body {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  }
+
+  header {
+    padding-left: var(--space-3);
+    padding-right: var(--space-3);
+  }
+
+  main {
+    padding-left: var(--space-3);
+    padding-right: var(--space-3);
+  }
+
+  .nav-bottom {
+    width: calc(100% - 16px);
+  }
+
+  .nav-btn {
+    padding: var(--space-2) var(--space-1);
+    font-size: var(--font-size-2xs);
+  }
+
+  .card-saldo-principal .saldo-valor {
+    font-size: var(--font-size-lg);
+    overflow-wrap: anywhere;
+  }
+
+  .ordenacao-container {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .extrato-periodo {
+    gap: var(--space-2);
+  }
+
+  .periodo-label {
+    font-size: var(--font-size-sm);
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
 /* ── Mobile small (< 480px) ───────────────────────────────── */
 
 @media (max-width: 480px) {
   body {
-    padding-bottom: 100px;
+    padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
   }
 
   header h1 { font-size: var(--font-size-xl); }

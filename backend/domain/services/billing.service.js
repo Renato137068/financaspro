@@ -5,7 +5,22 @@ import CONFIG from '../../config.js';
 import logger from '../../lib/logger.js';
 import { enqueue, QUEUES } from '../../lib/queue.js';
 import { assertAllowedRedirectUrl } from '../../lib/billing-urls.js';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+
 let _stripePromise = null;
+
+const TRIAL_DAYS = (function loadTrialDays() {
+  try {
+    const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../..');
+    const cfg = JSON.parse(readFileSync(path.join(root, 'config/plan-limits.json'), 'utf8'));
+    const n = Number(cfg.trialDays);
+    return Number.isFinite(n) && n > 0 ? n : 7;
+  } catch {
+    return 7;
+  }
+})();
 
 function getStripe() {
   if (!CONFIG.stripe?.secretKey) return Promise.resolve(null);
@@ -71,7 +86,7 @@ export const BillingService = {
       const stripeSub = await stripe.subscriptions.create({
         customer: stripeCustomerId,
         items: [{ price: priceId }],
-        trial_period_days: 14,
+        trial_period_days: TRIAL_DAYS,
         metadata: { orgId },
       });
 
@@ -112,14 +127,42 @@ export const BillingService = {
     const sub = await BillingRepository.findSubscription(orgId);
     if (!sub) throw new AppError('Assinatura não encontrada', 404);
 
+    const sid = String(sub.stripeSubId || '');
+    if (sid.startsWith('play:')) {
+      throw new AppError('Cancele a assinatura na Google Play Store', 400);
+    }
+
     const stripe = await getStripe();
-    if (stripe && sub.stripeSubId) {
+    // welcome: e chaves não-Stripe: só marca cancelAtPeriodEnd no banco.
+    if (stripe && sid && !sid.startsWith('welcome:')) {
       await stripe.subscriptions.update(sub.stripeSubId, {
         cancel_at_period_end: true,
       });
     }
 
     return BillingRepository.updateSubscription(orgId, { cancelAtPeriodEnd: true });
+  },
+
+  async resume(orgId) {
+    const sub = await BillingRepository.findSubscription(orgId);
+    if (!sub) throw new AppError('Assinatura não encontrada', 404);
+    if (!sub.cancelAtPeriodEnd) {
+      return sub;
+    }
+
+    const sid = String(sub.stripeSubId || '');
+    if (sid.startsWith('play:')) {
+      throw new AppError('Reative a assinatura na Google Play Store', 400);
+    }
+
+    const stripe = await getStripe();
+    if (stripe && sid && !sid.startsWith('welcome:')) {
+      await stripe.subscriptions.update(sub.stripeSubId, {
+        cancel_at_period_end: false,
+      });
+    }
+
+    return BillingRepository.updateSubscription(orgId, { cancelAtPeriodEnd: false });
   },
 
   async createPortalSession(orgId, returnUrl) {
@@ -181,7 +224,7 @@ export const BillingService = {
       cancel_url:           cancelUrl + cancelSep + 'billing=cancel',
       allow_promotion_codes: true,
       subscription_data: {
-        trial_period_days: 14,
+        trial_period_days: TRIAL_DAYS,
         metadata:          { orgId, planTier },
       },
       metadata: { orgId, planTier, interval },
@@ -343,6 +386,10 @@ export const BillingService = {
   async reconcileSubscription(orgId) {
     const sub = await BillingRepository.findSubscription(orgId);
     if (!sub?.stripeSubId) return { orgId, skipped: true };
+    // Entitlements do Google Play usam a chave `play:<token>` no campo
+    // stripeSubId; não são assinaturas Stripe e não devem ir para a API do
+    // Stripe (senão falhariam toda rodada). O Play é reconciliado à parte.
+    if (String(sub.stripeSubId).startsWith('play:')) return { orgId, skipped: true, source: 'google_play' };
 
     const stripe = await getStripe();
     if (!stripe) throw new AppError('Stripe não configurado', 503);

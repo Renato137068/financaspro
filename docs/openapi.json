@@ -1367,6 +1367,50 @@
         ]
       }
     },
+    "/orgs/{orgId}/invitations/{invitationId}": {
+      "delete": {
+        "summary": "Revogar convite pendente",
+        "tags": [
+          "Orgs"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "orgId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "invitationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Convite removido"
+          },
+          "403": {
+            "description": "Sem permissão"
+          },
+          "404": {
+            "description": "Convite não encontrado"
+          }
+        }
+      }
+    },
     "/orgs/invitations/{token}/accept": {
       "post": {
         "summary": "Aceitar um convite",
@@ -1595,6 +1639,30 @@
     "/billing/{orgId}/cancel": {
       "post": {
         "summary": "Cancelar ao fim do período vigente",
+        "tags": [
+          "Billing"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "orgId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/billing/{orgId}/resume": {
+      "post": {
+        "summary": "Reativar renovação (desfaz o cancelamento agendado)",
         "tags": [
           "Billing"
         ],

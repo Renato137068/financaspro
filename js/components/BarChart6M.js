@@ -8,6 +8,9 @@
     var moeda = UI._utils.moeda;
     var esc = UI._utils.esc;
     var rows = dados.map(function(d) {
+      if (d.bloqueado) {
+        return '<tr><td>' + esc(d.mes) + '</td><td colspan="2">Disponível no plano Pro</td></tr>';
+      }
       return '<tr><td>' + esc(d.mes) + '</td><td>' + esc(moeda(d.receitas)) +
         '</td><td>' + esc(moeda(d.despesas)) + '</td></tr>';
     }).join('');
@@ -43,6 +46,17 @@
 
     for (var j = 0; j < dados.length; j++) {
       var x = startX + j * (groupW + 12);
+
+      // Mês fora da janela do plano: silhueta cinza, sem número em lugar
+      // nenhum — nem no tooltip, nem na tabela acessível.
+      if (dados[j].bloqueado) {
+        var hSil = (dados[j].silhueta || 0.4) * chartH;
+        svg += '<rect x="' + x + '" y="' + (padding + chartH - hSil) + '" width="' + barW + '" height="' + hSil + '" rx="3" fill="#9aa5a0" opacity="0.28"/>';
+        svg += '<rect x="' + (x + barW + gap) + '" y="' + (padding + chartH - hSil * 0.8) + '" width="' + barW + '" height="' + (hSil * 0.8) + '" rx="3" fill="#9aa5a0" opacity="0.28"/>';
+        svg += '<text x="' + (x + groupW / 2) + '" y="' + (h - 4) + '" text-anchor="middle" fill="#9aa5a0" font-size="9" font-weight="600">' + dados[j].mes + '</text>';
+        continue;
+      }
+
       var hRec  = (dados[j].receitas / maxVal) * chartH;
       var hDesp = (dados[j].despesas / maxVal) * chartH;
 
@@ -67,13 +81,25 @@
     render: function(dados) {
       var el = document.createElement('div');
       el.className = 'chart-6m-container';
-      el.innerHTML = _buildSVG(dados) + _buildResumoTabela(dados);
+      var bloqueados = (dados || []).filter(function(d) { return d.bloqueado; }).length;
+      var cta = '';
+      if (bloqueados > 0) {
+        cta = '<button type="button" class="chart-6m-upsell" data-action="abrir-paywall">' +
+          'Mais ' + bloqueados + ' ' + (bloqueados === 1 ? 'mês' : 'meses') +
+          ' de histórico já estão salvos — veja com o Pro</button>';
+      }
+      el.innerHTML = _buildSVG(dados) + cta + _buildResumoTabela(dados);
       return el;
     },
 
     // html(dados) → string SVG + tabela acessível
     html: function(dados) {
       return _buildSVG(dados) + _buildResumoTabela(dados);
+    },
+
+    /** Quantos meses do conjunto estão fora do plano atual. */
+    bloqueados: function(dados) {
+      return (dados || []).filter(function(d) { return d && d.bloqueado; }).length;
     }
   };
 

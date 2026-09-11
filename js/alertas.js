@@ -18,6 +18,15 @@ var ALERTAS = {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   },
 
+  /** Alertas básicos (FREE na nuvem): saldo e orçamento. */
+  _tipoBasico: function(tipo) {
+    return tipo === 'saldo' || tipo === 'orcamento';
+  },
+
+  _podeAlertasAvancados: function() {
+    return typeof BILLING === 'undefined' || BILLING.canUse('advancedAlerts');
+  },
+
   // ─────────────────────────────────────────────────────────────────
   // ESTADO PERSISTIDO
   // ─────────────────────────────────────────────────────────────────
@@ -69,8 +78,29 @@ var ALERTAS = {
 
     // Alertas do AI_ENGINE
     var alertas = AI_ENGINE.gerarAlertas(txs, config);
+    var avancados = this._podeAlertasAvancados();
+    var tinhaAvancados = false;
+    if (!avancados) {
+      tinhaAvancados = alertas.some(function(a) { return !ALERTAS._tipoBasico(a.tipo); });
+      alertas = alertas.filter(function(a) { return ALERTAS._tipoBasico(a.tipo); });
+      // Nunca silenciar: o usuario precisa SABER que o app detectou algo, mesmo
+      // sem poder ver o que. Teaser vale mais que ausencia -- ausencia nao
+      // converte ninguem porque ninguem sente falta do que nao viu existir.
+      if (tinhaAvancados) {
+        alertas.push({
+          id: 'upsell-alertas-avancados',
+          tipo: 'upsell',
+          titulo: 'O app detectou algo fora do padrão',
+          msg: 'Gastos incomuns, hábitos novos e projeção do mês ficam visíveis no Pro.',
+          gravidade: 'baixa',
+          acao: 'abrirPaywall',
+          parametros: { message: 'Alertas que avisam antes do estouro estão no Pro.' },
+        });
+      }
+    }
 
-    // Anomalias de transações
+    // Anomalias de transações (PRO)
+    if (avancados) {
     var anomalias = AI_ENGINE.detectarAnomalias(txs);
     anomalias.forEach(function(a) {
       alertas.push({
@@ -101,6 +131,7 @@ var ALERTAS = {
         parametros: { descricao: p.descricao, valor: p.valorMedio }
       });
     });
+    }
 
     // Filtrar dispensados
     var self = this;
@@ -297,7 +328,8 @@ var ALERTAS = {
       lancarRecorrente: '<i data-lucide="banknote" aria-hidden="true"></i> Lançar',
       marcarRecorrente: '<i data-lucide="repeat" aria-hidden="true"></i> Marcar recorrente',
       editarTransacao:  '<i data-lucide="pencil" aria-hidden="true"></i> Ver transação',
-      aumentarLimite:   '<i data-lucide="arrow-up" aria-hidden="true"></i> Ajustar limite'
+      aumentarLimite:   '<i data-lucide="arrow-up" aria-hidden="true"></i> Ajustar limite',
+      abrirPaywall:     '<i data-lucide="sparkles" aria-hidden="true"></i> Ver o Pro'
     };
     return labels[acao] || '<i data-lucide="arrow-right" aria-hidden="true"></i> ' + acao;
   },
@@ -349,6 +381,11 @@ var ALERTAS = {
       case 'editarTransacao':
         if (params && params.id && typeof abrirModalEdicao === 'function') {
           abrirModalEdicao(params.id);
+        }
+        break;
+      case 'abrirPaywall':
+        if (typeof INIT_BILLING !== 'undefined' && INIT_BILLING.abrirPaywall) {
+          INIT_BILLING.abrirPaywall((params && params.message) || 'Alertas que avisam antes do estouro estão no Pro.');
         }
         break;
     }

@@ -1,38 +1,56 @@
 // backend/middleware/plan.js — enforcement de limites de plano SaaS
+import { readFileSync } from 'node:fs';
 import prisma from '../lib/db.js';
 import { AppError } from '../domain/errors.js';
 
+/**
+ * Limites de plano — lidos da fonte canonica, nao duplicados aqui.
+ *
+ * A tabela vivia hardcoded neste arquivo e em js/billing.js ao mesmo tempo. Um
+ * teste de paridade avisava quando divergiam, mas so depois de divergirem; ler
+ * o JSON elimina a classe inteira de bug. `null` no JSON significa ilimitado e
+ * vira `Infinity` aqui, que e o que o resto do middleware compara.
+ */
+const CANONICAL = JSON.parse(
+  readFileSync(new URL('../../config/plan-limits.json', import.meta.url), 'utf8'),
+);
+
+function hydrate(tier) {
+  const raw = CANONICAL[tier] || {};
+  const out = {};
+  for (const [key, value] of Object.entries(raw)) {
+    out[key] = value === null ? Infinity : value;
+  }
+  return out;
+}
+
 const PLAN_LIMITS = {
-  FREE: {
-    maxUsers:        1,
-    maxTransPerMonth: 100,
-    maxAccounts:     3,
-    maxBudgets:      5,
-    aiFeatures:      false,
-    teamFeatures:    false,
-    reportExport:    false,
-  },
-  PRO: {
-    maxUsers:        5,
-    maxTransPerMonth: Infinity,
-    maxAccounts:     20,
-    maxBudgets:      Infinity,
-    aiFeatures:      true,
-    teamFeatures:    true,
-    reportExport:    true,
-  },
-  BUSINESS: {
-    maxUsers:        Infinity,
-    maxTransPerMonth: Infinity,
-    maxAccounts:     Infinity,
-    maxBudgets:      Infinity,
-    aiFeatures:      true,
-    teamFeatures:    true,
-    reportExport:    true,
-  },
+  FREE: hydrate('FREE'),
+  PRO: hydrate('PRO'),
+  BUSINESS: hydrate('BUSINESS'),
 };
 
+export const TRIAL_DAYS = CANONICAL.trialDays;
+export const WELCOME_TRIAL_DAYS = CANONICAL.welcomeTrialDays;
+
 const TIER_ORDER = { FREE: 0, PRO: 1, BUSINESS: 2 };
+
+/**
+ * A assinatura ainda da direito ao tier?
+ *
+ * TRIALING sozinho nao basta. O trial do Stripe e virado pelo webhook, mas o
+ * Pro de boas-vindas e um entitlement nosso, sem assinatura de loja por tras:
+ * sem olhar `trialEndsAt`, um trial vencido daria PRO para sempre. Vale
+ * tambem como rede se um webhook do Stripe atrasar ou falhar.
+ */
+function entitlementAtivo(sub) {
+  if (!sub) return false;
+  if (sub.status === 'ACTIVE') return true;
+  if (sub.status !== 'TRIALING') return false;
+  if (!sub.trialEndsAt) return true;
+  const fim = new Date(sub.trialEndsAt).getTime();
+  return Number.isNaN(fim) ? true : fim > Date.now();
+}
 
 /** Busca o tier do plano ativo do usuário (via org pessoal ou individual). */
 async function getUserPlanTier(userId) {
@@ -48,8 +66,8 @@ async function getUserPlanTier(userId) {
   });
 
   if (membership?.org?.subscription?.plan) {
-    const { status, plan } = membership.org.subscription;
-    if (['ACTIVE', 'TRIALING'].includes(status)) return plan.tier;
+    const sub = membership.org.subscription;
+    if (entitlementAtivo(sub)) return sub.plan.tier;
   }
 
   return 'FREE';
@@ -159,7 +177,7 @@ export async function getOrgPlanTier(orgId) {
   const sub = await prisma.subscription.findUnique({
     where: { orgId },
   });
-  if (!sub || !['ACTIVE', 'TRIALING'].includes(sub.status)) return 'FREE';
+  if (!entitlementAtivo(sub)) return 'FREE';
 
   const plan = await prisma.plan.findUnique({ where: { id: sub.planId } });
   if (plan) return plan.tier;
@@ -248,4 +266,4 @@ export async function checkBudgetLimit(req, _res, next) {
   }
 }
 
-export { PLAN_LIMITS, TIER_ORDER, getUserPlanTier };
+export { PLAN_LIMITS, TIER_ORDER, getUserPlanTier, entitlementAtivo };

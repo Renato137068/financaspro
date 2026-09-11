@@ -32,14 +32,21 @@ var BUDGET_SERVICE = (function() {
 
   function calculateSpent(transacoes, categoria, mes, ano) {
     if (typeof TRANSACTION_SERVICE === 'undefined') return 0;
-    // Acumula em centavos: 1000 lançamentos de R$ 0,10 somavam 99,9999999999986
-    // em ponto flutuante, e o orçamento de R$ 100 nunca era dado como excedido.
-    var totalC = TRANSACTION_SERVICE.filterTransactions(transacoes, {
-      mes: mes,
-      ano: ano,
-      categoria: categoria,
-      tipo: 'despesa'
-    }).reduce(function(total, t) { return total + centavos(t.valor || 0); }, 0);
+    var list = Array.isArray(transacoes) ? transacoes : [];
+    var filtered;
+    if (mes != null && ano != null) {
+      filtered = TRANSACTION_SERVICE.filterTransactions(list, {
+        mes: mes,
+        ano: ano,
+        categoria: categoria,
+        tipo: 'despesa'
+      });
+    } else {
+      filtered = list.filter(function(t) {
+        return t.tipo === 'despesa' && t.categoria === categoria;
+      });
+    }
+    var totalC = filtered.reduce(function(total, t) { return total + centavos(t.valor || 0); }, 0);
     return totalC / 100;
   }
 

@@ -12,6 +12,7 @@ import com.android.billingclient.api.ProductDetails;
 import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.PurchasesUpdatedListener;
 import com.android.billingclient.api.QueryProductDetailsParams;
+import com.android.billingclient.api.QueryProductDetailsResult;
 import com.android.billingclient.api.QueryPurchasesParams;
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
@@ -89,6 +90,9 @@ public class PlayBillingPlugin extends Plugin implements PurchasesUpdatedListene
             return;
         }
 
+        final String requestedOldToken = call.getString("oldPurchaseToken");
+        final String requestedOldProductId = call.getString("oldProductId");
+
         ensureConnected(() -> {
             if (billingClient == null || !billingClient.isReady()) {
                 call.reject("billing-indisponivel");
@@ -106,7 +110,10 @@ public class PlayBillingPlugin extends Plugin implements PurchasesUpdatedListene
 
             billingClient.queryProductDetailsAsync(
                 QueryProductDetailsParams.newBuilder().setProductList(products).build(),
-                (billingResult, productDetailsList) -> {
+                (billingResult, queryProductDetailsResult) -> {
+                    List<ProductDetails> productDetailsList = queryProductDetailsResult != null
+                        ? queryProductDetailsResult.getProductDetailsList()
+                        : null;
                     if (billingResult.getResponseCode() != BillingClient.BillingResponseCode.OK
                         || productDetailsList == null
                         || productDetailsList.isEmpty()) {
@@ -136,6 +143,16 @@ public class PlayBillingPlugin extends Plugin implements PurchasesUpdatedListene
                         return;
                     }
 
+                    // Troca de ciclo (mensal↔anual): precisa do token da compra ativa.
+                    if ((requestedOldToken != null && !requestedOldToken.isEmpty())
+                        || (requestedOldProductId != null && !requestedOldProductId.isEmpty())) {
+                        launchWithPossibleReplacement(
+                            activity, call, productParams, productId,
+                            requestedOldToken, requestedOldProductId
+                        );
+                        return;
+                    }
+
                     BillingResult launchResult = billingClient.launchBillingFlow(
                         activity,
                         BillingFlowParams.newBuilder()
@@ -150,6 +167,71 @@ public class PlayBillingPlugin extends Plugin implements PurchasesUpdatedListene
                 }
             );
         });
+    }
+
+    /**
+     * Compra com SubscriptionUpdateParams quando há assinatura ativa a substituir.
+     * Se o JS não mandou o token, consulta compras ativas e usa a que tiver
+     * productId diferente do destino (ex.: monthly → yearly).
+     */
+    private void launchWithPossibleReplacement(
+        Activity activity,
+        PluginCall call,
+        BillingFlowParams.ProductDetailsParams productParams,
+        String newProductId,
+        String oldTokenHint,
+        String oldProductIdHint
+    ) {
+        billingClient.queryPurchasesAsync(
+            QueryPurchasesParams.newBuilder()
+                .setProductType(BillingClient.ProductType.SUBS)
+                .build(),
+            (billingResult, purchases) -> {
+                if (billingResult.getResponseCode() != BillingClient.BillingResponseCode.OK) {
+                    pendingPurchaseCall = null;
+                    call.reject("falha-consultar-assinatura");
+                    return;
+                }
+
+                String oldToken = oldTokenHint;
+                String oldProductId = oldProductIdHint;
+                if ((oldToken == null || oldToken.isEmpty()) && purchases != null) {
+                    for (Purchase purchase : purchases) {
+                        if (purchase.getPurchaseState() != Purchase.PurchaseState.PURCHASED) continue;
+                        for (String pid : purchase.getProducts()) {
+                            if (pid == null || pid.equals(newProductId)) continue;
+                            if (oldProductId != null && !oldProductId.isEmpty() && !pid.equals(oldProductId)) {
+                                continue;
+                            }
+                            oldToken = purchase.getPurchaseToken();
+                            oldProductId = pid;
+                            break;
+                        }
+                        if (oldToken != null && !oldToken.isEmpty()) break;
+                    }
+                }
+
+                BillingFlowParams.Builder flowBuilder = BillingFlowParams.newBuilder()
+                    .setProductDetailsParamsList(Collections.singletonList(productParams));
+
+                if (oldToken != null && !oldToken.isEmpty()) {
+                    flowBuilder.setSubscriptionUpdateParams(
+                        BillingFlowParams.SubscriptionUpdateParams.newBuilder()
+                            .setOldPurchaseToken(oldToken)
+                            .setSubscriptionReplacementMode(
+                                BillingFlowParams.SubscriptionUpdateParams.ReplacementMode.WITH_TIME_PRORATION
+                            )
+                            .build()
+                    );
+                }
+
+                BillingResult launchResult = billingClient.launchBillingFlow(activity, flowBuilder.build());
+                if (launchResult.getResponseCode() != BillingClient.BillingResponseCode.OK) {
+                    pendingPurchaseCall = null;
+                    call.reject("falha-abrir-compra");
+                }
+            }
+        );
     }
 
     @PluginMethod
@@ -222,6 +304,76 @@ public class PlayBillingPlugin extends Plugin implements PurchasesUpdatedListene
         ret.put("productId", productId);
         ret.put("purchaseToken", purchase.getPurchaseToken());
         call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void getProductDetails(PluginCall call) {
+        JSArray rawIds = call.getArray("productIds");
+        if (rawIds == null || rawIds.length() == 0) {
+            call.reject("product-ids-obrigatorios");
+            return;
+        }
+        ensureConnected(() -> {
+            if (billingClient == null || !billingClient.isReady()) {
+                call.reject("billing-indisponivel");
+                return;
+            }
+            List<QueryProductDetailsParams.Product> products = new ArrayList<>();
+            try {
+                for (int i = 0; i < rawIds.length(); i++) {
+                    String pid = rawIds.getString(i);
+                    if (pid == null || pid.isEmpty()) continue;
+                    products.add(
+                        QueryProductDetailsParams.Product.newBuilder()
+                            .setProductId(pid)
+                            .setProductType(BillingClient.ProductType.SUBS)
+                            .build()
+                    );
+                }
+            } catch (Exception e) {
+                call.reject("product-ids-invalidos");
+                return;
+            }
+            if (products.isEmpty()) {
+                call.reject("product-ids-obrigatorios");
+                return;
+            }
+            billingClient.queryProductDetailsAsync(
+                QueryProductDetailsParams.newBuilder().setProductList(products).build(),
+                (billingResult, queryProductDetailsResult) -> {
+                    if (billingResult.getResponseCode() != BillingClient.BillingResponseCode.OK) {
+                        call.reject("falha-consultar-produtos");
+                        return;
+                    }
+                    List<ProductDetails> list = queryProductDetailsResult != null
+                        ? queryProductDetailsResult.getProductDetailsList()
+                        : null;
+                    JSArray out = new JSArray();
+                    if (list != null) {
+                        for (ProductDetails details : list) {
+                            JSObject item = new JSObject();
+                            item.put("productId", details.getProductId());
+                            item.put("title", details.getTitle());
+                            String formatted = "";
+                            List<ProductDetails.SubscriptionOfferDetails> offers =
+                                details.getSubscriptionOfferDetails();
+                            if (offers != null && !offers.isEmpty()) {
+                                List<ProductDetails.PricingPhase> phases =
+                                    offers.get(0).getPricingPhases().getPricingPhaseList();
+                                if (phases != null && !phases.isEmpty()) {
+                                    formatted = phases.get(phases.size() - 1).getFormattedPrice();
+                                }
+                            }
+                            item.put("formattedPrice", formatted);
+                            out.put(item);
+                        }
+                    }
+                    JSObject ret = new JSObject();
+                    ret.put("products", out);
+                    call.resolve(ret);
+                }
+            );
+        });
     }
 
     private void acknowledgeIfNeeded(Purchase purchase) {

@@ -73,6 +73,14 @@ router.post('/:orgId/cancel', validateParams(orgIdParamSchema), resolveOrg, requ
   } catch (err) { next(err); }
 });
 
+// Reativar renovação (desfaz cancel_at_period_end)
+router.post('/:orgId/resume', validateParams(orgIdParamSchema), resolveOrg, requireOrgRole('OWNER'), async (req, res, next) => {
+  try {
+    const sub = await BillingService.resume(req.params.orgId);
+    res.json(sub);
+  } catch (err) { next(err); }
+});
+
 // Abrir portal de billing do Stripe
 router.post(
   '/:orgId/portal', validateParams(orgIdParamSchema),

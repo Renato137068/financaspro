@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FinançasPro — Reauditoria v11.3.9 (notas antes/depois)</title>
+<style>
+:root{--bg:#0a0e14;--card:#121820;--line:#243044;--txt:#eef2f8;--mut:#8fa3be;--ok:#22c55e;--warn:#f59e0b}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font:15px/1.6 system-ui,sans-serif;padding:32px 20px 64px}
+.wrap{max-width:920px;margin:0 auto}
+h1{font-size:26px;margin-bottom:8px}
+.sub{color:var(--mut);margin-bottom:28px}
+.hero{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:28px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px}
+.stat b{display:block;font-size:32px;margin:6px 0}
+.stat span{color:var(--mut);font-size:13px}
+.up{color:var(--ok)}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:28px}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid #1a2332;font-size:13px}
+th{background:#0c1018;color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+td.n{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+.delta{color:var(--ok);font-weight:700}
+.zero{color:var(--mut)}
+h2{font-size:14px;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);margin:0 0 12px}
+@media(max-width:640px){.hero{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Reauditoria — FinançasPro v11.3.9 (vc32)</h1>
+  <p class="sub">Mesmas dimensões das auditorias de 01–02/09/2026. Método: revisão estática do código após as correções das Fases 1–3.</p>
+
+  <div class="hero">
+    <div class="stat">
+      <span>Play Store oculta</span>
+      <b><span style="color:var(--warn)">62</span> → <span class="up">74</span></b>
+      <span class="up">+12 pontos · 9/12 dimensões subiram</span>
+    </div>
+    <div class="stat">
+      <span>Auth (login/cadastro)</span>
+      <b><span style="color:var(--warn)">55</span> → <span class="up">74</span></b>
+      <span class="up">+19 pontos · 12/12 dimensões subiram</span>
+    </div>
+  </div>
+
+  <h2>Play Store — por dimensão</h2>
+  <table>
+    <thead><tr><th>Dimensão</th><th>Antes</th><th>Agora</th><th>Δ</th></tr></thead>
+    <tbody id="play"></tbody>
+  </table>
+
+  <h2>Auth — por dimensão</h2>
+  <table>
+    <thead><tr><th>Dimensão</th><th>Antes</th><th>Agora</th><th>Δ</th></tr></thead>
+    <tbody id="auth"></tbody>
+  </table>
+
+  <p class="sub">Arquivo de apoio visual: canvas <code>auditoria-reavaliacao-11-3-9.canvas.tsx</code>. Residuais abertos: hospedar assetlinks.json em produção (hoje 500), E2E login real com credenciais, poda profunda do backend Express.</p>
+</div>
+<script>
+var play=[
+  ['Honestidade vitrine vs binário',38,72],
+  ['Segurança aparente vs efetiva',45,68],
+  ['Custódia de sessão',52,78],
+  ['Privacidade por padrão',50,58],
+  ['Integridade multi-dispositivo',70,78],
+  ['Monetização sem armadilhas',78,78],
+  ['Acessibilidade profunda',73,74],
+  ['Offline de verdade',68,68],
+  ['Direitos LGPD',77,85],
+  ['Empacotamento Android',71,88],
+  ['Superfície WebView / CSP',56,62],
+  ['Coerência arquitetural',62,75]
+];
+var auth=[
+  ['Login e-mail → senha',62,82],
+  ['Cadastro de conta',58,75],
+  ['Biometria Android',52,80],
+  ['Sessão e desbloqueio',54,62],
+  ['Logout e botão Sair',60,88],
+  ['Recuperação de senha',55,80],
+  ['2FA / TOTP',30,55],
+  ['UI e layout auth',74,86],
+  ['Mensagens de erro',78,85],
+  ['Segurança da autenticação',50,78],
+  ['Testes automatizados',38,58],
+  ['Arquitetura Express vs Supabase',45,62]
+];
+function fill(id, rows){
+  rows.sort(function(a,b){return (b[2]-b[1])-(a[2]-a[1]);});
+  document.getElementById(id).innerHTML=rows.map(function(r){
+    var d=r[2]-r[1];
+    return '<tr><td>'+r[0]+'</td><td class="n">'+r[1]+'</td><td class="n">'+r[2]+'</td><td class="n '+(d>0?'delta':'zero')+'">'+(d>0?'+':'')+d+'</td></tr>';
+  }).join('');
+}
+fill('play',play);fill('auth',auth);
+</script>
+</body>
+</html>

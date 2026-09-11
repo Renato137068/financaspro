@@ -153,8 +153,8 @@
   border-radius: var(--radius-lg);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
-  /* P2.3: hex local (≥ 5,5:1 sobre o fundo tintado). Dark sobrescreve com -light. */
-  color: #16613f;
+  /* P2.3: tom acessível sobre fundo tintado (≥ 5,5:1). Dark sobrescreve com -light. */
+  color: var(--color-success-text-on-tint);
   transition: all var(--transition-fast);
 }
 
@@ -165,6 +165,14 @@
 .security-indicator:hover {
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
+}
+
+/* Estado neutro: proteção desligada (ex.: PIN desativado). Cinza, não verde —
+   verde é para o que está de fato protegido. */
+.security-indicator--neutro {
+  background: var(--color-gray-100);
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
 }
 
 /* ── SEÇÕES ───────────────────────────────────────────────── */
@@ -179,8 +187,16 @@
 
 .perfil-section-danger {
   margin-top: var(--space-10);
-  padding-top: var(--space-6);
-  border-top: 1px solid rgba(201, 87, 58, 0.2);
+  padding: var(--space-5);
+  border: 1px solid rgba(201, 87, 58, 0.22);
+  border-radius: var(--radius-xl);
+  background: rgba(201, 87, 58, 0.04);
+}
+
+.perfil-danger-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
 .perfil-section-title {
@@ -190,6 +206,26 @@
   letter-spacing: var(--letter-spacing-wider);
   color: var(--color-text-secondary);
   margin: 0 0 var(--space-4) 0;
+}
+
+.perfil-dica {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: var(--space-4) 0 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-card);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.45;
+}
+
+.perfil-dica svg,
+.perfil-dica i {
+  flex: 0 0 auto;
+  margin-top: 2px;
 }
 
 .perfil-section-title-danger {
@@ -253,7 +289,7 @@
 }
 
 .perfil-card:active {
-  transform: translateY(0);
+  transform: scale(0.98);
 }
 
 .perfil-card-toggle {
@@ -490,8 +526,8 @@
   background: var(--color-danger-bg);
   border: 2px solid var(--color-danger);
   border-radius: var(--radius-xl);
-  /* P2.3: hex local (≥ 5,5:1 sobre o fundo tintado). Dark sobrescreve com -light. */
-  color: #8f3a26;
+  /* P2.3: tom acessível sobre fundo tintado (≥ 5,5:1). Dark sobrescreve com -light. */
+  color: var(--color-danger-text-on-tint);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
   cursor: pointer;
@@ -526,9 +562,11 @@
   line-height: var(--line-height-normal);
 }
 
-/* ── BOTÃO SECUNDÁRIO ─────────────────────────────────────── */
+/* ── BOTÃO SECUNDÁRIO (só em telas de perfil/config — não sobrescreve o DS global) ── */
 
-.btn-secundario {
+#aba-config .btn-secundario,
+#aba-editar-perfil .btn-secundario,
+#aba-gerenciar-bancos .btn-secundario {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -546,7 +584,9 @@
   box-shadow: var(--shadow-xs);
 }
 
-.btn-secundario:hover {
+#aba-config .btn-secundario:hover,
+#aba-editar-perfil .btn-secundario:hover,
+#aba-gerenciar-bancos .btn-secundario:hover {
   background: var(--color-bg-page);
   border-color: var(--color-border);
   color: var(--color-text-primary);
@@ -554,13 +594,17 @@
   box-shadow: var(--shadow-sm);
 }
 
-.btn-secundario:focus-visible {
+#aba-config .btn-secundario:focus-visible,
+#aba-editar-perfil .btn-secundario:focus-visible,
+#aba-gerenciar-bancos .btn-secundario:focus-visible {
   outline: 2px solid var(--color-primary-500);
   outline-offset: 2px;
   box-shadow: 0 0 0 4px rgba(18, 105, 78, 0.15);
 }
 
-.btn-secundario:active {
+#aba-config .btn-secundario:active,
+#aba-editar-perfil .btn-secundario:active,
+#aba-gerenciar-bancos .btn-secundario:active {
   transform: translateY(0);
 }
 
@@ -620,6 +664,22 @@
 .banco-item-tipo {
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
+}
+
+.banco-item--aviso {
+  border-color: rgba(234, 88, 12, 0.25);
+  background: rgba(234, 88, 12, 0.04);
+}
+
+.banco-item-badge-aviso {
+  display: inline-block;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-warning-text);
+  background: rgba(234, 88, 12, 0.12);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  vertical-align: middle;
 }
 
 .banco-item-actions {
@@ -826,12 +886,26 @@
   color: var(--color-text-inverse);
   border: none;
   border-radius: var(--radius-md);
-  padding: var(--space-1) var(--space-3);
+  padding: 0;
+  width: var(--tap-target-min, 44px);
+  height: var(--tap-target-min, 44px);
+  min-width: var(--tap-target-min, 44px);
+  min-height: var(--tap-target-min, 44px);
   font-size: var(--font-size-base);
   cursor: pointer;
-  opacity: 0;
-  transition: opacity var(--transition-fast);
-  line-height: 1.4;
+  opacity: 1;
+  transition: opacity var(--transition-fast), transform .12s, background .15s;
+  line-height: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.er-btn i[data-lucide],
+.er-btn svg {
+  display: block;
+  width: 1.2em;
+  height: 1.2em;
 }
 
 .er-wrapper:focus-within .er-btn { opacity: 1; }
@@ -1007,6 +1081,13 @@
   color: var(--color-success-light);
 }
 
+/* Neutro no escuro: proteção desligada não usa o verde. */
+[data-theme="dark"] .security-indicator--neutro {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
+}
+
 [data-theme="dark"] .perfil-card {
   background: var(--color-bg-dark-card);
   border-color: var(--color-border);
@@ -1139,7 +1220,7 @@
 }
 
 .perfil-modal-item-icon {
-  font-size: 18px;
+  font-size: var(--font-size-lg);
 }
 
 .perfil-modal-item-title {
@@ -1147,21 +1228,34 @@
 }
 
 .perfil-modal-btn-primary {
-  padding: 8px 16px;
+  width: 100%;
+  margin-top: var(--space-3);
+  padding: 12px 16px;
+  min-height: var(--tap-target-min, 44px);
   background: var(--primary);
   color: white;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
+  font-weight: var(--font-weight-semibold);
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .perfil-modal-btn-danger {
-  padding: 4px 8px;
-  background: var(--danger);
+  padding: 12px 16px;
+  min-height: var(--tap-target-min, 44px);
+  background: var(--color-danger, var(--danger));
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   cursor: pointer;
+  font-weight: var(--font-weight-semibold);
+  font-family: var(--font-family-sans);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .perfil-modal-empty {

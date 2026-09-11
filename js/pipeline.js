@@ -29,16 +29,20 @@ var PIPELINE = {
     if (!valor) return;
     var el = document.getElementById(id);
     if (!el) return;
+    var resolved = valor;
+    if (id === 'novo-banco' && typeof CONTAS !== 'undefined' && CONTAS.resolveBancoSelectValue) {
+      resolved = CONTAS.resolveBancoSelectValue(valor) || valor;
+    }
     var existe = false;
     for (var i = 0; i < el.options.length; i++) {
-      if (el.options[i].value === valor) { existe = true; break; }
+      if (el.options[i].value === resolved) { existe = true; break; }
     }
     if (!existe) {
       var opt = document.createElement('option');
-      opt.value = opt.textContent = valor;
+      opt.value = opt.textContent = resolved;
       el.appendChild(opt);
     }
-    el.value = valor;
+    el.value = resolved;
   },
 
   preencherForm: function(r) {

@@ -175,6 +175,24 @@ button i[data-lucide] {
   --color-info-dark:  #235871;
   --color-info-bg:    rgba(60, 134, 168, 0.08);
 
+  /* Gráficos, confetti e acentos decorativos */
+  --color-success-chart:       #6ee7b7;
+  --color-success-chart-light: #a7f3d0;
+  --color-success-emphasis:    #16a34a;
+
+  /* Superfícies e bordas escuras (tema dark) */
+  --color-warning-surface-dark: #2a2210;
+  --color-danger-surface-dark:  #2a0f0f;
+  --color-bg-dark-inset:        #0a1510;
+  --color-border-dark-strong:   #22302a;
+  --color-billing-business-bg:  #1e3a5f;
+
+  /* Aliases pontuais de fundo/texto (legado → token) */
+  --color-bg-body-soft:      #f6fbf8;
+  --color-placeholder-muted: #9aaea3;
+  --color-bg-dark-deep:      #0c1710;
+  --color-sidebar-brand-dark:#002d1a;
+
   /* ── Semântica acessível (texto e botões) ────────────────────
      Os tons vivos acima (--color-success, --color-warning, ...) existem para
      PREENCHIMENTO: barra de progresso, ponto de legenda, fundo de toast. Eles
@@ -197,6 +215,9 @@ button i[data-lucide] {
   --color-warning-text: var(--color-warning-on-light);
   --color-danger-text:  var(--color-danger-on-light);
   --color-info-text:    var(--color-info-on-light);
+  /* Texto sobre fundos semanticamente tintados (≥ 5,5:1 no tema claro) */
+  --color-success-text-on-tint: var(--color-success-dark);
+  --color-danger-text-on-tint:  var(--color-danger-dark);
 
   /* A cor da MARCA usada como texto também precisa alternar. Faltava este
      alias, e por isso 135 regras escreviam `color: var(--color-primary-600)`
@@ -251,6 +272,20 @@ button i[data-lucide] {
      ignora-los em silencio. */
   --color-text-muted:     #55665c;  /* AA: 6,1:1 s/ branco · 5,4:1 s/ tinta · 5,8:1 s/ página */
   --color-text-inverse:   #ffffff;
+
+  /* ── Tinta travada no CLARO ──────────────────────────────────
+     Para overlays que ficam sempre claros (bank auth): com data-theme=dark
+     os tokens de texto viram claros e cairiam abaixo do AA sobre o card
+     branco. Estes espelham os valores claros e NUNCA são redefinidos no
+     bloco escuro, então o overlay pode referenciá-los sem hardcode de hex. */
+  --color-ink-locked-strong:       #121915;  /* = text-primary claro */
+  --color-ink-locked-soft:         #3f4f47;  /* = text-secondary claro */
+  --color-ink-locked-muted:        #55665c;  /* = text-muted claro */
+  --color-ink-locked-gray-600:     #55605a;  /* = gray-600 claro */
+  --color-ink-locked-gray-700:     #3c4541;  /* = gray-700 claro */
+  --color-ink-locked-gray-800:     #242a27;  /* = gray-800 claro */
+  --color-ink-locked-brand:        #0b5c42;
+  --color-ink-locked-brand-strong: #12694e;
 
   /* ── Borda ───────────────────────────────────────────────── */
   --color-border:       #dde5e1;
@@ -405,7 +440,9 @@ button i[data-lucide] {
   --z-modal:          500;
   --z-popover:        600;
   --z-tooltip:        700;
-  --z-toast:          800;
+  /* Acima de --z-overlay: o login em tela cheia usa z-overlay+10 e escondia
+     todo aviso da tela de entrar (reset de senha, erro de biometria). */
+  --z-toast:          950;
   --z-overlay:        900;
   --z-top:            1000;
 
@@ -421,12 +458,12 @@ button i[data-lucide] {
   --gradient-red-card:    var(--color-danger-bg);
   --gradient-surface:     var(--color-bg-card);
 
-  /* ── Elevações semânticas ────────────────────────────────── */
-  --elevation-0: none;
-  --elevation-1: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-  --elevation-2: 0 4px 12px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.04);
-  --elevation-3: 0 10px 28px rgba(0,0,0,0.09), 0 4px 10px rgba(0,0,0,0.05);
-  --elevation-4: 0 20px 48px rgba(0,0,0,0.12), 0 8px 16px rgba(0,0,0,0.06);
+  /* ── Elevações semânticas (aliases → escala canônica --elevacao-*) ── */
+  --elevation-0: var(--elevacao-0);
+  --elevation-1: var(--elevacao-1);
+  --elevation-2: var(--elevacao-1);
+  --elevation-3: var(--elevacao-2);
+  --elevation-4: var(--elevacao-2);
 
   /* ── Fase 4: Tipografia display ─────────────────────────── */
   --font-family-display: 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif;
@@ -476,6 +513,19 @@ button i[data-lucide] {
   --text-primary:   var(--color-text-primary);
   --text-secondary: var(--color-text-secondary);
   --radius:         var(--radius-lg);
+
+  /* ── Botões canônicos (.btn-primario / .btn-secundario) ───── */
+  --btn-pad-y:     var(--space-3);
+  --btn-pad-x:     var(--space-5);
+  --btn-radius:    var(--radius-controle);
+  --btn-height:    48px;
+  --btn-icon-gap:  8px;
+  --btn-sm-pad-y:  8px;
+  --btn-sm-pad-x:  12px;
+  --btn-sm-height: 44px;
+
+  /* Superfície da nav inferior flutuante (também borda do FAB Novo) */
+  --nav-bottom-bg: rgba(255, 255, 255, 0.90);
 }
 
 /* ============================================================
@@ -489,179 +539,25 @@ button i[data-lucide] {
 }
 
 /* ============================================================
-   BOTÕES (Componente Base)
+   COMPONENTES CANÔNICOS — onde eles moram de verdade
+   ============================================================
+   A família de COMPONENTES .fp-btn / .fp-card / .fp-input vivia aqui como
+   camada "oficial", mas tinha ZERO uso no app e divergia da real (raio 16 vs
+   8, borda 2px vs 1px). Foi removida para não ser armadilha: um componente
+   novo escrito com .fp-btn nasceria fora do padrão que a tela de fato usa.
+
+   Os componentes canônicos são os que o app realmente usa, definidos por
+   domínio ao lado deste arquivo:
+     botões  → css/components/buttons.css   (.btn-primario, .btn-secundario, …)
+     cards   → css/components/cards.css      (.card, .kpi-card, .dashboard-section)
+     inputs  → css/components/forms.css      (.form-group input/select/textarea)
+     nav     → css/components/navigation.css
+     toasts  → css/components/toasts.css
+   Todos consomem os tokens deste arquivo (:root acima), que segue sendo a
+   fonte única de verdade dos tokens. Os UTILITÁRIOS .fp-* (texto, espaçamento,
+   layout) abaixo ficam: mapeiam tokens, não divergem de nada, e há um guard
+   de acessibilidade sobre .fp-text-*.
    ============================================================ */
-
-/* --- Base --- */
-.fp-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
-  font-family: var(--font-family-sans);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
-  line-height: var(--line-height-tight);
-  text-decoration: none;
-  border: none;
-  border-radius: var(--radius-lg);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  white-space: nowrap;
-}
-
-.fp-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* --- Variantes --- */
-
-/* Primary */
-.fp-btn--primary {
-  background: var(--color-primary-500);
-  color: var(--color-text-inverse);
-  box-shadow: var(--shadow-primary);
-}
-
-.fp-btn--primary:hover:not(:disabled) {
-  background: var(--color-primary-600);
-  transform: translateY(-1px);
-  box-shadow: 0 12px 32px rgba(18, 105, 78, 0.35);
-}
-
-.fp-btn--primary:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-/* Secondary */
-.fp-btn--secondary {
-  background: var(--color-gray-100);
-  color: var(--color-gray-700);
-}
-
-.fp-btn--secondary:hover:not(:disabled) {
-  background: var(--color-gray-200);
-}
-
-/* Outline */
-.fp-btn--outline {
-  background: transparent;
-  color: var(--color-primary-text);
-  border: 2px solid var(--color-primary-500);
-}
-
-.fp-btn--outline:hover:not(:disabled) {
-  background: var(--color-primary-50);
-}
-
-/* Ghost */
-.fp-btn--ghost {
-  background: transparent;
-  color: var(--color-gray-600);
-}
-
-.fp-btn--ghost:hover:not(:disabled) {
-  background: var(--color-gray-100);
-  color: var(--color-gray-900);
-}
-
-/* Danger */
-.fp-btn--danger {
-  background: var(--color-danger-on-light);
-  color: var(--color-text-inverse);
-}
-
-.fp-btn--danger:hover:not(:disabled) {
-  background: var(--color-danger-dark);
-}
-
-/* --- Tamanhos --- */
-.fp-btn--sm {
-  padding: var(--space-2) var(--space-3);
-  font-size: var(--font-size-xs);
-}
-
-.fp-btn--lg {
-  padding: var(--space-4) var(--space-6);
-  font-size: var(--font-size-base);
-}
-
-/* --- Icon Button --- */
-.fp-btn--icon {
-  padding: var(--space-2);
-  border-radius: var(--radius-md);
-}
-
-/* ============================================================
-   CARDS (Componente Base)
-   ============================================================ */
-
-.fp-card {
-  background: var(--color-bg-card);
-  border-radius: var(--radius-xl);
-  padding: var(--space-4);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--color-border-light);
-}
-
-.fp-card--hover:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
-  transition: all var(--transition-fast);
-}
-
-.fp-card--padded-sm { padding: var(--space-3); }
-.fp-card--padded-lg { padding: var(--space-6); }
-
-/* ============================================================
-   FORMULÁRIOS (Componentes Base)
-   ============================================================ */
-
-.fp-input {
-  width: 100%;
-  padding: var(--space-3) var(--space-4);
-  font-family: var(--font-family-sans);
-  font-size: var(--font-size-base);
-  line-height: var(--line-height-normal);
-  color: var(--color-text-primary);
-  background: var(--color-bg-card);
-  border: 2px solid var(--color-gray-200);
-  border-radius: var(--radius-lg);
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-}
-
-.fp-input:focus {
-  outline: none;
-  border-color: var(--color-primary-500);
-  box-shadow: 0 0 0 3px rgba(18, 105, 78, 0.1);
-}
-
-.fp-input::placeholder {
-  color: var(--color-text-muted);
-}
-
-.fp-input:disabled {
-  background: var(--color-gray-100);
-  cursor: not-allowed;
-}
-
-.fp-label {
-  display: block;
-  margin-bottom: var(--space-2);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-secondary);
-}
-
-.fp-form-group {
-  margin-bottom: var(--space-4);
-}
-
-.fp-form-group:last-child {
-  margin-bottom: 0;
-}
 
 /* ============================================================
    TIPOGRAFIA UTILITÁRIA
@@ -689,43 +585,8 @@ button i[data-lucide] {
 .fp-text-warning { color: var(--color-warning-text); }
 .fp-text-info { color: var(--color-info-text); }
 
-/* ============================================================
-   ESPAÇAMENTO UTILITÁRIO
-   ============================================================ */
-
-/* Padding */
-.fp-p-0 { padding: var(--space-0); }
-.fp-p-1 { padding: var(--space-1); }
-.fp-p-2 { padding: var(--space-2); }
-.fp-p-3 { padding: var(--space-3); }
-.fp-p-4 { padding: var(--space-4); }
-.fp-p-6 { padding: var(--space-6); }
-.fp-p-8 { padding: var(--space-8); }
-
-/* Margin */
-.fp-m-0 { margin: var(--space-0); }
-.fp-m-1 { margin: var(--space-1); }
-.fp-m-2 { margin: var(--space-2); }
-.fp-m-3 { margin: var(--space-3); }
-.fp-m-4 { margin: var(--space-4); }
-.fp-m-6 { margin: var(--space-6); }
-
-/* ============================================================
-   LAYOUT UTILITÁRIO
-   ============================================================ */
-
-.fp-flex { display: flex; }
-.fp-flex-col { flex-direction: column; }
-.fp-items-center { align-items: center; }
-.fp-justify-center { justify-content: center; }
-.fp-justify-between { justify-content: space-between; }
-.fp-gap-2 { gap: var(--space-2); }
-.fp-gap-4 { gap: var(--space-4); }
-
-.fp-grid { display: grid; }
-.fp-grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
-.fp-grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
-.fp-gap-4 { gap: var(--space-4); }
+/* API oficial: utilitários de tipografia/cor acima. Espaçamento e layout
+   usam classes de componente — não há uso de .fp-p-* / .fp-flex no app. */
 
 /* ============================================================
    DARK MODE — Tokens remapeados
@@ -736,6 +597,7 @@ button i[data-lucide] {
   --color-bg-page:      var(--color-bg-dark-page);
   --color-bg-card:      var(--color-bg-dark-card);
   --color-bg-primary:   rgba(47, 163, 123, 0.14);
+  --nav-bottom-bg:      rgba(18, 28, 20, 0.92);
 
   /* Aliases legacy */
   --bg:     var(--color-bg-dark-page);
@@ -771,26 +633,6 @@ button i[data-lucide] {
      a segunda família de sombras que a escala veio eliminar. */
   --elevacao-1: 0 1px 2px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.32);
   --elevacao-2: 0 2px 8px rgba(0, 0, 0, 0.34), 0 12px 32px rgba(0, 0, 0, 0.44);
-}
-
-[data-theme="dark"] .fp-card {
-  border-color: var(--color-border);
-  background: var(--color-bg-card);
-}
-
-[data-theme="dark"] .fp-input {
-  background: var(--color-bg-dark-elevated);
-  border-color: var(--color-border);
-  color: var(--color-text-primary);
-}
-
-[data-theme="dark"] .fp-btn--secondary {
-  background: var(--color-gray-700);
-  color: var(--color-text-primary);
-}
-
-[data-theme="dark"] .fp-btn--ghost:hover {
-  background: var(--color-gray-700);
 }
 
 /* ══════════════════════════════════════════════════════════════

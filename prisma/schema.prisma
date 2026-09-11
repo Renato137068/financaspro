@@ -53,8 +53,10 @@ model User {
   id           String   @id @default(uuid())
   name         String
   email        String   @unique
-  passwordHash String
-  passwordSalt String
+  // Opcionais: o Supabase Auth gerencia as credenciais. Preenchidos só no
+  // fluxo legado do backend Express (em retirada).
+  passwordHash String?
+  passwordSalt String?
   role         Role     @default(USER)
   active       Boolean  @default(true)
   totpSecret   String?
@@ -174,6 +176,7 @@ model Account {
   updatedAt    DateTime      @updatedAt
   transactions Transaction[] @relation("TxAccount")
   incomingTransfers Transaction[] @relation("TxTargetAccount")
+  recurringTransactions RecurringTransaction[]
 
   // Fase 10
   orgId        String?
@@ -216,6 +219,8 @@ model RecurringTransaction {
   endDate     DateTime?
   nextDue     DateTime
   active      Boolean       @default(true)
+  accountId   String?
+  account     Account?      @relation(fields: [accountId], references: [id])
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
@@ -225,6 +230,7 @@ model RecurringTransaction {
 
   @@index([userId])
   @@index([nextDue])
+  @@index([accountId])
   @@index([orgId])
 }
 

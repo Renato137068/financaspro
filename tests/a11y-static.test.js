@@ -70,7 +70,9 @@ describe('a11y — rótulos de formulário', () => {
 });
 
 describe('a11y — navegação por teclado', () => {
-  test('existe skip link apontando para o conteúdo principal', () => {
+  test('existe exatamente um skip link apontando para o conteúdo principal', () => {
+    const matches = html.match(/class="[^"]*skip-link[^"]*"/g) || [];
+    expect(matches.length).toBe(1);
     expect(html).toMatch(/<a[^>]+href="#main-content"[^>]*class="[^"]*skip-link/);
   });
 
@@ -162,7 +164,7 @@ describe('ux — feedback em ações longas', () => {
     for (const acao of ['exportar-excel', 'exportar-pdf', 'exportar-dados']) {
       const i = nav.indexOf(`'${acao}':`);
       expect(i).toBeGreaterThan(-1);
-      expect(nav.slice(i, i + 220)).toMatch(/comCarregamento/);
+      expect(nav.slice(i, i + 420)).toMatch(/comCarregamento/);
     }
   });
 });

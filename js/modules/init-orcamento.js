@@ -341,16 +341,22 @@ const INIT_ORCAMENTO = {
     this._updateElement('orc-nec-limite', UTILS.formatarMoeda(data.limNec));
     this._setProgressBar('orc-nec-bar', data.pctNec, 'Necessidades');
     this._updateElementClass('orc-nec-bar', 'orc-progress-fill ' + (data.pctNec >= 100 ? 'exceeded' : data.pctNec >= 80 ? 'attention' : 'healthy'));
+    // O rotulo de texto "X% utilizado" tem id proprio (orc-nec-percent) e nao
+    // era atualizado: so a barra recebia o valor. A tela mostrava a barra em 36%
+    // ao lado de "0% utilizado", que num app de dinheiro le como dado quebrado.
+    this._updateElement('orc-nec-percent', data.pctNec + '%');
 
     this._updateElement('orc-des-gasto', UTILS.formatarMoeda(data.gasDes));
     this._updateElement('orc-des-limite', UTILS.formatarMoeda(data.limDes));
     this._setProgressBar('orc-des-bar', data.pctDes, 'Desejos');
     this._updateElementClass('orc-des-bar', 'orc-progress-fill ' + (data.pctDes >= 100 ? 'exceeded' : data.pctDes >= 80 ? 'attention' : 'healthy'));
+    this._updateElement('orc-des-percent', data.pctDes + '%');
 
     this._updateElement('orc-pou-gasto', UTILS.formatarMoeda(Math.max(0, data.poupancaReal)));
     this._updateElement('orc-pou-limite', UTILS.formatarMoeda(data.limPou));
     this._setProgressBar('orc-pou-bar', data.pctPou, 'Poupança');
     this._updateElementClass('orc-pou-bar', 'orc-progress-fill ' + (data.pctPou >= 100 ? 'otimo' : data.pctPou >= 50 ? 'healthy' : 'attention'));
+    this._updateElement('orc-pou-percent', data.pctPou + '%');
   },
 
   renderInsights: function(data) {
@@ -528,6 +534,66 @@ const INIT_ORCAMENTO = {
     if (emptyEl) emptyEl.style.display = algum === 0 ? '' : 'none';
 
     if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(container);
+  },
+
+  SUB_ABAS: ['planejamento', 'metas', 'assinaturas', 'patrimonio'],
+
+  /**
+   * Alterna as sub-seções do Orçamento sem destruir IDs internos.
+   * @param {string} nome planejamento|metas|assinaturas|patrimonio
+   */
+  mudarSubAba: function(nome, opcoes) {
+    opcoes = opcoes || {};
+    var permitido = this.SUB_ABAS.indexOf(nome) !== -1 ? nome : 'planejamento';
+    var root = document.getElementById('aba-orcamento');
+    if (!root) return;
+
+    var tabs = root.querySelectorAll('[data-orc-sub]');
+    var activeTab = null;
+    for (var i = 0; i < tabs.length; i++) {
+      var on = tabs[i].getAttribute('data-orc-sub') === permitido;
+      tabs[i].classList.toggle('ativo', on);
+      tabs[i].setAttribute('aria-selected', on ? 'true' : 'false');
+      if (on) activeTab = tabs[i];
+    }
+
+    for (var t = 0; t < tabs.length; t++) {
+      tabs[t].setAttribute('tabindex', tabs[t] === activeTab ? '0' : '-1');
+    }
+    if (opcoes.focusTab && activeTab) activeTab.focus();
+
+    var panels = root.querySelectorAll('.orc-sub-panel');
+    for (var j = 0; j < panels.length; j++) {
+      var match = panels[j].id === 'orc-sub-panel-' + permitido;
+      panels[j].classList.toggle('ativo', match);
+      if (match) panels[j].removeAttribute('hidden');
+      else panels[j].setAttribute('hidden', '');
+    }
+
+    try {
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem('fp-orc-sub', permitido);
+      }
+    } catch (_e) { /* storage opcional */ }
+
+    try {
+      var main = document.querySelector('main');
+      if (main && typeof main.scrollTo === 'function') main.scrollTo(0, 0);
+      if (typeof window.scrollTo === 'function') window.scrollTo(0, 0);
+    } catch (_s) { /* scroll opcional */ }
+  },
+
+  /** Restaura última sub-aba da sessão ou cai em planejamento. */
+  restaurarSubAba: function(preferida) {
+    var nome = preferida;
+    if (!nome) {
+      try {
+        nome = (typeof sessionStorage !== 'undefined')
+          ? sessionStorage.getItem('fp-orc-sub')
+          : null;
+      } catch (_e) { nome = null; }
+    }
+    this.mudarSubAba(nome || 'planejamento');
   }
 };
 
@@ -536,6 +602,7 @@ function editarRendaOrcamento() { INIT_ORCAMENTO.editarRenda(); }
 function editarRegra503020() { INIT_ORCAMENTO.editarRegra503020(); }
 function toggleDetalhesCategorias() { INIT_ORCAMENTO.toggleDetalhesCategorias(); }
 function renderOrcamentoDashboard() { INIT_ORCAMENTO.renderDashboard(); }
+function mudarSubAbaOrcamento(nome) { INIT_ORCAMENTO.mudarSubAba(nome); }
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = INIT_ORCAMENTO;

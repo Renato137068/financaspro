@@ -1,0 +1,30 @@
+# Padrao: normaliza para LF dentro do repositorio
+* text=auto eol=lf
+
+# Scripts do Windows quebram com LF — mantenha CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Wrapper do Gradle
+android/gradlew      text eol=lf
+android/gradlew.bat  text eol=crlf
+
+# Binarios — nunca converter
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.webp binary
+*.ttf  binary
+*.otf  binary
+*.woff binary
+*.woff2 binary
+*.jks  binary
+*.keystore binary
+*.aab  binary
+*.apk  binary
+*.pdf  binary
+*.zip  binary
+*.mp4  binary

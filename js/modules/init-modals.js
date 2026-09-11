@@ -64,13 +64,14 @@ const INIT_MODALS = {
     document.body.appendChild(ov);
     
     var btn = ov.querySelector('.modal-btn');
-    btn.focus();
     
     // Initialize focus trap if available
     var focusTrap = null;
     if (typeof FocusTrap !== 'undefined' && FocusTrap) {
       focusTrap = new FocusTrap(ov);
-      focusTrap.activate();
+      focusTrap.activate(btn);
+    } else if (btn) {
+      btn.focus();
     }
 
     // Fechar SEMPRE desativa o trap. Módulos legados fazem `ok.onclick = save`
@@ -147,15 +148,20 @@ const INIT_MODALS = {
       : this._isDestrutivo(msg);
     var okClass = destrutivo ? 'btn-confirmar-danger' : 'btn-confirmar-primary';
     var okLabel = options.okLabel || 'Confirmar';
+    var cancelLabel = options.cancelLabel || 'Cancelar';
+
+    var body = options.trustedHtml
+      ? '<div id="confirm-title">' + msg + '</div>'
+      : '<p id="confirm-title">' + UTILS.escapeHtml(msg) + '</p>';
 
     var ov = document.createElement('div');
     ov.className = 'modal-overlay';
     ov.setAttribute('role','dialog');
     ov.setAttribute('aria-modal','true');
     ov.setAttribute('aria-labelledby','confirm-title');
-    ov.innerHTML = '<div class="modal-box"><p id="confirm-title">' + UTILS.escapeHtml(msg) + '</p>' +
+    ov.innerHTML = '<div class="modal-box">' + body +
       '<div class="modal-actions">' +
-      '<button class="btn-cancelar" type="button" id="mc">Cancelar</button>' +
+      '<button class="btn-cancelar" type="button" id="mc">' + UTILS.escapeHtml(cancelLabel) + '</button>' +
       '<button class="' + okClass + '" type="button" id="mo">' + UTILS.escapeHtml(okLabel) + '</button>' +
       '</div></div>';
     
@@ -163,13 +169,14 @@ const INIT_MODALS = {
     
     var bo = ov.querySelector('#mo');
     var bc = ov.querySelector('#mc');
-    bo.focus();
     
     // Initialize focus trap if available
     var focusTrap = null;
     if (FocusTrap) {
       focusTrap = new FocusTrap(ov);
-      focusTrap.activate();
+      focusTrap.activate(bo);
+    } else if (bo) {
+      bo.focus();
     }
     
     // Event listeners
@@ -264,8 +271,8 @@ const INIT_MODALS = {
 
             setTimeout(function() {
               overlay.remove();
-              UTILS.mostrarToast('Feedback salvo. Você também pode enviar por e-mail.', 'success');
-              var mail = 'mailto:?subject=' + encodeURIComponent('Feedback FinançasPro') +
+              UTILS.mostrarToast('Feedback registrado — abrindo seu e-mail para enviar.', 'success');
+              var mail = 'mailto:renato.soares1370@gmail.com?subject=' + encodeURIComponent('Feedback FinançasPro') +
                 '&body=' + encodeURIComponent(corpo);
               try { window.open(mail, '_blank'); } catch (_e) { /* ignore */ }
             }, 800);
@@ -280,14 +287,14 @@ const INIT_MODALS = {
    */
   abrirChangelog: function() {
     var html = '<h3>Novidades</h3>' +
-      '<div style="max-height:350px;overflow-y:auto;padding-right:8px;">' +
+      '<div style="max-height:350px;overflow-y:auto;padding-right:8px;" tabindex="0" role="region" aria-label="Histórico de versões">' +
       '<div style="margin-bottom:16px;"><strong>v11.0.0</strong><br>' +
       '<i data-lucide="calendar-clock" aria-hidden="true"></i> Contas a pagar e calendário<br>' +
       '<i data-lucide="shield" aria-hidden="true"></i> PIN de segurança<br>' +
       '<i data-lucide="bell" aria-hidden="true"></i> Lembrete diário com notificação<br>' +
       '<i data-lucide="bar-chart" aria-hidden="true"></i> Insights e previsão financeira<br>' +
       '<i data-lucide="target" aria-hidden="true"></i> Orçamento 50/30/20<br>' +
-      '<i data-lucide="scan" aria-hidden="true"></i> OCR de comprovantes<br>' +
+      '<i data-lucide="paperclip" aria-hidden="true"></i> Anexos de comprovante (foto/PDF)<br>' +
       '<i data-lucide="layers" aria-hidden="true"></i> Código modular (INIT_*)</div>' +
       '<div style="margin-bottom:16px;"><strong>v10.0.0</strong><br>' +
       '<i data-lucide="zap" aria-hidden="true"></i> Performance 3x mais rápido<br>' +

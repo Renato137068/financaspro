@@ -27,7 +27,7 @@ async function seedFreePlan() {
     data: {
       id: 'plan-free', name: 'Free', tier: 'FREE',
       priceMonthly: 0, priceYearly: 0,
-      maxUsers: 1, maxAccounts: 3, maxBudgets: 5, maxTransPerMonth: 100,
+      maxUsers: 1, maxAccounts: 5, maxBudgets: 5, maxTransPerMonth: null,
     },
   });
   await prisma.subscription.create({
@@ -39,15 +39,40 @@ async function seedFreePlan() {
 }
 
 describe('assertAccountCapacity', () => {
-  test('FREE bloqueia na 4ª conta', async () => {
+  // Cinco contas cobrem o usuário típico do app: corrente, poupança, dois
+  // cartões e a carteira. Com o teto em três, ele estourava durante o próprio
+  // onboarding — antes de lançar a primeira despesa e de ver valor nenhum.
+  test('FREE aceita a 5ª conta', async () => {
     await seedFreePlan();
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 4; i++) {
+      await prisma.account.create({
+        data: { userId: USER, name: `C${i}`, type: 'checking', active: true },
+      });
+    }
+
+    await expect(assertAccountCapacity(USER, 'FREE')).resolves.toBeUndefined();
+  });
+
+  test('FREE bloqueia na 6ª conta', async () => {
+    await seedFreePlan();
+    for (let i = 0; i < 5; i++) {
       await prisma.account.create({
         data: { userId: USER, name: `C${i}`, type: 'checking', active: true },
       });
     }
 
     await expect(assertAccountCapacity(USER, 'FREE')).rejects.toMatchObject({ status: 402 });
+  });
+
+  test('PRO não tem teto de contas', async () => {
+    await seedFreePlan();
+    for (let i = 0; i < 30; i++) {
+      await prisma.account.create({
+        data: { userId: USER, name: `C${i}`, type: 'checking', active: true },
+      });
+    }
+
+    await expect(assertAccountCapacity(USER, 'PRO')).resolves.toBeUndefined();
   });
 });
 
@@ -89,13 +114,20 @@ describe('assertOrgMemberCapacity', () => {
 });
 
 /**
- * O teto mensal do plano FREE contava por `date` — a data que o usuário digita
- * no formulário. Lançar com data retroativa nunca encostava no limite: bypass
- * completo, sem exigir nenhuma manha técnica. Agora conta por `createdAt`.
+ * Nao existe mais teto mensal de transacoes, em nenhum plano.
+ *
+ * O limite de 100/mes parava de aceitar lancamentos por volta do dia 15 para o
+ * usuario intenso -- que e exatamente quem pagaria. O mes ficava pela metade, o
+ * que estragava orcamento, insight e comparativo junto, e o app virava inutil
+ * justamente no mes em que a pessoa mais precisava dele. Limite de volume num
+ * app de habito e churn, nao conversao.
+ *
+ * O middleware continua montado e continua contando por `createdAt` (e nao por
+ * `date`, que o usuario digita e que permitia burlar o teto com data
+ * retroativa). Fica inerte enquanto `maxTransPerMonth` for nulo -- reintroduzir
+ * um teto e mudar um dado, nao reescrever enforcement.
  */
-describe('checkTransactionLimit — mês contado por createdAt', () => {
-  const MES_PASSADO = new Date(Date.now() - 45 * 86400000);
-
+describe('checkTransactionLimit — sem teto mensal', () => {
   /** Executa o middleware e devolve o erro que ele passou ao next(), se houver. */
   function rodar(req) {
     return new Promise((resolve) => {
@@ -116,38 +148,25 @@ describe('checkTransactionLimit — mês contado por createdAt', () => {
     }
   }
 
-  test('lançamento com data retroativa NÃO escapa do teto', async () => {
-    // Criados agora (conta), mas datados do mês passado (antes, não contava).
-    await semearTransacoes(100, { date: MES_PASSADO, createdAt: new Date() });
-
-    const err = await rodar({ user: { id: USER }, planTier: 'FREE' });
-
-    expect(err).toBeTruthy();
-    expect(err.status).toBe(402);
-    expect(err.message).toMatch(/Limite de 100 transações\/mês/);
-  });
-
-  test('lançamento criado no mês passado não ocupa a cota deste mês', async () => {
-    await semearTransacoes(100, { date: new Date(), createdAt: MES_PASSADO });
+  test('FREE lança 500 vezes no mês sem ser bloqueado', async () => {
+    await semearTransacoes(500, { date: new Date(), createdAt: new Date() });
 
     const err = await rodar({ user: { id: USER }, planTier: 'FREE' });
 
     expect(err).toBeNull();
   });
 
-  test('transação apagada (tombstone) não ocupa cota', async () => {
-    await semearTransacoes(100, { date: new Date(), createdAt: new Date() });
-    for (const tx of prisma.__store.get('transaction').values()) tx.deletedAt = new Date();
-
-    const err = await rodar({ user: { id: USER }, planTier: 'FREE' });
-
-    expect(err).toBeNull();
-  });
-
-  test('plano PRO não tem teto mensal', async () => {
+  test('PRO também não tem teto', async () => {
     await semearTransacoes(100, { date: new Date(), createdAt: new Date() });
 
     const err = await rodar({ user: { id: USER }, planTier: 'PRO' });
+
+    expect(err).toBeNull();
+  });
+
+  test('o middleware sai cedo: nem chega a contar', async () => {
+    // Sem teto, nao vale pagar um count() no caminho mais quente da API.
+    const err = await rodar({ user: { id: USER }, planTier: 'FREE' });
 
     expect(err).toBeNull();
   });

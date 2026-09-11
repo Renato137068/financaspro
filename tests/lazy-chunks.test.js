@@ -80,6 +80,27 @@ describe('chunks lazy', () => {
     expect(eager.sort()).toEqual(arquivos.slice().sort());
   });
 
+  test('billing.js NÃO é lazy — quotas no boot (RISK-01)', () => {
+    // Se BILLING voltar ao chunk conta, Free no AAB ultrapassa limites até
+    // abrir Config: guardas `typeof BILLING !== 'undefined' && !guardQuota`.
+    expect(arquivos).not.toContain('js/billing.js');
+    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+    expect(html).toMatch(/src="js\/billing\.js"/);
+  });
+
+  test('lifecycle agenda reconcile Play no boot (RISK-04)', () => {
+    const life = fs.readFileSync(
+      path.join(root, 'js/core/lifecycle.js'), 'utf8',
+    );
+    expect(life).toMatch(/carregarChunkConta/);
+    expect(life).toMatch(/_reconciliarPlay\(\{\s*force:\s*true\s*\}\)/);
+    const init = fs.readFileSync(
+      path.join(root, 'js/modules/init-billing.js'), 'utf8',
+    );
+    expect(init).toMatch(/_reconciliouNestaSessao/);
+    expect(init).toMatch(/opts\.force/);
+  });
+
   test('os módulos do chunk conta são inicializados ao carregar', () => {
     // Não basta baixar o arquivo: sem init() o módulo existe e não se liga a
     // nada — a aba abre e não faz coisa alguma.

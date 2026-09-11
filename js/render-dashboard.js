@@ -111,17 +111,17 @@
    * P2.1: resumo mensal memoizado no ciclo de render (this._ctx.resumoCache).
    * Evita refiltrar TRANSACOES.obterResumoMes para o mesmo ano-mes.
    */
-  DashboardRenderer._resumoMes = function(mes, ano) {
+  DashboardRenderer._resumoMes = function(mes, ano, opts) {
     var ctx = this._ctx;
     var vazio = { saldo: 0, receitas: 0, despesas: 0 };
     if (!ctx) return vazio;
     if (!ctx.resumoCache) ctx.resumoCache = {};
-    var key = ano + '-' + mes;
+    var key = ano + '-' + mes + (opts && opts.ate ? '@' + opts.ate : '');
     if (Object.prototype.hasOwnProperty.call(ctx.resumoCache, key)) {
       return ctx.resumoCache[key];
     }
     var resumo = (ctx.tx && typeof ctx.tx.obterResumoMes === 'function')
-      ? ctx.tx.obterResumoMes(mes, ano)
+      ? ctx.tx.obterResumoMes(mes, ano, opts)
       : vazio;
     ctx.resumoCache[key] = resumo;
     return resumo;
@@ -166,17 +166,22 @@
     var agora  = new Date();
     var mes    = agora.getMonth() + 1;
     var ano    = agora.getFullYear();
+    var hoje   = (typeof UTILS !== 'undefined' && UTILS.dataLocalIso)
+      ? UTILS.dataLocalIso(agora)
+      : agora.toISOString().slice(0, 10);
     var tx     = _dadosTransacoes();
     var orc    = _dadosOrcamento();
     var config = (typeof DADOS !== 'undefined' && DADOS.getConfig) ? DADOS.getConfig() : {};
 
     this._ctx = {
-      agora: agora, mes: mes, ano: ano, tx: tx, orc: orc, config: config,
+      agora: agora, mes: mes, ano: ano, hoje: hoje, tx: tx, orc: orc, config: config,
       resumoCache: {}
     };
-    this._ctx.resumo = this._resumoMes(mes, ano);
+    this._ctx.resumo = this._resumoMes(mes, ano, { ate: hoje });
+    this._ctx.resumoProjetado = this._resumoMes(mes, ano);
 
     this.renderGreeting();
+    this.renderOnboarding();
     this.renderCardSaldo();
     this.renderResumo();
     this.renderComparacaoMesAnterior();
@@ -215,6 +220,28 @@
   // ============================================================
   // SUB-RENDERERS
   // ============================================================
+
+  DashboardRenderer.renderOnboarding = function() {
+    try {
+      var el = document.getElementById('dashboard-onboarding');
+      if (!el) return;
+      var total = 0;
+      if (typeof DADOS !== 'undefined' && DADOS.getTransacoes) {
+        total = DADOS.getTransacoes().length;
+      } else if (this._ctx && this._ctx.tx && typeof this._ctx.tx.obter === 'function') {
+        total = this._ctx.tx.obter({}).length;
+      }
+      el.hidden = total > 0;
+      if (!el.hidden && typeof renderLucideIconsNow === 'function') {
+        renderLucideIconsNow(el);
+      }
+      if (typeof INIT_BILLING !== 'undefined' && INIT_BILLING.refreshUsageBanner) {
+        INIT_BILLING.refreshUsageBanner();
+      }
+    } catch (e) {
+      _reportarErroRender('onboarding', e, document.getElementById('dashboard-onboarding'));
+    }
+  };
 
   DashboardRenderer.renderGreeting = function() {
     try {
@@ -265,11 +292,20 @@
       var info = this.create('div', { class: 'saldo-info' });
       var lbl  = this.create('div', { class: 'saldo-label' });
       lbl.textContent = 'Saldo do mês (realizado)';
+      lbl.title = 'Soma apenas de lançamentos já ocorridos neste mês, sem contas futuras.';
       info.appendChild(lbl);
 
       var val = this.create('div', { class: 'saldo-valor' });
       val.textContent = this.money(saldo);
       info.appendChild(val);
+
+      var proj = this._ctx.resumoProjetado;
+      if (proj && Math.abs((proj.saldo || 0) - saldo) >= 0.005) {
+        var hint = this.create('p', { class: 'saldo-projetado-hint' });
+        hint.textContent = 'Projetado no mês (incl. futuros): ' + this.money(proj.saldo || 0);
+        hint.title = 'Inclui lançamentos com data futura ainda não realizados.';
+        info.appendChild(hint);
+      }
 
       el.appendChild(info);
 
@@ -415,11 +451,28 @@
         return;
       }
 
+      // Janela analítica: o gráfico continua com seis colunas, mas as que
+      // caem fora do plano vêm esmaecidas em vez de sumirem. Efeito de
+      // demonstração — o usuário vê a FORMA do que está perdendo, e é isso
+      // que converte; um gráfico que simplesmente encolhe não comunica nada.
+      var janela = (typeof BILLING !== 'undefined' && BILLING.janelaAnalitica)
+        ? BILLING.janelaAnalitica()
+        : { limitado: false, desde: null };
+
       var dados = [];
       for (var i = 5; i >= 0; i--) {
         var d      = new Date(ctx.ano, ctx.mes - 1 - i, 1);
         var resumo = this._resumoMes(d.getMonth() + 1, d.getFullYear());
-        dados.push({ mes: NOMES_MESES[d.getMonth()], receitas: resumo.receitas, despesas: resumo.despesas });
+        var fora   = janela.limitado && janela.desde && d < janela.desde;
+        dados.push({
+          mes: NOMES_MESES[d.getMonth()],
+          receitas: fora ? 0 : resumo.receitas,
+          despesas: fora ? 0 : resumo.despesas,
+          bloqueado: !!fora,
+          // Altura só para dar silhueta ao mês bloqueado. Nunca é o valor real:
+          // o número fica no Pro, a forma fica visível.
+          silhueta: fora ? Math.max(0.25, Math.min(0.8, (resumo.despesas || 1) / 10000)) : 0
+        });
       }
 
       var temDados = dados.some(function(d) { return d.receitas > 0 || d.despesas > 0; });
@@ -518,15 +571,24 @@
       var tx = this._ctx.tx;
       var transacoes = [];
 
-      // Padronização de API: usar obter() se disponível, senão getTodas()
-      if (tx && typeof tx.obter === 'function') {
+      // Padronização de API: obterRecentes evita sort O(n log n) em históricos grandes
+      if (tx && typeof tx.obterRecentes === 'function') {
+        transacoes = tx.obterRecentes(3);
+      } else if (tx && typeof tx.obter === 'function') {
         transacoes = tx.obter({});
       } else if (tx && typeof tx.getTodas === 'function') {
         transacoes = tx.getTodas();
       }
 
       if (transacoes.length === 0) {
-        _setChildren(el, [UI.EmptyState.render({ lucide: 'clock', titulo: 'Nenhuma transação registrada ainda. Comece adicionando sua primeira!', aba: 'novo' })]);
+        _setChildren(el, [UI.EmptyState.render({
+          lucide: 'sparkles',
+          titulo: 'Seu painel está pronto',
+          subtitulo: 'Registre a primeira transação para ver saldo, gráficos e últimas movimentações.',
+          aba: 'novo',
+          ctaTexto: 'Registrar primeira transação',
+          animado: true
+        })]);
         return;
       }
 

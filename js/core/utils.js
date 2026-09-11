@@ -149,6 +149,101 @@ var UTILS = {
     return { fechar: fechar };
   },
 
+  _exclusoesPendentes: {},
+
+  /**
+   * Agenda exclusão definitiva após janela de desfazer (~5s).
+   * @param {string} chave id único da operação pendente
+   * @param {Function} efetivarFn chamada ao expirar o prazo
+   * @param {{mensagem?:string,rotuloAcao?:string,duracaoMs?:number,aoDesfazer?:Function,tipo?:string}} [opts]
+   */
+  agendarExclusao: function(chave, efetivarFn, opts) {
+    opts = opts || {};
+    var self = this;
+    var duracao = typeof opts.duracaoMs === 'number' ? opts.duracaoMs : 5000;
+
+    if (this._exclusoesPendentes[chave]) {
+      clearTimeout(this._exclusoesPendentes[chave].timer);
+      if (this._exclusoesPendentes[chave].toast && this._exclusoesPendentes[chave].toast.fechar) {
+        this._exclusoesPendentes[chave].toast.fechar();
+      }
+    }
+
+    var timer = setTimeout(function() {
+      try {
+        if (typeof efetivarFn === 'function') efetivarFn();
+      } finally {
+        delete self._exclusoesPendentes[chave];
+      }
+    }, duracao);
+
+    var toast = this.mostrarToastAcao(
+      opts.mensagem || 'Excluído',
+      opts.rotuloAcao || 'Desfazer',
+      function() {
+        clearTimeout(timer);
+        delete self._exclusoesPendentes[chave];
+        if (typeof opts.aoDesfazer === 'function') opts.aoDesfazer();
+      },
+      { duracaoMs: duracao, tipo: opts.tipo || 'info' }
+    );
+
+    this._exclusoesPendentes[chave] = { timer: timer, toast: toast };
+  },
+
+  /**
+   * Banner dispensável (não-modal) para avisos como backup pendente.
+   */
+  mostrarBanner: function(opts) {
+    opts = opts || {};
+    var id = opts.id || 'fp-banner';
+    var existente = document.getElementById(id);
+    if (existente) existente.remove();
+
+    var banner = document.createElement('div');
+    banner.id = id;
+    banner.className = 'fp-banner' + (opts.tipo ? ' fp-banner--' + opts.tipo : '');
+    banner.setAttribute('role', opts.role || 'status');
+    banner.setAttribute('aria-live', 'polite');
+
+    var texto = document.createElement('p');
+    texto.className = 'fp-banner-texto';
+    texto.textContent = opts.mensagem || '';
+    banner.appendChild(texto);
+
+    var actions = document.createElement('div');
+    actions.className = 'fp-banner-actions';
+
+    if (opts.acao && typeof opts.onAcao === 'function') {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'fp-banner-btn';
+      btn.textContent = opts.acao;
+      btn.addEventListener('click', function() {
+        opts.onAcao();
+        if (opts.fecharAoAcao !== false) banner.remove();
+      });
+      actions.appendChild(btn);
+    }
+
+    if (opts.dismissivel !== false) {
+      var dismiss = document.createElement('button');
+      dismiss.type = 'button';
+      dismiss.className = 'fp-banner-dismiss';
+      dismiss.setAttribute('aria-label', 'Dispensar aviso');
+      dismiss.textContent = '×';
+      dismiss.addEventListener('click', function() {
+        banner.remove();
+        if (typeof opts.aoDispensar === 'function') opts.aoDispensar();
+      });
+      actions.appendChild(dismiss);
+    }
+
+    banner.appendChild(actions);
+    document.body.appendChild(banner);
+    return banner;
+  },
+
   /**
    * Converte um valor monetário digitado (ou numérico) em Number.
    * Aceita número (usa direto), string em formato BR ("1.234,56" → 1234.56) e
@@ -296,9 +391,14 @@ var UTILS = {
   },
 
   calcularSaldo: function(transacoes) {
-    return transacoes.reduce(function(acc, t) {
-      return t.tipo === CONFIG.TIPO_RECEITA ? acc + t.valor : acc - t.valor;
-    }, 0);
+    if (typeof TRANSACTION_SERVICE !== 'undefined' && TRANSACTION_SERVICE.calculateBalance) {
+      return TRANSACTION_SERVICE.calculateBalance(transacoes);
+    }
+    return (transacoes || []).reduce(function(acc, t) {
+      if (t.tipo === CONFIG.TIPO_RECEITA) return acc + UTILS.paraCentavos(t.valor);
+      if (t.tipo === CONFIG.TIPO_DESPESA) return acc - UTILS.paraCentavos(t.valor);
+      return acc;
+    }, 0) / 100;
   },
 
   filtrarPorMes: function(transacoes, mes, ano) {
@@ -331,7 +431,10 @@ var UTILS = {
   },
 
   labelCategoria: function(key) {
-    return CONFIG.CATEGORIAS_MAP[key] || key;
+    if (typeof CONFIG !== 'undefined' && CONFIG.getCatLabel) {
+      return CONFIG.getCatLabel(key);
+    }
+    return (CONFIG && CONFIG.CATEGORIAS_MAP && CONFIG.CATEGORIAS_MAP[key]) || key;
   },
 
   formatarDataRelativa: function(data) {

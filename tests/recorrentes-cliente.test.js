@@ -158,6 +158,43 @@ describe('idempotência — o dinheiro não pode dobrar', () => {
     expect(DADOS.getTransacoes()).toHaveLength(2);
   });
 
+  test('semanal gera uma ocorrência por semana', () => {
+    comRecorrentes([recorrente({
+      frequencia: 'semanal',
+      dataInicio: '2026-08-01',
+      valor: 50,
+      descricao: 'Mercado',
+    })]);
+
+    const criadas = RECORRENTES.processar(HOJE);
+    expect(criadas.map((t) => t.data)).toEqual([
+      '2026-08-01', '2026-08-08',
+    ]);
+    expect(criadas.every((t) => t.competencia === t.data)).toBe(true);
+  });
+
+  test('quinzenal respeita intervalo de 14 dias', () => {
+    comRecorrentes([recorrente({
+      frequencia: 'quinzenal',
+      dataInicio: '2026-07-20',
+    })]);
+
+    const criadas = RECORRENTES.processar(HOJE);
+    expect(criadas.map((t) => t.data)).toEqual(['2026-07-20', '2026-08-03']);
+  });
+
+  test('anual gera no mesmo dia/mês cada ano', () => {
+    comRecorrentes([recorrente({
+      frequencia: 'anual',
+      dataInicio: '2024-08-10',
+      descricao: 'IPVA',
+    })]);
+
+    const criadas = RECORRENTES.processar(HOJE);
+    expect(criadas.map((t) => t.data)).toEqual(['2024-08-10', '2025-08-10', '2026-08-10']);
+    expect(criadas[0].competencia).toBe('2024-08-10');
+  });
+
   test('duas recorrentes diferentes no mesmo mês não se anulam', () => {
     comRecorrentes([
       recorrente({ id: 'rec-1', descricao: 'Aluguel', dataInicio: '2026-08-05' }),
@@ -221,10 +258,8 @@ describe('robustez', () => {
     expect(RECORRENTES.processar(HOJE)).toEqual([]);
   });
 
-  test('frequências não mensais ainda não são materializadas', () => {
-    // Semanal e quinzenal exigem outra aritmética; gerar errado seria pior
-    // do que não gerar. Fica explícito em vez de silencioso.
-    comRecorrentes([recorrente({ frequencia: 'semanal', dataInicio: '2026-08-01' })]);
+  test('frequências desconhecidas não são materializadas', () => {
+    comRecorrentes([recorrente({ frequencia: 'diaria', dataInicio: '2026-08-01' })]);
     expect(RECORRENTES.processar(HOJE)).toEqual([]);
   });
 });

@@ -10,180 +10,28 @@ html.pin-locked body > header,
 html.pin-locked body > .sidebar,
 html.pin-locked body > main,
 html.pin-locked body > nav,
-html.pin-locked body > .nav-bottom { 
-  visibility: hidden !important; 
+html.pin-locked body > .nav-bottom {
+  visibility: hidden !important;
 }
-html.pin-locked body { 
-  overflow: hidden; 
-}
-
-/* ── Auth UI Override ─────────────────────────────────────────── */
-/* Auth UI melhorada - override para forçar aplicação */
-.auth-overlay {
-  background: var(--color-gray-50) !important;
-  backdrop-filter: blur(8px) !important;
-  -webkit-backdrop-filter: blur(8px) !important;
+html.pin-locked body {
+  overflow: hidden;
 }
 
-.auth-card {
-  background: rgba(255, 255, 255, 0.95) !important;
-  border: 1px solid rgba(226, 232, 240, 0.8) !important;
-  border-radius: var(--radius-xl) !important;
-  padding: 32px !important;
-  box-shadow: 0 20px 50px rgba(18, 105, 78, 0.08),
-             0 8px 25px rgba(0, 0, 0, 0.04),
-             inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-  transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+/* Crítico: evita vazar header/nav atrás do overlay de login */
+body.auth-overlay-open > header,
+body.auth-overlay-open > .sidebar,
+body.auth-overlay-open > main,
+body.auth-overlay-open > .nav-bottom,
+body.auth-overlay-open > a.skip-link {
+  display: none !important;
+}
+body.auth-overlay-open {
+  overflow: hidden;
 }
 
-.auth-card:hover {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 25px 60px rgba(18, 105, 78, 0.12),
-             0 12px 35px rgba(0, 0, 0, 0.06),
-             inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
-}
-
-.auth-brand {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  text-align: center !important;
-  margin-bottom: 24px !important;
-}
-
-.auth-logo {
-  width: 64px !important;
-  height: 64px !important;
-  border-radius: var(--radius-xl) !important;
-  background: var(--color-success) !important;
-  font-size: var(--font-size-3xl) !important;
-  margin-bottom: 16px !important;
-  animation: logoFloat 3s ease-in-out infinite !important;
-}
-
-@keyframes logoFloat {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-4px); }
-}
-
-.auth-card h2 {
-  color: var(--color-gray-800) !important;
-  font-size: var(--font-size-3xl) !important;
-  font-weight: 700 !important;
-  margin-bottom: 4px !important;
-}
-
-.auth-card > p {
-  color: var(--color-gray-500) !important;
-  font-size: var(--font-size-sm) !important;
-  text-align: center !important;
-  margin-bottom: 24px !important;
-}
-
-.auth-tabs {
-  background: rgba(241, 245, 249, 0.8) !important;
-  border: 1px solid rgba(226, 232, 240, 0.6) !important;
-  border-radius: var(--radius-xl) !important;
-  padding: 3px !important;
-  gap: 2px !important;
-}
-
-.auth-tab {
-  background: transparent !important;
-  color: var(--color-gray-500) !important;
-  border-radius: var(--radius-md) !important;
-  font-weight: 600 !important;
-  font-size: var(--font-size-sm) !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-.auth-tab.ativo {
-  background: white !important;
-  color: var(--color-success-text) !important;
-  box-shadow: var(--elevacao-1);
-  font-weight: 700 !important;
-}
-
-.auth-form input {
-  min-height: 52px !important;
-  border: 2px solid var(--color-gray-200) !important;
-  border-radius: var(--radius-xl) !important;
-  background: var(--color-white) !important;
-  color: var(--color-gray-800) !important;
-  font-size: var(--font-size-sm) !important;
-  font-weight: 500 !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  box-shadow: var(--elevacao-1);
-}
-
-.auth-form input:focus {
-  border-color: var(--color-success) !important;
-  box-shadow: 0 0 0 4px rgba(47, 156, 109, 0.1),
-             0 4px 12px rgba(47, 156, 109, 0.15) !important;
-  transform: translateY(-1px) !important;
-}
-
-.auth-form .btn-primario {
-  min-height: 52px !important;
-  /* O botão de entrar é o botão PRIMÁRIO, não o de confirmação: usa a cor da
-     marca, não o verde semântico de "deu certo". Eram cores diferentes por
-     acidente — a regra com !important daqui vencia a de auth.css. */
-  background: var(--color-primary-500) !important;
-  border: none !important;
-  border-radius: var(--radius-controle) !important;
-  font-size: var(--font-size-base) !important;
-  font-weight: 700 !important;
-  box-shadow: var(--elevacao-2);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-.auth-form .btn-primario:hover {
-  transform: translateY(-2px) !important;
-  box-shadow: var(--elevacao-2);
-}
-
-/* ── Dark Theme Overrides ─────────────────────────────────────── */
-[data-theme="dark"] .auth-overlay {
-  background: var(--color-gray-900) !important;
-}
-
-[data-theme="dark"] .auth-card {
-  background: rgba(30, 41, 59, 0.95) !important;
-  border: 1px solid rgba(71, 85, 105, 0.4) !important;
-}
-
-[data-theme="dark"] .auth-card h2 {
-  color: var(--color-gray-100) !important;
-}
-
-[data-theme="dark"] .auth-card > p {
-  color: var(--color-gray-400) !important;
-}
-
-[data-theme="dark"] .auth-tabs {
-  background: rgba(51, 65, 85, 0.4) !important;
-  border: 1px solid rgba(71, 85, 105, 0.3) !important;
-}
-
-[data-theme="dark"] .auth-tab {
-  color: var(--color-gray-400) !important;
-}
-
-[data-theme="dark"] .auth-tab.ativo {
-  background: rgba(30, 41, 59, 0.9) !important;
-  color: var(--color-success-text) !important;
-}
-
-[data-theme="dark"] .auth-form input {
-  background: rgba(30, 41, 59, 0.8) !important;
-  border: 2px solid rgba(71, 85, 105, 0.4) !important;
-  color: var(--color-gray-100) !important;
-}
-
-[data-theme="dark"] .auth-form input:focus {
-  border-color: var(--color-success) !important;
-  box-shadow: 0 0 0 4px rgba(47, 156, 109, 0.15),
-             0 4px 12px rgba(47, 156, 109, 0.25) !important;
-}
+/*
+ * Nota: o visual da tela de autenticação é 100% definido por
+ * css/features/auth.css (layout "bank", tela cheia). Os overrides !important
+ * que existiam aqui eram do design antigo (card centralizado) e brigavam com o
+ * layout novo — foram removidos para o auth.css poder aplicar o design correto.
+ */

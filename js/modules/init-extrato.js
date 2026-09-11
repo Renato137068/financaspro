@@ -21,8 +21,14 @@ const INIT_EXTRATO = {
       dataFim: null
     },
     selecionados: [], // IDs de transações selecionadas
+    pendenteExclusao: {}, // IDs ocultos até efetivar ou desfazer
     virtualScroll: {
       pageSize: 50,
+      maxRendered: 500,
+      virtualThreshold: 100,
+      windowSize: 60,
+      estimatedItemHeight: 76,
+      overscan: 8,
       currentPage: 0,
       totalItems: 0
     }
@@ -30,6 +36,10 @@ const INIT_EXTRATO = {
   listenerAttached: false,
   filtrosCategoriasListener: false,
   listaTransacoesListener: false,
+  _scrollMaisObserver: null,
+  _virtualScrollBound: false,
+  _virtualAtivo: false,
+  _virtualLastStart: -1,
   /** Lista filtrada do render atual — usada pelo handler delegado (carregar mais). */
   _listaTxsAtual: null,
   _gruposOrdenadosAtual: null,
@@ -44,6 +54,9 @@ const INIT_EXTRATO = {
     this.atualizarPeriodoLabel();
     this._bindBusca();
     this._bindKeyboardShortcuts();
+    this.atualizarBadgeFiltrosAvancados();
+    this._syncOrdenacaoUI();
+    this._bindVirtualScroll();
   },
 
   /**
@@ -198,9 +211,13 @@ const INIT_EXTRATO = {
       var btnDel = e.target.closest('.btn-deletar');
       var btnAnexo = e.target.closest('.btn-anexo');
       var btnCarregarMais = e.target.closest('.btn-carregar-mais');
+      var btnLimparFiltros = e.target.closest('#extrato-empty-limpar-filtros');
       var txItem = e.target.closest('.ext-tx') || e.target.closest('.extrato-item');
 
-      if (btnAnexo) {
+      if (btnLimparFiltros) {
+        e.stopPropagation();
+        INIT_EXTRATO.limparFiltros();
+      } else if (btnAnexo) {
         e.stopPropagation();
       } else if (btnEdit) {
         e.stopPropagation();
@@ -255,8 +272,50 @@ const INIT_EXTRATO = {
     
     this.setFiltroTipo('todos');
     this.setOrdenacao('data-desc');
+    this.atualizarBadgeFiltrosAvancados();
     
     UTILS.mostrarToast('Filtros limpos', 'info');
+  },
+
+  /**
+   * Abre/fecha painel de filtros avançados (categoria, ordenação, limpar).
+   */
+  toggleFiltrosAvancados: function() {
+    var panel = document.getElementById('extrato-filtros-avancados');
+    var btn = document.getElementById('btn-filtros-avancados');
+    if (!panel || !btn) return;
+    var aberto = panel.hasAttribute('hidden');
+    if (aberto) {
+      panel.removeAttribute('hidden');
+      btn.setAttribute('aria-expanded', 'true');
+    } else {
+      panel.setAttribute('hidden', '');
+      btn.setAttribute('aria-expanded', 'false');
+    }
+    if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(btn);
+  },
+
+  /**
+   * Selinho no botão "Filtros" quando há categoria ou ordenação ≠ padrão.
+   */
+  atualizarBadgeFiltrosAvancados: function() {
+    var badge = document.getElementById('filtro-avancados-count');
+    var btn = document.getElementById('btn-filtros-avancados');
+    if (!badge) return;
+    var n = 0;
+    if (this.state.filtroCat) n += 1;
+    if (this.state.ordenacao && this.state.ordenacao !== 'data-desc') n += 1;
+    if (n > 0) {
+      badge.textContent = String(n);
+      badge.hidden = false;
+      badge.removeAttribute('hidden');
+      if (btn) btn.classList.add('tem-avancados');
+    } else {
+      badge.textContent = '0';
+      badge.hidden = true;
+      badge.setAttribute('hidden', '');
+      if (btn) btn.classList.remove('tem-avancados');
+    }
   },
 
   /**
@@ -275,10 +334,7 @@ const INIT_EXTRATO = {
     
     this.filtrarExtrato();
     UTILS.mostrarToast('Filtros avançados aplicados', 'success');
-    
-    // Fechar painel
-    var container = document.getElementById('busca-avancada-container');
-    if (container) container.style.display = 'none';
+    // Valor/período vive dentro de #extrato-filtros-avancados — não esconder o bloco
   },
 
   /**
@@ -335,18 +391,29 @@ const INIT_EXTRATO = {
     var self = this;
     var qtd = this.state.selecionados.length;
     INIT_MODALS.confirm('Deseja realmente deletar ' + qtd + ' transação(ões)?', function() {
-      var deletadas = 0;
-      self.state.selecionados.forEach(function(txId) {
-        var tx = TRANSACOES.obterPorId(txId);
-        if (tx) {
-          TRANSACOES.deletar(txId);
-          deletadas++;
-        }
-      });
+      var ids = self.state.selecionados.slice();
       self.state.selecionados = [];
       self._atualizarBarraAcoesMassa();
+
+      ids.forEach(function(txId) {
+        if (!TRANSACOES.obterPorId(txId)) return;
+        self.state.pendenteExclusao[txId] = true;
+        UTILS.agendarExclusao('tx-' + txId, function() {
+          TRANSACOES.deletar(txId);
+          delete self.state.pendenteExclusao[txId];
+          RENDER.init();
+        }, {
+          mensagem: 'Excluído',
+          duracaoMs: 5000,
+          aoDesfazer: function() {
+            delete self.state.pendenteExclusao[txId];
+            self.filtrarExtrato();
+            RENDER.init();
+          }
+        });
+      });
+
       self.filtrarExtrato();
-      UTILS.mostrarToast(deletadas + ' transação(ões) deletada(s)', 'success');
     });
   },
 
@@ -397,7 +464,7 @@ const INIT_EXTRATO = {
    */
   setFiltroTipo: function(tipo) {
     this.state.filtroTipo = tipo;
-    document.querySelectorAll('.filtro-chip').forEach(function(b) {
+    document.querySelectorAll('#aba-extrato .filtro-chip[data-filtro]').forEach(function(b) {
       var isActive = b.dataset.filtro === tipo;
       b.classList.toggle('ativo', isActive);
       b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
@@ -409,14 +476,60 @@ const INIT_EXTRATO = {
   /**
    * Define ordenação de transações
    */
+  _parseOrdenacao: function(ord) {
+    var m = (ord || 'data-desc').match(/^(data|valor)-(asc|desc)$/);
+    return { campo: m ? m[1] : 'data', dir: m ? m[2] : 'desc' };
+  },
+
+  _comporOrdenacao: function(campo, dir) {
+    return campo + '-' + dir;
+  },
+
+  _syncOrdenacaoUI: function() {
+    var parsed = this._parseOrdenacao(this.state.ordenacao);
+    document.querySelectorAll('.ordenacao-campo-btn').forEach(function(b) {
+      var on = b.dataset.ordenacaoCampo === parsed.campo;
+      b.classList.toggle('ativo', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    var dirBtn = document.querySelector('.ordenacao-dir-btn');
+    if (dirBtn) {
+      var desc = parsed.dir === 'desc';
+      dirBtn.setAttribute('aria-label', desc ? 'Ordenação descendente' : 'Ordenação ascendente');
+      dirBtn.setAttribute('aria-pressed', desc ? 'true' : 'false');
+      dirBtn.title = desc ? 'Maior ou mais recente primeiro' : 'Menor ou mais antiga primeiro';
+      var icon = dirBtn.querySelector('[data-lucide]');
+      if (icon) {
+        icon.setAttribute('data-lucide', desc ? 'arrow-down' : 'arrow-up');
+        if (typeof renderLucideIcons === 'function') renderLucideIcons(dirBtn);
+      }
+    }
+    var hint = document.getElementById('ordenacao-hint');
+    if (hint) {
+      var campoTxt = parsed.campo === 'valor' ? 'valor' : 'data';
+      var dirTxt = parsed.campo === 'valor'
+        ? (parsed.dir === 'desc' ? 'Maior valor primeiro' : 'Menor valor primeiro')
+        : (parsed.dir === 'desc' ? 'Data mais recente primeiro' : 'Data mais antiga primeiro');
+      hint.textContent = dirTxt + '. Toque em Data, Valor ou na seta para mudar a ordenação por ' + campoTxt + '.';
+    }
+  },
+
+  setOrdenacaoCampo: function(campo) {
+    var parsed = this._parseOrdenacao(this.state.ordenacao);
+    this.setOrdenacao(this._comporOrdenacao(campo, parsed.dir));
+  },
+
+  toggleOrdenacaoDir: function() {
+    var parsed = this._parseOrdenacao(this.state.ordenacao);
+    var novaDir = parsed.dir === 'desc' ? 'asc' : 'desc';
+    this.setOrdenacao(this._comporOrdenacao(parsed.campo, novaDir));
+  },
+
   setOrdenacao: function(ordenacao) {
     this.state.ordenacao = ordenacao;
-    document.querySelectorAll('.ordenacao-btn').forEach(function(b) {
-      var isActive = b.dataset.ordenacao === ordenacao;
-      b.classList.toggle('ativo', isActive);
-      b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-    });
+    this._syncOrdenacaoUI();
     this._salvarFiltros();
+    this.atualizarBadgeFiltrosAvancados();
     this.filtrarExtrato();
   },
 
@@ -456,6 +569,7 @@ const INIT_EXTRATO = {
       b.classList.toggle('ativo', isActive);
       b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
     }.bind(this));
+    this.atualizarBadgeFiltrosAvancados();
     this.filtrarExtrato();
   },
 
@@ -475,7 +589,7 @@ const INIT_EXTRATO = {
       var ativo = isActive ? ' ativo' : '';
       var pressed = isActive ? 'true' : 'false';
       return '<button type="button" class="filtro-cat-chip' + ativo + '" data-cat="' + UTILS.escapeHtml(cat) + '" aria-pressed="' + pressed + '">' +
-        INIT_EXTRATO.getCatIcon(cat) + ' ' + UTILS.escapeHtml(cat) + ' <span class="cat-count">' + cats[cat] + '</span></button>';
+        INIT_EXTRATO.getCatIcon(cat) + ' ' + UTILS.escapeHtml(CONFIG.getCatLabel(cat)) + ' <span class="cat-count">' + cats[cat] + '</span></button>';
     }.bind(this)).join('');
 
     if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(container);
@@ -574,7 +688,10 @@ const INIT_EXTRATO = {
     if (!container) return;
     
     if (txs.length === 0) {
+      this._virtualAtivo = false;
+      this._limparSpacersVirtuais();
       container.innerHTML = this._renderEmptyState();
+      this._atualizarContadorExtrato(0, 0);
       return;
     }
 
@@ -584,9 +701,102 @@ const INIT_EXTRATO = {
     // Reset paginação quando mudam os filtros
     this.state.virtualScroll.totalItems = txs.length;
     this.state.virtualScroll.currentPage = 0;
+    this._virtualLastStart = -1;
+
+    if (this._usaVirtualizacao(txs)) {
+      this._virtualAtivo = true;
+      this._renderGruposVirtual(txs);
+      return;
+    }
+
+    this._virtualAtivo = false;
+    this._limparSpacersVirtuais();
 
     // Renderizar grupos
     this._renderGrupos(grupos, txs);
+  },
+
+  _usaVirtualizacao: function(txs) {
+    var limiar = this.state.virtualScroll.virtualThreshold || 100;
+    return Array.isArray(txs) && txs.length >= limiar;
+  },
+
+  _limparSpacersVirtuais: function() {
+    var top = document.getElementById('extrato-virtual-spacer-top');
+    var bot = document.getElementById('extrato-virtual-spacer-bottom');
+    if (top) top.style.height = '0px';
+    if (bot) bot.style.height = '0px';
+  },
+
+  _atualizarSpacersVirtuais: function(start, rendered, total) {
+    var vs = this.state.virtualScroll;
+    var h = vs.estimatedItemHeight || 76;
+    var top = document.getElementById('extrato-virtual-spacer-top');
+    var bot = document.getElementById('extrato-virtual-spacer-bottom');
+    if (top) top.style.height = (start * h) + 'px';
+    if (bot) bot.style.height = Math.max(0, (total - start - rendered) * h) + 'px';
+  },
+
+  _calcularJanelaVirtual: function(total) {
+    var vs = this.state.virtualScroll;
+    var win = vs.windowSize || 60;
+    var h = vs.estimatedItemHeight || 76;
+    var overscan = vs.overscan || 8;
+    var viewport = document.getElementById('extrato-lista-viewport');
+    var start = 0;
+
+    if (viewport && typeof window !== 'undefined') {
+      var anchor = viewport.getBoundingClientRect().top + window.pageYOffset;
+      var scrollPast = Math.max(0, window.pageYOffset + 96 - anchor);
+      start = Math.floor(scrollPast / h) - overscan;
+    }
+
+    start = Math.max(0, Math.min(start, Math.max(0, total - 1)));
+    var count = Math.min(win + overscan * 2, total - start);
+    return { start: start, count: Math.max(count, 0) };
+  },
+
+  _bindVirtualScroll: function() {
+    if (this._virtualScrollBound || typeof window === 'undefined') return;
+    this._virtualScrollBound = true;
+    var self = this;
+    var timer;
+    window.addEventListener('scroll', function() {
+      if (!self._virtualAtivo || !self._listaTxsAtual) return;
+      clearTimeout(timer);
+      timer = setTimeout(function() {
+        self._renderGruposVirtual(self._listaTxsAtual, true);
+      }, 80);
+    }, { passive: true });
+  },
+
+  _renderGruposVirtual: function(txs, fromScroll) {
+    var container = document.getElementById('lista-transacoes');
+    if (!container) return;
+
+    var grupos = this._agruparTransacoesPorPeriodo(txs);
+    var gruposOrdenados = this._ordenarGrupos(grupos);
+    this._gruposOrdenadosAtual = gruposOrdenados;
+    this._listaTxsAtual = txs;
+    this._bindListaTransacoesClick();
+
+    var janela = this._calcularJanelaVirtual(txs.length);
+    if (fromScroll && janela.start === this._virtualLastStart) return;
+    this._virtualLastStart = janela.start;
+
+    var slice = this._renderGruposHtml(gruposOrdenados, janela.start, janela.count);
+    container.innerHTML = slice.html;
+    this._atualizarSpacersVirtuais(janela.start, slice.rendered, txs.length);
+
+    var exibidos = janela.start + slice.rendered;
+    var el = document.getElementById('extrato-lista-meta');
+    if (el && txs.length) {
+      el.hidden = false;
+      el.textContent = 'Exibindo itens ' + (janela.start + 1) + '–' + exibidos
+        + ' de ' + txs.length + ' (rolagem virtual)';
+    }
+
+    if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(container);
   },
 
   /**
@@ -692,6 +902,63 @@ const INIT_EXTRATO = {
     return { html: html, rendered: rendered };
   },
 
+  _atualizarContadorExtrato: function(total, mostrados) {
+    var el = document.getElementById('extrato-lista-meta');
+    if (!el) return;
+    if (!total) {
+      el.textContent = '';
+      el.hidden = true;
+      return;
+    }
+    var maxRendered = this._maxRenderedExtrato();
+    var exibidos = Math.min(mostrados, total, maxRendered);
+    el.hidden = false;
+    if (total > maxRendered && exibidos >= maxRendered) {
+      el.textContent = 'Mostrando ' + exibidos + ' de ' + total
+        + ' transações (limite de exibição — use filtros)';
+    } else {
+      el.textContent = 'Mostrando ' + exibidos + ' de ' + total + ' transações';
+    }
+  },
+
+  _maxRenderedExtrato: function() {
+    return this.state.virtualScroll.maxRendered || 500;
+  },
+
+  _desconectarScrollMaisObserver: function() {
+    if (this._scrollMaisObserver) {
+      this._scrollMaisObserver.disconnect();
+      this._scrollMaisObserver = null;
+    }
+  },
+
+  _vincularScrollMaisObserver: function(txs) {
+    var self = this;
+    this._desconectarScrollMaisObserver();
+    if (typeof IntersectionObserver === 'undefined') return;
+    var btn = document.getElementById('btn-carregar-mais');
+    if (!btn) return;
+    this._scrollMaisObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) self._carregarMais(txs);
+      });
+    }, { root: null, rootMargin: '160px', threshold: 0 });
+    this._scrollMaisObserver.observe(btn);
+  },
+
+  _appendControlesPaginacao: function(html, txs, totalShown) {
+    var maxRendered = this._maxRenderedExtrato();
+    if (totalShown < txs.length && totalShown < maxRendered) {
+      var restantes = Math.min(txs.length, maxRendered) - totalShown;
+      html += '<button type="button" class="btn-carregar-mais" id="btn-carregar-mais">Carregar mais ('
+        + restantes + ')</button>';
+    } else if (txs.length > maxRendered && totalShown >= maxRendered) {
+      html += '<p class="extrato-lista-limite" role="status">Mostrando os primeiros ' + maxRendered
+        + ' de ' + txs.length + ' transações. Use filtros ou exporte o período para refinar.</p>';
+    }
+    return html;
+  },
+
   /**
    * Renderiza grupos de transações (primeira página ou re-render completo).
    */
@@ -706,17 +973,18 @@ const INIT_EXTRATO = {
     this._gruposOrdenadosAtual = gruposOrdenados;
 
     var pageSize = this.state.virtualScroll.pageSize;
+    var maxRendered = this._maxRenderedExtrato();
     var startItem = this.state.virtualScroll.currentPage * pageSize;
-    var slice = this._renderGruposHtml(gruposOrdenados, startItem, pageSize);
+    var limit = Math.min(pageSize, Math.max(0, maxRendered - startItem));
+    var slice = this._renderGruposHtml(gruposOrdenados, startItem, limit || pageSize);
     var html = slice.html;
     var totalShown = startItem + slice.rendered;
 
-    if (totalShown < txs.length) {
-      html += '<button type="button" class="btn-carregar-mais" id="btn-carregar-mais">Carregar mais (' +
-        (txs.length - totalShown) + ')</button>';
-    }
+    html = this._appendControlesPaginacao(html, txs, totalShown);
 
     container.innerHTML = html;
+    this._atualizarContadorExtrato(txs.length, totalShown);
+    this._vincularScrollMaisObserver(txs);
 
     if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(container);
   },
@@ -744,7 +1012,7 @@ const INIT_EXTRATO = {
       '<div class="ext-tx-info">' +
         '<div class="ext-tx-desc">' + UTILS.escapeHtml(t.descricao || t.categoria) + '</div>' +
         '<div class="ext-tx-meta">' +
-          '<span class="ext-tx-meta-tag">' + UTILS.escapeHtml(t.categoria) + '</span>' +
+          '<span class="ext-tx-meta-tag">' + UTILS.escapeHtml(CONFIG.getCatLabel(t.categoria)) + '</span>' +
           '<span>' + dataStr + '</span>' +
           (t.anexoCount ? '<span class="ext-tx-anexo-badge" aria-hidden="true"><i data-lucide="paperclip"></i></span>' : '') +
         '</div>' +
@@ -760,6 +1028,12 @@ const INIT_EXTRATO = {
    */
   _renderEmptyState: function() {
     var totalReal = (typeof DADOS !== 'undefined' && DADOS.getTransacoes) ? DADOS.getTransacoes().length : 0;
+    var filtrosAtivos = this.state.filtroTipo !== 'todos' || this.state.filtroCat
+      || this.state.busca
+      || this.state.buscaAvancada.valorMin != null
+      || this.state.buscaAvancada.valorMax != null
+      || this.state.buscaAvancada.dataInicio
+      || this.state.buscaAvancada.dataFim;
     var opts = totalReal === 0
       ? {
           lucide: 'wallet',
@@ -772,28 +1046,53 @@ const INIT_EXTRATO = {
       : {
           lucide: 'search-x',
           titulo: 'Nenhuma movimentação encontrada',
-          subtitulo: 'Tente ajustar os filtros ou selecionar outro intervalo de período.',
-          aba: 'novo',
-          ctaTexto: 'Registrar transação',
+          subtitulo: filtrosAtivos
+            ? 'Nenhum lançamento combina com os filtros atuais.'
+            : 'Tente selecionar outro intervalo de período.',
+          aba: filtrosAtivos ? null : 'novo',
+          ctaTexto: filtrosAtivos ? null : 'Registrar transação',
           animado: true,
         };
     if (typeof UI !== 'undefined' && UI.EmptyState && typeof UI.EmptyState.render === 'function') {
       var el = UI.EmptyState.render(opts);
       if (el) {
         el.setAttribute('role', 'status');
+        if (filtrosAtivos && totalReal > 0) {
+          var btnLimpar = document.createElement('button');
+          btnLimpar.type = 'button';
+          btnLimpar.className = 'btn-empty-cta btn-empty-cta--secundario';
+          btnLimpar.id = 'extrato-empty-limpar-filtros';
+          btnLimpar.innerHTML = '<i data-lucide="rotate-ccw" aria-hidden="true"></i> Limpar filtros';
+          btnLimpar.addEventListener('click', function() { INIT_EXTRATO.limparFiltros(); });
+          el.appendChild(btnLimpar);
+          if (typeof renderLucideIcons === 'function') renderLucideIcons(el);
+        }
         return el.outerHTML;
       }
     }
-    return '<div class="empty-state" role="status">' +
+    var html = '<div class="empty-state" role="status">' +
       '<div class="empty-state-title">' + opts.titulo + '</div>' +
-      '<div class="empty-state-message">' + opts.subtitulo + '</div>' +
-    '</div>';
+      '<div class="empty-state-message">' + opts.subtitulo + '</div>';
+    if (filtrosAtivos && totalReal > 0) {
+      html += '<button type="button" class="btn-empty-cta btn-empty-cta--secundario" id="extrato-empty-limpar-filtros">' +
+        'Limpar filtros</button>';
+    } else if (opts.aba) {
+      html += '<button type="button" class="btn-empty-cta" data-mudar-aba="' + opts.aba + '">' +
+        (opts.ctaTexto || 'Começar') + '</button>';
+    }
+    html += '</div>';
+    return html;
   },
 
   /**
    * Carrega mais itens na lista (virtual scrolling)
    */
   _carregarMais: function(txs) {
+    var maxRendered = this._maxRenderedExtrato();
+    var pageSize = this.state.virtualScroll.pageSize;
+    var proximoStart = (this.state.virtualScroll.currentPage + 1) * pageSize;
+    if (proximoStart >= maxRendered) return;
+
     this.state.virtualScroll.currentPage++;
     var container = document.getElementById('lista-transacoes');
     if (!container) return;
@@ -801,19 +1100,18 @@ const INIT_EXTRATO = {
     var btnCarregarMais = document.getElementById('btn-carregar-mais');
     if (btnCarregarMais) btnCarregarMais.remove();
 
-    var pageSize = this.state.virtualScroll.pageSize;
     var startItem = this.state.virtualScroll.currentPage * pageSize;
+    var limit = Math.min(pageSize, Math.max(0, maxRendered - startItem));
     var gruposOrdenados = this._gruposOrdenadosAtual || {};
-    var slice = this._renderGruposHtml(gruposOrdenados, startItem, pageSize);
+    var slice = this._renderGruposHtml(gruposOrdenados, startItem, limit || pageSize);
     var html = slice.html;
     var totalShown = startItem + slice.rendered;
 
-    if (totalShown < txs.length) {
-      html += '<button type="button" class="btn-carregar-mais" id="btn-carregar-mais">Carregar mais (' +
-        (txs.length - totalShown) + ')</button>';
-    }
+    html = this._appendControlesPaginacao(html, txs, totalShown);
 
     container.insertAdjacentHTML('beforeend', html);
+    this._atualizarContadorExtrato(txs.length, totalShown);
+    this._vincularScrollMaisObserver(txs);
     if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(container);
   },
 
@@ -838,6 +1136,10 @@ const INIT_EXTRATO = {
 
     // Aplicar filtros avançados
     txs = this._aplicarFiltrosAvancados(txs);
+
+    if (this.state.pendenteExclusao) {
+      txs = txs.filter(function(t) { return !INIT_EXTRATO.state.pendenteExclusao[t.id]; });
+    }
 
     // Aplicar ordenação
     txs = this._aplicarOrdenacao(txs);
@@ -950,11 +1252,27 @@ const INIT_EXTRATO = {
    * Deleta transação
    */
   deletarTransacao: function(id) {
+    var self = this;
     INIT_MODALS.confirm('Tem certeza que deseja deletar esta transação?', function() {
-      TRANSACOES.deletar(id);
-      INIT_EXTRATO.filtrarExtrato();
+      if (!TRANSACOES.obterPorId(id)) return;
+      self.state.pendenteExclusao[id] = true;
+      self.filtrarExtrato();
       RENDER.init();
-      UTILS.mostrarToast('Transação deletada', 'success');
+
+      UTILS.agendarExclusao('tx-' + id, function() {
+        TRANSACOES.deletar(id);
+        delete self.state.pendenteExclusao[id];
+        self.filtrarExtrato();
+        RENDER.init();
+      }, {
+        mensagem: 'Excluído',
+        duracaoMs: 5000,
+        aoDesfazer: function() {
+          delete self.state.pendenteExclusao[id];
+          self.filtrarExtrato();
+          RENDER.init();
+        }
+      });
     });
   },
 
@@ -971,6 +1289,9 @@ const INIT_EXTRATO = {
    * Exporta extrato para Excel (CSV melhorado)
    */
   exportarExcel: function() {
+    // CSV e livre em todos os planos: o dado e do usuario e poder leva-lo
+    // embora e argumento de aquisicao ("saia quando quiser"), nao de paywall.
+
     var info = this.getExtratoMesAno();
     var txs = TRANSACOES.obter({ mes: info.mes, ano: info.ano });
     
@@ -1040,6 +1361,13 @@ const INIT_EXTRATO = {
    * Exporta extrato para PDF
    */
   exportarExtrato: function() {
+    if (typeof BILLING !== 'undefined' && !BILLING.canUse('exportPdf')) {
+      BILLING.onPaymentRequired({
+        message: 'O relatório em PDF, pronto para apresentar, está no Pro.',
+        gate: 'exportPdf',
+      });
+      return;
+    }
     var info = this.getExtratoMesAno();
     var txs = TRANSACOES.obter({ mes: info.mes, ano: info.ano });
     

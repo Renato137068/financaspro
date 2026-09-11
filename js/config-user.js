@@ -107,6 +107,9 @@ var CONFIG_USER = {
     } else {
       document.documentElement.removeAttribute('data-theme');
     }
+    try {
+      localStorage.setItem('financaspro_tema', isDark ? 'dark' : 'light');
+    } catch (e) { /* noop */ }
     var chk = document.getElementById('chk-darkmode');
     if (chk) chk.checked = isDark;
   },

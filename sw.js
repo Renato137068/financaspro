@@ -1,7 +1,7 @@
 // FinançasPro - Service Worker (PWA offline-first, stale-while-revalidate)
 // Gerado por scripts/generate-sw-cache.cjs — não edite urlsParaCache manualmente
 
-const CACHE_NAME = 'financaspro-v1110-p2';
+const CACHE_NAME = 'financaspro-v11318-p3';
 const urlsParaCache = [
   "/",
   "/css/base.css",
@@ -56,6 +56,7 @@ const urlsParaCache = [
   "/js/app-bootstrap.js",
   "/js/aprendizado.js",
   "/js/assinaturas.js",
+  "/js/auth-biometric.js",
   "/js/authController.js",
   "/js/auto-categorizer.js",
   "/js/automacao.js",
@@ -86,17 +87,23 @@ const urlsParaCache = [
   "/js/core/event-bus.js",
   "/js/core/events-catalog.js",
   "/js/core/finance-contract.js",
+  "/js/core/idb-kv.js",
   "/js/core/lazy-load.js",
   "/js/core/lifecycle.js",
   "/js/core/password-policy.js",
   "/js/core/persist-queue.js",
+  "/js/core/session-log.js",
   "/js/core/setup-guide.js",
   "/js/core/store.js",
+  "/js/core/supabase-billing.js",
+  "/js/core/supabase-sync.js",
+  "/js/core/supabase.js",
   "/js/core/sync-engine.js",
   "/js/core/sync-merge.js",
   "/js/core/utils.js",
   "/js/core/validations.js",
   "/js/fp-native-billing-bridge.js",
+  "/js/fp-secure-screen.js",
   "/js/init.js",
   "/js/insights.js",
   "/js/lucide-init.js",
@@ -117,7 +124,6 @@ const urlsParaCache = [
   "/js/modules/init-orcamento.js",
   "/js/modules/init-patrimonio.js",
   "/js/modules/init-relatorios.js",
-  "/js/ocr.js",
   "/js/onboarding.js",
   "/js/open-finance.js",
   "/js/orcamento.js",
@@ -146,10 +152,13 @@ const urlsParaCache = [
   "/js/utilities/daily-reminder.js",
   "/js/utilities/finance-reconciler.js",
   "/js/utilities/focus-trap.js",
+  "/js/utilities/funil.js",
   "/js/utilities/local-crypto.js",
   "/js/utilities/observability.js",
   "/js/utilities/sync-indicator.js",
+  "/js/utilities/tablist-keyboard.js",
   "/js/vendor/lucide.min.js",
+  "/js/vendor/supabase.js",
   "/manifest.json",
   "/privacidade.html"
 ];
@@ -193,6 +202,17 @@ self.addEventListener('message', (event) => {
   if (event && event.data === 'SKIP_WAITING') self.skipWaiting();
 });
 
+// Únicas origens cross-origin cujas respostas PODEM entrar no cache: asset
+// estático imutável e versionado (CDN). NUNCA a origem do Supabase — as
+// consultas de sincronização são GET PostgREST (SB.from('Transaction')
+// .select('*')…) e carregam dado financeiro do usuário. Cacheadas por URL,
+// ficariam em texto puro no Cache Storage (fora do LOCAL_CRYPTO) e, como a URL
+// é idêntica entre usuários, poderiam ser servidas a outra sessão no mesmo
+// aparelho quando offline. Tudo fora desta allowlist é network-only.
+const CACHEABLE_CROSS_ORIGIN = new Set([
+  'cdn.jsdelivr.net',
+]);
+
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
@@ -200,13 +220,17 @@ self.addEventListener('fetch', (event) => {
   const isOrigem = url.origin === self.location.origin;
   const isNavigation = event.request.mode === 'navigate';
   const isApi = isOrigem && url.pathname.startsWith('/api/');
+  const crossOriginCacheavel = !isOrigem && CACHEABLE_CROSS_ORIGIN.has(url.hostname);
 
-  if (isApi) {
+  // Network-only, sem tocar no cache: API local e QUALQUER cross-origin fora da
+  // allowlist (Supabase REST/Auth/Realtime, Belvo…). É o que fecha o vazamento
+  // de dado financeiro at-rest e o cruzamento de sessões (H1).
+  if (isApi || (!isOrigem && !crossOriginCacheavel)) {
     event.respondWith(fetch(event.request));
     return;
   }
 
-  if (!isOrigem) {
+  if (crossOriginCacheavel) {
     event.respondWith(
       fetch(event.request)
         .then((res) => {
@@ -216,7 +240,7 @@ self.addEventListener('fetch', (event) => {
           }
           return res;
         })
-        .catch(() => caches.match(event.request).then((cached) => cached || new Response('Offline', { status: 503 }))),
+        .catch(() => caches.match(event.request).then((cached) => cached || new Response('Sem conexão', { status: 503 }))),
     );
     return;
   }
@@ -239,7 +263,7 @@ self.addEventListener('fetch', (event) => {
       return networkFetch.then((res) => {
         if (res) return res;
         if (isNavigation) return caches.match('/index.html');
-        return new Response('Offline', { status: 503 });
+        return new Response('Sem conexão', { status: 503 });
       });
     }),
   );

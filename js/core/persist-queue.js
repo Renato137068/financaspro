@@ -117,7 +117,7 @@ var PERSIST_QUEUE = (function() {
         payload.descricao,
         payload.banco,
         payload.cartao,
-        { clientKey: clientKey }
+        { clientKey: clientKey, accountId: payload.accountId || undefined }
       )
       : null;
 
@@ -238,7 +238,8 @@ var PERSIST_QUEUE = (function() {
         data: payload.data,
         descricao: payload.descricao || '',
         banco: payload.banco || '',
-        cartao: payload.cartao || ''
+        cartao: payload.cartao || '',
+        accountId: payload.accountId || undefined
       },
       txId: null,
       error: null,
@@ -255,7 +256,8 @@ var PERSIST_QUEUE = (function() {
         data: payload.data,
         descricao: payload.descricao || '',
         banco: payload.banco || '',
-        cartao: payload.cartao || ''
+        cartao: payload.cartao || '',
+        accountId: payload.accountId || undefined
       };
       item.updatedAt = agora();
     } else {

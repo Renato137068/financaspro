@@ -19,7 +19,8 @@ function carregarModulo() {
     CONFIG: {
       TIPO_RECEITA: 'receita',
       TIPO_DESPESA: 'despesa',
-      TIPO_TRANSFERENCIA: 'transferencia'
+      TIPO_TRANSFERENCIA: 'transferencia',
+      getCatLabel: function(s) { return s; }
     },
     UTILS: {
       escapeHtml: function(s) {

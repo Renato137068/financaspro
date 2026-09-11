@@ -15,6 +15,8 @@ import { csrfGuard } from './middleware/csrf.js';
 import apiRouter from './routes/index.js';
 import healthRouter from './routes/health.js';
 import { BillingService } from './domain/services/billing.service.js';
+import { PlayBillingService } from './domain/services/play-billing.service.js';
+import { BillingRepository } from './domain/repositories/billing.repository.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DEV_ROOT  = path.join(__dirname, '..');
@@ -34,6 +36,21 @@ function resolveStaticRoot() {
 }
 
 const STATIC_ROOT = resolveStaticRoot();
+
+// Decodifica o envelope de push do Pub/Sub → DeveloperNotification do Google Play.
+// Formato: { message: { data: base64(JSON), messageId, ... }, subscription }.
+function decodeRtdnEnvelope(body) {
+  const msg = body && body.message;
+  const messageId = msg && (msg.messageId || msg.message_id);
+  const dataB64 = msg && msg.data;
+  if (!dataB64) return { messageId, notification: null };
+  try {
+    const json = Buffer.from(String(dataB64), 'base64').toString('utf8');
+    return { messageId, notification: JSON.parse(json) };
+  } catch {
+    return { messageId, notification: null };
+  }
+}
 
 export function createApp() {
   const app = express();
@@ -102,6 +119,46 @@ export function createApp() {
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 
+  // Webhook RTDN (Real-time Developer Notifications) do Google Play — push do
+  // Pub/Sub, server-to-server, sem cookie. Fica antes do csrfGuard, como o do
+  // Stripe. Autenticado por header `x-rtdn-secret` (não usar ?secret= — vaza em logs).
+  app.post('/api/v1/play-billing/rtdn', async (req, res, next) => {
+    try {
+      const secret = CONFIG.playBilling && CONFIG.playBilling.rtdnSecret;
+      // Fail-closed: sem secret configurado, não aceita POST anônimo (paridade Edge).
+      if (!secret) {
+        return res.status(503).json({ error: 'nao-configurado' });
+      }
+      const provided = req.headers['x-rtdn-secret'];
+      if (provided !== secret) {
+        return res.status(403).json({ error: 'forbidden' });
+      }
+
+      const { messageId, notification } = decodeRtdnEnvelope(req.body);
+      // Envelope inválido/vazio: reconhece (204) para o Pub/Sub não reenviar.
+      if (!notification) return res.status(204).end();
+
+      // Idempotência por messageId (reusa a tabela de eventos de webhook).
+      if (messageId) {
+        const fresh = await BillingRepository.claimWebhookEvent(`rtdn:${messageId}`, 'play_rtdn');
+        if (!fresh) return res.status(200).json({ duplicate: true });
+      }
+
+      try {
+        const out = await PlayBillingService.handleRtdn(notification);
+        return res.status(200).json({ ok: true, ...out });
+      } catch (err) {
+        // Falha de processamento: libera o claim para o Pub/Sub reentregar.
+        if (messageId) {
+          await BillingRepository.releaseWebhookEvent(`rtdn:${messageId}`).catch(() => {});
+        }
+        throw err;
+      }
+    } catch (err) {
+      next(err);
+    }
+  });
+
   // Depois do webhook do Stripe (que é server-to-server, sem cookie e validado
   // por assinatura) e antes das rotas de aplicação.
   app.use(csrfGuard);
@@ -119,7 +176,7 @@ export function createApp() {
   // da Play Store para qualquer um que alcançasse a porta. Bastava um `npm run
   // backend:dev` numa rede compartilhada ou atrás de um túnel de preview.
   // Aqui a lista é explícita: só sai o que o index.html realmente pede.
-  const PASTAS_PUBLICAS = ['js', 'css', 'icons', 'fonts', 'screenshots', 'assets'];
+  const PASTAS_PUBLICAS = ['js', 'css', 'icons', 'fonts', 'screenshots', 'assets', '.well-known'];
   const ARQUIVOS_PUBLICOS = new Set([
     'index.html', 'manifest.json', 'sw.js', 'privacidade.html', 'favicon.ico',
   ]);
@@ -142,8 +199,24 @@ export function createApp() {
     res.setHeader('Cache-Control', 'public, max-age=3600');
   }
 
+  // App Links e política: rotas explícitas (dotfiles do express.static
+  // ficam "ignore" por padrão e o SPA engolia assetlinks como index.html).
+  app.get('/.well-known/assetlinks.json', (req, res, next) => {
+    const file = path.join(STATIC_ROOT, '.well-known', 'assetlinks.json');
+    if (!fs.existsSync(file)) {
+      return res.status(404).type('application/json').send('{"error":"not-found"}');
+    }
+    res.type('application/json');
+    cabecalhosDeCache(res, file);
+    res.sendFile(file, (err) => { if (err) next(err); });
+  });
+
   if (CONFIG.isProd) {
-    app.use(express.static(STATIC_ROOT, { index: 'index.html', setHeaders: cabecalhosDeCache }));
+    app.use(express.static(STATIC_ROOT, {
+      index: 'index.html',
+      dotfiles: 'allow',
+      setHeaders: cabecalhosDeCache,
+    }));
   } else {
     // Nada de express.static na raiz aqui: só as pastas e os arquivos da
     // allowlist são alcançáveis. O que não estiver nela simplesmente não
@@ -151,7 +224,10 @@ export function createApp() {
     for (const pasta of PASTAS_PUBLICAS) {
       const dir = path.join(STATIC_ROOT, pasta);
       if (fs.existsSync(dir)) {
-        app.use('/' + pasta, express.static(dir, { setHeaders: cabecalhosDeCache }));
+        app.use('/' + pasta, express.static(dir, {
+          dotfiles: 'allow',
+          setHeaders: cabecalhosDeCache,
+        }));
       }
     }
     app.use((req, res, next) => {

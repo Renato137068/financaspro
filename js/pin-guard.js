@@ -1,6 +1,18 @@
 /* PIN guard — roda antes de qualquer paint para evitar leak visual.
-   Carregado no <head> antes do <body>. */
+   Carregado no <head> antes do <body>.
+
+   Flags planos (fora de fp-config) porque a cifragem at-rest deixa fp-config
+   ilegível neste momento (LOCAL_CRYPTO ainda não carregou):
+     financaspro_pin_locked = '1'
+     financaspro_tema = 'dark'|'light'
+
+   FLAG_SECURE: marca __FP_PIN_EARLY_SECURE__; fp-secure-screen.js faz retain
+   assim que carrega (pin.js libera no desbloqueio).
+*/
 (function() {
+  var PIN_FLAG = 'financaspro_pin_locked';
+  var TEMA_FLAG = 'financaspro_tema';
+
   if (location.protocol === 'http:' || location.protocol === 'https:') {
     if (!document.querySelector('link[rel="manifest"]')) {
       var manifest = document.createElement('link');
@@ -13,28 +25,33 @@
   var cfg = null;
   try {
     var raw = localStorage.getItem('fp-config');
-    if (raw) cfg = JSON.parse(raw);
-  } catch (e) { /* config corrompido → segue com os padrões */ }
+    if (raw && raw.indexOf('enc1:') !== 0 && raw.indexOf('enc2:') !== 0
+        && raw.indexOf('enc3:') !== 0) {
+      cfg = JSON.parse(raw);
+    }
+  } catch (e) { /* config cifrado/corrompido → usa flags planos */ }
 
-  if (cfg && cfg.pinAtivo && cfg.pinHash) {
+  var pinOn = false;
+  try {
+    pinOn = localStorage.getItem(PIN_FLAG) === '1'
+      || !!(cfg && cfg.pinAtivo && cfg.pinHash);
+  } catch (e2) {
+    pinOn = !!(cfg && cfg.pinAtivo && cfg.pinHash);
+  }
+  if (pinOn) {
     document.documentElement.classList.add('pin-locked');
+    try { window.__FP_PIN_EARLY_SECURE__ = 1; } catch (ePin) { /* noop */ }
   }
 
-  // Tema resolvido ANTES do primeiro paint.
-  //
-  // Se ficasse só no CONFIG_USER.aplicarTema(), que roda depois do bundle, o
-  // usuário de tema escuro veria um flash branco a cada abertura. Um <script>
-  // inline seria o caminho usual, mas a CSP é `script-src 'self'` — sem
-  // 'unsafe-inline' —, então este arquivo bloqueante é o lugar certo.
-  //
-  // A regra é a mesma do CONFIG_USER.temaEfetivo(): escolha explícita vence,
-  // senão segue o sistema. As duas implementações precisam concordar; há teste
-  // estático garantindo isso.
   try {
-    var tema = cfg && (cfg.tema === 'dark' || cfg.tema === 'light') ? cfg.tema : null;
+    var tema = null;
+    try { tema = localStorage.getItem(TEMA_FLAG); } catch (e3) { /* noop */ }
+    if (tema !== 'dark' && tema !== 'light') {
+      tema = cfg && (cfg.tema === 'dark' || cfg.tema === 'light') ? cfg.tema : null;
+    }
     if (!tema && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
       tema = 'dark';
     }
     if (tema === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
-  } catch (e) { /* sem matchMedia → tema claro, que é o padrão */ }
+  } catch (e4) { /* sem matchMedia → tema claro */ }
 })();

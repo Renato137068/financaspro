@@ -99,8 +99,31 @@ var LOCAL_CRYPTO = {
       if (!dev) { dev = this._randHex(32); localStorage.setItem(this._DEV_KEY, dev); }
     } catch (e) { /* storage indisponível */ }
     var cfg = typeof DADOS !== 'undefined' ? DADOS.getConfig() : {};
-    // Passphrase real do usuário tem prioridade; senão, segredo aleatório do
-    // device (nunca o nome). Salt aleatório por instalação.
+    /* Passphrase real do usuário tem prioridade; senão, segredo aleatório do
+       device (nunca o nome). Salt aleatório por instalação.
+
+       ⚠ ARMADILHA PARA QUEM FOR IMPLEMENTAR O MODO PASSPHRASE ⚠
+
+       Hoje NADA escreve cfg.cryptoPassphrase — não existe tela para defini-la,
+       então todo mundo está no modo 'dispositivo'. Este ramo é o encaixe de uma
+       feature que ainda não foi construída.
+
+       Passar a gravar cryptoPassphrase sem mais nada TROCA A CHAVE DERIVADA, e
+       todo dado já gravado como enc2/enc3 vira ilegível: as chaves 'fp-' do
+       localStorage (config, lançamentos, orçamento…) e os anexos no IndexedDB.
+       Perda de dados silenciosa — o app não quebra, só passa a não decifrar.
+
+       Quem for construir isso precisa, na mesma entrega:
+         1. recifrar tudo com a chave nova antes de descartar a antiga —
+            gravar o novo, verificar a leitura, só então trocar;
+         2. decidir o que acontece quando o usuário esquece a passphrase
+            (sem ela o dado local morre; a nuvem passa a ser o único backup);
+         3. resolver quando pedi-la. Se não for a cada abertura, ela precisa
+            ficar guardada em algum lugar — e aí volta a ser exatamente o
+            problema que o modo 'dispositivo' já tem.
+
+       O teste tests/local-crypto-passphrase-guard.test.js falha se alguém
+       começar a gravar a passphrase sem uma rotina de recifragem. */
     return {
       passphrase: cfg.cryptoPassphrase || dev || 'financaspro-fallback',
       saltHex: salt || 'financaspro-fallback-salt',

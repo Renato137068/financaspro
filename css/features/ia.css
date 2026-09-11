@@ -54,9 +54,9 @@
   font-size: var(--font-size-sm);
   font-weight: 700;
   color: var(--color-text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .alerta-msg {
@@ -72,9 +72,36 @@
   flex-shrink: 0;
 }
 
+@media (max-width: 360px) {
+  .alerta-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .alerta-acoes {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+  .alerta-acoes .alerta-btn {
+    flex: 1 1 auto;
+    text-align: center;
+    min-height: 36px;
+  }
+  .alerta-dispensar {
+    margin-left: auto;
+    min-width: var(--tap-target-min, 44px);
+    min-height: var(--tap-target-min, 44px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .alerta-item { animation: none; }
+}
+
 .alerta-btn {
   font-size: var(--font-size-xs);
-  padding: 4px 8px;
+  padding: 8px 12px;
+  min-height: var(--tap-target-min, 44px);
   border-radius: var(--radius-md);
   border: 1px solid currentColor;
   background: transparent;
@@ -82,6 +109,9 @@
   color: var(--color-primary-text);
   white-space: nowrap;
   transition: background .15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .alerta-btn:hover { background: var(--color-primary-500); color: var(--color-white); }
 
@@ -91,10 +121,18 @@
   cursor: pointer;
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
-  line-height: 1;
-  padding: 2px 4px;
+  line-height: 0;
+  padding: 0;
+  width: var(--tap-target-min, 44px);
+  height: var(--tap-target-min, 44px);
+  min-width: var(--tap-target-min, 44px);
+  min-height: var(--tap-target-min, 44px);
   border-radius: var(--radius-sm);
   transition: color .15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 .alerta-dispensar:hover { color: var(--color-danger-text); }
 
@@ -331,16 +369,27 @@
 
 .btn-insight {
   font-size: var(--font-size-xs);
-  padding: 3px 8px;
+  font-weight: var(--font-weight-semibold);
+  font-family: var(--font-family-sans);
+  padding: 0 12px;
+  min-height: var(--tap-target-min, 44px);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-primary-500);
   background: transparent;
   color: var(--color-primary-text);
   cursor: pointer;
   margin-left: 6px;
-  transition: background .15s, color .15s;
+  transition: background .15s, color .15s, transform .12s, box-shadow .15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
-.btn-insight:hover { background: var(--color-primary-500); color: var(--color-white); }
+.btn-insight:hover {
+  background: var(--color-primary-500);
+  color: var(--color-white);
+  box-shadow: var(--shadow-primary-sm);
+}
+.btn-insight:active { transform: scale(0.98); }
 
 .orc-insights-titulo {
   font-size: var(--font-size-sm);
@@ -391,30 +440,8 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   OCR — BOTÃO DE SCAN
+   ENTRADA RÁPIDA — feedback
 ───────────────────────────────────────────────────────────────── */
-
-.ocr-btn {
-  background: var(--color-bg-card) !important;
-  color: var(--color-primary-text) !important;
-  border: 1px solid var(--color-primary-500) !important;
-  border-radius: var(--radius-md) !important;
-  font-size: var(--font-size-lg) !important;
-  width: 36px !important;
-  transition: background .15s, transform .12s;
-}
-
-/* O .er-btn nasce com opacity 0 e só aparece com o wrapper em foco — regra
-   pensada para o botão de confirmar. O de escanear precisa estar sempre
-   visível: é ponto de entrada, não confirmação de algo já digitado. */
-.ocr-btn { opacity: 1 !important; }
-
-.ocr-btn:active { transform: scale(.92); }
-
-.ocr-btn:hover {
-  background: var(--color-primary-500) !important;
-  color: var(--color-white) !important;
-}
 
 .er-feedback-sucesso { color: var(--color-success-text); }
 .er-feedback-erro    { color: var(--color-danger-text); }
@@ -427,14 +454,39 @@
 
 #secao-previsao {
   padding: 0;
+  /* Sem sombra dupla: o toggle interno já eleva; a section não empilha outra. */
+  box-shadow: none;
+  border: none;
+  background: transparent;
+  overflow: hidden;
 }
 
 #secao-previsao .dashboard-section-toggle {
   width: 100%;
+  margin-bottom: 0;
+}
+
+#secao-previsao .dashboard-section-toggle[aria-expanded="true"] {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
 #previsao-painel {
-  padding: 14px 4px 6px;
+  padding: var(--space-4);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-light);
+  border-top: none;
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+  box-shadow: var(--shadow-xs);
+}
+
+#previsao-painel:empty,
+#previsao-painel[style*="display: none"],
+#previsao-painel[style*="display:none"] {
+  display: none !important;
+  padding: 0;
+  border: none;
+  box-shadow: none;
 }
 
 /* ─────────────────────────────────────────────────────────────────

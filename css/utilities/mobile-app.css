@@ -16,7 +16,8 @@ html {
 }
 
 body {
-  padding-top: var(--safe-top);
+  /* Sem padding-top de safe-area aqui: o header (e a sidebar no desktop)
+     já aplicam o inset superior. Duplicar empurrava o chrome para baixo. */
   padding-left: var(--safe-left);
   padding-right: var(--safe-right);
   overscroll-behavior-y: contain;
@@ -30,8 +31,9 @@ body {
   }
 
   .nav-bottom {
+    /* Só offset em bottom — sem padding-bottom extra (evita inset duplo). */
     bottom: calc(10px + var(--safe-bottom));
-    padding-bottom: var(--safe-bottom);
+    padding-bottom: 0;
   }
 
   main {

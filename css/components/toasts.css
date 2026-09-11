@@ -7,7 +7,10 @@
 
 .toast {
   position: fixed;
-  bottom: 110px;
+  /* Folga sobre a barra inferior: o FAB "Novo" sobe ~16px acima da nav, e o
+     toast em 110px encostava nele. 124px + safe-area libera o FAB e respeita o
+     home indicator do iOS (que faltava). */
+  bottom: calc(124px + env(safe-area-inset-bottom, 0px));
   left: var(--space-5);
   right: var(--space-5);
   padding: var(--space-4);
@@ -37,6 +40,38 @@
 
 .toast.info,
 .toast.toast-info    { background: var(--color-primary-500); }
+
+/* Tablet portrait (768–1023): ainda há bottom nav — centraliza o snackbar,
+   mas mantém a folga elevada do mobile. Baixar para 24px só quando a nav some. */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .toast {
+    left: 50%;
+    right: auto;
+    max-width: 380px;
+    transform: translateX(-50%) translateY(30px);
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* Desktop / sidebar (≥1024): snackbar baixo, centrado. */
+@media (min-width: 1024px) {
+  .toast {
+    left: 50%;
+    right: auto;
+    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    max-width: 380px;
+    transform: translateX(-50%) translateY(30px);
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
 
 /* ── Empty states ─────────────────────────────────────────── */
 

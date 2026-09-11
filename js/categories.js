@@ -225,6 +225,11 @@ const CATEGORIES = {
       if (!custom[tipo]) custom[tipo] = [];
       
       if (!custom[tipo].includes(nome)) {
+        // As ~15 categorias padrao atendem quase todo mundo; quem cria a sexta
+        // propria e organizador nato -- perfil de assinante, nao de iniciante.
+        if (typeof BILLING !== 'undefined' && !BILLING.guardQuota('category', 1)) {
+          return false;
+        }
         custom[tipo].push(nome);
         DADOS.salvarConfig({ categoriasCustom: custom });
         

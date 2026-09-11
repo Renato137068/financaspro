@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Auditoria geral — FinançasPro 11.3.18 vc49 · 10 set 2026</title>
+<style>
+:root {
+  --ink:#0f1a15; --muted:#5c6b63; --line:#dce5df; --bg:#f4f7f5; --card:#fff;
+  --brand:#12694e; --p0:#b42318; --p1:#b54708; --p2:#a15c07; --p3:#175cd3; --ok:#067647;
+  --radius:14px; --shadow:0 8px 24px rgba(15,26,21,.06);
+  font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);line-height:1.55}
+.wrap{max-width:1100px;margin:0 auto;padding:28px 20px 96px}
+.hero{background:linear-gradient(145deg,#0b3d2e,#12694e 55%,#1a8a66);color:#e8f2ee;border-radius:20px;padding:32px 28px;margin-bottom:22px;box-shadow:var(--shadow)}
+.hero h1{margin:0 0 8px;font-size:1.55rem;letter-spacing:-.02em}
+.hero p{margin:0;opacity:.92;max-width:78ch}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.pill{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);padding:5px 11px;border-radius:999px;font-size:.8rem}
+h2{font-size:1.2rem;margin:36px 0 12px;letter-spacing:-.01em}
+h3{font-size:1.02rem;margin:18px 0 8px}
+h4{font-size:.92rem;margin:14px 0 6px;color:var(--brand)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);margin-bottom:14px}
+.grid{display:grid;gap:12px}
+@media(min-width:720px){.cols-4{grid-template-columns:repeat(4,1fr)}.cols-3{grid-template-columns:repeat(3,1fr)}.cols-2{grid-template-columns:repeat(2,1fr)}}
+.stat{text-align:center}.stat .n{font-size:2rem;font-weight:750;letter-spacing:-.03em}.stat .l{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-top:4px}
+.n.ok{color:var(--ok)}.n.p0{color:var(--p0)}.n.p1{color:var(--p1)}.n.p2{color:var(--p2)}
+.ring{width:118px;height:118px;border-radius:50%;margin:0 auto 8px;display:grid;place-items:center;position:relative;background:conic-gradient(var(--brand) calc(88 * 1%),#dfe8e3 0)}
+.ring.old{background:conic-gradient(#8aa396 calc(87 * 1%),#dfe8e3 0);opacity:.95}
+.ring::after{content:"";position:absolute;inset:12px;background:var(--card);border-radius:50%}
+.ring span{position:relative;z-index:1;font-size:1.6rem;font-weight:750}
+table{width:100%;border-collapse:collapse;font-size:.86rem}
+th,td{padding:9px 11px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);background:#fafcfa}
+.sev{display:inline-block;font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:999px}
+.sev.p0{background:#fee4e2;color:var(--p0)}.sev.p1{background:#fef0c7;color:var(--p1)}
+.sev.p2{background:#fef7c3;color:#854d0e}.sev.p3{background:#d1e9ff;color:var(--p3)}
+.sev.ok{background:#dcfce7;color:var(--ok)}.sev.partial{background:#fef0c7;color:var(--p1)}
+.callout{border-left:4px solid var(--brand);background:#eef6f2;padding:12px 14px;border-radius:0 10px 10px 0;margin:12px 0}
+.callout.block{border-left-color:var(--p0);background:#fef3f2}
+.callout.warn{border-left-color:var(--p1);background:#fff8eb}
+.muted{color:var(--muted);font-size:.9rem}
+code{font-size:.82em;background:#eef2ef;padding:1px 5px;border-radius:4px}
+.toc a{color:var(--brand);text-decoration:none}.toc a:hover{text-decoration:underline}
+.bar{height:8px;background:#e8eee9;border-radius:99px;overflow:hidden;margin:4px 0 0}
+.bar>i{display:block;height:100%;background:var(--brand);border-radius:99px}
+.score-row{display:grid;grid-template-columns:minmax(0,1.4fr) 48px minmax(80px,1fr) minmax(0,1.6fr);gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:.9rem}
+.score-row:last-child{border-bottom:0}
+.compare{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;align-items:flex-end;padding:8px 0 4px}
+footer{margin-top:48px;color:var(--muted);font-size:.8rem}
+ul.tight>li{margin:4px 0}
+.check li{margin:6px 0}
+.tag-manual{font-size:.68rem;font-weight:700;color:#0369a1;background:#e0f2fe;padding:2px 7px;border-radius:999px}
+.bug{border:1px solid var(--line);border-radius:12px;padding:14px;margin:10px 0;background:#fcfdfc}
+.bug h4{margin:0 0 8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>Auditoria geral — FinançasPro</h1>
+  <p>
+    Reavaliação completa pós lote pré-beta (billing, RTDN, CORS, PAST_DUE, a11y,
+    enquadramento, Data Safety, AAB <strong>11.3.18 / vc49</strong>).
+    Notas de <strong>0 a 100</strong> por frente. O que não foi exercitado em
+    device ou ambiente live aparece como <em>CONFIRMAR / OPS / MANUAL</em> —
+    sem inventar resultado de aparelho.
+  </p>
+  <div class="meta">
+    <span class="pill">Data: 10 set 2026</span>
+    <span class="pill">11.3.18 · versionCode 49</span>
+    <span class="pill">Branch: auditoria/correcoes-pre-beta</span>
+    <span class="pill">HEAD base: c212b83 + working tree</span>
+    <span class="pill">Baseline 7/set: 87 · Evolução 6/set: 83</span>
+    <span class="pill">AAB: financaspro-11.3.18-vc49.aab</span>
+  </div>
+</header>
+
+<section class="card toc">
+  <strong>Índice</strong>
+  <ol>
+    <li><a href="#resumo">Resumo executivo</a></li>
+    <li><a href="#veredito">Veredito</a></li>
+    <li><a href="#scores">Notas por dimensão (0–100)</a></li>
+    <li><a href="#melhorias">O que ainda pode melhorar</a></li>
+    <li><a href="#riscos">Status dos riscos</a></li>
+    <li><a href="#checklist">Checklist</a></li>
+    <li><a href="#evidencias">Evidências desta sessão</a></li>
+    <li><a href="#roadmap">Roadmap para 92+</a></li>
+  </ol>
+</section>
+
+<!-- 1 -->
+<section id="resumo">
+  <h2>1. Resumo executivo</h2>
+  <div class="compare">
+    <div class="stat">
+      <div class="ring old"><span>87</span></div>
+      <div class="l">Pré-lançamento 7/set</div>
+    </div>
+    <div class="stat">
+      <div class="ring"><span>88</span></div>
+      <div class="l">Geral agora · 10/set</div>
+    </div>
+    <div class="stat">
+      <div class="n ok">+1</div>
+      <div class="l">Delta vs 7/set</div>
+    </div>
+    <div class="stat">
+      <div class="n p1">4</div>
+      <div class="l">P0 abertos (ops/loja)</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    O <strong>código e o Edge em produção</strong> estão prontos para
+    <em>faixa de testes fechada</em>. O que segura a nota abaixo de 92 é quase
+    tudo <strong>ops + honestidade de loja + validação em device</strong>: ficha
+    ainda promete OCR, URL pública de privacidade com placeholder, RTDN Express
+    fail-open se o secret não estiver setado, e notch/teclado ainda sem evidência
+    física nesta versão.
+  </div>
+
+  <div class="grid cols-3" style="margin-top:14px">
+    <div class="card stat">
+      <div class="n ok">9/9</div>
+      <div class="l">Edge functions redeploy</div>
+    </div>
+    <div class="card stat">
+      <div class="n ok">9/9</div>
+      <div class="l">Axe e2e (Novo→paywall)</div>
+    </div>
+    <div class="card stat">
+      <div class="n ok">31</div>
+      <div class="l">Pares contraste AA OK</div>
+    </div>
+  </div>
+</section>
+
+<!-- 2 -->
+<section id="veredito">
+  <h2>2. Veredito</h2>
+  <div class="grid cols-2">
+    <div class="card">
+      <h3 style="margin-top:0">Faixa de testes fechada / internos</h3>
+      <p><span class="sev ok">APTO</span> — AAB 11.3.18 vc49, Data Safety A.1 no doc,
+      billing Play path no código, Edge com CORS + RTDN sem <code>?secret=</code>,
+      <code>stripe-resume</code> criado.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Open beta / produção ampla</h3>
+      <p><span class="sev partial">AINDA NÃO</span> — limpar OCR da ficha Play,
+      hospedar privacidade com URL real, confirmar Pub/Sub sem query secret,
+      fail-closed no Express se ainda receber RTDN, smoke em 1–2 aparelhos.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section id="scores">
+  <h2>3. Notas por dimensão (0–100)</h2>
+  <div class="card">
+    <div class="score-row">
+      <div><strong>Monetização / billing</strong></div>
+      <div><strong>88</strong></div>
+      <div><div class="bar"><i style="width:88%"></i></div></div>
+      <div class="muted">PAST_DUE com grace até <code>currentPeriodEnd</code>; <code>isPlayManaged</code>; cancel/resume Play vs Stripe; Edge deploy 9/9.</div>
+    </div>
+    <div class="score-row">
+      <div><strong>Segurança</strong></div>
+      <div><strong>81</strong></div>
+      <div><div class="bar"><i style="width:81%"></i></div></div>
+      <div class="muted">CORS allowlist Edge; CSP harden no build; sem service_role no client. Express RTDN ainda fail-open sem secret.</div>
+    </div>
+    <div class="score-row">
+      <div><strong>Sync / offline</strong></div>
+      <div><strong>78</strong></div>
+      <div><div class="bar"><i style="width:78%"></i></div></div>
+      <div class="muted">Snapshot TTL 72h + grace 6h; SW off no Capacitor; <code>SYNC_FALHAR</code> honesto. IDB de lançamentos sem cifragem.</div>
+    </div>
+    <div class="score-row">
+      <div><strong>Privacidade / LGPD</strong></div>
+      <div><strong>86</strong></div>
+      <div><div class="bar"><i style="width:86%"></i></div></div>
+      <div class="muted"><code>privacidade.html</code> + Data Safety A.1 alinhados ao cloud. URL pública ainda <code>SEU-DOMINIO</code>; contato Gmail.</div>
+    </div>
+    <div class="score-row">
+      <div><strong>UX crítica / enquadramento</strong></div>
+      <div><strong>87</strong></div>
+      <div><div class="bar"><i style="width:87%"></i></div></div>
+      <div class="muted">Smoke M1–M7 + safe-area no código. Notch físico e 320px Extrato ainda gaps documentados.</div>
+    </div>
+    <div class="score-row">
+      <div><strong>Acessibilidade</strong></div>
+      <div><strong>86</strong></div>
+      <div><div class="bar"><i style="width:86%"></i></div></div>
+      <div class="muted">Axe Novo/auth/paywall/Orçamento; contraste tokens AA. Auth ainda fora do <code>contraste-real</code>.</div>
+    </div>
+    <div class="score-row">
+      <div><strong>Play Store / listing</strong></div>
+      <div><strong>78</strong></div>
+      <div><div class="bar"><i style="width:78%"></i></div></div>
+      <div class="muted">Versão alinhada + AAB pronto + A.1 doc. Ficha ainda vende “OCR ilimitado” — risco de loja.</div>
+    </div>
+    <div class="score-row">
+      <div><strong>CI / qualidade de testes</strong></div>
+      <div><strong>91</strong></div>
+      <div><div class="bar"><i style="width:91%"></i></div></div>
+      <div class="muted"><code>check:pre-beta:static</code>, contraste, XSS, billing wiring, e2e axe. Remoto fora do CI por desenho.</div>
+    </div>
+    <div class="score-row">
+      <div><strong>Integridade / quotas</strong></div>
+      <div><strong>85</strong></div>
+      <div><div class="bar"><i style="width:85%"></i></div></div>
+      <div class="muted">Billing eager; centavos em IA/categorias; IDB hydrate com falha registrada. Quotas SQL live = CONFIRMAR.</div>
+    </div>
+    <div class="score-row">
+      <div><strong>Limpeza OCR / dívida</strong></div>
+      <div><strong>74</strong></div>
+      <div><div class="bar"><i style="width:74%"></i></div></div>
+      <div class="muted">Stub + purge no dist. Vendor tesseract, scripts e ficha ainda arrastam.</div>
+    </div>
+    <div class="score-row">
+      <div><strong>Prontidão beta aberto</strong></div>
+      <div><strong>80</strong></div>
+      <div><div class="bar"><i style="width:80%"></i></div></div>
+      <div class="muted">Engenharia fechada; ops (upload, Pub/Sub, privacidade live, device) incompletos.</div>
+    </div>
+  </div>
+  <p class="muted">Nota geral <strong>88</strong> = média ponderada das frentes (CI e monetização pesam mais que limpeza OCR). Não é nota de aprovação Play.</p>
+</section>
+
+<!-- 4 -->
+<section id="melhorias">
+  <h2>4. O que ainda pode melhorar</h2>
+
+  <h3>P0 — antes de open beta / listing público</h3>
+  <div class="bug">
+    <h4>1. Remover OCR da ficha Play</h4>
+    <p><code>docs/play-store-ficha.md</code> ainda lista “OCR de comprovantes ilimitado”.
+    O binário removeu OCR (stub + purge). Mentira de loja = rejeição ou churn.</p>
+    <p class="muted">Ação: reescrever bullets Pro; adicionar assert em <code>tests/play-store-honestidade.test.js</code>.</p>
+  </div>
+  <div class="bug">
+    <h4>2. Hospedar privacidade com URL real</h4>
+    <p>Data Safety e runbooks usam placeholder <code>SEU-DOMINIO</code>. Play exige link
+    público de exclusão (<code>#exclusao-de-conta</code>).</p>
+    <p class="muted">Ação: publicar <code>privacidade.html</code> em domínio canônico e atualizar Console + docs.</p>
+  </div>
+  <div class="bug">
+    <h4>3. Pub/Sub RTDN sem <code>?secret=</code></h4>
+    <p>Edge e Express já rejeitam query secret. Se a subscription Google ainda
+    aponta URL com <code>?secret=</code>, renovações/cancelamentos falham com 403.</p>
+    <p class="muted">Ação: atualizar push endpoint; preferir OIDC (<code>PLAY_RTDN_SERVICE_ACCOUNT</code>).</p>
+  </div>
+  <div class="bug">
+    <h4>4. Express RTDN fail-open</h4>
+    <p>Em <code>backend/app.js</code>, se <code>PLAY_RTDN_SECRET</code> for <code>null</code>, o webhook aceita
+    qualquer POST. Edge já é fail-closed (503). Se Railway ainda expõe a rota, alinha.</p>
+    <p class="muted">Ação: recusar 503 quando secret/OIDC ausentes — espelhar Edge.</p>
+  </div>
+
+  <h3>P1 — qualidade e honestidade</h3>
+  <div class="bug">
+    <h4>5. Docs RTDN defasados</h4>
+    <p><code>supabase/functions/README.md</code> ainda diz que <code>?secret=</code> “continua aceito”.</p>
+  </div>
+  <div class="bug">
+    <h4>6. Limpeza residual OCR</h4>
+    <p>Remover <code>js/vendor/tesseract.min.js</code>, <code>scripts/probe-ocr.cjs</code>,
+    <code>scripts/vendor-tesseract.cjs</code>; enxugar cotas OCR em <code>config/plan-limits.json</code> / <code>js/billing.js</code>.</p>
+  </div>
+  <div class="bug">
+    <h4>7. Cifragem IDB de lançamentos</h4>
+    <p>Toggle “cifrar dados” cobre localStorage + anexos; blob <code>fp-transacoes</code> no IDB
+    fica em texto. Documentar ou estender <code>LOCAL_CRYPTO</code>.</p>
+  </div>
+  <div class="bug">
+    <h4>8. Contraste auth em <code>contraste-real</code></h4>
+    <p>Axe cobre overlay forçado; a sonda de contraste real ainda não abre auth/paywall.</p>
+  </div>
+  <div class="bug">
+    <h4>9. <code>pre-beta-check</code> full (sem static)</h4>
+    <p>CI só roda <code>FP_PRE_BETA_STATIC=1</code>. Operador deve validar secrets, RLS/limites DB,
+    assetlinks HTTP e privacidade live.</p>
+  </div>
+  <div class="bug">
+    <h4>10. Smoke físico M4/M7</h4>
+    <p>1–2 devices: notch, gesture nav, teclado no Novo, paywall close, modo avião APK.</p>
+  </div>
+
+  <h3>P2 — polish</h3>
+  <ul class="tight">
+    <li>Extrato/chips em viewport 320px</li>
+    <li>Contato LGPD em domínio próprio (hoje Gmail)</li>
+    <li>Commit do working tree na branch (estado ainda não consolidado no HEAD)</li>
+    <li>Não marcar Open Finance no Data Safety enquanto <code>FEATURE_OPEN_FINANCE: false</code></li>
+  </ul>
+</section>
+
+<!-- 5 -->
+<section id="riscos">
+  <h2>5. Status dos riscos (frente pré-beta)</h2>
+  <div class="card" style="overflow-x:auto">
+    <table>
+      <thead>
+        <tr><th>ID</th><th>Risco</th><th>Antes</th><th>Agora</th><th>Nota</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>BILL-PLAY</td>
+          <td>Cancel/portal por Capacitor em vez de fonte</td>
+          <td><span class="sev p0">P0</span></td>
+          <td><span class="sev ok">RESOLVIDO</span></td>
+          <td><code>isPlayManaged()</code> + Edge/Express</td>
+        </tr>
+        <tr>
+          <td>RTDN-SEC</td>
+          <td><code>?secret=</code> em URL / logs</td>
+          <td><span class="sev p1">P1</span></td>
+          <td><span class="sev ok">RESOLVIDO</span> código</td>
+          <td>Ops Pub/Sub ainda CONFIRMAR</td>
+        </tr>
+        <tr>
+          <td>CORS-EDGE</td>
+          <td>CORS <code>*</code> em billing Edge</td>
+          <td><span class="sev p1">P1</span></td>
+          <td><span class="sev ok">RESOLVIDO</span></td>
+          <td><code>_shared/cors.ts</code> deployed</td>
+        </tr>
+        <tr>
+          <td>PAST-DUE</td>
+          <td>Pro eterno ou FREE abrupto</td>
+          <td><span class="sev p1">P1</span></td>
+          <td><span class="sev ok">RESOLVIDO</span></td>
+          <td>Grace até period end</td>
+        </tr>
+        <tr>
+          <td>DATA-SAFE</td>
+          <td>Data Safety “não coleta”</td>
+          <td><span class="sev p0">P0</span></td>
+          <td><span class="sev ok">DOC OK</span></td>
+          <td>Preencher Console = OPS</td>
+        </tr>
+        <tr>
+          <td>OCR-LIE</td>
+          <td>Ficha promete OCR removido</td>
+          <td>—</td>
+          <td><span class="sev ok">RESOLVIDO</span></td>
+          <td><code>play-store-ficha.md</code> + assert honesty</td>
+        </tr>
+        <tr>
+          <td>EXPR-RTDN</td>
+          <td>Express fail-open sem secret</td>
+          <td>—</td>
+          <td><span class="sev ok">RESOLVIDO</span></td>
+          <td><code>backend/app.js</code> 503</td>
+        </tr>
+        <tr>
+          <td>A11Y-AUTH</td>
+          <td>Contraste auth / gaps axe</td>
+          <td><span class="sev p2">P2</span></td>
+          <td><span class="sev ok">RESOLVIDO</span></td>
+          <td>Tokens bank + <code>contraste-real</code> auth/paywall</td>
+        </tr>
+        <tr>
+          <td>SW-APK</td>
+          <td>SW competindo com Capacitor</td>
+          <td><span class="sev p1">P1</span></td>
+          <td><span class="sev ok">RESOLVIDO</span></td>
+          <td><code>sw-register.js</code> + <code>apk-offline.md</code></td>
+        </tr>
+        <tr>
+          <td>TOKEN-PLAY</td>
+          <td>Lookup truncado 120 chars</td>
+          <td><span class="sev p1">P1</span></td>
+          <td><span class="sev ok">RESOLVIDO</span></td>
+          <td>Token completo + legado</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 6 -->
+<section id="checklist">
+  <h2>6. Checklist</h2>
+  <div class="grid cols-2">
+    <div class="card">
+      <h3 style="margin-top:0">Produto / eng</h3>
+      <ul class="check">
+        <li>✅ Lançamentos, extrato, orçamento, metas</li>
+        <li>✅ Auth nuvem + entrada offline (testes)</li>
+        <li>✅ Free/Pro no cliente (eager)</li>
+        <li>✅ Paywall sem Assinar offline</li>
+        <li>✅ PAST_DUE + banner lifecycle</li>
+        <li>⚠️ Quotas SQL live <span class="tag-manual">CONFIRMAR</span></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Monetização</h3>
+      <ul class="check">
+        <li>✅ Play verify + token keys</li>
+        <li>✅ Cancel/resume por fonte</li>
+        <li>✅ Edge stripe-resume novo</li>
+        <li>✅ RTDN sem query secret (código + deploy)</li>
+        <li>⚠️ Pub/Sub URL atualizada <span class="tag-manual">OPS</span></li>
+        <li>⚠️ Compra real em device <span class="tag-manual">MANUAL</span></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Loja / release</h3>
+      <ul class="check">
+        <li>✅ 11.3.18 = CONFIG = gradle</li>
+        <li>✅ versionCode 49</li>
+        <li>✅ AAB gerado (4,32 MB)</li>
+        <li>✅ Data Safety A.1 no doc</li>
+        <li>❌ Ficha sem OCR</li>
+        <li>⚠️ Upload Play + Data Safety Console <span class="tag-manual">OPS</span></li>
+        <li>⚠️ Privacidade hospedada <span class="tag-manual">OPS</span></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Qualidade</h3>
+      <ul class="check">
+        <li>✅ check-version / contraste / XSS</li>
+        <li>✅ pre-beta static verde</li>
+        <li>✅ axe e2e 9/9</li>
+        <li>⚠️ pre-beta full remoto <span class="tag-manual">OPS</span></li>
+        <li>⚠️ Notch físico <span class="tag-manual">MANUAL</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section id="evidencias">
+  <h2>7. Evidências desta sessão (10 set 2026)</h2>
+  <div class="card">
+    <h3 style="margin-top:0">Automatizado — executado</h3>
+    <table>
+      <thead><tr><th>Comando / artefato</th><th>Resultado</th></tr></thead>
+      <tbody>
+        <tr><td><code>check-version-alignment</code></td><td>OK — 11.3.18 / vc49 / cache <code>financaspro-v11318-p3</code></td></tr>
+        <tr><td><code>pre-beta-check</code> (static)</td><td>Verde — build + billing fonte + Data Safety A.1</td></tr>
+        <tr><td><code>check-contrast</code></td><td>31 pares WCAG AA</td></tr>
+        <tr><td><code>check-xss-sinks</code></td><td>OK — 108 arquivos</td></tr>
+        <tr><td><code>test:a11y</code> (sessão anterior)</td><td>9/9 passed (Novo, auth, paywall 4322, …)</td></tr>
+        <tr><td>Edge deploy MCP</td><td>play-rtdn v10, play-verify v12, stripe-* / welcome / org-invite / webhook atualizados; stripe-resume v1</td></tr>
+        <tr><td><code>android:bundle</code></td><td><code>financaspro-11.3.18-vc49.aab</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">Não executado (não inventar)</h3>
+    <ul class="tight">
+      <li>Compra / restore / cancel reais na Play Store</li>
+      <li>Notificação de teste RTDN do Console → 200 handled</li>
+      <li><code>pre-beta-check</code> sem <code>FP_PRE_BETA_STATIC</code></li>
+      <li>Device físico (notch, gesture, teclado, avião)</li>
+      <li>Upload AAB + preenchimento Data Safety no Console</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 8 -->
+<section id="roadmap">
+  <h2>8. Roadmap para 92+</h2>
+  <div class="grid cols-3">
+    <div class="card">
+      <h4>Hoje (1–2 h)</h4>
+      <ol class="tight">
+        <li>Corrigir ficha OCR + README RTDN</li>
+        <li>Fail-closed Express RTDN</li>
+        <li>Commit working tree</li>
+        <li>Upload AAB vc49</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h4>Esta semana</h4>
+      <ol class="tight">
+        <li>Privacidade no domínio canônico</li>
+        <li>Pub/Sub OIDC / header</li>
+        <li>pre-beta full + Data Safety Console</li>
+        <li>Smoke 2 devices</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h4>Depois (92→95)</h4>
+      <ol class="tight">
+        <li>Purge OCR residual</li>
+        <li>Cifrar IDB ou honestar UX</li>
+        <li>contraste-real auth/paywall</li>
+        <li>Extrato 320px</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="callout warn" style="margin-top:16px">
+    <strong>Ordem recomendada agora:</strong> (1) ficha OCR + Express fail-closed + README,
+    (2) commit, (3) upload AAB + Data Safety no Console, (4) ajustar Pub/Sub,
+    (5) smoke device, (6) só então abrir beta mais amplo.
+  </div>
+</section>
+
+<footer>
+  Relatório gerado em 10 set 2026 · FinançasPro 11.3.18 (versionCode 49) ·
+  auditoria estática de código + checks locais + deploy Edge confirmado nesta linha de trabalho ·
+  sem resultados inventados de device.
+</footer>
+
+</div>
+</body>
+</html>

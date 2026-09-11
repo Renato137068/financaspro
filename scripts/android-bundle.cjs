@@ -8,7 +8,8 @@ const root = path.join(__dirname, '..');
 const androidDir = path.join(root, 'android');
 
 const isWin = process.platform === 'win32';
-const gradlew = isWin ? 'gradlew.bat' : './gradlew';
+// No Windows o cmd não acha 'gradlew.bat' sem prefixo de caminho — precisa do '.\'.
+const gradlew = isWin ? '.\\gradlew.bat' : './gradlew';
 
 console.log('[android-bundle] Gerando Android App Bundle (AAB)...');
 execSync(gradlew + ' bundleRelease', {

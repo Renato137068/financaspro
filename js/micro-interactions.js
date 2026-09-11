@@ -19,7 +19,7 @@ var MICRO = (function() {
   }
 
   function setupRipple() {
-    var seletores = '.btn-primario, .nav-btn, .tipo-btn, .filtro-chip, .filtro-cat-chip, ' +
+    var seletores = '.btn-primario, .nav-btn, .tipo-btn, .filtro-chip, .orc-tab, .filtro-cat-chip, ' +
                     '.btn-registrar, .data-chip, .onb-btn-next, .quick-amount, .rec-chip';
     document.addEventListener('click', function(e) {
       var btn = e.target.closest(seletores);
