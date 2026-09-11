@@ -13,28 +13,14 @@ on:
   pull_request:
     branches: [main, master]
 
+# Os jobs `checks` e `test` rodam EM PARALELO. Antes tudo era um job só e
+# sequencial: um lint vermelho escondia as falhas de teste (e vice-versa), e
+# cada gate atrasava o proximo. Agora as duas familias de falha aparecem juntas
+# no mesmo push. O Quality Gate exige que ambos passem.
 jobs:
-  test:
-    name: Testes (${{ matrix.node-version }})
+  checks:
+    name: Checks (lint + estaticos)
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: financaspro
-          POSTGRES_PASSWORD: testpass
-          POSTGRES_DB: financaspro_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    strategy:
-      matrix:
-        node-version: [18.x, 20.x]
-
     steps:
       - name: Checkout codigo
         uses: actions/checkout@v4
@@ -42,16 +28,17 @@ jobs:
           # lint:changed compara com a base do PR — precisa do historico.
           fetch-depth: 0
 
-      - name: Setup Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 20.x
           cache: npm
 
       - name: Instalar dependencias
         run: npm ci
 
       - name: Build
+        # check:bundle / check:pre-beta:static leem o dist.
         run: npm run build
 
       - name: Lint
@@ -86,6 +73,45 @@ jobs:
         env:
           FP_PRE_BETA_STATIC: '1'
           FP_SKIP_CLI: '1'
+
+  test:
+    name: Testes (${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: financaspro
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: financaspro_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+      - name: Checkout codigo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Build
+        run: npm run build
 
       - name: Testes
         run: npm run test:ci
@@ -142,13 +168,17 @@ jobs:
   quality-gate:
     name: Quality Gate
     runs-on: ubuntu-latest
-    needs: test
+    needs: [checks, test]
     if: always()
     steps:
-      - name: Verificar resultado dos testes
+      - name: Verificar resultado do pipeline
         run: |
+          if [ "${{ needs.checks.result }}" != "success" ]; then
+            echo "Checks (lint/estaticos) falharam - pipeline bloqueado"
+            exit 1
+          fi
           if [ "${{ needs.test.result }}" != "success" ]; then
             echo "Testes falharam - pipeline bloqueado"
             exit 1
           fi
-          echo "Todos os testes passaram"
+          echo "Checks e testes passaram"
