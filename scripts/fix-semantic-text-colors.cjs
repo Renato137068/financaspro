@@ -59,7 +59,7 @@ for (const file of listarCss(cssDir)) {
   }
 
   if (trocas > 0) {
-    if (!dryRun) fs.writeFileSync(file, src);
+    if (!dryRun) fs.writeFileSync(file, src, 'utf8');
     console.log(`[cor-texto] ${path.relative(root, file)}: ${trocas} troca(s)`);
     totalTrocas += trocas;
     arquivosTocados++;

@@ -61,6 +61,10 @@ jobs:
         # Congela a divida existente e exige zero avisos no que o PR toca.
         run: npm run lint:changed
 
+      - name: Encoding (sem U+FFFD no fonte)
+        # Barra acentuacao corrompida (arquivo salvo fora de UTF-8) antes de virar bug de tela.
+        run: npm run check:encoding
+
       - name: Auditoria de dependencias
         run: npm audit --audit-level=high
 
