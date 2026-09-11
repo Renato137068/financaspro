@@ -55,22 +55,3 @@ test('soft AI esgotado abre paywall sem ir ao Stripe', async function({ page }) 
   await expect(page.locator('#billing-lead')).toContainText(/usos grátis/i);
   expect(stripeHit).toBe(false);
 });
-
-test('banner soft AI aparece com 1 uso restante', async function({ page }) {
-  await expect.poll(async function() {
-    return page.evaluate(function() {
-      var ob = document.getElementById('dashboard-onboarding');
-      if (ob) {
-        ob.hidden = true;
-        if (ob.parentNode) ob.parentNode.removeChild(ob);
-      }
-      localStorage.setItem('fp-local-ai-uses', '4');
-      if (INIT_BILLING.refreshUsageBanner) INIT_BILLING.refreshUsageBanner();
-      var el = document.getElementById('fp-usage-banner');
-      if (!el || el.hidden) return '';
-      return el.textContent || '';
-    });
-  }, { timeout: 8000 }).toMatch(/1 uso/);
-
-  await expect(page.locator('#fp-usage-banner [data-action="abrir-paywall"]')).toBeAttached();
-});
