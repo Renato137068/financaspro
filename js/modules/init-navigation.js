@@ -631,12 +631,30 @@ function mudarAba(nomeAba, opcoes) {
     btns[k].setAttribute('aria-current','page');
   }
 
+  // As sub-telas do Perfil (config-*) não têm botão próprio no menu inferior;
+  // manter "Perfil" destacado deixa claro em que seção o usuário está.
+  if (nomeAba.indexOf('config-') === 0) {
+    var perfilBtns = document.querySelectorAll('[data-aba="config"]');
+    for (var p = 0; p < perfilBtns.length; p++) {
+      perfilBtns[p].classList.add('ativo');
+      perfilBtns[p].setAttribute('aria-current','page');
+    }
+  }
+
   var tabLabels = {
     resumo: 'Resumo financeiro',
     novo: 'Novo lançamento',
     extrato: 'Extrato',
     orcamento: 'Orçamento',
     config: 'Perfil e configurações',
+    'config-conta': 'Conta e plano',
+    'config-seguranca': 'Segurança',
+    'config-conexoes': 'Bancos e conexões',
+    'config-categorias': 'Categorias',
+    'config-preferencias': 'Preferências e notificações',
+    'config-dados': 'Backup e dados',
+    'config-ajuda': 'Ajuda e sobre',
+    'config-suporte': 'Suporte técnico',
   };
   if (typeof ariaLive !== 'undefined' && ariaLive.announce) {
     ariaLive.announce('Aba ' + (tabLabels[nomeAba] || nomeAba));
@@ -716,7 +734,10 @@ function mudarAba(nomeAba, opcoes) {
           refreshBillingUi();
         }
       }
-      if (nomeAba === 'config') {
+      if (nomeAba === 'config' || nomeAba.indexOf('config-') === 0) {
+        // Vale para o Perfil e suas sub-telas (config-*): os cartões e toggles
+        // moram em containers diferentes, mas o refreshPerfil atualiza todos por
+        // id, então rodá-lo ao abrir qualquer sub-tela mantém os estados certos.
         // Paywall/Play/2FA/Open Finance: chunk 'conta' (~UI). BILLING (quotas)
         // já está no eager. O chunk precisa chegar ANTES do refreshPerfil:
         // refreshPlanoCard/refreshUI checam `typeof X !== 'undefined'`.
@@ -736,10 +757,18 @@ function mudarAba(nomeAba, opcoes) {
 
 /** Botão voltar Android (Capacitor) — subpáginas voltam ao perfil */
 window.__fpHandleAndroidBack = function() {
-  var subpages = ['editar-perfil', 'gerenciar-bancos'];
+  var estaAtiva = function(id) {
+    var el = document.getElementById(id);
+    return !!(el && el.classList.contains('ativo'));
+  };
+
+  // Suporte técnico é filho de "Ajuda e sobre": volta um nível, não direto ao menu.
+  if (estaAtiva('aba-config-suporte')) { mudarAba('config-ajuda'); return true; }
+
+  // Sub-telas do perfil (config-*) e as subpáginas antigas voltam ao menu Perfil.
+  var subpages = document.querySelectorAll('[id^="aba-config-"], #aba-editar-perfil, #aba-gerenciar-bancos');
   for (var i = 0; i < subpages.length; i++) {
-    var page = document.getElementById('aba-' + subpages[i]);
-    if (page && page.classList.contains('ativo')) {
+    if (subpages[i].classList.contains('ativo')) {
       mudarAba('config');
       return true;
     }
