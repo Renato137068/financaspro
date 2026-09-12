@@ -194,7 +194,11 @@ var CATEGORIZADOR = {
       return cached;
     }
 
-    var palavras = chave.split(/\s+/);
+    // Separadores de adquirente/extrato viram espaço para tokenizar o comerciante:
+    // "IFD*IFOOD", "PAG*99APP", "MP_SHOPEE" → "ifd ifood", "pag 99app", "mp shopee".
+    // Sem isto, tudo vira um token único e o casamento difuso não encontra a marca.
+    var normalizado = chave.replace(/[*_/\\|]+/g, ' ');
+    var palavras = normalizado.split(/\s+/);
     var melhorScore = 0, melhorCategoria = null, melhorTipo = null;
 
     Object.keys(this.DICIONARIO).forEach(function(categoria) {
