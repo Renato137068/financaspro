@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auditoria da Aba Perfil</title>
+<meta name="description" content="Auditoria de arquitetura de informação da aba Perfil do FinançasPro, comparada aos concorrentes do segmento.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --ground:#f5f7f4; --card:#ffffff; --card-2:#fbfcfa;
+    --ink:#15211c; --muted:#59685f; --faint:#89968e; --line:#e4e9e3; --line-2:#eef2ec;
+    --brand:#0e5a41; --brand-2:#2f9c6d; --brand-ink:#0a3d2c;
+    --keep:#15803d; --keep-bg:#e9f6ec;
+    --group:#0e7490; --group-bg:#e2f3f6;
+    --merge:#4f46e5; --merge-bg:#ecebfc;
+    --back:#b45309; --back-bg:#fbeedd;
+    --shadow:0 1px 2px rgba(16,40,30,.05), 0 10px 30px rgba(16,40,30,.06);
+    --shadow-sm:0 1px 2px rgba(16,40,30,.06);
+    --radius:16px; --radius-sm:11px;
+    --maxw:920px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#0d1310; --card:#151c18; --card-2:#121814;
+      --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+      --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6;
+      --keep:#57c98a; --keep-bg:#123222;
+      --group:#4bc4d8; --group-bg:#0c3138;
+      --merge:#9a95f5; --merge-bg:#1e1c3c;
+      --back:#e0a24a; --back-bg:#352312;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4);
+      --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0d1310; --card:#151c18; --card-2:#121814;
+    --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6;
+    --keep:#57c98a; --keep-bg:#123222;
+    --group:#4bc4d8; --group-bg:#0c3138;
+    --merge:#9a95f5; --merge-bg:#1e1c3c;
+    --back:#e0a24a; --back-bg:#352312;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4);
+    --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--ground); color:var(--ink);
+    font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    line-height:1.6; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  }
+  .wrap{max-width:var(--maxw); margin:0 auto; padding-inline:20px; padding-block:0}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+  code{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.85em;
+    background:var(--line-2); padding:1px 6px; border-radius:6px; color:var(--brand-ink)}
+  :root:not([data-theme="light"]) code{color:var(--brand-2)}
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) code{color:var(--brand-2)}}
+  h1,h2,h3{font-family:"Bricolage Grotesque","IBM Plex Sans",sans-serif; text-wrap:balance; letter-spacing:-.015em; margin:0}
+  a{color:var(--brand-2); text-underline-offset:3px}
+
+  /* ---- HERO ---- */
+  .hero{background:
+      radial-gradient(120% 140% at 100% 0%, rgba(47,156,109,.18), transparent 55%),
+      linear-gradient(158deg, var(--brand), var(--brand-ink));
+    color:#eafff5; border-radius:0 0 26px 26px; box-shadow:var(--shadow); position:relative; overflow:hidden}
+  .hero::after{content:""; position:absolute; inset:0;
+    background-image:radial-gradient(rgba(255,255,255,.06) 1px, transparent 1.4px);
+    background-size:22px 22px; mask:linear-gradient(120deg, #000, transparent 62%); pointer-events:none}
+  .hero .wrap{padding-block:34px 30px; position:relative; z-index:1}
+  .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.16em; text-transform:uppercase;
+    color:#9fe8c9; display:flex; align-items:center; gap:10px; margin-bottom:16px}
+  .eyebrow .dot{width:7px; height:7px; border-radius:50%; background:#7bffc8; box-shadow:0 0 0 4px rgba(123,255,200,.18)}
+  h1{font-size:clamp(30px,6vw,46px); line-height:1.02; font-weight:800; color:#fff; max-width:15ch}
+  .hero .lede{margin:16px 0 0; font-size:clamp(15px,2.3vw,18px); max-width:60ch; color:#d5f4e6; line-height:1.55}
+  .hero .lede b{color:#fff; font-weight:600}
+  .stats{display:flex; flex-wrap:wrap; gap:12px; margin-top:26px}
+  .stat{background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.16); border-radius:14px;
+    padding:12px 16px; min-width:118px; backdrop-filter:blur(2px)}
+  .stat .n{font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:26px; line-height:1; color:#fff; font-variant-numeric:tabular-nums}
+  .stat .l{font-size:12px; color:#bfead7; margin-top:6px; letter-spacing:.01em}
+  .stat .n small{font-size:14px; font-weight:600; opacity:.8}
+
+  /* ---- SECTIONS ---- */
+  section{margin-top:52px}
+  .sec-head{display:flex; align-items:baseline; gap:12px; margin-bottom:8px}
+  .sec-head .k{font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:600; color:var(--brand-2);
+    border:1px solid var(--line); border-radius:8px; padding:3px 9px; background:var(--card); flex:none}
+  h2{font-size:clamp(21px,3.6vw,27px); font-weight:700; line-height:1.12}
+  .sec-sub{color:var(--muted); font-size:15.5px; margin:2px 0 22px; max-width:66ch}
+
+  /* verdict banner */
+  .verdict{background:var(--card); border:1px solid var(--line); border-left:5px solid var(--brand-2);
+    border-radius:var(--radius); padding:22px 24px; box-shadow:var(--shadow); margin-top:-30px; position:relative; z-index:2}
+  .verdict h2{font-size:19px; margin-bottom:8px; display:flex; align-items:center; gap:10px}
+  .verdict p{margin:0; color:var(--muted); font-size:15px}
+  .verdict p+p{margin-top:10px}
+  .verdict strong{color:var(--ink)}
+
+  /* generic card */
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow-sm)}
+
+  /* inventory */
+  .inv{display:grid; grid-template-columns:repeat(auto-fill,minmax(232px,1fr)); gap:14px}
+  .inv-group{background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:16px 17px; box-shadow:var(--shadow-sm)}
+  .inv-group h3{font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-family:"IBM Plex Mono",monospace;
+    font-weight:600; display:flex; justify-content:space-between; align-items:center; margin-bottom:11px}
+  .inv-group h3 .c{color:var(--brand-2); font-size:13px}
+  .inv-group ul{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:7px}
+  .inv-group li{font-size:14px; color:var(--ink); display:flex; gap:8px; align-items:flex-start; line-height:1.35}
+  .inv-group li::before{content:""; width:5px; height:5px; border-radius:50%; background:var(--line);
+    margin-top:8px; flex:none}
+  .inv-group li.diag{color:var(--back)}
+  .inv-group li.diag::before{background:var(--back)}
+
+  /* competitor benchmark */
+  .bench{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  @media(max-width:640px){.bench{grid-template-columns:1fr}}
+  .comp{background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:18px 19px; box-shadow:var(--shadow-sm)}
+  .comp .name{font-family:"Bricolage Grotesque",sans-serif; font-weight:700; font-size:16.5px; display:flex; align-items:center; gap:9px; margin-bottom:3px}
+  .comp .tag{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em}
+  .comp p{margin:10px 0 0; font-size:13.6px; color:var(--muted); line-height:1.5}
+  .comp p b{color:var(--ink); font-weight:600}
+  .pattern{grid-column:1/-1; background:linear-gradient(180deg,var(--keep-bg),transparent);
+    border:1px solid var(--line); border-radius:var(--radius-sm); padding:18px 20px}
+  .pattern h3{font-size:15px; margin-bottom:6px; color:var(--ink)}
+  .pattern p{margin:0; font-size:14px; color:var(--muted)}
+  .pattern p b{color:var(--ink)}
+
+  /* findings */
+  .finds{display:flex; flex-direction:column; gap:16px}
+  .find{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:20px 22px; box-shadow:var(--shadow-sm)}
+  .find .top{display:flex; align-items:center; gap:11px; flex-wrap:wrap; margin-bottom:9px}
+  .badge{font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase;
+    padding:4px 9px; border-radius:20px; flex:none}
+  .b-p1{background:var(--back-bg); color:var(--back)}
+  .b-p2{background:var(--group-bg); color:var(--group)}
+  .b-p3{background:var(--merge-bg); color:var(--merge)}
+  .find h3{font-size:17.5px; font-weight:700; line-height:1.25}
+  .find p{margin:0 0 0; color:var(--muted); font-size:14.6px}
+  .find p+p{margin-top:10px}
+  .find .fix{margin-top:14px; padding:12px 14px; background:var(--card-2); border:1px dashed var(--line);
+    border-radius:10px; font-size:14px}
+  .find .fix b{color:var(--brand-2); font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.05em; text-transform:uppercase; display:block; margin-bottom:4px}
+
+  /* before/after */
+  .ba{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+  @media(max-width:680px){.ba{grid-template-columns:1fr}}
+  .col{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px 18px 20px; box-shadow:var(--shadow-sm)}
+  .col.after{border-color:var(--brand-2); box-shadow:0 0 0 1px var(--brand-2), var(--shadow)}
+  .col .h{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; gap:10px}
+  .col .h .t{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+  .col .h .p{font-family:"Bricolage Grotesque",sans-serif; font-weight:700; font-size:14px; padding:3px 10px; border-radius:20px; font-variant-numeric:tabular-nums}
+  .col.before .p{background:var(--back-bg); color:var(--back)}
+  .col.after .p{background:var(--keep-bg); color:var(--keep)}
+  .rows{display:flex; flex-direction:column; gap:7px}
+  .row{display:flex; align-items:center; gap:10px; font-size:14px; padding:9px 11px; border-radius:9px; background:var(--card-2); border:1px solid var(--line-2)}
+  .row .ico{width:15px; height:15px; flex:none; color:var(--brand-2)}
+  .row.after-row{background:var(--keep-bg); border-color:transparent}
+  .row .chev{margin-left:auto; color:var(--faint); font-family:"IBM Plex Mono",monospace; font-size:12px}
+  .col.before .row{opacity:1}
+  .col.before .mini{font-size:11.5px; color:var(--muted); margin-left:auto; font-family:"IBM Plex Mono",monospace}
+  .scrollnote{font-size:12.5px; color:var(--muted); margin-top:12px; font-style:italic}
+
+  /* decision matrix */
+  .legend{display:flex; flex-wrap:wrap; gap:9px; margin-bottom:16px}
+  .chip{font-family:"IBM Plex Mono",monospace; font-size:11.5px; font-weight:600; padding:5px 11px; border-radius:20px; display:inline-flex; align-items:center; gap:6px}
+  .chip::before{content:""; width:8px; height:8px; border-radius:2px}
+  .c-keep{background:var(--keep-bg); color:var(--keep)} .c-keep::before{background:var(--keep)}
+  .c-group{background:var(--group-bg); color:var(--group)} .c-group::before{background:var(--group)}
+  .c-merge{background:var(--merge-bg); color:var(--merge)} .c-merge::before{background:var(--merge)}
+  .c-back{background:var(--back-bg); color:var(--back)} .c-back::before{background:var(--back)}
+  .tbl-wrap{overflow-x:auto; border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow-sm)}
+  table{border-collapse:collapse; width:100%; min-width:540px; background:var(--card)}
+  thead th{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted);
+    text-align:left; padding:13px 16px; border-bottom:1px solid var(--line); font-weight:600; background:var(--card-2)}
+  tbody td{padding:12px 16px; border-bottom:1px solid var(--line-2); font-size:14px; vertical-align:top}
+  tbody tr:last-child td{border-bottom:0}
+  tbody td.item{font-weight:600; color:var(--ink); white-space:nowrap}
+  tbody td.why{color:var(--muted); font-size:13.4px}
+  .grp-row td{background:var(--card-2); font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--brand-2); font-weight:600; padding-top:14px; padding-bottom:6px}
+  .v{font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600; padding:3px 9px; border-radius:20px; white-space:nowrap; display:inline-block}
+  .v-keep{background:var(--keep-bg); color:var(--keep)}
+  .v-group{background:var(--group-bg); color:var(--group)}
+  .v-merge{background:var(--merge-bg); color:var(--merge)}
+  .v-back{background:var(--back-bg); color:var(--back)}
+
+  /* action plan */
+  .plan{display:flex; flex-direction:column; gap:12px}
+  .step{display:flex; gap:16px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:16px 18px; box-shadow:var(--shadow-sm)}
+  .step .no{font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:22px; color:var(--brand-2);
+    line-height:1; flex:none; width:34px; font-variant-numeric:tabular-nums}
+  .step .body{flex:1}
+  .step .body h3{font-size:15.5px; margin-bottom:3px; display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+  .step .body p{margin:0; color:var(--muted); font-size:14px}
+  .effort{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.04em; text-transform:uppercase; color:var(--muted);
+    border:1px solid var(--line); padding:2px 8px; border-radius:20px; flex:none}
+  .effort.win{color:var(--keep); border-color:var(--keep)}
+
+  /* keep list */
+  .keeps{columns:2; column-gap:22px}
+  @media(max-width:600px){.keeps{columns:1}}
+  .keeps li{break-inside:avoid; margin-bottom:11px; font-size:14px; color:var(--muted); list-style:none; padding-left:24px; position:relative; line-height:1.45}
+  .keeps li::before{content:"✓"; position:absolute; left:0; top:0; color:var(--keep); font-weight:700}
+  .keeps li b{color:var(--ink); font-weight:600}
+
+  footer{margin:60px 0 40px; padding-top:22px; border-top:1px solid var(--line); color:var(--muted); font-size:13px}
+  footer .mono{font-size:12px; color:var(--faint)}
+  footer p{margin:4px 0}
+</style>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0}
+  img{max-width:100%}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow"><span class="dot"></span> FinançasPro · Auditoria de produto</div>
+    <h1>A aba Perfil está saudável — só está pesada demais.</h1>
+    <p class="lede">Auditoria de <b>arquitetura de informação</b> da aba Perfil (<code>#aba-config</code>), lida contra o padrão que Mobills, Organizze, Monarch e YNAB usam no mesmo lugar. A conclusão bate com sua intuição: <b>quase nada precisa sumir — precisa ser reorganizado.</b></p>
+    <div class="stats">
+      <div class="stat"><div class="n">29</div><div class="l">controles interativos hoje</div></div>
+      <div class="stat"><div class="n">8</div><div class="l">seções em rolagem única</div></div>
+      <div class="stat"><div class="n">4</div><div class="l">ferramentas de diagnóstico expostas</div></div>
+      <div class="stat"><div class="n">~7</div><div class="l">linhas de topo na proposta</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="verdict">
+    <h2>Veredito em uma linha</h2>
+    <p>A aba já foi auditada em segurança e acessibilidade e tirou <strong>79/100</strong> — a melhor das quatro abas do app. Este relatório olha outra coisa: <strong>o peso cognitivo</strong>. Hoje ela empilha <strong>29 controles em 8 blocos numa única rolagem</strong>, enquanto todo concorrente do segmento resolve o mesmo com <strong>uma lista curta de categorias que abrem sub-telas</strong> (divulgação progressiva).</p>
+    <p>O problema não são as funcionalidades — é a <strong>apresentação plana</strong>. A única gordura real são <strong>4 ferramentas de suporte/diagnóstico</strong> que nenhum app de consumo mostra no perfil. Minha recomendação: <strong>manter tudo, reagrupar em ~7 linhas de topo e mover o diagnóstico para os bastidores.</strong></p>
+    <p style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)"><strong style="color:var(--keep)">✓ Implementado</strong> — a reestruturação foi aplicada em 12 set 2026 (commit <code>76e89d6</code>): menu de 7 grupos abrindo sub-telas, diagnóstico movido para “Suporte técnico”, notificações e categorias fundidas, tour em Ajuda. Suíte unitária (167 suítes), lint e os gates de contraste/CSS/XSS passaram.</p>
+  </div>
+
+  <!-- 1. INVENTÁRIO -->
+  <section>
+    <div class="sec-head"><span class="k">01</span><h2>O que existe hoje</h2></div>
+    <p class="sec-sub">Inventário fiel do <code>#aba-config</code>. No build local (Android piloto) cerca de 8 itens somem por <code>data-requer-nuvem</code> — mas no build em nuvem tudo isto aparece de uma vez, na mesma tela.</p>
+    <div class="inv">
+      <div class="inv-group">
+        <h3>Conta <span class="c">5</span></h3>
+        <ul>
+          <li>Dados pessoais</li><li>Plano e assinatura</li><li>Equipe (modo casal)</li>
+          <li>Bancos e cartões</li><li>Open Finance</li>
+        </ul>
+      </div>
+      <div class="inv-group">
+        <h3>Segurança <span class="c">6</span></h3>
+        <ul>
+          <li>Proteção por PIN</li><li>Biometria</li><li>Verificação em 2 etapas</li>
+          <li>Códigos de recuperação</li><li>Sessões em outros aparelhos</li><li>Cifrar dados no dispositivo</li>
+        </ul>
+      </div>
+      <div class="inv-group">
+        <h3>Preferências <span class="c">4</span></h3>
+        <ul>
+          <li>Modo escuro</li><li>Alertas de orçamento</li><li>Lembrete diário</li><li>Tour de boas-vindas</li>
+        </ul>
+      </div>
+      <div class="inv-group">
+        <h3>Categorias <span class="c">2</span></h3>
+        <ul><li>Categorias de despesa</li><li>Categorias de receita</li></ul>
+      </div>
+      <div class="inv-group">
+        <h3>Dados <span class="c">6</span></h3>
+        <ul>
+          <li>Exportar backup</li><li>Importar dados</li>
+          <li class="diag">Verificar números</li><li class="diag">Exportar diagnóstico</li>
+          <li class="diag">Replay da sessão</li><li class="diag">Exportar replay HTML</li>
+        </ul>
+      </div>
+      <div class="inv-group">
+        <h3>Sobre <span class="c">3</span></h3>
+        <ul><li>Política de privacidade</li><li>Novidades</li><li>Enviar feedback</li></ul>
+      </div>
+      <div class="inv-group">
+        <h3>Sair &amp; Zona de perigo <span class="c">3</span></h3>
+        <ul><li>Sair da conta</li><li>Apagar todos os dados</li><li>Excluir minha conta</li></ul>
+      </div>
+      <div class="inv-group">
+        <h3>Header + status <span class="c">3</span></h3>
+        <ul><li>Editar perfil (avatar)</li><li>Indicador “conta protegida”</li><li>Status do PIN</li></ul>
+      </div>
+    </div>
+    <p class="scrollnote">Em <span class="mono" style="color:var(--back)">âmbar</span>: as 4 ferramentas de diagnóstico/suporte que puxam o perfil para um público que não é o usuário final.</p>
+  </section>
+
+  <!-- 2. BENCHMARK -->
+  <section>
+    <div class="sec-head"><span class="k">02</span><h2>Como os concorrentes fazem</h2></div>
+    <p class="sec-sub">Olhei o mesmo lugar — a área de perfil/ajustes — nos apps líderes do segmento de finanças pessoais, tanto o mercado BR quanto os referenciais internacionais.</p>
+    <div class="bench">
+      <div class="comp">
+        <div class="name">🇧🇷 Mobills <span class="tag">líder BR</span></div>
+        <p>A aba <b>“Mais opções”</b> é uma lista curta que separa <b>Meu perfil</b>, <b>Gerenciar</b> (cartões, objetivos, tags, importar) e <b>Configurações</b> (engrenagem). Cada bloco abre a sua própria tela — nada de despejar tudo numa rolagem.</p>
+      </div>
+      <div class="comp">
+        <div class="name">🇧🇷 Organizze <span class="tag">líder BR</span></div>
+        <p>Perfil é a <b>foto do usuário</b>; ajustes ficam atrás de um <b>ícone de engrenagem</b>. O perfil em si é enxuto e as configurações são um destino separado, não uma parede de toggles.</p>
+      </div>
+      <div class="comp">
+        <div class="name">🌎 Monarch Money <span class="tag">referência global</span></div>
+        <p>Settings é um índice: <b>Account, Household, Preferences, Institutions, Categories, Rules, Tags</b> — cada um a sua página. Categorias e contas são <b>destinos dedicados</b>, não cartões soltos no perfil.</p>
+      </div>
+      <div class="comp">
+        <div class="name">🌎 YNAB / Nubank <span class="tag">referência global</span></div>
+        <p>Mesma gramática: uma <b>lista de linhas com seta</b> que leva a sub-telas curtas. Ferramenta de suporte/diagnóstico <b>nunca</b> aparece no perfil do usuário — vive em “Ajuda” ou fica oculta.</p>
+      </div>
+      <div class="pattern">
+        <h3>O padrão do segmento, em uma frase</h3>
+        <p><b>Divulgação progressiva:</b> o perfil é um menu curto (6–9 linhas) de categorias, e cada categoria abre uma tela própria. O usuário vê pouco, decide para onde ir, e só então encontra os controles. O FinançasPro já tem essa mecânica (Editar perfil e Bancos já abrem sub-abas próprias) — só não a aplica ao resto.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. ACHADOS -->
+  <section>
+    <div class="sec-head"><span class="k">03</span><h2>Achados</h2></div>
+    <p class="sec-sub">Quatro, do mais estrutural ao mais pontual. Nenhum é bug — são decisões de arquitetura de informação.</p>
+    <div class="finds">
+      <div class="find">
+        <div class="top"><span class="badge b-p1">Achado 1 · estrutural</span></div>
+        <h3>Rolagem única de 29 itens onde o segmento usa menu de 7</h3>
+        <p>Tudo está no mesmo nível hierárquico: toggles de segurança avançada convivem com “modo escuro” e com exportação de diagnóstico, sem prioridade visual. O usuário que só quer <em>trocar o tema</em> ou <em>ver o plano</em> precisa rolar por códigos de recuperação e replay de sessão. É o oposto da divulgação progressiva que todo concorrente adota.</p>
+        <div class="fix"><b>Correção</b> Transformar as 8 seções planas em ~7 linhas de topo que abrem sub-telas (o app já sabe fazer isso — <code>aba-editar-perfil</code>, <code>aba-gerenciar-bancos</code>).</div>
+      </div>
+      <div class="find">
+        <div class="top"><span class="badge b-p1">Achado 2 · gordura real</span></div>
+        <h3>4 ferramentas de diagnóstico no perfil do usuário final</h3>
+        <p><code>Verificar números</code>, <code>Exportar diagnóstico</code>, <code>Replay da sessão</code> e <code>Exportar replay HTML</code> são ferramentas de <b>suporte técnico</b> — úteis para depurar um ticket, ruído para quem só quer cuidar do dinheiro. Metade da seção “Dados” é isto. Nenhum app de consumo do segmento expõe algo assim no perfil.</p>
+        <div class="fix"><b>Correção</b> Consolidar as quatro atrás de uma única linha <code>Suporte técnico</code> dentro de “Ajuda”, ou revelá-las só em modo suporte. A seção “Dados” volta a ser o que o usuário espera: <b>exportar e importar backup</b>.</div>
+      </div>
+      <div class="find">
+        <div class="top"><span class="badge b-p2">Achado 3 · agrupamento</span></div>
+        <h3>“Segurança” tem 6 controles chapados; notificações estão soltas</h3>
+        <p>Seis toggles/ações de segurança lado a lado assustam mais do que tranquilizam — e alguns são contextuais (códigos de recuperação só fazem sentido <em>depois</em> do 2FA). Em Preferências, “Alertas de orçamento” e “Lembrete diário” são a mesma ideia (notificações) em duas linhas.</p>
+        <div class="fix"><b>Correção</b> Segurança vira uma sub-tela; códigos de recuperação aparecem dentro do fluxo de 2FA. Alertas + lembrete viram um único item <code>Notificações</code>.</div>
+      </div>
+      <div class="find">
+        <div class="top"><span class="badge b-p3">Achado 4 · pontual</span></div>
+        <h3>Redundâncias pequenas</h3>
+        <p>Duas portas para a mesma tela de editar perfil (botão do header <em>e</em> card “Dados pessoais”). Categorias ocupam duas linhas quando poderiam ser uma com abas despesa/receita. “Tour de boas-vindas” está em Preferências, mas é conteúdo de ajuda. E, herdado da auditoria anterior, “Apagar tudo” tem confirmação única enquanto “Excluir conta” tem dupla — atrito desigual para ações igualmente irreversíveis.</p>
+        <div class="fix"><b>Correção</b> Uma porta para editar perfil; uma linha “Categorias”; mover o tour para “Ajuda”; igualar o atrito das duas ações destrutivas.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. RECOMENDAÇÃO -->
+  <section>
+    <div class="sec-head"><span class="k">04</span><h2>A reorganização proposta</h2></div>
+    <p class="sec-sub">Antes e depois da tela de topo. Mesma capacidade, um terço da carga visual — de 29 controles à mostra para ~7 linhas que revelam o resto sob demanda.</p>
+    <div class="ba">
+      <div class="col before">
+        <div class="h"><span class="t">Hoje</span><span class="p">29 itens visíveis</span></div>
+        <div class="rows">
+          <div class="row">Conta <span class="mini">5 cards</span></div>
+          <div class="row">Segurança <span class="mini">6 controles</span></div>
+          <div class="row">Preferências <span class="mini">4 cards</span></div>
+          <div class="row">Categorias <span class="mini">2 cards</span></div>
+          <div class="row">Dados <span class="mini">6 cards</span></div>
+          <div class="row">Sobre <span class="mini">3 cards</span></div>
+          <div class="row">Sair / Zona de perigo <span class="mini">3</span></div>
+        </div>
+        <p class="scrollnote">Tudo aberto ao mesmo tempo, em rolagem.</p>
+      </div>
+      <div class="col after">
+        <div class="h"><span class="t">Proposta</span><span class="p">7 linhas de topo</span></div>
+        <div class="rows">
+          <div class="row after-row">Conta e plano <span class="chev">›</span></div>
+          <div class="row after-row">Segurança <span class="chev">›</span></div>
+          <div class="row after-row">Bancos e conexões <span class="chev">›</span></div>
+          <div class="row after-row">Categorias <span class="chev">›</span></div>
+          <div class="row after-row">Preferências e notificações <span class="chev">›</span></div>
+          <div class="row after-row">Backup e dados <span class="chev">›</span></div>
+          <div class="row after-row">Ajuda e sobre <span class="chev">›</span></div>
+        </div>
+        <p class="scrollnote">Sair e Zona de perigo continuam ancorados no rodapé.</p>
+      </div>
+    </div>
+
+    <h3 style="font-size:16px; margin:34px 0 14px; color:var(--ink)">Decisão item a item</h3>
+    <div class="legend">
+      <span class="chip c-keep">Manter</span>
+      <span class="chip c-group">Reagrupar</span>
+      <span class="chip c-merge">Fundir</span>
+      <span class="chip c-back">Bastidores</span>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Item</th><th>Decisão</th><th>Por quê</th></tr></thead>
+        <tbody>
+          <tr class="grp-row"><td colspan="3">Conta</td></tr>
+          <tr><td class="item">Dados pessoais</td><td><span class="v v-keep">Manter</span></td><td class="why">Núcleo. Vira porta única (remover o botão duplicado do header).</td></tr>
+          <tr><td class="item">Plano e assinatura</td><td><span class="v v-keep">Manter</span></td><td class="why">Deve ficar em destaque — é o caminho de upsell, como nos concorrentes.</td></tr>
+          <tr><td class="item">Equipe</td><td><span class="v v-group">Reagrupar</span></td><td class="why">Sob “Conta e plano”; é recurso do Pro.</td></tr>
+          <tr><td class="item">Bancos e cartões</td><td><span class="v v-group">Reagrupar</span></td><td class="why">Conceitualmente são contas, não identidade — grupo “Bancos e conexões”.</td></tr>
+          <tr><td class="item">Open Finance</td><td><span class="v v-group">Reagrupar</span></td><td class="why">Mesmo grupo de “Bancos e conexões”.</td></tr>
+          <tr class="grp-row"><td colspan="3">Segurança</td></tr>
+          <tr><td class="item">Proteção por PIN</td><td><span class="v v-group">Reagrupar</span></td><td class="why">Sub-tela “Segurança”, não 6 linhas na home do perfil.</td></tr>
+          <tr><td class="item">Biometria</td><td><span class="v v-group">Reagrupar</span></td><td class="why">Idem sub-tela “Segurança”.</td></tr>
+          <tr><td class="item">Verificação em 2 etapas</td><td><span class="v v-group">Reagrupar</span></td><td class="why">Idem sub-tela “Segurança”.</td></tr>
+          <tr><td class="item">Códigos de recuperação</td><td><span class="v v-merge">Fundir</span></td><td class="why">Contextual: mostrar dentro do fluxo de 2FA, não como irmão solto.</td></tr>
+          <tr><td class="item">Sessões em outros aparelhos</td><td><span class="v v-group">Reagrupar</span></td><td class="why">Idem sub-tela “Segurança”.</td></tr>
+          <tr><td class="item">Cifrar dados no dispositivo</td><td><span class="v v-group">Reagrupar</span></td><td class="why">Avançado; sub-tela “Segurança” (rótulo já é honesto — manter).</td></tr>
+          <tr class="grp-row"><td colspan="3">Preferências</td></tr>
+          <tr><td class="item">Modo escuro</td><td><span class="v v-keep">Manter</span></td><td class="why">Preferência de topo, uso frequente.</td></tr>
+          <tr><td class="item">Alertas de orçamento</td><td><span class="v v-merge">Fundir</span></td><td class="why">Une-se a “Lembrete” numa linha “Notificações”.</td></tr>
+          <tr><td class="item">Lembrete diário</td><td><span class="v v-merge">Fundir</span></td><td class="why">Mesma ideia — notificações num só lugar.</td></tr>
+          <tr><td class="item">Tour de boas-vindas</td><td><span class="v v-back">Bastidores</span></td><td class="why">É ajuda, não preferência — mover para “Ajuda e sobre”.</td></tr>
+          <tr class="grp-row"><td colspan="3">Categorias</td></tr>
+          <tr><td class="item">Categorias de despesa</td><td><span class="v v-merge">Fundir</span></td><td class="why">Uma linha “Categorias” com abas despesa/receita.</td></tr>
+          <tr><td class="item">Categorias de receita</td><td><span class="v v-merge">Fundir</span></td><td class="why">Idem — uma linha só.</td></tr>
+          <tr class="grp-row"><td colspan="3">Dados</td></tr>
+          <tr><td class="item">Exportar backup</td><td><span class="v v-keep">Manter</span></td><td class="why">Voltado ao usuário — fica em “Backup e dados”.</td></tr>
+          <tr><td class="item">Importar dados</td><td><span class="v v-keep">Manter</span></td><td class="why">Par natural do exportar.</td></tr>
+          <tr><td class="item">Verificar números</td><td><span class="v v-back">Bastidores</span></td><td class="why">Diagnóstico obscuro para o usuário → “Suporte técnico”.</td></tr>
+          <tr><td class="item">Exportar diagnóstico</td><td><span class="v v-back">Bastidores</span></td><td class="why">Ferramenta de ticket → “Suporte técnico”.</td></tr>
+          <tr><td class="item">Replay da sessão</td><td><span class="v v-back">Bastidores</span></td><td class="why">Ferramenta de ticket → “Suporte técnico”.</td></tr>
+          <tr><td class="item">Exportar replay HTML</td><td><span class="v v-back">Bastidores</span></td><td class="why">Fundir com “Replay” dentro de “Suporte técnico”.</td></tr>
+          <tr class="grp-row"><td colspan="3">Sobre · Sair · Zona de perigo</td></tr>
+          <tr><td class="item">Privacidade / Novidades / Feedback</td><td><span class="v v-keep">Manter</span></td><td class="why">Grupo “Ajuda e sobre”, no rodapé — como no segmento.</td></tr>
+          <tr><td class="item">Sair da conta</td><td><span class="v v-keep">Manter</span></td><td class="why">Ancorado no fim.</td></tr>
+          <tr><td class="item">Apagar tudo / Excluir conta</td><td><span class="v v-keep">Manter</span></td><td class="why">Manter — mas igualar o atrito (dupla confirmação nos dois).</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 5. PLANO -->
+  <section>
+    <div class="sec-head"><span class="k">05</span><h2>Plano de ação, por esforço</h2></div>
+    <p class="sec-sub">Os dois primeiros passos entregam a maior parte do ganho e são baratos. A reestruturação completa vem depois, sem pressa.</p>
+    <div class="plan">
+      <div class="step">
+        <div class="no">1</div>
+        <div class="body">
+          <h3>Tirar o diagnóstico do fluxo <span class="effort win">ganho rápido · ~2 h</span></h3>
+          <p>Agrupar “Verificar números”, “Exportar diagnóstico”, “Replay” e “Replay HTML” atrás de uma linha “Suporte técnico” em Ajuda. Sozinho, isso já enxuga a seção mais pesada e some com a única gordura real.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="no">2</div>
+        <div class="body">
+          <h3>Fundir os pares óbvios <span class="effort win">ganho rápido · ~2 h</span></h3>
+          <p>Alertas + Lembrete → “Notificações”; despesa + receita → “Categorias”; remover a porta duplicada de editar perfil; mover “Tour” para Ajuda. Quatro linhas a menos, zero função perdida.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="no">3</div>
+        <div class="body">
+          <h3>Converter para menu com sub-telas <span class="effort">estrutural · ~1–2 dias</span></h3>
+          <p>Segurança e Bancos/conexões viram sub-abas (mesmo padrão de <code>aba-gerenciar-bancos</code>). A home do perfil passa a ser ~7 linhas com seta. É o passo que alinha o app ao segmento.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="no">4</div>
+        <div class="body">
+          <h3>Fechar as pontas de segurança da auditoria anterior <span class="effort">higiene · ~1 h</span></h3>
+          <p>Igualar o atrito de “Apagar tudo” ao de “Excluir conta” e revisar o “último acesso” (hoje mostra sempre a hora atual). Itens que a auditoria de 24/ago já mapeou.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. MANTER -->
+  <section>
+    <div class="sec-head"><span class="k">06</span><h2>O que já está bom — não mexer</h2></div>
+    <p class="sec-sub">Reorganizar não é depreciar. Estas escolhas são acertadas e devem sobreviver à reforma.</p>
+    <div class="card" style="padding:22px 24px">
+      <ul class="keeps">
+        <li><b>Divulgação progressiva já existe</b> em Editar perfil e Bancos — a base para expandir o padrão está pronta.</li>
+        <li><b>Conformidade Play Store:</b> <code>data-requer-nuvem</code> some com nuvem/assinatura no build local — manter na reforma.</li>
+        <li><b>Cópia honesta</b> na cifragem e no PIN: dizem o que protegem e o que não protegem.</li>
+        <li><b>Exclusão de conta in-app</b> com dupla confirmação (exigência da loja).</li>
+        <li><b>Plano em destaque</b> com card diferenciado — coerente com o upsell dos concorrentes.</li>
+        <li><b>Dark mode correto</b> e contraste aprovado nos dois temas (79/100 na auditoria anterior).</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    <p><b>Auditoria da aba Perfil</b> — arquitetura de informação · escopo: <code>#aba-config</code>, <code>js/modules/init-config.js</code>.</p>
+    <p class="mono">Método: inventário estático + benchmark de segmento (Mobills, Organizze, Monarch, YNAB, Nubank). Complementa a auditoria de segurança/acessibilidade de 24 ago 2026 (79/100), não a substitui.</p>
+  </footer>
+
+</div>
+
+</body>
+</html>
