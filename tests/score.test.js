@@ -67,26 +67,26 @@ describe('SCORE — calcular com fuzzy baixa confiança', () => {
 describe('SCORE — calcular sem fuzzy, apenas aprendizado', () => {
   beforeEach(() => SCORE._cache.clear());
 
-  test('aprendizado com contador 1 → aScore = 0.55', () => {
+  test('aprendizado com contador 1 → piso média (manda)', () => {
     const r = SCORE.calcular(null, { categoria: 'moradia', tipo: 'despesa', contador: 1 }, null);
-    // aScore = min(0.5 + 1*0.05, 0.95) = 0.55 * 0.35 = 0.1925 → 'baixa'
-    expect(r.score).toBeCloseTo(0.19, 1);
-    expect(r.confianca).toBe('baixa');
+    // net=1 → manda; boost mínimo 0.51 → 'media'
+    expect(r.score).toBeCloseTo(0.51, 1);
+    expect(r.confianca).toBe('media');
+    expect(r.fonte).toBe('aprendizado');
   });
 
   test('aprendizado sem contador usa contador=1', () => {
     const r1 = SCORE.calcular(null, { categoria: 'moradia', tipo: 'despesa', contador: 1 }, null);
-    const r2 = SCORE.calcular(null, { categoria: 'moradia', tipo: 'despesa' }, null);
-    // contador undefined → usa 1 → mesmo resultado
-    // Mas categoria diferente produziria cache diferente, então limpamos cache
     SCORE._cache.clear();
+    const r2 = SCORE.calcular(null, { categoria: 'moradia', tipo: 'despesa' }, null);
     expect(r1.score).toBe(r2.score);
   });
 
-  test('aprendizado com contador alto (≥9) satura em aScore = 0.95', () => {
+  test('aprendizado com contador alto (≥2) sobe para alta', () => {
     const r = SCORE.calcular(null, { categoria: 'saude', tipo: 'despesa', contador: 100 }, null);
-    // aScore = min(0.5 + 100*0.05, 0.95) = 0.95 * 0.35 = 0.3325 → 'baixa'
-    expect(r.score).toBeCloseTo(0.33, 1);
+    // net>=2 → Math.max(weighted, 0.76) → 'alta'
+    expect(r.score).toBeGreaterThan(0.75);
+    expect(r.confianca).toBe('alta');
   });
 });
 
@@ -118,9 +118,20 @@ describe('SCORE — limiares de confiança', () => {
 describe('SCORE — categoria e tipo derivados', () => {
   beforeEach(() => SCORE._cache.clear());
 
-  test('categoria vem do fuzzy quando disponível', () => {
+  test('categoria vem do fuzzy quando aprendizado está ausente', () => {
     const r = SCORE.calcular({ confianca: 'alta', categoria: 'lazer', tipo: 'despesa' }, null, null);
     expect(r.categoria).toBe('lazer');
+  });
+
+  test('aprendizado vence fuzzy quando categorias divergem', () => {
+    const r = SCORE.calcular(
+      { confianca: 'alta', categoria: 'transporte', tipo: 'despesa' },
+      { categoria: 'alimentacao', tipo: 'despesa', contador: 2, correcao: true },
+      null
+    );
+    expect(r.categoria).toBe('alimentacao');
+    expect(r.fonte).toBe('aprendizado');
+    expect(r.confianca).toBe('alta');
   });
 
   test('categoria vem do aprendizado quando fuzzy é null', () => {

@@ -43,6 +43,7 @@ const PERMITIDO = new RegExp([
   'perfil-avatar-badge--' + PROIBIDA,   // modificador do PLANO
   "'" + PROIBIDA + "'",                  // comparação com o tier vindo da API
   'youtube ' + PROIBIDA,                 // serviço de terceiro
+  'youtube\\\\s\\*' + PROIBIDA,          // regex de extrato (YouTube Premium)
   'Recursos ' + PROIBIDA + ' na nuvem',  // comentário sobre o plano
   // rótulo antigo do plano (histórico); UI atual usa "Pro"
   "label: '" + PROIBIDA + "'",

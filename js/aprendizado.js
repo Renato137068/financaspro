@@ -19,6 +19,15 @@ var APRENDIZADO = {
   PRUNE_CONTADOR_MIN: 2, // ...se contador < 2
   MAX_ENTRADAS: 5000, // hard cap
 
+  /** Chave estável para frase inteira (correção do usuário manda). */
+  _chaveFrase: function(desc) {
+    var n = (typeof CATEGORIZADOR !== 'undefined' && CATEGORIZADOR.normalizarExtrato)
+      ? CATEGORIZADOR.normalizarExtrato(desc)
+      : String(desc || '').toLowerCase().trim();
+    if (!n || n.length < 2) return null;
+    return '@@' + n;
+  },
+
   init: function() {
     this.HISTORICO = DADOS.obterAprendizado() || {};
     this.prune();
@@ -106,7 +115,18 @@ var APRENDIZADO = {
     // plano gratuito, entao quem assina depois ja chega com o app treinado --
     // em vez de comecar do zero no dia em que pagou.
     if (!this._podeAprender()) return null;
-    var tokens = desc.toLowerCase().split(/\s+/);
+
+    // 1) Frase exata (após normalizar extrato) — prioridade máxima
+    var chaveFrase = this._chaveFrase(desc);
+    if (chaveFrase && this.HISTORICO[chaveFrase]) {
+      var frase = this.HISTORICO[chaveFrase];
+      return Object.assign({}, frase, { fraseExata: true, correcao: !!frase.correcao });
+    }
+
+    var norm = (typeof CATEGORIZADOR !== 'undefined' && CATEGORIZADOR.normalizarExtrato)
+      ? CATEGORIZADOR.normalizarExtrato(desc)
+      : String(desc).toLowerCase();
+    var tokens = norm.split(/\s+/);
     var candidatos = [];
 
     tokens.forEach(function(p) {
@@ -115,13 +135,11 @@ var APRENDIZADO = {
       if (APRENDIZADO.HISTORICO[p]) {
         candidatos.push(APRENDIZADO.HISTORICO[p]);
       }
-      if (!APRENDIZADO.HISTORICO[p]) {
-        var prefixo = p + '__';
-        var chaves = Object.keys(APRENDIZADO.HISTORICO);
-        for (var i = 0; i < chaves.length; i++) {
-          if (chaves[i].indexOf(prefixo) === 0) {
-            candidatos.push(APRENDIZADO.HISTORICO[chaves[i]]);
-          }
+      var prefixo = p + '__';
+      var chaves = Object.keys(APRENDIZADO.HISTORICO);
+      for (var i = 0; i < chaves.length; i++) {
+        if (chaves[i].indexOf(prefixo) === 0) {
+          candidatos.push(APRENDIZADO.HISTORICO[chaves[i]]);
         }
       }
     });
@@ -136,13 +154,35 @@ var APRENDIZADO = {
     });
   },
 
+  /** Grava/reforça a frase inteira sem precisar de categoria “errada”. */
+  lembrarFrase: function(desc, categoria, tipo) {
+    if (!desc || !categoria) return;
+    var chaveFrase = this._chaveFrase(desc);
+    if (!chaveFrase) return;
+    var hoje = (typeof UTILS !== 'undefined' && UTILS.dataLocalIso)
+      ? UTILS.dataLocalIso()
+      : new Date().toISOString().slice(0, 10);
+    var prev = this.HISTORICO[chaveFrase];
+    this.HISTORICO[chaveFrase] = {
+      categoria: categoria,
+      tipo: tipo || 'despesa',
+      contador: Math.max(3, (prev && prev.contador) || 0),
+      penalidades: 0,
+      correcao: true,
+      fraseExata: true,
+      ultimaUsada: hoje,
+      primeiraUsada: (prev && prev.primeiraUsada) || hoje
+    };
+    DADOS.salvarAprendizado(this.HISTORICO);
+  },
+
   // Feedback loop: chamado quando usuário corrige uma sugestão.
   // Penaliza palavras associadas à categoria errada, reforça a correta.
-  registrarCorrecao: function(desc, categoriaErrada, categoriaCorreta) {
+  registrarCorrecao: function(desc, categoriaErrada, categoriaCorreta, tipoCorreto) {
     if (!desc || !categoriaErrada || !categoriaCorreta) return;
     if (categoriaErrada === categoriaCorreta) return;
 
-    var palavras = desc.toLowerCase().split(/\s+/);
+    var palavras = String(desc).toLowerCase().split(/\s+/);
     var alterou = false;
 
     palavras.forEach(function(p) {
@@ -161,8 +201,27 @@ var APRENDIZADO = {
       }
     });
 
+    // Frase inteira: próxima vez essa descrição (normalizada) já nasce certa
+    var chaveFrase = this._chaveFrase(desc);
+    if (chaveFrase) {
+      var hoje = (typeof UTILS !== 'undefined' && UTILS.dataLocalIso)
+        ? UTILS.dataLocalIso()
+        : new Date().toISOString().slice(0, 10);
+      APRENDIZADO.HISTORICO[chaveFrase] = {
+        categoria: categoriaCorreta,
+        tipo: tipoCorreto || 'despesa',
+        contador: Math.max(3, (APRENDIZADO.HISTORICO[chaveFrase] && APRENDIZADO.HISTORICO[chaveFrase].contador) || 0),
+        penalidades: 0,
+        correcao: true,
+        fraseExata: true,
+        ultimaUsada: hoje,
+        primeiraUsada: (APRENDIZADO.HISTORICO[chaveFrase] && APRENDIZADO.HISTORICO[chaveFrase].primeiraUsada) || hoje
+      };
+      alterou = true;
+    }
+
     if (alterou) DADOS.salvarAprendizado(this.HISTORICO);
-    // Reforço da correta acontece via registrar() chamado no submit normal
+    // Reforço por palavra da correta acontece via registrar() no submit
   }
 };
 

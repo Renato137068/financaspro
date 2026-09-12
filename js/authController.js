@@ -1056,26 +1056,14 @@ function setupAuthUI() {
   return false;
 }
 
-/** Ao voltar do background, pede senha/biometria de novo (estilo app bancário). */
+/**
+ * Antes: ao sair para outra aba/app e voltar, revogava o desbloqueio e pedia
+ * senha/biometria de novo. Isso atrapalha uso normal (consultar algo e voltar).
+ * Mantemos a sessão desbloqueada até logout explícito ou fim do processo.
+ */
 function _authRegistrarBloqueioAoRetomar(overlay) {
-  if (!overlay || overlay.dataset.authResumeBound === '1') return;
+  if (!overlay) return;
   overlay.dataset.authResumeBound = '1';
-
-  document.addEventListener('visibilitychange', function() {
-    if (!_authTemSessaoNuvem()) return;
-    /* O prompt de biometria nativo esconde o WebView. Não é o usuário saindo do
-       app — ignorar para não revogar o desbloqueio nem reabrir em loop. */
-    if (_authBiometricInFlight) return;
-    if (document.visibilityState === 'hidden') {
-      _authRevogarDesbloqueio();
-      _authBiometricAutoTried = false; // saída real: permite auto-biometria ao voltar
-      return;
-    }
-    if (document.visibilityState === 'visible' && !_authEstaDesbloqueado()) {
-      _abrirAuthOverlay(overlay);
-      overlay.dispatchEvent(new CustomEvent('fp-auth-unlock'));
-    }
-  });
 }
 
 function atualizarBarraSessao() {

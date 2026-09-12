@@ -1377,10 +1377,12 @@
     font-size: var(--font-size-xl);
   }
 
+  /* z abaixo da bottom nav (--z-nav:150): sticky com --z-sticky (200)
+     pintava por cima do menu de 5 abas no Extrato vazio/curto. */
   .extrato-filtros {
     position: sticky;
     top: var(--app-header-offset, 58px);
-    z-index: var(--z-sticky);
+    z-index: var(--z-raised);
     background: var(--color-bg-page);
     padding: var(--space-3) 0;
   }

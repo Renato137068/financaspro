@@ -7,7 +7,12 @@ var PIPELINE = {
     if (!input || input.length < 2) return null;
 
     var parsed = PARSER.extrair(input);
-    var aprend = APRENDIZADO.sugerir(parsed.desc);
+    var desc = parsed.desc;
+    if (typeof CATEGORIZADOR !== 'undefined' && CATEGORIZADOR.normalizarExtrato) {
+      var limpa = CATEGORIZADOR.normalizarExtrato(desc);
+      if (limpa) desc = limpa;
+    }
+    var aprend = APRENDIZADO.sugerir(parsed.desc) || APRENDIZADO.sugerir(desc);
     var fuzzy = typeof CATEGORIZADOR !== 'undefined' ? CATEGORIZADOR.detectar(parsed.desc) : null;
     var score = SCORE.calcular(fuzzy, aprend);
 

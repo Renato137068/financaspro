@@ -700,8 +700,14 @@ const INIT_FORM = {
       var confirmBtn = document.getElementById('ia-confirm-category');
       if (confirmBtn) {
         confirmBtn.addEventListener('click', function() {
-          var confirmada = Object.assign({}, INIT_FORM._iaSuggestion || sugestao, { confirmada: true, confianca: 'alta' });
+          var atual = INIT_FORM._iaSuggestion || sugestao;
+          var confirmada = Object.assign({}, atual, { confirmada: true, confianca: 'alta' });
           INIT_FORM.aplicarSugestaoCategoria(confirmada);
+          var descNow = (document.getElementById('novo-descricao') || {}).value || '';
+          if (typeof APRENDIZADO !== 'undefined' && descNow && atual.categoria) {
+            if (APRENDIZADO.lembrarFrase) APRENDIZADO.lembrarFrase(descNow, atual.categoria, atual.tipo);
+            if (APRENDIZADO.registrar) APRENDIZADO.registrar(descNow, atual.categoria, atual.tipo);
+          }
           INIT_FORM.mostrarFeedbackAprendizado('Sugestão confirmada. Aprendizado atualizado.');
         });
       }
@@ -709,9 +715,13 @@ const INIT_FORM = {
 
     if (actions) {
       var altHtml = '';
-      if (confianca === 'baixa') {
+      // Chips também na confiança média (antes só na baixa) — R$ 0, mais automático.
+      if (confianca === 'baixa' || confianca === 'media') {
         var alternativas = (sugestao.contexto && sugestao.contexto.alternativas) || [];
-        altHtml = '<span class="ia-action-hint">Escolha uma categoria para me ensinar</span>' +
+        var hint = confianca === 'media'
+          ? 'Ou escolha outra categoria'
+          : 'Escolha uma categoria para me ensinar';
+        altHtml = '<span class="ia-action-hint">' + hint + '</span>' +
           alternativas.slice(0, 3).map(function(alt) {
             return '<button type="button" class="ia-alt-btn" data-cat="' + UTILS.escapeHtml(alt.categoria) + '" data-tipo="' + UTILS.escapeHtml(alt.tipo || 'despesa') + '">' +
               UTILS.escapeHtml(UTILS.labelCategoria(alt.categoria)) + '</button>';
@@ -724,6 +734,8 @@ const INIT_FORM = {
 
       actions.querySelectorAll('.ia-alt-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
+          var descNow = (document.getElementById('novo-descricao') || {}).value || '';
+          var anterior = (INIT_FORM._iaSuggestion && INIT_FORM._iaSuggestion.categoria) || 'outro';
           var confirmada = {
             categoria: this.dataset.cat,
             tipo: this.dataset.tipo || 'despesa',
@@ -731,6 +743,12 @@ const INIT_FORM = {
             confirmada: true,
             contexto: { razoes: ['Categoria ensinada manualmente', 'Aprendizado ativo'] }
           };
+          if (typeof APRENDIZADO !== 'undefined' && APRENDIZADO.registrarCorrecao && descNow) {
+            APRENDIZADO.registrarCorrecao(descNow, anterior, confirmada.categoria, confirmada.tipo);
+          }
+          if (typeof APRENDIZADO !== 'undefined' && APRENDIZADO.registrar && descNow) {
+            APRENDIZADO.registrar(descNow, confirmada.categoria, confirmada.tipo);
+          }
           INIT_FORM.aplicarSugestaoCategoria(confirmada);
           INIT_FORM.mostrarFeedbackAprendizado('Entendido. Vou melhorar as próximas sugestões.');
         });
@@ -806,7 +824,19 @@ const INIT_FORM = {
       ? APRENDIZADO.sugerir(descricao)
       : null;
     if (aprendida) {
-      add(aprendida.categoria, aprendida.tipo, 18 + Math.min((aprendida.contador || 0) * 3, 18), 'Correções e usos anteriores', 'aprendizado');
+      // Correção / frase ensinada pelo usuário manda sobre o dicionário (R$ 0).
+      var ptsApr = (aprendida.fraseExata || aprendida.correcao)
+        ? 95
+        : (55 + Math.min((aprendida.contador || 0) * 5, 30));
+      add(
+        aprendida.categoria,
+        aprendida.tipo,
+        ptsApr,
+        (aprendida.fraseExata || aprendida.correcao)
+          ? 'Você me ensinou esta descrição'
+          : 'Correções e usos anteriores',
+        'aprendizado'
+      );
       if (aprendida.banco && contexto.banco && aprendida.banco === contexto.banco) {
         add(aprendida.categoria, aprendida.tipo, 8, 'Mesmo banco usado antes', 'banco');
       }
