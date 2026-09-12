@@ -1191,10 +1191,7 @@
       </div>
     </div>
 
-    <!-- MENU DE GRUPOS — divulgação progressiva: cada linha abre uma sub-tela
-         (#aba-config-*), no lugar da rolagem única com dezenas de controles.
-         As sub-telas ficam logo após o fechamento de #aba-config, antes de
-         #aba-editar-perfil (o teste perfil-polish fatia esse trecho). -->
+    <!-- MENU DE GRUPOS — cada linha abre uma sub-tela (#aba-config-*). -->
     <div class="perfil-section">
       <h2 class="perfil-section-title">Configurações</h2>
       <div class="perfil-cards-grid">
@@ -1299,15 +1296,10 @@
     <div style="height: 24px;"></div>
   </div>
 
-  <!-- ══════════════════════════════════════════════════════════════
-       SUB-TELAS DO PERFIL (divulgação progressiva)
-       Cada uma é uma .aba irmã, aberta por mudarAba('config-*') a partir
-       do menu, e fechada de volta com data-aba="config". Ficam ANTES de
-       #aba-editar-perfil de propósito: o teste perfil-polish fatia o HTML
-       de #aba-config até #aba-editar-perfil e exige o link de privacidade
-       nesse trecho. Os IDs/toggles são os mesmos de antes — init-config.js
-       liga tudo por getElementById, então continuam funcionando aqui.
-       ══════════════════════════════════════════════════════════════ -->
+  <!-- Sub-telas do Perfil: .aba irmãs abertas por mudarAba('config-*') e
+       fechadas com data-aba="config". Antes de #aba-editar-perfil de propósito
+       (o teste perfil-polish fatia esse trecho e exige o link de privacidade).
+       IDs preservados — init-config.js liga tudo por getElementById. -->
 
   <!-- SUB-TELA: CONTA E PLANO -->
   <div id="aba-config-conta" class="aba">
