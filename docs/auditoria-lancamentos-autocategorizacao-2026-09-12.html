@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auditoria de Lançamentos</title>
+<meta name="description" content="Auditoria da parte de lançamentos e da autocategorização do FinançasPro, com recomendações práticas e gratuitas.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --ground:#f5f7f4; --card:#ffffff; --card-2:#fbfcfa;
+    --ink:#15211c; --muted:#59685f; --faint:#89968e; --line:#e4e9e3; --line-2:#eef2ec;
+    --brand:#0e5a41; --brand-2:#2f9c6d; --brand-ink:#0a3d2c;
+    --free:#15803d; --free-bg:#e9f6ec; --p1:#c2410c; --p1-bg:#fbeee5; --p2:#0e7490; --p2-bg:#e2f3f6; --p3:#6b7280; --p3-bg:#eef1ee;
+    --shadow:0 1px 2px rgba(16,40,30,.05), 0 10px 30px rgba(16,40,30,.06); --shadow-sm:0 1px 2px rgba(16,40,30,.06);
+    --radius:16px; --radius-sm:11px; --maxw:940px;
+  }
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+    --ground:#0d1310; --card:#151c18; --card-2:#121814; --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6;
+    --free:#57c98a; --free-bg:#123222; --p1:#f0a173; --p1-bg:#37210f; --p2:#4bc4d8; --p2-bg:#0c3138; --p3:#9aa6a0; --p3-bg:#1e2621;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }}
+  :root[data-theme="dark"]{
+    --ground:#0d1310; --card:#151c18; --card-2:#121814; --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6;
+    --free:#57c98a; --free-bg:#123222; --p1:#f0a173; --p1-bg:#37210f; --p2:#4bc4d8; --p2-bg:#0c3138; --p3:#9aa6a0; --p3-bg:#1e2621;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box} html{-webkit-text-size-adjust:100%}
+  body{background:var(--ground); color:var(--ink); font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:var(--maxw); margin:0 auto; padding-inline:20px}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+  code{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.84em; background:var(--line-2); padding:1px 6px; border-radius:6px; color:var(--brand-ink)}
+  :root:not([data-theme="light"]) code,:root[data-theme="dark"] code{color:var(--brand-2)}
+  h1,h2,h3{font-family:"Bricolage Grotesque","IBM Plex Sans",sans-serif; text-wrap:balance; letter-spacing:-.015em; margin:0}
+  a{color:var(--brand-2)}
+
+  .hero{background:radial-gradient(120% 140% at 100% 0%, rgba(47,156,109,.18), transparent 55%), linear-gradient(158deg, var(--brand), var(--brand-ink)); color:#eafff5; border-radius:0 0 26px 26px; box-shadow:var(--shadow); position:relative; overflow:hidden}
+  .hero::after{content:""; position:absolute; inset:0; background-image:radial-gradient(rgba(255,255,255,.06) 1px, transparent 1.4px); background-size:22px 22px; mask:linear-gradient(120deg,#000,transparent 62%); pointer-events:none}
+  .hero .wrap{padding-block:34px 30px; position:relative; z-index:1}
+  .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:#9fe8c9; display:flex; align-items:center; gap:10px; margin-bottom:16px}
+  .eyebrow .dot{width:7px; height:7px; border-radius:50%; background:#7bffc8; box-shadow:0 0 0 4px rgba(123,255,200,.18)}
+  h1{font-size:clamp(28px,5.6vw,44px); line-height:1.03; font-weight:800; color:#fff; max-width:17ch}
+  .hero .lede{margin:16px 0 0; font-size:clamp(15px,2.3vw,18px); max-width:64ch; color:#d5f4e6; line-height:1.55}
+  .hero .lede b{color:#fff; font-weight:600}
+  .stats{display:flex; flex-wrap:wrap; gap:12px; margin-top:26px}
+  .stat{background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.16); border-radius:14px; padding:12px 16px; min-width:120px}
+  .stat .n{font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:24px; line-height:1; color:#fff; font-variant-numeric:tabular-nums}
+  .stat .l{font-size:12px; color:#bfead7; margin-top:6px}
+
+  section{margin-top:50px}
+  .sec-head{display:flex; align-items:baseline; gap:12px; margin-bottom:8px}
+  .sec-head .k{font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:600; color:var(--brand-2); border:1px solid var(--line); border-radius:8px; padding:3px 9px; background:var(--card); flex:none}
+  h2{font-size:clamp(20px,3.4vw,26px); font-weight:700; line-height:1.14}
+  .sec-sub{color:var(--muted); font-size:15px; margin:2px 0 20px; max-width:68ch}
+
+  .verdict{background:var(--card); border:1px solid var(--line); border-left:5px solid var(--brand-2); border-radius:var(--radius); padding:22px 24px; box-shadow:var(--shadow); margin-top:-30px; position:relative; z-index:2}
+  .verdict h2{font-size:19px; margin-bottom:8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+  .verdict .grade{font-family:"IBM Plex Mono",monospace; font-size:12px; font-weight:600; color:var(--free); background:var(--free-bg); padding:3px 10px; border-radius:20px}
+  .verdict p{margin:0; color:var(--muted); font-size:15px} .verdict p+p{margin-top:10px} .verdict strong{color:var(--ink)}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow-sm); padding:20px 22px}
+
+  /* pipeline */
+  .pipe{display:flex; flex-direction:column; gap:10px}
+  .layer{display:grid; grid-template-columns:44px 1fr auto; align-items:center; gap:14px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:14px 16px; box-shadow:var(--shadow-sm)}
+  .layer .num{width:44px; height:44px; border-radius:11px; background:var(--brand); color:#fff; font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:19px; display:flex; align-items:center; justify-content:center}
+  .layer .body h3{font-size:15px; font-weight:700} .layer .body p{margin:3px 0 0; font-size:13.4px; color:var(--muted)}
+  .layer .tag{font-family:"IBM Plex Mono",monospace; font-size:10.5px; font-weight:600; padding:3px 9px; border-radius:20px; white-space:nowrap}
+  .t-free{background:var(--free-bg); color:var(--free)} .t-pro{background:#efe9fb; color:#6d28d9}
+  :root:not([data-theme="light"]) .t-pro,:root[data-theme="dark"] .t-pro{background:#241a3a; color:#a78bfa}
+
+  ul.keeps{list-style:none; margin:0; padding:0; display:grid; gap:11px}
+  @media(min-width:640px){ul.keeps{grid-template-columns:1fr 1fr; gap:11px 22px}}
+  ul.keeps li{padding-left:26px; position:relative; font-size:14.2px; color:var(--muted); line-height:1.5}
+  ul.keeps li::before{content:"✓"; position:absolute; left:0; top:0; color:var(--free); font-weight:700}
+  ul.keeps li b{color:var(--ink); font-weight:600}
+
+  .finds{display:flex; flex-direction:column; gap:16px}
+  .find{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; box-shadow:var(--shadow-sm)}
+  .find .top{display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-bottom:8px}
+  .badge{font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; padding:4px 9px; border-radius:20px; flex:none}
+  .b-p1{background:var(--p1-bg); color:var(--p1)} .b-p2{background:var(--p2-bg); color:var(--p2)} .b-p3{background:var(--p3-bg); color:var(--p3)}
+  .b-free{background:var(--free-bg); color:var(--free)}
+  .b-done{background:var(--free); color:#fff} .b-has{background:var(--p2); color:#fff}
+  .find.is-done{border-left:5px solid var(--free)} .find.is-has{border-left:5px solid var(--p2)}
+  .find h3{font-size:16.5px; font-weight:700; line-height:1.25}
+  .find p{margin:8px 0 0; color:var(--muted); font-size:14.4px}
+  .find .ex{margin-top:12px; padding:11px 14px; background:var(--card-2); border:1px dashed var(--line); border-radius:10px; font-size:13.6px}
+  .find .ex b{color:var(--brand-2); font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.05em; text-transform:uppercase; display:block; margin-bottom:5px}
+  .find .ex .mono{color:var(--ink)}
+
+  .note{background:var(--card-2); border:1px solid var(--line); border-radius:12px; padding:16px 18px; font-size:14px; color:var(--muted)}
+  .note b{color:var(--ink)}
+  footer{margin:56px 0 40px; padding-top:22px; border-top:1px solid var(--line); color:var(--muted); font-size:13px}
+  footer .mono{font-size:12px; color:var(--faint)}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow"><span class="dot"></span> FinançasPro · Auditoria de produto</div>
+    <h1>A autocategorização já é forte. O que falta é o mundo real.</h1>
+    <p class="lede">Auditoria da parte de <b>lançamentos</b> e da <b>autocategorização</b>. Por baixo há um motor de <b>4 camadas, 100% no aparelho e sem custo de API</b>. Os ganhos não estão em "mais IA" — estão em <b>lidar com a bagunça de extrato real</b> e <b>cobrir mais marcas</b>. Tudo grátis.</p>
+    <div class="stats">
+      <div class="stat"><div class="n">4</div><div class="l">camadas de categorização</div></div>
+      <div class="stat"><div class="n">R$ 0</div><div class="l">custo por lançamento (on-device)</div></div>
+      <div class="stat"><div class="n">2</div><div class="l">já entregues nesta rodada</div></div>
+      <div class="stat"><div class="n">4</div><div class="l">no roadmap — todas grátis</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="verdict">
+    <h2>Veredito <span class="grade">MADURO · melhorias 100% gratuitas</span></h2>
+    <p>Para um app <em>vanilla JS</em> sem back-end de IA, a categorização é <strong>surpreendentemente boa</strong>: combina dicionário com tolerância a erro de digitação, regras por marca, o <strong>seu próprio histórico</strong> e um aprendizado que penaliza correções — tudo <strong>no aparelho, de graça</strong>. A monetização está bem desenhada: dicionário e histórico próprio são grátis; só o <em>aprendizado generalizado</em> é Pro.</p>
+    <p>As oportunidades são de <strong>praticidade</strong>, não de motor: hoje o app se sai bem com "Uber", mas tropeçava em <code>IFD*IFOOD</code> — descrição crua de extrato. <strong>Esta rodada já entregou</strong> a normalização desses separadores e uma leva de marcas BR que faltavam (McDonald's, Shopee, Zé Delivery, Shell, HBO Max…). Um ponto que a auditoria inicial supôs frágil se confirmou <strong>já resolvido</strong>: na dúvida o app <em>não</em> cai em "outro" calado — o cartão de detecção já mostra chips de confirmação e de categorias alternativas.</p>
+  </div>
+
+  <!-- 1 -->
+  <section>
+    <div class="sec-head"><span class="k">01</span><h2>Como funciona hoje</h2></div>
+    <p class="sec-sub">Um lançamento passa por um funil de sinais que somam pontos; a categoria de maior pontuação vence. Entrada rápida por linguagem natural ("Uber 32,90 ontem nubank") alimenta o mesmo funil.</p>
+    <div class="pipe">
+      <div class="layer">
+        <div class="num">1</div>
+        <div class="body"><h3>Dicionário difuso — <code>CATEGORIZADOR</code></h3><p>Lista de palavras por categoria + distância de Levenshtein: pega "neflix", "farmacea", "supermercto". Base da sugestão (60 pts se confiança alta).</p></div>
+        <span class="tag t-free">grátis</span>
+      </div>
+      <div class="layer">
+        <div class="num">2</div>
+        <div class="body"><h3>Regras por marca — <code>AUTO_CATEGORIZER</code></h3><p>~24 regex de marcas/termos (Netflix, iFood, Uber, IPTU…) + frequência do histórico. Fallback quando o dicionário não decide.</p></div>
+        <span class="tag t-free">grátis</span>
+      </div>
+      <div class="layer">
+        <div class="num">3</div>
+        <div class="body"><h3>Seu histórico — <code>contexto.matches</code></h3><p>Compara com seus lançamentos anteriores (descrição exata/parecida, valor, banco, cartão, dia do mês). "Você já lançou isto como Transporte."</p></div>
+        <span class="tag t-free">grátis</span>
+      </div>
+      <div class="layer">
+        <div class="num">4</div>
+        <div class="body"><h3>Aprendizado generalizado — <code>APRENDIZADO</code></h3><p>Aprende palavra→categoria das suas correções, com contador e penalidade. <em>Grava</em> no grátis (para chegar treinado ao assinar); <em>ler</em> é Pro.</p></div>
+        <span class="tag t-pro">Pro</span>
+      </div>
+    </div>
+    <p class="sec-sub" style="margin-top:16px">A <b>entrada rápida</b> (<code>PARSER</code>) já entende valor em formato BR (<code>1.250,00</code>), datas relativas (hoje/ontem/sexta), banco e crédito/débito — um diferencial real. Nada disso chama servidor.</p>
+  </section>
+
+  <!-- 2 -->
+  <section>
+    <div class="sec-head"><span class="k">02</span><h2>O que já está muito bom</h2></div>
+    <div class="card">
+      <ul class="keeps">
+        <li><b>Multi-sinal</b> — junta semântica, marca, histórico próprio e aprendizado num placar único e explicável.</li>
+        <li><b>Tolerante a erro de digitação</b> — Levenshtein cobre "supermercto", "farmacea".</li>
+        <li><b>Entrada por linguagem natural</b> — valor, data, banco e cartão de uma frase só.</li>
+        <li><b>Aprende com correção</b> — penaliza a categoria errada e reforça a certa.</li>
+        <li><b>Nunca troca receita↔despesa em silêncio</b> — só aplica se o tipo bate (cuidado de UX real).</li>
+        <li><b>Monetização honesta</b> — o grátis já entrega muito; o Pro é o aprendizado generalizado, não o básico.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section>
+    <div class="sec-head"><span class="k">03</span><h2>Achados — entregues e roadmap</h2></div>
+    <p class="sec-sub">Ordenados por impacto no dia a dia. Nenhum exige IA paga nem servidor; todos rodam no aparelho. Os dois primeiros já foram implementados nesta rodada; um terceiro já existia no app.</p>
+    <div class="finds">
+
+      <div class="find is-done">
+        <div class="top"><span class="badge b-done">✓ Entregue nesta rodada</span><span class="badge b-free">grátis</span></div>
+        <h3>Normalizar o ruído do extrato antes de casar</h3>
+        <p>As regras assumiam descrição limpa ("Uber"), mas cartão e <b>Open Finance</b> (que o app já suporta) trazem <code>IFD*IFOOD</code>, <code>PAG*99APP</code>, <code>MP_SHOPEE</code>. Agora um passo de <b>normalização</b> converte os separadores de adquirente (<code>* _ / \ |</code>) em espaço antes de casar — em <code>CATEGORIZADOR</code> (difuso) e em <code>AUTO_CATEGORIZER</code> (regex) —, disparando a categoria certa em transações importadas que antes caíam em "outro".</p>
+        <div class="ex"><b>Exemplo</b> <span class="mono">"IFD*IFOOD" → normaliza → "ifd ifood" → Alimentação ✓ · "MP_SHOPEE" → Compras ✓</span></div>
+      </div>
+
+      <div class="find is-done">
+        <div class="top"><span class="badge b-done">✓ Entregue nesta rodada</span><span class="badge b-free">grátis</span></div>
+        <h3>Ampliar a cobertura de marcas BR de alta frequência</h3>
+        <p>Uma leva de marcas que faltavam entrou nas regras, sem custo de API: fast-food/delivery (McDonald's, Burger King, Zé Delivery, Assaí, Atacadão), postos (Shell, Ipiranga, Petrobras), mobilidade (Cabify, inDrive), streaming/assinaturas (HBO Max, Paramount+, Crunchyroll, Canva, ChatGPT) e marketplaces (Shopee, AliExpress, Shein, Kabum, Netshoes). Coberto por testes.</p>
+        <div class="ex"><b>Exemplo</b> <span class="mono">"posto shell" → Transporte · "hbo max" → Assinaturas · "shopee" → Compras</span></div>
+      </div>
+
+      <div class="find is-has">
+        <div class="top"><span class="badge b-has">Já existe no app</span><span class="badge b-free">grátis</span></div>
+        <h3>Na dúvida, perguntar — não cair em "outro" calado</h3>
+        <p>A auditoria inicial supôs que confiança média/baixa virava <code>outro</code> em silêncio. Ao revisar o código, <b>confirmei que já não é o caso</b>: o cartão de detecção (<code>#ia-deteccao-card</code> em <code>init-form.js</code>) já mostra chip de confirmação na confiança média, chips de categorias alternativas na baixa, e o aviso "confirme X ou será salvo como Outro". Nada a fazer — registro aqui para corrigir a suposição.</p>
+        <div class="ex"><b>Estado real</b> <span class="mono">confiança média → [confirmar] · baixa → [alt 1] [alt 2] + "confirme ou vira Outro"</span></div>
+      </div>
+
+      <div class="find">
+        <div class="top"><span class="badge b-p2">Roadmap · manutenção</span><span class="badge b-free">grátis</span></div>
+        <h3>Unificar os dois sistemas de regra</h3>
+        <p>Existem <b>dois</b> conjuntos que se sobrepõem: <code>CATEGORIZADOR.DICIONARIO</code> (difuso) e <code>AUTO_CATEGORIZER.REGRAS</code> (regex). Eles podem divergir, e o dicionário ainda lista typos à mão ("neflix") que o Levenshtein já pega. Consolidar numa fonte só reduz manutenção e risco de conflito — trabalho de refatoração maior, deixado para uma rodada dedicada.</p>
+      </div>
+
+      <div class="find">
+        <div class="top"><span class="badge b-p2">Roadmap · importação</span><span class="badge b-free">grátis</span></div>
+        <h3>Revisão em lote ao importar / conectar contas</h3>
+        <p>Ao importar backup ou puxar por Open Finance, categorizar <b>tudo</b> de uma vez e mostrar só os <b>incertos</b> numa tela de revisão rápida (chips por linha). Transforma "editar 40 lançamentos um a um" em "confirmar 5 em 30 segundos" — o momento em que o usuário novo mais desiste.</p>
+      </div>
+
+      <div class="find">
+        <div class="top"><span class="badge b-p2">Roadmap · confiança</span><span class="badge b-free">grátis</span></div>
+        <h3>Mostrar o "porquê" e corrigir em um toque</h3>
+        <p>O motor <b>já calcula</b> as razões (<code>razoes</code>: "Descrição já registrada antes", "Padrão semântico"). Exibir isso como um chip discreto sob a categoria ("↳ porque você já fez isso") cria confiança e convida à correção — que alimenta o aprendizado. Custo baixo, o dado já existe.</p>
+      </div>
+
+      <div class="find">
+        <div class="top"><span class="badge b-p3">Roadmap · flexibilidade</span><span class="badge b-free">grátis</span></div>
+        <h3>Auto-categorizar para categorias personalizadas</h3>
+        <p>O usuário pode criar categorias próprias, mas dicionário/regex só conhecem as fixas. Deixar o histórico e o aprendizado <b>mirarem as categorias custom</b> faz o app respeitar a organização de cada um — sem inchar as regras embutidas.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section>
+    <div class="sec-head"><span class="k">04</span><h2>Sobre "manter grátis"</h2></div>
+    <div class="note">
+      <p style="margin:0 0 10px">Nenhuma recomendação aqui exige LLM pago ou servidor — todas rodam no aparelho, então <b>não criam custo por usuário</b>. Elas melhoram o <b>tier gratuito</b> sem canibalizar o Pro: a fronteira de monetização continua sendo o <b>aprendizado generalizado</b> (camada 4), enquanto dicionário, marcas, normalização de extrato e histórico próprio seguem grátis — como já é hoje.</p>
+      <p style="margin:0; font-size:13px; color:var(--faint)" class="mono">Se um dia quiser um salto de qualidade opcional, um modelo on-device minúsculo (categorizador leve em WASM) ainda seria "grátis de rodar" — mas as 6 melhorias acima entregam a maior parte do ganho sem essa complexidade.</p>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section>
+    <div class="sec-head"><span class="k">05</span><h2>Estado e sequência</h2></div>
+    <div class="note">
+      <p style="margin:0 0 10px"><b>Já entregue nesta rodada:</b> normalização do ruído de extrato + ampliação de marcas BR (com testes). <b>Já existia no app:</b> perguntar na dúvida com chips de confirmação/alternativas.</p>
+      <p style="margin:0"><b>Próximos, por retorno:</b><br>
+      <b>1.</b> Revisão em lote na importação — mata a fricção do onboarding com histórico.<br>
+      <b>2.</b> "Porquê" visível sob a categoria — o dado (<code>razoes</code>) já é calculado; falta exibir.<br>
+      <b>3.</b> Auto-categorização para categorias personalizadas — respeita a organização de cada um.<br>
+      <b>4.</b> Unificar os dois sistemas de regra — refatoração de manutenção, rodada dedicada.</p>
+    </div>
+  </section>
+
+  <footer>
+    <p><b>Auditoria de Lançamentos & Autocategorização — FinançasPro</b> · 12 set 2026 · escopo: <code>CATEGORIZADOR</code>, <code>AUTO_CATEGORIZER</code>, <code>APRENDIZADO</code>, <code>PARSER</code> e o funil em <code>init-form.js</code>.</p>
+    <p class="mono">Método: leitura do código do motor de categorização + fluxo de entrada. Recomendações restritas a soluções on-device e gratuitas. Não substitui teste com usuários reais.</p>
+  </footer>
+
+</div>
+</body>
+</html>
