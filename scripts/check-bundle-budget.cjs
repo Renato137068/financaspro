@@ -26,11 +26,15 @@ const KB = 1024;
 // Limites com folga deliberada sobre o valor atual: o objetivo é barrar um
 // salto acidental, não travar o desenvolvimento em cada quilobyte.
 const BUDGETS = {
-  precacheTotal: { max: 1350 * KB, label: 'Precache total (1º acesso)' },
+  // 1350→1360 KB (2026-09-12): acompanha o +7 KB do index.html da
+  // reestruturação da aba Perfil, mantendo folga em vez de ficar no limite.
+  precacheTotal: { max: 1360 * KB, label: 'Precache total (1º acesso)' },
   appBundle: { max: 580 * KB, label: 'js/app.bundle.js', file: 'js/app.bundle.js' },
   vendorBundle: { max: 260 * KB, label: 'js/vendor.bundle.js', file: 'js/vendor.bundle.js' },
   cssBundle: { max: 300 * KB, label: 'CSS bundle', glob: /^css\/index-.*\.css$/ },
-  indexHtml: { max: 100 * KB, label: 'index.html', file: 'index.html' },
+  // 100→112 KB (2026-09-12): reestruturação da aba Perfil em menu + sub-telas
+  // (divulgação progressiva) adiciona ~7 KB de markup — aumento intencional.
+  indexHtml: { max: 112 * KB, label: 'index.html', file: 'index.html' },
 };
 
 function size(rel) {
