@@ -414,15 +414,18 @@
         diasRestantes < 5 ? 'alerta' : 'neutro'
       ));
 
-      // Base: receitas REAIS do mês (não a renda configurada). Quem tem renda
-      // variável ou lança valores diferentes do config veria um número enganoso.
-      if (resumo.receitas > 0 || resumo.despesas > 0) {
-        var economia = resumo.receitas - resumo.despesas;
+      // Ritmo de gasto: média diária realizada no mês. Substitui o antigo
+      // "Economia do mês", que repetia exatamente a cifra do card de Saldo
+      // (receitas − despesas) — redundância apontada na auditoria de UI/UX.
+      // O ritmo diário é uma leitura distinta e acionável, e não duplica nada.
+      if (resumo.despesas > 0) {
+        var diasDecorridos = Math.max(1, ctx.agora.getDate());
+        var gastoDia = resumo.despesas / diasDecorridos;
         container.appendChild(UI.Indicador.render(
-          economia >= 0 ? 'trending-up' : 'trending-down',
-          this.money(Math.abs(economia)),
-          economia >= 0 ? 'Economia do mês' : 'Déficit do mês',
-          economia >= 0 ? 'positivo' : 'negativo'
+          'trending-down',
+          this.money(gastoDia),
+          'Gasto médio/dia',
+          'neutro'
         ));
       }
 
