@@ -395,10 +395,18 @@ main {
     margin-bottom: 0;
   }
 
-  /* Faixa hero — span nas 2 colunas */
+  /* Faixa hero — span nas 2 colunas.
+     method-tagline e onboarding entram aqui de propósito: sem coluna
+     explícita, caíam como itens `auto` numa coluna só e, com o
+     grid-auto-flow dense, deixavam a lateral (ex.: Limites de orçamento)
+     subir para o topo ao lado de um vazio — invertendo a ordem de leitura
+     (o secundário antes do Saldo). Fazê-los cruzar as 2 colunas mantém a
+     faixa hero contínua e o Saldo no topo. */
   [id="aba-resumo"] > h2.sr-only,
   #dashboard-skeleton,
   #dashboard-greeting,
+  #dashboard-method-tagline,
+  #dashboard-onboarding,
   #card-saldo-principal,
   #saldo-anuncio,
   #dashboard-alertas,
