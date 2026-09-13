@@ -567,7 +567,15 @@ const INIT_BILLING = {
     };
 
     if (typeof BILLING !== 'undefined') {
-      BILLING.listPlans().then(function(plans) {
+      // Offline, listPlans() pode ficar PENDENTE (o getSession do Supabase entra
+      // em retry sem rede) e o .catch nunca dispara — o "Carregando planos…"
+      // ficava para sempre. Um teto de tempo cai nos planos estáticos (a mesma
+      // vitrine do fallback de erro), então offline o usuário vê os preços em
+      // vez de um spinner infinito.
+      var settled = false;
+      var comPlanos = function(plans) {
+        if (settled) return;
+        settled = true;
         if (typeof PLAY_BILLING !== 'undefined' && PLAY_BILLING.isAvailable
             && PLAY_BILLING.isAvailable() && PLAY_BILLING.getProductDetails) {
           PLAY_BILLING.getProductDetails().then(function(products) {
@@ -581,7 +589,20 @@ const INIT_BILLING = {
           return;
         }
         render(plans);
-      }).catch(function() { render(BILLING.STATIC_PLANS); });
+      };
+      var comFallback = function() {
+        if (settled) return;
+        settled = true;
+        render(BILLING.STATIC_PLANS || []);
+      };
+      var timer = setTimeout(comFallback, 6000);
+      BILLING.listPlans().then(function(plans) {
+        clearTimeout(timer);
+        comPlanos(plans);
+      }).catch(function() {
+        clearTimeout(timer);
+        comFallback();
+      });
     } else {
       render([]);
     }

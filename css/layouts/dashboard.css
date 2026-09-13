@@ -267,6 +267,17 @@
   outline-offset: 2px;
 }
 
+/* No tema escuro, --color-bg-body-soft é uma tinta clara (não tem override
+   escuro), então o card ficava branco/brilhante destoando do resto. Usa uma
+   superfície escura do tema. */
+[data-theme="dark"] .indicador-cta {
+  background: var(--color-bg-dark-card);
+}
+
+[data-theme="dark"] .indicador-cta:hover {
+  background: var(--color-bg-dark-elevated);
+}
+
 .indicador-cta .indicador-label {
   color: var(--color-text-muted);
 }
