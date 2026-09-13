@@ -28,8 +28,12 @@ const KB = 1024;
 const BUDGETS = {
   // 1350→1360 KB (2026-09-12): acompanha o +7 KB do index.html da
   // reestruturação da aba Perfil, mantendo folga em vez de ficar no limite.
-  precacheTotal: { max: 1360 * KB, label: 'Precache total (1º acesso)' },
-  appBundle: { max: 580 * KB, label: 'js/app.bundle.js', file: 'js/app.bundle.js' },
+  // 1360→1370 KB (2026-09-13): acompanha o +10 KB do appBundle abaixo.
+  precacheTotal: { max: 1370 * KB, label: 'Precache total (1º acesso)' },
+  // 580→590 KB (2026-09-13): correção do KPI "Folga poupança" no Orçamento
+  // (cálculo da folga da fatia de poupança) + referência de ritmo no Resumo
+  // adicionam alguns KB de código — aumento intencional.
+  appBundle: { max: 590 * KB, label: 'js/app.bundle.js', file: 'js/app.bundle.js' },
   vendorBundle: { max: 260 * KB, label: 'js/vendor.bundle.js', file: 'js/vendor.bundle.js' },
   cssBundle: { max: 300 * KB, label: 'CSS bundle', glob: /^css\/index-.*\.css$/ },
   // 100→112 KB (2026-09-12): reestruturação da aba Perfil em menu + sub-telas

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auditoria da aba Orçamento</title>
+<meta name="description" content="Auditoria completa da aba Orçamento do FinançasPro: 50/30/20, KPIs, consistência de dados, classificação de categorias e boas práticas.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --ground:#f5f7f4; --card:#ffffff; --card-2:#fbfcfa;
+    --ink:#15211c; --muted:#59685f; --faint:#89968e; --line:#e4e9e3; --line-2:#eef2ec;
+    --brand:#0e5a41; --brand-2:#2f9c6d; --brand-ink:#0a3d2c;
+    --free:#15803d; --free-bg:#e9f6ec; --p1:#c2410c; --p1-bg:#fbeee5; --p2:#0e7490; --p2-bg:#e2f3f6; --p3:#6b7280; --p3-bg:#eef1ee;
+    --shadow:0 1px 2px rgba(16,40,30,.05), 0 10px 30px rgba(16,40,30,.06); --shadow-sm:0 1px 2px rgba(16,40,30,.06);
+    --radius:16px; --radius-sm:11px; --maxw:940px;
+  }
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+    --ground:#0d1310; --card:#151c18; --card-2:#121814; --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6;
+    --free:#57c98a; --free-bg:#123222; --p1:#f0a173; --p1-bg:#37210f; --p2:#4bc4d8; --p2-bg:#0c3138; --p3:#9aa6a0; --p3-bg:#1e2621;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }}
+  :root[data-theme="dark"]{
+    --ground:#0d1310; --card:#151c18; --card-2:#121814; --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6;
+    --free:#57c98a; --free-bg:#123222; --p1:#f0a173; --p1-bg:#37210f; --p2:#4bc4d8; --p2-bg:#0c3138; --p3:#9aa6a0; --p3-bg:#1e2621;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box} html{-webkit-text-size-adjust:100%}
+  body{background:var(--ground); color:var(--ink); font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:var(--maxw); margin:0 auto; padding-inline:20px}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+  code{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.84em; background:var(--line-2); padding:1px 6px; border-radius:6px; color:var(--brand-ink)}
+  :root:not([data-theme="light"]) code,:root[data-theme="dark"] code{color:var(--brand-2)}
+  h1,h2,h3{font-family:"Bricolage Grotesque","IBM Plex Sans",sans-serif; text-wrap:balance; letter-spacing:-.015em; margin:0}
+  a{color:var(--brand-2)}
+
+  .hero{background:radial-gradient(120% 140% at 100% 0%, rgba(47,156,109,.18), transparent 55%), linear-gradient(158deg, var(--brand), var(--brand-ink)); color:#eafff5; border-radius:0 0 26px 26px; box-shadow:var(--shadow); position:relative; overflow:hidden}
+  .hero::after{content:""; position:absolute; inset:0; background-image:radial-gradient(rgba(255,255,255,.06) 1px, transparent 1.4px); background-size:22px 22px; mask:linear-gradient(120deg,#000,transparent 62%); pointer-events:none}
+  .hero .wrap{padding-block:34px 30px; position:relative; z-index:1}
+  .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:#9fe8c9; display:flex; align-items:center; gap:10px; margin-bottom:16px}
+  .eyebrow .dot{width:7px; height:7px; border-radius:50%; background:#7bffc8; box-shadow:0 0 0 4px rgba(123,255,200,.18)}
+  h1{font-size:clamp(28px,5.6vw,44px); line-height:1.03; font-weight:800; color:#fff; max-width:18ch}
+  .hero .lede{margin:16px 0 0; font-size:clamp(15px,2.3vw,18px); max-width:66ch; color:#d5f4e6; line-height:1.55}
+  .hero .lede b{color:#fff; font-weight:600}
+  .stats{display:flex; flex-wrap:wrap; gap:12px; margin-top:26px}
+  .stat{background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.16); border-radius:14px; padding:12px 16px; min-width:120px}
+  .stat .n{font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:24px; line-height:1; color:#fff; font-variant-numeric:tabular-nums}
+  .stat .l{font-size:12px; color:#bfead7; margin-top:6px}
+
+  section{margin-top:50px}
+  .sec-head{display:flex; align-items:baseline; gap:12px; margin-bottom:8px}
+  .sec-head .k{font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:600; color:var(--brand-2); border:1px solid var(--line); border-radius:8px; padding:3px 9px; background:var(--card); flex:none}
+  h2{font-size:clamp(20px,3.4vw,26px); font-weight:700; line-height:1.14}
+  .sec-sub{color:var(--muted); font-size:15px; margin:2px 0 20px; max-width:68ch}
+
+  .verdict{background:var(--card); border:1px solid var(--line); border-left:5px solid var(--brand-2); border-radius:var(--radius); padding:22px 24px; box-shadow:var(--shadow); margin-top:-30px; position:relative; z-index:2}
+  .verdict h2{font-size:19px; margin-bottom:8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+  .verdict .grade{font-family:"IBM Plex Mono",monospace; font-size:12px; font-weight:600; color:var(--free); background:var(--free-bg); padding:3px 10px; border-radius:20px}
+  .verdict p{margin:0; color:var(--muted); font-size:15px} .verdict p+p{margin-top:10px} .verdict strong{color:var(--ink)}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow-sm); padding:20px 22px}
+
+  .stack{display:flex; flex-direction:column; gap:8px}
+  .row{display:grid; grid-template-columns:28px 1fr auto; align-items:center; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:11px 14px; box-shadow:var(--shadow-sm)}
+  .row .i{width:28px; height:28px; border-radius:8px; background:var(--line-2); color:var(--brand-2); font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:12px; display:flex; align-items:center; justify-content:center}
+  .row .t{font-size:14px} .row .t b{font-weight:600}
+  .row .z{font-family:"IBM Plex Mono",monospace; font-size:10.5px; font-weight:600; padding:2px 8px; border-radius:20px; white-space:nowrap; background:var(--line-2); color:var(--muted)}
+
+  ul.keeps{list-style:none; margin:0; padding:0; display:grid; gap:11px}
+  @media(min-width:640px){ul.keeps{grid-template-columns:1fr 1fr; gap:11px 22px}}
+  ul.keeps li{padding-left:26px; position:relative; font-size:14.2px; color:var(--muted); line-height:1.5}
+  ul.keeps li::before{content:"✓"; position:absolute; left:0; top:0; color:var(--free); font-weight:700}
+  ul.keeps li b{color:var(--ink); font-weight:600}
+
+  .finds{display:flex; flex-direction:column; gap:16px}
+  .find{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; box-shadow:var(--shadow-sm)}
+  .find.is-done{border-left:5px solid var(--free)} .find.is-p2{border-left:5px solid var(--p2)} .find.is-p3{border-left:5px solid var(--p3)}
+  .find .top{display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-bottom:8px}
+  .badge{font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; padding:4px 9px; border-radius:20px; flex:none}
+  .b-done{background:var(--free); color:#fff} .b-p2{background:var(--p2-bg); color:var(--p2)} .b-p3{background:var(--p3-bg); color:var(--p3)}
+  .b-free{background:var(--free-bg); color:var(--free)}
+  .find h3{font-size:16.5px; font-weight:700; line-height:1.25}
+  .find p{margin:8px 0 0; color:var(--muted); font-size:14.4px}
+  .find .ex{margin-top:12px; padding:11px 14px; background:var(--card-2); border:1px dashed var(--line); border-radius:10px; font-size:13.4px}
+  .find .ex b{color:var(--brand-2); font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.05em; text-transform:uppercase; display:block; margin-bottom:5px}
+  .find .ex .mono{color:var(--ink)}
+
+  .note{background:var(--card-2); border:1px solid var(--line); border-radius:12px; padding:16px 18px; font-size:14px; color:var(--muted)}
+  .note b{color:var(--ink)}
+  footer{margin:56px 0 40px; padding-top:22px; border-top:1px solid var(--line); color:var(--muted); font-size:13px}
+  footer .mono{font-size:12px; color:var(--faint)}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow"><span class="dot"></span> FinançasPro · Auditoria de produto</div>
+    <h1>Um orçamento 50/30/20 completo — com um KPI que se contradizia.</h1>
+    <p class="lede">Auditoria da aba <b>Orçamento</b>: quatro sub-abas (Planejamento, Metas, Gastos fixos, Patrimônio), regra <b>50/30/20 personalizável</b>, detalhamento por categoria e estados vazios cuidados. A base é forte. O achado principal: dois KPIs do cabeçalho mostravam <b>a mesma cifra</b>, e o rótulo de um deles <b>não batia com o próprio tooltip</b> — corrigido nesta rodada.</p>
+    <div class="stats">
+      <div class="stat"><div class="n">1</div><div class="l">bug de KPI — corrigido</div></div>
+      <div class="stat"><div class="n">2</div><div class="l">de consistência / classificação</div></div>
+      <div class="stat"><div class="n">4</div><div class="l">sub-abas auditadas</div></div>
+      <div class="stat"><div class="n">R$ 0</div><div class="l">custo — nada de API paga</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="verdict">
+    <h2>Veredito <span class="grade">MADURO · 1 correção entregue</span></h2>
+    <p>A aba é rica e bem construída: sub-abas com <strong>ARIA correto</strong> (tablist, roving tabindex), <strong>50/30/20 personalizável</strong> validado para somar 100%, barras com status semântico, <strong>poupança sem "360%"</strong> (cap + "meta batida"), <strong>região viva</strong> para leitor de tela, tendência vs. mês anterior e estados vazios com CTA. As Metas aparecem <strong>mesmo sem renda</strong> — decisão certa.</p>
+    <p>O problema real estava no cabeçalho: <strong>"Saldo disponível" e "Economia" exibiam exatamente o mesmo número</strong> (<code>renda − despesas</code>), e o tooltip da "Economia" prometia outra coisa (<em>"quanto ainda cabe na fatia de poupança"</em>). Rótulo, tooltip e valor se contradiziam. <strong>Corrigido nesta rodada.</strong></p>
+  </div>
+
+  <!-- 1 -->
+  <section>
+    <div class="sec-head"><span class="k">01</span><h2>O que a aba oferece</h2></div>
+    <div class="stack">
+      <div class="row"><div class="i">A</div><div class="t"><b>Planejamento</b> — renda, KPIs, regra 50/30/20, insights, detalhes por categoria</div><span class="z">principal</span></div>
+      <div class="row"><div class="i">B</div><div class="t"><b>Metas</b> — objetivos financeiros (visíveis mesmo sem renda)</div><span class="z">sub-aba</span></div>
+      <div class="row"><div class="i">C</div><div class="t"><b>Gastos fixos</b> — assinaturas e mensalidades</div><span class="z">sub-aba</span></div>
+      <div class="row"><div class="i">D</div><div class="t"><b>Patrimônio</b> — ativos e dívidas (patrimônio líquido)</div><span class="z">sub-aba</span></div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section>
+    <div class="sec-head"><span class="k">02</span><h2>O que já está muito bom</h2></div>
+    <div class="card">
+      <ul class="keeps">
+        <li><b>Sub-abas acessíveis</b> — tablist com <code>role=tab/tabpanel</code>, <code>aria-selected</code> e roving tabindex.</li>
+        <li><b>50/30/20 personalizável</b> — a soma é validada para 100% antes de salvar.</li>
+        <li><b>Poupança sem "360%"</b> — exibição limitada a 100% com rótulo "meta batida".</li>
+        <li><b>Barras semânticas</b> — status saudável / atenção / estourado por faixa.</li>
+        <li><b>Região viva</b> — <code>aria-live</code> para anunciar atualizações do orçamento.</li>
+        <li><b>Estados vazios</b> — setup de renda e empty-state de categorias com CTA.</li>
+        <li><b>Tendência mensal</b> — compara o saldo com o mês anterior.</li>
+        <li><b>Metas independentes</b> — aparecem mesmo sem renda definida.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section>
+    <div class="sec-head"><span class="k">03</span><h2>Achados</h2></div>
+    <p class="sec-sub">Em ordem de impacto. O primeiro foi corrigido nesta rodada; os demais ficam no roadmap.</p>
+    <div class="finds">
+
+      <div class="find is-done">
+        <div class="top"><span class="badge b-done">✓ Entregue nesta rodada</span><span class="badge b-free">grátis</span></div>
+        <h3>"Saldo disponível" e "Economia" mostravam o mesmo número</h3>
+        <p>No cabeçalho, <code>orc-saldo-disponivel</code> e <code>orc-economia-mes</code> recebiam ambos <code>renda − despesas</code> — a mesma cifra sob dois rótulos. E o tooltip da "Economia" dizia <em>"quanto ainda cabe na fatia de poupança (20%)"</em>, que é outra medida. <b>Correção:</b> o card virou <b>"Folga poupança"</b> e passa a mostrar de fato a folga da fatia de poupança — <code>limite(20%) − poupado</code>, com piso em zero quando a meta é batida. Agora bate com o tooltip e não duplica o Saldo. Coberto por testes.</p>
+        <div class="ex"><b>Exemplo</b> <span class="mono">renda 5.000 · nada poupado → Saldo −500 (renda − despesas) · Folga poupança 1.000 (fatia 20% intacta)</span></div>
+      </div>
+
+      <div class="find is-p2">
+        <div class="top"><span class="badge b-p2">Roadmap · consistência</span><span class="badge b-free">grátis</span></div>
+        <h3>Duas bases de "sobra" convivem sem aviso</h3>
+        <p>"Saldo disponível" usa a <b>renda planejada</b> − despesas; a Poupança usa <b>receitas reais</b> − despesas. Quando a renda configurada difere do que de fato entrou no mês (renda variável, receita extra), os dois números divergem e podem confundir. Vale deixar explícito nos <em>hints</em> ("com base na renda planejada" vs "no que entrou").</p>
+      </div>
+
+      <div class="find is-p2">
+        <div class="top"><span class="badge b-p2">Roadmap · classificação</span><span class="badge b-free">grátis</span></div>
+        <h3>Categoria personalizada cai sempre em "Desejos"</h3>
+        <p>A classificação 50/30/20 tem <em>default</em> para "desejos": qualquer categoria fora das listas fixas (incluindo as que o usuário cria) entra como Desejo, distorcendo o cálculo para quem usa categorias próprias. Ideia gratuita: deixar marcar cada categoria custom como Necessidade / Desejo / Poupança.</p>
+      </div>
+
+      <div class="find is-p3">
+        <div class="top"><span class="badge b-p3">Roadmap · tema</span><span class="badge b-free">grátis</span></div>
+        <h3>Cor hex de fallback em JS</h3>
+        <p>Há uma cor fixa (<code>#98a39d</code>) como fallback de cor de categoria quando o módulo de Extrato não está disponível — caminho defensivo, raramente atingido. Trocar por token quando conveniente; impacto baixo.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section>
+    <div class="sec-head"><span class="k">04</span><h2>Sequência sugerida</h2></div>
+    <div class="note">
+      <p style="margin:0"><b>Feito:</b> "Folga poupança" corrigida (valor bate com o tooltip; não duplica o Saldo).<br>
+      <b>1.</b> Explicitar nos hints a base de cada "sobra" (renda planejada × receitas reais).<br>
+      <b>2.</b> Permitir classificar categorias personalizadas no 50/30/20.<br>
+      <b>3.</b> Trocar o hex de fallback por token.</p>
+    </div>
+  </section>
+
+  <footer>
+    <p><b>Auditoria da aba Orçamento — FinançasPro</b> · 13 set 2026 · escopo: <code>index.html</code> (<code>#aba-orcamento</code> e sub-abas), <code>js/modules/init-orcamento.js</code> e <code>js/orcamento.js</code>.</p>
+    <p class="mono">Método: leitura do markup das quatro sub-abas e da lógica de cálculo/render do orçamento (KPIs, 50/30/20, categorias). Recomendações restritas a soluções on-device e gratuitas. Não substitui teste com usuários reais.</p>
+  </footer>
+
+</div>
+</body>
+</html>
