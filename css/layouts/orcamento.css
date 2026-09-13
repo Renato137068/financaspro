@@ -670,6 +670,16 @@
   line-height: 1.5;
 }
 
+/* Deixa explícita a base do número quando ela difere das outras fatias
+   (poupança usa receitas − despesas; Necessidades/Desejos usam a renda). */
+.orc-regra-card-base {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--font-size-2xs);
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
 .orc-regra-item {
   background: var(--color-bg-card);
   border-radius: var(--radius-xl);
@@ -1139,17 +1149,39 @@
 }
 
 .orc-cat-badge {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
   font-size: var(--font-size-2xs);
   font-weight: var(--font-weight-semibold);
   padding: 1px var(--space-2);
+  border: 0;
   border-radius: var(--radius-full);
   margin-top: 2px;
   letter-spacing: var(--letter-spacing-normal);
+  cursor: pointer;
+  font-family: inherit;
+  transition: filter var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+/* Afordância de "clique para alterar": um chevron discreto após o rótulo. */
+.orc-cat-badge::after {
+  content: '⌄';
+  font-size: 0.9em;
+  line-height: 1;
+  opacity: 0.65;
+  margin-top: -2px;
+}
+
+.orc-cat-badge:hover { filter: brightness(0.96); }
+.orc-cat-badge:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 1px;
 }
 
 .orc-cat-badge.necessidades { background: var(--color-info-bg); color: var(--color-info-text); }
 .orc-cat-badge.desejos      { background: var(--color-primary-50); color: var(--color-primary-text); }
+.orc-cat-badge.poupanca     { background: var(--color-success-bg); color: var(--color-success-text); }
 
 .orc-cat-pct {
   font-size: var(--font-size-2xs);

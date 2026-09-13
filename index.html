@@ -897,9 +897,9 @@
         <!-- KPI Principal -->
         <div class="orc-kpi-main">
           <div class="orc-kpi-main-content">
-            <div class="orc-kpi-label" title="Renda do mês menos despesas lançadas">Saldo disponível do orçamento</div>
+            <div class="orc-kpi-label" title="Renda planejada do mês menos despesas de consumo lançadas">Saldo disponível do orçamento</div>
             <div class="orc-kpi-value" id="orc-saldo-disponivel" aria-describedby="orc-kpi-saldo-hint">R$ 0,00</div>
-            <p id="orc-kpi-saldo-hint" class="orc-kpi-hint">Renda informada menos despesas do mês</p>
+            <p id="orc-kpi-saldo-hint" class="orc-kpi-hint">Base: renda planejada − despesas (não o que entrou de fato)</p>
             <div class="orc-kpi-meta">
               <span class="orc-kpi-percent" id="orc-percent-restante">0%</span>
               <span class="orc-kpi-separator">•</span>
@@ -937,7 +937,7 @@
           <div class="orc-kpi-card">
             <div class="orc-kpi-card-icon"><i data-lucide="trending-up" aria-hidden="true"></i></div>
             <div class="orc-kpi-card-content">
-              <span class="orc-kpi-card-label" title="Quanto ainda cabe na fatia de poupança do mês">Folga poupança</span>
+              <span class="orc-kpi-card-label" title="Fatia de 20% menos o que você já poupou — base: receitas − despesas do mês">Folga poupança</span>
               <span class="orc-kpi-card-value" id="orc-economia-mes">R$ 0,00</span>
             </div>
           </div>
@@ -1065,6 +1065,7 @@
           </div>
           <div class="orc-regra-card-footer">
             <span class="orc-regra-card-cats">Investimentos, Reserva de emergência</span>
+            <span class="orc-regra-card-base">Base: o que entrou (receitas − despesas), não a renda planejada</span>
           </div>
         </div>
       </div>
