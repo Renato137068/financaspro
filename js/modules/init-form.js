@@ -1574,7 +1574,10 @@ const INIT_FORM = {
     var gastoNovo = gastoAtual + val;
     var pctAtual = Math.round((gastoAtual / status.limite) * 100);
     var pctNovo = Math.round((gastoNovo / status.limite) * 100);
-    var cor = pctNovo > 100 ? '#c9573a' : pctNovo > 80 ? '#c98a1e' : '#2f9c6d';
+    // Tokens do design-system (acompanham o tema escuro), não cores hex fixas:
+    // antes eram valores da paleta clara cravados aqui, que não mudavam no
+    // modo escuro. Aplicados inline em background/color — var() resolve normal.
+    var cor = pctNovo > 100 ? 'var(--color-danger)' : pctNovo > 80 ? 'var(--color-warning)' : 'var(--color-success)';
     var nomeCategoria = cat.charAt(0).toUpperCase() + cat.slice(1);
 
     el.innerHTML = '<div class="orc-preview-card">' +
