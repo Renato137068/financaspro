@@ -166,6 +166,34 @@ describe('calculateBudgetData — categoria "poupanca" vira reserva, não consum
   });
 });
 
+describe('soma em centavos — sem resíduo de float (bate com o Resumo)', function() {
+  test('3 × R$ 0,10 = R$ 0,30 exato (float daria 0,30000000000000004)', function() {
+    var d = hojeStr();
+    var sb = carregar();
+    sb._setTxs([
+      { tipo: 'despesa', valor: 0.1, categoria: 'alimentacao', data: d },
+      { tipo: 'despesa', valor: 0.1, categoria: 'alimentacao', data: d },
+      { tipo: 'despesa', valor: 0.1, categoria: 'alimentacao', data: d }
+    ]);
+    var data = sb.INIT_ORCAMENTO.calculateBudgetData();
+    expect(data.gastoNec).toBe(0.3);
+    expect(data.catGastos.alimentacao).toBe(0.3);
+    // A prova do bug antigo: a soma em float não seria exatamente 0,3.
+    expect(0.1 + 0.1 + 0.1).not.toBe(0.3);
+  });
+
+  test('centavos fracionados não acumulam erro (várias despesas de 33,33)', function() {
+    var d = hojeStr();
+    var sb = carregar();
+    var txs = [];
+    for (var i = 0; i < 10; i++) txs.push({ tipo: 'despesa', valor: 33.33, categoria: 'lazer', data: d });
+    sb._setTxs(txs);
+    var data = sb.INIT_ORCAMENTO.calculateBudgetData();
+    expect(data.gasDes).toBe(333.3);
+    expect(data.realizado).toBe(333.3);
+  });
+});
+
 describe('_catItemHtml — badge interativo', function() {
   test('renderiza botão com data-cat e rótulo do grupo atual', function() {
     var sb = carregar();
