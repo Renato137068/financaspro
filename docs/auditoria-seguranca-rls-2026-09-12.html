@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auditoria de Segurança — RLS & Auth</title>
+<meta name="description" content="Auditoria da Row Level Security e da camada de autenticação/2FA do FinançasPro no Supabase.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --ground:#f5f7f4; --card:#ffffff; --card-2:#fbfcfa;
+    --ink:#15211c; --muted:#59685f; --faint:#89968e; --line:#e4e9e3; --line-2:#eef2ec;
+    --brand:#0e5a41; --brand-2:#2f9c6d; --brand-ink:#0a3d2c;
+    --ok:#15803d; --ok-bg:#e9f6ec;
+    --warn:#b45309; --warn-bg:#fbeedd;
+    --crit:#b91c1c; --crit-bg:#fbe9e9;
+    --shadow:0 1px 2px rgba(16,40,30,.05), 0 10px 30px rgba(16,40,30,.06);
+    --shadow-sm:0 1px 2px rgba(16,40,30,.06);
+    --radius:16px; --radius-sm:11px; --maxw:900px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#0d1310; --card:#151c18; --card-2:#121814;
+      --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+      --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6;
+      --ok:#57c98a; --ok-bg:#123222; --warn:#e0a24a; --warn-bg:#352312; --crit:#f0857f; --crit-bg:#3a1918;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0d1310; --card:#151c18; --card-2:#121814;
+    --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6;
+    --ok:#57c98a; --ok-bg:#123222; --warn:#e0a24a; --warn-bg:#352312; --crit:#f0857f; --crit-bg:#3a1918;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box} body{margin:0} img{max-width:100%} [hidden]{display:none!important}
+  html{-webkit-text-size-adjust:100%}
+  body{background:var(--ground); color:var(--ink);
+    font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif; line-height:1.6;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;}
+  .wrap{max-width:var(--maxw); margin:0 auto; padding-inline:20px; padding-block:0}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+  code{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.85em; background:var(--line-2);
+    padding:1px 6px; border-radius:6px; color:var(--brand-ink)}
+  :root:not([data-theme="light"]) code, :root[data-theme="dark"] code{color:var(--brand-2)}
+  h1,h2,h3{font-family:"Bricolage Grotesque","IBM Plex Sans",sans-serif; text-wrap:balance; letter-spacing:-.015em; margin:0}
+  a{color:var(--brand-2); text-underline-offset:3px}
+
+  .hero{background:radial-gradient(120% 140% at 100% 0%, rgba(47,156,109,.18), transparent 55%),
+      linear-gradient(158deg, var(--brand), var(--brand-ink)); color:#eafff5;
+    border-radius:0 0 26px 26px; box-shadow:var(--shadow); position:relative; overflow:hidden}
+  .hero::after{content:""; position:absolute; inset:0;
+    background-image:radial-gradient(rgba(255,255,255,.06) 1px, transparent 1.4px); background-size:22px 22px;
+    mask:linear-gradient(120deg,#000,transparent 62%); pointer-events:none}
+  .hero .wrap{padding-block:34px 30px; position:relative; z-index:1}
+  .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.16em; text-transform:uppercase;
+    color:#9fe8c9; display:flex; align-items:center; gap:10px; margin-bottom:16px}
+  .eyebrow .dot{width:7px; height:7px; border-radius:50%; background:#7bffc8; box-shadow:0 0 0 4px rgba(123,255,200,.18)}
+  h1{font-size:clamp(28px,5.6vw,42px); line-height:1.03; font-weight:800; color:#fff; max-width:17ch}
+  .hero .lede{margin:16px 0 0; font-size:clamp(15px,2.3vw,18px); max-width:62ch; color:#d5f4e6; line-height:1.55}
+  .hero .lede b{color:#fff; font-weight:600}
+  .stats{display:flex; flex-wrap:wrap; gap:12px; margin-top:26px}
+  .stat{background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.16); border-radius:14px; padding:12px 16px; min-width:120px}
+  .stat .n{font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:26px; line-height:1; color:#fff; font-variant-numeric:tabular-nums}
+  .stat .l{font-size:12px; color:#bfead7; margin-top:6px}
+
+  section{margin-top:50px}
+  .sec-head{display:flex; align-items:baseline; gap:12px; margin-bottom:8px}
+  .sec-head .k{font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:600; color:var(--brand-2);
+    border:1px solid var(--line); border-radius:8px; padding:3px 9px; background:var(--card); flex:none}
+  h2{font-size:clamp(20px,3.4vw,26px); font-weight:700; line-height:1.14}
+  .sec-sub{color:var(--muted); font-size:15px; margin:2px 0 20px; max-width:68ch}
+
+  .verdict{background:var(--card); border:1px solid var(--line); border-left:5px solid var(--ok);
+    border-radius:var(--radius); padding:22px 24px; box-shadow:var(--shadow); margin-top:-30px; position:relative; z-index:2}
+  .verdict h2{font-size:19px; margin-bottom:8px; display:flex; align-items:center; gap:10px}
+  .verdict .grade{font-family:"IBM Plex Mono",monospace; font-size:12px; font-weight:600; color:var(--ok);
+    background:var(--ok-bg); padding:3px 10px; border-radius:20px}
+  .verdict p{margin:0; color:var(--muted); font-size:15px} .verdict p+p{margin-top:10px} .verdict strong{color:var(--ink)}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow-sm); padding:22px 24px}
+
+  .tbl-wrap{overflow-x:auto; border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow-sm)}
+  table{border-collapse:collapse; width:100%; min-width:540px; background:var(--card)}
+  thead th{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted);
+    text-align:left; padding:12px 16px; border-bottom:1px solid var(--line); font-weight:600; background:var(--card-2)}
+  tbody td{padding:11px 16px; border-bottom:1px solid var(--line-2); font-size:14px; vertical-align:top}
+  tbody tr:last-child td{border-bottom:0}
+  tbody td.grp{font-weight:600; color:var(--ink)}
+  .v{font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600; padding:3px 9px; border-radius:20px; white-space:nowrap; display:inline-block}
+  .v-deny{background:var(--card-2); color:var(--muted); border:1px solid var(--line)}
+  .v-own{background:var(--ok-bg); color:var(--ok)}
+  .v-pub{background:#e2f3f6; color:#0e7490}
+  :root:not([data-theme="light"]) .v-pub, :root[data-theme="dark"] .v-pub{background:#0c3138; color:#4bc4d8}
+
+  .finds{display:flex; flex-direction:column; gap:14px}
+  .find{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; box-shadow:var(--shadow-sm)}
+  .find .top{display:flex; align-items:center; gap:11px; flex-wrap:wrap; margin-bottom:8px}
+  .badge{font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; padding:4px 9px; border-radius:20px; flex:none}
+  .b-opt{background:var(--warn-bg); color:var(--warn)}
+  .b-info{background:#e2f3f6; color:#0e7490}
+  :root:not([data-theme="light"]) .b-info, :root[data-theme="dark"] .b-info{background:#0c3138; color:#4bc4d8}
+  .find h3{font-size:16.5px; font-weight:700; line-height:1.25}
+  .find p{margin:8px 0 0; color:var(--muted); font-size:14.4px}
+  .find .risk{margin-top:10px; padding:10px 13px; background:var(--warn-bg); border-radius:9px; font-size:13.6px; color:var(--ink)}
+
+  ul.keeps{list-style:none; margin:0; padding:0; display:grid; gap:11px}
+  ul.keeps li{padding-left:26px; position:relative; font-size:14.4px; color:var(--muted); line-height:1.5}
+  ul.keeps li::before{content:"✓"; position:absolute; left:0; top:0; color:var(--ok); font-weight:700}
+  ul.keeps li b{color:var(--ink); font-weight:600}
+
+  .callout{background:var(--warn-bg); border:1px solid rgba(180,83,9,.35); border-radius:var(--radius); padding:18px 20px}
+  .callout h3{font-size:16px; margin-bottom:6px; color:var(--ink); display:flex; gap:9px; align-items:center}
+  .callout p{margin:6px 0 0; font-size:14.4px; color:var(--ink)}
+  pre{background:var(--ink); color:#e9efe9; border-radius:10px; padding:14px 16px; overflow-x:auto; font-family:"IBM Plex Mono",monospace; font-size:13px; margin:12px 0 0}
+  :root:not([data-theme="light"]) pre, :root[data-theme="dark"] pre{background:#0a0f0c; border:1px solid var(--line)}
+
+  footer{margin:56px 0 40px; padding-top:22px; border-top:1px solid var(--line); color:var(--muted); font-size:13px}
+  footer .mono{font-size:12px; color:var(--faint)}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow"><span class="dot"></span> FinançasPro · Auditoria de segurança</div>
+    <h1>RLS &amp; Auth: a base de segurança está sólida.</h1>
+    <p class="lede">Revisão da <b>Row Level Security</b> e da camada de <b>autenticação/2FA</b> do FinançasPro no Supabase — políticas, funções auxiliares, cobertura e testes. <b>Nenhum bloqueador.</b> Feita a partir do código do repositório; a validação final roda no seu projeto ao vivo.</p>
+    <div class="stats">
+      <div class="stat"><div class="n">24</div><div class="l">tabelas com RLS ativa</div></div>
+      <div class="stat"><div class="n">0</div><div class="l">achados críticos</div></div>
+      <div class="stat"><div class="n">3</div><div class="l">ajustes opcionais</div></div>
+      <div class="stat"><div class="n">1</div><div class="l">guarda de cobertura no CI</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="verdict">
+    <h2>Veredito <span class="grade">APROVADA · sem bloqueador</span></h2>
+    <p>A modelagem é <strong>defesa em profundidade</strong> e está acima da média: RLS habilitada em <strong>todas</strong> as tabelas (negado por padrão), padrão de acesso "dono OU membro da org" com funções auxiliares <code>SECURITY DEFINER</code> de <code>search_path</code> fixo, billing/auditoria em <strong>deny-all</strong> (só o service_role escreve), e uma camada de 2FA/AAL2 bem construída (códigos de recuperação só em hash, políticas <em>restrictive</em> de segundo fator).</p>
+    <p>O ponto mais forte é sistêmico: um <strong>teste pgTAP falha o CI</strong> se qualquer tabela de <code>public</code> nascer sem RLS. A cobertura é <strong>garantida</strong>, não confiada à disciplina. Os achados são <strong>opcionais</strong> — nenhum é vulnerabilidade.</p>
+  </div>
+
+  <!-- 1 -->
+  <section>
+    <div class="sec-head"><span class="k">01</span><h2>Escopo e método</h2></div>
+    <p class="sec-sub">Auditoria estática do código de segurança no repositório, cruzando o schema com as políticas e os testes.</p>
+    <div class="card">
+      <ul class="keeps">
+        <li><b>Políticas RLS</b> — <code>supabase/migrations/20260828120000_rls_policies.sql</code> e 14 migrations subsequentes (quota, AAL2, MFA, exclusão de conta, welcome-trial).</li>
+        <li><b>Schema</b> — <code>prisma/schema.prisma</code> (20 modelos) + 4 tabelas criadas fora do Prisma nas migrations.</li>
+        <li><b>Testes</b> — suíte pgTAP em <code>supabase/tests/</code> (cobertura de RLS, AAL2, MFA, quota, convites).</li>
+        <li><b>Fora do escopo</b> — cobrança (Edge Functions Stripe/Play, webhooks, secrets) e a verificação de que o projeto <em>ao vivo</em> tem todas as migrations aplicadas (ver seção 06).</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section>
+    <div class="sec-head"><span class="k">02</span><h2>Cobertura — toda tabela sob RLS</h2></div>
+    <p class="sec-sub">As 24 tabelas de <code>public</code> têm RLS habilitada. As que guardam dado sensível de billing/auditoria ficam em <em>deny-all</em>: RLS ligada e sem policy = nenhum cliente acessa; só as Edge Functions (service_role, que ignora RLS) escrevem.</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Grupo</th><th>Tabelas</th><th>Acesso do cliente</th></tr></thead>
+        <tbody>
+          <tr><td class="grp">Identidade</td><td>User</td><td><span class="v v-own">dono (select/update)</span></td></tr>
+          <tr><td class="grp">Financeiro</td><td>Transaction, Account, Budget, RecurringTransaction</td><td><span class="v v-own">dono OU org</span></td></tr>
+          <tr><td class="grp">Só-do-dono</td><td>UserConfig, SyncOp, OpenFinanceConnection</td><td><span class="v v-own">dono (all)</span></td></tr>
+          <tr><td class="grp">Organização</td><td>Organization, OrganizationMember, Invitation</td><td><span class="v v-own">dono/admin da org</span></td></tr>
+          <tr><td class="grp">Planos</td><td>Plan, fp_plan_limit_config</td><td><span class="v v-pub">leitura pública</span></td></tr>
+          <tr><td class="grp">Billing</td><td>Subscription, UsageRecord, Invoice</td><td><span class="v v-own">leitura p/ membros</span></td></tr>
+          <tr><td class="grp">2FA</td><td>MfaRecoveryCode, MfaRecoveryAttempt</td><td><span class="v v-deny">deny-all + funções</span></td></tr>
+          <tr><td class="grp">Interno</td><td>AuditLog, StripeWebhookEvent, JobLog, Session, VerificationToken, fp_welcome_trial_grant</td><td><span class="v v-deny">deny-all / self-read</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sec-sub" style="margin-top:16px"><b>Guarda de CI (destaque):</b> <code>rls_coverage.test.sql</code> falha o build se <em>qualquer</em> tabela base de <code>public</code> estiver sem RLS (allowlist justificada: só <code>_prisma_migrations</code>). Foi ele que já pegou <code>fp_plan_limit_config</code> desprotegida antes — a cobertura é auto-verificada.</p>
+  </section>
+
+  <!-- 3 -->
+  <section>
+    <div class="sec-head"><span class="k">03</span><h2>Modelo de acesso</h2></div>
+    <p class="sec-sub">"Dono OU membro da org", implementado com funções auxiliares seguras.</p>
+    <div class="card">
+      <ul class="keeps">
+        <li><b>IDs comparados corretamente</b> — <code>"userId" = auth.uid()::text</code> (os IDs do Prisma são TEXT; comparar com o <code>uuid</code> cru falharia silenciosamente).</li>
+        <li><b>Funções <code>SECURITY DEFINER</code></b> (<code>is_org_member/editor/admin</code>) leem a filiação sem disparar a RLS da própria tabela — evitam recursão — e fixam <code>search_path</code> (barram injeção por search_path).</li>
+        <li><b>Papéis respeitados</b> — VIEWER só lê; escrita exige OWNER/ADMIN/MEMBER. Convite visível para o admin da org <em>ou</em> para o e-mail convidado (via <code>auth.jwt()</code>).</li>
+        <li><b>Criação de <code>User</code> só por trigger</b> — sem insert/delete pelo cliente; a linha nasce do trigger de auth e a exclusão passa por Edge Function (LGPD/Play).</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section>
+    <div class="sec-head"><span class="k">04</span><h2>Autenticação e 2FA</h2></div>
+    <p class="sec-sub">A camada de segundo fator é o ponto mais bem trabalhado da auditoria.</p>
+    <div class="card">
+      <ul class="keeps">
+        <li><b>Códigos de recuperação só em hash</b> — SHA-256 com o <code>userId</code> no hash (dois usuários com o mesmo código não colidem; vazar a tabela não permite comparar hashes entre contas), 64 bits de entropia, <b>uso único</b>, e os demais são invalidados junto.</li>
+        <li><b>Tabela de recovery blindada</b> — deny-all + <code>revoke all from anon, authenticated</code>; todo acesso passa por funções <code>SECURITY DEFINER</code> que gatam o nível (gerar exige AAL2; consumir funciona em AAL1 — é justamente quem perdeu o autenticador).</li>
+        <li><b>Enforcement de AAL2</b> — políticas <b>RESTRICTIVE</b> <code>_require_aal2</code> em 14 tabelas de dado do usuário: se a conta tem 2FA, uma sessão só-senha (AAL1) <b>não enxerga os dados</b> até completar o segundo fator. Restrictive soma com as permissivas — não há como "passar por cima".</li>
+        <li><b>Rate-limit de MFA</b> e enforcement de quota por plano, ambos com tabela própria sob RLS.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section>
+    <div class="sec-head"><span class="k">05</span><h2>Achados — 0 críticos, 3 opcionais</h2></div>
+    <p class="sec-sub">Nenhum é vulnerabilidade. Registrados para higiene e defesa em profundidade.</p>
+    <div class="finds">
+      <div class="find">
+        <div class="top"><span class="badge b-opt">Opcional 1 · clareza</span></div>
+        <h3><code>WITH CHECK</code> implícito nos UPDATE financeiros</h3>
+        <p>As policies de UPDATE de <code>Transaction/Account/Budget/RecurringTransaction</code> definem só <code>USING</code>. É <b>seguro</b> — o Postgres reaplica o <code>USING</code> como check no UPDATE — mas um <code>WITH CHECK</code> explícito deixa a intenção evidente e protege contra um refactor futuro do <code>USING</code> mudar a semântica sem querer.</p>
+        <div class="risk"><b>Nuance:</b> como o <code>USING</code> inclui o ramo "org editor", um editor da org pode reatribuir o <code>userId</code> de um registro para outro membro <b>da mesma org</b>. É colaborativo por design — só vale estar ciente.</div>
+      </div>
+      <div class="find">
+        <div class="top"><span class="badge b-opt">Opcional 2 · cuidado</span></div>
+        <h3>Least-privilege nas funções auxiliares — <u>não fazer do jeito ingênuo</u></h3>
+        <p>As funções <code>is_org_member/editor/admin</code> têm <code>EXECUTE</code> para <code>public</code> (padrão). Revogar de <code>anon</code> parece "endurecer", mas <b>quebraria o caminho não-logado</b>: as policies base valem para <code>public</code>, então uma consulta anon avalia a função e passaria a receber <em>erro de permissão</em> em vez de "0 linhas". O jeito correto — restringir as policies a <code>TO authenticated</code> — é uma mudança maior que <b>precisa do pgTAP rodando</b> para validar. Recomendação: só encostar nisso depois da seção 06.</p>
+      </div>
+      <div class="find">
+        <div class="top"><span class="badge b-info">Nota · produto</span></div>
+        <h3><code>AuditLog</code> é deny-all ao cliente</h3>
+        <p>Correto do ponto de vista de segurança. Se um dia você quiser que o usuário veja o <em>próprio</em> histórico de auditoria, será preciso adicionar uma policy de self-read (<code>"userId" = auth.uid()::text</code>). Decisão de produto, não pendência.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section>
+    <div class="sec-head"><span class="k">06</span><h2>A verificação que falta (você roda)</h2></div>
+    <p class="sec-sub">Esta auditoria é do <b>código</b>. Se o seu projeto ao vivo tem <em>todas</em> as migrations aplicadas, não dá para ver daqui — o diagnóstico já mostrou <code>RLS em User = sim</code>, o que é um forte indício de que a <code>rls_policies.sql</code> rodou.</p>
+    <div class="callout">
+      <h3>⚙ Rode a suíte pgTAP contra o seu projeto</h3>
+      <p>É a checagem autoritativa: valida cobertura de RLS, AAL2, MFA e quota de ponta a ponta.</p>
+      <pre>node scripts/test-supabase-pgtap.cjs      # ou: supabase test db</pre>
+      <p style="margin-top:10px">Passou = tudo aplicado e verificado. Falhou = a saída aponta qual migration falta.</p>
+    </div>
+  </section>
+
+  <footer>
+    <p><b>Auditoria de Segurança — RLS &amp; Auth (Supabase)</b> · 12 set 2026 · escopo: <code>supabase/migrations/</code>, <code>supabase/tests/</code>, <code>prisma/schema.prisma</code>.</p>
+    <p class="mono">Método: revisão estática de políticas RLS, funções SECURITY DEFINER e testes pgTAP. Complementa as auditorias de UI/IA da aba Perfil. Nenhum segredo ou credencial acessado — o auditor não tem acesso ao projeto Supabase ao vivo.</p>
+  </footer>
+
+</div>
+</body>
+</html>

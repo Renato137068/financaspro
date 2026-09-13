@@ -4,17 +4,17 @@
 
 const AUTO_CATEGORIZER = {
   REGRAS: [
-    { regex: /supermercado|mercado|padaria|acougue|hortifruti|feira|quitanda|ceia|ifood|rappi|delivery|restaurante|lanchonete|cafe|pizza|hamburguer|sushi|bar|boteco/i, cat: 'alimentacao', tipo: 'despesa' },
-    { regex: /uber|99|taxi|onibus|metro|combustivel|gasolina|estacionamento|pedagio|passagem/i, cat: 'transporte', tipo: 'despesa' },
+    { regex: /supermercado|mercado|padaria|acougue|hortifruti|feira|quitanda|ceia|ifood|rappi|aiqfome|ze delivery|zedelivery|delivery|restaurante|lanchonete|cafe|pizza|hamburguer|sushi|bar|boteco|mcdonald|burger king|subway|habib|giraffas|outback|starbucks|dominos|acai|assai|atacadao|carrefour|pao de acucar/i, cat: 'alimentacao', tipo: 'despesa' },
+    { regex: /uber|99|taxi|onibus|metro|combustivel|gasolina|posto|shell|ipiranga|petrobras|estacionamento|pedagio|passagem|cabify|indrive|blablacar/i, cat: 'transporte', tipo: 'despesa' },
     { regex: /aluguel|condominio|iptu|agua|luz|energia|internet|telefone|celular|gas|botijao|wifi/i, cat: 'moradia', tipo: 'despesa' },
     { regex: /farmacia|remedio|medico|consulta|exame|plano de saude|hospital|dentista|psicologo|academia|gym|vitamina/i, cat: 'saude', tipo: 'despesa' },
     { regex: /escola|faculdade|curso|livro|mensalidade|material escolar|udemy|alura|formacao/i, cat: 'educacao', tipo: 'despesa' },
     { regex: /cinema|teatro|show|jogos|passeio|lazer/i, cat: 'lazer', tipo: 'despesa' },
-    { regex: /netflix|spotify|deezer|youtube premium|prime video|hbo|disney\+|icloud|dropbox|adobe/i, cat: 'assinaturas', tipo: 'despesa' },
+    { regex: /netflix|spotify|deezer|youtube premium|prime video|amazon music|hbo|hbo max|disney\+|paramount|globoplay|crunchyroll|apple tv|twitch|icloud|dropbox|google one|adobe|canva|chatgpt|openai/i, cat: 'assinaturas', tipo: 'despesa' },
     { regex: /seguro|seguradora|porto seguro|tokio marine|sulamerica/i, cat: 'seguros', tipo: 'despesa' },
     { regex: /iof|irpf|imposto|taxa|darf|ipva/i, cat: 'impostos', tipo: 'despesa' },
     { regex: /anuidade|tarifa|juros|multa|encargo|taxa banc/i, cat: 'servicos_financeiros', tipo: 'despesa' },
-    { regex: /loja|shopping|amazon|mercado livre|magalu|americanas|compra/i, cat: 'compras', tipo: 'despesa' },
+    { regex: /loja|shopping|amazon|mercado livre|mercadolivre|magalu|magazine luiza|americanas|shopee|aliexpress|shein|casas bahia|kabum|netshoes|compra/i, cat: 'compras', tipo: 'despesa' },
     { regex: /roupa|camisa|calca|vestido|sapato|tenis/i, cat: 'vestuario', tipo: 'despesa' },
     { regex: /hotel|passagem|airbnb|viagem|turismo/i, cat: 'viagem', tipo: 'despesa' },
     { regex: /pet|veterin|racao|banho e tosa/i, cat: 'pet', tipo: 'despesa' },
@@ -57,8 +57,11 @@ const AUTO_CATEGORIZER = {
     if (!descricao) return null;
     // Normaliza acentos: as regras são escritas sem acento, então "água",
     // "décimo", "farmácia" passam a casar (antes caíam em "outro").
+    // Separadores de adquirente/extrato ("IFD*IFOOD", "MP_SHOPEE", "PAG*99")
+    // viram espaço para o comerciante casar como palavra isolada.
     var desc = String(descricao).toLowerCase().trim()
-      .normalize('NFD').replace(/[̀-ͯ]/g, '');
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[*_/\\|]+/g, ' ');
 
     for (var i = 0; i < this.REGRAS.length; i++) {
       if (this.REGRAS[i].regex.test(desc)) {

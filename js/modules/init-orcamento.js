@@ -356,7 +356,15 @@ const INIT_ORCAMENTO = {
     this._updateElement('orc-pou-limite', UTILS.formatarMoeda(data.limPou));
     this._setProgressBar('orc-pou-bar', data.pctPou, 'Poupança');
     this._updateElementClass('orc-pou-bar', 'orc-progress-fill ' + (data.pctPou >= 100 ? 'otimo' : data.pctPou >= 50 ? 'healthy' : 'attention'));
-    this._updateElement('orc-pou-percent', data.pctPou + '%');
+    // Poupança: no 50/30/20 a "sobra" do mês pode superar muito a meta de 20%,
+    // gerando "360% alcançado" — número que assusta e sugere dinheiro guardado
+    // que talvez só esteja parado na conta. Limita a exibição a 100% e, ao bater
+    // a meta, troca o rótulo para "meta batida" (a auditoria de UI/UX apontou).
+    // Só a poupança é limitada: em Necessidades/Desejos passar de 100% é um
+    // alerta real de estouro e deve continuar visível.
+    var pouMetaBatida = data.pctPou >= 100;
+    this._updateElement('orc-pou-percent', Math.min(data.pctPou, 100) + '%');
+    this._updateElement('orc-pou-percent-label', pouMetaBatida ? 'meta batida' : 'alcançado');
   },
 
   renderInsights: function(data) {

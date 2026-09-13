@@ -857,6 +857,43 @@ function setupAuthUI() {
   _montarMedidorSenha('auth-register-password');
   _montarMedidorSenha('auth-reset-password');
 
+  /* Aviso de Caps Lock: mostra um alerta enquanto o campo de senha está
+     focado e o Caps Lock está ligado. É a causa nº 1 de "minha senha não
+     funciona" no desktop — e não dá para diagnosticar com o campo mascarado.
+     Usa getModifierState, disponível em qualquer evento de teclado. */
+  function _montarAvisoCapsLock(inputId) {
+    var input = document.getElementById(inputId);
+    if (!input || input.dataset.capslock === '1') return;
+    input.dataset.capslock = '1';
+
+    var aviso = document.createElement('p');
+    aviso.className = 'auth-capslock-aviso';
+    aviso.setAttribute('role', 'status');
+    aviso.hidden = true;
+    aviso.innerHTML = '<i data-lucide="arrow-big-up" aria-hidden="true"></i>'
+      + '<span>Caps Lock está ligado.</span>';
+
+    var wrap = input.closest('.auth-password-wrap') || input;
+    if (wrap && wrap.parentNode) wrap.parentNode.insertBefore(aviso, wrap.nextSibling);
+
+    function _sync(e) {
+      var ligado = false;
+      try {
+        ligado = !!(e && typeof e.getModifierState === 'function'
+          && e.getModifierState('CapsLock'));
+      } catch (_) { ligado = false; }
+      aviso.hidden = !ligado;
+    }
+
+    input.addEventListener('keydown', _sync);
+    input.addEventListener('keyup', _sync);
+    input.addEventListener('blur', function() { aviso.hidden = true; });
+  }
+
+  _montarAvisoCapsLock('auth-login-password');
+  _montarAvisoCapsLock('auth-register-password');
+  _montarAvisoCapsLock('auth-reset-password');
+
   if (registerForm) {
     registerForm.addEventListener('submit', function(e) {
       e.preventDefault();

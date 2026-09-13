@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auditoria da aba Resumo</title>
+<meta name="description" content="Auditoria completa da aba Resumo (dashboard) do FinançasPro: hierarquia de informação, temas, ativação e boas práticas de dashboard financeiro.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --ground:#f5f7f4; --card:#ffffff; --card-2:#fbfcfa;
+    --ink:#15211c; --muted:#59685f; --faint:#89968e; --line:#e4e9e3; --line-2:#eef2ec;
+    --brand:#0e5a41; --brand-2:#2f9c6d; --brand-ink:#0a3d2c;
+    --free:#15803d; --free-bg:#e9f6ec; --p1:#c2410c; --p1-bg:#fbeee5; --p2:#0e7490; --p2-bg:#e2f3f6; --p3:#6b7280; --p3-bg:#eef1ee;
+    --shadow:0 1px 2px rgba(16,40,30,.05), 0 10px 30px rgba(16,40,30,.06); --shadow-sm:0 1px 2px rgba(16,40,30,.06);
+    --radius:16px; --radius-sm:11px; --maxw:940px;
+  }
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+    --ground:#0d1310; --card:#151c18; --card-2:#121814; --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6;
+    --free:#57c98a; --free-bg:#123222; --p1:#f0a173; --p1-bg:#37210f; --p2:#4bc4d8; --p2-bg:#0c3138; --p3:#9aa6a0; --p3-bg:#1e2621;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }}
+  :root[data-theme="dark"]{
+    --ground:#0d1310; --card:#151c18; --card-2:#121814; --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6;
+    --free:#57c98a; --free-bg:#123222; --p1:#f0a173; --p1-bg:#37210f; --p2:#4bc4d8; --p2-bg:#0c3138; --p3:#9aa6a0; --p3-bg:#1e2621;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box} html{-webkit-text-size-adjust:100%}
+  body{background:var(--ground); color:var(--ink); font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:var(--maxw); margin:0 auto; padding-inline:20px}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+  code{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.84em; background:var(--line-2); padding:1px 6px; border-radius:6px; color:var(--brand-ink)}
+  :root:not([data-theme="light"]) code,:root[data-theme="dark"] code{color:var(--brand-2)}
+  h1,h2,h3{font-family:"Bricolage Grotesque","IBM Plex Sans",sans-serif; text-wrap:balance; letter-spacing:-.015em; margin:0}
+  a{color:var(--brand-2)}
+
+  .hero{background:radial-gradient(120% 140% at 100% 0%, rgba(47,156,109,.18), transparent 55%), linear-gradient(158deg, var(--brand), var(--brand-ink)); color:#eafff5; border-radius:0 0 26px 26px; box-shadow:var(--shadow); position:relative; overflow:hidden}
+  .hero::after{content:""; position:absolute; inset:0; background-image:radial-gradient(rgba(255,255,255,.06) 1px, transparent 1.4px); background-size:22px 22px; mask:linear-gradient(120deg,#000,transparent 62%); pointer-events:none}
+  .hero .wrap{padding-block:34px 30px; position:relative; z-index:1}
+  .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:#9fe8c9; display:flex; align-items:center; gap:10px; margin-bottom:16px}
+  .eyebrow .dot{width:7px; height:7px; border-radius:50%; background:#7bffc8; box-shadow:0 0 0 4px rgba(123,255,200,.18)}
+  h1{font-size:clamp(28px,5.6vw,44px); line-height:1.03; font-weight:800; color:#fff; max-width:18ch}
+  .hero .lede{margin:16px 0 0; font-size:clamp(15px,2.3vw,18px); max-width:66ch; color:#d5f4e6; line-height:1.55}
+  .hero .lede b{color:#fff; font-weight:600}
+  .stats{display:flex; flex-wrap:wrap; gap:12px; margin-top:26px}
+  .stat{background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.16); border-radius:14px; padding:12px 16px; min-width:120px}
+  .stat .n{font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:24px; line-height:1; color:#fff; font-variant-numeric:tabular-nums}
+  .stat .l{font-size:12px; color:#bfead7; margin-top:6px}
+
+  section{margin-top:50px}
+  .sec-head{display:flex; align-items:baseline; gap:12px; margin-bottom:8px}
+  .sec-head .k{font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:600; color:var(--brand-2); border:1px solid var(--line); border-radius:8px; padding:3px 9px; background:var(--card); flex:none}
+  h2{font-size:clamp(20px,3.4vw,26px); font-weight:700; line-height:1.14}
+  .sec-sub{color:var(--muted); font-size:15px; margin:2px 0 20px; max-width:68ch}
+
+  .verdict{background:var(--card); border:1px solid var(--line); border-left:5px solid var(--brand-2); border-radius:var(--radius); padding:22px 24px; box-shadow:var(--shadow); margin-top:-30px; position:relative; z-index:2}
+  .verdict h2{font-size:19px; margin-bottom:8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+  .verdict .grade{font-family:"IBM Plex Mono",monospace; font-size:12px; font-weight:600; color:var(--free); background:var(--free-bg); padding:3px 10px; border-radius:20px}
+  .verdict p{margin:0; color:var(--muted); font-size:15px} .verdict p+p{margin-top:10px} .verdict strong{color:var(--ink)}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow-sm); padding:20px 22px}
+
+  /* stack de leitura da tela */
+  .stack{display:flex; flex-direction:column; gap:8px}
+  .row{display:grid; grid-template-columns:28px 1fr auto; align-items:center; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:11px 14px; box-shadow:var(--shadow-sm)}
+  .row .i{width:28px; height:28px; border-radius:8px; background:var(--line-2); color:var(--brand-2); font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:12px; display:flex; align-items:center; justify-content:center}
+  .row .t{font-size:14px} .row .t b{font-weight:600}
+  .row .z{font-family:"IBM Plex Mono",monospace; font-size:10.5px; font-weight:600; padding:2px 8px; border-radius:20px; white-space:nowrap; background:var(--line-2); color:var(--muted)}
+  .row .z.cond{background:var(--p2-bg); color:var(--p2)}
+
+  ul.keeps{list-style:none; margin:0; padding:0; display:grid; gap:11px}
+  @media(min-width:640px){ul.keeps{grid-template-columns:1fr 1fr; gap:11px 22px}}
+  ul.keeps li{padding-left:26px; position:relative; font-size:14.2px; color:var(--muted); line-height:1.5}
+  ul.keeps li::before{content:"✓"; position:absolute; left:0; top:0; color:var(--free); font-weight:700}
+  ul.keeps li b{color:var(--ink); font-weight:600}
+
+  .finds{display:flex; flex-direction:column; gap:16px}
+  .find{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; box-shadow:var(--shadow-sm)}
+  .find.is-p1{border-left:5px solid var(--p1)} .find.is-p2{border-left:5px solid var(--p2)} .find.is-p3{border-left:5px solid var(--p3)}
+  .find .top{display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-bottom:8px}
+  .badge{font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; padding:4px 9px; border-radius:20px; flex:none}
+  .b-p1{background:var(--p1-bg); color:var(--p1)} .b-p2{background:var(--p2-bg); color:var(--p2)} .b-p3{background:var(--p3-bg); color:var(--p3)}
+  .b-free{background:var(--free-bg); color:var(--free)} .b-fix{background:var(--brand); color:#fff}
+  .find h3{font-size:16.5px; font-weight:700; line-height:1.25}
+  .find p{margin:8px 0 0; color:var(--muted); font-size:14.4px}
+  .find .ex{margin-top:12px; padding:11px 14px; background:var(--card-2); border:1px dashed var(--line); border-radius:10px; font-size:13.4px}
+  .find .ex b{color:var(--brand-2); font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.05em; text-transform:uppercase; display:block; margin-bottom:5px}
+  .find .ex .mono{color:var(--ink)}
+
+  .note{background:var(--card-2); border:1px solid var(--line); border-radius:12px; padding:16px 18px; font-size:14px; color:var(--muted)}
+  .note b{color:var(--ink)}
+  footer{margin:56px 0 40px; padding-top:22px; border-top:1px solid var(--line); color:var(--muted); font-size:13px}
+  footer .mono{font-size:12px; color:var(--faint)}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow"><span class="dot"></span> FinançasPro · Auditoria de produto</div>
+    <h1>O Resumo já é um bom dashboard. Falta afinar a hierarquia.</h1>
+    <p class="lede">Auditoria completa da aba <b>Resumo</b>. A base é sólida: <b>skeleton de carregamento</b>, <b>divulgação progressiva</b> (o essencial em cima, o resto recolhido), <b>comparação com o mês anterior</b> e <b>saldo realizado × projetado</b>. Os ganhos estão em <b>qual número aparece primeiro</b>, em <b>cores fora do design-system</b> e em <b>convidar quem ainda não configurou a renda</b>. Tudo grátis e on-device.</p>
+    <div class="stats">
+      <div class="stat"><div class="n">1</div><div class="l">achado concreto (corrigível já)</div></div>
+      <div class="stat"><div class="n">3</div><div class="l">de hierarquia / ativação</div></div>
+      <div class="stat"><div class="n">2</div><div class="l">refinamentos menores</div></div>
+      <div class="stat"><div class="n">R$ 0</div><div class="l">custo — nada de API paga</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="verdict">
+    <h2>Veredito <span class="grade">MADURO · ajustes de afinação</span></h2>
+    <p>O Resumo faz o que um bom painel financeiro deve fazer: <strong>carrega com skeleton</strong> (sem “pulo” de layout), mostra o essencial acima da dobra e <strong>recolhe</strong> relatórios, gráficos e previsão em seções expansíveis — divulgação progressiva bem aplicada. Distingue <strong>saldo realizado de projetado</strong>, compara com o <strong>mês anterior</strong>, esconde seções vazias e <strong>anuncia o saldo</strong> para leitores de tela. É acima da média do mercado.</p>
+    <p>As oportunidades não são de motor, são de <strong>foco</strong>: hoje três leituras de “quanto tenho” competem no topo, o indicador de <strong>% da renda</strong> usa <strong>cores fixas em código</strong> (fora dos tokens e do tema escuro), e quem <strong>não configurou a renda</strong> perde justamente o indicador mais útil — sem ser convidado a configurá-la.</p>
+  </div>
+
+  <!-- 1 -->
+  <section>
+    <div class="sec-head"><span class="k">01</span><h2>O que a tela mostra hoje</h2></div>
+    <p class="sec-sub">Ordem de leitura no celular. As marcas <span class="z cond" style="display:inline-block">condicional</span> só aparecem quando há dado — bom sinal de que a tela não enche de zeros.</p>
+    <div class="stack">
+      <div class="row"><div class="i">01</div><div class="t"><b>Saudação</b> + “Resumo de [mês] [ano]” e a tagline “Método 50/30/20”</div><span class="z">sempre</span></div>
+      <div class="row"><div class="i">02</div><div class="t"><b>Onboarding</b> — “Comece em 3 passos”</div><span class="z cond">0 lançamentos</span></div>
+      <div class="row"><div class="i">03</div><div class="t"><b>Saldo do mês (realizado)</b> — cartão-herói, com projetado quando difere</div><span class="z">sempre</span></div>
+      <div class="row"><div class="i">04</div><div class="t"><b>Receitas / Despesas</b> — dois cartões + variação vs. mês anterior</div><span class="z">sempre</span></div>
+      <div class="row"><div class="i">05</div><div class="t"><b>Alertas de orçamento</b> (estourado / em risco)</div><span class="z cond">se houver</span></div>
+      <div class="row"><div class="i">06</div><div class="t"><b>Indicadores</b> — % da renda · dias restantes · gasto médio/dia</div><span class="z">sempre</span></div>
+      <div class="row"><div class="i">07</div><div class="t"><b>Disponível para gastar</b> + já comprometido (cartões, parcelas, contas)</div><span class="z cond">se houver saldo/compromisso</span></div>
+      <div class="row"><div class="i">08</div><div class="t"><b>Limites de orçamento</b> · <b>Últimas transações</b> · botão Registrar</div><span class="z">sempre</span></div>
+      <div class="row"><div class="i">09</div><div class="t"><b>Recolhidos</b>: relatório do mês, análise (gráficos), previsão &amp; saúde</div><span class="z">expansível</span></div>
+      <div class="row"><div class="i">10</div><div class="t"><b>Módulos</b>: cartões, contas, contas a pagar, metas, gastos fixos, patrimônio</div><span class="z cond">quando usados</span></div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section>
+    <div class="sec-head"><span class="k">02</span><h2>O que já está muito bom</h2></div>
+    <div class="card">
+      <ul class="keeps">
+        <li><b>Skeleton de carregamento</b> — sem tela em branco nem “pulo” de layout ao renderizar.</li>
+        <li><b>Divulgação progressiva</b> — o essencial em cima; gráficos, relatório e previsão recolhidos.</li>
+        <li><b>Realizado × projetado</b> — o saldo separa o que já aconteceu de contas futuras.</li>
+        <li><b>Comparação mensal</b> — receitas e despesas mostram a variação vs. o mês anterior.</li>
+        <li><b>Esconde o vazio</b> — “Disponível”, cartões, metas etc. só aparecem quando há dado.</li>
+        <li><b>Acessibilidade</b> — o saldo é anunciado via <code>aria-live</code>, e só quando o número muda.</li>
+        <li><b>Resiliência</b> — cada sub-render tem <code>try/catch</code>; um erro não derruba a tela toda.</li>
+        <li><b>Gráficos sob demanda</b> — só renderizam quando o painel é aberto (leve no boot).</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section>
+    <div class="sec-head"><span class="k">03</span><h2>O que eu melhoraria</h2></div>
+    <p class="sec-sub">Em ordem de retorno. Nenhum exige IA paga nem servidor.</p>
+    <div class="finds">
+
+      <div class="find is-p1">
+        <div class="top"><span class="badge b-p1">Concreto · tema</span><span class="badge b-fix">corrigível já</span><span class="badge b-free">grátis</span></div>
+        <h3>Cores fixas em código no indicador “% da renda”</h3>
+        <p>O anel de progresso do indicador de renda recebe cores <b>hard-coded em JavaScript</b> (<code>render-dashboard.js</code>), em vez de tokens do design-system. Elas <b>não seguem o tema</b>: no modo escuro continuam as mesmas do claro, então não acompanham o resto da paleta e escapam do verificador de tokens do CI (que só olha o CSS). É o achado mais objetivo desta auditoria — e o mais fácil de corrigir.</p>
+        <div class="ex"><b>Hoje</b> <span class="mono">cor: pctGasto &gt; 100 ? '#c9573a' : pctGasto &gt; 80 ? '#c98a1e' : '#2f9c6d'</span></div>
+        <div class="ex"><b>Correção</b> <span class="mono">usar var(--color-danger) / --color-warning / --color-success (adaptam ao tema)</span></div>
+      </div>
+
+      <div class="find is-p2">
+        <div class="top"><span class="badge b-p2">Ativação</span><span class="badge b-free">grátis</span></div>
+        <h3>Sem renda configurada, some o indicador mais útil</h3>
+        <p>O indicador “% da renda” só aparece quando há renda cadastrada. Quem ainda não configurou <b>simplesmente não vê nada</b> ali — e não é convidado a configurar. Como é a leitura que responde “estou gastando demais?”, vale trocar a ausência por um <b>estado clicável</b>: “Defina sua renda para acompanhar quanto já gastou” levando à tela de Orçamento. Melhora a ativação sem custo.</p>
+        <div class="ex"><b>Exemplo</b> <span class="mono">renda = 0 → card “Defina sua renda →” em vez de indicador oculto</span></div>
+      </div>
+
+      <div class="find is-p2">
+        <div class="top"><span class="badge b-p2">Hierarquia</span><span class="badge b-free">grátis</span></div>
+        <h3>Três leituras de “quanto tenho” competem no topo</h3>
+        <p>Perto da dobra convivem <b>Saldo do mês</b>, <b>Receitas/Despesas</b> e <b>Disponível para gastar</b>. Para a decisão do dia a dia (“posso gastar?”), a métrica-herói costuma ser a <b>Disponível para gastar</b> — mas ela aparece só depois dos indicadores, abaixo do Saldo. Vale avaliar <b>elevar o “Disponível”</b> quando existir, ou deixar mais explícita a relação entre as três (saldo → menos compromissos → disponível). É uma decisão de produto, não um bug — por isso fica como recomendação, não correção automática.</p>
+      </div>
+
+      <div class="find is-p3">
+        <div class="top"><span class="badge b-p3">Refinamento</span><span class="badge b-free">grátis</span></div>
+        <h3>“Gasto médio/dia” sem referência</h3>
+        <p>O indicador mostra a média diária gasta, mas sozinho não diz se está <b>sustentável</b>. Um comparativo barato — o ritmo que caberia no mês (renda ÷ dias, ou orçamento ÷ dias) — transforma um número neutro em sinal: “R$ 84/dia · dentro do ritmo” ou “acima do sustentável”. Só quando houver renda/orçamento, para não inventar meta.</p>
+      </div>
+
+      <div class="find is-p3">
+        <div class="top"><span class="badge b-p3">Refinamento</span><span class="badge b-free">grátis</span></div>
+        <h3>Duas linhas de contexto antes do primeiro número</h3>
+        <p>Logo abaixo da saudação vêm “Resumo de [mês] [ano]” <b>e</b> a tagline “Método 50/30/20…”. São duas linhas de texto empilhadas antes de qualquer cifra. Dá para <b>fundir</b> (mês + método numa linha só) ou mostrar a tagline apenas no primeiro uso, aproximando o Saldo do topo. Ganho pequeno, custo pequeno.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section>
+    <div class="sec-head"><span class="k">04</span><h2>Verificar (baixa confiança)</h2></div>
+    <div class="note">
+      <p style="margin:0 0 10px"><b>Alternativa textual dos gráficos.</b> A “Evolução (6 meses)” e o “Despesas por categoria” são desenhados em SVG/canvas. Vale confirmar se expõem um resumo textual/tabela para leitor de tela — se não, é um complemento de acessibilidade barato (o dado já existe no render).</p>
+      <p style="margin:0"><b>Densidade abaixo da dobra.</b> Com todos os módulos ativos (cartões, contas, metas, gastos fixos, patrimônio, previsão…), a página fica longa. Já é tudo condicional/recolhido — então não é problema hoje, mas convém vigiar se a lista de seções continuar crescendo.</p>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section>
+    <div class="sec-head"><span class="k">05</span><h2>Sequência sugerida</h2></div>
+    <div class="note">
+      <p style="margin:0"><b>1.</b> Cores do indicador “% da renda” → tokens do design-system (correção objetiva, com teste).<br>
+      <b>2.</b> Estado “defina sua renda” no lugar do indicador oculto (ativação).<br>
+      <b>3.</b> Referência de ritmo no “gasto médio/dia” (quando houver renda/orçamento).<br>
+      <b>4.</b> Enxugar as duas linhas de contexto do topo.<br>
+      <b>5.</b> Hierarquia do “Disponível para gastar” — decidir com calma, é mudança de produto.</p>
+    </div>
+  </section>
+
+  <footer>
+    <p><b>Auditoria da aba Resumo — FinançasPro</b> · 13 set 2026 · escopo: <code>index.html</code> (markup do <code>#aba-resumo</code>), <code>render-dashboard.js</code> e <code>compromissos.js</code>.</p>
+    <p class="mono">Método: leitura do markup e do renderizador do dashboard, ordem de render e regras de exibição condicional. Recomendações restritas a soluções on-device e gratuitas. Não substitui teste com usuários reais.</p>
+  </footer>
+
+</div>
+</body>
+</html>

@@ -398,13 +398,39 @@
       if (renda > 0) {
         var pctGasto = (resumo.despesas / renda) * 100;
         var tipo1 = pctGasto > 100 ? 'negativo' : 'positivo';
+        // Cores da barra por tokens do design-system (adaptam ao tema escuro),
+        // não hex fixos: antes eram '#c9573a'/'#c98a1e'/'#2f9c6d', que ficavam
+        // presos à paleta clara e escapavam do verificador de tokens do CI.
+        var corBarra = pctGasto > 100 ? 'var(--color-danger)'
+          : pctGasto > 80 ? 'var(--color-warning)'
+          : 'var(--color-success)';
         container.appendChild(UI.Indicador.render(
           'wallet',
           pctGasto.toFixed(0) + '% da renda',
           pctGasto > 100 ? 'Indicador alerta' : 'Indicador ok',
           tipo1,
-          { pct: Math.min(pctGasto, 100), cor: pctGasto > 100 ? '#c9573a' : pctGasto > 80 ? '#c98a1e' : '#2f9c6d' }
+          { pct: Math.min(pctGasto, 100), cor: corBarra }
         ));
+      } else {
+        // Sem renda cadastrada, o indicador mais útil (% da renda) some. Em vez
+        // de deixar um vazio, convida a configurar — é o número que responde
+        // "estou gastando demais?". Leva ao Orçamento › Planejamento, onde a
+        // renda é definida. Botão de verdade: acessível e navegável por teclado.
+        var ctaRenda = this.create('button', {
+          type: 'button',
+          class: 'indicador indicador-cta',
+          'data-mudar-aba': 'orcamento',
+          'data-orc-sub': 'planejamento',
+          'aria-label': 'Defina sua renda mensal para acompanhar quanto já gastou'
+        });
+        var ctaIcon = this.create('span', { class: 'indicador-icon' });
+        ctaIcon.innerHTML = '<i data-lucide="wallet" aria-hidden="true"></i>';
+        ctaRenda.appendChild(ctaIcon);
+        var ctaContent = this.create('div', { class: 'indicador-content' });
+        ctaContent.appendChild(this.create('span', { class: 'indicador-valor', textContent: 'Definir' }));
+        ctaContent.appendChild(this.create('span', { class: 'indicador-label', textContent: 'Defina sua renda' }));
+        ctaRenda.appendChild(ctaContent);
+        container.appendChild(ctaRenda);
       }
 
       container.appendChild(UI.Indicador.render(
@@ -414,15 +440,18 @@
         diasRestantes < 5 ? 'alerta' : 'neutro'
       ));
 
-      // Base: receitas REAIS do mês (não a renda configurada). Quem tem renda
-      // variável ou lança valores diferentes do config veria um número enganoso.
-      if (resumo.receitas > 0 || resumo.despesas > 0) {
-        var economia = resumo.receitas - resumo.despesas;
+      // Ritmo de gasto: média diária realizada no mês. Substitui o antigo
+      // "Economia do mês", que repetia exatamente a cifra do card de Saldo
+      // (receitas − despesas) — redundância apontada na auditoria de UI/UX.
+      // O ritmo diário é uma leitura distinta e acionável, e não duplica nada.
+      if (resumo.despesas > 0) {
+        var diasDecorridos = Math.max(1, ctx.agora.getDate());
+        var gastoDia = resumo.despesas / diasDecorridos;
         container.appendChild(UI.Indicador.render(
-          economia >= 0 ? 'trending-up' : 'trending-down',
-          this.money(Math.abs(economia)),
-          economia >= 0 ? 'Economia do mês' : 'Déficit do mês',
-          economia >= 0 ? 'positivo' : 'negativo'
+          'trending-down',
+          this.money(gastoDia),
+          'Gasto médio/dia',
+          'neutro'
         ));
       }
 

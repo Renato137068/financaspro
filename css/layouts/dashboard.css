@@ -239,6 +239,38 @@
   gap: var(--space-3);
 }
 
+/* CTA "Defina sua renda": ocupa a célula do indicador de renda quando ela
+   ainda não foi configurada. É um botão de verdade (foco/teclado), com a
+   moldura tracejada que sinaliza "configure aqui". */
+.indicador-cta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  text-align: left;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px dashed var(--color-border);
+  background: var(--color-bg-body-soft);
+  color: var(--color-primary-text);
+  cursor: pointer;
+  transition: border-color var(--transition-smooth), background var(--transition-smooth);
+}
+
+.indicador-cta:hover {
+  border-color: var(--color-primary-500);
+  background: var(--color-bg-card);
+}
+
+.indicador-cta:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+}
+
+.indicador-cta .indicador-label {
+  color: var(--color-text-muted);
+}
+
 /* ── Dashboard Sections ─────────────────────────────────────── */
 
 .dashboard-section {

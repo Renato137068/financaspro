@@ -823,6 +823,10 @@ const INIT_EXTRATO = {
         grupo = 'ONTEM';
       } else if (dataTx >= inicioSemana && dataTx < hoje) {
         grupo = 'ESTA SEMANA';
+      } else if (dataTx.getMonth() === hoje.getMonth() && dataTx.getFullYear() === hoje.getFullYear()) {
+        // Mesmo mês corrente que já aparece no cabeçalho do Extrato — evita
+        // repetir "Setembro 2026" como rótulo de grupo (nit da auditoria UI/UX).
+        grupo = 'MAIS CEDO NO MÊS';
       } else {
         var nomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
         grupo = nomes[dataTx.getMonth()].toUpperCase() + ' ' + dataTx.getFullYear();
@@ -839,7 +843,7 @@ const INIT_EXTRATO = {
    * Ordena grupos temporais (HOJE, ONTEM, ESTA SEMANA, depois meses).
    */
   _ordenarGrupos: function(grupos) {
-    var ordemGrupos = ['HOJE', 'ONTEM', 'ESTA SEMANA'];
+    var ordemGrupos = ['HOJE', 'ONTEM', 'ESTA SEMANA', 'MAIS CEDO NO MÊS'];
     var gruposOrdenados = {};
     ordemGrupos.forEach(function(g) {
       if (grupos[g]) gruposOrdenados[g] = grupos[g];

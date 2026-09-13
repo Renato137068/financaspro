@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auditoria UI/UX do App</title>
+<meta name="description" content="Auditoria completa de interface e experiência do FinançasPro, com o app rodando — telas em claro, escuro, mobile e desktop.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --ground:#f5f7f4; --card:#ffffff; --card-2:#fbfcfa;
+    --ink:#15211c; --muted:#59685f; --faint:#89968e; --line:#e4e9e3; --line-2:#eef2ec;
+    --brand:#0e5a41; --brand-2:#2f9c6d; --brand-ink:#0a3d2c;
+    --ok:#15803d; --ok-bg:#e9f6ec; --warn:#b45309; --warn-bg:#fbeedd; --crit:#b91c1c; --crit-bg:#fbe9e9;
+    --p1:#c2410c; --p1-bg:#fbeee5; --p2:#0e7490; --p2-bg:#e2f3f6; --nit:#6b7280; --nit-bg:#eef1ee;
+    --shadow:0 1px 2px rgba(16,40,30,.05), 0 10px 30px rgba(16,40,30,.06); --shadow-sm:0 1px 2px rgba(16,40,30,.06);
+    --radius:16px; --radius-sm:11px; --maxw:940px;
+  }
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+    --ground:#0d1310; --card:#151c18; --card-2:#121814; --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6;
+    --ok:#57c98a; --ok-bg:#123222; --warn:#e0a24a; --warn-bg:#352312; --crit:#f0857f; --crit-bg:#3a1918;
+    --p1:#f0a173; --p1-bg:#37210f; --p2:#4bc4d8; --p2-bg:#0c3138; --nit:#9aa6a0; --nit-bg:#1e2621;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }}
+  :root[data-theme="dark"]{
+    --ground:#0d1310; --card:#151c18; --card-2:#121814; --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6;
+    --ok:#57c98a; --ok-bg:#123222; --warn:#e0a24a; --warn-bg:#352312; --crit:#f0857f; --crit-bg:#3a1918;
+    --p1:#f0a173; --p1-bg:#37210f; --p2:#4bc4d8; --p2-bg:#0c3138; --nit:#9aa6a0; --nit-bg:#1e2621;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box} html{-webkit-text-size-adjust:100%}
+  body{background:var(--ground); color:var(--ink); font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:var(--maxw); margin:0 auto; padding-inline:20px}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+  code{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.85em; background:var(--line-2); padding:1px 6px; border-radius:6px; color:var(--brand-ink)}
+  :root:not([data-theme="light"]) code,:root[data-theme="dark"] code{color:var(--brand-2)}
+  h1,h2,h3{font-family:"Bricolage Grotesque","IBM Plex Sans",sans-serif; text-wrap:balance; letter-spacing:-.015em; margin:0}
+  a{color:var(--brand-2)}
+
+  .hero{background:radial-gradient(120% 140% at 100% 0%, rgba(47,156,109,.18), transparent 55%), linear-gradient(158deg, var(--brand), var(--brand-ink)); color:#eafff5; border-radius:0 0 26px 26px; box-shadow:var(--shadow); position:relative; overflow:hidden}
+  .hero::after{content:""; position:absolute; inset:0; background-image:radial-gradient(rgba(255,255,255,.06) 1px, transparent 1.4px); background-size:22px 22px; mask:linear-gradient(120deg,#000,transparent 62%); pointer-events:none}
+  .hero .wrap{padding-block:34px 30px; position:relative; z-index:1}
+  .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:#9fe8c9; display:flex; align-items:center; gap:10px; margin-bottom:16px}
+  .eyebrow .dot{width:7px; height:7px; border-radius:50%; background:#7bffc8; box-shadow:0 0 0 4px rgba(123,255,200,.18)}
+  h1{font-size:clamp(28px,5.6vw,44px); line-height:1.03; font-weight:800; color:#fff; max-width:16ch}
+  .hero .lede{margin:16px 0 0; font-size:clamp(15px,2.3vw,18px); max-width:64ch; color:#d5f4e6; line-height:1.55}
+  .hero .lede b{color:#fff; font-weight:600}
+  .stats{display:flex; flex-wrap:wrap; gap:12px; margin-top:26px}
+  .stat{background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.16); border-radius:14px; padding:12px 16px; min-width:112px}
+  .stat .n{font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:24px; line-height:1; color:#fff; font-variant-numeric:tabular-nums}
+  .stat .l{font-size:12px; color:#bfead7; margin-top:6px}
+
+  section{margin-top:50px}
+  .sec-head{display:flex; align-items:baseline; gap:12px; margin-bottom:8px}
+  .sec-head .k{font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:600; color:var(--brand-2); border:1px solid var(--line); border-radius:8px; padding:3px 9px; background:var(--card); flex:none}
+  h2{font-size:clamp(20px,3.4vw,26px); font-weight:700; line-height:1.14}
+  .sec-sub{color:var(--muted); font-size:15px; margin:2px 0 20px; max-width:68ch}
+
+  .verdict{background:var(--card); border:1px solid var(--line); border-left:5px solid var(--brand-2); border-radius:var(--radius); padding:22px 24px; box-shadow:var(--shadow); margin-top:-30px; position:relative; z-index:2}
+  .verdict h2{font-size:19px; margin-bottom:8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+  .verdict .grade{font-family:"IBM Plex Mono",monospace; font-size:12px; font-weight:600; color:var(--ok); background:var(--ok-bg); padding:3px 10px; border-radius:20px}
+  .verdict p{margin:0; color:var(--muted); font-size:15px} .verdict p+p{margin-top:10px} .verdict strong{color:var(--ink)}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow-sm); padding:20px 22px}
+
+  /* screen-by-screen */
+  .screens{display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:14px}
+  .scr{background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:16px 17px; box-shadow:var(--shadow-sm)}
+  .scr h3{font-family:"Bricolage Grotesque",sans-serif; font-size:15.5px; font-weight:700; display:flex; align-items:center; justify-content:space-between; gap:8px}
+  .scr .score{font-family:"IBM Plex Mono",monospace; font-size:12px; font-weight:600; color:var(--ok); background:var(--ok-bg); padding:2px 8px; border-radius:20px}
+  .scr .score.mid{color:var(--warn); background:var(--warn-bg)}
+  .scr p{margin:9px 0 0; font-size:13.6px; color:var(--muted); line-height:1.5}
+  .scr p b{color:var(--ink); font-weight:600}
+
+  /* findings */
+  .finds{display:flex; flex-direction:column; gap:14px}
+  .find{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; box-shadow:var(--shadow-sm)}
+  .find .top{display:flex; align-items:center; gap:11px; flex-wrap:wrap; margin-bottom:8px}
+  .badge{font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; padding:4px 9px; border-radius:20px; flex:none}
+  .b-p1{background:var(--p1-bg); color:var(--p1)} .b-p2{background:var(--p2-bg); color:var(--p2)} .b-nit{background:var(--nit-bg); color:var(--nit)}
+  .find h3{font-size:16.5px; font-weight:700; line-height:1.25}
+  .find p{margin:8px 0 0; color:var(--muted); font-size:14.4px}
+  .find .fix{margin-top:12px; padding:11px 14px; background:var(--card-2); border:1px dashed var(--line); border-radius:10px; font-size:13.8px}
+  .find .fix b{color:var(--brand-2); font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.05em; text-transform:uppercase; display:block; margin-bottom:4px}
+
+  ul.keeps{list-style:none; margin:0; padding:0; display:grid; gap:11px}
+  @media(min-width:640px){ul.keeps{grid-template-columns:1fr 1fr; gap:11px 22px}}
+  ul.keeps li{padding-left:26px; position:relative; font-size:14.2px; color:var(--muted); line-height:1.5}
+  ul.keeps li::before{content:"✓"; position:absolute; left:0; top:0; color:var(--ok); font-weight:700}
+  ul.keeps li b{color:var(--ink); font-weight:600}
+
+  .note{background:var(--card-2); border:1px solid var(--line); border-radius:12px; padding:14px 16px; font-size:14px; color:var(--muted)}
+  .note b{color:var(--ink)}
+  footer{margin:56px 0 40px; padding-top:22px; border-top:1px solid var(--line); color:var(--muted); font-size:13px}
+  footer .mono{font-size:12px; color:var(--faint)}
+</style>
+<style>
+  *{box-sizing:border-box} body{margin:0} img{max-width:100%} [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow"><span class="dot"></span> FinançasPro · Auditoria de produto</div>
+    <h1>A interface é forte — o que falta é polir as bordas.</h1>
+    <p class="lede">Auditoria completa de <b>UI e UX</b> com o app <b>rodando de verdade</b>: as cinco abas em claro e escuro, no mobile e no desktop, cruzadas com o design system e os guardas de qualidade do CI. O produto está maduro; os achados são refino, com <b>uma exceção</b> — o layout do Resumo em telas largas.</p>
+    <div class="stats">
+      <div class="stat"><div class="n">5</div><div class="l">abas auditadas (claro+escuro)</div></div>
+      <div class="stat"><div class="n">1</div><div class="l">correção de layout (desktop)</div></div>
+      <div class="stat"><div class="n">31/31</div><div class="l">contraste WCAG AA (2 temas)</div></div>
+      <div class="stat"><div class="n">Muito boa</div><div class="l">nota geral</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="verdict">
+    <h2>Veredito <span class="grade">MUITO BOA · sem bloqueador</span></h2>
+    <p>No <strong>mobile</strong> — o alvo primário (PWA/Android) — o app é <strong>coeso e polido</strong>: hierarquia clara por tela, um design system com escalas reais (espaçamento, tipografia, raio, sombra), dark mode correto e acessibilidade garantida por testes no CI. O <strong>Novo lançamento</strong> (entrada rápida + linguagem natural) é um diferencial de mercado.</p>
+    <p>O único achado de peso é o <strong>layout do Resumo em telas largas</strong> (desktop), que quebra enquanto o Extrato se adapta bem — logo, é específico, não sistêmico. O resto são refinamentos de <strong>terminologia repetida</strong> e <strong>densidade</strong>.</p>
+  </div>
+
+  <!-- 1 -->
+  <section>
+    <div class="sec-head"><span class="k">01</span><h2>Método</h2></div>
+    <p class="sec-sub">Nada de opinião no vácuo: o app foi executado e cada tela, fotografada em estado real.</p>
+    <div class="card">
+      <ul class="keeps">
+        <li><b>App rodando</b> com dados de exemplo (14 lançamentos, orçamentos, contas) — Resumo, Extrato, Novo, Orçamento e Perfil.</li>
+        <li><b>Claro e escuro</b> capturados nas telas principais.</li>
+        <li><b>Mobile (430px) e desktop (1280px)</b> — para testar a responsividade real.</li>
+        <li><b>Cruzado com o código</b> — design system (<code>css/design-system.css</code>), guardas de contraste/a11y/tokens do CI e a reestruturação recente do Perfil.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section>
+    <div class="sec-head"><span class="k">02</span><h2>Tela a tela</h2></div>
+    <p class="sec-sub">Cada aba tem identidade e cumpre bem seu papel. Nota qualitativa por tela.</p>
+    <div class="screens">
+      <div class="scr">
+        <h3>Resumo <span class="score mid">bom · ajustar</span></h3>
+        <p>Saldo em destaque, receitas/despesas, 50/30/20, últimas transações e accordions (relatório, análise, previsão). <b>Denso e longo</b> no mobile; <b>quebra no desktop</b> (achado P1-01).</p>
+      </div>
+      <div class="scr">
+        <h3>Extrato <span class="score">ótimo</span></h3>
+        <p>Agrupado por período, <b>ícones por categoria</b>, seleção em massa, busca, filtros e exportação (CSV/PDF-Pro). Adapta bem ao desktop.</p>
+      </div>
+      <div class="scr">
+        <h3>Novo <span class="score">ótimo</span></h3>
+        <p><b>Destaque do produto.</b> Chips de recorrentes, <b>parser de linguagem natural</b> ("Uber 32,90 ontem nubank"), valor com atalhos (+10/+50), contexto rápido, transferência.</p>
+      </div>
+      <div class="scr">
+        <h3>Orçamento <span class="score">ótimo</span></h3>
+        <p>50/30/20 com barras e selos "saudável", KPIs, <b>insights contextuais</b> ("já usou 70%…"), sub-abas (Metas, Gastos fixos, Patrimônio).</p>
+      </div>
+      <div class="scr">
+        <h3>Perfil <span class="score">ótimo</span></h3>
+        <p>Recém-reestruturado: menu de 7 grupos com sub-telas, diagnóstico fora do fluxo. Coeso com o resto do app.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section>
+    <div class="sec-head"><span class="k">03</span><h2>Achados priorizados</h2></div>
+    <p class="sec-sub">Um de correção (desktop) e o resto de refino. Nenhum é bloqueador.</p>
+    <div class="finds">
+      <div class="find">
+        <div class="top"><span class="badge b-p1">P1 · correção</span></div>
+        <h3>O Resumo quebra em telas largas (desktop)</h3>
+        <p>A 1280px, o Resumo mostra um <b>vazio grande no topo</b> e joga o card "Limites de orçamento" para a direita <b>acima</b> do card de Saldo — a ordem de leitura inverte (o secundário vem antes do principal). O Extrato, na mesma largura, se comporta perfeitamente — então o problema é do <b>grid específico do Resumo</b>, não do app.</p>
+        <div class="fix"><b>Correção</b> Revisar o grid do Resumo no breakpoint desktop: coluna única centrada com <code>max-width</code> (como o Extrato faz) ou um 2-colunas intencional com o Saldo sempre em primeiro. É o item de maior retorno visual.</div>
+      </div>
+      <div class="find">
+        <div class="top"><span class="badge b-p1">P1 · clareza</span></div>
+        <h3>A mesma cifra aparece sob quatro nomes</h3>
+        <p>O valor de sobra do mês (no exemplo, <code>R$ 4.928</code>) aparece como <b>"Saldo do mês (realizado)"</b>, <b>"Economia do mês"</b> (logo abaixo, idêntico) no Resumo, e como <b>"Saldo disponível do orçamento"</b> e <b>"Economia"</b> no Orçamento. Quatro rótulos para o mesmo número convidam o usuário a achar que são coisas diferentes.</p>
+        <div class="fix"><b>Correção</b> Um conceito, um nome. No Resumo, remover o "Economia do mês" redundante (ou fundi-lo ao card de Saldo). Padronizar o vocabulário entre Resumo e Orçamento.</div>
+      </div>
+      <div class="find">
+        <div class="top"><span class="badge b-p2">P2 · densidade</span></div>
+        <h3>A Resumo empilha muitos módulos</h3>
+        <p>São ~2000px de rolagem: saldo, banner Pro, receitas/despesas, "42% da renda", "economia do mês", orçamento, últimas transações, "Registrar", e 3 accordions. Já há divulgação progressiva (accordions) — dá para ir além.</p>
+        <div class="fix"><b>Correção</b> Promover 1–2 blocos primários e recolher o resto; eliminar a redundância de "economia"; considerar o "Registrar Transação" como secundário (o "Novo" central já é o caminho principal).</div>
+      </div>
+      <div class="find">
+        <div class="top"><span class="badge b-p2">P2 · métrica</span></div>
+        <h3>Poupança "360% alcançado" infla o número</h3>
+        <p>No Orçamento, toda a sobra do mês é contada como poupança contra a meta — daí "360%". É otimista demais e pode mascarar que o dinheiro não foi, de fato, guardado.</p>
+        <div class="fix"><b>Correção</b> Separar "sobra do mês" de "aporte de poupança declarado" (ou marcar a diferença), para a métrica refletir o que foi realmente reservado.</div>
+      </div>
+      <div class="find">
+        <div class="top"><span class="badge b-nit">Nit · alinhamento</span></div>
+        <h3>"R$" solto no campo de valor (Novo)</h3>
+        <p>No teclado de valor, o prefixo <code>R$</code> fica fora da caixa do número. Alinhar o prefixo <em>dentro</em> do campo deixa a leitura mais limpa.</p>
+      </div>
+      <div class="find">
+        <div class="top"><span class="badge b-nit">Nit · microcopy</span></div>
+        <h3>Grupo do Extrato repete o mês</h3>
+        <p>O agrupamento "Ontem / Esta semana / <b>Setembro 2026</b>" repete o mês que já está no cabeçalho da tela. E o toast "você tem N transações sem backup" reaparece a cada navegação — avaliar a frequência para não virar ruído.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section>
+    <div class="sec-head"><span class="k">04</span><h2>O que já está excelente</h2></div>
+    <p class="sec-sub">Boa parte do trabalho pesado de design já foi feito — e bem feito. Manter.</p>
+    <div class="card">
+      <ul class="keeps">
+        <li><b>Design system maduro</b> — escalas de espaçamento (0–16), tipografia, raio, sombra e <em>easing</em> em tokens; guarda de CI contra hex/px soltos.</li>
+        <li><b>Dark mode correto</b> — cartões escurecem; contraste passa <b>31/31</b> em claro e escuro (guarda automática).</li>
+        <li><b>Entrada rápida de classe</b> — parser de linguagem natural + chips + atalhos de valor no "Novo".</li>
+        <li><b>Extrato rico</b> — agrupamento, ícones por categoria, seleção em massa e exportação.</li>
+        <li><b>Orçamento com insights</b> — 50/30/20, selos de saúde e dicas contextuais em vez de só números.</li>
+        <li><b>Acessibilidade no CI</b> — skip link, landmarks, <code>aria-current</code>, alvo de toque (WCAG 2.5.5), nomes de navegação consistentes; <code>prefers-reduced-motion</code> respeitado.</li>
+        <li><b>Estados vazios com ação</b> — ex.: orçamento sem limites mostra "Começar agora".</li>
+        <li><b>Navegação coerente</b> — barra inferior no mobile, sidebar no desktop, aba ativa destacada.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section>
+    <div class="sec-head"><span class="k">05</span><h2>Sequência sugerida</h2></div>
+    <div class="note">
+      <p style="margin:0 0 10px"><b>1.</b> Corrigir o grid do <b>Resumo no desktop</b> (P1-01) — maior retorno visual, escopo pequeno.<br>
+      <b>2.</b> Unificar a <b>terminologia de "saldo/economia"</b> e remover a cifra repetida no Resumo (P1-02).<br>
+      <b>3.</b> Enxugar a <b>densidade do Resumo</b> e ajustar a métrica de poupança (P2).<br>
+      <b>4.</b> Os nits (alinhamento do R$, microcopy do Extrato) entram em qualquer passada de polish.</p>
+      <p style="margin:0; font-size:13px; color:var(--faint)" class="mono">Escopo: interface e experiência das 5 abas. Não cobre performance, conteúdo de cobrança nem back-end. Complementa as auditorias da aba Perfil e de segurança/RLS.</p>
+    </div>
+  </section>
+
+  <footer>
+    <p><b>Auditoria UI/UX — FinançasPro</b> · 12 set 2026 · método: app executado + captura (claro/escuro, mobile/desktop) + revisão do design system e dos guardas de CI.</p>
+    <p class="mono">Notas qualitativas de produto/design; não substituem teste com usuários reais.</p>
+  </footer>
+
+</div>
+
+</body>
+</html>

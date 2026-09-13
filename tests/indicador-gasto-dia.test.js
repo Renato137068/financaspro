@@ -1,8 +1,10 @@
 /**
- * economia-indicador.test.js — P2.4: base do indicador Economia/Déficit
+ * indicador-gasto-dia.test.js — indicador "Gasto médio/dia" no Resumo
  *
- * O indicador usava config.renda (configurada). Com renda variável ou receitas
- * lançadas diferentes do config, o número mentia. Agora usa receitas reais do mês.
+ * Substitui o antigo "Economia do mês", que repetia a mesma cifra do card de
+ * Saldo (receitas − despesas) — redundância apontada na auditoria de UI/UX.
+ * O ritmo diário usa despesas REAIS do mês ÷ dias decorridos; nunca a renda
+ * configurada (que enganaria quem tem renda variável).
  * @jest-environment jsdom
  */
 const fs = require('fs');
@@ -77,7 +79,7 @@ beforeEach(function() {
 
 function renderCom(resumo, rendaConfig) {
   RENDER_DASHBOARD._ctx = {
-    agora: new Date(2026, 7, 15),
+    agora: new Date(2026, 7, 15),   // 15 de agosto → 15 dias decorridos
     mes: 8,
     ano: 2026,
     config: { renda: rendaConfig },
@@ -86,37 +88,40 @@ function renderCom(resumo, rendaConfig) {
   RENDER_DASHBOARD.renderIndicadores();
 }
 
-describe('indicador Economia/Déficit — base = receitas reais', function() {
-  test('usa receitas do mês, não a renda configurada', function() {
-    // Config diz 10.000; lançamentos reais: 4.000 − 1.500 = 2.500
+function gastoDia() {
+  return indicadoresChamados.filter(function(c) {
+    return c.label === 'Gasto médio/dia';
+  });
+}
+
+describe('indicador Gasto médio/dia — base = despesas reais ÷ dias decorridos', function() {
+  test('média diária = despesas do mês / dias decorridos', function() {
+    // 1500 de despesa em 15 dias → 100/dia. A renda configurada não entra.
     renderCom({ receitas: 4000, despesas: 1500, saldo: 2500 }, 10000);
 
-    var econ = indicadoresChamados.filter(function(c) {
-      return /Economia|Déficit/.test(c.label);
-    });
-    expect(econ).toHaveLength(1);
-    expect(econ[0].label).toBe('Economia do mês');
-    expect(econ[0].valor).toBe('R$ 2500,00');
-    expect(econ[0].tipo).toBe('positivo');
-    // Não pode refletir 10000 − 1500 = 8500
-    expect(econ[0].valor).not.toBe('R$ 8500,00');
+    var ind = gastoDia();
+    expect(ind).toHaveLength(1);
+    expect(ind[0].valor).toBe('R$ 100,00');
+    expect(ind[0].tipo).toBe('neutro');
   });
 
-  test('rótulo e sinal de déficit quando despesas > receitas', function() {
+  test('não repete mais a cifra de Saldo (Economia/Déficit sumiu)', function() {
     renderCom({ receitas: 2000, despesas: 3500, saldo: -1500 }, 8000);
 
-    var econ = indicadoresChamados.filter(function(c) {
-      return /Economia|Déficit/.test(c.label);
-    })[0];
-    expect(econ.label).toBe('Déficit do mês');
-    expect(econ.valor).toBe('R$ 1500,00');
-    expect(econ.tipo).toBe('negativo');
+    var labels = indicadoresChamados.map(function(c) { return c.label; }).join(' ');
+    expect(labels).not.toMatch(/Economia do mês|Déficit do mês/);
+    // 3500 / 15 = 233,33
+    expect(gastoDia()[0].valor).toBe('R$ 233,33');
   });
 
-  test('não usa mais os rótulos "prevista"/"estimado"', function() {
-    renderCom({ receitas: 1000, despesas: 200, saldo: 800 }, 5000);
-    var labels = indicadoresChamados.map(function(c) { return c.label; }).join(' ');
-    expect(labels).not.toMatch(/prevista|estimado/i);
-    expect(labels).toMatch(/Economia do mês/);
+  test('não aparece quando não há despesas no mês', function() {
+    renderCom({ receitas: 1000, despesas: 0, saldo: 1000 }, 5000);
+    expect(gastoDia()).toHaveLength(0);
+  });
+
+  test('não usa a renda configurada como base', function() {
+    // Renda alta não deve inflar o gasto/dia — só as despesas contam.
+    renderCom({ receitas: 200, despesas: 300, saldo: -100 }, 99999);
+    expect(gastoDia()[0].valor).toBe('R$ 20,00'); // 300 / 15
   });
 });
