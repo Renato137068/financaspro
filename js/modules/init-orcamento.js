@@ -283,41 +283,55 @@ const INIT_ORCAMENTO = {
     var ano = agora.getFullYear();
     var txs = TRANSACOES.obter({ mes: mes, ano: ano });
     var self = this;
-    var gastoNec = 0, gasDes = 0, gastoPou = 0, totalDespesas = 0, totalReceitas = 0;
-    var catGastos = {};
+    // Soma em CENTAVOS (inteiros) e só converte para reais no fim. Somar em
+    // float aqui fazia o Orçamento divergir por um centavo do Resumo (que já
+    // usa centavos) — dois números do app discordando destrói a confiança.
+    // Usa o helper canônico UTILS.paraCentavos, com fallback (Math.round(v*100))
+    // para os harnesses de teste que não o expõem.
+    function cent(v) {
+      return (typeof UTILS !== 'undefined' && UTILS.paraCentavos)
+        ? UTILS.paraCentavos(v)
+        : Math.round((Number(v) || 0) * 100);
+    }
+    var gastoNecC = 0, gasDesC = 0, gastoPouC = 0, totalDespesasC = 0, totalReceitasC = 0;
+    var catGastosC = {};
     txs.forEach(function(t) {
+      var c = cent(t.valor);
       if (t.tipo === CONFIG.TIPO_DESPESA) {
-        totalDespesas += t.valor;
+        totalDespesasC += c;
         var cls = self.classificarCategoria503020(t.categoria);
         // "poupanca" é dinheiro movido para a reserva/investimento, não consumo:
         // fica de fora de Necessidades/Desejos e é somado de volta na poupança.
-        if (cls === 'necessidades') gastoNec += t.valor;
-        else if (cls === 'poupanca') gastoPou += t.valor;
-        else gasDes += t.valor;
-        catGastos[t.categoria] = (catGastos[t.categoria] || 0) + t.valor;
+        if (cls === 'necessidades') gastoNecC += c;
+        else if (cls === 'poupanca') gastoPouC += c;
+        else gasDesC += c;
+        catGastosC[t.categoria] = (catGastosC[t.categoria] || 0) + c;
       } else if (t.tipo === CONFIG.TIPO_RECEITA) {
-        totalReceitas += t.valor;
+        totalReceitasC += c;
       }
     });
     // Poupança do mês = o que entrou menos o que foi consumido. Despesas
     // classificadas como poupança não são consumo, então voltam para a conta.
-    var poupancaReal = totalReceitas - totalDespesas + gastoPou;
-    var limNec = renda * (pNec / 100);
-    var limDes = renda * (pDes / 100);
-    var limPou = renda * (pPou / 100);
-    var realizado = gastoNec + gasDes;
+    var poupancaRealC = totalReceitasC - totalDespesasC + gastoPouC;
+    var rendaC = cent(renda);
+    var limNecC = Math.round(rendaC * pNec / 100);
+    var limDesC = Math.round(rendaC * pDes / 100);
+    var limPouC = Math.round(rendaC * pPou / 100);
+    var realizadoC = gastoNecC + gasDesC;
     /* Saldo do orçamento = o que sobra da renda planejada após despesas.
        "Folga poupança" é OUTRA leitura (quanto ainda cabe na fatia de 20%) e
        é calculada no _renderHeader a partir de limPou e poupancaReal. */
-    var saldoDisponivel = renda - realizado;
+    var saldoDisponivelC = rendaC - realizadoC;
+    var catGastos = {};
+    Object.keys(catGastosC).forEach(function(k) { catGastos[k] = catGastosC[k] / 100; });
     return {
       renda: renda, pNec: pNec, pDes: pDes, pPou: pPou,
-      gastoNec: gastoNec, gasDes: gasDes, poupancaReal: poupancaReal,
-      limNec: limNec, limDes: limDes, limPou: limPou,
-      realizado: realizado, saldoDisponivel: saldoDisponivel,
-      pctNec: limNec > 0 ? Math.round((gastoNec / limNec) * 100) : 0,
-      pctDes: limDes > 0 ? Math.round((gasDes / limDes) * 100) : 0,
-      pctPou: limPou > 0 ? Math.round((Math.max(0, poupancaReal) / limPou) * 100) : 0,
+      gastoNec: gastoNecC / 100, gasDes: gasDesC / 100, poupancaReal: poupancaRealC / 100,
+      limNec: limNecC / 100, limDes: limDesC / 100, limPou: limPouC / 100,
+      realizado: realizadoC / 100, saldoDisponivel: saldoDisponivelC / 100,
+      pctNec: limNecC > 0 ? Math.round((gastoNecC / limNecC) * 100) : 0,
+      pctDes: limDesC > 0 ? Math.round((gasDesC / limDesC) * 100) : 0,
+      pctPou: limPouC > 0 ? Math.round((Math.max(0, poupancaRealC) / limPouC) * 100) : 0,
       catGastos: catGastos,
       mes: mes, ano: ano
     };
