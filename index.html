@@ -687,7 +687,7 @@
         <button class="periodo-nav" id="periodo-prev" data-action="navegar-periodo" data-dir="-1" aria-label="Mês anterior">
           <i data-lucide="chevron-left" aria-hidden="true"></i>
         </button>
-        <button class="periodo-label" id="periodo-label-btn" data-action="abrir-calendario">Abril 2026</button>
+        <button class="periodo-label" id="periodo-label-btn" data-action="abrir-calendario">—</button>
         <input type="month" id="periodo-date-picker" class="periodo-date-picker" style="display:none" aria-label="Selecionar período">
         <button class="periodo-nav" id="periodo-next" data-action="navegar-periodo" data-dir="1" aria-label="Próximo mês">
           <i data-lucide="chevron-right" aria-hidden="true"></i>
@@ -699,15 +699,17 @@
       <div class="saldo-card">
         <div class="saldo-card-header">
           <span class="saldo-label">Saldo do período</span>
-          <div class="saldo-trend" id="saldo-trend" aria-label="Tendência vs mês anterior">
-            <span class="trend-icon" id="trend-icon" aria-hidden="true"><i data-lucide="trending-up"></i></span>
-            <span class="trend-value" id="trend-value">+12.5%</span>
-            <span class="trend-label">vs mês anterior</span>
+          <!-- Começa oculto: o render mostra o selo só quando há base de
+               comparação. Evita o flash de "+12.5%" fixo antes do boot. -->
+          <div class="saldo-trend" id="saldo-trend" aria-label="Tendência vs mês anterior" style="display:none">
+            <span class="trend-icon" id="trend-icon" aria-hidden="true"></span>
+            <span class="trend-value" id="trend-value"></span>
+            <span class="trend-label" id="trend-label">vs mês anterior</span>
           </div>
         </div>
         <div class="saldo-value" id="saldo-valor" aria-label="Valor total do saldo">R$ 0,00</div>
         <div class="saldo-meta">
-          <span class="saldo-period" id="saldo-period">1 a 30 de Abril</span>
+          <span class="saldo-period" id="saldo-period">—</span>
         </div>
       </div>
 
