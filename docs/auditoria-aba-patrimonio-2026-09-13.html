@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auditoria da aba Patrimônio</title>
+<meta name="description" content="Auditoria completa da aba Patrimônio do FinançasPro: patrimônio líquido, reconciliação com o ledger, e um bug que criava ativo de R$ 0,00 em silêncio.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --ground:#f5f7f4; --card:#ffffff; --card-2:#fbfcfa;
+    --ink:#15211c; --muted:#59685f; --faint:#89968e; --line:#e4e9e3; --line-2:#eef2ec;
+    --brand:#0e5a41; --brand-2:#2f9c6d; --brand-ink:#0a3d2c;
+    --free:#15803d; --free-bg:#e9f6ec; --p1:#c2410c; --p1-bg:#fbeee5; --p2:#0e7490; --p2-bg:#e2f3f6; --p3:#6b7280; --p3-bg:#eef1ee;
+    --shadow:0 1px 2px rgba(16,40,30,.05), 0 10px 30px rgba(16,40,30,.06); --shadow-sm:0 1px 2px rgba(16,40,30,.06);
+    --radius:16px; --radius-sm:11px; --maxw:940px;
+  }
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+    --ground:#0d1310; --card:#151c18; --card-2:#121814; --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6;
+    --free:#57c98a; --free-bg:#123222; --p1:#f0a173; --p1-bg:#37210f; --p2:#4bc4d8; --p2-bg:#0c3138; --p3:#9aa6a0; --p3-bg:#1e2621;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }}
+  :root[data-theme="dark"]{
+    --ground:#0d1310; --card:#151c18; --card-2:#121814; --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6;
+    --free:#57c98a; --free-bg:#123222; --p1:#f0a173; --p1-bg:#37210f; --p2:#4bc4d8; --p2-bg:#0c3138; --p3:#9aa6a0; --p3-bg:#1e2621;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box} html{-webkit-text-size-adjust:100%}
+  body{background:var(--ground); color:var(--ink); font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; margin:0}
+  .wrap{max-width:var(--maxw); margin:0 auto; padding-inline:20px}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+  code{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.84em; background:var(--line-2); padding:1px 6px; border-radius:6px; color:var(--brand-ink)}
+  :root:not([data-theme="light"]) code,:root[data-theme="dark"] code{color:var(--brand-2)}
+  h1,h2,h3{font-family:"Bricolage Grotesque","IBM Plex Sans",sans-serif; text-wrap:balance; letter-spacing:-.015em; margin:0}
+  a{color:var(--brand-2)}
+
+  .hero{background:radial-gradient(120% 140% at 100% 0%, rgba(47,156,109,.18), transparent 55%), linear-gradient(158deg, var(--brand), var(--brand-ink)); color:#eafff5; border-radius:0 0 26px 26px; box-shadow:var(--shadow); position:relative; overflow:hidden}
+  .hero::after{content:""; position:absolute; inset:0; background-image:radial-gradient(rgba(255,255,255,.06) 1px, transparent 1.4px); background-size:22px 22px; mask:linear-gradient(120deg,#000,transparent 62%); pointer-events:none}
+  .hero .wrap{padding-block:34px 30px; position:relative; z-index:1}
+  .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:#9fe8c9; display:flex; align-items:center; gap:10px; margin-bottom:16px}
+  .eyebrow .dot{width:7px; height:7px; border-radius:50%; background:#7bffc8; box-shadow:0 0 0 4px rgba(123,255,200,.18)}
+  h1{font-size:clamp(28px,5.6vw,44px); line-height:1.03; font-weight:800; color:#fff; max-width:20ch}
+  .hero .lede{margin:16px 0 0; font-size:clamp(15px,2.3vw,18px); max-width:66ch; color:#d5f4e6; line-height:1.55}
+  .hero .lede b{color:#fff; font-weight:600}
+  .stats{display:flex; flex-wrap:wrap; gap:12px; margin-top:26px}
+  .stat{background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.16); border-radius:14px; padding:12px 16px; min-width:110px}
+  .stat .n{font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:24px; line-height:1; color:#fff; font-variant-numeric:tabular-nums}
+  .stat .l{font-size:12px; color:#bfead7; margin-top:6px}
+
+  section{margin-top:50px}
+  .sec-head{display:flex; align-items:baseline; gap:12px; margin-bottom:8px}
+  .sec-head .k{font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:600; color:var(--brand-2); border:1px solid var(--line); border-radius:8px; padding:3px 9px; background:var(--card); flex:none}
+  h2{font-size:clamp(20px,3.4vw,26px); font-weight:700; line-height:1.14}
+  .sec-sub{color:var(--muted); font-size:15px; margin:2px 0 20px; max-width:68ch}
+
+  .verdict{background:var(--card); border:1px solid var(--line); border-left:5px solid var(--free); border-radius:var(--radius); padding:22px 24px; box-shadow:var(--shadow); margin-top:-30px; position:relative; z-index:2}
+  .verdict .grade{display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:10px}
+  .grade .letter{font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:30px; line-height:1; color:var(--free)}
+  .grade .tag{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); border:1px solid var(--line); border-radius:999px; padding:4px 12px}
+  .verdict p{margin:.5em 0 0; color:var(--ink)}
+  .verdict p.small{color:var(--muted); font-size:14px}
+
+  ul.clean{list-style:none; padding:0; margin:10px 0 0; display:grid; gap:9px}
+  ul.clean li{position:relative; padding-left:24px; color:var(--muted); font-size:14.5px}
+  ul.clean li::before{content:"✓"; position:absolute; left:0; top:0; color:var(--brand-2); font-weight:700}
+  ul.clean li b{color:var(--ink); font-weight:600}
+
+  .pri{display:inline-flex; align-items:center; gap:7px; font-family:"IBM Plex Mono",monospace; font-size:11.5px; letter-spacing:.04em; text-transform:uppercase; padding:3px 10px; border-radius:999px; font-weight:600}
+  .pri.p2{color:var(--p2); background:var(--p2-bg)} .pri.p3{color:var(--p3); background:var(--p3-bg)}
+  .pri.done{color:var(--free); background:var(--free-bg)}
+
+  .find{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow-sm); padding:20px 22px; margin-top:16px}
+  .find.hit{border-left:5px solid var(--free)}
+  .find .top{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:8px}
+  .find h3{font-size:17.5px; font-weight:700}
+  .find p{margin:.5em 0 0; color:var(--muted); font-size:15px}
+  .find p b{color:var(--ink); font-weight:600}
+  .note{margin-top:12px; background:var(--card-2); border:1px solid var(--line-2); border-radius:11px; padding:12px 14px; font-size:14px; color:var(--muted)}
+  .note b{color:var(--ink)}
+  .ex{margin-top:12px; font-family:"IBM Plex Mono",monospace; font-size:12.5px; color:var(--muted); background:var(--card-2); border:1px dashed var(--line); border-radius:10px; padding:10px 12px}
+  .ex b{color:var(--ink)}
+
+  .foot{margin:56px 0 40px; padding-top:22px; border-top:1px solid var(--line); color:var(--faint); font-size:13px}
+  .foot b{color:var(--muted)}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow"><span class="dot"></span> FinançasPro · Auditoria de produto</div>
+    <h1>Patrimônio líquido bem calculado — e até avisa contagem dupla. Mas aceitava ativo sem valor.</h1>
+    <p class="lede">Auditoria da aba <b>Patrimônio</b>: ativos e dívidas manuais, patrimônio líquido em centavos, importação a partir das contas do app e — o diferencial — um aviso de <b>possível contagem dupla</b> quando um ativo repete o saldo que já está em “Minhas contas”. O achado principal: o campo de valor de <b>ativo</b> aceitava vazio/texto e criava um ativo de <b>R$ 0,00 em silêncio</b>, porque a UI pré-convertia o valor e derrotava a validação estrita do core. Corrigido nesta rodada.</p>
+    <div class="stats">
+      <div class="stat"><div class="n">1</div><div class="l">bug — corrigido</div></div>
+      <div class="stat"><div class="n">3</div><div class="l">itens de roadmap</div></div>
+      <div class="stat"><div class="n">✓</div><div class="l">aviso de contagem dupla</div></div>
+      <div class="stat"><div class="n">R$ 0</div><div class="l">custo — nada de API paga</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="verdict">
+    <div class="grade">
+      <span class="letter">MADURO</span>
+      <span class="tag">1 correção entregue</span>
+    </div>
+    <p>A aba é bem construída: patrimônio líquido somado em <b>centavos</b> (sem resíduo de ponto flutuante), CRUD de ativos e dívidas com tipos e ícones, e um <b>reconciliador</b> que compara ativos de conta com o saldo do ledger para alertar quando o mesmo dinheiro entra duas vezes — sem alterar nada automaticamente. Ainda oferece importar contas do app como ativos, com o saldo pré-preenchido.</p>
+    <p>O problema real era de validação: <code>PATRIMONIO.criarAtivo</code> usa <code>parseMoedaEstrita</code> de propósito — 0 é um ativo legítimo (conta zerada), mas texto/vazio deve ser rejeitado. Só que a UI (<code>init-patrimonio._salvarAtivo</code>) pré-convertia o valor com <code>parseMoeda</code> (tolerante, que devolve <b>0</b> para vazio/lixo) antes de chamar o core — então o vazio virava 0 e passava. Resultado: campo vazio criava um ativo de R$ 0,00 com toast de sucesso. Corrigido: a UI passa a <b>string crua</b>, e a validação volta a ser do core.</p>
+    <p class="small">Método on-device, sem API paga. Bug reproduzido ao vivo (campo vazio → ativo R$ 0,00) e reconferido após a correção (vazio → erro; “1.500,00” → R$ 1.500). Não substitui teste com usuários reais.</p>
+  </div>
+
+  <!-- 01 -->
+  <section>
+    <div class="sec-head"><span class="k">01</span><h2>O que já está muito bom</h2></div>
+    <ul class="clean">
+      <li><b>Patrimônio líquido em centavos</b> — soma via <code>somarMoeda</code>, sem erro de sinal nem resíduo de float.</li>
+      <li><b>Aviso de contagem dupla</b> — detecta ativo que repete saldo já contado em “Minhas contas” (por <code>contaId</code> ou por nome, para tipos de caixa) e mostra o líquido “sem sobreposição”. Só avisa; não mexe.</li>
+      <li><b>Importar do app</b> — sugere contas cadastradas como ativos, com o saldo do ledger pré-preenchido e aviso de que é um snapshot editável.</li>
+      <li><b>Tipos e ícones</b> — ativos (corrente, poupança, investimento, imóvel, veículo…) e dívidas (empréstimo, financiamento, consórcio, cartão…) com rótulo e ícone próprios.</li>
+      <li><b>Enquadramento</b> — 2 colunas (Ativos | Dívidas) no desktop/tablet; empilha no celular. Hero muda de cor para patrimônio negativo.</li>
+    </ul>
+  </section>
+
+  <!-- 02 -->
+  <section>
+    <div class="sec-head"><span class="k">02</span><h2>Achados</h2></div>
+    <p class="sec-sub">Em ordem de impacto. O primeiro foi corrigido nesta rodada; os demais ficam no roadmap.</p>
+
+    <div class="find hit">
+      <div class="top"><span class="pri done">✓ Entregue nesta rodada</span><span class="pri done">grátis</span></div>
+      <h3>Ativo sem valor era criado como R$ 0,00 em silêncio</h3>
+      <p>O core rejeita valor inválido com <code>parseMoedaEstrita</code> (texto → erro; <code>0</code> passa, pois conta zerada é um ativo). Mas <code>_salvarAtivo</code> chamava <code>UTILS.parseMoeda</code> (tolerante) antes, convertendo <b>vazio → 0</b>; o core recebia 0 e aceitava. <b>Correção:</b> a UI passa a string crua ao core (ativo e dívida), então vazio/texto voltam a ser rejeitados com “Valor inválido”, e <code>0,00</code> explícito continua válido. Coberto por testes de UI.</p>
+      <div class="ex"><b>Antes:</b> nome “Conta X”, valor em branco → “Ativo adicionado!” + item R$ 0,00.&nbsp;&nbsp; <b>Depois:</b> valor em branco → “Valor inválido”, nada criado.</div>
+    </div>
+
+    <div class="find">
+      <div class="top"><span class="pri p2">Roadmap · consistência</span><span class="pri done">grátis</span></div>
+      <h3>Exclusão sem desfazer</h3>
+      <p>Excluir ativo/dívida é imediato após confirmar — enquanto Metas e Extrato oferecem <b>desfazer</b> (5s) via <code>UTILS.agendarExclusao</code>. Um toque errado apaga sem volta um valor digitado à mão. Alinhar ao resto do app (exclusão otimista + “desfazer”) reduz o custo do erro.</p>
+    </div>
+
+    <div class="find">
+      <div class="top"><span class="pri p2">Roadmap · a11y &amp; microcópia</span><span class="pri done">grátis</span></div>
+      <h3>Rótulos de leitor de tela e redundância no topo</h3>
+      <p>(a) Os botões “Excluir” não trazem <code>aria-label</code> do item — o leitor de tela ouve “Excluir” repetido (Metas já resolve isso). (b) “Patrimônio líquido” aparece duas vezes coladas (título da seção + hero). (c) O chip de sugestão diz “Contas sem saldo cadastrado” mas exibe um saldo (o do ledger) — copy que se contradiz.</p>
+    </div>
+
+    <div class="find">
+      <div class="top"><span class="pri p3">Roadmap · polimento</span><span class="pri done">grátis</span></div>
+      <h3>Prefill de edição e curva histórica</h3>
+      <p>Ao editar, o valor pré-preenche como <code>1500</code> (via <code>String(valor)</code>) em vez de <code>1.500,00</code> em pt-BR — some no primeiro blur, mas destoa. E a <b>evolução histórica</b> do patrimônio (curva ao longo do tempo) está prevista como PRO e ainda não construída — fora do escopo desta rodada, mas é o próximo salto de valor da aba.</p>
+    </div>
+  </section>
+
+  <!-- 03 -->
+  <section>
+    <div class="sec-head"><span class="k">03</span><h2>Não são bugs</h2></div>
+    <div class="note">
+      <p style="margin:0 0 10px"><b>Ativo aceita R$ 0,00; dívida não.</b> Por design: uma conta zerada é um ativo legítimo (snapshot), mas uma dívida de R$ 0 não é dívida. A assimetria é intencional.</p>
+      <p style="margin:0"><b>Reconciliação só avisa.</b> O alerta de contagem dupla nunca altera valores — mostra o líquido “sem sobreposição” e deixa a decisão com o usuário. É a postura certa para um número que a pessoa lê como verdade sobre a própria vida.</p>
+    </div>
+  </section>
+
+  <!-- 04 -->
+  <section>
+    <div class="sec-head"><span class="k">04</span><h2>Sequência sugerida</h2></div>
+    <div class="note">
+      <p style="margin:0"><b>Feito:</b> ativo sem valor deixa de ser criado como R$ 0,00.<br>
+      <b>1.</b> Exclusão com desfazer (paridade com Metas/Extrato).<br>
+      <b>2.</b> a11y (aria-label nos “Excluir”) e microcópia (remover “Patrimônio líquido” duplicado; corrigir copy do chip).<br>
+      <b>3.</b> Prefill de edição em pt-BR; depois, a curva histórica de patrimônio (PRO).</p>
+    </div>
+  </section>
+
+  <div class="foot">
+    <b>Auditoria da aba Patrimônio — FinançasPro</b> · 13 set 2026 · escopo: <code>index.html</code> (<code>#orc-sub-panel-patrimonio</code>), <code>js/patrimonio.js</code> (motor + reconciliação), <code>js/modules/init-patrimonio.js</code> (UI).<br>
+    Método: leitura do motor e do render, com o bug de valor reproduzido e reconferido ao vivo. Recomendações restritas a soluções on-device e gratuitas. Não substitui teste com usuários reais.
+  </div>
+
+</div>
+</body>
+</html>

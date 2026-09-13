@@ -241,7 +241,10 @@ const INIT_PATRIMONIO = {
       var dados = {
         nome: document.getElementById('pat-ativo-nome').value,
         tipo: document.getElementById('pat-ativo-tipo').value,
-        valor: UTILS.parseMoeda(document.getElementById('pat-ativo-valor').value),
+        // String crua: quem valida é o core (parseMoedaEstrita). Pré-converter
+        // aqui com parseMoeda (tolerante, vira 0) derrotava a validação e criava
+        // um ativo de R$ 0,00 em silêncio quando o campo estava vazio/inválido.
+        valor: document.getElementById('pat-ativo-valor').value,
         contaId: document.getElementById('pat-ativo-conta-id').value || null
       };
       if (editId) PATRIMONIO.atualizarAtivo(editId, dados);
@@ -306,7 +309,9 @@ const INIT_PATRIMONIO = {
       var dados = {
         nome: document.getElementById('pat-div-nome').value,
         tipo: document.getElementById('pat-div-tipo').value,
-        valor: UTILS.parseMoeda(document.getElementById('pat-div-valor').value)
+        // String crua: a validação de valor é do core (parseMoedaEstrita),
+        // consistente com o ativo.
+        valor: document.getElementById('pat-div-valor').value
       };
       if (editId) PATRIMONIO.atualizarDivida(editId, dados);
       else PATRIMONIO.criarDivida(dados);
