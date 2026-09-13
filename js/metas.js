@@ -167,7 +167,7 @@ const METAS = {
    *   percentual:number, restante:number, diasRestantes:?number,
    *   mesesRestantes:?number, aporteMensalNecessario:?number,
    *   ritmoMensal:number, previsaoConclusao:?string,
-   *   situacao:string, ajusteMensal:number
+   *   situacao:string, ajusteMensal:number, concluida:boolean
    * }}
    */
   calcularProjecao: function(meta, hoje) {
@@ -183,7 +183,11 @@ const METAS = {
       ritmoMensal: 0,
       previsaoConclusao: null,
       situacao: 'sem-prazo',
-      ajusteMensal: 0
+      ajusteMensal: 0,
+      // A UI (init-metas._renderCard) decide "+ Aporte", selo "Meta concluída!"
+      // e a borda verde por este campo. Sem ele, toda meta era tratada como não
+      // concluída — inclusive as batidas, que seguiam pedindo aporte.
+      concluida: base.concluida
     };
     if (!meta) return vazio;
 
@@ -263,7 +267,8 @@ const METAS = {
       ritmoMensal: ritmoMensal,
       previsaoConclusao: previsaoConclusao,
       situacao: situacao,
-      ajusteMensal: ajuste
+      ajusteMensal: ajuste,
+      concluida: base.concluida
     };
   },
 

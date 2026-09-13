@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auditoria da aba Metas</title>
+<meta name="description" content="Auditoria completa da aba Metas do FinançasPro: motor de projeção (ritmo, aporte necessário, previsão), estados de meta, acessibilidade e um bug que fazia metas concluídas ainda pedirem aporte.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --ground:#f5f7f4; --card:#ffffff; --card-2:#fbfcfa;
+    --ink:#15211c; --muted:#59685f; --faint:#89968e; --line:#e4e9e3; --line-2:#eef2ec;
+    --brand:#0e5a41; --brand-2:#2f9c6d; --brand-ink:#0a3d2c;
+    --free:#15803d; --free-bg:#e9f6ec; --p1:#c2410c; --p1-bg:#fbeee5; --p2:#0e7490; --p2-bg:#e2f3f6; --p3:#6b7280; --p3-bg:#eef1ee;
+    --shadow:0 1px 2px rgba(16,40,30,.05), 0 10px 30px rgba(16,40,30,.06); --shadow-sm:0 1px 2px rgba(16,40,30,.06);
+    --radius:16px; --radius-sm:11px; --maxw:940px;
+  }
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+    --ground:#0d1310; --card:#151c18; --card-2:#121814; --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6;
+    --free:#57c98a; --free-bg:#123222; --p1:#f0a173; --p1-bg:#37210f; --p2:#4bc4d8; --p2-bg:#0c3138; --p3:#9aa6a0; --p3-bg:#1e2621;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }}
+  :root[data-theme="dark"]{
+    --ground:#0d1310; --card:#151c18; --card-2:#121814; --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6;
+    --free:#57c98a; --free-bg:#123222; --p1:#f0a173; --p1-bg:#37210f; --p2:#4bc4d8; --p2-bg:#0c3138; --p3:#9aa6a0; --p3-bg:#1e2621;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box} html{-webkit-text-size-adjust:100%}
+  body{background:var(--ground); color:var(--ink); font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; margin:0}
+  .wrap{max-width:var(--maxw); margin:0 auto; padding-inline:20px}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+  code{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.84em; background:var(--line-2); padding:1px 6px; border-radius:6px; color:var(--brand-ink)}
+  :root:not([data-theme="light"]) code,:root[data-theme="dark"] code{color:var(--brand-2)}
+  h1,h2,h3{font-family:"Bricolage Grotesque","IBM Plex Sans",sans-serif; text-wrap:balance; letter-spacing:-.015em; margin:0}
+  a{color:var(--brand-2)}
+
+  .hero{background:radial-gradient(120% 140% at 100% 0%, rgba(47,156,109,.18), transparent 55%), linear-gradient(158deg, var(--brand), var(--brand-ink)); color:#eafff5; border-radius:0 0 26px 26px; box-shadow:var(--shadow); position:relative; overflow:hidden}
+  .hero::after{content:""; position:absolute; inset:0; background-image:radial-gradient(rgba(255,255,255,.06) 1px, transparent 1.4px); background-size:22px 22px; mask:linear-gradient(120deg,#000,transparent 62%); pointer-events:none}
+  .hero .wrap{padding-block:34px 30px; position:relative; z-index:1}
+  .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:#9fe8c9; display:flex; align-items:center; gap:10px; margin-bottom:16px}
+  .eyebrow .dot{width:7px; height:7px; border-radius:50%; background:#7bffc8; box-shadow:0 0 0 4px rgba(123,255,200,.18)}
+  h1{font-size:clamp(28px,5.6vw,44px); line-height:1.03; font-weight:800; color:#fff; max-width:20ch}
+  .hero .lede{margin:16px 0 0; font-size:clamp(15px,2.3vw,18px); max-width:66ch; color:#d5f4e6; line-height:1.55}
+  .hero .lede b{color:#fff; font-weight:600}
+  .stats{display:flex; flex-wrap:wrap; gap:12px; margin-top:26px}
+  .stat{background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.16); border-radius:14px; padding:12px 16px; min-width:110px}
+  .stat .n{font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:24px; line-height:1; color:#fff; font-variant-numeric:tabular-nums}
+  .stat .l{font-size:12px; color:#bfead7; margin-top:6px}
+
+  section{margin-top:50px}
+  .sec-head{display:flex; align-items:baseline; gap:12px; margin-bottom:8px}
+  .sec-head .k{font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:600; color:var(--brand-2); border:1px solid var(--line); border-radius:8px; padding:3px 9px; background:var(--card); flex:none}
+  h2{font-size:clamp(20px,3.4vw,26px); font-weight:700; line-height:1.14}
+  .sec-sub{color:var(--muted); font-size:15px; margin:2px 0 20px; max-width:68ch}
+
+  .verdict{background:var(--card); border:1px solid var(--line); border-left:5px solid var(--free); border-radius:var(--radius); padding:22px 24px; box-shadow:var(--shadow); margin-top:-30px; position:relative; z-index:2}
+  .verdict .grade{display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:10px}
+  .grade .letter{font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:30px; line-height:1; color:var(--free)}
+  .grade .tag{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); border:1px solid var(--line); border-radius:999px; padding:4px 12px}
+  .verdict p{margin:.5em 0 0; color:var(--ink)}
+  .verdict p.small{color:var(--muted); font-size:14px}
+
+  ul.clean{list-style:none; padding:0; margin:10px 0 0; display:grid; gap:9px}
+  ul.clean li{position:relative; padding-left:24px; color:var(--muted); font-size:14.5px}
+  ul.clean li::before{content:"✓"; position:absolute; left:0; top:0; color:var(--brand-2); font-weight:700}
+  ul.clean li b{color:var(--ink); font-weight:600}
+
+  .cards{display:grid; gap:14px; margin-top:8px}
+  @media(min-width:640px){.cards.two{grid-template-columns:1fr 1fr}}
+  .box{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; box-shadow:var(--shadow-sm)}
+  .box h3{font-size:16px; font-weight:700; margin-bottom:6px; display:flex; gap:9px; align-items:baseline}
+  .box h3 .num{font-family:"IBM Plex Mono",monospace; color:var(--brand-2); font-size:13px; flex:none}
+  .box p{margin:.35em 0 0; color:var(--muted); font-size:14.5px}
+  .box p b{color:var(--ink); font-weight:600}
+
+  .pri{display:inline-flex; align-items:center; gap:7px; font-family:"IBM Plex Mono",monospace; font-size:11.5px; letter-spacing:.04em; text-transform:uppercase; padding:3px 10px; border-radius:999px; font-weight:600}
+  .pri.p1{color:var(--p1); background:var(--p1-bg)} .pri.p2{color:var(--p2); background:var(--p2-bg)} .pri.p3{color:var(--p3); background:var(--p3-bg)}
+  .pri.done{color:var(--free); background:var(--free-bg)}
+
+  .find{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow-sm); padding:20px 22px; margin-top:16px}
+  .find.hit{border-left:5px solid var(--free)}
+  .find .top{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:8px}
+  .find h3{font-size:17.5px; font-weight:700}
+  .find p{margin:.5em 0 0; color:var(--muted); font-size:15px}
+  .find p b{color:var(--ink); font-weight:600}
+  .note{margin-top:12px; background:var(--card-2); border:1px solid var(--line-2); border-radius:11px; padding:12px 14px; font-size:14px; color:var(--muted)}
+  .note b{color:var(--ink)}
+  .ex{margin-top:12px; font-family:"IBM Plex Mono",monospace; font-size:12.5px; color:var(--muted); background:var(--card-2); border:1px dashed var(--line); border-radius:10px; padding:10px 12px}
+  .ex b{color:var(--ink)}
+
+  .foot{margin:56px 0 40px; padding-top:22px; border-top:1px solid var(--line); color:var(--faint); font-size:13px}
+  .foot b{color:var(--muted)}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow"><span class="dot"></span> FinançasPro · Auditoria de produto</div>
+    <h1>Um motor de metas que responde “vou conseguir?” — mas ainda pedia aporte de meta já batida.</h1>
+    <p class="lede">Auditoria da aba <b>Metas</b>: alvo, progresso, prazo e — o que a diferencia — um <b>motor de projeção</b> que cruza ritmo demonstrado, prazo e o que falta para dizer se você chega lá e <b>quanto ajustar por mês</b> quando não chega. O achado principal era um bug silencioso: o objeto de projeção não devolvia o campo <code>concluida</code>, então a UI tratava <b>toda</b> meta como não concluída — inclusive as batidas, que seguiam mostrando “+ Aporte”. Corrigido nesta rodada.</p>
+    <div class="stats">
+      <div class="stat"><div class="n">1</div><div class="l">bug — corrigido</div></div>
+      <div class="stat"><div class="n">3</div><div class="l">itens de roadmap</div></div>
+      <div class="stat"><div class="n">5</div><div class="l">estados de meta</div></div>
+      <div class="stat"><div class="n">R$ 0</div><div class="l">custo — nada de API paga</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="verdict">
+    <div class="grade">
+      <span class="letter">MADURO</span>
+      <span class="tag">1 correção entregue</span>
+    </div>
+    <p>A aba é forte onde importa: não para no percentual. O motor de projeção calcula o <b>ritmo mensal já demonstrado</b>, o <b>aporte necessário</b> para o prazo e devolve um diagnóstico acionável (“aumente o aporte em R$ X por mês”), com ancoragem de datas ao meio-dia e soma de meses de calendário (sem o bug de “vence hoje = 1 dia”). Tem empty-state com CTA, exclusão com desfazer, e formulários com campo-moeda.</p>
+    <p>O problema real era de plumbing: <code>calcularProjecao</code> montava seu objeto de retorno sem a chave <code>concluida</code> (só <code>situacao</code>). O render lê <code>prog.concluida</code> em quatro pontos — botão “+ Aporte”, selo “Meta concluída!”, borda verde e cor da barra —, e todos caíam como <b>falsos</b>. Resultado: metas 100% batidas continuavam com “+ Aporte” (e o clique dava toast de sucesso sem efeito) e nunca exibiam a comemoração. Corrigido.</p>
+    <p class="small">Método on-device, sem API paga. Telas semeadas com metas em 4 estados (adiantada, atrasada, sem prazo, concluída). Não substitui teste com usuários reais.</p>
+  </div>
+
+  <!-- 01 -->
+  <section>
+    <div class="sec-head"><span class="k">01</span><h2>O que já está muito bom</h2></div>
+    <p class="sec-sub">A base é sólida — a meta responde à pergunta que o número sozinho não responde.</p>
+    <ul class="clean">
+      <li><b>Motor de projeção</b> — ritmo mensal demonstrado, aporte necessário para o prazo, previsão de conclusão e diagnóstico (adiantado / no ritmo / atrasado / vencida).</li>
+      <li><b>Ajuste com número exato</b> — quando atrasa, diz <b>quanto</b> aumentar por mês; “você está atrasado” sem o quanto não ajuda ninguém.</li>
+      <li><b>Datas corretas</b> — prazo ancorado ao meio-dia e meses de calendário (fracionários), sem o erro de “vence hoje = 1 dia” nem divisor de ritmo torto.</li>
+      <li><b>Precisão em centavos</b> — o “restante” fecha em centavos, sem resíduo de ponto flutuante.</li>
+      <li><b>Empty-state e ciclo</b> — CTA única para a primeira meta; exclusão com <b>desfazer</b> (5s); aporte com foco automático no campo.</li>
+      <li><b>Independência</b> — Metas aparecem mesmo sem renda definida (decisão certa).</li>
+    </ul>
+  </section>
+
+  <!-- 02 -->
+  <section>
+    <div class="sec-head"><span class="k">02</span><h2>Achados</h2></div>
+    <p class="sec-sub">Em ordem de impacto. O primeiro foi corrigido nesta rodada; os demais ficam no roadmap.</p>
+
+    <div class="find hit">
+      <div class="top"><span class="pri done">✓ Entregue nesta rodada</span><span class="pri done">grátis</span></div>
+      <h3>Meta concluída ainda pedia aporte (campo <code>concluida</code> ausente na projeção)</h3>
+      <p><code>METAS.calcularProjecao</code> devolvia <code>situacao: 'concluida'</code>, mas o objeto não incluía o booleano <code>concluida</code>. O render (<code>init-metas._renderCard</code>) decide por <code>prog.concluida</code> se mostra “+ Aporte”, o selo “Meta concluída!”, a borda verde e a cor “ótimo” da barra — e, como o campo vinha <code>undefined</code>, <b>toda</b> meta caía como não concluída. <b>Correção:</b> <code>calcularProjecao</code> passa a devolver <code>concluida</code> em todos os caminhos. Agora meta batida esconde o “+ Aporte”, mostra “Meta concluída!” e ganha a borda verde. Coberto por testes.</p>
+      <div class="ex"><b>Antes:</b> meta 100% → “+ Aporte” visível · clicar → toast “Aporte registrado” sem efeito (o valor já está no alvo).&nbsp;&nbsp; <b>Depois:</b> meta 100% → “✓ Meta concluída!”, só Editar/Excluir.</div>
+    </div>
+
+    <div class="find">
+      <div class="top"><span class="pri p2">Roadmap · produto</span><span class="pri done">grátis</span></div>
+      <h3>A barra de progresso não sinaliza o ritmo</h3>
+      <p>Toda barra de meta é verde por decisão de design (âmbar fica reservado a limites de orçamento). Mas o motor já sabe se a meta está <b>atrasada</b> ou <b>adiantada</b> — e a barra, que é o elemento mais escaneável do card, ignora isso: uma meta atrasada tem barra idêntica à de uma adiantada; o alerta vive só no texto. Ideia: colorir a barra por <code>situacao</code> (atrasada = âmbar, no-ritmo/adiantada = verde), mantendo o texto.</p>
+    </div>
+
+    <div class="find">
+      <div class="top"><span class="pri p2">Roadmap · organização</span><span class="pri done">grátis</span></div>
+      <h3>Metas concluídas se acumulam na lista ativa</h3>
+      <p>Uma meta batida continua no meio das ativas para sempre. Com o tempo a lista mistura “feito” e “em andamento”, diluindo o foco no que ainda precisa de aporte. Ideia: agrupar as concluídas numa seção “Concluídas” (recolhível) ou movê-las para o fim, mantendo a comemoração.</p>
+    </div>
+
+    <div class="find">
+      <div class="top"><span class="pri p3">Roadmap · polimento</span><span class="pri done">grátis</span></div>
+      <h3>Detalhes de eficiência, a11y e microcópia</h3>
+      <p>Pequenos, mas somam: (a) <b>eficiência</b> — <code>calcularProjecao</code> roda duas vezes por card (uma direta e outra dentro de <code>mensagemProjecao</code>); dá para calcular uma vez e reusar. (b) <b>a11y</b> — a barra de meta não tem <code>role="progressbar"</code>/<code>aria-valuenow</code> (o percentual existe como texto ao lado, então é leve). (c) <b>microcópia</b> — “180 dias restantes” lê melhor como “~6 meses”; e criar meta com prazo no passado não avisa (já nasce “vencida”).</p>
+    </div>
+  </section>
+
+  <!-- 03 -->
+  <section>
+    <div class="sec-head"><span class="k">03</span><h2>Não são bugs</h2></div>
+    <div class="note">
+      <p style="margin:0 0 10px"><b>Aporte é um rastreador, não uma transação.</b> Registrar aporte só incrementa o valor guardado da meta — não cria lançamento nem debita conta. É um acompanhamento aspiracional consciente; ligar meta a transações reais seria outra feature, não um conserto.</p>
+      <p style="margin:0"><b>Aporte limitado ao alvo.</b> <code>registrarAporte</code> faz <code>Math.min(alvo, atual + v)</code> — não deixa “passar” da meta. Correto para um tracker; o único efeito colateral (toast de sucesso sem mudança numa meta já cheia) desaparece com a correção do “+ Aporte” acima.</p>
+    </div>
+  </section>
+
+  <!-- 04 -->
+  <section>
+    <div class="sec-head"><span class="k">04</span><h2>Sequência sugerida</h2></div>
+    <div class="note">
+      <p style="margin:0"><b>Feito:</b> metas concluídas param de pedir aporte e mostram “Meta concluída!”.<br>
+      <b>1.</b> Colorir a barra por situação (atrasada = âmbar), mantendo o texto.<br>
+      <b>2.</b> Agrupar/recolher as metas concluídas, separando do foco ativo.<br>
+      <b>3.</b> Polir eficiência (uma projeção por card), a11y (progressbar) e microcópia (meses; aviso de prazo passado).</p>
+    </div>
+  </section>
+
+  <div class="foot">
+    <b>Auditoria da aba Metas — FinançasPro</b> · 13 set 2026 · escopo: <code>index.html</code> (<code>#orc-sub-panel-metas</code>), <code>js/metas.js</code> (motor), <code>js/modules/init-metas.js</code> (UI) e <code>css/features/metas.css</code>.<br>
+    Método: leitura do motor de projeção e do render, com telas semeadas em 4 estados. Recomendações restritas a soluções on-device e gratuitas. Não substitui teste com usuários reais.
+  </div>
+
+</div>
+</body>
+</html>
