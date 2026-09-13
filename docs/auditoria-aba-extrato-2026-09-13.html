@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auditoria da aba Extrato</title>
+<meta name="description" content="Auditoria completa da aba Extrato do FinançasPro: período, tendência, filtros, rolagem virtual, exportação e boas práticas.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --ground:#f5f7f4; --card:#ffffff; --card-2:#fbfcfa;
+    --ink:#15211c; --muted:#59685f; --faint:#89968e; --line:#e4e9e3; --line-2:#eef2ec;
+    --brand:#0e5a41; --brand-2:#2f9c6d; --brand-ink:#0a3d2c;
+    --free:#15803d; --free-bg:#e9f6ec; --p1:#c2410c; --p1-bg:#fbeee5; --p2:#0e7490; --p2-bg:#e2f3f6; --p3:#6b7280; --p3-bg:#eef1ee;
+    --shadow:0 1px 2px rgba(16,40,30,.05), 0 10px 30px rgba(16,40,30,.06); --shadow-sm:0 1px 2px rgba(16,40,30,.06);
+    --radius:16px; --radius-sm:11px; --maxw:940px;
+  }
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+    --ground:#0d1310; --card:#151c18; --card-2:#121814; --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6;
+    --free:#57c98a; --free-bg:#123222; --p1:#f0a173; --p1-bg:#37210f; --p2:#4bc4d8; --p2-bg:#0c3138; --p3:#9aa6a0; --p3-bg:#1e2621;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }}
+  :root[data-theme="dark"]{
+    --ground:#0d1310; --card:#151c18; --card-2:#121814; --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6;
+    --free:#57c98a; --free-bg:#123222; --p1:#f0a173; --p1-bg:#37210f; --p2:#4bc4d8; --p2-bg:#0c3138; --p3:#9aa6a0; --p3-bg:#1e2621;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box} html{-webkit-text-size-adjust:100%}
+  body{background:var(--ground); color:var(--ink); font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:var(--maxw); margin:0 auto; padding-inline:20px}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+  code{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.84em; background:var(--line-2); padding:1px 6px; border-radius:6px; color:var(--brand-ink)}
+  :root:not([data-theme="light"]) code,:root[data-theme="dark"] code{color:var(--brand-2)}
+  h1,h2,h3{font-family:"Bricolage Grotesque","IBM Plex Sans",sans-serif; text-wrap:balance; letter-spacing:-.015em; margin:0}
+  a{color:var(--brand-2)}
+
+  .hero{background:radial-gradient(120% 140% at 100% 0%, rgba(47,156,109,.18), transparent 55%), linear-gradient(158deg, var(--brand), var(--brand-ink)); color:#eafff5; border-radius:0 0 26px 26px; box-shadow:var(--shadow); position:relative; overflow:hidden}
+  .hero::after{content:""; position:absolute; inset:0; background-image:radial-gradient(rgba(255,255,255,.06) 1px, transparent 1.4px); background-size:22px 22px; mask:linear-gradient(120deg,#000,transparent 62%); pointer-events:none}
+  .hero .wrap{padding-block:34px 30px; position:relative; z-index:1}
+  .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:#9fe8c9; display:flex; align-items:center; gap:10px; margin-bottom:16px}
+  .eyebrow .dot{width:7px; height:7px; border-radius:50%; background:#7bffc8; box-shadow:0 0 0 4px rgba(123,255,200,.18)}
+  h1{font-size:clamp(28px,5.6vw,44px); line-height:1.03; font-weight:800; color:#fff; max-width:18ch}
+  .hero .lede{margin:16px 0 0; font-size:clamp(15px,2.3vw,18px); max-width:66ch; color:#d5f4e6; line-height:1.55}
+  .hero .lede b{color:#fff; font-weight:600}
+  .stats{display:flex; flex-wrap:wrap; gap:12px; margin-top:26px}
+  .stat{background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.16); border-radius:14px; padding:12px 16px; min-width:120px}
+  .stat .n{font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:24px; line-height:1; color:#fff; font-variant-numeric:tabular-nums}
+  .stat .l{font-size:12px; color:#bfead7; margin-top:6px}
+
+  section{margin-top:50px}
+  .sec-head{display:flex; align-items:baseline; gap:12px; margin-bottom:8px}
+  .sec-head .k{font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:600; color:var(--brand-2); border:1px solid var(--line); border-radius:8px; padding:3px 9px; background:var(--card); flex:none}
+  h2{font-size:clamp(20px,3.4vw,26px); font-weight:700; line-height:1.14}
+  .sec-sub{color:var(--muted); font-size:15px; margin:2px 0 20px; max-width:68ch}
+
+  .verdict{background:var(--card); border:1px solid var(--line); border-left:5px solid var(--brand-2); border-radius:var(--radius); padding:22px 24px; box-shadow:var(--shadow); margin-top:-30px; position:relative; z-index:2}
+  .verdict h2{font-size:19px; margin-bottom:8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+  .verdict .grade{font-family:"IBM Plex Mono",monospace; font-size:12px; font-weight:600; color:var(--free); background:var(--free-bg); padding:3px 10px; border-radius:20px}
+  .verdict p{margin:0; color:var(--muted); font-size:15px} .verdict p+p{margin-top:10px} .verdict strong{color:var(--ink)}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow-sm); padding:20px 22px}
+
+  ul.keeps{list-style:none; margin:0; padding:0; display:grid; gap:11px}
+  @media(min-width:640px){ul.keeps{grid-template-columns:1fr 1fr; gap:11px 22px}}
+  ul.keeps li{padding-left:26px; position:relative; font-size:14.2px; color:var(--muted); line-height:1.5}
+  ul.keeps li::before{content:"✓"; position:absolute; left:0; top:0; color:var(--free); font-weight:700}
+  ul.keeps li b{color:var(--ink); font-weight:600}
+
+  .finds{display:flex; flex-direction:column; gap:16px}
+  .find{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; box-shadow:var(--shadow-sm)}
+  .find.is-done{border-left:5px solid var(--free)} .find.is-p2{border-left:5px solid var(--p2)} .find.is-p3{border-left:5px solid var(--p3)}
+  .find .top{display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-bottom:8px}
+  .badge{font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; padding:4px 9px; border-radius:20px; flex:none}
+  .b-done{background:var(--free); color:#fff} .b-p2{background:var(--p2-bg); color:var(--p2)} .b-p3{background:var(--p3-bg); color:var(--p3)}
+  .b-free{background:var(--free-bg); color:var(--free)}
+  .find h3{font-size:16.5px; font-weight:700; line-height:1.25}
+  .find p{margin:8px 0 0; color:var(--muted); font-size:14.4px}
+  .find .ex{margin-top:12px; padding:11px 14px; background:var(--card-2); border:1px dashed var(--line); border-radius:10px; font-size:13.4px}
+  .find .ex b{color:var(--brand-2); font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.05em; text-transform:uppercase; display:block; margin-bottom:5px}
+  .find .ex .mono{color:var(--ink)}
+
+  .note{background:var(--card-2); border:1px solid var(--line); border-radius:12px; padding:16px 18px; font-size:14px; color:var(--muted)}
+  .note b{color:var(--ink)}
+  footer{margin:56px 0 40px; padding-top:22px; border-top:1px solid var(--line); color:var(--muted); font-size:13px}
+  footer .mono{font-size:12px; color:var(--faint)}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow"><span class="dot"></span> FinançasPro · Auditoria de produto</div>
+    <h1>A aba mais robusta do app — com um selo que enganava.</h1>
+    <p class="lede">Auditoria da aba <b>Extrato</b>: navegação por período, saldo com tendência, KPIs, busca com debounce, filtros avançados, <b>rolagem virtual</b> para listas grandes, seleção em massa e exportação CSV/PDF. É a tela mais completa do app. O achado principal: o selo de tendência mostrava <b>"+0,0% vs mês anterior"</b> quando não havia mês anterior — corrigido nesta rodada.</p>
+    <div class="stats">
+      <div class="stat"><div class="n">1</div><div class="l">correção entregue</div></div>
+      <div class="stat"><div class="n">2</div><div class="l">itens de roadmap</div></div>
+      <div class="stat"><div class="n">100</div><div class="l">itens → rolagem virtual</div></div>
+      <div class="stat"><div class="n">R$ 0</div><div class="l">custo — nada de API paga</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="verdict">
+    <h2>Veredito <span class="grade">MADURO · 1 correção entregue</span></h2>
+    <p>O Extrato é a aba mais bem trabalhada: <strong>rolagem virtual</strong> real (a partir de 100 itens, com spacers e "exibindo X–Y de N"), <strong>busca com debounce</strong>, <strong>filtros</strong> por tipo/valor/data/categoria e <strong>ordenação</strong>, <strong>agrupamento temporal</strong>, seleção em massa e <strong>exportação CSV e PDF</strong>. A acessibilidade é forte: <code>role=region</code>, anúncio do resumo por <code>aria-live</code> e rótulos ARIA por toda parte.</p>
+    <p>O problema real estava no selo de tendência: quando o mês anterior não tinha lançamentos, ele exibia <strong>"+0,0% vs mês anterior"</strong> com seta de alta — sugerindo estabilidade contra um mês que não existiu. <strong>Corrigido nesta rodada:</strong> sem base de comparação, o selo some.</p>
+  </div>
+
+  <!-- 2 -->
+  <section>
+    <div class="sec-head"><span class="k">01</span><h2>O que já está muito bom</h2></div>
+    <div class="card">
+      <ul class="keeps">
+        <li><b>Rolagem virtual</b> — listas grandes (≥100) renderizam só a janela visível, com spacers e meta.</li>
+        <li><b>Busca com debounce</b> — 300ms, por descrição e categoria.</li>
+        <li><b>Filtros completos</b> — tipo, valor, intervalo de datas, categoria e ordenação (campo + direção).</li>
+        <li><b>Agrupamento temporal</b> — Hoje / Ontem / … / "Mais cedo no mês".</li>
+        <li><b>Seleção em massa</b> — selecionar e deletar vários de uma vez.</li>
+        <li><b>Exportação</b> — CSV (Excel/Sheets) e PDF de impressão.</li>
+        <li><b>Acessibilidade</b> — <code>role=region</code>, <code>aria-live</code> do resumo, <code>aria-pressed</code>/<code>aria-expanded</code> nos filtros.</li>
+        <li><b>Tendência calculada</b> — variação real vs. mês anterior (não um número fixo).</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section>
+    <div class="sec-head"><span class="k">02</span><h2>Achados</h2></div>
+    <p class="sec-sub">Em ordem de impacto. O primeiro foi corrigido nesta rodada; os demais ficam no roadmap.</p>
+    <div class="finds">
+
+      <div class="find is-done">
+        <div class="top"><span class="badge b-done">✓ Entregue nesta rodada</span><span class="badge b-free">grátis</span></div>
+        <h3>Tendência enganosa quando não há mês anterior</h3>
+        <p>Quando o mês anterior não tinha lançamentos (primeiro mês de uso, ou mês vazio), o selo mostrava <b>"+0,0% vs mês anterior"</b> com seta de alta — estabilidade contra um mês que não existiu. <b>Correção:</b> sem base de comparação (<code>saldoAnterior === 0</code>, seja por não haver lançamentos, seja por saldo líquido zero), o selo é <b>escondido</b> em vez de exibir 0%. Coberto por testes.</p>
+        <div class="ex"><b>Exemplo</b> <span class="mono">mês anterior vazio → selo oculto · mês anterior com saldo → "+100,0%" / "−75,0%" conforme a variação</span></div>
+      </div>
+
+      <div class="find is-p2">
+        <div class="top"><span class="badge b-p2">Roadmap · nuance</span><span class="badge b-free">grátis</span></div>
+        <h3>Comparação parcial × mês cheio no mês corrente</h3>
+        <p>No mês em curso, a tendência compara o saldo <b>parcial</b> (só os dias decorridos) com o mês anterior <b>inteiro</b> — no começo do mês o selo quase sempre aparece "pior". Opções: comparar o mesmo intervalo (1..dia de hoje do mês anterior) ou rotular a comparação como parcial. É mais decisão de produto do que bug.</p>
+      </div>
+
+      <div class="find is-p3">
+        <div class="top"><span class="badge b-p3">Roadmap · polimento</span><span class="badge b-free">grátis</span></div>
+        <h3>Placeholders estáticos no markup</h3>
+        <p>O HTML traz valores fixos ("Abril 2026", "+12.5%", "1 a 30 de Abril") que o render substitui no boot. Se o render atrasar, eles aparecem por um instante como se fossem reais. Iniciar neutros (vazio ou "—") evita esse flash.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section>
+    <div class="sec-head"><span class="k">03</span><h2>Não são bugs</h2></div>
+    <div class="note">
+      <p style="margin:0 0 10px"><b>PDF com cores fixas.</b> O relatório em PDF usa cores hex embutidas, mas é um documento de impressão autocontido (janela separada) — não usa os tokens do app, e num PDF impresso não há tema escuro. Está correto assim.</p>
+      <p style="margin:0"><b>Reconstrução da lista no scroll virtual.</b> A janela visível é recriada a cada tique de rolagem; funciona bem (a seleção mora no estado, o clique é delegado) e já tem debounce de 80ms. Só vale vigiar em aparelhos fracos com listas enormes.</p>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section>
+    <div class="sec-head"><span class="k">04</span><h2>Sequência sugerida</h2></div>
+    <div class="note">
+      <p style="margin:0"><b>Feito:</b> selo de tendência escondido quando não há base de comparação.<br>
+      <b>1.</b> Comparar o mesmo intervalo do mês (ou rotular a comparação como parcial).<br>
+      <b>2.</b> Iniciar os placeholders do cabeçalho neutros, evitando o flash de valores fixos.</p>
+    </div>
+  </section>
+
+  <footer>
+    <p><b>Auditoria da aba Extrato — FinançasPro</b> · 13 set 2026 · escopo: <code>index.html</code> (<code>#aba-extrato</code>) e <code>js/modules/init-extrato.js</code>.</p>
+    <p class="mono">Método: leitura do markup e da lógica de resumo/tendência, filtros, rolagem virtual e exportação. Recomendações restritas a soluções on-device e gratuitas. Não substitui teste com usuários reais.</p>
+  </footer>
+
+</div>
+</body>
+</html>
