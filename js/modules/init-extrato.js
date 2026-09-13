@@ -633,21 +633,29 @@ const INIT_EXTRATO = {
       else if (t.tipo === CONFIG.TIPO_DESPESA) saldoAnterior -= t.valor;
     });
 
-    var trendValue = 0;
-    var trendIcon = '<i data-lucide="trending-up" aria-hidden="true"></i>';
-    if (saldoAnterior !== 0) {
-      trendValue = ((saldo - saldoAnterior) / Math.abs(saldoAnterior)) * 100;
-      trendIcon = trendValue >= 0 ? '<i data-lucide="trending-up" aria-hidden="true"></i>' : '<i data-lucide="trending-down" aria-hidden="true"></i>';
-    }
+    // Sem base de comparação (mês anterior sem lançamentos, ou saldo líquido
+    // exatamente zero) não dá para calcular variação percentual: mostrar
+    // "+0,0% vs mês anterior" sugeria estabilidade contra um mês que não
+    // existiu. Nesses casos, esconde o selo de tendência em vez de inventar 0%.
+    var temBase = saldoAnterior !== 0;
+    var trendWrap = document.getElementById('saldo-trend');
+    if (trendWrap) trendWrap.style.display = temBase ? '' : 'none';
 
-    var trendEl = document.getElementById('trend-value');
-    var trendIconEl = document.getElementById('trend-icon');
-    if (trendEl) trendEl.textContent = (trendValue >= 0 ? '+' : '') + trendValue.toFixed(1) + '%';
-    if (trendIconEl) {
-      // innerHTML (não textContent) para o markup do ícone ser interpretado,
-      // seguido de re-render do Lucide para transformar <i data-lucide> em SVG.
-      trendIconEl.innerHTML = trendIcon;
-      if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(trendIconEl);
+    if (temBase) {
+      var trendValue = ((saldo - saldoAnterior) / Math.abs(saldoAnterior)) * 100;
+      var trendIcon = trendValue >= 0
+        ? '<i data-lucide="trending-up" aria-hidden="true"></i>'
+        : '<i data-lucide="trending-down" aria-hidden="true"></i>';
+
+      var trendEl = document.getElementById('trend-value');
+      var trendIconEl = document.getElementById('trend-icon');
+      if (trendEl) trendEl.textContent = (trendValue >= 0 ? '+' : '') + trendValue.toFixed(1) + '%';
+      if (trendIconEl) {
+        // innerHTML (não textContent) para o markup do ícone ser interpretado,
+        // seguido de re-render do Lucide para transformar <i data-lucide> em SVG.
+        trendIconEl.innerHTML = trendIcon;
+        if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(trendIconEl);
+      }
     }
 
     // Atualizar período
