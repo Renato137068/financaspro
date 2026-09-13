@@ -89,8 +89,10 @@ function renderCom(resumo, rendaConfig) {
 }
 
 function gastoDia() {
+  // O rótulo pode ganhar sufixo de ritmo ("· dentro do ritmo" /
+  // "· acima do sustentável") quando há renda ou orçamento; casa pelo prefixo.
   return indicadoresChamados.filter(function(c) {
-    return c.label === 'Gasto médio/dia';
+    return /^Gasto médio\/dia/.test(String(c.label));
   });
 }
 
@@ -101,8 +103,12 @@ describe('indicador Gasto médio/dia — base = despesas reais ÷ dias decorrido
 
     var ind = gastoDia();
     expect(ind).toHaveLength(1);
+    // O VALOR continua sendo despesas ÷ dias decorridos (a renda não entra aqui).
     expect(ind[0].valor).toBe('R$ 100,00');
-    expect(ind[0].tipo).toBe('neutro');
+    // Com renda de 10.000 em agosto (31 dias), o ritmo sustentável é ~322/dia;
+    // 100/dia está dentro → o indicador passa a ser "positivo" (ver
+    // indicador-ritmo-sustentavel.test.js para a cobertura do ritmo).
+    expect(ind[0].tipo).toBe('positivo');
   });
 
   test('não repete mais a cifra de Saldo (Economia/Déficit sumiu)', function() {

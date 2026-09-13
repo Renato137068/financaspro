@@ -447,11 +447,37 @@
       if (resumo.despesas > 0) {
         var diasDecorridos = Math.max(1, ctx.agora.getDate());
         var gastoDia = resumo.despesas / diasDecorridos;
+
+        // Referência de ritmo sustentável: quanto caberia gastar por dia sem
+        // estourar no mês — pela renda, ou (sem renda) pelo total de limites de
+        // orçamento. gastoDia ≤ refDia significa que manter esse ritmo fecha o
+        // mês dentro do teto. Só rotula quando há base real; sem renda nem
+        // orçamento, mantém a leitura neutra, sem inventar meta.
+        var refDia = 0;
+        if (renda > 0) {
+          refDia = renda / diasNoMes;
+        } else if (ctx.orc && typeof ctx.orc.obterStatusTodos === 'function') {
+          var totalLimites = 0;
+          ctx.orc.obterStatusTodos(ctx.mes, ctx.ano).forEach(function(s) {
+            if (s && typeof s.limite === 'number') totalLimites += s.limite;
+          });
+          if (totalLimites > 0) refDia = totalLimites / diasNoMes;
+        }
+
+        var ritmoLabel = 'Gasto médio/dia';
+        var ritmoTipo  = 'neutro';
+        if (refDia > 0) {
+          var dentro = gastoDia <= refDia;
+          ritmoLabel = dentro ? 'Gasto médio/dia · dentro do ritmo'
+                              : 'Gasto médio/dia · acima do sustentável';
+          ritmoTipo  = dentro ? 'positivo' : 'alerta';
+        }
+
         container.appendChild(UI.Indicador.render(
           'trending-down',
           this.money(gastoDia),
-          'Gasto médio/dia',
-          'neutro'
+          ritmoLabel,
+          ritmoTipo
         ));
       }
 
