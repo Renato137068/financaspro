@@ -232,6 +232,11 @@
         total = this._ctx.tx.obter({}).length;
       }
       el.hidden = total > 0;
+      // A tagline "Método 50/30/20…" explica o método — útil para quem está
+      // começando, redundante depois (o topo já traz "Resumo de <mês> <ano>").
+      // Mostra só no primeiro uso, junto do onboarding, e some quando há dados.
+      var tagline = document.getElementById('dashboard-method-tagline');
+      if (tagline) tagline.hidden = total > 0;
       if (!el.hidden && typeof renderLucideIconsNow === 'function') {
         renderLucideIconsNow(el);
       }

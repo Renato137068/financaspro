@@ -263,6 +263,24 @@
 
     <div id="card-saldo-principal" class="card-saldo-principal"></div>
     <span class="sr-only" aria-live="polite" id="saldo-anuncio"></span>
+
+    <!-- "Disponível para gastar" logo abaixo do Saldo: é o número de decisão
+         ("posso gastar?") = saldo − compromissos. Fica oculto até haver saldo
+         ou compromisso. Antes aparecia só depois dos indicadores, longe do topo
+         (achado da auditoria do Resumo). É membro da faixa hero (span 1/-1),
+         então mover a posição no DOM não altera o grid do desktop. -->
+    <section class="dashboard-section disponivel-section" id="secao-disponivel" style="display:none">
+      <div class="disponivel-principal">
+        <span class="disponivel-label">Disponível para gastar</span>
+        <span class="kpi-disponivel-valor" id="kpi-disponivel" role="status">R$ 0,00</span>
+      </div>
+      <div class="disponivel-secundario">
+        <span class="disponivel-comprometido-label">Já comprometido</span>
+        <span class="disponivel-comprometido-valor" id="kpi-comprometido">R$ 0,00</span>
+        <span class="disponivel-comprometido-detalhe" id="kpi-comprometido-detalhe"></span>
+      </div>
+    </section>
+
     <div id="dashboard-alertas" class="dashboard-alertas"></div>
     <section class="cards-container" aria-label="Resumo de receitas e despesas">
       <div class="card receita">
@@ -277,19 +295,6 @@
       </div>
     </section>
     <div id="dashboard-indicadores" class="dashboard-indicadores"></div>
-
-    <!-- Acima da dobra: disponível, orçamento e últimas transações -->
-    <section class="dashboard-section disponivel-section" id="secao-disponivel" style="display:none">
-      <div class="disponivel-principal">
-        <span class="disponivel-label">Disponível para gastar</span>
-        <span class="kpi-disponivel-valor" id="kpi-disponivel" role="status">R$ 0,00</span>
-      </div>
-      <div class="disponivel-secundario">
-        <span class="disponivel-comprometido-label">Já comprometido</span>
-        <span class="disponivel-comprometido-valor" id="kpi-comprometido">R$ 0,00</span>
-        <span class="disponivel-comprometido-detalhe" id="kpi-comprometido-detalhe"></span>
-      </div>
-    </section>
 
     <section class="dashboard-section perfil-section" id="secao-orcamento-resumo">
       <div class="secao-header">
