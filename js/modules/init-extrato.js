@@ -912,6 +912,7 @@ const INIT_EXTRATO = {
       });
 
       var itemsHtml = '';
+      var renderedThisGroup = 0;
       for (var j = 0; j < grupoTxs.length; j++) {
         if (skipped < startItem) {
           skipped++;
@@ -920,15 +921,27 @@ const INIT_EXTRATO = {
         if (rendered >= maxItems) break;
         itemsHtml += self._renderTransacaoItem(grupoTxs[j]);
         rendered++;
+        renderedThisGroup++;
       }
 
       if (!itemsHtml) continue;
 
+      // O subtotal é sempre do DIA INTEIRO (é o número que importa). Quando a
+      // rolagem virtual corta o grupo e só parte das linhas aparece, o subtotal
+      // não bate com a soma visível — então deixamos explícito que ele é do dia,
+      // para o número não parecer "errado".
+      var parcial = renderedThisGroup < grupoTxs.length;
+      var subLabel = 'Saldo do dia ' + grupo + ': ' + UTILS.formatarMoeda(subtotal)
+        + (parcial ? ' (dia inteiro; exibindo ' + renderedThisGroup + ' de ' + grupoTxs.length + ' lançamentos)' : '');
+
       html += '<div class="ext-grupo" role="group" aria-label="' + UTILS.escapeHtml(grupo) + '">';
       html += '<div class="ext-grupo-header">';
       html += '<span class="ext-grupo-data">' + grupo + '</span>';
-      html += '<span class="ext-grupo-subtotal ' + (subtotal >= 0 ? 'positivo' : 'negativo') + '">' +
-        (subtotal >= 0 ? '+' : '') + UTILS.formatarMoeda(subtotal) + '</span>';
+      html += '<span class="ext-grupo-subtotal ' + (subtotal >= 0 ? 'positivo' : 'negativo') +
+        (parcial ? ' ext-grupo-subtotal--parcial' : '') + '" aria-label="' + UTILS.escapeHtml(subLabel) + '">' +
+        (subtotal >= 0 ? '+' : '') + UTILS.formatarMoeda(subtotal) +
+        (parcial ? '<span class="ext-grupo-subtotal-hint" aria-hidden="true"> · dia inteiro</span>' : '') +
+        '</span>';
       html += '</div>';
       html += '<div class="ext-grupo-list" role="list">';
       html += itemsHtml;
