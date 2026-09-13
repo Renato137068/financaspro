@@ -842,6 +842,14 @@
   background: var(--color-danger-bg);
 }
 
+/* Grupo cortado pela rolagem virtual: o subtotal é do dia inteiro, não da
+   soma visível. A dica deixa isso claro sem competir com o valor. */
+.ext-grupo-subtotal-hint {
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-medium);
+  opacity: 0.75;
+}
+
 .ext-grupo-list {
   display: flex;
   flex-direction: column;
