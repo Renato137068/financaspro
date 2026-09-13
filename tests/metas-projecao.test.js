@@ -142,6 +142,25 @@ describe('METAS.calcularProjecao — ritmo e diagnóstico', () => {
   });
 });
 
+describe('METAS.calcularProjecao — expõe `concluida` para a UI', () => {
+  // Regressão: o objeto de projeção não trazia o campo `concluida`, então o
+  // render (init-metas._renderCard) tratava TODA meta como não concluída —
+  // metas batidas seguiam mostrando "+ Aporte" e nunca ganhavam o selo
+  // "Meta concluída!". A UI decide esses estados por este campo.
+  test('meta batida → concluida = true (em todos os cenários de prazo)', () => {
+    expect(METAS.calcularProjecao(meta({ valorAtual: 12000, prazo: '2027-08-10' }), HOJE).concluida).toBe(true);
+    expect(METAS.calcularProjecao(meta({ valorAtual: 12000, prazo: null }), HOJE).concluida).toBe(true);
+    expect(METAS.calcularProjecao(meta({ valorAtual: 12000, concluida: true }), HOJE).concluida).toBe(true);
+  });
+
+  test('meta em andamento → concluida = false', () => {
+    expect(METAS.calcularProjecao(meta({ valorAtual: 3000, prazo: '2027-02-10' }), HOJE).concluida).toBe(false);
+    expect(METAS.calcularProjecao(meta({ valorAtual: 3000, prazo: null }), HOJE).concluida).toBe(false);
+    // Vencida e incompleta continua não concluída.
+    expect(METAS.calcularProjecao(meta({ valorAtual: 5000, prazo: '2026-06-10' }), HOJE).concluida).toBe(false);
+  });
+});
+
 describe('METAS.calcularProgresso — precisão e datas', () => {
   test('o restante fecha em centavos, sem resíduo de ponto flutuante', () => {
     const p = METAS.calcularProgresso(meta({ valorAlvo: 0.3, valorAtual: 0.1 }));
