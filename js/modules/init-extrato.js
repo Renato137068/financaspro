@@ -327,8 +327,10 @@ const INIT_EXTRATO = {
     var dataInicio = document.getElementById('data-inicio');
     var dataFim = document.getElementById('data-fim');
     
-    this.state.buscaAvancada.valorMin = valorMin && valorMin.value ? parseFloat(valorMin.value) : null;
-    this.state.buscaAvancada.valorMax = valorMax && valorMax.value ? parseFloat(valorMax.value) : null;
+    // parseMoeda (BR-aware) em vez de parseFloat: aceita "1.500,00", "1500",
+    // "1500,50" etc. Com type=number o campo rejeitava a vírgula do teclado BR.
+    this.state.buscaAvancada.valorMin = valorMin && valorMin.value.trim() ? UTILS.parseMoeda(valorMin.value) : null;
+    this.state.buscaAvancada.valorMax = valorMax && valorMax.value.trim() ? UTILS.parseMoeda(valorMax.value) : null;
     this.state.buscaAvancada.dataInicio = dataInicio && dataInicio.value ? dataInicio.value : null;
     this.state.buscaAvancada.dataFim = dataFim && dataFim.value ? dataFim.value : null;
     
