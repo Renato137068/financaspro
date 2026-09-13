@@ -97,8 +97,8 @@
     <h1>A aba mais robusta do app — com um selo que enganava.</h1>
     <p class="lede">Auditoria da aba <b>Extrato</b>: navegação por período, saldo com tendência, KPIs, busca com debounce, filtros avançados, <b>rolagem virtual</b> para listas grandes, seleção em massa e exportação CSV/PDF. É a tela mais completa do app. O achado principal: o selo de tendência mostrava <b>"+0,0% vs mês anterior"</b> quando não havia mês anterior — corrigido nesta rodada.</p>
     <div class="stats">
-      <div class="stat"><div class="n">1</div><div class="l">correção entregue</div></div>
-      <div class="stat"><div class="n">2</div><div class="l">itens de roadmap</div></div>
+      <div class="stat"><div class="n">3</div><div class="l">correções entregues</div></div>
+      <div class="stat"><div class="n">0</div><div class="l">roadmap restante</div></div>
       <div class="stat"><div class="n">100</div><div class="l">itens → rolagem virtual</div></div>
       <div class="stat"><div class="n">R$ 0</div><div class="l">custo — nada de API paga</div></div>
     </div>
@@ -144,15 +144,15 @@
       </div>
 
       <div class="find is-p2">
-        <div class="top"><span class="badge b-p2">Roadmap · nuance</span><span class="badge b-free">grátis</span></div>
+        <div class="top"><span class="badge b-free">Entregue</span><span class="badge b-free">grátis</span></div>
         <h3>Comparação parcial × mês cheio no mês corrente</h3>
-        <p>No mês em curso, a tendência compara o saldo <b>parcial</b> (só os dias decorridos) com o mês anterior <b>inteiro</b> — no começo do mês o selo quase sempre aparece "pior". Opções: comparar o mesmo intervalo (1..dia de hoje do mês anterior) ou rotular a comparação como parcial. É mais decisão de produto do que bug.</p>
+        <p>No mês em curso, a tendência comparava o saldo <b>parcial</b> (só os dias decorridos) com o mês anterior <b>inteiro</b> — no começo do mês o selo quase sempre aparecia "pior". <b>Corrigido:</b> no mês corrente a comparação usa o <b>mesmo intervalo</b> (1..dia de hoje) dos dois lados; em meses fechados segue cheio × cheio. O rótulo passa a "vs mesmo período" no mês em curso. Coberto por testes.</p>
       </div>
 
       <div class="find is-p3">
-        <div class="top"><span class="badge b-p3">Roadmap · polimento</span><span class="badge b-free">grátis</span></div>
+        <div class="top"><span class="badge b-free">Entregue</span><span class="badge b-free">grátis</span></div>
         <h3>Placeholders estáticos no markup</h3>
-        <p>O HTML traz valores fixos ("Abril 2026", "+12.5%", "1 a 30 de Abril") que o render substitui no boot. Se o render atrasar, eles aparecem por um instante como se fossem reais. Iniciar neutros (vazio ou "—") evita esse flash.</p>
+        <p>O HTML trazia valores fixos ("Abril 2026", "+12.5%", "1 a 30 de Abril") que o render substituía no boot — se o render atrasasse, apareciam por um instante como reais. <b>Corrigido:</b> período e datas iniciam neutros ("—"), o valor da tendência inicia vazio e o selo começa oculto (o render o mostra só quando há base de comparação).</p>
       </div>
 
     </div>
@@ -172,8 +172,9 @@
     <div class="sec-head"><span class="k">04</span><h2>Sequência sugerida</h2></div>
     <div class="note">
       <p style="margin:0"><b>Feito:</b> selo de tendência escondido quando não há base de comparação.<br>
-      <b>1.</b> Comparar o mesmo intervalo do mês (ou rotular a comparação como parcial).<br>
-      <b>2.</b> Iniciar os placeholders do cabeçalho neutros, evitando o flash de valores fixos.</p>
+      <b>1. Entregue:</b> no mês corrente a tendência compara o mesmo intervalo (1..dia de hoje); rótulo "vs mesmo período".<br>
+      <b>2. Entregue:</b> placeholders do cabeçalho iniciam neutros e o selo começa oculto, sem flash de valores fixos.<br>
+      Com isto, o roadmap do Extrato fica <b>completo</b>.</p>
     </div>
   </section>
 

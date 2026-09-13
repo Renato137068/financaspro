@@ -627,22 +627,46 @@ const INIT_EXTRATO = {
       mes: mesAnterior.getMonth() + 1,
       ano: mesAnterior.getFullYear()
     });
-    var saldoAnterior = 0;
-    txsAnterior.forEach(function(t) {
-      if (t.tipo === CONFIG.TIPO_RECEITA) saldoAnterior += t.valor;
-      else if (t.tipo === CONFIG.TIPO_DESPESA) saldoAnterior -= t.valor;
-    });
+    // No mês CORRENTE, o saldo do período é parcial (só os dias decorridos).
+    // Comparar esse parcial com o mês anterior INTEIRO fazia o selo aparecer
+    // "pior" quase todo começo de mês. A correção compara o MESMO intervalo:
+    // 1..dia de hoje, dos dois lados. Em meses já fechados, compara cheio×cheio.
+    var hoje = new Date();
+    var ehMesCorrente = info.mes === (hoje.getMonth() + 1) && info.ano === hoje.getFullYear();
+    var diaLimite = ehMesCorrente ? hoje.getDate() : null;
+    function somaSaldoAte(lista, limite) {
+      var s = 0;
+      lista.forEach(function(t) {
+        if (limite != null) {
+          var dia = parseInt(String(t.data || '').split('-')[2], 10);
+          if (!dia || dia > limite) return;
+        }
+        if (t.tipo === CONFIG.TIPO_RECEITA) s += t.valor;
+        else if (t.tipo === CONFIG.TIPO_DESPESA) s -= t.valor;
+      });
+      return s;
+    }
+    var saldoAnterior = somaSaldoAte(txsAnterior, diaLimite);
+    var saldoAtual = ehMesCorrente ? somaSaldoAte(txs, diaLimite) : saldo;
 
-    // Sem base de comparação (mês anterior sem lançamentos, ou saldo líquido
-    // exatamente zero) não dá para calcular variação percentual: mostrar
-    // "+0,0% vs mês anterior" sugeria estabilidade contra um mês que não
+    // Sem base de comparação (mês anterior sem lançamentos no intervalo, ou
+    // saldo líquido exatamente zero) não dá para calcular variação percentual:
+    // mostrar "+0,0% vs mês anterior" sugeria estabilidade contra um mês que não
     // existiu. Nesses casos, esconde o selo de tendência em vez de inventar 0%.
     var temBase = saldoAnterior !== 0;
     var trendWrap = document.getElementById('saldo-trend');
     if (trendWrap) trendWrap.style.display = temBase ? '' : 'none';
 
     if (temBase) {
-      var trendValue = ((saldo - saldoAnterior) / Math.abs(saldoAnterior)) * 100;
+      var trendValue = ((saldoAtual - saldoAnterior) / Math.abs(saldoAnterior)) * 100;
+      // Deixa claro que, no mês em curso, a comparação é do mesmo intervalo.
+      var trendLabelEl = document.getElementById('trend-label');
+      if (trendLabelEl) trendLabelEl.textContent = ehMesCorrente ? 'vs mesmo período' : 'vs mês anterior';
+      if (trendWrap) {
+        trendWrap.setAttribute('aria-label', ehMesCorrente
+          ? 'Tendência vs mesmo período do mês anterior'
+          : 'Tendência vs mês anterior');
+      }
       var trendIcon = trendValue >= 0
         ? '<i data-lucide="trending-up" aria-hidden="true"></i>'
         : '<i data-lucide="trending-down" aria-hidden="true"></i>';
