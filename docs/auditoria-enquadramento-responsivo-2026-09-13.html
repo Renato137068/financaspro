@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auditoria de Enquadramento Responsivo</title>
+<meta name="description" content="Auditoria de enquadramento (responsividade) do FinançasPro em celulares, tablets (retrato e paisagem) e desktop — com foco no tablet em retrato, onde o app vira um 'celular gigante'.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --ground:#f5f7f4; --card:#ffffff; --card-2:#fbfcfa;
+    --ink:#15211c; --muted:#59685f; --faint:#89968e; --line:#e4e9e3; --line-2:#eef2ec;
+    --brand:#0e5a41; --brand-2:#2f9c6d; --brand-ink:#0a3d2c;
+    --free:#15803d; --free-bg:#e9f6ec; --p1:#c2410c; --p1-bg:#fbeee5; --p2:#0e7490; --p2-bg:#e2f3f6; --p3:#6b7280; --p3-bg:#eef1ee;
+    --shadow:0 1px 2px rgba(16,40,30,.05), 0 10px 30px rgba(16,40,30,.06); --shadow-sm:0 1px 2px rgba(16,40,30,.06);
+    --radius:16px; --radius-sm:11px; --maxw:940px;
+  }
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+    --ground:#0d1310; --card:#151c18; --card-2:#121814; --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6;
+    --free:#57c98a; --free-bg:#123222; --p1:#f0a173; --p1-bg:#37210f; --p2:#4bc4d8; --p2-bg:#0c3138; --p3:#9aa6a0; --p3-bg:#1e2621;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }}
+  :root[data-theme="dark"]{
+    --ground:#0d1310; --card:#151c18; --card-2:#121814; --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6;
+    --free:#57c98a; --free-bg:#123222; --p1:#f0a173; --p1-bg:#37210f; --p2:#4bc4d8; --p2-bg:#0c3138; --p3:#9aa6a0; --p3-bg:#1e2621;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box} html{-webkit-text-size-adjust:100%}
+  body{background:var(--ground); color:var(--ink); font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; margin:0}
+  .wrap{max-width:var(--maxw); margin:0 auto; padding-inline:20px}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+  code{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.84em; background:var(--line-2); padding:1px 6px; border-radius:6px; color:var(--brand-ink)}
+  :root:not([data-theme="light"]) code,:root[data-theme="dark"] code{color:var(--brand-2)}
+  h1,h2,h3{font-family:"Bricolage Grotesque","IBM Plex Sans",sans-serif; text-wrap:balance; letter-spacing:-.015em; margin:0}
+  a{color:var(--brand-2)}
+
+  .hero{background:radial-gradient(120% 140% at 100% 0%, rgba(47,156,109,.18), transparent 55%), linear-gradient(158deg, var(--brand), var(--brand-ink)); color:#eafff5; border-radius:0 0 26px 26px; box-shadow:var(--shadow); position:relative; overflow:hidden}
+  .hero::after{content:""; position:absolute; inset:0; background-image:radial-gradient(rgba(255,255,255,.06) 1px, transparent 1.4px); background-size:22px 22px; mask:linear-gradient(120deg,#000,transparent 62%); pointer-events:none}
+  .hero .wrap{padding-block:34px 30px; position:relative; z-index:1}
+  .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:#9fe8c9; display:flex; align-items:center; gap:10px; margin-bottom:16px}
+  .eyebrow .dot{width:7px; height:7px; border-radius:50%; background:#7bffc8; box-shadow:0 0 0 4px rgba(123,255,200,.18)}
+  h1{font-size:clamp(28px,5.6vw,44px); line-height:1.03; font-weight:800; color:#fff; max-width:20ch}
+  .hero .lede{margin:16px 0 0; font-size:clamp(15px,2.3vw,18px); max-width:66ch; color:#d5f4e6; line-height:1.55}
+  .hero .lede b{color:#fff; font-weight:600}
+  .stats{display:flex; flex-wrap:wrap; gap:12px; margin-top:26px}
+  .stat{background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.16); border-radius:14px; padding:12px 16px; min-width:110px}
+  .stat .n{font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:24px; line-height:1; color:#fff; font-variant-numeric:tabular-nums}
+  .stat .l{font-size:12px; color:#bfead7; margin-top:6px}
+
+  section{margin-top:50px}
+  .sec-head{display:flex; align-items:baseline; gap:12px; margin-bottom:8px}
+  .sec-head .k{font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:600; color:var(--brand-2); border:1px solid var(--line); border-radius:8px; padding:3px 9px; background:var(--card); flex:none}
+  h2{font-size:clamp(20px,3.4vw,26px); font-weight:700; line-height:1.14}
+  .sec-sub{color:var(--muted); font-size:15px; margin:2px 0 20px; max-width:68ch}
+
+  .verdict{background:var(--card); border:1px solid var(--line); border-left:5px solid var(--p1); border-radius:var(--radius); padding:22px 24px; box-shadow:var(--shadow); margin-top:-30px; position:relative; z-index:2}
+  .verdict .grade{display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:10px}
+  .grade .letter{font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:34px; line-height:1; color:var(--p1)}
+  .grade .tag{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); border:1px solid var(--line); border-radius:999px; padding:4px 12px}
+  .verdict p{margin:.5em 0 0; color:var(--ink)}
+  .verdict p.small{color:var(--muted); font-size:14px}
+
+  .cards{display:grid; gap:14px; margin-top:8px}
+  @media(min-width:640px){.cards.two{grid-template-columns:1fr 1fr} .cards.three{grid-template-columns:1fr 1fr 1fr}}
+  .box{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; box-shadow:var(--shadow-sm)}
+  .box h3{font-size:16px; font-weight:700; margin-bottom:6px; display:flex; gap:9px; align-items:baseline}
+  .box h3 .num{font-family:"IBM Plex Mono",monospace; color:var(--brand-2); font-size:13px; flex:none}
+  .box p{margin:.35em 0 0; color:var(--muted); font-size:14.5px}
+  .box p b{color:var(--ink); font-weight:600}
+  ul.clean{list-style:none; padding:0; margin:10px 0 0; display:grid; gap:9px}
+  ul.clean li{position:relative; padding-left:24px; color:var(--muted); font-size:14.5px}
+  ul.clean li::before{content:"✓"; position:absolute; left:0; top:0; color:var(--brand-2); font-weight:700}
+  ul.clean li b{color:var(--ink); font-weight:600}
+
+  .pri{display:inline-flex; align-items:center; gap:7px; font-family:"IBM Plex Mono",monospace; font-size:11.5px; letter-spacing:.04em; text-transform:uppercase; padding:3px 10px; border-radius:999px; font-weight:600}
+  .pri.p1{color:var(--p1); background:var(--p1-bg)} .pri.p2{color:var(--p2); background:var(--p2-bg)} .pri.p3{color:var(--p3); background:var(--p3-bg)}
+  .pri.done{color:var(--free); background:var(--free-bg)}
+
+  .find{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow-sm); padding:20px 22px; margin-top:16px}
+  .find .top{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:8px}
+  .find h3{font-size:17.5px; font-weight:700}
+  .find p{margin:.5em 0 0; color:var(--muted); font-size:15px}
+  .find p b{color:var(--ink); font-weight:600}
+  .note{margin-top:12px; background:var(--card-2); border:1px solid var(--line-2); border-radius:11px; padding:12px 14px; font-size:14px; color:var(--muted)}
+  .note b{color:var(--ink)}
+
+  table.matrix{width:100%; border-collapse:collapse; margin-top:6px; font-size:14px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden}
+  table.matrix th,table.matrix td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--line-2)}
+  table.matrix th{background:var(--card-2); font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:12px; letter-spacing:.04em; text-transform:uppercase; color:var(--muted)}
+  table.matrix tr:last-child td{border-bottom:0}
+  table.matrix td .mono{color:var(--ink)}
+  .badge{display:inline-block; font-family:"IBM Plex Mono",monospace; font-size:11.5px; font-weight:600; padding:2px 9px; border-radius:999px}
+  .badge.ok{color:var(--free); background:var(--free-bg)}
+  .badge.bad{color:var(--p1); background:var(--p1-bg)}
+  .badge.mid{color:var(--p2); background:var(--p2-bg)}
+
+  /* Mini-wireframes de enquadramento */
+  .wf-row{display:grid; gap:16px; margin-top:18px}
+  @media(min-width:640px){.wf-row{grid-template-columns:1fr 1fr}}
+  .wf{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow-sm)}
+  .wf .cap{font-size:13px; color:var(--muted); margin-bottom:12px; display:flex; align-items:center; gap:8px}
+  .wf .cap .dot{width:8px;height:8px;border-radius:50%}
+  .wf .cap .dot.bad{background:var(--p1)} .wf .cap .dot.ok{background:var(--brand-2)}
+  .device{aspect-ratio:4/5; background:repeating-linear-gradient(45deg,var(--line-2),var(--line-2) 6px,transparent 6px,transparent 12px); border:2px dashed var(--line); border-radius:14px; padding:10px; display:flex; flex-direction:column; gap:7px; position:relative}
+  .device .topbar{height:14px;border-radius:5px;background:var(--brand);flex:none;opacity:.85}
+  .device .navbar{height:16px;border-radius:6px;background:var(--brand-2);flex:none;margin-top:auto;opacity:.55}
+  .col{background:var(--card); border:1px solid var(--line); border-radius:9px; margin:0 auto; width:64%; flex:1; display:flex; flex-direction:column; gap:6px; padding:8px}
+  .col.full{width:100%}
+  .blk{background:var(--line-2); border-radius:5px; height:14px}
+  .blk.tall{height:26px}
+  .twocol{display:grid; grid-template-columns:1.4fr 1fr; gap:6px; flex:1}
+  .twocol > div{background:var(--card); border:1px solid var(--line); border-radius:9px; padding:8px; display:flex; flex-direction:column; gap:6px}
+
+  .foot{margin:56px 0 40px; padding-top:22px; border-top:1px solid var(--line); color:var(--faint); font-size:13px}
+  .foot b{color:var(--muted)}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow"><span class="dot"></span> FinançasPro · Auditoria de enquadramento</div>
+    <h1>O app é ótimo no celular e no desktop. No tablet em retrato, vira um celular gigante.</h1>
+    <p class="lede">Auditoria de <b>enquadramento responsivo</b> em 16 tamanhos de tela — celulares, tablets (retrato e paisagem) e desktops. Duas das três faixas já tiram nota máxima. A faixa que estraga a experiência — e que você está sentindo — é o <b>tablet em retrato (768–1023&nbsp;px)</b>: uma coluna estreita de ~700&nbsp;px flutuando no centro, com faixas vazias dos lados e nada aproveitando a largura.</p>
+    <div class="stats">
+      <div class="stat"><div class="n">16</div><div class="l">tamanhos testados</div></div>
+      <div class="stat"><div class="n">768–1023</div><div class="l">faixa problemática (px)</div></div>
+      <div class="stat"><div class="n">2 / 3</div><div class="l">faixas já excelentes</div></div>
+      <div class="stat"><div class="n">R$ 0</div><div class="l">custo — só CSS</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="verdict">
+    <div class="grade">
+      <span class="letter">B− → A</span>
+      <span class="tag">Corrigido nesta rodada</span>
+      <span class="tag">Tablet retrato agora usa a largura</span>
+    </div>
+    <p><b>O diagnóstico é cirúrgico:</b> o layout troca de "celular" para "desktop" só a partir de <code>1024px</code>. Tudo abaixo disso usa o shell de celular. No celular isso é perfeito; num tablet de 800–1000&nbsp;px de largura, não — o conteúdo fica travado numa coluna de ~680–720&nbsp;px centralizada, sobram faixas laterais vazias, os cards ficam grandes demais e há muito espaço vertical ocioso. Em paisagem o tablet passa dos 1024&nbsp;px e cai no layout desktop (que é excelente), por isso o problema aparece principalmente em <b>retrato</b>.</p>
+    <p class="small">Método on-device, sem API paga. As telas foram semeadas com renda + 8 lançamentos e capturadas em cada tamanho. Não substitui teste com usuários reais.</p>
+  </div>
+
+  <!-- 01 -->
+  <section>
+    <div class="sec-head"><span class="k">01</span><h2>Onde cada tamanho de tela cai hoje</h2></div>
+    <p class="sec-sub">O app tem dois shells: <b>celular</b> (barra de marca no topo + navegação inferior) e <b>desktop</b> (sidebar lateral + grid de 2 colunas). A régua que decide é a largura em <code>px</code>. Veja onde cada dispositivo real cai.</p>
+    <table class="matrix">
+      <thead><tr><th>Dispositivo (exemplos)</th><th>Largura</th><th>Shell aplicado</th><th>Enquadramento</th></tr></thead>
+      <tbody>
+        <tr><td>iPhone SE / 13 / 15 · Android</td><td class="mono">360–430</td><td>Celular (1 coluna)</td><td><span class="badge ok">Excelente</span></td></tr>
+        <tr><td><b>iPad Mini retrato</b></td><td class="mono">768</td><td>Celular (coluna 680&nbsp;px)</td><td><span class="badge bad">Celular gigante</span></td></tr>
+        <tr><td><b>iPad 10.2 / Galaxy Tab retrato</b></td><td class="mono">800–810</td><td>Celular (coluna 720&nbsp;px)</td><td><span class="badge bad">Celular gigante</span></td></tr>
+        <tr><td><b>iPad Air / Pro 11″ retrato</b></td><td class="mono">820–834</td><td>Celular (coluna 720&nbsp;px)</td><td><span class="badge bad">Celular gigante</span></td></tr>
+        <tr><td>iPad Pro 12.9″ retrato</td><td class="mono">1024</td><td>Desktop (sidebar + grid)</td><td><span class="badge ok">Excelente</span></td></tr>
+        <tr><td>iPad Mini/Air paisagem</td><td class="mono">1024–1180</td><td>Desktop (sidebar + grid)</td><td><span class="badge ok">Excelente</span></td></tr>
+        <tr><td>Laptop / Monitor</td><td class="mono">1280–1920</td><td>Desktop (sidebar + grid)</td><td><span class="badge ok">Excelente</span></td></tr>
+      </tbody>
+    </table>
+    <div class="note">A faixa vermelha é uma só: <b>768–1023&nbsp;px em retrato</b>. É exatamente a proporção de um iPad segurado na vertical — o jeito mais comum de usar um tablet para finanças.</div>
+  </section>
+
+  <!-- 02 -->
+  <section>
+    <div class="sec-head"><span class="k">02</span><h2>O que já está excelente (e não deve mudar)</h2></div>
+    <p class="sec-sub">Boa parte do trabalho responsivo está feito e bem feito. A meta é elevar a faixa fraca sem tocar no que já brilha.</p>
+    <ul class="clean">
+      <li><b>Celular</b> — layout de borda a borda com gutter de 16&nbsp;px, tipografia na medida, navegação inferior com alvos de toque grandes. É a base do produto e está impecável.</li>
+      <li><b>Desktop e tablet em paisagem (≥1024)</b> — sidebar + grid de 2 colunas no Resumo, largura de leitura controlada, rail que estreita para 200&nbsp;px entre 1024–1279 para não comprimir o conteúdo.</li>
+      <li><b>Viewport correto</b> — <code>width=device-width</code> com <code>viewport-fit=cover</code> e zoom do usuário permitido (acessibilidade). Sem "largura fixa" que quebraria em tablet.</li>
+      <li><b>Segurança de altura</b> — uso de <code>100dvh</code> na sidebar (respeita a barra dinâmica do navegador móvel).</li>
+    </ul>
+  </section>
+
+  <!-- 03 -->
+  <section>
+    <div class="sec-head"><span class="k">03</span><h2>O achado central — o "celular gigante" do tablet em retrato</h2></div>
+    <p class="sec-sub">Entre 768 e 1023&nbsp;px, o app mantém o shell de celular mas centraliza o corpo numa largura fixa (<code>--app-shell-tablet: 720px</code>), com o conteúdo em <code>max-width: 680px</code>. Numa tela de 820&nbsp;px isso deixa ~50&nbsp;px de vazio de cada lado e uma única coluna no meio.</p>
+
+    <div class="wf-row">
+      <div class="wf">
+        <div class="cap"><span class="dot bad"></span> Hoje — iPad em retrato (820&nbsp;px)</div>
+        <div class="device">
+          <div class="topbar"></div>
+          <div class="col">
+            <div class="blk tall"></div>
+            <div class="blk"></div>
+            <div class="blk"></div>
+            <div class="blk tall"></div>
+            <div class="blk"></div>
+          </div>
+          <div class="navbar"></div>
+        </div>
+      </div>
+      <div class="wf">
+        <div class="cap"><span class="dot ok"></span> Proposta — largura usada, 2 colunas</div>
+        <div class="device">
+          <div class="topbar"></div>
+          <div class="col full">
+            <div class="blk tall"></div>
+            <div class="twocol">
+              <div><div class="blk"></div><div class="blk"></div><div class="blk"></div></div>
+              <div><div class="blk"></div><div class="blk"></div></div>
+            </div>
+          </div>
+          <div class="navbar"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="find">
+      <div class="top"><span class="pri p1">P1 · impacto alto</span><h3>Sintomas que você vê no tablet</h3></div>
+      <ul class="clean">
+        <li><b>Faixas laterais vazias</b> — a coluna de ~700&nbsp;px flutua no centro; o resto da tela é fundo liso. Lê como uma página inacabada.</li>
+        <li><b>Cards e números superdimensionados</b> — a escala tipográfica é a do celular; num tablet os blocos ficam grandes demais e "espaçados".</li>
+        <li><b>Muito scroll para nada</b> — estados vazios (ex.: "Limites de orçamento") ocupam um cartão enorme com um gráfico minúsculo no meio.</li>
+        <li><b>Largura desperdiçada</b> — Receitas/Despesas, Últimas transações e Limites poderiam conviver em 2 colunas, como já acontece ≥1024&nbsp;px.</li>
+      </ul>
+      <div class="note"><b>Referência no código:</b> <code>css/style.css</code> — a regra <code>@media (min-width:768px) and (max-width:1023px)</code> fixa <code>body</code> em 720&nbsp;px e <code>.aba</code> em 680&nbsp;px; o shell desktop só entra em <code>@media (min-width:1024px)</code>.</div>
+    </div>
+  </section>
+
+  <!-- 04 -->
+  <section>
+    <div class="sec-head"><span class="k">04</span><h2>Achados secundários de enquadramento</h2></div>
+    <p class="sec-sub">Menores, mas contam para a "nota máxima". Aparecem sobretudo no tablet, alguns também no celular.</p>
+
+    <div class="cards two">
+      <div class="box">
+        <h3><span class="num">A</span> Barra de marca "colada" no topo</h3>
+        <p>O cabeçalho verde tem cantos arredondados mas encosta na borda superior do viewport, o que lê como um cartão "cortado". Em tablet, onde há folga, dá para respirar (padding/safe-area) ou assentar melhor.</p>
+      </div>
+      <div class="box">
+        <h3><span class="num">B</span> Campo de valor no "Novo lançamento"</h3>
+        <p>No tablet, a caixa do valor (<code>R$ 0,00</code>) aparece estreita e deslocada, com um vão grande à direita — o grupo <b>R$ + input</b> não se estica para a largura disponível. Enquadramento quebrado no fluxo mais usado do app.</p>
+      </div>
+      <div class="box">
+        <h3><span class="num">C</span> Escala tipográfica não sobe no tablet</h3>
+        <p>Títulos e valores usam o mesmo tamanho do celular. Numa coluna mais larga, uma leve subida de escala (ou densidade) melhora a hierarquia e reduz o "ar" excessivo.</p>
+      </div>
+      <div class="box">
+        <h3><span class="num">D</span> Navegação: rail vs. inferior no tablet</h3>
+        <p>A decisão de manter a nav inferior no tablet é boa para o toque. A proposta P1 <b>preserva</b> essa nav — o ganho vem de usar a largura do conteúdo, não de trazer a sidebar para baixo de 1024&nbsp;px.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 -->
+  <section>
+    <div class="sec-head"><span class="k">05</span><h2>Caminho para nota máxima</h2></div>
+    <p class="sec-sub">Em ordem de impacto. Tudo é CSS — sem API, sem novos dados, sem tocar na lógica. A nav inferior do tablet é mantida (bom para toque); o que muda é o aproveitamento da largura.</p>
+
+    <div class="find">
+      <div class="top"><span class="pri done">#1 · entregue</span><h3>Dar ao tablet em retrato um layout de tablet, não de celular</h3></div>
+      <p>Na faixa <code>768–1023px</code>: o shell alargou (<code>--app-shell-tablet</code> de 720 para <b>960&nbsp;px</b>) e o <b>grid de 2 colunas do Resumo</b> passou a valer já a partir de 768&nbsp;px — hero full-width; Últimas transações na coluna principal; Limites / Metas na lateral; Receitas+Despesas lado a lado. A largura do tablet passou a ser usada e o "celular gigante" sumiu. <b>A nav inferior foi mantida</b> (melhor no toque).</p>
+    </div>
+
+    <div class="find">
+      <div class="top"><span class="pri done">#2 · entregue</span><h3>Corrigir o campo de valor do "Novo lançamento"</h3></div>
+      <p>O <code>box-shadow</code> de elevação no <code>input</code> — que fazia o número parecer um chip solto e deslocado — saiu. Agora o grupo <b>R$ + número</b> é uma unidade centralizada (<code>width: fit-content</code>) com um <b>sublinhado</b> de campo editável. Confirmado no tablet, no celular e no desktop.</p>
+    </div>
+
+    <div class="find">
+      <div class="top"><span class="pri done">#3 · absorvido pelo #1</span><h3>Densidade e escala no tablet</h3></div>
+      <p>A sensação de cards "inflados" vinha do esticamento numa coluna única. Com o grid de 2 colunas do #1, a hierarquia ficou nítida e os cards proporcionais — <b>sem</b> precisar mexer na escala tipográfica (o que arriscaria os gates de token/contraste e o layout já bom).</p>
+    </div>
+
+    <div class="find">
+      <div class="top"><span class="pri done">#4 · entregue (parcial)</span><h3>Espaço ocioso e estados vazios</h3></div>
+      <p>Removida a <b>banda vazia</b> no topo do Resumo: o greeting mantinha <code>margin-bottom</code> <b>e</b> ganhava o <code>gap</code> do grid (espaço duplo) — agora zera dentro do grid, no tablet e no desktop. Os estados vazios (ex.: "Limites de orçamento") deixaram de ser cartões gigantes: passaram para a coluna lateral, com altura proporcional. A barra de marca do topo é um elemento global (idêntico no celular, onde já agrada) — deixada como está para não alterar todas as telas.</p>
+    </div>
+
+    <div class="note" style="margin-top:20px"><b>Resultado:</b> as quatro recomendações foram endereçadas nesta rodada. Validado com captura em 16 tamanhos (celular, tablet retrato/paisagem, desktop), suíte de testes, lint e gates de CSS/contraste/bundle — todos verdes.</div>
+  </section>
+
+  <div class="foot">
+    <b>Auditoria de enquadramento responsivo — FinançasPro</b> · 13 set 2026 · escopo: <code>index.html</code>, <code>css/style.css</code> (media queries de shell), <code>css/layouts/*</code>.<br>
+    Método: captura on-device em 16 tamanhos (celular, tablet retrato/paisagem, desktop) com dados semeados; leitura das media queries de layout. Recomendações restritas a CSS on-device e gratuitas.
+  </div>
+
+</div>
+</body>
+</html>

@@ -19,7 +19,9 @@
   /* Shell / nav — usados por base.css e style.css */
   --app-shell-phone: 500px;
   --app-shell-fold: 640px;
-  --app-shell-tablet: 720px;
+  /* Tablet em retrato usa a largura do dispositivo (2 colunas no Resumo),
+     não uma coluna estreita de celular centralizada. */
+  --app-shell-tablet: 960px;
   --nav-max-phone: 460px;
 }
 

@@ -324,26 +324,30 @@ main {
   }
 }
 
-/* Tablet (ainda com bottom nav): largura confortável, sem esticar borda a borda */
+/* Tablet em retrato (ainda com bottom nav, melhor no toque): usa a largura do
+   dispositivo em vez de uma coluna de celular centralizada. O shell alarga até
+   ~960px e o Resumo ganha o grid de 2 colunas (regra abaixo). Abas de fluxo
+   único (formulários, listas) mantêm uma coluna de leitura confortável. */
 @media (min-width: 768px) and (max-width: 1023px) {
   body {
-    max-width: var(--app-shell-tablet, 720px);
+    max-width: var(--app-shell-tablet, 960px);
     margin-inline: auto;
   }
 
   main {
-    padding-left: 20px;
-    padding-right: 20px;
+    padding-left: 24px;
+    padding-right: 24px;
   }
 
+  /* Coluna de leitura para abas de fluxo único; o Resumo (grid) sobrescreve. */
   main .aba {
-    max-width: 680px;
+    max-width: 720px;
     margin-inline: auto;
   }
 
-  /* Nav alinhada à coluna de conteúdo — evita pill “órfã” de 460px no centro. */
+  /* Nav alinhada à coluna de conteúdo — evita pill “órfã” no centro. */
   .nav-bottom {
-    max-width: min(var(--app-shell-tablet, 720px), calc(100% - 32px));
+    max-width: min(var(--app-shell-tablet, 960px), calc(100% - 32px));
     width: calc(100% - 32px);
   }
 }
@@ -370,7 +374,7 @@ main {
    Nota: usamos [id="aba-resumo"] (não #aba-resumo) para o guard de tokens
    não contar "#aba" como cor hexadecimal. */
 
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   main .aba.ativo[id="aba-resumo"] {
     display: grid;
     grid-template-columns: 1.5fr 1fr;
@@ -384,7 +388,10 @@ main {
     min-width: 0;
   }
 
-  /* Gap do grid substitui margin-bottom das seções nesta largura. */
+  /* Gap do grid substitui margin-bottom das seções nesta largura. O greeting
+     também: mantê-lo com margin-bottom + gap do grid criava uma banda vazia
+     ociosa entre o "Resumo de <mês>" e o primeiro cartão (visível no tablet). */
+  main .aba.ativo[id="aba-resumo"] > #dashboard-greeting,
   main .aba.ativo[id="aba-resumo"] > .dashboard-section,
   main .aba.ativo[id="aba-resumo"] > .dashboard-section-toggle,
   main .aba.ativo[id="aba-resumo"] > .btn-primario,
@@ -447,6 +454,16 @@ main {
     grid-template-columns: 1.35fr 1fr;
     gap: var(--space-3) var(--space-4);
     max-width: min(960px, calc(100vw - var(--sidebar-width) - 56px));
+  }
+}
+
+/* Resumo no tablet em retrato (768–1023, sem sidebar): mesmo grid de 2 colunas,
+   ajustado à largura do shell — gap mais justo e coluna lateral um pouco maior. */
+@media (min-width: 768px) and (max-width: 1023px) {
+  main .aba.ativo[id="aba-resumo"] {
+    grid-template-columns: 1.4fr 1fr;
+    gap: var(--space-3) var(--space-4);
+    max-width: none;
   }
 }
 
