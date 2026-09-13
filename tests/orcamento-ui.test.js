@@ -153,9 +153,47 @@ describe('P0 — header estratégico', function() {
     expect(document.getElementById('orc-total-planejado').textContent).toBe('R$ 5000,00');
     expect(document.getElementById('orc-total-realizado').textContent).toBe('R$ 2800,00');
     expect(document.getElementById('orc-saldo-disponivel').textContent).toBe('R$ 2200,00');
-    expect(document.getElementById('orc-economia-mes').textContent).toBe('R$ 2200,00');
+    // "Folga poupança" ≠ Saldo: é o que ainda cabe na fatia de 20% (1000),
+    // já que nada foi poupado (receitas 0 − despesas). Antes repetia o Saldo.
+    expect(document.getElementById('orc-economia-mes').textContent).toBe('R$ 1000,00');
     expect(document.getElementById('orc-percent-restante').textContent).toMatch(/44%/);
     expect(document.getElementById('orc-nec-gasto').textContent).toBe('R$ 2000,00');
+  });
+});
+
+describe('Folga poupança — não repete o Saldo e bate com o tooltip', function() {
+  function hojeStr() {
+    var h = new Date();
+    return h.getFullYear() + '-' + String(h.getMonth() + 1).padStart(2, '0') + '-' +
+      String(h.getDate()).padStart(2, '0');
+  }
+
+  test('poupou parte da meta → folga = limite(20%) − poupado, ≠ Saldo', function() {
+    var d = hojeStr();
+    montarHeaderDom();
+    var sb = carregar(); // renda 5000 → fatia poupança (20%) = 1000
+    sb._setTxs([
+      { tipo: 'receita', valor: 6000, categoria: 'salario', data: d },
+      { tipo: 'despesa', valor: 5500, categoria: 'alimentacao', data: d }
+    ]);
+    sb.INIT_ORCAMENTO.renderDashboard();
+    // poupancaReal = 6000 − 5500 = 500 → folga = 1000 − 500 = 500.
+    expect(document.getElementById('orc-economia-mes').textContent).toBe('R$ 500,00');
+    // Saldo = renda − despesas = 5000 − 5500 = −500 → prova que são leituras distintas.
+    expect(document.getElementById('orc-saldo-disponivel').textContent).toBe('R$ -500,00');
+  });
+
+  test('meta batida → folga não fica negativa (piso em 0)', function() {
+    var d = hojeStr();
+    montarHeaderDom();
+    var sb = carregar();
+    sb._setTxs([
+      { tipo: 'receita', valor: 3000, categoria: 'salario', data: d },
+      { tipo: 'despesa', valor: 500, categoria: 'alimentacao', data: d }
+    ]);
+    sb.INIT_ORCAMENTO.renderDashboard();
+    // poupancaReal = 2500 ≥ fatia 1000 → folga = 0 (não negativa).
+    expect(document.getElementById('orc-economia-mes').textContent).toBe('R$ 0,00');
   });
 });
 

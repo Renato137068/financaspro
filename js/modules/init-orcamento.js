@@ -231,7 +231,8 @@ const INIT_ORCAMENTO = {
     var limPou = renda * (pPou / 100);
     var realizado = gastoNec + gasDes;
     /* Saldo do orçamento = o que sobra da renda planejada após despesas.
-       Economia do mês usa o mesmo número (rótulo do card secundário). */
+       "Folga poupança" é OUTRA leitura (quanto ainda cabe na fatia de 20%) e
+       é calculada no _renderHeader a partir de limPou e poupancaReal. */
     var saldoDisponivel = renda - realizado;
     return {
       renda: renda, pNec: pNec, pDes: pDes, pPou: pPou,
@@ -257,7 +258,14 @@ const INIT_ORCAMENTO = {
     this._updateElement('orc-total-planejado', UTILS.formatarMoeda(data.renda));
     this._updateElement('orc-total-realizado', UTILS.formatarMoeda(realizado));
     this._updateElement('orc-saldo-disponivel', UTILS.formatarMoeda(saldo));
-    this._updateElement('orc-economia-mes', UTILS.formatarMoeda(saldo));
+    // "Folga poupança": quanto ainda cabe na fatia de poupança (bate com o
+    // tooltip do card). Antes recebia o mesmo `saldo` do KPI ao lado —
+    // duplicava a cifra e contradizia o próprio tooltip. Já poupado no mês
+    // (receitas − despesas, sem contar negativo) abatido do limite da fatia;
+    // meta batida → folga 0.
+    var poupado = Math.max(0, data.poupancaReal != null ? data.poupancaReal : 0);
+    var folgaPoupanca = Math.max(0, (data.limPou || 0) - poupado);
+    this._updateElement('orc-economia-mes', UTILS.formatarMoeda(folgaPoupanca));
     this._updateElement('orc-percent-restante', pctRestante + '% restante');
 
     var criticas = 0;
