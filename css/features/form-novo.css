@@ -411,6 +411,11 @@
   align-items: baseline;
   justify-content: center;
   gap: var(--space-1);
+  /* Hug do conteúdo: "R$" + número leem como uma unidade centralizada,
+     em vez de uma caixinha deslocada com vão ao lado (bug no tablet). */
+  width: fit-content;
+  max-width: 100%;
+  margin-inline: auto;
 }
 
 .valor-prefix {
@@ -421,8 +426,7 @@
 
 .valor-input {
   width: 100%;
-  max-width: 200px;
-  border: none !important;
+  max-width: min(260px, 62vw);
   background: transparent !important;
   font-size: var(--font-size-4xl);
   font-weight: var(--font-weight-extrabold);
@@ -430,8 +434,13 @@
   text-align: center;
   letter-spacing: var(--letter-spacing-tight);
   padding: var(--space-1) 0 !important;
-  box-shadow: var(--elevacao-1);
   font-family: var(--font-family-sans);
+  /* Afordância de campo editável: um sublinhado — não uma caixa flutuante
+     (o box-shadow anterior fazia o número parecer um chip solto). */
+  border: none !important;
+  border-bottom: 2px solid var(--color-border) !important;
+  box-shadow: none;
+  transition: border-color var(--transition-fast);
 }
 
 .valor-input::placeholder {
@@ -441,8 +450,8 @@
 
 .valor-input:focus {
   outline: none;
-  border: none !important;
-  box-shadow: var(--elevacao-1);
+  box-shadow: none;
+  border-bottom-color: var(--color-primary-500) !important;
 }
 
 /* ── Grid de categorias ───────────────────────────────────── */
