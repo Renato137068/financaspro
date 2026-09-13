@@ -17,9 +17,27 @@ const INIT_ORCAMENTO = {
     return this._lucideHtml('pin');
   },
 
+  // Fallback de cor quando o módulo de Extrato não expôs a cor da categoria.
+  // Antes era um hex fixo (#98a39d); agora resolve o token --color-gray-400
+  // (mesmo valor, mas segue o tema). A cor é concatenada com "20" (alpha) no
+  // markup, então precisa sair como hex — por isso lemos o valor computado.
+  _corFallbackCache: undefined,
+  _corFallback: function() {
+    if (this._corFallbackCache !== undefined) return this._corFallbackCache;
+    var cor = '#98a39d';
+    try {
+      if (typeof getComputedStyle === 'function' && typeof document !== 'undefined' && document.documentElement) {
+        var v = getComputedStyle(document.documentElement).getPropertyValue('--color-gray-400');
+        if (v && v.trim()) cor = v.trim();
+      }
+    } catch (_e) { /* sem DOM/estilo: mantém o hex do token */ }
+    this._corFallbackCache = cor;
+    return cor;
+  },
+
   _getCatCor: function(cat) {
     if (typeof INIT_EXTRATO !== 'undefined' && INIT_EXTRATO.getCatCor) return INIT_EXTRATO.getCatCor(cat);
-    return '#98a39d';
+    return this._corFallback();
   },
 
   _catLucideName: function(cat) {
@@ -27,11 +45,64 @@ const INIT_ORCAMENTO = {
     return map[cat] || map[(cat || '').toLowerCase()] || 'pin';
   },
 
+  GRUPOS_503020: ['necessidades', 'desejos', 'poupanca'],
+
+  _labelGrupo503020: function(grupo) {
+    if (grupo === 'necessidades') return 'Necessidade';
+    if (grupo === 'poupanca') return 'Poupança';
+    return 'Desejo';
+  },
+
+  // Override de classificação por categoria (inclui as personalizadas), salvo em
+  // config.classificacao503020. Sem override, cai nas listas fixas; o default
+  // histórico para qualquer categoria fora das listas é "desejos".
+  _overrideClassificacao: function(cat) {
+    try {
+      var mapa = (DADOS.getConfig() || {}).classificacao503020;
+      if (!mapa) return null;
+      if (mapa[cat]) return mapa[cat];
+      var c = (cat || '').toLowerCase();
+      if (mapa[c]) return mapa[c];
+    } catch (_e) { /* config indisponível: usa as listas fixas */ }
+    return null;
+  },
+
   classificarCategoria503020: function(cat) {
+    var over = this._overrideClassificacao(cat);
+    if (over && this.GRUPOS_503020.indexOf(over) !== -1) return over;
     var c = (cat || '').toLowerCase();
     if (this.REGRA_503020.necessidades.indexOf(c) !== -1) return 'necessidades';
     if (this.REGRA_503020.desejos.indexOf(c) !== -1) return 'desejos';
     return 'desejos';
+  },
+
+  /**
+   * Grava a classificação 50/30/20 de uma categoria e re-renderiza.
+   * Categorias marcadas como "poupanca" deixam de contar como consumo
+   * (Necessidades/Desejos) e passam a somar na poupança do mês.
+   */
+  definirClassificacao503020: function(cat, grupo) {
+    if (!cat || this.GRUPOS_503020.indexOf(grupo) === -1) return;
+    var config = DADOS.getConfig() || {};
+    var mapa = Object.assign({}, config.classificacao503020 || {});
+    mapa[cat] = grupo;
+    DADOS.salvarConfig({ classificacao503020: mapa });
+    this.renderDashboard();
+    var nome = (typeof CONFIG !== 'undefined' && CONFIG.getCatLabel) ? CONFIG.getCatLabel(cat) : cat;
+    var labelGrupo = this._labelGrupo503020(grupo);
+    if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+      UTILS.mostrarToast(nome + ' agora conta como ' + labelGrupo, 'success');
+    }
+    this._announce(nome + ' reclassificada como ' + labelGrupo + ' no 50/30/20');
+  },
+
+  /** Alterna a categoria entre Necessidade → Desejo → Poupança. */
+  cicloClassificacao503020: function(cat) {
+    if (!cat) return;
+    var atual = this.classificarCategoria503020(cat);
+    var idx = this.GRUPOS_503020.indexOf(atual);
+    var prox = this.GRUPOS_503020[(idx + 1) % this.GRUPOS_503020.length];
+    this.definirClassificacao503020(cat, prox);
   },
 
   salvarRenda: function() {
@@ -212,20 +283,25 @@ const INIT_ORCAMENTO = {
     var ano = agora.getFullYear();
     var txs = TRANSACOES.obter({ mes: mes, ano: ano });
     var self = this;
-    var gastoNec = 0, gasDes = 0, totalDespesas = 0, totalReceitas = 0;
+    var gastoNec = 0, gasDes = 0, gastoPou = 0, totalDespesas = 0, totalReceitas = 0;
     var catGastos = {};
     txs.forEach(function(t) {
       if (t.tipo === CONFIG.TIPO_DESPESA) {
         totalDespesas += t.valor;
         var cls = self.classificarCategoria503020(t.categoria);
+        // "poupanca" é dinheiro movido para a reserva/investimento, não consumo:
+        // fica de fora de Necessidades/Desejos e é somado de volta na poupança.
         if (cls === 'necessidades') gastoNec += t.valor;
+        else if (cls === 'poupanca') gastoPou += t.valor;
         else gasDes += t.valor;
         catGastos[t.categoria] = (catGastos[t.categoria] || 0) + t.valor;
       } else if (t.tipo === CONFIG.TIPO_RECEITA) {
         totalReceitas += t.valor;
       }
     });
-    var poupancaReal = totalReceitas - totalDespesas;
+    // Poupança do mês = o que entrou menos o que foi consumido. Despesas
+    // classificadas como poupança não são consumo, então voltam para a conta.
+    var poupancaReal = totalReceitas - totalDespesas + gastoPou;
     var limNec = renda * (pNec / 100);
     var limDes = renda * (pDes / 100);
     var limPou = renda * (pPou / 100);
@@ -450,15 +526,24 @@ const INIT_ORCAMENTO = {
     var icon = self._getCatIcon(cat);
     var cor = self._getCatCor(cat);
     var cls503020 = self.classificarCategoria503020(cat);
+    var labelGrupo = self._labelGrupo503020(cls503020);
     var label = (typeof CONFIG !== 'undefined' && CONFIG.getCatLabel) ? CONFIG.getCatLabel(cat) : cat;
     var barW = Math.min(100, pct);
     var msg = extraMsg
       ? '<div class="orc-cat-risco">' + UTILS.escapeHtml(extraMsg) + '</div>'
       : '';
+    // Badge clicável: alterna Necessidade → Desejo → Poupança. Permite ajustar
+    // a classificação de qualquer categoria (inclusive as personalizadas, que
+    // antes caíam sempre em "Desejo") e recalcular o 50/30/20.
+    var badge = '<button type="button" class="orc-cat-badge ' + cls503020 + '"' +
+      ' data-cat="' + UTILS.escapeHtml(cat) + '"' +
+      ' onclick="classificarCategoriaOrcamento(this)"' +
+      ' aria-label="Classificação 50/30/20 de ' + UTILS.escapeHtml(label) + ': ' + labelGrupo + '. Clique para alterar."' +
+      ' title="Clique para reclassificar (Necessidade → Desejo → Poupança)">' + labelGrupo + '</button>';
     return '<div class="orc-cat-item"><div class="orc-cat-row"><div class="orc-cat-left">' +
       '<span class="orc-cat-icon" style="background:' + cor + '20;color:' + cor + '">' + icon + '</span>' +
       '<div class="orc-cat-info"><span class="orc-cat-nome">' + UTILS.escapeHtml(label) + '</span>' +
-      '<span class="orc-cat-badge ' + cls503020 + '">' + (cls503020 === 'necessidades' ? 'Necessidade' : 'Desejo') + '</span></div></div>' +
+      badge + '</div></div>' +
       '<div class="orc-cat-right"><span class="orc-cat-valor">' + UTILS.formatarMoeda(val) + '</span>' +
       '<span class="orc-cat-pct">' + pct + '%</span></div></div>' +
       '<div class="orc-cat-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + barW + '" aria-label="' + UTILS.escapeHtml(label) + ': ' + pct + '% da renda">' +
@@ -619,6 +704,10 @@ function editarRegra503020() { INIT_ORCAMENTO.editarRegra503020(); }
 function toggleDetalhesCategorias() { INIT_ORCAMENTO.toggleDetalhesCategorias(); }
 function renderOrcamentoDashboard() { INIT_ORCAMENTO.renderDashboard(); }
 function mudarSubAbaOrcamento(nome) { INIT_ORCAMENTO.mudarSubAba(nome); }
+function classificarCategoriaOrcamento(btn) {
+  if (!btn || !btn.getAttribute) return;
+  INIT_ORCAMENTO.cicloClassificacao503020(btn.getAttribute('data-cat'));
+}
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = INIT_ORCAMENTO;
