@@ -229,3 +229,102 @@ describe('UTILS.parseMoeda vs parseMoedaEstrita', function() {
     expect(global.UTILS.parseMoedaEstrita('-100')).toBe(-100);
   });
 });
+
+describe('ASSINATURAS — edição', function() {
+  test('atualiza nome, valor e dia preservando id, ícone, estado e criadoEm', function() {
+    const s = A().criar({ nome: 'Netflix', valor: '39,90', diaCobranca: 10, icone: 'tv' });
+    A().toggleAtiva(s.id); // deixa inativa antes de editar
+    const antes = A().obter(s.id);
+
+    const r = A().editar(s.id, { nome: 'Netflix 4 telas', valor: '55,90', diaCobranca: 20 });
+
+    expect(r.id).toBe(s.id);
+    expect(r.nome).toBe('Netflix 4 telas');
+    expect(r.valor).toBe(55.9);
+    expect(r.diaCobranca).toBe(20);
+    // preserva o que não estava no formulário
+    expect(r.icone).toBe('tv');
+    expect(r.ativa).toBe(antes.ativa); // continua inativa
+    expect(r.criadoEm).toBe(antes.criadoEm);
+  });
+
+  test('aplica trim no nome', function() {
+    const s = A().criar({ nome: 'X', valor: '10', diaCobranca: 5 });
+    const r = A().editar(s.id, { nome: '   Spotify   ', valor: '21,90', diaCobranca: 5 });
+    expect(r.nome).toBe('Spotify');
+  });
+
+  test('id inexistente lança erro e não cria nada', function() {
+    expect(function() { A().editar('nao-existe', { nome: 'Z', valor: '10', diaCobranca: 1 }); })
+      .toThrow('Assinatura não encontrada');
+    expect(A().listar().length).toBe(0);
+  });
+
+  test('recusa nome vazio, valor inválido e dia fora de 1–31', function() {
+    const s = A().criar({ nome: 'Base', valor: '10', diaCobranca: 5 });
+    expect(function() { A().editar(s.id, { nome: '  ', valor: '10', diaCobranca: 5 }); }).toThrow('nome');
+    expect(function() { A().editar(s.id, { nome: 'Ok', valor: '0', diaCobranca: 5 }); }).toThrow('Valor');
+    expect(function() { A().editar(s.id, { nome: 'Ok', valor: '10', diaCobranca: 0 }); }).toThrow('Dia');
+    expect(function() { A().editar(s.id, { nome: 'Ok', valor: '10', diaCobranca: 32 }); }).toThrow('Dia');
+    // depois dos erros, o registro original permanece intacto
+    const a = A().obter(s.id);
+    expect(a.nome).toBe('Base');
+    expect(a.valor).toBe(10);
+  });
+});
+
+describe('ASSINATURAS — total mensal em centavos (sem drift de float)', function() {
+  test('soma decimais que estouram o float sem perder centavo', function() {
+    // 0.1 + 0.2 em float dá 0.30000000000000004; somando 3x isso, o total tem
+    // de bater exatamente 0,90 e não arrastar dízima.
+    A().criar({ nome: 'A', valor: 0.1, diaCobranca: 1 });
+    A().criar({ nome: 'B', valor: 0.2, diaCobranca: 2 });
+    A().criar({ nome: 'C', valor: 0.6, diaCobranca: 3 });
+    expect(A().totalMensal()).toBe(0.9);
+    expect(A().totalAnual()).toBe(10.8);
+  });
+
+  test('valores típicos de assinatura somam exatamente', function() {
+    A().criar({ nome: 'A', valor: '19,99', diaCobranca: 1 });
+    A().criar({ nome: 'B', valor: '29,99', diaCobranca: 2 });
+    expect(A().totalMensal()).toBe(49.98);
+  });
+});
+
+describe('ASSINATURAS — sugerir do extrato exige recorrência real', function() {
+  test('só sugere o que aparece 2+ vezes; ocorrência única fica de fora', function() {
+    const D = global.CONFIG.TIPO_DESPESA;
+    global.TRANSACOES.criar(D, 39.90, 'assinaturas', '2026-01-05', 'Netflix');
+    global.TRANSACOES.criar(D, 39.90, 'assinaturas', '2026-02-05', 'Netflix');
+    global.TRANSACOES.criar(D, 21.90, 'assinaturas', '2026-01-08', 'Spotify'); // uma vez só
+
+    const nomes = A().sugerirDoExtrato().map(function(s) { return s.nome.toLowerCase(); });
+    expect(nomes).toContain('netflix');
+    expect(nomes).not.toContain('spotify');
+  });
+
+  test('não sugere o que já está cadastrado', function() {
+    const D = global.CONFIG.TIPO_DESPESA;
+    global.TRANSACOES.criar(D, 39.90, 'assinaturas', '2026-01-05', 'Netflix');
+    global.TRANSACOES.criar(D, 39.90, 'assinaturas', '2026-02-05', 'Netflix');
+    A().criar({ nome: 'Netflix', valor: '39,90', diaCobranca: 5 });
+
+    const nomes = A().sugerirDoExtrato().map(function(s) { return s.nome.toLowerCase(); });
+    expect(nomes).not.toContain('netflix');
+  });
+
+  test('detecta pela descrição fora da categoria e ignora ruído (sem descrição / curta)', function() {
+    const D = global.CONFIG.TIPO_DESPESA;
+    // Categoria comum, mas a descrição casa o padrão de serviço → recorrente.
+    global.TRANSACOES.criar(D, 30, 'lazer', '2026-01-05', 'Disney');
+    global.TRANSACOES.criar(D, 30, 'lazer', '2026-02-05', 'Disney');
+    // Ruído que o detector precisa atravessar sem quebrar nem sugerir:
+    global.TRANSACOES.criar(D, 10, 'assinaturas', '2026-01-05', '');   // sem descrição
+    global.TRANSACOES.criar(D, 10, 'assinaturas', '2026-01-06', 'ab'); // descrição curta (<3)
+
+    const nomes = A().sugerirDoExtrato().map(function(s) { return s.nome.toLowerCase(); });
+    expect(nomes).toContain('disney');
+    expect(nomes).not.toContain('');
+    expect(nomes).not.toContain('ab');
+  });
+});

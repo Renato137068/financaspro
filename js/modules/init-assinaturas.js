@@ -13,6 +13,7 @@ const INIT_ASSINATURAS = {
       if (!btn) return;
       var action = btn.dataset.action;
       if (action === 'assinatura-nova') { e.preventDefault(); self.abrirFormNova(); }
+      else if (action === 'assinatura-editar') { e.preventDefault(); self.abrirFormEdicao(btn.dataset.assinaturaId); }
       else if (action === 'assinatura-toggle') self.toggle(btn.dataset.assinaturaId);
       else if (action === 'assinatura-excluir') self.confirmarExcluir(btn.dataset.assinaturaId);
       else if (action === 'assinatura-importar') self.importarSugestao(btn.dataset.nome, btn.dataset.valor);
@@ -38,6 +39,7 @@ const INIT_ASSINATURAS = {
         '<span class="sub-card-valor">' + UTILS.formatarMoeda(a.valor) + '<small>/mês</small></span>' +
       '</div>' +
       '<div class="sub-card-actions">' +
+        '<button type="button" class="btn-ghost btn-sm" data-action="assinatura-editar" data-assinatura-id="' + UTILS.escapeHtml(a.id) + '">Editar</button>' +
         '<button type="button" class="btn-ghost btn-sm" data-action="assinatura-toggle" data-assinatura-id="' + UTILS.escapeHtml(a.id) + '">' +
           (a.ativa === false ? 'Reativar' : 'Pausar') + '</button>' +
         '<button type="button" class="btn-ghost btn-sm sub-btn-danger" data-action="assinatura-excluir" data-assinatura-id="' + UTILS.escapeHtml(a.id) + '">Excluir</button>' +
@@ -105,10 +107,9 @@ const INIT_ASSINATURAS = {
       }).join('');
   },
 
-  abrirFormNova: function(preset) {
+  _formHtml: function(preset) {
     preset = preset || {};
-    var html =
-      '<div class="meta-form">' +
+    return '<div class="meta-form">' +
         '<label class="form-label" for="sub-nome">Nome</label>' +
         '<input type="text" id="sub-nome" class="form-input" placeholder="Netflix, Spotify..." value="' + UTILS.escapeHtml(preset.nome || '') + '">' +
         '<label class="form-label" for="sub-valor">Valor mensal (R$)</label>' +
@@ -117,8 +118,19 @@ const INIT_ASSINATURAS = {
         '<label class="form-label" for="sub-dia">Dia da cobrança</label>' +
         '<input type="number" id="sub-dia" class="form-input" min="1" max="31" value="' + (preset.dia || new Date().getDate()) + '">' +
       '</div>';
+  },
+
+  _bindCampoMoeda: function() {
+    setTimeout(function() {
+      if (UTILS.bindCampoMoeda) {
+        UTILS.bindCampoMoeda(document.getElementById('sub-valor'), { previewId: 'sub-valor-preview' });
+      }
+    }, 0);
+  },
+
+  abrirFormNova: function(preset) {
     var self = this;
-    INIT_MODALS.fpAlert(html, {
+    INIT_MODALS.fpAlert(this._formHtml(preset), {
       trustedHtml: true,
       title: 'Nova assinatura',
       okLabel: 'Salvar',
@@ -132,11 +144,24 @@ const INIT_ASSINATURAS = {
         }
       }
     });
-    setTimeout(function() {
-      if (UTILS.bindCampoMoeda) {
-        UTILS.bindCampoMoeda(document.getElementById('sub-valor'), { previewId: 'sub-valor-preview' });
+    this._bindCampoMoeda();
+  },
+
+  abrirFormEdicao: function(id) {
+    var a = ASSINATURAS.obter(id);
+    if (!a) return;
+    var self = this;
+    var preset = { nome: a.nome, valor: a.valor, dia: a.diaCobranca };
+    INIT_MODALS.fpAlert(this._formHtml(preset), {
+      trustedHtml: true,
+      title: 'Editar assinatura',
+      okLabel: 'Salvar',
+      onOk: function(ov) {
+        self._salvarEdicao(ov, id);
+        return false;
       }
-    }, 0);
+    });
+    this._bindCampoMoeda();
   },
 
   _salvarNova: function(overlay) {
@@ -148,6 +173,22 @@ const INIT_ASSINATURAS = {
       });
       overlay.remove();
       UTILS.mostrarToast('Assinatura salva', 'success');
+      this.render();
+      this.renderResumo();
+    } catch (e) {
+      UTILS.mostrarToast(e.message || 'Erro', 'error');
+    }
+  },
+
+  _salvarEdicao: function(overlay, id) {
+    try {
+      ASSINATURAS.editar(id, {
+        nome: document.getElementById('sub-nome').value,
+        valor: UTILS.parseMoeda(document.getElementById('sub-valor').value),
+        diaCobranca: parseInt(document.getElementById('sub-dia').value, 10)
+      });
+      overlay.remove();
+      UTILS.mostrarToast('Assinatura atualizada', 'success');
       this.render();
       this.renderResumo();
     } catch (e) {

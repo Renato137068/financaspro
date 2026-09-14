@@ -23,24 +23,34 @@ const ASSINATURAS = {
     DADOS.salvarConfig({ assinaturas: lista });
   },
 
-  criar: function(dados) {
-    if (typeof BILLING !== 'undefined' && !BILLING.guardQuota('subscription', 1)) {
-      var errAss = new Error('Limite de gastos fixos do plano gratuito');
-      errAss.code = 'quota';
-      throw errAss;
-    }
+  /**
+   * Normaliza e valida os campos comuns a criar e editar. Devolve
+   * { nome, valor, dia } já limpos ou lança a mensagem de erro correspondente.
+   * Centralizar evita que as duas entradas divirjam na regra de validação.
+   */
+  _validar: function(dados) {
     var nome = (dados.nome || '').trim();
     var valor = UTILS.parseMoeda(dados.valor);
     var dia = parseInt(dados.diaCobranca, 10);
     if (!nome) throw new Error('Informe o nome da assinatura');
     if (!valor || valor <= 0) throw new Error('Valor inválido');
     if (!dia || dia < 1 || dia > 31) throw new Error('Dia de cobrança inválido');
+    return { nome: nome, valor: valor, dia: dia };
+  },
+
+  criar: function(dados) {
+    if (typeof BILLING !== 'undefined' && !BILLING.guardQuota('subscription', 1)) {
+      var errAss = new Error('Limite de gastos fixos do plano gratuito');
+      errAss.code = 'quota';
+      throw errAss;
+    }
+    var v = this._validar(dados);
 
     var item = {
       id: UTILS.gerarId(),
-      nome: nome,
-      valor: valor,
-      diaCobranca: dia,
+      nome: v.nome,
+      valor: v.valor,
+      diaCobranca: v.dia,
       ativa: true,
       icone: dados.icone || 'tv',
       criadoEm: new Date().toISOString()
@@ -49,6 +59,27 @@ const ASSINATURAS = {
     lista.push(item);
     this._salvar(lista);
     return item;
+  },
+
+  /**
+   * Edita nome, valor e dia de cobrança de uma assinatura existente.
+   * Preserva id, estado (ativa), ícone e criadoEm — por isso não passa por
+   * `criar`: recriar do zero perderia o histórico e consumiria a cota do plano
+   * de novo. Preço de serviço de streaming muda o tempo todo; sem edição, o
+   * usuário teria de excluir e recadastrar a cada reajuste.
+   */
+  editar: function(id, dados) {
+    var lista = this.listar();
+    var idx = -1;
+    for (var i = 0; i < lista.length; i++) {
+      if (lista[i].id === id) { idx = i; break; }
+    }
+    if (idx === -1) throw new Error('Assinatura não encontrada');
+
+    var v = this._validar(dados);
+    lista[idx] = Object.assign({}, lista[idx], { nome: v.nome, valor: v.valor, diaCobranca: v.dia });
+    this._salvar(lista);
+    return lista[idx];
   },
 
   excluir: function(id) {
@@ -91,7 +122,13 @@ const ASSINATURAS = {
   },
 
   totalMensal: function() {
-    return this.listar(true).reduce(function(s, a) { return s + a.valor; }, 0);
+    // Soma em centavos inteiros e só então volta a reais, como Resumo,
+    // Orçamento e Extrato. Somar floats direto acumula erro de arredondamento
+    // e faz o total divergir por um centavo do que o usuário confere na mão.
+    var totalCent = this.listar(true).reduce(function(s, a) {
+      return s + UTILS.paraCentavos(a.valor);
+    }, 0);
+    return totalCent / 100;
   },
 
   totalAnual: function() {
@@ -116,7 +153,11 @@ const ASSINATURAS = {
     var existentes = this.listar().map(function(a) { return a.nome.toLowerCase(); });
     var sugestoes = [];
     Object.keys(map).forEach(function(k) {
-      if (map[k].count >= 1 && existentes.indexOf(k) === -1) {
+      // >= 2: uma cobrança isolada não é assinatura. A guarda antiga (>= 1) era
+      // sempre verdadeira — bastava aparecer uma vez para virar sugestão, o que
+      // contradiz a própria premissa de "despesa recorrente" e enche a lista de
+      // ruído. Só o que se repetiu no extrato é oferecido.
+      if (map[k].count >= 2 && existentes.indexOf(k) === -1) {
         sugestoes.push({ nome: map[k].nome, valor: map[k].valor });
       }
     });
