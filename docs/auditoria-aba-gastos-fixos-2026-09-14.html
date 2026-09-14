@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auditoria — Gastos fixos</title>
+<meta name="description" content="Auditoria completa da seção Gastos fixos (assinaturas) do FinançasPro: edição ausente, detector de recorrência que disparava com uma ocorrência, e soma de totais em float.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --ground:#f5f7f4; --card:#ffffff; --card-2:#fbfcfa;
+    --ink:#15211c; --muted:#59685f; --faint:#89968e; --line:#e4e9e3; --line-2:#eef2ec;
+    --brand:#0e5a41; --brand-2:#2f9c6d; --brand-ink:#0a3d2c;
+    --free:#15803d; --free-bg:#e9f6ec; --p1:#c2410c; --p1-bg:#fbeee5; --p2:#0e7490; --p2-bg:#e2f3f6; --p3:#6b7280; --p3-bg:#eef1ee;
+    --shadow:0 1px 2px rgba(16,40,30,.05), 0 10px 30px rgba(16,40,30,.06); --shadow-sm:0 1px 2px rgba(16,40,30,.06);
+    --radius:16px; --radius-sm:11px; --maxw:940px;
+  }
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+    --ground:#0d1310; --card:#151c18; --card-2:#121814; --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6;
+    --free:#57c98a; --free-bg:#123222; --p1:#f0a173; --p1-bg:#37210f; --p2:#4bc4d8; --p2-bg:#0c3138; --p3:#9aa6a0; --p3-bg:#1e2621;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }}
+  :root[data-theme="dark"]{
+    --ground:#0d1310; --card:#151c18; --card-2:#121814; --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6;
+    --free:#57c98a; --free-bg:#123222; --p1:#f0a173; --p1-bg:#37210f; --p2:#4bc4d8; --p2-bg:#0c3138; --p3:#9aa6a0; --p3-bg:#1e2621;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box} html{-webkit-text-size-adjust:100%}
+  body{background:var(--ground); color:var(--ink); font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; margin:0}
+  .wrap{max-width:var(--maxw); margin:0 auto; padding-inline:20px}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+  code{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.84em; background:var(--line-2); padding:1px 6px; border-radius:6px; color:var(--brand-ink)}
+  :root:not([data-theme="light"]) code,:root[data-theme="dark"] code{color:var(--brand-2)}
+  h1,h2,h3{font-family:"Bricolage Grotesque","IBM Plex Sans",sans-serif; text-wrap:balance; letter-spacing:-.015em; margin:0}
+  a{color:var(--brand-2)}
+
+  .hero{background:radial-gradient(120% 140% at 100% 0%, rgba(47,156,109,.18), transparent 55%), linear-gradient(158deg, var(--brand), var(--brand-ink)); color:#eafff5; border-radius:0 0 26px 26px; box-shadow:var(--shadow); position:relative; overflow:hidden}
+  .hero::after{content:""; position:absolute; inset:0; background-image:radial-gradient(rgba(255,255,255,.06) 1px, transparent 1.4px); background-size:22px 22px; mask:linear-gradient(120deg,#000,transparent 62%); pointer-events:none}
+  .hero .wrap{padding-block:34px 30px; position:relative; z-index:1}
+  .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:#9fe8c9; display:flex; align-items:center; gap:10px; margin-bottom:16px}
+  .eyebrow .dot{width:7px; height:7px; border-radius:50%; background:#7bffc8; box-shadow:0 0 0 4px rgba(123,255,200,.18)}
+  h1{font-size:clamp(28px,5.6vw,44px); line-height:1.03; font-weight:800; color:#fff; max-width:22ch}
+  .hero .lede{margin:16px 0 0; font-size:clamp(15px,2.3vw,18px); max-width:66ch; color:#d5f4e6; line-height:1.55}
+  .hero .lede b{color:#fff; font-weight:600}
+  .stats{display:flex; flex-wrap:wrap; gap:12px; margin-top:26px}
+  .stat{background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.16); border-radius:14px; padding:12px 16px; min-width:110px}
+  .stat .n{font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:24px; line-height:1; color:#fff; font-variant-numeric:tabular-nums}
+  .stat .l{font-size:12px; color:#bfead7; margin-top:6px}
+
+  section{margin-top:50px}
+  .sec-head{display:flex; align-items:baseline; gap:12px; margin-bottom:8px}
+  .sec-head .k{font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:600; color:var(--brand-2); border:1px solid var(--line); border-radius:8px; padding:3px 9px; background:var(--card); flex:none}
+  h2{font-size:clamp(20px,3.4vw,26px); font-weight:700; line-height:1.14}
+  .sec-sub{color:var(--muted); font-size:15px; margin:2px 0 20px; max-width:70ch}
+
+  .verdict{background:var(--card); border:1px solid var(--line); border-left:5px solid var(--free); border-radius:var(--radius); padding:22px 24px; box-shadow:var(--shadow); margin-top:-30px; position:relative; z-index:2}
+  .verdict h2{font-size:19px; margin-bottom:6px}
+  .verdict p{margin:8px 0 0; color:var(--muted); font-size:15px}
+  .verdict b{color:var(--ink)}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:20px 22px; box-shadow:var(--shadow-sm); margin-top:16px}
+  .find{border-left:5px solid var(--p3)}
+  .find.p1{border-left-color:var(--p1)} .find.p2{border-left-color:var(--p2)} .find.done{border-left-color:var(--free)}
+  .find .top{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px}
+  .tag{font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; padding:3px 9px; border-radius:999px}
+  .tag.p1{color:var(--p1); background:var(--p1-bg)} .tag.p2{color:var(--p2); background:var(--p2-bg)} .tag.p3{color:var(--p3); background:var(--p3-bg)} .tag.done{color:var(--free); background:var(--free-bg)}
+  .find h3{font-size:17px; font-weight:700}
+  .find p{margin:8px 0 0; color:var(--muted); font-size:14.5px}
+  .find p b{color:var(--ink)}
+  .find .fix{margin-top:12px; padding:12px 14px; background:var(--card-2); border:1px solid var(--line-2); border-radius:var(--radius-sm); font-size:14px}
+  .find .fix b{color:var(--brand-2)}
+  ul{margin:10px 0 0; padding-left:20px; color:var(--muted); font-size:14.5px} li{margin:5px 0}
+  .gate{display:grid; grid-template-columns:auto 1fr; gap:8px 14px; font-size:14px; margin-top:6px}
+  .gate .ok{color:var(--free); font-weight:700; font-family:"IBM Plex Mono",monospace}
+  footer{margin:60px 0 40px; color:var(--faint); font-size:13px; text-align:center}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow"><span class="dot"></span> Auditoria de aba · FinançasPro v11</div>
+    <h1>Gastos fixos: o que o usuário não conseguia fazer, e o número que não fechava</h1>
+    <p class="lede">A seção <b>Gastos fixos</b> (o rastreador de assinaturas dentro do Orçamento) deixava criar, pausar e excluir — mas <b>não editar</b>. Preço de streaming muda toda hora; sem edição, corrigir um reajuste virava apagar e recadastrar, perdendo histórico e ícone. Junto disso, o detector "detectadas no extrato" prometia recorrência e disparava com <b>uma única</b> ocorrência, e o total mensal somava em <i>float</i>.</p>
+    <div class="stats">
+      <div class="stat"><div class="n">6</div><div class="l">achados</div></div>
+      <div class="stat"><div class="n">3</div><div class="l">corrigidos agora</div></div>
+      <div class="stat"><div class="n">+9</div><div class="l">testes novos</div></div>
+      <div class="stat"><div class="n">94,8%</div><div class="l">branches assinaturas.js</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="verdict">
+    <h2>Veredito — READY, com edição habilitada</h2>
+    <p>A seção estava funcional mas <b>incompleta como ferramenta de gestão</b>: faltava a operação mais óbvia (editar) e o detector de recorrência não distinguia recorrência de gasto avulso. Corrigidos os três pontos de maior impacto do usuário; os dois restantes são dívida de coerência de produto, anotados para depois. Todos os gates verdes.</p>
+  </div>
+
+  <section>
+    <div class="sec-head"><span class="k">MAPA</span><h2>O que é a seção</h2></div>
+    <p class="sec-sub">"Gastos fixos" é a terceira sub-aba do Orçamento (<code>Planejamento · Metas · Gastos fixos · Patrimônio</code>). Por baixo, é o módulo de <b>assinaturas</b>: <code>js/assinaturas.js</code> (núcleo, sobre <code>config.assinaturas</code>) e <code>js/modules/init-assinaturas.js</code> (UI). Um resumo aparece no Dashboard; a detecção de "assinaturas esquecidas" vive no Insights (<code>ai-engine.js</code>), fora desta seção.</p>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="k">ACHADOS</span><h2>O que a auditoria encontrou</h2></div>
+    <p class="sec-sub">Seis achados, ordenados por impacto no usuário. Os três primeiros foram corrigidos neste PR.</p>
+
+    <div class="card find done">
+      <div class="top"><span class="tag done">Corrigido</span><span class="tag p1">Alto · UX</span><h3>F1 — Não havia como editar uma assinatura</h3></div>
+      <p>O card só oferecia <b>Pausar</b> e <b>Excluir</b>. Para trocar valor, nome ou dia de cobrança, o usuário tinha de excluir e recriar — perdendo <code>criadoEm</code> e o ícone, e <b>reconsumindo a cota</b> do plano gratuito (<code>criar()</code> chama <code>BILLING.guardQuota</code>). Reajuste de preço de serviço de streaming é rotina; a ausência de edição transformava tarefa trivial em retrabalho.</p>
+      <div class="fix"><b>Correção:</b> novo <code>ASSINATURAS.editar(id, dados)</code> que preserva <code>id</code>, estado (ativa/pausada), ícone e <code>criadoEm</code>, e <b>não</b> passa pela cota (é edição, não criação). Botão <b>Editar</b> no card + formulário reaproveitado (<code>abrirFormEdicao</code>), com a mesma máscara de moeda BR.</p>
+    </div>
+
+    <div class="card find done">
+      <div class="top"><span class="tag done">Corrigido</span><span class="tag p2">Médio · Correção</span><h3>F2 — "Detectadas no extrato" disparava com 1 ocorrência</h3></div>
+      <p>A função <code>sugerirDoExtrato</code> promete despesas <b>recorrentes</b>, mas a guarda era <code>count >= 1</code> — sempre verdadeira (uma chave só existe no mapa se apareceu ao menos uma vez). Resultado: uma única compra com nome de streaming no histórico já virava sugestão de assinatura, enchendo a lista de ruído e contradizendo a própria premissa.</p>
+      <div class="fix"><b>Correção:</b> exige <code>count >= 2</code> — só o que efetivamente se repetiu no extrato é oferecido. Gasto avulso deixa de aparecer.</div>
+    </div>
+
+    <div class="card find done">
+      <div class="top"><span class="tag done">Corrigido</span><span class="tag p3">Baixo · Consistência</span><h3>F3 — Totais somados em float</h3></div>
+      <p><code>totalMensal</code> somava <code>a.valor</code> como ponto flutuante e <code>totalAnual</code> multiplicava por 12. Diverge do padrão de <b>centavos inteiros</b> já adotado em Resumo, Orçamento e Extrato — e podia mostrar um centavo a mais/menos do que o usuário confere na mão para decidir cancelamentos.</p>
+      <div class="fix"><b>Correção:</b> soma em centavos com <code>UTILS.paraCentavos</code> e só então volta a reais, igual ao resto do app.</div>
+    </div>
+
+    <div class="card find p3">
+      <div class="top"><span class="tag p3">Anotado</span><h3>F4 — "Gastos fixos" x "assinaturas" x "recorrentes" x "contas a pagar"</h3></div>
+      <p>O rótulo diz "Gastos fixos", mas o modelo, o CSS e os IDs dizem "assinaturas". E convivem <b>quatro</b> conceitos próximos: assinaturas (aqui), recorrência no formulário de lançamento (<code>chk-recorrente</code>), <code>recorrentes.js</code> (materialização) e <code>contas-pagar.js</code>. É dívida de <b>coerência de produto</b>, não bug — mexer agora tem risco alto e nenhum ganho de correção. Fica registrado para uma decisão de nomenclatura/unificação futura.</p>
+    </div>
+
+    <div class="card find p3">
+      <div class="top"><span class="tag p3">Anotado</span><h3>F5 — Ícone sempre "tv"</h3></div>
+      <p><code>criar()</code> aceita <code>dados.icone</code>, mas o formulário nunca oferece escolha — toda assinatura nasce com o ícone de TV. Melhoria de UX de baixo impacto que exige um seletor de ícones; fora do escopo deste PR.</p>
+    </div>
+
+    <div class="card find p3">
+      <div class="top"><span class="tag p3">Sem ação</span><h3>F6 — Parse de valor aplicado duas vezes</h3></div>
+      <p><code>_salvarNova</code> já faz <code>parseMoeda</code> antes de chamar <code>criar()</code>, que faz de novo. <b>Inofensivo:</b> <code>UTILS.parseMoeda</code> é idempotente para números (retorna o próprio número). Não é bug; apenas redundância registrada.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="k">EVIDÊNCIA</span><h2>Gates de verificação</h2></div>
+    <p class="sec-sub">Rodados localmente sobre o diff. Nenhum teste desativado; a cobertura de <code>assinaturas.js</code> (piso próprio de 90% de branches) foi mantida acima do limite com testes reais via <code>load-sources</code>.</p>
+    <div class="card">
+      <div class="gate">
+        <span class="ok">✓</span><span>Frontend: <b>182 suites, 2027 testes</b> (9 skip) — +9 testes novos de assinaturas</span>
+        <span class="ok">✓</span><span><code>assinaturas.js</code>: statements 99,4% · <b>branches 94,8%</b> (piso 90%) · functions 100%</span>
+        <span class="ok">✓</span><span><code>lint</code> e <code>lint:changed</code> — código alterado limpo, zero warnings</span>
+        <span class="ok">✓</span><span><code>security:xss</code> — 108 arquivos, nenhum sink sem escape (form usa <code>escapeHtml</code>)</span>
+        <span class="ok">✓</span><span><code>check-css-tokens</code> · <code>check-contrast</code> (31 pares WCAG AA) · <code>check-bundle-budget</code></span>
+        <span class="ok">✓</span><span><code>build</code> — dist sem órfãos, dentro do orçamento</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="k">ARQUIVOS</span><h2>O que mudou</h2></div>
+    <div class="card">
+      <ul>
+        <li><code>js/assinaturas.js</code> — novo <code>editar()</code>; validação extraída para <code>_validar()</code> (compartilhada com <code>criar()</code>); <code>totalMensal</code> em centavos; <code>sugerirDoExtrato</code> exige <code>count >= 2</code>.</li>
+        <li><code>js/modules/init-assinaturas.js</code> — botão <b>Editar</b> no card; <code>abrirFormEdicao</code> + <code>_salvarEdicao</code>; corpo do formulário extraído em <code>_formHtml</code>/<code>_bindCampoMoeda</code>.</li>
+        <li><code>tests/assinaturas-real.test.js</code> — edição (sucesso, preservação de campos, id inexistente, validações), total em centavos sem drift, e recorrência do detector (2+, categoria x descrição, ruído).</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    FinançasPro · Auditoria da seção Gastos fixos · 2026-09-14 · gerado no fluxo de auditoria por aba
+  </footer>
+
+</div>
+</body>
+</html>
