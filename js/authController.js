@@ -19,6 +19,41 @@ function _authMarcarDesbloqueado() {
   _authDesbloqueadoNestaCarga = true;
 }
 
+/**
+ * Cooldown anti-spam no botão de reenviar e-mail de confirmação.
+ *
+ * Cada tentativa (mesmo se falhar) trava o botão por `segundos`, com contagem
+ * regressiva ("Reenviar em Ns"). Sem isto, quem não recebia o e-mail clicava
+ * repetidamente e cada clique gastava mais da cota de e-mail do Supabase —
+ * estourando o limite do projeto e derrubando o cadastro de TODO o grupo de
+ * testes ("Muitas tentativas").
+ *
+ * @param {HTMLButtonElement|null} btn
+ * @param {number} [segundos=60]
+ * @returns {Function} para de contar e restaura o botão
+ */
+function authResendCooldown(btn, segundos) {
+  if (!btn) return function () {};
+  var total = segundos > 0 ? segundos : 60;
+  if (!btn.dataset.labelOriginal) btn.dataset.labelOriginal = btn.textContent;
+  var fim = Date.now() + total * 1000;
+  var timer = null;
+  function restaurar() {
+    if (timer) { clearInterval(timer); timer = null; }
+    btn.disabled = false;
+    btn.textContent = btn.dataset.labelOriginal;
+  }
+  function tick() {
+    var restante = Math.ceil((fim - Date.now()) / 1000);
+    if (restante <= 0) { restaurar(); return; }
+    btn.disabled = true;
+    btn.textContent = 'Reenviar em ' + restante + 's';
+  }
+  tick();
+  timer = setInterval(tick, 1000);
+  return restaurar;
+}
+
 function _authRevogarDesbloqueio() {
   _authDesbloqueadoNestaCarga = false;
 }
@@ -673,14 +708,16 @@ function setupAuthUI() {
         UTILS.mostrarToast('Reenvio disponível apenas com login na nuvem.', 'info');
         return;
       }
-      resendEmailBtn.disabled = true;
+      // Cooldown já no clique: mesmo que o reenvio falhe (ex.: limite de e-mail
+      // do Supabase), o botão fica travado com contagem regressiva em vez de
+      // reabilitar na hora — impede o clique-repetido que queima a cota.
+      var pararCooldown = authResendCooldown(resendEmailBtn, 60);
       SUPA_AUTH.resendSignupEmail(email).then(function() {
         UTILS.mostrarToast('E-mail de confirmação reenviado para ' + email + '.', 'info');
+        pararCooldown();
         _authMostrarReenviarEmail(false);
       }).catch(function(err) {
         _authOnError(err, 'Não foi possível reenviar o e-mail.');
-      }).finally(function() {
-        resendEmailBtn.disabled = false;
       });
     });
   }
@@ -1176,5 +1213,6 @@ if (typeof module !== 'undefined' && module.exports) {
     atualizarBarraSessao: atualizarBarraSessao,
     setupLogoutButton: setupLogoutButton,
     sairDaConta: sairDaConta,
+    authResendCooldown: authResendCooldown,
   };
 }

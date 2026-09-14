@@ -126,6 +126,18 @@
       return 'Não foi possível concluir o cadastro. Confira o e-mail digitado e tente de novo.';
     }
     if (/Password should be|at least/i.test(m)) return 'Senha muito curta (mínimo 8 caracteres).';
+    // Limite de ENVIO DE E-MAIL do Supabase (o mais comum num grupo de testes:
+    // muitos cadastros/reenvios seguidos estouram a cota de e-mail do projeto).
+    // Mensagem específica ajuda mais que o "Muitas tentativas" genérico.
+    if (/over_email_send_rate_limit|email rate limit/i.test(m)) {
+      return 'Muitos e-mails de confirmação em pouco tempo. Aguarde alguns minutos e tente de novo.';
+    }
+    // Supabase às vezes diz "you can only request this after N seconds": mostra o tempo.
+    var apos = m.match(/after (\d+) seconds?/i);
+    if (apos) {
+      var seg = parseInt(apos[1], 10) || 60;
+      return 'Aguarde ' + seg + ' segundo' + (seg === 1 ? '' : 's') + ' antes de tentar de novo.';
+    }
     if (/rate limit|too many/i.test(m)) return 'Muitas tentativas. Aguarde um instante.';
     return m;
   }
