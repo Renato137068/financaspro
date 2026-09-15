@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auditoria — Configurações</title>
+<meta name="description" content="Auditoria da aba Configurações/Perfil do FinançasPro: um backup que perdia silenciosamente os orçamentos de 13 das 18 categorias, e o estado geral do import/export.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --ground:#f5f7f4; --card:#ffffff; --card-2:#fbfcfa;
+    --ink:#15211c; --muted:#59685f; --faint:#89968e; --line:#e4e9e3; --line-2:#eef2ec;
+    --brand:#0e5a41; --brand-2:#2f9c6d; --brand-ink:#0a3d2c;
+    --free:#15803d; --free-bg:#e9f6ec; --p1:#c2410c; --p1-bg:#fbeee5; --p2:#0e7490; --p2-bg:#e2f3f6; --p3:#6b7280; --p3-bg:#eef1ee;
+    --shadow:0 1px 2px rgba(16,40,30,.05), 0 10px 30px rgba(16,40,30,.06); --shadow-sm:0 1px 2px rgba(16,40,30,.06);
+    --radius:16px; --radius-sm:11px; --maxw:940px;
+  }
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+    --ground:#0d1310; --card:#151c18; --card-2:#121814; --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6;
+    --free:#57c98a; --free-bg:#123222; --p1:#f0a173; --p1-bg:#37210f; --p2:#4bc4d8; --p2-bg:#0c3138; --p3:#9aa6a0; --p3-bg:#1e2621;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }}
+  :root[data-theme="dark"]{
+    --ground:#0d1310; --card:#151c18; --card-2:#121814; --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6;
+    --free:#57c98a; --free-bg:#123222; --p1:#f0a173; --p1-bg:#37210f; --p2:#4bc4d8; --p2-bg:#0c3138; --p3:#9aa6a0; --p3-bg:#1e2621;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box} html{-webkit-text-size-adjust:100%}
+  body{background:var(--ground); color:var(--ink); font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; margin:0}
+  .wrap{max-width:var(--maxw); margin:0 auto; padding-inline:20px}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+  code{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.84em; background:var(--line-2); padding:1px 6px; border-radius:6px; color:var(--brand-ink)}
+  :root:not([data-theme="light"]) code,:root[data-theme="dark"] code{color:var(--brand-2)}
+  h1,h2,h3{font-family:"Bricolage Grotesque","IBM Plex Sans",sans-serif; text-wrap:balance; letter-spacing:-.015em; margin:0}
+  a{color:var(--brand-2)}
+
+  .hero{background:radial-gradient(120% 140% at 100% 0%, rgba(47,156,109,.18), transparent 55%), linear-gradient(158deg, var(--brand), var(--brand-ink)); color:#eafff5; border-radius:0 0 26px 26px; box-shadow:var(--shadow); position:relative; overflow:hidden}
+  .hero::after{content:""; position:absolute; inset:0; background-image:radial-gradient(rgba(255,255,255,.06) 1px, transparent 1.4px); background-size:22px 22px; mask:linear-gradient(120deg,#000,transparent 62%); pointer-events:none}
+  .hero .wrap{padding-block:34px 30px; position:relative; z-index:1}
+  .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:#9fe8c9; display:flex; align-items:center; gap:10px; margin-bottom:16px}
+  .eyebrow .dot{width:7px; height:7px; border-radius:50%; background:#7bffc8; box-shadow:0 0 0 4px rgba(123,255,200,.18)}
+  h1{font-size:clamp(28px,5.6vw,44px); line-height:1.03; font-weight:800; color:#fff; max-width:22ch}
+  .hero .lede{margin:16px 0 0; font-size:clamp(15px,2.3vw,18px); max-width:66ch; color:#d5f4e6; line-height:1.55}
+  .hero .lede b{color:#fff; font-weight:600}
+  .stats{display:flex; flex-wrap:wrap; gap:12px; margin-top:26px}
+  .stat{background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.16); border-radius:14px; padding:12px 16px; min-width:110px}
+  .stat .n{font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:24px; line-height:1; color:#fff; font-variant-numeric:tabular-nums}
+  .stat .l{font-size:12px; color:#bfead7; margin-top:6px}
+
+  section{margin-top:50px}
+  .sec-head{display:flex; align-items:baseline; gap:12px; margin-bottom:8px}
+  .sec-head .k{font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:600; color:var(--brand-2); border:1px solid var(--line); border-radius:8px; padding:3px 9px; background:var(--card); flex:none}
+  h2{font-size:clamp(20px,3.4vw,26px); font-weight:700; line-height:1.14}
+  .sec-sub{color:var(--muted); font-size:15px; margin:2px 0 20px; max-width:70ch}
+
+  .verdict{background:var(--card); border:1px solid var(--line); border-left:5px solid var(--free); border-radius:var(--radius); padding:22px 24px; box-shadow:var(--shadow); margin-top:-30px; position:relative; z-index:2}
+  .verdict h2{font-size:19px; margin-bottom:6px}
+  .verdict p{margin:8px 0 0; color:var(--muted); font-size:15px}
+  .verdict b{color:var(--ink)}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:20px 22px; box-shadow:var(--shadow-sm); margin-top:16px}
+  .find{border-left:5px solid var(--p3)}
+  .find.p1{border-left-color:var(--p1)} .find.p2{border-left-color:var(--p2)} .find.done{border-left-color:var(--free)}
+  .find .top{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px}
+  .tag{font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; padding:3px 9px; border-radius:999px}
+  .tag.p1{color:var(--p1); background:var(--p1-bg)} .tag.p2{color:var(--p2); background:var(--p2-bg)} .tag.p3{color:var(--p3); background:var(--p3-bg)} .tag.done{color:var(--free); background:var(--free-bg)}
+  .find h3{font-size:17px; font-weight:700}
+  .find p{margin:8px 0 0; color:var(--muted); font-size:14.5px}
+  .find p b{color:var(--ink)}
+  .find .fix{margin-top:12px; padding:12px 14px; background:var(--card-2); border:1px solid var(--line-2); border-radius:var(--radius-sm); font-size:14px}
+  .find .fix b{color:var(--brand-2)}
+  ul{margin:10px 0 0; padding-left:20px; color:var(--muted); font-size:14.5px} li{margin:5px 0}
+  .gate{display:grid; grid-template-columns:auto 1fr; gap:8px 14px; font-size:14px; margin-top:6px}
+  .gate .ok{color:var(--free); font-weight:700; font-family:"IBM Plex Mono",monospace}
+  .grid2{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin-top:14px}
+  .mini{background:var(--card-2); border:1px solid var(--line-2); border-radius:var(--radius-sm); padding:12px 14px; font-size:14px}
+  .mini b{color:var(--ink)} .mini .s{display:block; color:var(--free); font-family:"IBM Plex Mono",monospace; font-size:12px; margin-top:4px}
+  footer{margin:60px 0 40px; color:var(--faint); font-size:13px; text-align:center}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow"><span class="dot"></span> Auditoria de aba · FinançasPro v11</div>
+    <h1>Configurações: o backup dizia "completo" e deixava 13 orçamentos para trás</h1>
+    <p class="lede">A aba <b>Configurações/Perfil</b> é a maior do app — oito sub-telas e ~1.700 linhas de lógica. O foco da auditoria foi a área de maior risco: <b>exportar e importar dados</b>, o custo de saída do usuário. Lá estava o defeito: o export de orçamentos percorria uma <b>lista fixa de 5 categorias</b>, então quem tinha limite em educação, assinaturas, viagem ou pet via esses orçamentos <b>desaparecerem em silêncio</b> do backup — e voltarem pela metade na restauração.</p>
+    <div class="stats">
+      <div class="stat"><div class="n">5→18</div><div class="l">categorias no backup</div></div>
+      <div class="stat"><div class="n">1</div><div class="l">bug de perda de dados</div></div>
+      <div class="stat"><div class="n">+3</div><div class="l">testes novos</div></div>
+      <div class="stat"><div class="n">2039</div><div class="l">testes verdes</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="verdict">
+    <h2>Veredito — READY, com o backup honesto</h2>
+    <p>A área de dados já estava <b>bem endurecida na segurança</b> (PIN nunca sai nem é sobrescrito, allowlist de importação, plano ignorado, outbox/cursor validados). O furo não era de segurança e sim de <b>completude</b>: o backup silenciava orçamentos. Corrigido na raiz, com teste que compara o export ao conjunto real de categorias. Demais sub-telas varridas sem bug bloqueante.</p>
+  </div>
+
+  <section>
+    <div class="sec-head"><span class="k">MAPA</span><h2>A aba e suas oito sub-telas</h2></div>
+    <p class="sec-sub">Config é um menu (<code>init-config.js</code>, 1.706 linhas) com sub-telas: Conta, Segurança, Conexões, Categorias, Preferências, Dados (backup), Ajuda e Suporte. A varredura priorizou <b>Dados</b> (import/export) por ser onde um bug custa o dado do usuário, e passou por Conta (edição de perfil), Categorias e Segurança.</p>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="k">ACHADO</span><h2>O que a auditoria encontrou</h2></div>
+
+    <div class="card find done">
+      <div class="top"><span class="tag done">Corrigido</span><span class="tag p1">Alto · Perda de dados</span><h3>C1 — Export de orçamentos limitado a 5 categorias fixas</h3></div>
+      <p><code>getOrcamentosData()</code> iterava um array literal <code>['alimentacao','transporte','moradia','saude','lazer']</code>. O app tem <b>18 categorias de despesa</b> (<code>CONFIG.CATEGORIAS_DESPESA_SLUGS</code>) mais as personalizadas. Quem definia orçamento em <b>educação, assinaturas, seguros, impostos, compras, vestuário, viagem, pet, família, doações, beleza…</b> tinha esses limites <b>omitidos do backup</b>. Como o arquivo trazia tudo o mais (transações, contas, config), parecia completo — e a restauração vinha incompleta, sem aviso.</p>
+      <p>Junto: o campo <code>periodo</code> usava <code>status.mes + '/' + status.ano</code>, mas <code>obterStatus</code> não devolve <code>mes</code>/<code>ano</code> — gravava <code>"undefined/undefined"</code>.</p>
+      <div class="fix"><b>Correção:</b> percorre <code>ORCAMENTO.obterTodos()</code> — todas as categorias com limite definido, padrão e personalizadas — e monta <code>periodo</code> com o mês/ano correntes. O importador já lê qualquer chave presente, então a restauração passa a trazer todos os orçamentos.</div>
+    </div>
+
+    <div class="card find p3">
+      <div class="top"><span class="tag p3">Anotado</span><h3>C2 — Transação com valor 0 é descartada na importação</h3></div>
+      <p>O schema (<code>_validateImportSchema</code>) aceita <code>valor</code> como qualquer número, mas <code>importarDados</code> descarta a transação quando <code>!tx.valor</code> — ou seja, quando o valor é <b>0</b>. Um backup que passou na validação pode perder essas linhas. Caso raro (lançamento de R$ 0,00 é incomum) e sem risco de corrupção; anotado para alinhar a guarda ao schema numa próxima passada.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="k">OK</span><h2>O que já estava sólido</h2></div>
+    <p class="sec-sub">Vale registrar o que a varredura confirmou funcionando — para não “corrigir” o que não está quebrado.</p>
+    <div class="grid2">
+      <div class="mini"><b>PIN local protegido</b><span class="s">hash/salt nunca exportados nem sobrescritos</span></div>
+      <div class="mini"><b>Allowlist de importação</b><span class="s">chaves de infra e <code>plano</code> ignoradas</span></div>
+      <div class="mini"><b>Outbox & cursor</b><span class="s">só restaurados com shape válido</span></div>
+      <div class="mini"><b>Contas viajam no backup</b><span class="s">extrato restaurado mantém o banco</span></div>
+      <div class="mini"><b>Um só formato</b><span class="s">exportadores unificados (teste estrutural)</span></div>
+      <div class="mini"><b>Validação de perfil</b><span class="s">nome, e-mail, telefone, datas, valores</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="k">EVIDÊNCIA</span><h2>Gates de verificação</h2></div>
+    <div class="card">
+      <div class="gate">
+        <span class="ok">✓</span><span>Frontend: <b>182 suites, 2030 testes</b> (9 skip) — +3 de backup de orçamentos</span>
+        <span class="ok">✓</span><span><code>backup-simetria</code> + <code>perfil-backup-import</code> verdes (16 testes)</span>
+        <span class="ok">✓</span><span><code>lint</code> · <code>lint:changed</code> limpos · <code>security:xss</code> (108 arquivos)</span>
+        <span class="ok">✓</span><span><code>check-css-tokens</code> · <code>check-contrast</code> (31 pares AA) · <code>check-bundle-budget</code> · <code>build</code></span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="k">ARQUIVOS</span><h2>O que mudou</h2></div>
+    <div class="card">
+      <ul>
+        <li><code>js/modules/init-config.js</code> — <code>getOrcamentosData()</code> percorre <code>ORCAMENTO.obterTodos()</code>; <code>periodo</code> com mês/ano corrente.</li>
+        <li><code>tests/perfil-backup-import.test.js</code> — +3 testes: categorias não-padrão no export, <code>periodo</code> correto, categoria sem limite fora.</li>
+        <li><code>docs/auditoria-aba-configuracoes-2026-09-15.html</code> — este relatório.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    FinançasPro · Auditoria da aba Configurações/Perfil · 2026-09-15 · fluxo de auditoria por aba
+  </footer>
+
+</div>
+</body>
+</html>
