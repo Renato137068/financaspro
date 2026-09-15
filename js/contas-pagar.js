@@ -23,24 +23,33 @@ const CONTAS_PAGAR = {
     DADOS.salvarConfig({ contasPagar: lista });
   },
 
-  criar: function(dados) {
-    if (typeof BILLING !== 'undefined' && !BILLING.guardQuota('bill', 1)) {
-      var errConta = new Error('Limite de contas a pagar do plano gratuito');
-      errConta.code = 'quota';
-      throw errConta;
-    }
+  /**
+   * Normaliza e valida os campos comuns a criar e editar. Centralizar evita que
+   * as duas entradas divirjam na regra de validação.
+   */
+  _validar: function(dados) {
     var descricao = (dados.descricao || '').trim();
     var valor = UTILS.parseMoeda(dados.valor);
     var vencimento = dados.vencimento;
     if (!descricao) throw new Error('Informe a descrição');
     if (!valor || valor <= 0) throw new Error('Valor inválido');
     if (!vencimento) throw new Error('Informe o vencimento');
+    return { descricao: descricao, valor: valor, vencimento: vencimento };
+  },
+
+  criar: function(dados) {
+    if (typeof BILLING !== 'undefined' && !BILLING.guardQuota('bill', 1)) {
+      var errConta = new Error('Limite de contas a pagar do plano gratuito');
+      errConta.code = 'quota';
+      throw errConta;
+    }
+    var v = this._validar(dados);
 
     var conta = {
       id: UTILS.gerarId(),
-      descricao: descricao,
-      valor: valor,
-      vencimento: vencimento,
+      descricao: v.descricao,
+      valor: v.valor,
+      vencimento: v.vencimento,
       categoria: dados.categoria || 'outro',
       recorrente: !!dados.recorrente,
       status: 'pendente',
@@ -50,6 +59,31 @@ const CONTAS_PAGAR = {
     lista.push(conta);
     this._salvarLista(lista);
     return conta;
+  },
+
+  /**
+   * Edita descrição, valor, vencimento, categoria e recorrência de uma conta.
+   * Preserva id, status, criadoEm e o histórico de pagamento — por isso não
+   * passa por `criar`: recriar perderia o registro e reconsumiria a cota.
+   */
+  editar: function(id, dados) {
+    var lista = this.listar();
+    var idx = -1;
+    for (var i = 0; i < lista.length; i++) {
+      if (lista[i].id === id) { idx = i; break; }
+    }
+    if (idx < 0) throw new Error('Conta não encontrada');
+
+    var v = this._validar(dados);
+    lista[idx] = Object.assign({}, lista[idx], {
+      descricao: v.descricao,
+      valor: v.valor,
+      vencimento: v.vencimento,
+      categoria: dados.categoria || lista[idx].categoria || 'outro',
+      recorrente: !!dados.recorrente
+    });
+    this._salvarLista(lista);
+    return lista[idx];
   },
 
   excluir: function(id) {

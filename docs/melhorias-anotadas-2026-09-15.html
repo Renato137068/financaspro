@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Melhorias anotadas — set/2026</title>
+<meta name="description" content="Implementação das melhorias anotadas nas auditorias recentes do FinançasPro: editar conta a pagar e editar cartão, com o que ficou deliberadamente de fora e por quê.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --ground:#f5f7f4; --card:#ffffff; --card-2:#fbfcfa;
+    --ink:#15211c; --muted:#59685f; --faint:#89968e; --line:#e4e9e3; --line-2:#eef2ec;
+    --brand:#0e5a41; --brand-2:#2f9c6d; --brand-ink:#0a3d2c;
+    --free:#15803d; --free-bg:#e9f6ec; --p1:#c2410c; --p1-bg:#fbeee5; --p2:#0e7490; --p2-bg:#e2f3f6; --p3:#6b7280; --p3-bg:#eef1ee;
+    --shadow:0 1px 2px rgba(16,40,30,.05), 0 10px 30px rgba(16,40,30,.06); --shadow-sm:0 1px 2px rgba(16,40,30,.06);
+    --radius:16px; --radius-sm:11px; --maxw:940px;
+  }
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+    --ground:#0d1310; --card:#151c18; --card-2:#121814; --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6;
+    --free:#57c98a; --free-bg:#123222; --p1:#f0a173; --p1-bg:#37210f; --p2:#4bc4d8; --p2-bg:#0c3138; --p3:#9aa6a0; --p3-bg:#1e2621;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }}
+  :root[data-theme="dark"]{
+    --ground:#0d1310; --card:#151c18; --card-2:#121814; --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6;
+    --free:#57c98a; --free-bg:#123222; --p1:#f0a173; --p1-bg:#37210f; --p2:#4bc4d8; --p2-bg:#0c3138; --p3:#9aa6a0; --p3-bg:#1e2621;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box} html{-webkit-text-size-adjust:100%}
+  body{background:var(--ground); color:var(--ink); font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; margin:0}
+  .wrap{max-width:var(--maxw); margin:0 auto; padding-inline:20px}
+  code{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.84em; background:var(--line-2); padding:1px 6px; border-radius:6px; color:var(--brand-ink)}
+  :root:not([data-theme="light"]) code,:root[data-theme="dark"] code{color:var(--brand-2)}
+  h1,h2,h3{font-family:"Bricolage Grotesque","IBM Plex Sans",sans-serif; text-wrap:balance; letter-spacing:-.015em; margin:0}
+  a{color:var(--brand-2)}
+
+  .hero{background:radial-gradient(120% 140% at 100% 0%, rgba(47,156,109,.18), transparent 55%), linear-gradient(158deg, var(--brand), var(--brand-ink)); color:#eafff5; border-radius:0 0 26px 26px; box-shadow:var(--shadow); position:relative; overflow:hidden}
+  .hero::after{content:""; position:absolute; inset:0; background-image:radial-gradient(rgba(255,255,255,.06) 1px, transparent 1.4px); background-size:22px 22px; mask:linear-gradient(120deg,#000,transparent 62%); pointer-events:none}
+  .hero .wrap{padding-block:34px 30px; position:relative; z-index:1}
+  .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:#9fe8c9; display:flex; align-items:center; gap:10px; margin-bottom:16px}
+  .eyebrow .dot{width:7px; height:7px; border-radius:50%; background:#7bffc8; box-shadow:0 0 0 4px rgba(123,255,200,.18)}
+  h1{font-size:clamp(28px,5.6vw,44px); line-height:1.03; font-weight:800; color:#fff; max-width:22ch}
+  .hero .lede{margin:16px 0 0; font-size:clamp(15px,2.3vw,18px); max-width:66ch; color:#d5f4e6; line-height:1.55}
+  .hero .lede b{color:#fff; font-weight:600}
+  .stats{display:flex; flex-wrap:wrap; gap:12px; margin-top:26px}
+  .stat{background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.16); border-radius:14px; padding:12px 16px; min-width:110px}
+  .stat .n{font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:24px; line-height:1; color:#fff; font-variant-numeric:tabular-nums}
+  .stat .l{font-size:12px; color:#bfead7; margin-top:6px}
+
+  section{margin-top:50px}
+  .sec-head{display:flex; align-items:baseline; gap:12px; margin-bottom:8px}
+  .sec-head .k{font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:600; color:var(--brand-2); border:1px solid var(--line); border-radius:8px; padding:3px 9px; background:var(--card); flex:none}
+  h2{font-size:clamp(20px,3.4vw,26px); font-weight:700; line-height:1.14}
+  .sec-sub{color:var(--muted); font-size:15px; margin:2px 0 20px; max-width:70ch}
+
+  .verdict{background:var(--card); border:1px solid var(--line); border-left:5px solid var(--free); border-radius:var(--radius); padding:22px 24px; box-shadow:var(--shadow); margin-top:-30px; position:relative; z-index:2}
+  .verdict h2{font-size:19px; margin-bottom:6px}
+  .verdict p{margin:8px 0 0; color:var(--muted); font-size:15px}
+  .verdict b{color:var(--ink)}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:20px 22px; box-shadow:var(--shadow-sm); margin-top:16px}
+  .find{border-left:5px solid var(--p3)}
+  .find.p1{border-left-color:var(--p1)} .find.p2{border-left-color:var(--p2)} .find.done{border-left-color:var(--free)}
+  .find .top{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px}
+  .tag{font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; padding:3px 9px; border-radius:999px}
+  .tag.p1{color:var(--p1); background:var(--p1-bg)} .tag.p2{color:var(--p2); background:var(--p2-bg)} .tag.p3{color:var(--p3); background:var(--p3-bg)} .tag.done{color:var(--free); background:var(--free-bg)}
+  .find h3{font-size:17px; font-weight:700}
+  .find p{margin:8px 0 0; color:var(--muted); font-size:14.5px}
+  .find p b{color:var(--ink)}
+  .find .fix{margin-top:12px; padding:12px 14px; background:var(--card-2); border:1px solid var(--line-2); border-radius:var(--radius-sm); font-size:14px}
+  .find .fix b{color:var(--brand-2)}
+  ul{margin:10px 0 0; padding-left:20px; color:var(--muted); font-size:14.5px} li{margin:5px 0}
+  .gate{display:grid; grid-template-columns:auto 1fr; gap:8px 14px; font-size:14px; margin-top:6px}
+  .gate .ok{color:var(--free); font-weight:700; font-family:"IBM Plex Mono",monospace}
+  footer{margin:60px 0 40px; color:var(--faint); font-size:13px; text-align:center}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow"><span class="dot"></span> Follow-up de auditorias · FinançasPro v11</div>
+    <h1>Fechando as anotações: editar sem apagar e recriar</h1>
+    <p class="lede">As últimas auditorias deixaram uma trilha de anotações. Este lote implementa as que <b>recomendo</b> — o mesmo valor da edição de assinaturas já entregue: <b>corrigir um registro sem excluir e recadastrar</b>. Editar <b>conta a pagar</b> e editar <b>cartão</b>. O resto fica anotado, com o motivo de não mexer agora.</p>
+    <div class="stats">
+      <div class="stat"><div class="n">2</div><div class="l">edições novas</div></div>
+      <div class="stat"><div class="n">+7</div><div class="l">testes</div></div>
+      <div class="stat"><div class="n">4</div><div class="l">anotações mantidas</div></div>
+      <div class="stat"><div class="n">2052</div><div class="l">testes verdes</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="verdict">
+    <h2>Veredito — os gaps de edição fechados, o resto justificado</h2>
+    <p>Implementei as duas anotações de <b>maior valor e menor risco</b>. As demais eu <b>recomendo deixar como estão</b> por ora — não por preguiça, mas porque cada uma tem um motivo concreto (ambiguidade de produto, custo baixo do contorno, ou não ser bug). Está tudo abaixo, explícito.</p>
+  </div>
+
+  <section>
+    <div class="sec-head"><span class="k">FEITO</span><h2>O que entrou</h2></div>
+
+    <div class="card find done">
+      <div class="top"><span class="tag done">Implementado</span><span class="tag p2">CP3 · Contas a pagar</span><h3>Editar conta a pagar</h3></div>
+      <p>Antes só dava para adicionar, pagar e excluir. Corrigir um valor ou vencimento digitado errado exigia excluir e recriar, perdendo <code>criadoEm</code>. Agora há um botão <b>Editar</b> que abre o formulário preenchido.</p>
+      <div class="fix"><b>Como:</b> novo <code>CONTAS_PAGAR.editar(id, dados)</code> que preserva id, status, <code>criadoEm</code> e o histórico de pagamento; validação extraída para <code>_validar()</code>, compartilhada com <code>criar</code>. UI reaproveita o mesmo formulário com máscara de moeda BR.</div>
+    </div>
+
+    <div class="card find done">
+      <div class="top"><span class="tag done">Implementado</span><span class="tag p2">K2 · Cartões</span><h3>Editar cartão (bandeira, limite, fechamento, vencimento)</h3></div>
+      <p>Corrigir o limite ou o dia de fechamento exigia remover e recadastrar. Agora cada cartão tem um botão <b>Editar</b> num modal.</p>
+      <div class="fix"><b>Como:</b> <code>editarCartao(index)</code> + <code>_salvarEdicaoCartao</code> atualizam o cartão no lugar. O <b>nome fica somente leitura</b> de propósito: faturas pagas e lançamentos são indexados pelo nome do cartão — renomear aqui as deixaria órfãs em silêncio. O caso real (limite, dias de ciclo) não exige renomear.</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="k">MANTIDO</span><h2>O que recomendo NÃO fazer agora — e por quê</h2></div>
+
+    <div class="card find p3">
+      <div class="top"><span class="tag p3">Anotado</span><h3>K3 — Pagar a fatura aberta e comprar de novo no mesmo ciclo</h3></div>
+      <p>Ambiguidade inerente a "pagar fatura aberta". Não há correção óbvia de baixo risco; trocaria uma suposição por outra. Decisão de produto.</p>
+    </div>
+
+    <div class="card find p3">
+      <div class="top"><span class="tag p3">Anotado</span><h3>CP4 — Conta recorrente em atraso avança um mês por vez</h3></div>
+      <p>Defensável (cada pagamento quita a ocorrência mais antiga) e a baixa já tem confirmação citando o valor. Mudar o comportamento é decisão de produto, não correção.</p>
+    </div>
+
+    <div class="card find p3">
+      <div class="top"><span class="tag p3">Anotado</span><h3>F5 — Assinatura sempre com ícone "tv"</h3></div>
+      <p>Cosmético. Exige um seletor de ícones — trabalho de UI sem ganho de correção. Baixa prioridade.</p>
+    </div>
+
+    <div class="card find p3">
+      <div class="top"><span class="tag p3">Sem ação</span><h3>F6 — Parse de valor duplicado · C2 — Import descarta valor 0</h3></div>
+      <p><b>F6</b> não é bug (<code>parseMoeda</code> é idempotente). <b>C2</b> é raro (lançamento de R$ 0,00) e a direção "certa" é ambígua — afrouxar o import ou apertar o schema; sem um caso real, mexer só adiciona risco.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="k">EVIDÊNCIA</span><h2>Gates de verificação</h2></div>
+    <div class="card">
+      <div class="gate">
+        <span class="ok">✓</span><span>Frontend: <b>183 suites, 2043 testes</b> (9 skip) — +4 edição de conta, +3 edição de cartão</span>
+        <span class="ok">✓</span><span><code>contas-pagar.js</code>: branches 90,5% (piso próprio 88%)</span>
+        <span class="ok">✓</span><span><code>lint</code> · <code>lint:changed</code> limpos · <code>security:xss</code> (108 arquivos) · <code>a11y-static</code></span>
+        <span class="ok">✓</span><span><code>check-css-tokens</code> · <code>check-contrast</code> · <code>check-bundle-budget</code> · <code>build</code></span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="k">ARQUIVOS</span><h2>O que mudou</h2></div>
+    <div class="card">
+      <ul>
+        <li><code>js/contas-pagar.js</code> — <code>_validar()</code> compartilhado + <code>editar()</code>.</li>
+        <li><code>js/modules/init-contas-pagar.js</code> — botão Editar, <code>abrirFormEdicao</code>, <code>_salvarEdicao</code>, formulário com preset.</li>
+        <li><code>js/modules/init-config.js</code> — botão Editar no cartão, <code>editarCartao</code>, <code>_salvarEdicaoCartao</code> (nome somente leitura).</li>
+        <li><code>tests/contas-pagar-real.test.js</code> · <code>tests/perfil-backup-import.test.js</code> — +7 testes.</li>
+        <li><code>docs/melhorias-anotadas-2026-09-15.html</code> — este relatório.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    FinançasPro · Melhorias anotadas nas auditorias · 2026-09-15
+  </footer>
+
+</div>
+</body>
+</html>

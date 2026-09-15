@@ -19,6 +19,7 @@ const INIT_CONTAS_PAGAR = {
       if (!btn) return;
       var action = btn.dataset.action;
       if (action === 'conta-nova') { e.preventDefault(); self.abrirFormNova(); }
+      else if (action === 'conta-editar') { e.preventDefault(); self.abrirFormEdicao(btn.dataset.contaId); }
       else if (action === 'conta-pagar') self.confirmarPagamento(btn.dataset.contaId);
       else if (action === 'conta-excluir') self.confirmarExcluir(btn.dataset.contaId);
       else if (action === 'conta-mes-prev') { self._mudarMes(-1); }
@@ -87,6 +88,7 @@ const INIT_CONTAS_PAGAR = {
       '</div>' +
       '<div class="cp-item-actions">' +
         '<button type="button" class="btn-primario btn-sm" data-action="conta-pagar" data-conta-id="' + UTILS.escapeHtml(conta.id) + '">Marcar pago</button>' +
+        '<button type="button" class="btn-ghost btn-sm" data-action="conta-editar" data-conta-id="' + UTILS.escapeHtml(conta.id) + '">Editar</button>' +
         '<button type="button" class="btn-ghost btn-sm cp-btn-danger" data-action="conta-excluir" data-conta-id="' + UTILS.escapeHtml(conta.id) + '">Excluir</button>' +
       '</div>' +
     '</article>';
@@ -157,9 +159,10 @@ const INIT_CONTAS_PAGAR = {
     if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(el);
   },
 
-  abrirFormNova: function() {
+  _formHtml: function(preset) {
+    preset = preset || {};
     var hoje = new Date();
-    var defaultDate = [
+    var defaultDate = preset.vencimento || [
       hoje.getFullYear(),
       String(hoje.getMonth() + 1).padStart(2, '0'),
       String(hoje.getDate()).padStart(2, '0')
@@ -167,25 +170,37 @@ const INIT_CONTAS_PAGAR = {
 
     var cats = (CONFIG.CATEGORIAS_DESPESA_SLUGS || []).slice(0, 12);
     var catOpts = cats.map(function(c) {
-      return '<option value="' + c + '">' + (CONFIG.getCatLabel ? CONFIG.getCatLabel(c) : c) + '</option>';
+      var sel = preset.categoria === c ? ' selected' : '';
+      return '<option value="' + c + '"' + sel + '>' + (CONFIG.getCatLabel ? CONFIG.getCatLabel(c) : c) + '</option>';
     }).join('');
 
-    var html =
-      '<div class="meta-form">' +
+    var valorVal = (preset.valor != null && preset.valor !== '') ? String(preset.valor).replace('.', ',') : '';
+
+    return '<div class="meta-form">' +
         '<label class="form-label" for="conta-desc">Descrição</label>' +
-        '<input type="text" id="conta-desc" class="form-input" placeholder="Ex: Aluguel, Internet" maxlength="80">' +
+        '<input type="text" id="conta-desc" class="form-input" placeholder="Ex: Aluguel, Internet" maxlength="80" value="' + UTILS.escapeHtml(preset.descricao || '') + '">' +
         '<label class="form-label" for="conta-valor">Valor (R$)</label>' +
-        '<input type="text" id="conta-valor" class="form-input campo-moeda" placeholder="0,00" inputmode="decimal" autocomplete="off">' +
+        '<input type="text" id="conta-valor" class="form-input campo-moeda" placeholder="0,00" inputmode="decimal" autocomplete="off" value="' + UTILS.escapeHtml(valorVal) + '">' +
         '<p class="campo-moeda-preview" id="conta-valor-preview" hidden></p>' +
         '<label class="form-label" for="conta-venc">Vencimento</label>' +
-        '<input type="date" id="conta-venc" class="form-input" value="' + defaultDate + '">' +
+        '<input type="date" id="conta-venc" class="form-input" value="' + UTILS.escapeHtml(defaultDate) + '">' +
         '<label class="form-label" for="conta-cat">Categoria</label>' +
         '<select id="conta-cat" class="form-input">' + catOpts + '</select>' +
-        '<label class="form-check"><input type="checkbox" id="conta-recorrente"> Conta mensal (recorrente)</label>' +
+        '<label class="form-check"><input type="checkbox" id="conta-recorrente"' + (preset.recorrente ? ' checked' : '') + '> Conta mensal (recorrente)</label>' +
       '</div>';
+  },
 
+  _bindCampoMoeda: function() {
+    setTimeout(function() {
+      if (UTILS.bindCampoMoeda) {
+        UTILS.bindCampoMoeda(document.getElementById('conta-valor'), { previewId: 'conta-valor-preview' });
+      }
+    }, 0);
+  },
+
+  abrirFormNova: function() {
     var self = this;
-    INIT_MODALS.fpAlert(html, {
+    INIT_MODALS.fpAlert(this._formHtml(), {
       trustedHtml: true,
       title: 'Nova conta a pagar',
       okLabel: 'Salvar',
@@ -199,11 +214,43 @@ const INIT_CONTAS_PAGAR = {
         }
       }
     });
-    setTimeout(function() {
-      if (UTILS.bindCampoMoeda) {
-        UTILS.bindCampoMoeda(document.getElementById('conta-valor'), { previewId: 'conta-valor-preview' });
-      }
-    }, 0);
+    this._bindCampoMoeda();
+  },
+
+  abrirFormEdicao: function(id) {
+    var conta = CONTAS_PAGAR.obter(id);
+    if (!conta) return;
+    var self = this;
+    var preset = {
+      descricao: conta.descricao, valor: conta.valor, vencimento: conta.vencimento,
+      categoria: conta.categoria, recorrente: conta.recorrente
+    };
+    INIT_MODALS.fpAlert(this._formHtml(preset), {
+      trustedHtml: true,
+      title: 'Editar conta',
+      okLabel: 'Salvar',
+      onOk: function(ov) { self._salvarEdicao(ov, id); return false; }
+    });
+    this._bindCampoMoeda();
+  },
+
+  _salvarEdicao: function(overlay, id) {
+    try {
+      CONTAS_PAGAR.editar(id, {
+        descricao: document.getElementById('conta-desc').value,
+        valor: UTILS.parseMoeda(document.getElementById('conta-valor').value),
+        vencimento: document.getElementById('conta-venc').value,
+        categoria: document.getElementById('conta-cat').value,
+        recorrente: document.getElementById('conta-recorrente').checked
+      });
+      overlay.remove();
+      UTILS.mostrarToast('Conta atualizada', 'success');
+      this.render();
+      this.renderResumo();
+      if (typeof RENDER !== 'undefined' && RENDER.init) RENDER.init();
+    } catch (e) {
+      UTILS.mostrarToast(e.message || 'Erro ao salvar', 'error');
+    }
   },
 
   _salvarNova: function(overlay) {
