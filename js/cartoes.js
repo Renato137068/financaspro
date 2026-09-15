@@ -519,15 +519,29 @@ var CARTOES = {
       }
 
       // Botão de quitar a fatura aberta: quem paga no dia 20 não deve esperar
-      // até o 28 para ver o limite voltar.
+      // até o 28 para ver o limite voltar. E, se marcou por engano, precisa de
+      // uma saída — sem o "Desmarcar", um toque errado prendia o dinheiro fora
+      // do limite sem volta pela interface, embora o backend já soubesse desfazer.
       var acaoPagar = '';
-      if (r.faturaAtual && r.faturaAtual.status === 'aberta' && r.faturaAtual.total > 0) {
-        acaoPagar =
-          '<button type="button" class="btn-secundario btn-sm cartao-acao"' +
-            ' data-cartao-acao="pagar" data-cartao="' + nome + '"' +
-            ' data-competencia="' + UTILS.escapeHtml(r.faturaAtual.competencia) + '">' +
-            'Marcar fatura como paga' +
-          '</button>';
+      if (r.faturaAtual && r.faturaAtual.total > 0) {
+        if (r.faturaAtual.status === 'aberta') {
+          acaoPagar =
+            '<button type="button" class="btn-secundario btn-sm cartao-acao"' +
+              ' data-cartao-acao="pagar" data-cartao="' + nome + '"' +
+              ' data-competencia="' + UTILS.escapeHtml(r.faturaAtual.competencia) + '">' +
+              'Marcar fatura como paga' +
+            '</button>';
+        } else if (r.faturaAtual.status === 'paga') {
+          acaoPagar =
+            '<div class="cartao-fatura-paga">' +
+              '<span class="cartao-fatura-paga-selo">' + self._lucide('check-circle') + ' Fatura paga</span>' +
+              '<button type="button" class="btn-ghost btn-sm cartao-acao"' +
+                ' data-cartao-acao="desmarcar" data-cartao="' + nome + '"' +
+                ' data-competencia="' + UTILS.escapeHtml(r.faturaAtual.competencia) + '">' +
+                'Desmarcar' +
+              '</button>' +
+            '</div>';
+        }
       }
 
       // Faturas vencidas sem confirmação. O app NÃO afirma que estão em
@@ -588,12 +602,19 @@ var CARTOES = {
 
       var nome = btn.dataset.cartao;
       var competencia = btn.dataset.competencia;
-      if (btn.dataset.cartaoAcao !== 'pagar') return;
+      var acao = btn.dataset.cartaoAcao;
+      if (acao !== 'pagar' && acao !== 'desmarcar') return;
 
-      CARTOES.marcarFaturaPaga(nome, competencia);
+      var msg;
+      if (acao === 'desmarcar') {
+        CARTOES.desmarcarFaturaPaga(nome, competencia);
+        msg = 'Fatura de ' + CARTOES._rotuloCompetencia(competencia) + ' voltou para em aberto';
+      } else {
+        CARTOES.marcarFaturaPaga(nome, competencia);
+        msg = 'Fatura de ' + CARTOES._rotuloCompetencia(competencia) + ' marcada como paga';
+      }
       if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
-        UTILS.mostrarToast('Fatura de ' + CARTOES._rotuloCompetencia(competencia)
-          + ' marcada como paga', 'success');
+        UTILS.mostrarToast(msg, acao === 'desmarcar' ? 'info' : 'success');
       }
       if (typeof atualizarDashboard === 'function') atualizarDashboard();
     });
