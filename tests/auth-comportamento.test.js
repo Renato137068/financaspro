@@ -219,6 +219,20 @@ describe('PIN — backoff depois das tentativas', () => {
     expect(PIN_SECURITY.estaBloqueado()).toBe(0);
     expect(cfg.pinTentativas).toBe(0);
   });
+
+  test('registrarFalhaMsg conta as tentativas restantes antes do bloqueio', () => {
+    const r = PIN_SECURITY.registrarFalhaMsg(); // 1ª falha
+    expect(r.bloqueadoSegundos).toBe(0);
+    expect(r.tentativasRestantes).toBe(PIN_SECURITY.MAX_TENTATIVAS - 1);
+    expect(r.mensagem).toMatch(/restante/i);
+  });
+
+  test('registrarFalhaMsg devolve a mensagem de bloqueio ao estourar', () => {
+    let r;
+    for (let i = 0; i < PIN_SECURITY.MAX_TENTATIVAS; i++) r = PIN_SECURITY.registrarFalhaMsg();
+    expect(r.bloqueadoSegundos).toBeGreaterThan(25);
+    expect(r.mensagem).toMatch(/bloquead/i);
+  });
 });
 
 /* ───────────────────────── CSP ───────────────────────── */
