@@ -105,3 +105,35 @@ describe('primeiro CTA em instalação limpa', function() {
     expect(abas).not.toContain('resumo');
   });
 });
+
+describe('renda no onboarding aceita formato BR', function() {
+  function irParaRenda() {
+    global.ONBOARDING.abrirTourExplicito();
+    var guard = 0;
+    while (!document.getElementById('onb-renda-val') && guard < 12) {
+      var next = document.getElementById('onb-next');
+      if (!next) break;
+      next.click();
+      jest.advanceTimersByTime(600);
+      guard++;
+    }
+    return document.getElementById('onb-renda-val');
+  }
+
+  test('o campo de renda não é type=number (senão o "." vira decimal)', function() {
+    var inp = irParaRenda();
+    expect(inp).not.toBeNull();
+    expect(inp.getAttribute('type')).not.toBe('number');
+    expect(inp.getAttribute('inputmode')).toBe('decimal');
+  });
+
+  test('"5.000" é salvo como 5000, não como 5', function() {
+    var inp = irParaRenda();
+    expect(inp).not.toBeNull();
+    inp.value = '5.000';
+    document.getElementById('onb-next').click();
+    jest.advanceTimersByTime(600);
+    expect(global.DADOS.getConfig().renda).toBe(5000);
+    expect(global.DADOS.getConfig().rendaMensal).toBe(5000);
+  });
+});
