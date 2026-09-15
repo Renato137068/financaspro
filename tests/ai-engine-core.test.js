@@ -157,3 +157,41 @@ describe('AI_ENGINE.detectarPadroesRecorrentes', () => {
     expect(AI.detectarPadroesRecorrentes(txs)).toEqual([]);
   });
 });
+
+describe('AI_ENGINE.prever — ignora o mês em curso', () => {
+  const hoje = new Date(2026, 4, 10); // 10/05/2026 → mês corrente = 2026-05
+  function mes(k, rec, desp) {
+    return [
+      { tipo: 'receita', valor: rec, data: k + '-05', categoria: 'salario' },
+      { tipo: 'despesa', valor: desp, data: k + '-10', categoria: 'moradia' },
+    ];
+  }
+  const completos = [].concat(
+    mes('2026-01', 5000, 3000),
+    mes('2026-02', 5000, 3000),
+    mes('2026-03', 5000, 3000),
+    mes('2026-04', 5000, 3000)
+  );
+  const parcial = mes('2026-05', 200, 50); // mês corrente, quase nada gasto
+
+  test('o histórico não inclui o mês corrente', () => {
+    const r = AI.prever(completos.concat(parcial), 3, hoje);
+    const keys = r.historico.map(function(h) { return h.mesKey; });
+    expect(keys).not.toContain('2026-05');
+    expect(keys).toContain('2026-04');
+  });
+
+  test('a projeção não muda por causa do mês parcial — ele é ignorado', () => {
+    const comParcial = AI.prever(completos.concat(parcial), 3, hoje);
+    const semParcial = AI.prever(completos, 3, hoje);
+    expect(comParcial.historico).toEqual(semParcial.historico);
+    expect(comParcial.meses).toEqual(semParcial.meses);
+    expect(comParcial.tendencia).toBe(semParcial.tendencia);
+  });
+
+  test('só 1 mês completo (+ mês corrente parcial) => insuficiente', () => {
+    const r = AI.prever(mes('2026-04', 5000, 3000).concat(parcial), 3, hoje);
+    expect(r.tendencia).toBe('insuficiente');
+    expect(r.meses).toEqual([]);
+  });
+});

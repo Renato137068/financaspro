@@ -128,10 +128,16 @@ var AI_ENGINE = {
    * @param {number} mesesFuturos — default 3
    * @returns {Object} { meses: [{ mesKey, receitaEstimada, despesaEstimada, saldoEstimado, confianca }], tendencia, taxaPoupancaMedia }
    */
-  prever: function(transacoes, mesesFuturos) {
+  prever: function(transacoes, mesesFuturos, hoje) {
     mesesFuturos = mesesFuturos || 3;
+    hoje = hoje || new Date();
     var agregado = this.agregarPorMes(transacoes);
-    var chaves   = Object.keys(agregado).sort();
+    // O mês corrente ainda está EM CURSO: tratá-lo como um mês fechado enviesa
+    // média e tendência para baixo — e é justamente ele que carrega o maior
+    // peso na média ponderada. O modelo projeta a partir de meses COMPLETOS; o
+    // mês atual tem a sua própria conta, em projetarFimMes.
+    var mesAtual = hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0');
+    var chaves = Object.keys(agregado).sort().filter(function(k) { return k !== mesAtual; });
 
     if (chaves.length < 2) {
       return { meses: [], tendencia: 'insuficiente', taxaPoupancaMedia: 0, historico: [] };
@@ -178,7 +184,6 @@ var AI_ENGINE = {
     // Projetar próximos meses
     var n     = janela.length;
     var meses = [];
-    var hoje  = new Date();
     for (var i = 1; i <= mesesFuturos; i++) {
       var dataFut = new Date(hoje.getFullYear(), hoje.getMonth() + i, 1);
       var mesKey  = dataFut.getFullYear() + '-' + String(dataFut.getMonth() + 1).padStart(2, '0');
