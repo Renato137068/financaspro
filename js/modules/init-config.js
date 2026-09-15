@@ -1008,19 +1008,28 @@ const INIT_CONFIG = {
    */
   getOrcamentosData: function() {
     var orcamentos = {};
-    var categorias = ['alimentacao', 'transporte', 'moradia', 'saude', 'lazer'];
-    
-    categorias.forEach(function(cat) {
-      var status = ORCAMENTO.obterStatus(cat, new Date().getMonth() + 1, new Date().getFullYear());
+    var hoje = new Date();
+    var mes = hoje.getMonth() + 1;
+    var ano = hoje.getFullYear();
+
+    // Percorre TODAS as categorias com limite definido (padrão e personalizadas),
+    // não uma lista fixa de 5. Com a lista fixa, o backup perdia em silêncio os
+    // orçamentos de educação, assinaturas, viagem, pet, etc. — o arquivo parecia
+    // completo e a restauração vinha pela metade. `periodo` usa o mês/ano locais
+    // porque obterStatus não devolve esses campos (antes gravava undefined).
+    var todos = (typeof ORCAMENTO !== 'undefined' && ORCAMENTO.obterTodos)
+      ? ORCAMENTO.obterTodos() : {};
+    Object.keys(todos).forEach(function(cat) {
+      var status = ORCAMENTO.obterStatus(cat, mes, ano);
       if (status && status.limite) {
         orcamentos[cat] = {
           limite: status.limite,
           gasto: status.gasto,
-          periodo: status.mes + '/' + status.ano
+          periodo: mes + '/' + ano
         };
       }
     });
-    
+
     return orcamentos;
   },
 

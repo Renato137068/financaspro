@@ -132,3 +132,46 @@ describe('P1.2 — whitelist na importação de config', function() {
     expect(sb._getCursor()).toBe('cur-1');
   });
 });
+
+describe('backup — orçamentos de todas as categorias entram no export', function() {
+  // ORCAMENTO com limites em categorias FORA da antiga lista fixa de 5
+  // (alimentacao/transporte/moradia/saude/lazer). Se o export percorresse a
+  // lista fixa, educação, viagem e pet sumiriam do backup.
+  function orcamentoStub(limites) {
+    return {
+      obterTodos: function() {
+        var r = {};
+        Object.keys(limites).forEach(function(c) { r[c] = { limite: limites[c] }; });
+        return r;
+      },
+      obterStatus: function(cat) {
+        if (limites[cat] == null) return null;
+        return { categoria: cat, limite: limites[cat], gasto: 0 };
+      },
+      definirLimite: function() {}
+    };
+  }
+
+  test('exporta orçamentos de categorias não-padrão (educacao, viagem, pet)', function() {
+    var sb = carregarInitConfig({
+      ORCAMENTO: orcamentoStub({ educacao: 300, viagem: 800, pet: 150, alimentacao: 1000 })
+    });
+    var orc = sb.INIT_CONFIG.getOrcamentosData();
+    expect(Object.keys(orc).sort()).toEqual(['alimentacao', 'educacao', 'pet', 'viagem']);
+    expect(orc.educacao.limite).toBe(300);
+    expect(orc.viagem.limite).toBe(800);
+    expect(orc.pet.limite).toBe(150);
+  });
+
+  test('periodo é o mês/ano corrente, não "undefined/undefined"', function() {
+    var sb = carregarInitConfig({ ORCAMENTO: orcamentoStub({ educacao: 300 }) });
+    var hoje = new Date();
+    var esperado = (hoje.getMonth() + 1) + '/' + hoje.getFullYear();
+    expect(sb.INIT_CONFIG.getOrcamentosData().educacao.periodo).toBe(esperado);
+  });
+
+  test('categoria sem limite não entra', function() {
+    var sb = carregarInitConfig({ ORCAMENTO: orcamentoStub({}) });
+    expect(sb.INIT_CONFIG.getOrcamentosData()).toEqual({});
+  });
+});
