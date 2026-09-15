@@ -202,6 +202,24 @@ var PIN_SECURITY = {
 
   resetarFalhas: function() {
     DADOS.salvarConfig({ pinTentativas: 0, pinBloqueadoAte: 0 });
+  },
+
+  /**
+   * Registra a falha e devolve a mensagem pronta para a UI. Compartilhado entre
+   * o DESBLOQUEIO e a DESATIVAÇÃO do PIN, para as duas telas aplicarem a MESMA
+   * tranca — senão dava para forçar bruta o PIN na tela de desativar (sem rate
+   * limit) e remover a proteção de um aparelho pego desbloqueado.
+   * @returns {{bloqueadoSegundos:number, tentativasRestantes:number, mensagem:string}}
+   */
+  registrarFalhaMsg: function() {
+    var bloqAte = this.registrarFalha();
+    var cfg = DADOS.getConfig();
+    if (bloqAte > Date.now()) {
+      var seg = Math.ceil((bloqAte - Date.now()) / 1000);
+      return { bloqueadoSegundos: seg, tentativasRestantes: 0, mensagem: 'Muitas tentativas. Bloqueado por ' + seg + 's' };
+    }
+    var rest = Math.max(0, this.MAX_TENTATIVAS - (cfg.pinTentativas || 0));
+    return { bloqueadoSegundos: 0, tentativasRestantes: rest, mensagem: 'PIN incorreto. ' + rest + ' tentativa(s) restante(s)' };
   }
 };
 
@@ -363,6 +381,14 @@ function confirmarDesativarPin() {
     if (okBtn) {
       okBtn.textContent = 'Confirmar';
       okBtn.onclick = function() {
+        // Mesma tranca da tela de bloqueio: desativar o PIN também verifica o
+        // PIN, então também respeita o rate limit — senão bastava forçar bruta
+        // aqui para remover a proteção de um aparelho pego desbloqueado.
+        var bloqueado = PIN_SECURITY.estaBloqueado();
+        if (bloqueado > 0) {
+          UTILS.mostrarToast('Aguarde ' + bloqueado + 's antes de tentar novamente', 'error');
+          return;
+        }
         var pin = ['pinoff-1','pinoff-2','pinoff-3','pinoff-4']
           .map(function(id) { var el = document.getElementById(id); return el ? el.value : ''; }).join('');
         if (!/^\d{4}$/.test(pin)) {
@@ -372,7 +398,7 @@ function confirmarDesativarPin() {
         PIN_SECURITY.derivar(pin, config.pinSalt, PIN_SECURITY.iteracoesDe(config.pinAlgoritmo))
           .then(function(hash) {
           if (!PIN_SECURITY.comparar(hash, config.pinHash)) {
-            UTILS.mostrarToast('PIN incorreto', 'error');
+            UTILS.mostrarToast(PIN_SECURITY.registrarFalhaMsg().mensagem, 'error');
             return;
           }
           DADOS.salvarConfig({
@@ -520,15 +546,7 @@ function tentarDesbloquear() {
       }
       UTILS.mostrarToast('Que bom te ver.', 'success');
     } else {
-      var bloqAte = PIN_SECURITY.registrarFalha();
-      var cfg = DADOS.getConfig();
-      var rest = Math.max(0, PIN_SECURITY.MAX_TENTATIVAS - (cfg.pinTentativas || 0));
-      if (bloqAte > Date.now()) {
-        var seg = Math.ceil((bloqAte - Date.now()) / 1000);
-        UTILS.mostrarToast('Muitas tentativas. Bloqueado por ' + seg + 's', 'error');
-      } else {
-        UTILS.mostrarToast('PIN incorreto. ' + rest + ' tentativa(s) restante(s)', 'error');
-      }
+      UTILS.mostrarToast(PIN_SECURITY.registrarFalhaMsg().mensagem, 'error');
       ['unlock-1','unlock-2','unlock-3','unlock-4'].forEach(function(id){
         var el = document.getElementById(id); if (el) el.value = '';
       });
