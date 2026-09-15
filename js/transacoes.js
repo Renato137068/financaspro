@@ -149,6 +149,8 @@ var TRANSACOES = {
         };
       })();
     if (opts.clientKey) transacao.clientKey = opts.clientKey;
+    var tagsNovas = this.normalizarTags(opts.tags);
+    if (tagsNovas.length) transacao.tags = tagsNovas;
     DADOS.salvarTransacao(transacao);
     this._cache = DADOS.getTransacoes();
     this._monthIndex = null;
@@ -286,6 +288,9 @@ var TRANSACOES = {
       updates = Object.assign({}, updates, { descricao: this._sanitizarDescricao(updates.descricao) });
     }
     var updated = Object.assign({}, transacao, updates);
+    if (updates && updates.tags != null) {
+      updated.tags = this.normalizarTags(updates.tags);
+    }
     if (updates && (updates.banco != null || updates.accountId != null)) {
       var contasRef = (typeof DADOS !== 'undefined' && DADOS.getContas) ? DADOS.getContas() : [];
       if (typeof FINANCE_CONTRACT !== 'undefined') {
@@ -311,6 +316,56 @@ var TRANSACOES = {
     var resultado = DADOS.deletarTransacao(id);
     this.invalidateCache();
     return resultado;
+  },
+
+  /**
+   * Normaliza etiquetas (tags/marcadores). Aceita array ou string separada por
+   * vírgula. Cada tag vira minúscula, sem '#', com espaços internos colapsados;
+   * vazias e duplicadas caem fora. Limita tamanho (30) e quantidade (8) para
+   * a etiqueta não virar um texto livre disfarçado.
+   */
+  normalizarTags: function(input) {
+    var bruto = Array.isArray(input)
+      ? input
+      : String(input == null ? '' : input).split(',');
+    var vistas = {};
+    var out = [];
+    for (var i = 0; i < bruto.length; i++) {
+      var t = String(bruto[i] == null ? '' : bruto[i])
+        .trim().toLowerCase()
+        .replace(/^#+/, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 30);
+      if (!t || vistas[t]) continue;
+      vistas[t] = true;
+      out.push(t);
+      if (out.length >= 8) break;
+    }
+    return out;
+  },
+
+  /** Lista distinta e ordenada de todas as tags em uso. */
+  tagsUsadas: function() {
+    this._refreshCache();
+    var set = {};
+    var cache = this._cache || [];
+    for (var i = 0; i < cache.length; i++) {
+      var tags = cache[i] && cache[i].tags;
+      if (!Array.isArray(tags)) continue;
+      for (var j = 0; j < tags.length; j++) set[tags[j]] = true;
+    }
+    return Object.keys(set).sort();
+  },
+
+  /** Transações que carregam a tag informada. */
+  porTag: function(tag) {
+    var alvo = this.normalizarTags(tag)[0];
+    if (!alvo) return [];
+    this._refreshCache();
+    return (this._cache || []).filter(function(t) {
+      return t && Array.isArray(t.tags) && t.tags.indexOf(alvo) !== -1;
+    });
   },
 
   /**

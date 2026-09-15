@@ -117,7 +117,7 @@ var PERSIST_QUEUE = (function() {
         payload.descricao,
         payload.banco,
         payload.cartao,
-        { clientKey: clientKey, accountId: payload.accountId || undefined }
+        { clientKey: clientKey, accountId: payload.accountId || undefined, tags: payload.tags }
       )
       : null;
 

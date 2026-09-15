@@ -11,6 +11,7 @@ const INIT_EXTRATO = {
   state: {
     filtroTipo: 'todos',
     filtroCat: null,
+    filtroTag: null,
     busca: '',
     mesOffset: 0, // 0 = mês atual, -1 = mês anterior, etc
     ordenacao: 'data-desc', // 'data-desc', 'data-asc', 'valor-desc', 'valor-asc'
@@ -126,6 +127,7 @@ const INIT_EXTRATO = {
           // Limpar filtros
           self.state.filtroTipo = 'todos';
           self.state.filtroCat = null;
+          self.state.filtroTag = null;
           self.state.busca = '';
           var buscaInputReset = document.getElementById('extrato-busca');
           if (buscaInputReset) buscaInputReset.value = '';
@@ -207,6 +209,7 @@ const INIT_EXTRATO = {
     if (!container) return;
     this.listaTransacoesListener = true;
     container.addEventListener('click', function(e) {
+      var btnTag = e.target.closest('[data-tag-filter]');
       var btnEdit = e.target.closest('.btn-editar');
       var btnDel = e.target.closest('.btn-deletar');
       var btnAnexo = e.target.closest('.btn-anexo');
@@ -214,7 +217,10 @@ const INIT_EXTRATO = {
       var btnLimparFiltros = e.target.closest('#extrato-empty-limpar-filtros');
       var txItem = e.target.closest('.ext-tx') || e.target.closest('.extrato-item');
 
-      if (btnLimparFiltros) {
+      if (btnTag) {
+        e.stopPropagation();
+        INIT_EXTRATO.filtrarPorTag(btnTag.dataset.tagFilter);
+      } else if (btnLimparFiltros) {
         e.stopPropagation();
         INIT_EXTRATO.limparFiltros();
       } else if (btnAnexo) {
@@ -243,11 +249,23 @@ const INIT_EXTRATO = {
   },
 
   /**
+   * Filtra o extrato por uma tag. Clicar na tag já ativa desliga o filtro.
+   */
+  filtrarPorTag: function(tag) {
+    var alvo = (typeof TRANSACOES !== 'undefined' && TRANSACOES.normalizarTags)
+      ? TRANSACOES.normalizarTags(tag)[0]
+      : String(tag == null ? '' : tag).trim().toLowerCase();
+    this.state.filtroTag = (this.state.filtroTag === alvo) ? null : (alvo || null);
+    this.filtrarExtrato();
+  },
+
+  /**
    * Limpa todos os filtros aplicados
    */
   limparFiltros: function() {
     this.state.filtroTipo = 'todos';
     this.state.filtroCat = null;
+    this.state.filtroTag = null;
     this.state.busca = '';
     this.state.ordenacao = 'data-desc';
     this.state.buscaAvancada = {
@@ -1048,6 +1066,18 @@ const INIT_EXTRATO = {
     return INIT_ANEXOS.botaoVerHtml(t.id, t.anexoCount);
   },
 
+  /** Chips das tags de uma transação, clicáveis para filtrar. */
+  _tagsHtml: function(t) {
+    if (!Array.isArray(t.tags) || !t.tags.length) return '';
+    var ativa = this.state.filtroTag;
+    return t.tags.map(function(tg) {
+      var on = tg === ativa ? ' ext-tx-tag--ativa' : '';
+      return '<button type="button" class="ext-tx-tag' + on + '" data-tag-filter="' +
+        UTILS.escapeHtml(tg) + '" aria-pressed="' + (tg === ativa ? 'true' : 'false') +
+        '">#' + UTILS.escapeHtml(tg) + '</button>';
+    }).join('');
+  },
+
   _renderTransacaoItem: function(t) {
     var data = new Date(t.data + 'T00:00:00');
     var dataStr = data.toLocaleDateString('pt-BR');
@@ -1066,6 +1096,7 @@ const INIT_EXTRATO = {
           '<span class="ext-tx-meta-tag">' + UTILS.escapeHtml(CONFIG.getCatLabel(t.categoria)) + '</span>' +
           '<span>' + dataStr + '</span>' +
           (t.anexoCount ? '<span class="ext-tx-anexo-badge" aria-hidden="true"><i data-lucide="paperclip"></i></span>' : '') +
+          INIT_EXTRATO._tagsHtml(t) +
         '</div>' +
       '</div>' +
       '<div class="ext-tx-valor ' + UTILS.escapeHtml(t.tipo) + '">' +
@@ -1205,7 +1236,14 @@ const INIT_EXTRATO = {
    */
   _aplicarFiltrosAvancados: function(txs) {
     var filtros = this.state.buscaAvancada;
-    
+
+    if (this.state.filtroTag) {
+      var alvoTag = this.state.filtroTag;
+      txs = txs.filter(function(t) {
+        return Array.isArray(t.tags) && t.tags.indexOf(alvoTag) !== -1;
+      });
+    }
+
     return txs.filter(function(t) {
       // Filtro por valor mínimo
       if (filtros.valorMin !== null && t.valor < filtros.valorMin) {
@@ -1275,6 +1313,11 @@ const INIT_EXTRATO = {
     document.getElementById('novo-categoria').value = tx.categoria;
     document.getElementById('novo-tipo').value = tx.tipo;
     document.getElementById('novo-data').value = tx.data;
+    var tagsEl = document.getElementById('novo-tags');
+    if (tagsEl) {
+      tagsEl.value = Array.isArray(tx.tags) ? tx.tags.join(', ') : '';
+      if (INIT_FORM._renderTagsChips) INIT_FORM._renderTagsChips();
+    }
 
     // Atualizar UI
     INIT_FORM.atualizarTipoIndicator(tx.tipo);
