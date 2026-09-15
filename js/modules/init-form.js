@@ -14,6 +14,33 @@ const INIT_FORM = {
   init: function() {
     this.setupFormNovo();
     this._ligarPersistStatus();
+    this._bindTags();
+  },
+
+  /** Liga o campo de tags: pré-visualiza os chips normalizados enquanto digita. */
+  _bindTags: function() {
+    var el = document.getElementById('novo-tags');
+    if (!el || el._tagsBound) return;
+    el._tagsBound = true;
+    el.addEventListener('input', function() { INIT_FORM._renderTagsChips(); });
+    this._renderTagsChips();
+  },
+
+  /** Lê e normaliza as tags do formulário. */
+  _coletarTags: function() {
+    var el = document.getElementById('novo-tags');
+    if (!el) return [];
+    return (typeof TRANSACOES !== 'undefined' && TRANSACOES.normalizarTags)
+      ? TRANSACOES.normalizarTags(el.value) : [];
+  },
+
+  /** Mostra os chips já normalizados abaixo do campo (só leitura). */
+  _renderTagsChips: function() {
+    var box = document.getElementById('novo-tags-chips');
+    if (!box) return;
+    box.innerHTML = INIT_FORM._coletarTags().map(function(t) {
+      return '<span class="tags-chip">#' + UTILS.escapeHtml(t) + '</span>';
+    }).join('');
   },
 
   _ligarPersistStatus: function() {
@@ -1607,6 +1634,7 @@ const INIT_FORM = {
     var chkParcelado = document.getElementById('chk-parcelado');
     var chkRecorrente = document.getElementById('chk-recorrente');
     var descFinal = descricao || nota;
+    var tags = INIT_FORM._coletarTags();
 
     if (editId) {
       INIT_FORM._submitBusy = true;
@@ -1639,7 +1667,8 @@ const INIT_FORM = {
           descricao: descFinal,
           banco: banco,
           cartao: cartao,
-          accountId: accountId || undefined
+          accountId: accountId || undefined,
+          tags: tags
         });
         var discoEdit = (typeof DADOS !== 'undefined' && DADOS.aguardarDisco)
           ? DADOS.aguardarDisco()
@@ -1716,7 +1745,7 @@ const INIT_FORM = {
           return INIT_FORM._enfileirarLancamento({
             tipo: tipo, valor: vp, categoria: categoria,
             data: dataParcela, descricao: descParcela, banco: banco, cartao: cartao,
-            accountId: accountId || undefined
+            accountId: accountId || undefined, tags: tags
           }).then(function(item) {
             if (p === 0) firstTxId = item.txId;
             return item;
@@ -1747,7 +1776,7 @@ const INIT_FORM = {
         return INIT_FORM._enfileirarLancamento({
           tipo: tipo, valor: valor, categoria: categoria,
           data: data, descricao: descFinal + ' (recorrente)', banco: banco, cartao: cartao,
-          accountId: accountId || undefined
+          accountId: accountId || undefined, tags: tags
         }).then(function(item) {
           firstTxId = item.txId;
           return item;
@@ -1760,7 +1789,7 @@ const INIT_FORM = {
         return INIT_FORM._enfileirarLancamento({
           tipo: tipo, valor: valor, categoria: categoria,
           data: data, descricao: descFinal, banco: banco, cartao: cartao,
-          accountId: accountId || undefined
+          accountId: accountId || undefined, tags: tags
         }).then(function(item) {
           firstTxId = item.txId;
           return item;
@@ -1808,7 +1837,7 @@ const INIT_FORM = {
     var tx = TRANSACOES.criar(
       payload.tipo, payload.valor, payload.categoria, payload.data,
       payload.descricao, payload.banco, payload.cartao,
-      { clientKey: clientKey, accountId: payload.accountId || undefined }
+      { clientKey: clientKey, accountId: payload.accountId || undefined, tags: payload.tags }
     );
     var wait = (typeof DADOS !== 'undefined' && DADOS.aguardarDisco)
       ? DADOS.aguardarDisco()
@@ -1888,6 +1917,9 @@ const INIT_FORM = {
     var di = document.getElementById('novo-descricao');
     if (vi) vi.value = '';
     if (di) di.value = '';
+    var ti = document.getElementById('novo-tags');
+    if (ti) ti.value = '';
+    INIT_FORM._renderTagsChips();
     // Resetar _manualSet para permitir auto-categorização no próximo lançamento
     var catEl = document.getElementById('novo-categoria');
     if (catEl) catEl._manualSet = false;
@@ -1901,6 +1933,7 @@ const INIT_FORM = {
 
   limparFormularioCompleto: function(form) {
     form.reset();
+    INIT_FORM._renderTagsChips();
     delete form.dataset.editId;
     var btnReg = document.querySelector('.btn-registrar');
     if (btnReg) btnReg.textContent = 'Registrar';

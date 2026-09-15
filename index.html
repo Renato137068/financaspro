@@ -590,6 +590,16 @@
           <div id="anexo-preview-list" class="anexo-preview-list"></div>
         </div>
 
+        <!-- Tags / marcadores: agrupam lançamentos ENTRE categorias (viagem,
+             reembolsável, projeto). Uma categoria por lançamento; várias tags. -->
+        <div class="form-group">
+          <label for="novo-tags"><i data-lucide="tags" aria-hidden="true"></i> Tags <span class="label-opcional">(opcional)</span></label>
+          <input type="text" id="novo-tags" placeholder="Ex: viagem, reembolsável"
+                 autocomplete="off" data-autosave="tags" aria-describedby="tags-hint">
+          <div id="novo-tags-chips" class="tags-chips" aria-live="polite"></div>
+          <span id="tags-hint" class="form-hint">Separe por vírgula. Servem para somar gastos de contextos que cruzam categorias.</span>
+        </div>
+
         <!-- Recorrência -->
         <div class="form-group">
           <label class="toggle-label">
