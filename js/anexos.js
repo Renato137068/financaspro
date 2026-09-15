@@ -318,9 +318,26 @@ const ANEXOS = {
     });
   },
 
+  /**
+   * Filtra o que pode ENTRAR por importação. O `salvar` já barra MIME fora da
+   * allowlist e arquivo grande; a importação precisa aplicar a MESMA regra —
+   * senão um backup adulterado injeta anexos de tipo/tamanho arbitrários direto
+   * no armazenamento, e o viewer passa a lidar com tipos que não deviam existir.
+   * @returns {Array} só os itens com forma válida e dentro do contrato
+   */
+  _filtrarImportaveis: function(lista) {
+    var self = this;
+    return (lista || []).filter(function(item) {
+      if (!item || !item.transacaoId || !item.dadosBase64) return false;
+      if (self.MIME_PERMITIDOS.indexOf(item.mimeType) === -1) return false;
+      if (typeof item.tamanho === 'number' && item.tamanho > self.MAX_BYTES) return false;
+      return true;
+    });
+  },
+
   importarTodos: function(lista) {
     var self = this;
-    lista = lista || [];
+    lista = this._filtrarImportaveis(lista);
     return this._dbReady().then(function(db) {
       if (!db) throw new Error('Armazenamento de anexos indisponível');
       return new Promise(function(resolve, reject) {
@@ -328,7 +345,6 @@ const ANEXOS = {
         var store = tx.objectStore(ANEXOS.STORE);
         store.clear();
         lista.forEach(function(item) {
-          if (!item || !item.transacaoId || !item.dadosBase64) return;
           store.put({
             id: item.id || UTILS.gerarId(),
             transacaoId: item.transacaoId,

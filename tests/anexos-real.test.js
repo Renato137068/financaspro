@@ -41,3 +41,44 @@ describe('ANEXOS — constantes', function() {
     expect(ANEXOS.MIME_PERMITIDOS).toContain('application/pdf');
   });
 });
+
+describe('ANEXOS._filtrarImportaveis — a importação respeita o mesmo contrato', function() {
+  function item(over) {
+    return Object.assign({
+      transacaoId: 't1', dadosBase64: 'AAAA', mimeType: 'image/png', tamanho: 1000,
+    }, over || {});
+  }
+
+  test('mantém itens dentro da allowlist e do tamanho', function() {
+    var out = ANEXOS._filtrarImportaveis([item(), item({ mimeType: 'application/pdf' })]);
+    expect(out).toHaveLength(2);
+  });
+
+  test('descarta MIME fora da allowlist (ex.: text/html, svg)', function() {
+    var out = ANEXOS._filtrarImportaveis([
+      item({ mimeType: 'text/html' }),
+      item({ mimeType: 'image/svg+xml' }),
+      item({ mimeType: 'application/octet-stream' }),
+    ]);
+    expect(out).toEqual([]);
+  });
+
+  test('descarta acima do tamanho máximo', function() {
+    var out = ANEXOS._filtrarImportaveis([item({ tamanho: ANEXOS.MAX_BYTES + 1 })]);
+    expect(out).toEqual([]);
+  });
+
+  test('descarta itens sem transacaoId ou sem dados', function() {
+    var out = ANEXOS._filtrarImportaveis([
+      item({ transacaoId: null }),
+      item({ dadosBase64: '' }),
+      null,
+    ]);
+    expect(out).toEqual([]);
+  });
+
+  test('entrada nula ou não-array não quebra', function() {
+    expect(ANEXOS._filtrarImportaveis(null)).toEqual([]);
+    expect(ANEXOS._filtrarImportaveis(undefined)).toEqual([]);
+  });
+});
