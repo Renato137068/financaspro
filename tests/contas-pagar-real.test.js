@@ -184,6 +184,25 @@ describe('CONTAS_PAGAR — listagem e resumo', function() {
     const r = CP().resumo();
     expect(r).toMatchObject({ pendentes: 0, vencidas: 0, totalMes: 0, totalVencidas: 0 });
   });
+
+  test('totalMes soma em centavos, sem drift de float', function() {
+    // 33,33 + 33,33 + 33,34 em float estoura 100 por uma dízima; em centavos
+    // fecha exatamente 100,00 — que é o número que a KPI "Total do mês" mostra.
+    CP().criar({ descricao: 'A', valor: 33.33, vencimento: emDias(0) });
+    CP().criar({ descricao: 'B', valor: 33.33, vencimento: emDias(0) });
+    CP().criar({ descricao: 'C', valor: 33.34, vencimento: emDias(0) });
+    expect(CP().resumo().totalMes).toBe(100);
+  });
+
+  test('totalVencidas soma em centavos o valor das contas vencidas', function() {
+    CP().criar({ descricao: 'V1', valor: 19.99, vencimento: emDias(-3) });
+    CP().criar({ descricao: 'V2', valor: 0.01, vencimento: emDias(-1) });
+    CP().criar({ descricao: 'Futura', valor: 500, vencimento: emDias(10) });
+
+    const r = CP().resumo();
+    expect(r.vencidas).toBe(2);
+    expect(r.totalVencidas).toBe(20); // 19,99 + 0,01, exato
+  });
 });
 
 describe('CONTAS_PAGAR — exclusão', function() {
