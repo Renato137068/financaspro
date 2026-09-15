@@ -144,4 +144,25 @@ describe('SCORE — cache LRU', () => {
     expect(r1.score).toBe(r2.score);
     expect(r1.confianca).toBe(r2.confianca);
   });
+
+  test('categorias diferentes com mesmos pesos NÃO colidem no cache', () => {
+    // Regressão: a chave era só "fScore:aScore:cScore", então dois fuzzy de
+    // alta confiança sem aprendizado caíam na mesma entrada — o segundo
+    // lançamento herdava a categoria do primeiro na entrada rápida.
+    const uber = SCORE.calcular({ confianca: 'alta', categoria: 'transporte', tipo: 'despesa' }, null, null);
+    const netflix = SCORE.calcular({ confianca: 'alta', categoria: 'assinaturas', tipo: 'despesa' }, null, null);
+
+    expect(uber.categoria).toBe('transporte');
+    expect(netflix.categoria).toBe('assinaturas'); // não 'transporte'
+  });
+
+  test('tipos diferentes com mesmos pesos NÃO colidem no cache', () => {
+    // receita e despesa podem ter o mesmo perfil de confiança; o cache não
+    // pode fazer uma virar a outra.
+    const receita = SCORE.calcular({ confianca: 'alta', categoria: 'salario', tipo: 'receita' }, null, null);
+    const despesa = SCORE.calcular({ confianca: 'alta', categoria: 'moradia', tipo: 'despesa' }, null, null);
+
+    expect(receita.tipo).toBe('receita');
+    expect(despesa.tipo).toBe('despesa'); // não 'receita'
+  });
 });
