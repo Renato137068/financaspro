@@ -212,10 +212,14 @@ var ONBOARDING = (function() {
     }).join('');
 
     var rendaHtml = p.rendaStep
+      // type=text (não number): o teclado BR usa "." como milhar. Num campo
+      // number o browser lê "." como decimal, então "5.000" (placeholder) viraria
+      // R$ 5 logo na 1ª informação do usuário. Com text, o valor cru chega ao
+      // parseMoeda, que entende o formato brasileiro.
       ? '<div class="onb-renda-group" id="onb-renda-group">' +
           '<span class="onb-renda-prefix">R$</span>' +
-          '<input type="number" id="onb-renda-val" class="onb-renda-input"' +
-          ' placeholder="5.000" min="0" step="100" inputmode="decimal" aria-label="Renda mensal em reais">' +
+          '<input type="text" id="onb-renda-val" class="onb-renda-input"' +
+          ' placeholder="5.000" inputmode="decimal" autocomplete="off" aria-label="Renda mensal em reais">' +
         '</div>'
       : '';
 
