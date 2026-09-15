@@ -231,6 +231,11 @@ const INIT_CONFIG = {
         } else {
           INIT_CONFIG.removerBanco(index);
         }
+        return;
+      }
+      var btnEd = e.target.closest('.btn-editar-cartao');
+      if (btnEd) {
+        INIT_CONFIG.editarCartao(parseInt(btnEd.dataset.index, 10));
       }
     });
   },
@@ -1336,6 +1341,9 @@ const INIT_CONFIG = {
           '</div>' +
         '</div>' +
         '<div class="banco-item-actions">' +
+          '<button type="button" class="btn-editar-cartao" data-index="' + index + '" aria-label="Editar ' + UTILS.escapeHtml(cartao.nome) + '">' +
+          '<i data-lucide="pencil" aria-hidden="true"></i> Editar' +
+          '</button>' +
           '<button type="button" class="btn-remover-banco" data-index="' + index + '" data-tipo="cartao" aria-label="Remover ' + UTILS.escapeHtml(cartao.nome) + '">' +
           '<i data-lucide="trash-2" aria-hidden="true"></i> Remover' +
           '</button>' +
@@ -1446,6 +1454,78 @@ const INIT_CONFIG = {
       INIT_CONFIG._updateDynamicValues();
       UTILS.mostrarToast('Cartão removido', 'success');
     });
+  },
+
+  /**
+   * Edita um cartão (bandeira, limite, fechamento e vencimento).
+   *
+   * O NOME fica somente leitura de propósito: faturas pagas e transações são
+   * indexadas pelo nome do cartão; renomear aqui as órfãs, silenciosamente.
+   * Corrigir o limite ou os dias de ciclo — o caso real — não exige renomear.
+   */
+  editarCartao: function(index) {
+    var config = DADOS.getConfig();
+    var cartoes = (config.cartoes || []).slice();
+    var cartao = cartoes[index];
+    if (!cartao) return;
+
+    var bandeiras = ['Visa', 'Mastercard', 'Elo', 'American Express', 'Hipercard', 'Outro'];
+    var bandOpts = bandeiras.map(function(b) {
+      return '<option value="' + b + '"' + (cartao.bandeira === b ? ' selected' : '') + '>' + b + '</option>';
+    }).join('');
+    var limiteVal = (cartao.limite != null && cartao.limite !== '') ? String(cartao.limite).replace('.', ',') : '';
+
+    var html =
+      '<div class="meta-form">' +
+        '<label class="form-label" for="cartao-edit-nome">Nome</label>' +
+        '<input type="text" id="cartao-edit-nome" class="form-input" value="' + UTILS.escapeHtml(cartao.nome || '') + '" disabled>' +
+        '<p class="form-hint">O nome não muda aqui: faturas e lançamentos são ligados a ele.</p>' +
+        '<label class="form-label" for="cartao-edit-bandeira">Bandeira</label>' +
+        '<select id="cartao-edit-bandeira" class="form-input">' + bandOpts + '</select>' +
+        '<label class="form-label" for="cartao-edit-limite">Limite (R$)</label>' +
+        '<input type="text" id="cartao-edit-limite" class="form-input campo-moeda" inputmode="decimal" autocomplete="off" placeholder="0,00" value="' + UTILS.escapeHtml(limiteVal) + '">' +
+        '<p class="campo-moeda-preview" id="cartao-edit-limite-preview" hidden></p>' +
+        '<label class="form-label" for="cartao-edit-fech">Dia de fechamento</label>' +
+        '<input type="number" id="cartao-edit-fech" class="form-input" min="1" max="31" value="' + (cartao.fechamento || '') + '">' +
+        '<label class="form-label" for="cartao-edit-venc">Dia de vencimento</label>' +
+        '<input type="number" id="cartao-edit-venc" class="form-input" min="1" max="31" value="' + (cartao.vencimento || '') + '">' +
+      '</div>';
+
+    INIT_MODALS.fpAlert(html, {
+      trustedHtml: true,
+      title: 'Editar cartão',
+      okLabel: 'Salvar',
+      onOk: function(ov) { INIT_CONFIG._salvarEdicaoCartao(ov, index); return false; }
+    });
+    setTimeout(function() {
+      if (UTILS.bindCampoMoeda) {
+        UTILS.bindCampoMoeda(document.getElementById('cartao-edit-limite'), { previewId: 'cartao-edit-limite-preview' });
+      }
+    }, 0);
+  },
+
+  _salvarEdicaoCartao: function(overlay, index) {
+    var config = DADOS.getConfig();
+    var cartoes = (config.cartoes || []).slice();
+    if (!cartoes[index]) { overlay.remove(); return; }
+
+    var dia = function(v) {
+      var n = parseInt(v, 10);
+      return (isFinite(n) && n >= 1 && n <= 31) ? n : null;
+    };
+    var limite = document.getElementById('cartao-edit-limite').value;
+
+    cartoes[index] = Object.assign({}, cartoes[index], {
+      bandeira: document.getElementById('cartao-edit-bandeira').value,
+      limite: limite ? UTILS.parseMoeda(limite) : null,
+      fechamento: dia(document.getElementById('cartao-edit-fech').value),
+      vencimento: dia(document.getElementById('cartao-edit-venc').value)
+    });
+    DADOS.salvarConfig({ cartoes: cartoes });
+    overlay.remove();
+    INIT_CONFIG._renderizarListaCartoes();
+    INIT_CONFIG._updateDynamicValues();
+    UTILS.mostrarToast('Cartão atualizado', 'success');
   },
 
   /**

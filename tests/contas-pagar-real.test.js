@@ -205,6 +205,44 @@ describe('CONTAS_PAGAR — listagem e resumo', function() {
   });
 });
 
+describe('CONTAS_PAGAR — edição', function() {
+  test('atualiza campos preservando id, status e criadoEm', function() {
+    const c = CP().criar({ descricao: 'Luz', valor: 100, vencimento: emDias(3), categoria: 'moradia' });
+    const antes = CP().obter(c.id);
+
+    const r = CP().editar(c.id, { descricao: 'Energia', valor: '150,50', vencimento: emDias(5), categoria: 'servicos_financeiros', recorrente: true });
+
+    expect(r.id).toBe(c.id);
+    expect(r.descricao).toBe('Energia');
+    expect(r.valor).toBe(150.5);
+    expect(r.categoria).toBe('servicos_financeiros');
+    expect(r.recorrente).toBe(true);
+    expect(r.status).toBe('pendente');
+    expect(r.criadoEm).toBe(antes.criadoEm);
+  });
+
+  test('categoria omitida mantém a atual', function() {
+    const c = CP().criar({ descricao: 'X', valor: 10, vencimento: emDias(1), categoria: 'saude' });
+    const r = CP().editar(c.id, { descricao: 'X', valor: 20, vencimento: emDias(1) });
+    expect(r.categoria).toBe('saude');
+  });
+
+  test('id inexistente lança e não altera nada', function() {
+    expect(function() { CP().editar('fantasma', { descricao: 'Z', valor: 10, vencimento: emDias(1) }); })
+      .toThrow('não encontrada');
+    expect(CP().listar()).toHaveLength(0);
+  });
+
+  test('recusa descrição vazia, valor inválido e vencimento ausente', function() {
+    const c = CP().criar({ descricao: 'Base', valor: 10, vencimento: emDias(1) });
+    expect(function() { CP().editar(c.id, { descricao: ' ', valor: 10, vencimento: emDias(1) }); }).toThrow(/descrição/i);
+    expect(function() { CP().editar(c.id, { descricao: 'Ok', valor: 0, vencimento: emDias(1) }); }).toThrow(/inválido/i);
+    expect(function() { CP().editar(c.id, { descricao: 'Ok', valor: 10, vencimento: '' }); }).toThrow(/vencimento/i);
+    // registro original intacto
+    expect(CP().obter(c.id).descricao).toBe('Base');
+  });
+});
+
 describe('CONTAS_PAGAR — exclusão', function() {
   test('remove apenas a conta indicada', function() {
     const a = CP().criar({ descricao: 'A', valor: 10, vencimento: emDias(1) });

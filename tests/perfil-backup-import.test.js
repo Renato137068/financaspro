@@ -175,3 +175,64 @@ describe('backup — orçamentos de todas as categorias entram no export', funct
     expect(sb.INIT_CONFIG.getOrcamentosData()).toEqual({});
   });
 });
+
+describe('editarCartao — atualiza limite e ciclo, preserva o nome', function() {
+  function utilsStub() {
+    return {
+      escapeHtml: function(s) { return String(s); },
+      formatarMoeda: function(v) { return 'R$ ' + v; },
+      mostrarToast: function() {},
+      bindCampoMoeda: function() {},
+      parseMoeda: function(v) {
+        var n = parseFloat(String(v).replace(/\./g, '').replace(',', '.'));
+        return isFinite(n) ? n : 0;
+      }
+    };
+  }
+  function setup() {
+    var sb = carregarInitConfig({ UTILS: utilsStub() });
+    sb._setStored({ cartoes: [{ nome: 'Nubank', bandeira: 'Visa', limite: 1000, fechamento: 10, vencimento: 20 }] });
+    return sb;
+  }
+
+  test('_salvarEdicaoCartao grava novos valores mantendo o nome', function() {
+    var sb = setup();
+    document.body.innerHTML =
+      '<select id="cartao-edit-bandeira"><option value="Mastercard" selected>Mastercard</option></select>' +
+      '<input id="cartao-edit-limite" value="2.500,00">' +
+      '<input id="cartao-edit-fech" value="15">' +
+      '<input id="cartao-edit-venc" value="25">';
+    sb.INIT_CONFIG._salvarEdicaoCartao({ remove: function() {} }, 0);
+
+    var c = sb._getStored().cartoes[0];
+    expect(c.nome).toBe('Nubank');        // nome preservado (chave de faturas/lançamentos)
+    expect(c.bandeira).toBe('Mastercard');
+    expect(c.limite).toBe(2500);
+    expect(c.fechamento).toBe(15);
+    expect(c.vencimento).toBe(25);
+  });
+
+  test('dias inválidos e limite vazio viram null (cartão sem ciclo)', function() {
+    var sb = setup();
+    document.body.innerHTML =
+      '<select id="cartao-edit-bandeira"><option value="Visa" selected>Visa</option></select>' +
+      '<input id="cartao-edit-limite" value="">' +
+      '<input id="cartao-edit-fech" value="0">' +
+      '<input id="cartao-edit-venc" value="40">';
+    sb.INIT_CONFIG._salvarEdicaoCartao({ remove: function() {} }, 0);
+
+    var c = sb._getStored().cartoes[0];
+    expect(c.fechamento).toBeNull();
+    expect(c.vencimento).toBeNull();
+    expect(c.limite).toBeNull();
+  });
+
+  test('índice inexistente não quebra e não cria cartão', function() {
+    var sb = setup();
+    document.body.innerHTML =
+      '<select id="cartao-edit-bandeira"><option value="Visa" selected>Visa</option></select>' +
+      '<input id="cartao-edit-limite" value=""><input id="cartao-edit-fech" value="5"><input id="cartao-edit-venc" value="10">';
+    expect(function() { sb.INIT_CONFIG._salvarEdicaoCartao({ remove: function() {} }, 9); }).not.toThrow();
+    expect(sb._getStored().cartoes).toHaveLength(1);
+  });
+});
