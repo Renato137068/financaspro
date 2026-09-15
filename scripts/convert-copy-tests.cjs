@@ -83,7 +83,7 @@ for (const [arquivo, modulo] of Object.entries(ALVOS)) {
   if (dryRun) {
     console.log(`[convert] ${arquivo}: removeria ${removido} linhas de cópia de ${modulo}`);
   } else {
-    fs.writeFileSync(full, src);
+    fs.writeFileSync(full, src, 'utf8');
     console.log(`[convert] ${arquivo}: -${removido} linhas de cópia → módulo real ${modulo}`);
     convertidos++;
   }

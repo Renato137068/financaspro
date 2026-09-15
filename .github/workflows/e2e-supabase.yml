@@ -1,0 +1,86 @@
+name: E2E Supabase (staging)
+
+# Exercita o CAMINHO DE PRODUÇÃO do app — login/registro reais via Supabase —
+# que o CI principal não cobre: lá o build sobe em modo piloto (fp-force-local)
+# e o transporte Supabase fica desligado. Aqui o app é buildado em modo cloud
+# apontando para um Supabase de STAGING e o spec e2e/auth-supabase-ui.spec.cjs
+# faz login de verdade.
+#
+# Roda SÓ sob demanda (workflow_dispatch) — não trava PRs e não bate no
+# Supabase a cada push. Se os secrets não estiverem configurados, o job vira
+# um no-op explícito (não falha). Passo-a-passo em docs/E2E-SUPABASE.md.
+#
+# Para rodar semanalmente, descomente o bloco `schedule` abaixo.
+
+on:
+  workflow_dispatch:
+  # schedule:
+  #   - cron: '0 6 * * 1'   # segundas 06:00 UTC
+
+jobs:
+  e2e-supabase:
+    name: E2E Supabase (login real em staging)
+    runs-on: ubuntu-latest
+    env:
+      # Build: Supabase de STAGING (lidos por scripts/inject-supabase-env.cjs).
+      SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
+      # Execução: contas de teste do spec (nomes de env que o spec espera).
+      E2E_SUPABASE: '1'
+      E2E_EMAIL: ${{ secrets.E2E_SUPABASE_EMAIL }}
+      E2E_PASSWORD: ${{ secrets.E2E_SUPABASE_PASSWORD }}
+      # Opcional: conta com MFA TOTP (só então o teste de MFA roda).
+      E2E_SUPABASE_MFA_EMAIL: ${{ secrets.E2E_SUPABASE_MFA_EMAIL }}
+      E2E_SUPABASE_MFA_PASSWORD: ${{ secrets.E2E_SUPABASE_MFA_PASSWORD }}
+      E2E_TOTP_SECRET: ${{ secrets.E2E_SUPABASE_TOTP_SECRET }}
+    steps:
+      - name: Checkout codigo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: npm
+
+      - name: Verificar secrets de staging
+        id: guard
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "have=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::E2E Supabase pulado — configure os secrets E2E_SUPABASE_URL e E2E_SUPABASE_ANON_KEY (Supabase de staging). Veja docs/E2E-SUPABASE.md."
+          else
+            echo "have=true" >> "$GITHUB_OUTPUT"
+            if [ -z "$E2E_EMAIL" ] || [ -z "$E2E_PASSWORD" ]; then
+              echo "::warning::Sem E2E_SUPABASE_EMAIL/E2E_SUPABASE_PASSWORD — só os testes de UI estática rodam; o login real será pulado."
+            fi
+          fi
+
+      - name: Instalar dependencias
+        if: steps.guard.outputs.have == 'true'
+        run: npm ci
+
+      - name: Build (modo cloud, Supabase de staging)
+        if: steps.guard.outputs.have == 'true'
+        # inject-supabase-env.cjs (dentro de `npm run build`) grava SUPABASE_URL/
+        # SUPABASE_ANON_KEY em js/core/config.js; set-build-mode garante cloud.
+        run: |
+          node scripts/set-build-mode.cjs cloud
+          npm run build
+
+      - name: Instalar Chromium (Playwright)
+        if: steps.guard.outputs.have == 'true'
+        run: npx playwright install chromium
+
+      - name: E2E Supabase (UI + login real)
+        if: steps.guard.outputs.have == 'true'
+        run: npx playwright test --config playwright.config.cjs e2e/auth-supabase-ui.spec.cjs
+
+      - name: Upload do relatorio Playwright
+        if: ${{ always() && steps.guard.outputs.have == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-supabase
+          path: playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7

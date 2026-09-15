@@ -76,6 +76,7 @@
     "check:contrast": "node scripts/check-contrast.cjs",
     "check:a11y": "node scripts/check-contrast.cjs && npm run test:frontend:unit -- tests/a11y-static.test.js",
     "check:css": "node scripts/check-css-tokens.cjs",
+    "check:encoding": "node scripts/check-encoding.cjs",
     "check:css:update": "node scripts/check-css-tokens.cjs --update",
     "css:tokenize": "node scripts/css-hex-to-token.cjs",
     "fonts": "node scripts/setup-fonts.cjs",

@@ -74,7 +74,7 @@ for (const file of fs.readdirSync(ROUTES_DIR).filter(f => f.endsWith('.js'))) {
 
   if (changed > 0) {
     src = ensureImports(src, [...needed]);
-    fs.writeFileSync(full, src);
+    fs.writeFileSync(full, src, 'utf8');
     console.log(`[params] ${file}: ${changed} rota(s) protegida(s)`);
     totalRoutes += changed;
     totalFiles++;
