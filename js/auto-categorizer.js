@@ -30,6 +30,12 @@ const AUTO_CATEGORIZER = {
   ],
 
   HISTORICO: {},
+  // Tipo (receita/despesa) observado por categoria no histórico do usuário.
+  // O fallback por histórico casa a CATEGORIA a partir das palavras, mas a
+  // categoria sozinha não diz o tipo: sem isto, uma receita recorrente
+  // ("freelance", "investimentos") voltava como 'despesa' e o formulário
+  // pré-selecionava o tipo errado para uma entrada de renda.
+  _tipoPorCat: {},
 
   init: function() { this.analisarHistorico(); },
 
@@ -39,8 +45,11 @@ const AUTO_CATEGORIZER = {
       var transacoes = DADOS.getTransacoes();
       if (!Array.isArray(transacoes)) return;
       this.HISTORICO = {};
+      this._tipoPorCat = {};
       transacoes.forEach(function(t) {
         if (!t.descricao) return;
+        // Fonte da verdade para o tipo: o próprio lançamento do usuário.
+        if (t.categoria && t.tipo) this._tipoPorCat[t.categoria] = t.tipo;
         var palavras = String(t.descricao).toLowerCase().trim().split(/\s+/);
         palavras.forEach(function(p) {
           if (p.length <= 3) return;
@@ -85,7 +94,13 @@ const AUTO_CATEGORIZER = {
     }
 
     if (melhorCat && melhorScore >= 2) {
-      return { categoria: melhorCat, tipo: 'despesa', confianca: melhorScore >= 4 ? 'media' : 'baixa' };
+      // Deriva o tipo da categoria casada — nunca assume 'despesa'. Ordem:
+      // tipo observado no histórico → mapa de categorias → 'despesa'.
+      var tipoHist = this._tipoPorCat[melhorCat]
+        || (typeof CATEGORIES !== 'undefined' && CATEGORIES !== AUTO_CATEGORIZER && typeof CATEGORIES.getTipo === 'function'
+              ? CATEGORIES.getTipo(melhorCat)
+              : 'despesa');
+      return { categoria: melhorCat, tipo: tipoHist, confianca: melhorScore >= 4 ? 'media' : 'baixa' };
     }
 
     return { categoria: 'outro', tipo: 'despesa', confianca: 'baixa' };
