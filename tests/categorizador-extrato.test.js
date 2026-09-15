@@ -53,3 +53,51 @@ describe('cobertura de marcas BR (AUTO_CATEGORIZER)', function() {
     });
   });
 });
+
+describe('fallback por histórico preserva o tipo da categoria', function() {
+  var origDados;
+  beforeEach(function() {
+    origDados = global.DADOS;
+    AUTO_CATEGORIZER.HISTORICO = {};
+    AUTO_CATEGORIZER._tipoPorCat = {};
+  });
+  afterEach(function() {
+    global.DADOS = origDados;
+    AUTO_CATEGORIZER.HISTORICO = {};
+    AUTO_CATEGORIZER._tipoPorCat = {};
+  });
+
+  test('receita recorrente sem palavra de regra volta como receita, não despesa', function() {
+    // Palavras que NÃO casam nenhuma REGRA, categorizadas como receita.
+    global.DADOS = {
+      getTransacoes: function() {
+        return [
+          { descricao: 'Ganho atelie mensal', categoria: 'freelance', tipo: 'receita' },
+          { descricao: 'Ganho atelie mensal', categoria: 'freelance', tipo: 'receita' },
+        ];
+      }
+    };
+    AUTO_CATEGORIZER.analisarHistorico();
+
+    var r = AUTO_CATEGORIZER.detectar('Ganho atelie');
+    expect(r.categoria).toBe('freelance');
+    // Antes do fix o tipo vinha 'despesa' fixo — invertendo a natureza da entrada.
+    expect(r.tipo).toBe('receita');
+  });
+
+  test('despesa recorrente sem palavra de regra segue como despesa', function() {
+    global.DADOS = {
+      getTransacoes: function() {
+        return [
+          { descricao: 'Feira organica sitio', categoria: 'alimentacao', tipo: 'despesa' },
+          { descricao: 'Feira organica sitio', categoria: 'alimentacao', tipo: 'despesa' },
+        ];
+      }
+    };
+    AUTO_CATEGORIZER.analisarHistorico();
+
+    var r = AUTO_CATEGORIZER.detectar('organica sitio');
+    expect(r.categoria).toBe('alimentacao');
+    expect(r.tipo).toBe('despesa');
+  });
+});
