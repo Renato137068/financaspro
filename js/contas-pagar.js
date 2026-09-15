@@ -148,13 +148,15 @@ const CONTAS_PAGAR = {
     var ano = hoje.getFullYear();
     var noMes = this.listarNoMes(mes, ano);
     var vencidas = pendentes.filter(function(c) { return CONTAS_PAGAR.situacao(c) === 'vencida'; });
-    var totalMes = noMes.reduce(function(s, c) { return s + c.valor; }, 0);
-    var totalVencidas = vencidas.reduce(function(s, c) { return s + c.valor; }, 0);
+    // Soma em centavos inteiros, como Resumo/Orçamento/Extrato/Cartões: acumular
+    // reais em float faz o total exibido divergir do que o usuário confere.
+    var totalMesCent = noMes.reduce(function(s, c) { return s + UTILS.paraCentavos(c.valor); }, 0);
+    var totalVencidasCent = vencidas.reduce(function(s, c) { return s + UTILS.paraCentavos(c.valor); }, 0);
     return {
       pendentes: pendentes.length,
       vencidas: vencidas.length,
-      totalMes: totalMes,
-      totalVencidas: totalVencidas
+      totalMes: totalMesCent / 100,
+      totalVencidas: totalVencidasCent / 100
     };
   },
 

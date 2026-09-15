@@ -109,7 +109,9 @@ const INIT_CONTAS_PAGAR = {
     var html =
       '<div class="cp-kpis">' +
         '<div class="cp-kpi"><span class="cp-kpi-label">Pendentes</span><span class="cp-kpi-val">' + resumo.pendentes + '</span></div>' +
-        '<div class="cp-kpi cp-kpi--warn"><span class="cp-kpi-label">Vencidas</span><span class="cp-kpi-val">' + resumo.vencidas + '</span></div>' +
+        '<div class="cp-kpi cp-kpi--warn"><span class="cp-kpi-label">Vencidas</span><span class="cp-kpi-val">' + resumo.vencidas +
+          (resumo.vencidas > 0 ? '<small class="cp-kpi-sub">' + UTILS.escapeHtml(UTILS.formatarMoeda(resumo.totalVencidas)) + '</small>' : '') +
+          '</span></div>' +
         '<div class="cp-kpi"><span class="cp-kpi-label">Total do mês</span><span class="cp-kpi-val">' + UTILS.formatarMoeda(resumo.totalMes) + '</span></div>' +
       '</div>' +
       '<div class="cp-cal-header">' +

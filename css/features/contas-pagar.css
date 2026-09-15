@@ -33,6 +33,16 @@
   font-weight: 700;
 }
 
+/* Valor em R$ das contas vencidas: o número que importa é quanto se deve,
+   não só quantas contas. Fica abaixo da contagem, discreto. */
+.cp-kpi-sub {
+  display: block;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-danger-text);
+  margin-top: var(--space-1);
+}
+
 .cp-cal-header {
   display: flex;
   align-items: center;
