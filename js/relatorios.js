@@ -5,33 +5,37 @@ const RELATORIOS = {
   resumoMes: function(mes, ano) {
     if (typeof TRANSACOES === 'undefined') return null;
     var txs = TRANSACOES.obter({ mes: mes, ano: ano });
-    var receitas = 0;
-    var despesas = 0;
-    var porCat = {};
+    // Soma em centavos inteiros (padrão do app): somar t.valor em reais com +=
+    // acumula erro de ponto flutuante, e saldo = receitas - despesas propaga
+    // a deriva para os KPIs e para os diffs do comparativo mês a mês.
+    var receitasCent = 0;
+    var despesasCent = 0;
+    var porCatCent = {};
 
     txs.forEach(function(t) {
-      if (t.tipo === CONFIG.TIPO_RECEITA) receitas += t.valor;
+      var cent = UTILS.paraCentavos(t.valor);
+      if (t.tipo === CONFIG.TIPO_RECEITA) receitasCent += cent;
       else {
-        despesas += t.valor;
+        despesasCent += cent;
         var cat = t.categoria || 'outro';
-        porCat[cat] = (porCat[cat] || 0) + t.valor;
+        porCatCent[cat] = (porCatCent[cat] || 0) + cent;
       }
     });
 
-    var topCats = Object.keys(porCat).sort(function(a, b) { return porCat[b] - porCat[a]; }).slice(0, 5);
+    var topCats = Object.keys(porCatCent).sort(function(a, b) { return porCatCent[b] - porCatCent[a]; }).slice(0, 5);
     return {
       mes: mes,
       ano: ano,
-      receitas: receitas,
-      despesas: despesas,
-      saldo: receitas - despesas,
+      receitas: receitasCent / 100,
+      despesas: despesasCent / 100,
+      saldo: (receitasCent - despesasCent) / 100,
       transacoes: txs.length,
       topCategorias: topCats.map(function(c) {
         return {
           categoria: c,
           label: CONFIG.getCatLabel ? CONFIG.getCatLabel(c) : c,
-          valor: porCat[c],
-          percentual: despesas > 0 ? Math.round((porCat[c] / despesas) * 100) : 0
+          valor: porCatCent[c] / 100,
+          percentual: despesasCent > 0 ? Math.round((porCatCent[c] / despesasCent) * 100) : 0
         };
       })
     };
@@ -44,12 +48,14 @@ const RELATORIOS = {
     var atual = this.resumoMes(mes, ano);
     var anterior = this.resumoMes(prevMes, prevAno);
     if (!atual || !anterior) return null;
+    // Diffs também em centavos: subtrair dois valores em reais reintroduz a
+    // deriva (0,01 não é exato em binário), gerando "-R$ 0,00" espúrios.
     return {
       atual: atual,
       anterior: anterior,
-      diffReceitas: atual.receitas - anterior.receitas,
-      diffDespesas: atual.despesas - anterior.despesas,
-      diffSaldo: atual.saldo - anterior.saldo
+      diffReceitas: (UTILS.paraCentavos(atual.receitas) - UTILS.paraCentavos(anterior.receitas)) / 100,
+      diffDespesas: (UTILS.paraCentavos(atual.despesas) - UTILS.paraCentavos(anterior.despesas)) / 100,
+      diffSaldo: (UTILS.paraCentavos(atual.saldo) - UTILS.paraCentavos(anterior.saldo)) / 100
     };
   }
 };
