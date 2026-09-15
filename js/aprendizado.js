@@ -115,13 +115,15 @@ var APRENDIZADO = {
       if (APRENDIZADO.HISTORICO[p]) {
         candidatos.push(APRENDIZADO.HISTORICO[p]);
       }
-      if (!APRENDIZADO.HISTORICO[p]) {
-        var prefixo = p + '__';
-        var chaves = Object.keys(APRENDIZADO.HISTORICO);
-        for (var i = 0; i < chaves.length; i++) {
-          if (chaves[i].indexOf(prefixo) === 0) {
-            candidatos.push(APRENDIZADO.HISTORICO[chaves[i]]);
-          }
+      // As alternativas (p__categoria) sempre concorrem — mesmo quando existe
+      // uma entrada primária. Senão a primária penalizada por uma correção
+      // jamais perde para a alternativa correta que o usuário reforçou, e o
+      // laço de correção (penaliza a errada, reforça a correta) não muda nada.
+      var prefixo = p + '__';
+      var chaves = Object.keys(APRENDIZADO.HISTORICO);
+      for (var i = 0; i < chaves.length; i++) {
+        if (chaves[i].indexOf(prefixo) === 0) {
+          candidatos.push(APRENDIZADO.HISTORICO[chaves[i]]);
         }
       }
     });
