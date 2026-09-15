@@ -191,7 +191,12 @@ var RECORRENTES = {
             rec.descricao || 'Recorrente',
             rec.banco || '',
             rec.cartao || '',
-            { accountId: rec.accountId || undefined }
+            // clientKey determinístico por recorrente+competência: o marcador e
+            // a varredura de transações protegem no MESMO aparelho, mas não
+            // entre aparelhos (dois celulares materializam o mesmo mês antes de
+            // sincronizar). O clientKey é a chave de idempotência do sync/dedup
+            // — igual nos dois → o duplicado colapsa em vez de dobrar o gasto.
+            { accountId: rec.accountId || undefined, clientKey: 'rec|' + rec.id + '|' + d.competencia }
           );
         } catch (e) {
           // Uma recorrente inválida não pode impedir as outras de rodarem.

@@ -148,6 +148,28 @@ describe('idempotência — o dinheiro não pode dobrar', () => {
     expect(DADOS.getTransacoes()).toHaveLength(1);
   });
 
+  test('a materialização carrega um clientKey determinístico por competência', () => {
+    comRecorrentes([recorrente({ dataInicio: '2026-08-05' })]);
+    const t = RECORRENTES.processar(HOJE)[0];
+    expect(t.clientKey).toBe('rec|rec-1|2026-08');
+  });
+
+  test('dois aparelhos geram o MESMO clientKey para a mesma competência', () => {
+    // A chave é determinística por recorrente+competência. É isso que permite
+    // ao sync colapsar a materialização feita em dois aparelhos (cada um sem o
+    // marcador nem a transação do outro) numa só, em vez de dobrar o gasto.
+    comRecorrentes([recorrente({ dataInicio: '2026-08-05' })]);
+    const aparelhoA = RECORRENTES.processar(HOJE)[0].clientKey;
+
+    resetFixtures();          // "outro aparelho": storage limpo, sem marcador
+    DADOS._modoLocal = true;
+    comRecorrentes([recorrente({ dataInicio: '2026-08-05' })]);
+    const aparelhoB = RECORRENTES.processar(HOJE)[0].clientKey;
+
+    expect(aparelhoB).toBe(aparelhoA);
+    expect(aparelhoA).toBe('rec|rec-1|2026-08');
+  });
+
   test('o mês seguinte gera, o anterior não repete', () => {
     comRecorrentes([recorrente({ dataInicio: '2026-08-05' })]);
     RECORRENTES.processar(HOJE);
