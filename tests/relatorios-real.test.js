@@ -132,6 +132,21 @@ describe('RELATORIOS.resumoMes', function() {
     expect(r.mes).toBe(7);
     expect(r.ano).toBe(2026);
   });
+
+  test('soma valores com centavos sem deriva de ponto flutuante', function() {
+    // 0.1 + 0.2 === 0.30000000000000004 em float. Somando em centavos
+    // inteiros, o resumo — número que abre o app — bate ao centavo.
+    lancar({ tipo: 'despesa', valor: 0.10, data: '2026-03-01', categoria: 'lazer' });
+    lancar({ tipo: 'despesa', valor: 0.20, data: '2026-03-02', categoria: 'lazer' });
+    lancar({ tipo: 'receita', valor: 0.30, data: '2026-03-03', categoria: 'salario' });
+
+    const r = R().resumoMes(3, 2026);
+
+    expect(r.despesas).toBe(0.30);
+    expect(r.receitas).toBe(0.30);
+    expect(r.saldo).toBe(0);              // não -5.5e-17
+    expect(r.topCategorias[0].valor).toBe(0.30);
+  });
 });
 
 describe('RELATORIOS.compararMesAnterior', function() {
@@ -177,5 +192,19 @@ describe('RELATORIOS.compararMesAnterior', function() {
     expect(c.atual.mes).toBe(3);
     expect(c.anterior.mes).toBe(2);
     expect(c.atual.topCategorias).toBeDefined();
+  });
+
+  test('diffs com centavos não produzem deriva de ponto flutuante', function() {
+    // fev: 0,10 · mar: 0,30 (0.2 + 0.1) → diff 0,20 exato, não
+    // 0.20000000000000004, e sem "-R$ 0,00" espúrio no comparativo.
+    lancar({ tipo: 'despesa', valor: 0.10, data: '2026-02-01', categoria: 'lazer' });
+    lancar({ tipo: 'despesa', valor: 0.20, data: '2026-03-01', categoria: 'lazer' });
+    lancar({ tipo: 'despesa', valor: 0.10, data: '2026-03-02', categoria: 'lazer' });
+
+    const c = R().compararMesAnterior(3, 2026);
+
+    expect(c.anterior.despesas).toBe(0.10);
+    expect(c.atual.despesas).toBe(0.30);
+    expect(c.diffDespesas).toBe(0.20);
   });
 });
