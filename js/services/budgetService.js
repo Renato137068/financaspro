@@ -24,6 +24,20 @@ var BUDGET_SERVICE = (function() {
     return next;
   }
 
+  /**
+   * Leitura tolerante do limite. No WRITE (setBudget) um limite inválido é erro
+   * e estoura (normalizeLimit). Na LEITURA (getStatus, que alimenta o dashboard)
+   * um limite ausente/zerado — vindo de sync, dado legado ou config editada à
+   * mão — não pode derrubar a seção inteira: degrada para "sem-limite", igual ao
+   * fallback do ORCAMENTO e ao próprio avaliar(), que já tolera limite <= 0.
+   */
+  function toLimit(limite) {
+    var value = typeof limite === 'number'
+      ? limite
+      : parseFloat(String(limite == null ? '' : limite).replace(',', '.'));
+    return (Number.isFinite(value) && value > 0) ? value : null;
+  }
+
   /** Reais → centavos inteiros. Somar centavos não acumula erro; somar reais sim. */
   function centavos(valor) {
     var n = Number(valor);
@@ -78,11 +92,11 @@ var BUDGET_SERVICE = (function() {
 
   function getStatus(budgets, transacoes, categoria, mes, ano) {
     var entry = budgets && budgets[categoria];
-    if (!entry) {
+    var limite = entry ? toLimit(entry.limite) : null;
+    if (limite == null) {
       return { categoria: categoria, limite: null, gasto: 0, percentual: 0, status: 'sem-limite' };
     }
     var gasto = calculateSpent(transacoes, categoria, mes, ano);
-    var limite = normalizeLimit(entry.limite);
     var aval = avaliar(gasto, limite);
     return {
       categoria: categoria,
