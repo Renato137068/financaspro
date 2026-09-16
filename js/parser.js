@@ -3,13 +3,6 @@
  */
 
 var PARSER = {
-  padoes: [
-    { regex: /(\d+(?:[.,]\d{2})?)\s*(?:reais|real|r\$)?/i, tipo: 'valor' },
-    { regex: /(?:ontem|anteontem|hoje|amanhã|segunda|terça|quarta|quinta|sexta|sábado|domingo)/i, tipo: 'data' },
-    { regex: /(?:nubank|itaú|itau|caixa|bradesco|santander|banco|bbva)/i, tipo: 'banco' },
-    { regex: /(?:crédito|credito|débito|debito)/i, tipo: 'cartao' }
-  ],
-
   /**
    * Converte um token numérico brasileiro em número.
    *
@@ -89,7 +82,10 @@ var PARSER = {
 
       if (token.length < 2) return;
 
-      if (/^(hoje|ontem|anteontem|amanhã?|segunda|ter[cç]a|quarta|quinta|sexta|s[aá]bado|domingo)$/.test(token)) {
+      // amanh[aã]? aceita "amanha" sem acento, como os demais termos (ter[cç]a,
+      // s[aá]bado) já aceitam — no teclado do celular o til costuma faltar, e
+      // parseData já mapeia 'amanha'.
+      if (/^(hoje|ontem|anteontem|amanh[aã]?|segunda|ter[cç]a|quarta|quinta|sexta|s[aá]bado|domingo)$/.test(token)) {
         r.data = PARSER.parseData(token);
       } else if (todosBancos.indexOf(token) !== -1) {
         r.banco = token;
