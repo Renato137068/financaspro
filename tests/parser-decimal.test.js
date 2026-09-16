@@ -127,4 +127,30 @@ describe('PARSER.parseData — data local, sem escorregar de fuso', () => {
     expect(PARSER.parseData('quinta-feira-santa')).toBeNull();
     expect(PARSER.parseData('')).toBeNull();
   });
+
+  test('"amanhã" e "amanha" (sem acento) apontam para o dia seguinte', () => {
+    const hoje = PARSER.parseData('hoje');
+    ['amanhã', 'amanha'].forEach((termo) => {
+      const d = PARSER.parseData(termo);
+      const diff = (new Date(d + 'T12:00:00') - new Date(hoje + 'T12:00:00')) / 86400000;
+      expect(diff).toBe(1);
+    });
+  });
+});
+
+describe('PARSER.extrair — data por extenso na frase', () => {
+  test('"amanha" sem acento vira data e não polui a descrição', () => {
+    // No celular o til costuma faltar. Antes, só "amanhã" era reconhecido em
+    // extrair; "amanha" caía na descrição e a data ficava null.
+    const r = PARSER.extrair('cafe amanha');
+    expect(r.data).toBe(PARSER.parseData('amanha'));
+    expect(r.desc).toBe('cafe');
+    expect(r.desc).not.toContain('amanha');
+  });
+
+  test('"amanhã" com acento continua funcionando', () => {
+    const r = PARSER.extrair('cafe amanhã');
+    expect(r.data).toBe(PARSER.parseData('amanhã'));
+    expect(r.desc).toBe('cafe');
+  });
 });
