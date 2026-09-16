@@ -72,7 +72,6 @@ module.exports = {
     ALERTAS: 'readonly',
     APP_BOOTSTRAP: 'readonly',
     APP_STORE: 'readonly',
-    AUTOMACAO: 'readonly',
     CATEGORIAS: 'readonly',
     CONFIG: 'readonly',
     CONTAS: 'readonly',

@@ -47,7 +47,6 @@ const CONFIG = {
   STORAGE_OUTBOX: 'fp-outbox',
   STORAGE_SYNC_CURSOR: 'fp-sync-cursor',
   STORAGE_APRENDIZADO: 'aprendizado_historico',
-  STORAGE_RASCUNHO: '_rascunho_transacao',
   API_BASE_URL: '',
   API_FALLBACK_URL: 'http://localhost:4000',
   API_TOKEN_STORAGE: 'fp-api-token',
