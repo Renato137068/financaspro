@@ -144,6 +144,66 @@ var CARTOES = {
   },
 
   /**
+   * Melhor dia de compra — o dia seguinte ao fechamento.
+   *
+   * Uma compra feita logo APÓS o fechamento entra na próxima fatura, o que dá o
+   * maior intervalo possível até o vencimento: o período sem juros máximo que o
+   * cartão oferece. É o recurso que Mobills/Organizze destacam, e sai de graça
+   * do ciclo que o app já modela.
+   *
+   * @param {string} nomeCartao
+   * @param {Date} [hoje] injetável para teste
+   * @returns {?{melhorDia:number, proximaData:string, fechamento:string,
+   *             vencimento:string, diasSemJuros:number, temCiclo:boolean}}
+   */
+  melhorDiaCompra: function(nomeCartao, hoje) {
+    var cartao = this.obter(nomeCartao);
+    if (!cartao || !cartao.temCiclo) return null;
+
+    var ref = (hoje && typeof hoje.getTime === 'function' && !isNaN(hoje.getTime()))
+      ? hoje : new Date();
+    var ano = ref.getFullYear();
+    var mesIdx = ref.getMonth();
+
+    // Dia seguinte ao fechamento deste mês, montado como data real para tratar
+    // meses curtos (fechar dia 31 em fevereiro cai no último dia real).
+    var melhor = new Date(ano, mesIdx, this._diaNoMes(ano, mesIdx, cartao.fechamento));
+    melhor.setDate(melhor.getDate() + 1);
+
+    // Se essa data já passou, aponta para o dia seguinte ao fechamento do
+    // próximo mês — a recomendação é sempre a PRÓXIMA melhor janela.
+    var hojeZero = new Date(ano, mesIdx, ref.getDate());
+    if (melhor < hojeZero) {
+      var mesProx = mesIdx + 1;
+      var anoProx = ano + Math.floor(mesProx / 12);
+      mesProx = ((mesProx % 12) + 12) % 12;
+      melhor = new Date(anoProx, mesProx, this._diaNoMes(anoProx, mesProx, cartao.fechamento));
+      melhor.setDate(melhor.getDate() + 1);
+    }
+
+    var iso = melhor.getFullYear() + '-'
+      + String(melhor.getMonth() + 1).padStart(2, '0') + '-'
+      + String(melhor.getDate()).padStart(2, '0');
+
+    var fat = this.faturaDaCompra(cartao.nome, iso);
+    if (!fat) return null;
+
+    // Ambos ao meio-dia: contar dias entre 00:00 e 12:00 escorregaria de fuso.
+    var compra = new Date(melhor.getFullYear(), melhor.getMonth(), melhor.getDate(), 12, 0, 0, 0);
+    var venc = new Date(fat.vencimento + 'T12:00:00');
+    var diasSemJuros = Math.round((venc.getTime() - compra.getTime()) / 86400000);
+
+    return {
+      melhorDia: melhor.getDate(),
+      proximaData: iso,
+      fechamento: fat.fechamento,
+      vencimento: fat.vencimento,
+      diasSemJuros: diasSemJuros,
+      temCiclo: true
+    };
+  },
+
+  /**
    * Total e composição de uma fatura.
    *
    * @param {string} nomeCartao

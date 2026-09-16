@@ -1328,6 +1328,8 @@ const INIT_CONFIG = {
       var info = (typeof CARTOES !== 'undefined' && CARTOES.obter)
         ? CARTOES.obter(cartao.nome) : null;
       var semCiclo = info && !info.temCiclo;
+      var melhor = (info && info.temCiclo && CARTOES.melhorDiaCompra)
+        ? CARTOES.melhorDiaCompra(cartao.nome) : null;
       html += '<div class="banco-item' + (semCiclo ? ' banco-item--aviso' : '') + '" data-index="' + index + '" data-tipo="cartao">' +
         '<div class="banco-item-info">' +
           '<div class="banco-item-icon" aria-hidden="true"><i data-lucide="credit-card"></i></div>' +
@@ -1338,6 +1340,10 @@ const INIT_CONFIG = {
             '<div class="banco-item-tipo">' + UTILS.escapeHtml(cartao.bandeira) + (cartao.limite ? ' • Limite: R$ ' + parseFloat(cartao.limite).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '') +
               (semCiclo ? ' · Informe fechamento e vencimento para calcular faturas' : '') +
             '</div>' +
+            (melhor
+              ? '<div class="banco-item-tipo cartao-melhor-dia"><i data-lucide="lightbulb" aria-hidden="true"></i> Melhor dia de compra: dia ' +
+                  melhor.melhorDia + ' · ' + melhor.diasSemJuros + ' dias sem juros</div>'
+              : '') +
           '</div>' +
         '</div>' +
         '<div class="banco-item-actions">' +
