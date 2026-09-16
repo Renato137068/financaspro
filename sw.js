@@ -59,7 +59,6 @@ const urlsParaCache = [
   "/js/auth-biometric.js",
   "/js/authController.js",
   "/js/auto-categorizer.js",
-  "/js/automacao.js",
   "/js/billing.js",
   "/js/capacitor-init.js",
   "/js/cartoes.js",
