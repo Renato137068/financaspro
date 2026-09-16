@@ -106,6 +106,23 @@ describe('SYNC_MERGE.aplicarResolucoes', () => {
     const r = SM.aplicarResolucoes(local, [], delta, { a: 'remote' });
     expect(r.find(x => x.id === 'a').valor).toBe(20);
   });
+
+  test('escolher remoto vence mesmo com o local MAIS NOVO (não é LWW)', () => {
+    // Regressão: com o local mais novo (T2) que o remoto (T1), o LWW do
+    // mergeDelta descartava o delta e a escolha "remoto" sumia — o usuário
+    // resolvia o conflito e o app mantinha o local.
+    const local = [{ id: 'a', valor: 10, updatedAt: T2 }];
+    const delta = [{ id: 'a', valor: 20, updatedAt: T1 }];
+    const r = SM.aplicarResolucoes(local, [], delta, { a: 'remote' });
+    expect(r.find(x => x.id === 'a').valor).toBe(20);
+  });
+
+  test('escolher local vence mesmo com o remoto mais novo', () => {
+    const local = [{ id: 'a', valor: 10, updatedAt: T1 }];
+    const delta = [{ id: 'a', valor: 20, updatedAt: T2 }];
+    const r = SM.aplicarResolucoes(local, [], delta, { a: 'local' });
+    expect(r.find(x => x.id === 'a').valor).toBe(10);
+  });
 });
 
 describe('SYNC_MERGE.outboxEnqueue', () => {

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auditoria — Sincronização</title>
+<meta name="description" content="Auditoria da fusão de sync do FinançasPro: merge/LWW/tombstones sólidos; a resolução de conflitos ignorava a escolha 'remoto' quando o local era mais novo.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --ground:#f5f7f4; --card:#ffffff; --card-2:#fbfcfa;
+    --ink:#15211c; --muted:#59685f; --faint:#89968e; --line:#e4e9e3; --line-2:#eef2ec;
+    --brand:#0e5a41; --brand-2:#2f9c6d; --brand-ink:#0a3d2c;
+    --free:#15803d; --free-bg:#e9f6ec; --p1:#c2410c; --p1-bg:#fbeee5; --p2:#0e7490; --p2-bg:#e2f3f6; --p3:#6b7280; --p3-bg:#eef1ee;
+    --shadow:0 1px 2px rgba(16,40,30,.05), 0 10px 30px rgba(16,40,30,.06); --shadow-sm:0 1px 2px rgba(16,40,30,.06);
+    --radius:16px; --radius-sm:11px; --maxw:940px;
+  }
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+    --ground:#0d1310; --card:#151c18; --card-2:#121814; --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6;
+    --free:#57c98a; --free-bg:#123222; --p1:#f0a173; --p1-bg:#37210f; --p2:#4bc4d8; --p2-bg:#0c3138; --p3:#9aa6a0; --p3-bg:#1e2621;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }}
+  :root[data-theme="dark"]{
+    --ground:#0d1310; --card:#151c18; --card-2:#121814; --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6;
+    --free:#57c98a; --free-bg:#123222; --p1:#f0a173; --p1-bg:#37210f; --p2:#4bc4d8; --p2-bg:#0c3138; --p3:#9aa6a0; --p3-bg:#1e2621;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box} html{-webkit-text-size-adjust:100%}
+  body{background:var(--ground); color:var(--ink); font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; margin:0}
+  .wrap{max-width:var(--maxw); margin:0 auto; padding-inline:20px}
+  code{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.84em; background:var(--line-2); padding:1px 6px; border-radius:6px; color:var(--brand-ink)}
+  :root:not([data-theme="light"]) code,:root[data-theme="dark"] code{color:var(--brand-2)}
+  h1,h2,h3{font-family:"Bricolage Grotesque","IBM Plex Sans",sans-serif; text-wrap:balance; letter-spacing:-.015em; margin:0}
+  a{color:var(--brand-2)}
+  .hero{background:radial-gradient(120% 140% at 100% 0%, rgba(47,156,109,.18), transparent 55%), linear-gradient(158deg, var(--brand), var(--brand-ink)); color:#eafff5; border-radius:0 0 26px 26px; box-shadow:var(--shadow); position:relative; overflow:hidden}
+  .hero::after{content:""; position:absolute; inset:0; background-image:radial-gradient(rgba(255,255,255,.06) 1px, transparent 1.4px); background-size:22px 22px; mask:linear-gradient(120deg,#000,transparent 62%); pointer-events:none}
+  .hero .wrap{padding-block:34px 30px; position:relative; z-index:1}
+  .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:#9fe8c9; display:flex; align-items:center; gap:10px; margin-bottom:16px}
+  .eyebrow .dot{width:7px; height:7px; border-radius:50%; background:#7bffc8; box-shadow:0 0 0 4px rgba(123,255,200,.18)}
+  h1{font-size:clamp(28px,5.6vw,44px); line-height:1.03; font-weight:800; color:#fff; max-width:24ch}
+  .hero .lede{margin:16px 0 0; font-size:clamp(15px,2.3vw,18px); max-width:66ch; color:#d5f4e6; line-height:1.55}
+  .hero .lede b{color:#fff; font-weight:600}
+  .stats{display:flex; flex-wrap:wrap; gap:12px; margin-top:26px}
+  .stat{background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.16); border-radius:14px; padding:12px 16px; min-width:110px}
+  .stat .n{font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:24px; line-height:1; color:#fff; font-variant-numeric:tabular-nums}
+  .stat .l{font-size:12px; color:#bfead7; margin-top:6px}
+  section{margin-top:50px}
+  .sec-head{display:flex; align-items:baseline; gap:12px; margin-bottom:8px}
+  .sec-head .k{font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:600; color:var(--brand-2); border:1px solid var(--line); border-radius:8px; padding:3px 9px; background:var(--card); flex:none}
+  h2{font-size:clamp(20px,3.4vw,26px); font-weight:700; line-height:1.14}
+  .sec-sub{color:var(--muted); font-size:15px; margin:2px 0 20px; max-width:70ch}
+  .verdict{background:var(--card); border:1px solid var(--line); border-left:5px solid var(--free); border-radius:var(--radius); padding:22px 24px; box-shadow:var(--shadow); margin-top:-30px; position:relative; z-index:2}
+  .verdict h2{font-size:19px; margin-bottom:6px}
+  .verdict p{margin:8px 0 0; color:var(--muted); font-size:15px}
+  .verdict b{color:var(--ink)}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:20px 22px; box-shadow:var(--shadow-sm); margin-top:16px}
+  .find{border-left:5px solid var(--p3)}
+  .find.p1{border-left-color:var(--p1)} .find.p2{border-left-color:var(--p2)} .find.done{border-left-color:var(--free)}
+  .find .top{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px}
+  .tag{font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; padding:3px 9px; border-radius:999px}
+  .tag.p1{color:var(--p1); background:var(--p1-bg)} .tag.p2{color:var(--p2); background:var(--p2-bg)} .tag.p3{color:var(--p3); background:var(--p3-bg)} .tag.done{color:var(--free); background:var(--free-bg)}
+  .find h3{font-size:17px; font-weight:700}
+  .find p{margin:8px 0 0; color:var(--muted); font-size:14.5px}
+  .find p b{color:var(--ink)}
+  .find .fix{margin-top:12px; padding:12px 14px; background:var(--card-2); border:1px solid var(--line-2); border-radius:var(--radius-sm); font-size:14px}
+  .find .fix b{color:var(--brand-2)}
+  ul{margin:10px 0 0; padding-left:20px; color:var(--muted); font-size:14.5px} li{margin:5px 0}
+  .gate{display:grid; grid-template-columns:auto 1fr; gap:8px 14px; font-size:14px; margin-top:6px}
+  .gate .ok{color:var(--free); font-weight:700; font-family:"IBM Plex Mono",monospace}
+  .grid2{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin-top:14px}
+  .mini{background:var(--card-2); border:1px solid var(--line-2); border-radius:var(--radius-sm); padding:12px 14px; font-size:14px}
+  .mini b{color:var(--ink)} .mini .s{display:block; color:var(--free); font-family:"IBM Plex Mono",monospace; font-size:12px; margin-top:4px}
+  footer{margin:60px 0 40px; color:var(--faint); font-size:13px; text-align:center}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow"><span class="dot"></span> Auditoria funcional · FinançasPro v11</div>
+    <h1>Resolver o conflito escolhendo "remoto" às vezes não fazia nada</h1>
+    <p class="lede">A fusão de sync protege contra perda de dados: não sobrescreve pendências (D1), respeita tombstones (D2) e faz merge por registro via <code>updatedAt</code> (LWW, D3). Isso está <b>sólido</b>. Mas a <b>resolução de conflitos</b> tinha um furo: ao escolher "remoto", o delta passava pelo mesmo LWW — e se o registro <b>local fosse mais novo</b>, o LWW o mantinha, <b>ignorando em silêncio</b> a decisão explícita do usuário.</p>
+    <div class="stats">
+      <div class="stat"><div class="n">1</div><div class="l">bug de conflito</div></div>
+      <div class="stat"><div class="n">~50%</div><div class="l">dos conflitos afetados</div></div>
+      <div class="stat"><div class="n">+3</div><div class="l">testes</div></div>
+      <div class="stat"><div class="n">2097</div><div class="l">testes verdes</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="verdict">
+    <h2>Veredito — READY, com a escolha do usuário acima do LWW</h2>
+    <p>O merge automático (LWW, pendências, tombstones) estava <b>correto</b>. O ajuste é na resolução manual: quando o usuário decide, a decisão dele é autoritativa — não o timestamp. Agora "remoto" aplica o remoto e "local" mantém o local, independentemente de qual updatedAt é maior.</p>
+  </div>
+
+  <section>
+    <div class="sec-head"><span class="k">ACHADO</span><h2>O que a auditoria encontrou</h2></div>
+
+    <div class="card find done">
+      <div class="top"><span class="tag done">Corrigido</span><span class="tag p2">Médio · Resolução de conflito</span><h3>S1 — "remoto" era descartado quando o local era mais novo</h3></div>
+      <p>Em <code>aplicarResolucoes</code>, a escolha "remoto" mantinha o delta na lista e deixava o <code>mergeDelta</code> aplicá-lo — mas o <code>mergeDelta</code> usa LWW (<code>dm &gt;= am</code>). Num conflito, os dois lados editaram dentro da janela de 60s; se o local ficou com <code>updatedAt</code> maior (<code>am &gt; dm</code>), o LWW <b>rejeitava</b> o delta e o resultado voltava o <b>local</b> — o oposto do que o usuário pediu. Como conflitos com o local mais novo são cerca de metade dos casos, o furo era frequente. O único teste existente usava o remoto mais novo, onde o LWW por acaso concordava com a escolha, então o bug não aparecia.</p>
+      <div class="fix"><b>Correção:</b> depois do merge, <code>aplicarResolucoes</code> força o registro conforme a escolha — remoto do delta para <code>'remote'</code>, local para <code>'local'</code> — sobrepondo o LWW. Conflitos nunca envolvem tombstone (<code>detectarConflitos</code> os ignora), então o delta forçado é sempre um upsert válido.</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="k">OK</span><h2>O que já estava sólido</h2></div>
+    <div class="grid2">
+      <div class="mini"><b>D1 · pendências</b><span class="s">delta não sobrescreve mutação na outbox</span></div>
+      <div class="mini"><b>D2 · tombstone</b><span class="s">deletedAt remove, sem ressurreição</span></div>
+      <div class="mini"><b>D3 · LWW por registro</b><span class="s">nunca full-replace destrutivo</span></div>
+      <div class="mini"><b>Detecção de conflito</b><span class="s">campos core + janela de 60s</span></div>
+      <div class="mini"><b>Outbox dedup</b><span class="s">upsert substitui; delete suprime</span></div>
+      <div class="mini"><b>Timestamp robusto</b><span class="s">null/inválido → NaN, não 1970</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="k">EVIDÊNCIA</span><h2>Gates de verificação</h2></div>
+    <div class="card">
+      <div class="gate">
+        <span class="ok">✓</span><span>Frontend: <b>185 suites, 2097 testes</b> (+3: "remoto" vence com local mais novo; "local" vence com remoto mais novo)</span>
+        <span class="ok">✓</span><span><code>sync-merge.js</code>: 99,4% linhas / 84,3% branches / 100% funções (piso 95/95/60)</span>
+        <span class="ok">✓</span><span><code>lint</code> · <code>lint:changed</code> · <code>security:xss</code> · <code>a11y-static</code> · <code>css-tokens</code> · <code>contrast</code> · <code>bundle</code> · <code>build</code></span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="k">ARQUIVOS</span><h2>O que mudou</h2></div>
+    <div class="card">
+      <ul>
+        <li><code>js/core/sync-merge.js</code> — <code>aplicarResolucoes</code> força a escolha do usuário sobre o LWW.</li>
+        <li><code>tests/sync-merge.test.js</code> — +3 testes (remoto/local vencem contra o timestamp).</li>
+        <li><code>docs/auditoria-sincronizacao-2026-09-16.html</code> — este relatório.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    FinançasPro · Auditoria de Sincronização · 2026-09-16 · fluxo de auditoria por área
+  </footer>
+
+</div>
+</body>
+</html>

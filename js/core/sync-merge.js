@@ -119,8 +119,20 @@ var SYNC_MERGE = {
     var merged = this.mergeDelta(local, pendingIds, deltaFiltrado);
     var mapa = {};
     merged.forEach(function(r) { if (r && r.id != null) mapa[r.id] = r; });
+    // A escolha do usuário é autoritativa — sobrepõe o LWW. Sem forçar o
+    // 'remote', o mergeDelta rejeitava o delta quando o local era mais novo
+    // (dm < am) e a decisão "remoto" sumia silenciosamente. Conflitos nunca
+    // envolvem tombstone (detectarConflitos os ignora), então o delta aqui é
+    // sempre um upsert.
+    var mapaDelta = {};
+    (Array.isArray(delta) ? delta : []).forEach(function(d) {
+      if (d && d.id != null) mapaDelta[d.id] = d;
+    });
     (Array.isArray(local) ? local : []).forEach(function(loc) {
       if (loc && loc.id != null && res[loc.id] === 'local') mapa[loc.id] = loc;
+    });
+    Object.keys(res).forEach(function(id) {
+      if (res[id] === 'remote' && mapaDelta[id]) mapa[id] = mapaDelta[id];
     });
     return Object.keys(mapa).map(function(k) { return mapa[k]; });
   },
