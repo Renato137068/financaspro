@@ -75,11 +75,19 @@ const METAS = {
   },
 
   registrarAporte: function(id, valor) {
-    var v = parseFloat(valor);
+    // parseMoeda (BR-aware, idempotente para número), como em criar — parseFloat
+    // engolia "1.500" como 1,5.
+    var v = UTILS.parseMoeda(valor);
     if (!v || v <= 0) throw new Error('Valor inválido');
     var meta = this.obter(id);
     if (!meta) throw new Error('Meta não encontrada');
-    return this.atualizar(id, { valorAtual: Math.min(meta.valorAlvo, meta.valorAtual + v) });
+    // Soma em centavos inteiros: aportes sucessivos com += float faziam o
+    // valorAtual GUARDADO derivar (0,70 + 0,10 virava 0,7999999999999999).
+    // A meta ficava travada em "R$ 0,00 restante", 100%, mas nunca concluída —
+    // porque valorAtual < valorAlvo por uma fração de centavo.
+    var somaCent = UTILS.paraCentavos(meta.valorAtual) + UTILS.paraCentavos(v);
+    var alvoCent = UTILS.paraCentavos(meta.valorAlvo);
+    return this.atualizar(id, { valorAtual: Math.min(alvoCent, somaCent) / 100 });
   },
 
   calcularProgresso: function(meta, hoje) {

@@ -88,6 +88,19 @@ describe('METAS.registrarAporte', function() {
   test('meta inexistente lança', function() {
     expect(function() { global.METAS.registrarAporte('zzz', 10); }).toThrow(/encontrada/);
   });
+  test('aporte fracionário não trava a meta por deriva de float', function() {
+    // 0,70 + 0,10: em float dá 0.7999999999999999 (< 0,80). Guardado assim, a
+    // meta ficava em "R$ 0,00 restante" e 100%, mas nunca concluída.
+    var gid = global.METAS.criar({ titulo: 'Frac', valorAlvo: 0.80, valorAtual: 0.70 }).id;
+    var m = global.METAS.registrarAporte(gid, 0.10);
+    expect(m.valorAtual).toBe(0.8);
+    expect(m.concluida).toBe(true);
+  });
+  test('aceita valor em formato BR (string), como criar', function() {
+    var gid = global.METAS.criar({ titulo: 'BR', valorAlvo: 5000, valorAtual: 0 }).id;
+    // parseFloat('1.500') daria 1,5; parseMoeda entende o milhar BR.
+    expect(global.METAS.registrarAporte(gid, '1.500').valorAtual).toBe(1500);
+  });
 });
 
 describe('METAS.calcularProgresso', function() {
