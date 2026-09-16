@@ -460,7 +460,7 @@
         <div class="valor-input-wrapper">
           <span class="valor-prefix">R$</span>
           <input type="text" id="novo-valor" class="valor-input" placeholder="0,00"
-                 inputmode="decimal" autocomplete="off" required data-autosave="valor"
+                 inputmode="decimal" autocomplete="off" required
                  aria-label="Valor da transação" aria-describedby="valor-error">
         </div>
         <div id="valor-error" class="form-error-message" style="text-align: center; margin-top: 8px;"></div>
@@ -484,7 +484,7 @@
         <label for="novo-descricao"><i data-lucide="file-text"></i> Descrição</label>
         <div class="autocomplete-wrapper">
           <input type="text" id="novo-descricao" placeholder="Ex: Supermercado, Salário, Uber..."
-                 autocomplete="off" data-autosave="descricao" aria-describedby="desc-error"
+                 autocomplete="off" aria-describedby="desc-error"
                  role="combobox" aria-autocomplete="list" aria-expanded="false"
                  aria-controls="autocomplete-list" aria-haspopup="listbox">
           <div id="autocomplete-list" class="autocomplete-list" role="listbox" hidden></div>
@@ -595,7 +595,7 @@
         <div class="form-group">
           <label for="novo-tags"><i data-lucide="tags" aria-hidden="true"></i> Tags <span class="label-opcional">(opcional)</span></label>
           <input type="text" id="novo-tags" placeholder="Ex: viagem, reembolsável"
-                 autocomplete="off" data-autosave="tags" aria-describedby="tags-hint">
+                 autocomplete="off" aria-describedby="tags-hint">
           <div id="novo-tags-chips" class="tags-chips" aria-live="polite"></div>
           <span id="tags-hint" class="form-hint">Separe por vírgula. Servem para somar gastos de contextos que cruzam categorias.</span>
         </div>
@@ -2055,7 +2055,6 @@
 <script defer src="js/relatorios.js"></script>
 <script defer src="js/patrimonio.js"></script>
 <script defer src="js/anexos.js"></script>
-<script defer src="js/automacao.js"></script>
 <!-- Renderização modularizada -->
 <script defer src="js/render-core.js"></script>
 <!-- Componentes UI reutilizáveis -->
