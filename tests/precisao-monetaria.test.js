@@ -198,3 +198,61 @@ describe('BUDGET_SERVICE e o fallback do ORCAMENTO dão a mesma resposta', funct
     expect(viaFallback.percentual).toBe(viaService.percentual);
   });
 });
+
+// ─── caminho de produção do service (getStatus/calculateSpent/getAllStatus) ───
+describe('BUDGET_SERVICE.getStatus / calculateSpent / getAllStatus', function() {
+  var txs = [
+    { tipo: 'despesa', categoria: 'Alimentação', valor: 0.10 },
+    { tipo: 'despesa', categoria: 'Alimentação', valor: 0.20 },
+    { tipo: 'receita', categoria: 'Alimentação', valor: 999 }, // receita não conta
+    { tipo: 'despesa', categoria: 'Transporte', valor: 50 },
+  ];
+
+  test('calculateSpent soma só despesas da categoria, em centavos', function() {
+    // 0,10 + 0,20 = 0,30 exato (em float daria 0.30000000000000004).
+    expect(BUDGET_SERVICE.calculateSpent(txs, 'Alimentação', null, null)).toBe(0.30);
+    expect(BUDGET_SERVICE.calculateSpent(txs, 'Transporte', null, null)).toBe(50);
+    expect(BUDGET_SERVICE.calculateSpent(txs, 'Inexistente', null, null)).toBe(0);
+  });
+
+  test('getStatus devolve status coerente para categoria com limite', function() {
+    var s = BUDGET_SERVICE.getStatus({ Transporte: { limite: 100 } }, txs, 'Transporte', null, null);
+    expect(s.limite).toBe(100);
+    expect(s.gasto).toBe(50);
+    expect(s.percentual).toBe(50);
+    expect(s.status).toBe('ok');
+  });
+
+  test('getStatus de categoria sem entry é sem-limite', function() {
+    var s = BUDGET_SERVICE.getStatus({}, txs, 'Transporte', null, null);
+    expect(s.status).toBe('sem-limite');
+    expect(s.limite).toBeNull();
+  });
+
+  test('limite inválido ou zerado degrada para sem-limite, não estoura', function() {
+    // Regressão: normalizeLimit() estourava aqui na leitura, derrubando
+    // getAllStatus e a seção de orçamento do dashboard por uma entrada ruim.
+    ['0', 0, null, '', 'abc', -5].forEach(function(lim) {
+      expect(function() {
+        var s = BUDGET_SERVICE.getStatus({ Transporte: { limite: lim } }, txs, 'Transporte', null, null);
+        expect(s.status).toBe('sem-limite');
+        expect(s.limite).toBeNull();
+      }).not.toThrow();
+    });
+  });
+
+  test('getAllStatus não estoura quando uma entrada tem limite inválido', function() {
+    var budgets = { Transporte: { limite: 100 }, Quebrada: { limite: 0 } };
+    var todos;
+    expect(function() { todos = BUDGET_SERVICE.getAllStatus(budgets, txs, null, null); }).not.toThrow();
+    expect(todos).toHaveLength(2);
+    var quebrada = todos.filter(function(s) { return s.categoria === 'Quebrada'; })[0];
+    expect(quebrada.status).toBe('sem-limite');
+  });
+
+  test('limite em string BR é aceito na leitura', function() {
+    var s = BUDGET_SERVICE.getStatus({ Transporte: { limite: '100,00' } }, txs, 'Transporte', null, null);
+    expect(s.limite).toBe(100);
+    expect(s.gasto).toBe(50);
+  });
+});
