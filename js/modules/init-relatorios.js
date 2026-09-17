@@ -66,6 +66,29 @@ const INIT_RELATORIOS = {
       html += '</ul>';
     }
 
+    // Acima da média: categorias em que o gasto do mês superou a linha de base
+    // pessoal (média dos 3 meses anteriores). É o "fora do seu normal" que os
+    // concorrentes destacam, sem exigir orçamento configurado. Filtros contra
+    // alarme falso: só categorias com histórico em ≥ 2 dos 3 meses, variação
+    // ≥ 25% e ao menos R$ 25 acima da média.
+    if (typeof RELATORIOS.mediaPorCategoria === 'function') {
+      var acima = RELATORIOS.mediaPorCategoria(mes, ano).filter(function(c) {
+        return c.variacao != null && c.mesesComDados >= 2 && c.variacao >= 25 && c.diff >= 25;
+      });
+      if (acima.length > 0) {
+        html += '<h4 class="rel-subtitle">Acima da média</h4><ul class="rel-cat-list">';
+        acima.slice(0, 3).forEach(function(c) {
+          html += '<li class="rel-cat-item">' +
+            '<span class="rel-cat-name"><i data-lucide="trending-up" aria-hidden="true"></i> ' +
+              UTILS.escapeHtml(c.label) + '</span>' +
+            '<span class="rel-cat-val">' + UTILS.formatarMoeda(c.atual) +
+              ' · +' + c.variacao + '% vs média (' + UTILS.formatarMoeda(c.media) + ')</span>' +
+          '</li>';
+        });
+        html += '</ul>';
+      }
+    }
+
     // Gastos por marcador: o retorno do relatório sobre as tags. Como uma
     // transação pode ter várias tags, a soma por marcador pode passar do total
     // do mês — por isso cada barra é limitada a 100%, mas o % real é exibido.
