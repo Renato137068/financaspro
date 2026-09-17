@@ -45,6 +45,25 @@ const INIT_RELATORIOS = {
       html += '</ul>';
     }
 
+    // Gastos por marcador: o retorno do relatório sobre as tags. Como uma
+    // transação pode ter várias tags, a soma por marcador pode passar do total
+    // do mês — por isso cada barra é limitada a 100%, mas o % real é exibido.
+    if (typeof TRANSACOES !== 'undefined' && TRANSACOES.resumoPorTag) {
+      var porTag = TRANSACOES.resumoPorTag({ mes: mes, ano: ano }).filter(function(t) {
+        return t.despesa > 0;
+      });
+      if (porTag.length > 0) {
+        html += '<h4 class="rel-subtitle">Gastos por marcador</h4><ul class="rel-cat-list">';
+        porTag.slice(0, 5).forEach(function(t) {
+          var pct = a.despesas > 0 ? Math.round((t.despesa / a.despesas) * 100) : 0;
+          html += '<li class="rel-cat-item"><span class="rel-cat-name">#' + UTILS.escapeHtml(t.tag) + '</span>' +
+            '<span class="rel-cat-bar-wrap"><span class="rel-cat-bar" style="width:' + Math.min(100, pct) + '%"></span></span>' +
+            '<span class="rel-cat-val">' + UTILS.formatarMoeda(t.despesa) + ' (' + pct + '%)</span></li>';
+        });
+        html += '</ul>';
+      }
+    }
+
     if (typeof ASSINATURAS !== 'undefined') {
       var subTotal = ASSINATURAS.totalMensal();
       if (subTotal > 0) {
