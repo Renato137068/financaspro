@@ -300,3 +300,34 @@ describe('CARTOES.listarResumos', () => {
     expect(CARTOES.listarResumos(HOJE)).toEqual([]);
   });
 });
+
+describe('CARTOES.melhorDiaCompra — dia seguinte ao fechamento', () => {
+  test('fecha 20 / vence 28: melhor dia é 21, com a janela máxima sem juros', () => {
+    cadastrarCartao(); // fechamento 20, vencimento 28
+    // Antes do fechamento deste mês (10/08): a próxima melhor janela é 21/08.
+    const r = CARTOES.melhorDiaCompra('Nubank', new Date(2026, 7, 10));
+    expect(r.melhorDia).toBe(21);
+    expect(r.proximaData).toBe('2026-08-21');
+    // Compra em 21/08 cai na fatura que fecha 20/09 e vence 28/09.
+    expect(r.vencimento).toBe('2026-09-28');
+    expect(r.diasSemJuros).toBe(38);
+    expect(r.temCiclo).toBe(true);
+  });
+
+  test('quando o melhor dia do mês já passou, aponta para o próximo', () => {
+    cadastrarCartao(); // fechamento 20
+    // 25/08 já passou de 21/08 → próxima janela é 21/09.
+    const r = CARTOES.melhorDiaCompra('Nubank', new Date(2026, 7, 25));
+    expect(r.proximaData).toBe('2026-09-21');
+    expect(r.vencimento).toBe('2026-10-28');
+  });
+
+  test('cartão sem ciclo (sem fechamento/vencimento) devolve null', () => {
+    DADOS.salvarConfig({ cartoes: [{ nome: 'Simples', bandeira: 'Visa' }] });
+    expect(CARTOES.melhorDiaCompra('Simples', new Date(2026, 7, 10))).toBeNull();
+  });
+
+  test('cartão inexistente devolve null', () => {
+    expect(CARTOES.melhorDiaCompra('Fantasma', new Date(2026, 7, 10))).toBeNull();
+  });
+});
