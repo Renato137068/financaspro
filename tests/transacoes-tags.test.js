@@ -108,3 +108,48 @@ describe('TRANSACOES.tagsUsadas e porTag', function() {
     expect(T().porTag('')).toEqual([]);
   });
 });
+
+describe('TRANSACOES.resumoPorTag', function() {
+  test('soma despesa por marcador, em centavos, ordenado pela maior', function() {
+    T().criar('despesa', 100, 'lazer', '2026-05-10', 'A', '', '', { tags: 'viagem' });
+    T().criar('despesa', 50, 'transporte', '2026-05-11', 'B', '', '', { tags: 'viagem, uber' });
+    T().criar('despesa', 30, 'saude', '2026-05-12', 'C', '', '', { tags: 'casa' });
+
+    var res = T().resumoPorTag();
+    // viagem 150 > uber 50 > casa 30
+    expect(res.map(function(r) { return r.tag; })).toEqual(['viagem', 'uber', 'casa']);
+    var viagem = res.find(function(r) { return r.tag === 'viagem'; });
+    expect(viagem.despesa).toBe(150);       // 100 + 50 (duas transações)
+    expect(viagem.transacoes).toBe(2);
+  });
+
+  test('soma frações em centavos sem deriva de float', function() {
+    T().criar('despesa', 0.10, 'lazer', '2026-05-10', 'A', '', '', { tags: 'x' });
+    T().criar('despesa', 0.20, 'lazer', '2026-05-11', 'B', '', '', { tags: 'x' });
+    // 0.1 + 0.2 === 0.30000000000000004 em float; em centavos, 0,30.
+    expect(T().resumoPorTag().find(function(r) { return r.tag === 'x'; }).despesa).toBe(0.30);
+  });
+
+  test('separa receita de despesa por marcador (ex.: reembolsável)', function() {
+    T().criar('despesa', 200, 'lazer', '2026-05-10', 'Hotel', '', '', { tags: 'reembolsável' });
+    T().criar('receita', 200, 'outro', '2026-05-20', 'Reembolso', '', '', { tags: 'reembolsável' });
+
+    var r = T().resumoPorTag().find(function(x) { return x.tag === 'reembolsável'; });
+    expect(r.despesa).toBe(200);
+    expect(r.receita).toBe(200);
+    expect(r.transacoes).toBe(2);
+  });
+
+  test('recorta por mês quando mes/ano são informados', function() {
+    T().criar('despesa', 100, 'lazer', '2026-05-10', 'Maio', '', '', { tags: 'viagem' });
+    T().criar('despesa', 999, 'lazer', '2026-06-10', 'Junho', '', '', { tags: 'viagem' });
+
+    var maio = T().resumoPorTag({ mes: 5, ano: 2026 });
+    expect(maio.find(function(r) { return r.tag === 'viagem'; }).despesa).toBe(100);
+  });
+
+  test('lançamentos sem tag não entram', function() {
+    T().criar('despesa', 100, 'lazer', '2026-05-10', 'Sem tag');
+    expect(T().resumoPorTag()).toEqual([]);
+  });
+});

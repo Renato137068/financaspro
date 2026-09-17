@@ -369,6 +369,55 @@ var TRANSACOES = {
   },
 
   /**
+   * Quanto cada marcador soma — despesa e receita — em centavos exatos.
+   *
+   * Tags se sobrepõem (um lançamento pode ter várias), então a soma por tag
+   * pode passar do total do período: é esperado num relatório de marcadores.
+   * Transferência não entra (não é gasto nem ganho). Ordenado pela maior
+   * despesa.
+   *
+   * @param {{mes?:number, ano?:number}} [opts] recorta o período; sem isso, tudo.
+   * @returns {Array<{tag:string, despesa:number, receita:number, transacoes:number}>}
+   */
+  resumoPorTag: function(opts) {
+    opts = opts || {};
+    var lista;
+    if (opts.mes && opts.ano) {
+      lista = this.obter({ mes: opts.mes, ano: opts.ano });
+    } else {
+      this._refreshCache();
+      lista = this._cache || [];
+    }
+
+    var mapa = {};
+    lista.forEach(function(t) {
+      if (!t || !Array.isArray(t.tags) || !t.tags.length) return;
+      var ehReceita = t.tipo === CONFIG.TIPO_RECEITA;
+      var ehDespesa = t.tipo === CONFIG.TIPO_DESPESA;
+      if (!ehReceita && !ehDespesa) return; // transferência não compõe gasto/ganho
+      var cent = UTILS.paraCentavos(t.valor);
+      t.tags.forEach(function(tag) {
+        if (!mapa[tag]) mapa[tag] = { tag: tag, despesaCent: 0, receitaCent: 0, transacoes: 0 };
+        if (ehReceita) mapa[tag].receitaCent += cent;
+        else mapa[tag].despesaCent += cent;
+        mapa[tag].transacoes += 1;
+      });
+    });
+
+    return Object.keys(mapa).map(function(k) {
+      var m = mapa[k];
+      return {
+        tag: m.tag,
+        despesa: m.despesaCent / 100,
+        receita: m.receitaCent / 100,
+        transacoes: m.transacoes
+      };
+    }).sort(function(a, b) {
+      return (b.despesa - a.despesa) || (b.receita - a.receita) || a.tag.localeCompare(b.tag);
+    });
+  },
+
+  /**
    * Resumo agregado do mês.
    * @param {number} mes
    * @param {number} ano
