@@ -134,6 +134,7 @@ const urlsParaCache = [
   "/js/pipeline.js",
   "/js/play-billing.js",
   "/js/previsao.js",
+  "/js/projecao.js",
   "/js/recorrentes.js",
   "/js/relatorios.js",
   "/js/render-core.js",

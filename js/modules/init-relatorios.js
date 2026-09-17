@@ -35,6 +35,27 @@ const INIT_RELATORIOS = {
           '<small>' + fmtDiff(cmp.diffSaldo) + ' vs mês ant.</small></div>' +
       '</div>';
 
+    // Saldo do mês depois de honrar as contas a pagar ainda em aberto. É um
+    // recorte determinístico e gratuito (saldo realizado − contas pendentes),
+    // distinto da "Projeção de fim de mês" por ritmo/IA dos insights: aqui não
+    // há extrapolação, só o que já está lançado menos o que já se sabe que
+    // ainda vai sair. Só aparece quando há contas em aberto — senão o número
+    // seria igual ao saldo e não informa nada.
+    if (typeof PROJECAO !== 'undefined' && PROJECAO.doMes) {
+      var proj = PROJECAO.doMes(mes, ano);
+      if (proj.temDados && proj.contasEmAberto > 0) {
+        var sinal = proj.positivo ? 'rel-proj--pos' : 'rel-proj--neg';
+        var icone = proj.positivo ? 'wallet' : 'alert-triangle';
+        html += '<div class="rel-insight rel-proj ' + sinal + '">' +
+          '<i data-lucide="' + icone + '" aria-hidden="true"></i> ' +
+          'Depois das contas em aberto: <strong>' + UTILS.formatarMoeda(proj.projetado) + '</strong> ' +
+          '<span class="rel-proj-calc">(' + UTILS.formatarMoeda(proj.saldoAtual) + ' hoje − ' +
+            UTILS.formatarMoeda(proj.aPagar) + ' a pagar em ' + proj.contasEmAberto +
+            (proj.contasEmAberto > 1 ? ' contas' : ' conta') + ')</span>' +
+        '</div>';
+      }
+    }
+
     if (a.topCategorias.length > 0) {
       html += '<h4 class="rel-subtitle">Top despesas por categoria</h4><ul class="rel-cat-list">';
       a.topCategorias.forEach(function(c) {
