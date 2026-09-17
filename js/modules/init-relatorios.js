@@ -64,6 +64,32 @@ const INIT_RELATORIOS = {
       }
     }
 
+    // Agenda: o que vence no mês (contas a pagar + faturas de cartão),
+    // consolidado numa linha do tempo — o recorte de calendário financeiro.
+    if (typeof CALENDARIO !== 'undefined' && CALENDARIO.agendaDoMes) {
+      var agenda = CALENDARIO.agendaDoMes(mes, ano);
+      if (agenda.quantidade > 0) {
+        html += '<h4 class="rel-subtitle">Vencimentos do mês</h4><ul class="rel-cat-list">';
+        agenda.eventos.slice(0, 6).forEach(function(e) {
+          var diaTxt = e.data.slice(8, 10) + '/' + e.data.slice(5, 7);
+          var quando = (e.dias == null) ? ''
+            : (e.dias < 0 ? 'vencida' : e.dias === 0 ? 'hoje' : 'em ' + e.dias + (e.dias > 1 ? ' dias' : ' dia'));
+          var icone = e.tipo === 'cartao' ? 'credit-card' : 'file-text';
+          html += '<li class="rel-cat-item">' +
+            '<span class="rel-cat-name"><i data-lucide="' + icone + '" aria-hidden="true"></i> ' +
+              diaTxt + ' · ' + UTILS.escapeHtml(e.titulo) + '</span>' +
+            '<span class="rel-cat-val">' + UTILS.formatarMoeda(e.valor) +
+              (quando ? ' · ' + quando : '') + '</span>' +
+          '</li>';
+        });
+        html += '</ul>';
+        if (agenda.quantidade > 6) {
+          html += '<p class="rel-insight"><i data-lucide="calendar" aria-hidden="true"></i> + ' +
+            (agenda.quantidade - 6) + ' outros · total do mês ' + UTILS.formatarMoeda(agenda.total) + '</p>';
+        }
+      }
+    }
+
     if (typeof ASSINATURAS !== 'undefined') {
       var subTotal = ASSINATURAS.totalMensal();
       if (subTotal > 0) {

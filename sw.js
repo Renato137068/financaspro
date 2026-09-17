@@ -60,6 +60,7 @@ const urlsParaCache = [
   "/js/authController.js",
   "/js/auto-categorizer.js",
   "/js/billing.js",
+  "/js/calendario.js",
   "/js/capacitor-init.js",
   "/js/cartoes.js",
   "/js/categories.js",
