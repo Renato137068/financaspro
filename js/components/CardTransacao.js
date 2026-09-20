@@ -38,7 +38,7 @@
 
       var desc = document.createElement('div');
       desc.className = 'transacao-descricao';
-      desc.textContent = t.descricao || t.categoria;
+      desc.textContent = u.dtext(t.descricao || t.categoria);
       info.appendChild(desc);
 
       var meta = document.createElement('div');
@@ -89,7 +89,7 @@
 
       var desc = document.createElement('div');
       desc.className = 'transacao-desc';
-      desc.textContent = t.descricao || t.categoria;
+      desc.textContent = u.dtext(t.descricao || t.categoria);
       info.appendChild(desc);
 
       var metaEl = document.createElement('div');
