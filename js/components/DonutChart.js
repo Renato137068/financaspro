@@ -46,9 +46,11 @@
           ' L ' + ix1 + ' ' + iy1 +
           ' A ' + innerR + ' ' + innerR + ' 0 ' + largeArc + ' 0 ' + ix2 + ' ' + iy2 + ' Z';
 
-        // SVG de geometria pura — nome é slug interno, valor é número
-        svgStr += '<path d="' + path + '" fill="' + cats[i].cor + '" opacity="0.9">' +
-          '<title>' + u.label(cats[i].nome) + ': ' + u.moeda(cats[i].valor) + ' (' + Math.round(pct * 100) + '%)</title>' +
+        // O <title> vai por innerHTML: o rótulo pode ser uma CATEGORIA CUSTOM,
+        // cujo slug é o nome digitado pelo usuário — escapar aqui como a tabela
+        // já faz. A cor também é escapada por precaução (vai num atributo).
+        svgStr += '<path d="' + path + '" fill="' + u.esc(cats[i].cor) + '" opacity="0.9">' +
+          '<title>' + u.esc(u.label(cats[i].nome)) + ': ' + u.esc(u.moeda(cats[i].valor)) + ' (' + Math.round(pct * 100) + '%)</title>' +
           '</path>';
 
         startAngle = endAngle;

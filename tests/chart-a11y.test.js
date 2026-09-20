@@ -154,4 +154,22 @@ describe('DonutChart — alternativa acessível', function() {
     expect(el.querySelector('svg').getAttribute('aria-hidden')).toBe('true');
     expect(el.querySelector('svg').getAttribute('aria-label')).toBeNull();
   });
+
+  test('nome de categoria custom com markup é escapado no <title> do SVG (sem XSS)', function() {
+    // O slug de uma categoria customizada é o texto que o usuário digitou.
+    // No <title> (inserido via innerHTML) ele precisa ser escapado como já é
+    // na tabela sr-only — senão vira injeção de HTML.
+    var nome = '<img src=x onerror=alert(1)>';
+    var el = UI.DonutChart.render([{ nome: nome, valor: 100, cor: '#123456' }], 100);
+
+    // Nenhum elemento vivo injetado a partir do nome.
+    expect(el.querySelectorAll('img').length).toBe(0);
+    expect(el.querySelectorAll('script').length).toBe(0);
+    // O título existe e carrega o nome como TEXTO literal (escapado e reparseado).
+    var title = el.querySelector('svg title');
+    expect(title).toBeTruthy();
+    expect(title.textContent).toContain(nome);
+    // E o markup cru não aparece na string do SVG.
+    expect(el.querySelector('svg').innerHTML).not.toContain('<img');
+  });
 });
