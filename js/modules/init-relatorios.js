@@ -78,6 +78,28 @@ const INIT_RELATORIOS = {
       }
     }
 
+    // Compromissos dos próximos meses: a agenda de desembolsos já conhecidos
+    // (faturas de cartão, parcelas e contas a pagar) dos meses à frente. É o
+    // "mês pesado chegando" — distinto do disponível de hoje. Mostra só os meses
+    // futuros com algum compromisso (o mês corrente já aparece em projeção/ritmo).
+    if (typeof COMPROMISSOS !== 'undefined' && COMPROMISSOS.porMes) {
+      var MESES_PROX = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+      var futuros = COMPROMISSOS.porMes(4, agora).slice(1).filter(function(m) { return m.total > 0; });
+      if (futuros.length > 0) {
+        var maxProx = futuros.reduce(function(mx, m) { return m.total > mx ? m.total : mx; }, 0);
+        html += '<h4 class="rel-subtitle">Compromissos dos próximos meses</h4><ul class="rel-cat-list">';
+        futuros.forEach(function(m) {
+          var pct = maxProx > 0 ? Math.round((m.total / maxProx) * 100) : 0;
+          var label = MESES_PROX[m.mes - 1] + '/' + String(m.ano).slice(2);
+          html += '<li class="rel-cat-item"><span class="rel-cat-name">' +
+              '<i data-lucide="calendar-clock" aria-hidden="true"></i> ' + label + '</span>' +
+            '<span class="rel-cat-bar-wrap"><span class="rel-cat-bar" style="width:' + pct + '%"></span></span>' +
+            '<span class="rel-cat-val">' + UTILS.formatarMoeda(m.total) + '</span></li>';
+        });
+        html += '</ul>';
+      }
+    }
+
     if (a.topCategorias.length > 0) {
       html += '<h4 class="rel-subtitle">Top despesas por categoria</h4><ul class="rel-cat-list">';
       a.topCategorias.forEach(function(c) {
