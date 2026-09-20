@@ -386,6 +386,58 @@ const RELATORIOS = {
     }).map(function(m) {
       return { fonte: m.fonte, tipo: m.tipo, total: m.total, transacoes: m.transacoes, percentual: m.percentual };
     });
+  },
+
+  /**
+   * Retrospectiva do ano: agrega os 12 meses do ano civil — total de receitas,
+   * despesas e saldo, média de despesa por mês ativo, taxa de poupança do ano e
+   * os meses mais caro e mais econômico. É a visão anual que o app não tinha: o
+   * "Últimos 6 meses" é uma janela móvel; este é o ano fechado (jan→dez).
+   *
+   * A média divide pelos meses COM lançamento (não por 12 fixo), para um ano em
+   * curso não sair diluído por meses que ainda nem chegaram. Tudo em centavos
+   * inteiros. O array `meses` traz os 12 meses (zeros nos vazios) para desenhar
+   * a evolução do ano.
+   *
+   * @param {number} ano
+   * @returns {?{ano:number, receitas:number, despesas:number, saldo:number,
+   *   mediaDespesaMensal:number, taxaPoupanca:?number, mesesComDados:number,
+   *   maiorDespesaMes:?{mes:number, despesas:number},
+   *   menorDespesaMes:?{mes:number, despesas:number},
+   *   meses:Array<{mes:number, receitas:number, despesas:number, saldo:number, transacoes:number}>}}
+   */
+  resumoAno: function(ano) {
+    if (typeof TRANSACOES === 'undefined') return null;
+    var recCent = 0, despCent = 0, mesesComDados = 0;
+    var maior = null, menor = null;
+    var meses = [];
+    for (var mes = 1; mes <= 12; mes++) {
+      var r = this.resumoMes(mes, ano);
+      var rc = UTILS.paraCentavos(r.receitas);
+      var dc = UTILS.paraCentavos(r.despesas);
+      recCent += rc;
+      despCent += dc;
+      if (r.transacoes > 0) mesesComDados++;
+      if (dc > 0) {
+        if (maior === null || dc > maior.cent) maior = { mes: mes, cent: dc };
+        if (menor === null || dc < menor.cent) menor = { mes: mes, cent: dc };
+      }
+      meses.push({ mes: mes, receitas: rc / 100, despesas: dc / 100, saldo: (rc - dc) / 100, transacoes: r.transacoes });
+    }
+
+    var saldoCent = recCent - despCent;
+    return {
+      ano: ano,
+      receitas: recCent / 100,
+      despesas: despCent / 100,
+      saldo: saldoCent / 100,
+      mediaDespesaMensal: mesesComDados > 0 ? Math.round(despCent / mesesComDados) / 100 : 0,
+      taxaPoupanca: recCent > 0 ? Math.round((saldoCent / recCent) * 100) : null,
+      mesesComDados: mesesComDados,
+      maiorDespesaMes: maior ? { mes: maior.mes, despesas: maior.cent / 100 } : null,
+      menorDespesaMes: menor ? { mes: menor.mes, despesas: menor.cent / 100 } : null,
+      meses: meses
+    };
   }
 };
 

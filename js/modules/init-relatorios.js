@@ -245,6 +245,30 @@ const INIT_RELATORIOS = {
       }
     }
 
+    // Retrospectiva do ano: o ano civil fechado (jan→dez), complementando a
+    // janela móvel de 6 meses. Total do ano, média por mês ativo, poupança e os
+    // meses mais caro/econômico. Só com >= 3 meses de dados no ano (senão
+    // engana), e sem repetir o de 6 meses quando o ano ainda tem <= 6 meses de
+    // dados (aí as duas janelas seriam praticamente a mesma).
+    if (typeof RELATORIOS.resumoAno === 'function') {
+      var rano = RELATORIOS.resumoAno(ano);
+      if (rano && rano.mesesComDados >= 3 && rano.mesesComDados > 6) {
+        var MESES_ANO = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+        html += '<h4 class="rel-subtitle">Retrospectiva de ' + ano + '</h4>';
+        html += '<p class="rel-insight"><i data-lucide="calendar-days" aria-hidden="true"></i> ' +
+          'Despesas do ano: <strong>' + UTILS.formatarMoeda(rano.despesas) + '</strong> · média ' +
+          UTILS.formatarMoeda(rano.mediaDespesaMensal) + '/mês' +
+          (rano.taxaPoupanca != null ? ' · poupança ' + rano.taxaPoupanca + '%' : '') + '.</p>';
+        if (rano.maiorDespesaMes && rano.menorDespesaMes) {
+          html += '<p class="rel-insight"><i data-lucide="scale" aria-hidden="true"></i> ' +
+            'Mês mais caro: <strong>' + MESES_ANO[rano.maiorDespesaMes.mes - 1] + '</strong> (' +
+            UTILS.formatarMoeda(rano.maiorDespesaMes.despesas) + ') · mais econômico: <strong>' +
+            MESES_ANO[rano.menorDespesaMes.mes - 1] + '</strong> (' +
+            UTILS.formatarMoeda(rano.menorDespesaMes.despesas) + ').</p>';
+        }
+      }
+    }
+
     el.innerHTML = html;
     if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(el);
   }
