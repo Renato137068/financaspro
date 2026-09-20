@@ -75,6 +75,11 @@ module.exports = {
     // Regras de orçamento (dinheiro). O budget.test.js roda uma cópia inline
     // (0% do módulo real); budgetService-real.test.js carrega o de produção.
     'js/services/budgetService.js': { lines: 88, functions: 83, branches: 82 },
+
+    // Resolução de categorias (rótulo/ícone/cor/tipo/custom/busca), consumida
+    // por init-form, auto-categorizer e lifecycle. Estava em 0%; agora coberta
+    // por categories-real.test.js sobre o módulo de produção.
+    'js/categories.js': { lines: 95, functions: 90, branches: 78 },
   },
   coverageReporters: ['text', 'lcov', 'html'],
   verbose: true,
