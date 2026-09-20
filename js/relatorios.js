@@ -211,6 +211,71 @@ const RELATORIOS = {
     return labels.map(function(label, i) {
       return { dia: i, label: label, total: cent[i] / 100, transacoes: cnt[i] };
     });
+  },
+
+  /**
+   * Para onde o dinheiro foi: ranking das despesas do mês por descrição — o
+   * "maiores despesas / top estabelecimentos" que Mobills e Organizze mostram.
+   * Responde "quais lançamentos mais pesaram", olhando o texto do gasto, e não
+   * a categoria (topCategorias) nem o marcador (resumoPorTag).
+   *
+   * A chave de agrupamento normaliza a descrição (minúscula, espaços internos
+   * colapsados) para juntar "Uber", "uber " e "UBER" num item só; o rótulo
+   * exibido é a forma original mais frequente, para não descaracterizar o nome.
+   * Lançamentos sem descrição ficam de fora (não são um estabelecimento). Só
+   * despesa entra; soma em centavos inteiros. O percentual é sobre a despesa
+   * total do mês (inclusive a sem descrição), então "Uber = 12%" significa 12%
+   * de tudo que saiu no mês.
+   *
+   * @param {number} mes 1-12
+   * @param {number} ano
+   * @param {number} [limite=5] quantos itens no topo
+   * @returns {Array<{descricao:string, total:number, transacoes:number,
+   *   percentual:number}>} maior gasto primeiro
+   */
+  topDescricoes: function(mes, ano, limite) {
+    if (typeof TRANSACOES === 'undefined') return [];
+    var lim = (limite && limite > 0) ? limite : 5;
+    var totalDespCent = 0;
+    var mapa = {};
+    TRANSACOES.obter({ mes: mes, ano: ano }).forEach(function(t) {
+      if (!t || t.tipo !== CONFIG.TIPO_DESPESA) return;
+      var cent = UTILS.paraCentavos(t.valor);
+      totalDespCent += cent;
+      var bruto = String(t.descricao == null ? '' : t.descricao).trim();
+      if (!bruto) return; // sem descrição não é um estabelecimento
+      var chave = bruto.toLowerCase().replace(/\s+/g, ' ');
+      if (!mapa[chave]) mapa[chave] = { totalCent: 0, transacoes: 0, rotulos: {} };
+      var m = mapa[chave];
+      m.totalCent += cent;
+      m.transacoes += 1;
+      m.rotulos[bruto] = (m.rotulos[bruto] || 0) + 1;
+    });
+
+    return Object.keys(mapa).map(function(chave) {
+      var m = mapa[chave];
+      var rotulo = Object.keys(m.rotulos).sort(function(a, b) {
+        return (m.rotulos[b] - m.rotulos[a]) || a.localeCompare(b);
+      })[0];
+      return {
+        descricao: rotulo,
+        totalCent: m.totalCent,
+        total: m.totalCent / 100,
+        transacoes: m.transacoes,
+        percentual: totalDespCent > 0 ? Math.round((m.totalCent / totalDespCent) * 100) : 0
+      };
+    }).sort(function(a, b) {
+      return (b.totalCent - a.totalCent) ||
+        (b.transacoes - a.transacoes) ||
+        a.descricao.localeCompare(b.descricao);
+    }).slice(0, lim).map(function(item) {
+      return {
+        descricao: item.descricao,
+        total: item.total,
+        transacoes: item.transacoes,
+        percentual: item.percentual
+      };
+    });
   }
 };
 

@@ -66,6 +66,26 @@ const INIT_RELATORIOS = {
       html += '</ul>';
     }
 
+    // Maiores despesas: para onde o dinheiro foi, por descrição normalizada — o
+    // "top estabelecimentos" do mercado. Barras proporcionais ao maior item; o
+    // % é sobre a despesa do mês. Só aparece com >= 2 descrições distintas,
+    // senão vira eco do primeiro lançamento (e não um ranking).
+    if (typeof RELATORIOS.topDescricoes === 'function') {
+      var topDesc = RELATORIOS.topDescricoes(mes, ano, 5);
+      if (topDesc.length >= 2) {
+        var maxDesc = topDesc[0].total; // lista já vem ordenada por gasto desc
+        html += '<h4 class="rel-subtitle">Maiores despesas</h4><ul class="rel-cat-list">';
+        topDesc.forEach(function(d) {
+          var pct = maxDesc > 0 ? Math.round((d.total / maxDesc) * 100) : 0;
+          var qtd = d.transacoes > 1 ? ' · ' + d.transacoes + 'x' : '';
+          html += '<li class="rel-cat-item"><span class="rel-cat-name">' + UTILS.escapeHtml(d.descricao) + '</span>' +
+            '<span class="rel-cat-bar-wrap"><span class="rel-cat-bar" style="width:' + pct + '%"></span></span>' +
+            '<span class="rel-cat-val">' + UTILS.formatarMoeda(d.total) + ' (' + d.percentual + '%' + qtd + ')</span></li>';
+        });
+        html += '</ul>';
+      }
+    }
+
     // Acima da média: categorias em que o gasto do mês superou a linha de base
     // pessoal (média dos 3 meses anteriores). É o "fora do seu normal" que os
     // concorrentes destacam, sem exigir orçamento configurado. Filtros contra
