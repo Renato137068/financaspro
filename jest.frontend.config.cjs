@@ -54,7 +54,7 @@ module.exports = {
     'js/transacoes.js': { lines: 90, functions: 95, branches: 78 },
     'js/metas.js': { lines: 95, functions: 95, branches: 88 },
     'js/pipeline.js': { lines: 80, functions: 95, branches: 72 },
-    'js/score.js': { lines: 82, functions: 45, branches: 88 },
+    'js/score.js': { lines: 95, functions: 100, branches: 95 },
     'js/parser.js': { lines: 95, functions: 95, branches: 85 },
 
     // Estes três apareciam como 0% no relatório até se descobrir que os testes

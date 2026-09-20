@@ -166,3 +166,35 @@ describe('SCORE — cache LRU', () => {
     expect(despesa.tipo).toBe('despesa'); // não 'receita'
   });
 });
+
+describe('SCORE — teto do cache e limparCache', () => {
+  beforeEach(() => SCORE._cache.clear());
+
+  test('evicção LRU: o cache nunca ultrapassa _CACHE_MAX', () => {
+    // Cada categoria distinta gera uma chave nova; passando do teto, a entrada
+    // mais antiga é descartada para o Map não crescer sem limite.
+    for (var i = 0; i < SCORE._CACHE_MAX + 25; i++) {
+      SCORE.calcular({ confianca: 'alta', categoria: 'cat' + i, tipo: 'despesa' }, null, null);
+    }
+    expect(SCORE._cache.size).toBeLessThanOrEqual(SCORE._CACHE_MAX);
+    // A entrada mais antiga (cat0) foi evictada; a mais recente permanece.
+    var recente = SCORE.calcular({ confianca: 'alta', categoria: 'cat' + (SCORE._CACHE_MAX + 24), tipo: 'despesa' }, null, null);
+    expect(recente.categoria).toBe('cat' + (SCORE._CACHE_MAX + 24));
+  });
+
+  test('limparCache zera o cache quando acima do teto', () => {
+    // Infla o Map diretamente acima do teto (a evicção do calcular o mantém no
+    // teto, então este é o caminho que dispara o clear de limparCache).
+    for (var i = 0; i < SCORE._CACHE_MAX + 5; i++) SCORE._cache.set('k' + i, {});
+    expect(SCORE._cache.size).toBeGreaterThan(SCORE._CACHE_MAX);
+    SCORE.limparCache();
+    expect(SCORE._cache.size).toBe(0);
+  });
+
+  test('limparCache preserva o cache quando dentro do teto', () => {
+    SCORE.calcular({ confianca: 'alta', categoria: 'x', tipo: 'despesa' }, null, null);
+    var antes = SCORE._cache.size;
+    SCORE.limparCache();
+    expect(SCORE._cache.size).toBe(antes);
+  });
+});
