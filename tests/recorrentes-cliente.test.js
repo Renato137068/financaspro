@@ -205,6 +205,28 @@ describe('idempotência — o dinheiro não pode dobrar', () => {
     expect(criadas.map((t) => t.data)).toEqual(['2026-07-20', '2026-08-03']);
   });
 
+  test('semanal muito antiga gera as ocorrências RECENTES, não as de 12 anos atrás', () => {
+    // Regressão: com dataInicio de ~12 anos atrás, iterar desde o início com
+    // teto de 520 parava por volta de ~10 anos e o slice guardava semanas de
+    // 2024 — nunca as atuais. Agora ancora perto de hoje.
+    comRecorrentes([recorrente({
+      frequencia: 'semanal',
+      dataInicio: '2014-08-04',
+      valor: 50,
+      descricao: 'Mercado',
+    })]);
+
+    const criadas = RECORRENTES.processar(HOJE);
+    const datas = criadas.map((t) => t.data);
+    expect(datas).toHaveLength(RECORRENTES.MAX_RETROATIVO);   // 12 mais recentes
+    expect(datas.every((d) => d >= '2026-01-01')).toBe(true); // recentes, não 2014
+    const hojeIso = UTILS.dataLocalIso(HOJE);
+    const ultima = datas[datas.length - 1];
+    expect(ultima <= hojeIso).toBe(true);
+    // A próxima ocorrência (última + 7) já passaria de hoje → é mesmo a mais recente.
+    expect(RECORRENTES._addDias(ultima, 7) > hojeIso).toBe(true);
+  });
+
   test('anual gera no mesmo dia/mês cada ano', () => {
     comRecorrentes([recorrente({
       frequencia: 'anual',

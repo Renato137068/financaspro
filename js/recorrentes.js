@@ -132,7 +132,21 @@ var RECORRENTES = {
       }
     } else {
       var intervalo = freq === 'semanal' ? 7 : 14;
-      for (i = 0; i < 520; i++) {
+      // Só as MAX_RETROATIVO ocorrências mais recentes importam. Iterar desde a
+      // dataInicio com teto fixo truncava a ponta recente quando o início era de
+      // muitos anos atrás (semanal de 12 anos estoura 520 iterações antes de
+      // chegar a hoje, e o slice final guardava competências de ~10 anos atrás,
+      // nunca as atuais). Ancorar perto do presente: começa poucas ocorrências
+      // antes do fim efetivo (hoje, ou dataFim se anterior).
+      var msDia = 86400000;
+      var d0 = new Date(inicio + 'T12:00:00');
+      var fimEfetivo = (fim && fim < hojeIso) ? fim : hojeIso;
+      var d1 = new Date(fimEfetivo + 'T12:00:00');
+      var totalPeriodos = (isNaN(d0.getTime()) || isNaN(d1.getTime()))
+        ? -1
+        : Math.floor((d1 - d0) / msDia / intervalo);
+      var inicioIdx = Math.max(0, totalPeriodos - (this.MAX_RETROATIVO - 1));
+      for (i = inicioIdx; i <= totalPeriodos; i++) {
         data = self._addDias(inicio, i * intervalo);
         if (!data) break;
         if (data > hojeIso) break;
