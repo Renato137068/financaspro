@@ -379,6 +379,7 @@ const LIFECYCLE_BOOT = {
       if (typeof INIT_PATRIMONIO !== 'undefined') INIT_PATRIMONIO.init();
       if (typeof ANEXOS !== 'undefined') ANEXOS.init();
       if (typeof INIT_ANEXOS !== 'undefined') INIT_ANEXOS.init();
+      if (typeof INIT_SIMULADOR !== 'undefined') INIT_SIMULADOR.init();
       if (typeof BILLING !== 'undefined') BILLING.init();
       if (typeof INIT_BILLING !== 'undefined') INIT_BILLING.init();
       if (typeof INIT_2FA !== 'undefined') INIT_2FA.init();

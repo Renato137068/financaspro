@@ -1250,6 +1250,15 @@
           <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
         </button>
 
+        <button type="button" class="perfil-card" data-action="mudar-aba" data-aba="config-simulador" aria-label="Simulador financeiro">
+          <div class="perfil-card-icon-wrapper"><i data-lucide="calculator" aria-hidden="true"></i></div>
+          <div class="perfil-card-content">
+            <span class="perfil-card-title">Simulador financeiro</span>
+            <span class="perfil-card-subtitle">À vista ou parcelado, poupança e financiamento</span>
+          </div>
+          <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+        </button>
+
         <button type="button" class="perfil-card" data-action="mudar-aba" data-aba="config-preferencias" aria-label="Preferências e notificações">
           <div class="perfil-card-icon-wrapper"><i data-lucide="settings" aria-hidden="true"></i></div>
           <div class="perfil-card-content">
@@ -1319,6 +1328,27 @@
        fechadas com data-aba="config". Antes de #aba-editar-perfil de propósito
        (o teste perfil-polish fatia esse trecho e exige o link de privacidade).
        IDs preservados — init-config.js liga tudo por getElementById. -->
+
+  <!-- SUB-TELA: SIMULADOR FINANCEIRO -->
+  <div id="aba-config-simulador" class="aba">
+    <div class="perfil-header">
+      <div class="perfil-avatar-wrapper">
+        <div class="perfil-avatar" style="background: var(--color-primary-500);" aria-hidden="true"><i data-lucide="calculator"></i></div>
+      </div>
+      <div class="perfil-info">
+        <h2 class="perfil-nome">Simulador financeiro</h2>
+        <div class="perfil-meta"><span>Decida com números, sem cadastrar nada</span></div>
+      </div>
+      <div class="perfil-actions">
+        <button class="perfil-action-btn" data-action="mudar-aba" data-aba="config" aria-label="Perfil e configurações">
+          <i data-lucide="arrow-left" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
+    <div class="perfil-section">
+      <div id="simulador-panel" class="sim-panel"></div>
+    </div>
+  </div>
 
   <!-- SUB-TELA: CONTA E PLANO -->
   <div id="aba-config-conta" class="aba">
@@ -2055,6 +2085,7 @@
 <script defer src="js/assinaturas.js"></script>
 <script defer src="js/relatorios.js"></script>
 <script defer src="js/projecao.js"></script>
+<script defer src="js/simulador.js"></script>
 <script defer src="js/patrimonio.js"></script>
 <script defer src="js/anexos.js"></script>
 <!-- Renderização modularizada -->
@@ -2105,6 +2136,7 @@
 <script defer src="js/modules/init-assinaturas.js"></script>
 <script defer src="js/modules/init-relatorios.js"></script>
 <script defer src="js/modules/init-patrimonio.js"></script>
+<script defer src="js/modules/init-simulador.js"></script>
 <script defer src="js/modules/init-anexos.js"></script>
 <script defer src="js/modules/init-billing.js"></script>
 <script defer src="js/modules/init-2fa.js"></script>
