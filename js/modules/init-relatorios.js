@@ -63,7 +63,7 @@ const INIT_RELATORIOS = {
     if (typeof RELATORIOS.ritmoGasto === 'function') {
       var ritmo = RELATORIOS.ritmoGasto(mes, ano, agora);
       if (ritmo && ritmo.dia >= 5 && ritmo.anterior > 0 && ritmo.variacao != null) {
-        var ritmoBom = ritmo.diff <= 0;
+        var ritmoBom = ritmo.variacao <= 0;
         var ritmoCls = ritmoBom ? 'rel-proj--pos' : 'rel-proj--neg';
         var ritmoIcone = ritmoBom ? 'trending-down' : 'trending-up';
         var ritmoTxt = ritmoBom
@@ -269,12 +269,12 @@ const INIT_RELATORIOS = {
 
     // Retrospectiva do ano: o ano civil fechado (jan→dez), complementando a
     // janela móvel de 6 meses. Total do ano, média por mês ativo, poupança e os
-    // meses mais caro/econômico. Só com >= 3 meses de dados no ano (senão
-    // engana), e sem repetir o de 6 meses quando o ano ainda tem <= 6 meses de
-    // dados (aí as duas janelas seriam praticamente a mesma).
+    // meses mais caro/econômico. Só aparece com mais de 6 meses de dados no ano:
+    // com <= 6, a janela de "Últimos 6 meses" já cobre praticamente o mesmo, e
+    // mostrar as duas seria repetição.
     if (typeof RELATORIOS.resumoAno === 'function') {
-      var rano = RELATORIOS.resumoAno(ano);
-      if (rano && rano.mesesComDados >= 3 && rano.mesesComDados > 6) {
+      var rano = RELATORIOS.resumoAno(ano, agora);
+      if (rano && rano.mesesComDados > 6) {
         var MESES_ANO = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
         html += '<h4 class="rel-subtitle">Retrospectiva de ' + ano + '</h4>';
         html += '<p class="rel-insight"><i data-lucide="calendar-days" aria-hidden="true"></i> ' +

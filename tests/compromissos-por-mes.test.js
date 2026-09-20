@@ -103,6 +103,20 @@ describe('COMPROMISSOS.porMes', function() {
     expect(soma).toBe(0);
   });
 
+  test('cartão SEM ciclo entra pela data (parcela), não some da agenda', function() {
+    global.DADOS.salvarConfig({
+      saldosIniciais: { Corrente: 5000 },
+      // Cartão sem fechamento/vencimento → temCiclo=false, sem fatura por competência.
+      cartoes: [{ nome: 'CartãoSimples', limite: 3000 }],
+    });
+    global.TRANSACOES.criar('despesa', 250, 'compras', '2026-09-10', 'Compra futura', '', 'CartãoSimples');
+
+    const r = global.COMPROMISSOS.porMes(3, HOJE); // ago–out
+    // Cai em setembro, pela data — não é engolido pelo caminho da fatura.
+    expect(r[1]).toMatchObject({ ano: 2026, mes: 9, parcelas: 250 });
+    expect(r[1].total).toBe(250);
+  });
+
   test('janela vazia (sem compromissos) devolve meses zerados', function() {
     global.DADOS.salvarConfig({ saldosIniciais: { Corrente: 100 } });
     const r = global.COMPROMISSOS.porMes(2, HOJE);
