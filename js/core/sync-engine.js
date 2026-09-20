@@ -303,16 +303,23 @@ var SYNC_ENGINE = {
         if (r.action === 'server-wins' || r.status === 'stale') conflicts.push(r);
       });
 
-      var remaining = SYNC_MERGE.outboxAckRemove(fila, results);
-      // Re-enfileira rejeitados com backoff
+      // Reconcilia contra a outbox ATUAL, não contra o snapshot `fila`: uma
+      // mutação enfileirada durante o POST em voo vive só no armazenamento, e
+      // salvar o snapshot a apagaria — perda de um registro financeiro.
+      var atual = self.loadOutbox();
+      var remaining = SYNC_MERGE.outboxAckRemove(atual, results);
+      // Re-enfileira rejeitados com backoff — a menos que uma edição concorrente
+      // do mesmo registro já os tenha substituído na outbox atual.
       results.forEach(function(r) {
-        if (r.action === 'reject') {
-          var orig = fila.find(function(m) { return m.opId === r.opId; });
-          if (orig) {
-            orig.attempts = (orig.attempts || 0) + 1;
-            remaining = SYNC_MERGE.outboxEnqueue(remaining, orig);
-          }
-        }
+        if (r.action !== 'reject') return;
+        var orig = fila.find(function(m) { return m.opId === r.opId; });
+        if (!orig) return;
+        var substituido = remaining.some(function(m) {
+          return m.entity === orig.entity && m.id === orig.id;
+        });
+        if (substituido) return;
+        orig.attempts = (orig.attempts || 0) + 1;
+        remaining = SYNC_MERGE.outboxEnqueue(remaining, orig);
       });
       self.saveOutbox(remaining);
 
@@ -332,13 +339,18 @@ var SYNC_ENGINE = {
 
       return { ok: true, flushed: results.length, remaining: remaining.length, conflicts: conflicts };
     }).catch(function(err) {
-      fila.forEach(function(m) { m.attempts = (m.attempts || 0) + 1; });
-      self.saveOutbox(fila);
+      // Mantém as mutações enfileiradas durante o POST em voo: opera sobre a
+      // outbox atual, bumpando attempts só nas que foram tentadas agora.
+      var atual = self.loadOutbox();
+      var tentadas = {};
+      fila.forEach(function(m) { tentadas[m.opId] = true; });
+      atual.forEach(function(m) { if (tentadas[m.opId]) m.attempts = (m.attempts || 0) + 1; });
+      self.saveOutbox(atual);
       if (typeof APP_STORE !== 'undefined' && APP_STORE && typeof ACTIONS !== 'undefined' && ACTIONS) {
         APP_STORE.dispatch(ACTIONS.SYNC_FALHAR, { erro: err.message || 'rede' });
-        APP_STORE.dispatch(ACTIONS.SYNC_PENDENTE, { count: fila.length });
+        APP_STORE.dispatch(ACTIONS.SYNC_PENDENTE, { count: atual.length });
       }
-      self.scheduleFlush(self._nextBackoff(fila[0] && fila[0].attempts));
+      self.scheduleFlush(self._nextBackoff(atual[0] && atual[0].attempts));
       return { ok: false, reason: err.message || 'rede' };
     }).finally(function() {
       self._flushing = false;
@@ -412,6 +424,15 @@ var SYNC_ENGINE = {
     var pending = this.pendingIds('budget');
     var deltaPt = deltaEn.map(this._budgetEnToPt.bind(this));
     var merged = SYNC_MERGE.mergeDelta(local, pending, deltaPt);
+    // mergeDelta chaveia por id e descarta locais SEM id. Orçamentos legados
+    // (criados antes de o app atribuir id) somem no primeiro sync v2 — até com
+    // delta vazio. Reanexa os locais sem id cuja categoria o delta não cobre;
+    // se o servidor mandou a mesma categoria (com id), o dele prevalece.
+    var cobertas = {};
+    merged.forEach(function(b) { if (b && b.categoria) cobertas[b.categoria] = true; });
+    local.forEach(function(b) {
+      if (b && b.id == null && b.categoria && !cobertas[b.categoria]) merged.push(b);
+    });
     config.orcamentos = this._arrayToOrcamentos(merged);
     DADOS.salvarConfig(config, { skipPush: true });
     if (typeof ORCAMENTO !== 'undefined' && ORCAMENTO._carregarOrcamentos) {
