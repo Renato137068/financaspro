@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auditoria — Donut XSS</title>
+<meta name="description" content="Correção de segurança do FinançasPro: o <title> do gráfico de rosca inseria o nome da categoria (que pode ser custom, digitado pelo usuário) via innerHTML sem escape. Agora escapa, como o resto do app.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --ground:#f5f7f4; --card:#ffffff; --card-2:#fbfcfa;
+    --ink:#15211c; --muted:#59685f; --faint:#89968e; --line:#e4e9e3; --line-2:#eef2ec;
+    --brand:#0e5a41; --brand-2:#2f9c6d; --brand-ink:#0a3d2c;
+    --free:#15803d; --warn:#b4472e;
+    --shadow:0 1px 2px rgba(16,40,30,.05), 0 10px 30px rgba(16,40,30,.06); --shadow-sm:0 1px 2px rgba(16,40,30,.06);
+    --radius:16px; --radius-sm:11px; --maxw:940px;
+  }
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+    --ground:#0d1310; --card:#151c18; --card-2:#121814; --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6; --free:#57c98a; --warn:#f08a6e;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }}
+  :root[data-theme="dark"]{
+    --ground:#0d1310; --card:#151c18; --card-2:#121814; --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6; --free:#57c98a; --warn:#f08a6e;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box} html{-webkit-text-size-adjust:100%}
+  body{background:var(--ground); color:var(--ink); font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; margin:0}
+  .wrap{max-width:var(--maxw); margin:0 auto; padding-inline:20px}
+  code{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.84em; background:var(--line-2); padding:1px 6px; border-radius:6px; color:var(--brand-ink)}
+  :root:not([data-theme="light"]) code,:root[data-theme="dark"] code{color:var(--brand-2)}
+  h1,h2,h3{font-family:"Bricolage Grotesque","IBM Plex Sans",sans-serif; text-wrap:balance; letter-spacing:-.015em; margin:0}
+  .hero{background:radial-gradient(120% 140% at 100% 0%, rgba(47,156,109,.18), transparent 55%), linear-gradient(158deg, var(--brand), var(--brand-ink)); color:#eafff5; border-radius:0 0 26px 26px; box-shadow:var(--shadow); position:relative; overflow:hidden}
+  .hero .wrap{padding-block:34px 30px}
+  .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:#9fe8c9; display:flex; align-items:center; gap:10px; margin-bottom:16px}
+  .eyebrow .dot{width:7px; height:7px; border-radius:50%; background:#7bffc8; box-shadow:0 0 0 4px rgba(123,255,200,.18)}
+  h1{font-size:clamp(28px,5.6vw,44px); line-height:1.03; font-weight:800; color:#fff; max-width:24ch}
+  .hero .lede{margin:16px 0 0; font-size:clamp(15px,2.3vw,18px); max-width:66ch; color:#d5f4e6}
+  .hero .lede b{color:#fff; font-weight:600}
+  section{margin-top:44px}
+  .sec-head{display:flex; align-items:baseline; gap:12px; margin-bottom:8px}
+  .sec-head .k{font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:600; color:var(--brand-2); border:1px solid var(--line); border-radius:8px; padding:3px 9px; background:var(--card)}
+  h2{font-size:clamp(20px,3.4vw,26px); font-weight:700; line-height:1.14}
+  .verdict{background:var(--card); border:1px solid var(--line); border-left:5px solid var(--warn); border-radius:var(--radius); padding:22px 24px; box-shadow:var(--shadow); margin-top:-30px; position:relative; z-index:2}
+  .verdict h2{font-size:19px; margin-bottom:6px}
+  .verdict p{margin:8px 0 0; color:var(--muted); font-size:15px} .verdict b{color:var(--ink)}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:20px 22px; box-shadow:var(--shadow-sm); margin-top:16px}
+  .card p{margin:8px 0 0; color:var(--muted); font-size:14.5px} .card p b{color:var(--ink)}
+  ul{margin:10px 0 0; padding-left:20px; color:var(--muted); font-size:14.5px} li{margin:5px 0}
+  .gate{display:grid; grid-template-columns:auto 1fr; gap:8px 14px; font-size:14px; margin-top:6px}
+  .gate .ok{color:var(--free); font-weight:700; font-family:"IBM Plex Mono",monospace}
+  footer{margin:56px 0 40px; color:var(--faint); font-size:13px; text-align:center}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow"><span class="dot"></span> Auditoria de segurança · FinançasPro v11</div>
+    <h1>Gráfico de rosca: nome de categoria escapado no tooltip</h1>
+    <p class="lede">O <code>&lt;title&gt;</code> de cada fatia do donut era montado com o <b>nome da categoria</b> e inserido via <code>innerHTML</code> <b>sem escape</b>. Para categorias padrão o nome é um slug fixo — mas uma <b>categoria customizada</b> tem como slug o <b>texto que o usuário digitou</b>. Nome com markup = injeção de HTML. Agora escapa, igual à tabela acessível ao lado já fazia.</p>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="verdict">
+    <h2>O risco</h2>
+    <p>A mesma <code>DonutChart.render</code> monta duas coisas: a tabela <code>sr-only</code>, que escapava o rótulo com <code>u.esc(...)</code>, e o <code>&lt;title&gt;</code> do SVG, que <b>não</b> escapava — apesar de os dois virem do mesmo <code>u.label(cats[i].nome)</code> e do mesmo <code>innerHTML</code>. Um comentário afirmava "nome é slug interno", o que é falso para categorias custom (<code>CATEGORIES.adicionarCustom</code> guarda o nome cru). É XSS, majoritariamente do próprio usuário sobre si — mas categorias sincronizam entre dispositivos, e o app escapa em todo o resto: a inconsistência era o bug.</p>
+  </div>
+
+  <section>
+    <div class="sec-head"><span class="k">A CORREÇÃO</span><h2>Escapar como o resto</h2></div>
+    <div class="card">
+      <p>O rótulo (e, por precaução, a cor que vai num atributo <code>fill</code>) passam por <code>u.esc</code> no <code>&lt;title&gt;</code>, alinhando com a tabela <code>sr-only</code>. Uma linha; nenhuma mudança de comportamento visível além de o nome aparecer como texto, nunca como HTML.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="k">EVIDÊNCIA</span><h2>Gates de verificação</h2></div>
+    <div class="card">
+      <div class="gate">
+        <span class="ok">✓</span><span>Frontend: <b>195 suites, 2203 testes</b> (+1: nome de categoria com <code>&lt;img onerror&gt;</code> vira texto no <code>&lt;title&gt;</code>, sem elemento vivo injetado)</span>
+        <span class="ok">✓</span><span><code>lint</code> · <code>lint:changed</code> · <code>security:xss</code> · <code>a11y-static</code> · <code>css-tokens</code> · <code>contrast</code> · <code>bundle</code> · <code>build</code></span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="k">ARQUIVOS</span><h2>Alterados</h2></div>
+    <div class="card">
+      <ul>
+        <li><code>js/components/DonutChart.js</code> — escapa o rótulo e a cor no <code>&lt;title&gt;</code> do SVG.</li>
+        <li><code>tests/chart-a11y.test.js</code> — +1 teste de regressão de escape.</li>
+        <li><code>docs/auditoria-donut-xss-2026-09-20.html</code> — este documento.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    FinançasPro · Auditoria: Donut XSS · 2026-09-20
+  </footer>
+
+</div>
+</body>
+</html>
