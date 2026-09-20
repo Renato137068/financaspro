@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Feature — Gastos por dia da semana</title>
+<meta name="description" content="Nova feature do FinançasPro: padrão de gastos por dia da semana. Mostra em qual dia (dom→sáb) você mais gasta no mês — o recorte semanal que Mobills e Organizze destacam.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --ground:#f5f7f4; --card:#ffffff; --card-2:#fbfcfa;
+    --ink:#15211c; --muted:#59685f; --faint:#89968e; --line:#e4e9e3; --line-2:#eef2ec;
+    --brand:#0e5a41; --brand-2:#2f9c6d; --brand-ink:#0a3d2c;
+    --free:#15803d; --free-bg:#e9f6ec;
+    --shadow:0 1px 2px rgba(16,40,30,.05), 0 10px 30px rgba(16,40,30,.06); --shadow-sm:0 1px 2px rgba(16,40,30,.06);
+    --radius:16px; --radius-sm:11px; --maxw:940px;
+  }
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+    --ground:#0d1310; --card:#151c18; --card-2:#121814; --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6; --free:#57c98a; --free-bg:#123222;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }}
+  :root[data-theme="dark"]{
+    --ground:#0d1310; --card:#151c18; --card-2:#121814; --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6; --free:#57c98a; --free-bg:#123222;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box} html{-webkit-text-size-adjust:100%}
+  body{background:var(--ground); color:var(--ink); font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; margin:0}
+  .wrap{max-width:var(--maxw); margin:0 auto; padding-inline:20px}
+  code{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.84em; background:var(--line-2); padding:1px 6px; border-radius:6px; color:var(--brand-ink)}
+  :root:not([data-theme="light"]) code,:root[data-theme="dark"] code{color:var(--brand-2)}
+  h1,h2,h3{font-family:"Bricolage Grotesque","IBM Plex Sans",sans-serif; text-wrap:balance; letter-spacing:-.015em; margin:0}
+  .hero{background:radial-gradient(120% 140% at 100% 0%, rgba(47,156,109,.18), transparent 55%), linear-gradient(158deg, var(--brand), var(--brand-ink)); color:#eafff5; border-radius:0 0 26px 26px; box-shadow:var(--shadow); position:relative; overflow:hidden}
+  .hero::after{content:""; position:absolute; inset:0; background-image:radial-gradient(rgba(255,255,255,.06) 1px, transparent 1.4px); background-size:22px 22px; mask:linear-gradient(120deg,#000,transparent 62%); pointer-events:none}
+  .hero .wrap{padding-block:34px 30px; position:relative; z-index:1}
+  .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:#9fe8c9; display:flex; align-items:center; gap:10px; margin-bottom:16px}
+  .eyebrow .dot{width:7px; height:7px; border-radius:50%; background:#7bffc8; box-shadow:0 0 0 4px rgba(123,255,200,.18)}
+  h1{font-size:clamp(28px,5.6vw,44px); line-height:1.03; font-weight:800; color:#fff; max-width:22ch}
+  .hero .lede{margin:16px 0 0; font-size:clamp(15px,2.3vw,18px); max-width:66ch; color:#d5f4e6; line-height:1.55}
+  .hero .lede b{color:#fff; font-weight:600}
+  .stats{display:flex; flex-wrap:wrap; gap:12px; margin-top:26px}
+  .stat{background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.16); border-radius:14px; padding:12px 16px; min-width:110px}
+  .stat .n{font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:24px; line-height:1; color:#fff; font-variant-numeric:tabular-nums}
+  .stat .l{font-size:12px; color:#bfead7; margin-top:6px}
+  section{margin-top:50px}
+  .sec-head{display:flex; align-items:baseline; gap:12px; margin-bottom:8px}
+  .sec-head .k{font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:600; color:var(--brand-2); border:1px solid var(--line); border-radius:8px; padding:3px 9px; background:var(--card); flex:none}
+  h2{font-size:clamp(20px,3.4vw,26px); font-weight:700; line-height:1.14}
+  .verdict{background:var(--card); border:1px solid var(--line); border-left:5px solid var(--brand-2); border-radius:var(--radius); padding:22px 24px; box-shadow:var(--shadow); margin-top:-30px; position:relative; z-index:2}
+  .verdict h2{font-size:19px; margin-bottom:6px}
+  .verdict p{margin:8px 0 0; color:var(--muted); font-size:15px} .verdict b{color:var(--ink)}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:20px 22px; box-shadow:var(--shadow-sm); margin-top:16px}
+  .card p{margin:8px 0 0; color:var(--muted); font-size:14.5px} .card p b{color:var(--ink)}
+  .card h3{font-size:17px; font-weight:700}
+  .ex{margin-top:12px; padding:12px 14px; background:var(--card-2); border:1px solid var(--line-2); border-radius:var(--radius-sm); font-size:14px}
+  .ex b{color:var(--brand-2)}
+  ul{margin:10px 0 0; padding-left:20px; color:var(--muted); font-size:14.5px} li{margin:5px 0}
+  .gate{display:grid; grid-template-columns:auto 1fr; gap:8px 14px; font-size:14px; margin-top:6px}
+  .gate .ok{color:var(--free); font-weight:700; font-family:"IBM Plex Mono",monospace}
+  .grid2{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin-top:14px}
+  .mini{background:var(--card-2); border:1px solid var(--line-2); border-radius:var(--radius-sm); padding:12px 14px; font-size:14px}
+  .mini b{color:var(--ink)} .mini .s{display:block; color:var(--brand-2); font-family:"IBM Plex Mono",monospace; font-size:12px; margin-top:4px}
+  footer{margin:60px 0 40px; color:var(--faint); font-size:13px; text-align:center}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow"><span class="dot"></span> Feature nova · FinançasPro v11</div>
+    <h1>Gastos por dia da semana: quando você mais gasta</h1>
+    <p class="lede">O app já mostrava <b>onde</b> o dinheiro vai (categoria, marcador) e <b>quanto</b> (KPIs, projeções) — mas não <b>quando na semana</b>. Agora o painel revela o padrão: em qual dia, de <b>domingo a sábado</b>, seus gastos se concentram. É o recorte semanal que Mobills e Organizze destacam, e costuma revelar o "vazamento" do fim de semana.</p>
+    <div class="stats">
+      <div class="stat"><div class="n">+1</div><div class="l">feature (zero custo)</div></div>
+      <div class="stat"><div class="n">7 dias</div><div class="l">dom → sáb</div></div>
+      <div class="stat"><div class="n">+6</div><div class="l">testes</div></div>
+      <div class="stat"><div class="n">2211</div><div class="l">testes verdes</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="verdict">
+    <h2>Por que esta</h2>
+    <p>É uma dimensão nova e barata: os recortes que já entreguei olham categoria (#49 acima da média), marcador (#46) e o mês como um todo (#47, #50). O <b>dia da semana</b> é o eixo temporal que faltava — e o mais acionável do dia a dia ("corta o delivery de sexta"). Pura soma local sobre as transações que o app já tem, sem IA e sem paywall.</p>
+  </div>
+
+  <section>
+    <div class="sec-head"><span class="k">O QUÊ</span><h2>Como funciona</h2></div>
+    <div class="card">
+      <h3>Dados</h3>
+      <p><code>RELATORIOS.gastoPorDiaSemana(mes, ano)</code> devolve sempre <b>7 posições</b> (dom→sáb) com a <b>despesa total</b> e a contagem de lançamentos de cada dia da semana, somando em <b>centavos inteiros</b>. Só despesa entra (receita e transferência ficam de fora).</p>
+      <div class="ex"><b>Dia da semana correto</b> — a data é lida em componentes locais (<code>new Date(ano, mês−1, dia)</code>), <b>não</b> via <code>new Date('YYYY-MM-DD')</code>, que seria UTC e poderia jogar um sábado para sexta no fuso do Brasil.</div>
+    </div>
+    <div class="card">
+      <h3>Onde aparece</h3>
+      <p>No painel de relatório mensal (Resumo), a seção <b>"Gastos por dia da semana"</b> com sete barras proporcionais ao dia de maior gasto; o <b>pico</b> vem em negrito. Aparece só quando há despesa no mês.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="k">CUIDADOS</span><h2>Detalhes</h2></div>
+    <div class="grid2">
+      <div class="mini"><b>Fuso correto</b><span class="s">data local, sem UTC shift</span></div>
+      <div class="mini"><b>Só despesa</b><span class="s">receita/transferência fora</span></div>
+      <div class="mini"><b>Centavos exatos</b><span class="s">0,10 + 0,20 = 0,30</span></div>
+      <div class="mini"><b>Sempre 7 dias</b><span class="s">dom a sáb, mesmo zerados</span></div>
+      <div class="mini"><b>Pico destacado</b><span class="s">o maior dia em negrito</span></div>
+      <div class="mini"><b>Reusa a infra</b><span class="s">TRANSACOES.obter, nada duplicado</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="k">EVIDÊNCIA</span><h2>Gates de verificação</h2></div>
+    <div class="card">
+      <div class="gate">
+        <span class="ok">✓</span><span>Frontend: <b>196 suites, 2211 testes</b> (+6: 7 posições, dia certo sem UTC shift, acúmulo no mesmo dia, só despesa, centavos, só o mês consultado)</span>
+        <span class="ok">✓</span><span><code>relatorios.js</code>: 99,5% linhas / 100% funções (piso 95/95)</span>
+        <span class="ok">✓</span><span><code>lint</code> · <code>lint:changed</code> · <code>security:xss</code> · <code>a11y-static</code> · <code>css-tokens</code> · <code>contrast</code> · <code>bundle</code> · <code>build</code></span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="k">ARQUIVOS</span><h2>O que mudou</h2></div>
+    <div class="card">
+      <ul>
+        <li><code>js/relatorios.js</code> — nova função <code>gastoPorDiaSemana</code>.</li>
+        <li><code>js/modules/init-relatorios.js</code> — seção "Gastos por dia da semana" (barras + pico).</li>
+        <li><code>css/features/relatorios.css</code> — destaque do dia de pico.</li>
+        <li><code>tests/relatorios-dia-semana.test.js</code> — +6 testes.</li>
+        <li><code>docs/feature-gastos-dia-semana-2026-09-20.html</code> — este documento.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    FinançasPro · Feature: Gastos por dia da semana · 2026-09-20
+  </footer>
+
+</div>
+</body>
+</html>

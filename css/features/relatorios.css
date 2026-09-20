@@ -75,6 +75,12 @@
   font-size: var(--font-size-sm);
 }
 
+/* Dia da semana com maior gasto: destaque em negrito (cor herdada, mantém
+   o contraste do texto padrão). */
+.rel-cat-name--pico {
+  font-weight: 700;
+}
+
 .rel-cat-bar-wrap {
   height: 8px;
   background: var(--color-border-light);

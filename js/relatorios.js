@@ -178,6 +178,39 @@ const RELATORIOS = {
       maiorDespesaMes: maior ? { mes: maior.mes, ano: maior.ano, despesas: maior.cent / 100 } : null,
       mesesComDados: mesesComDados
     };
+  },
+
+  /**
+   * Despesa por dia da semana no mês — o padrão semanal de gastos ("você gasta
+   * mais aos sábados"). É o recorte temporal-dentro-da-semana que Mobills e
+   * Organizze mostram; complementa os cortes por categoria/marcador.
+   *
+   * A data é lida em componentes (new Date(ano, mes-1, dia)) e NÃO via
+   * new Date('YYYY-MM-DD'), que seria UTC e poderia jogar o dia da semana para
+   * o anterior no fuso do Brasil. Só despesa entra; soma em centavos inteiros.
+   *
+   * @param {number} mes 1-12
+   * @param {number} ano
+   * @returns {Array<{dia:number, label:string, total:number, transacoes:number}>}
+   *          sempre 7 posições, de domingo (0) a sábado (6)
+   */
+  gastoPorDiaSemana: function(mes, ano) {
+    var labels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    var cent = [0, 0, 0, 0, 0, 0, 0];
+    var cnt = [0, 0, 0, 0, 0, 0, 0];
+    if (typeof TRANSACOES !== 'undefined') {
+      TRANSACOES.obter({ mes: mes, ano: ano }).forEach(function(t) {
+        if (!t || t.tipo !== CONFIG.TIPO_DESPESA) return;
+        var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(t.data || ''));
+        if (!m) return;
+        var dow = new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10)).getDay();
+        cent[dow] += UTILS.paraCentavos(t.valor);
+        cnt[dow] += 1;
+      });
+    }
+    return labels.map(function(label, i) {
+      return { dia: i, label: label, total: cent[i] / 100, transacoes: cnt[i] };
+    });
   }
 };
 
