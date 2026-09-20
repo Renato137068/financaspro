@@ -71,6 +71,10 @@ module.exports = {
     // `*-real.test.js` que carregam o módulo de produção.
     'js/patrimonio.js': { lines: 99, functions: 100, branches: 84 },
     'js/relatorios.js': { lines: 95, functions: 95, branches: 60 },
+
+    // Regras de orçamento (dinheiro). O budget.test.js roda uma cópia inline
+    // (0% do módulo real); budgetService-real.test.js carrega o de produção.
+    'js/services/budgetService.js': { lines: 88, functions: 83, branches: 82 },
   },
   coverageReporters: ['text', 'lcov', 'html'],
   verbose: true,
