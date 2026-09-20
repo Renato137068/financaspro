@@ -39,23 +39,23 @@ module.exports = {
     // É a métrica honesta da dívida de teste do frontend e deve subir a cada
     // módulo migrado para ES Modules e coberto por teste.
     global: { lines: 2, functions: 10, branches: 30 },
-    'js/core/utils.js': { lines: 95, functions: 100, branches: 85 },
-    'js/core/store.js': { lines: 95, functions: 95, branches: 80 },
+    'js/core/utils.js': { lines: 96, functions: 100, branches: 85 },
+    'js/core/store.js': { lines: 99, functions: 100, branches: 84 },
     // Era o pior ramo do frontend (35%). O teste `validations-real.test.js`
     // passou a exercitar o módulo de verdade — antes, `validations.test.js`
     // testava uma cópia inline da implementação, que nunca pegaria regressão.
-    'js/core/validations.js': { lines: 95, functions: 95, branches: 90 },
-    'js/orcamento.js': { lines: 85, functions: 95, branches: 70 },
+    'js/core/validations.js': { lines: 98, functions: 100, branches: 94 },
+    'js/orcamento.js': { lines: 90, functions: 100, branches: 74 },
 
     // Saíram de 0%: os testes antigos recalculavam a lógica inline em vez de
     // carregar o módulo. A conversão revelou dois bugs de produção.
-    'js/contas-pagar.js': { lines: 80, functions: 80, branches: 88 },
-    'js/assinaturas.js': { lines: 78, functions: 80, branches: 90 },
-    'js/transacoes.js': { lines: 90, functions: 95, branches: 78 },
-    'js/metas.js': { lines: 95, functions: 95, branches: 88 },
-    'js/pipeline.js': { lines: 80, functions: 95, branches: 72 },
+    'js/contas-pagar.js': { lines: 88, functions: 90, branches: 90 },
+    'js/assinaturas.js': { lines: 98, functions: 100, branches: 93 },
+    'js/transacoes.js': { lines: 94, functions: 100, branches: 82 },
+    'js/metas.js': { lines: 99, functions: 100, branches: 94 },
+    'js/pipeline.js': { lines: 84, functions: 100, branches: 74 },
     'js/score.js': { lines: 95, functions: 100, branches: 95 },
-    'js/parser.js': { lines: 95, functions: 95, branches: 85 },
+    'js/parser.js': { lines: 98, functions: 100, branches: 88 },
 
     // Estes três apareciam como 0% no relatório até se descobrir que os testes
     // passavam um `filename` relativo ao vm.runInContext — o código rodava, mas
@@ -64,12 +64,12 @@ module.exports = {
     'js/ai-engine.js': { lines: 90, functions: 100, branches: 74 },
     // functions caiu de 95 para 80 porque a instrumentação do funil adicionou
     // funções ao módulo; as linhas seguem em 100%.
-    'js/core/setup-guide.js': { lines: 95, functions: 80, branches: 70 },
-    'js/core/sync-merge.js': { lines: 95, functions: 95, branches: 60 },
+    'js/core/setup-guide.js': { lines: 99, functions: 83, branches: 75 },
+    'js/core/sync-merge.js': { lines: 99, functions: 100, branches: 83 },
 
     // Estavam realmente em 0%: os testes recalculavam a lógica inline. Ganharam
     // `*-real.test.js` que carregam o módulo de produção.
-    'js/patrimonio.js': { lines: 88, functions: 90, branches: 80 },
+    'js/patrimonio.js': { lines: 99, functions: 100, branches: 84 },
     'js/relatorios.js': { lines: 95, functions: 95, branches: 60 },
   },
   coverageReporters: ['text', 'lcov', 'html'],
