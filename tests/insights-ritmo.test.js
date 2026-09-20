@@ -64,3 +64,32 @@ describe('INSIGHTS — alerta de ritmo de gastos', function() {
     expect(ritmo).toBeUndefined();
   });
 });
+
+describe('INSIGHTS — descrição não sofre escape duplo nas mensagens', function() {
+  function lancarDesc(descricao, data) {
+    global.DADOS.salvarTransacao({
+      id: global.UTILS.gerarId(),
+      tipo: 'despesa', valor: 90, data: data,
+      categoria: 'compras', descricao: descricao,
+    });
+    global.TRANSACOES._cache = null;
+    global.TRANSACOES._cacheTimestamp = null;
+  }
+
+  test('insight de recorrência exibe "C&A", não "C&amp;A" (decodifica o guardado)', function() {
+    // Descrição guardada escapada (como o app grava): "C&amp;A". Três meses
+    // seguidos para virar padrão recorrente.
+    lancarDesc('C&amp;A', '2026-01-10');
+    lancarDesc('C&amp;A', '2026-02-10');
+    lancarDesc('C&amp;A', '2026-03-10');
+
+    const rec = global.INSIGHTS.analisar().find(function(i) { return i.tipo === 'recorrencia'; });
+    expect(rec).toBeTruthy();
+    // A detecção normaliza para minúsculas; a mensagem passa por escapeHtml,
+    // então "c&a" vira "c&amp;a" (UMA camada), nunca "c&amp;amp;a".
+    expect(rec.msg).toContain('c&amp;a');
+    expect(rec.msg).not.toContain('c&amp;amp;a');
+    // O parâmetro que preenche o campo vem decodificado (sem corromper ao salvar).
+    expect(rec.parametros.descricao).toBe('c&a');
+  });
+});
