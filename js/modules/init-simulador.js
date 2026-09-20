@@ -32,6 +32,9 @@ const INIT_SIMULADOR = {
       } else if (action === 'sim-calc-financiamento') {
         e.preventDefault();
         self._calcFinanciamento();
+      } else if (action === 'sim-calc-meta') {
+        e.preventDefault();
+        self._calcMeta();
       }
     });
 
@@ -46,6 +49,7 @@ const INIT_SIMULADOR = {
       if (self._modo === 'parcelado') self._calcParcelado();
       else if (self._modo === 'poupar') self._calcJuros();
       else if (self._modo === 'financiamento') self._calcFinanciamento();
+      else if (self._modo === 'meta') self._calcMeta();
     });
   },
 
@@ -92,6 +96,7 @@ const INIT_SIMULADOR = {
     var modos = [
       { id: 'parcelado', rotulo: 'À vista ou parcelado', icone: 'scale' },
       { id: 'poupar', rotulo: 'Poupar', icone: 'piggy-bank' },
+      { id: 'meta', rotulo: 'Meta', icone: 'target' },
       { id: 'financiamento', rotulo: 'Financiamento', icone: 'landmark' },
     ];
     var tabs = '<div class="sim-tabs" role="tablist" aria-label="Tipo de simulação">';
@@ -108,6 +113,7 @@ const INIT_SIMULADOR = {
 
     var corpo;
     if (this._modo === 'poupar') corpo = this._formPoupar();
+    else if (this._modo === 'meta') corpo = this._formMeta();
     else if (this._modo === 'financiamento') corpo = this._formFinanciamento();
     else corpo = this._formParcelado();
 
@@ -142,6 +148,15 @@ const INIT_SIMULADOR = {
       this._campo('sim-j-taxa', 'Rendimento (% ao mês)', 'inputmode="decimal" placeholder="0,80"') +
       this._campo('sim-j-meses', 'Prazo (meses)', 'inputmode="numeric" placeholder="12"') +
       '<button type="button" class="btn-primario sim-btn" data-action="sim-calc-juros">Calcular</button>';
+  },
+
+  _formMeta: function() {
+    return '<p class="sim-intro">Diga quanto quer juntar e em quanto tempo — o app calcula o valor que você precisa guardar por mês para chegar lá.</p>' +
+      this._campo('sim-m-objetivo', 'Quero juntar', 'inputmode="decimal" placeholder="R$ 0,00"') +
+      this._campo('sim-m-meses', 'Em quantos meses', 'inputmode="numeric" placeholder="24"') +
+      this._campo('sim-m-inicial', 'Já tenho guardado', 'inputmode="decimal" placeholder="R$ 0,00"', 'Opcional.') +
+      this._campo('sim-m-taxa', 'Rendimento (% ao mês)', 'inputmode="decimal" placeholder="0,80"', 'Opcional. Ex.: poupança ~0,5% · CDI ~0,9%.') +
+      '<button type="button" class="btn-primario sim-btn" data-action="sim-calc-meta">Calcular</button>';
   },
 
   _formFinanciamento: function() {
@@ -232,6 +247,38 @@ const INIT_SIMULADOR = {
     html += this._linha('Total investido', this._fmt(r.totalAportado));
     html += this._linha('Juros ganhos', this._fmt(r.jurosGanhos), true);
     html += this._linha('Rendimento no período', this._pctTexto(r.taxaAnual) + ' ao ano');
+    html += '</div>';
+    this._mostrar(html);
+  },
+
+  _calcMeta: function() {
+    var r = SIMULADOR.aporteParaMeta({
+      objetivo: this._moeda('sim-m-objetivo'),
+      meses: this._int('sim-m-meses'),
+      inicial: this._moeda('sim-m-inicial'),
+      taxaMensal: this._pct('sim-m-taxa'),
+    });
+    if (!r.valido) { this._erro(r.motivo); return; }
+
+    var html;
+    if (r.jaAlcanca) {
+      html = '<div class="sim-veredito sim-veredito--parcelado">' +
+        '<i data-lucide="party-popper" aria-hidden="true"></i>' +
+        '<div><strong>Você já chega lá</strong>' +
+        '<span>O que você já tem, rendendo, alcança a meta no prazo — sem precisar guardar mais.</span></div></div>';
+    } else {
+      html = '<div class="sim-veredito sim-veredito--vista">' +
+        '<i data-lucide="target" aria-hidden="true"></i>' +
+        '<div><strong>' + this._fmt(r.aporteMensal) + ' por mês</strong>' +
+        '<span>para juntar ' + this._fmt(r.objetivo) + ' em ' + r.meses + (r.meses > 1 ? ' meses' : ' mês') + '.</span></div></div>';
+    }
+
+    html += '<div class="sim-res-bloco">';
+    html += this._linha('Meta', this._fmt(r.objetivo));
+    if (r.inicial > 0) html += this._linha('Já tenho guardado', this._fmt(r.inicial));
+    html += this._linha('Guardar por mês', this._fmt(r.aporteMensal), true);
+    html += this._linha('Total que você vai guardar', this._fmt(r.totalAportado));
+    if (r.jurosGanhos > 0) html += this._linha('Juros ajudam com', this._fmt(r.jurosGanhos), true);
     html += '</div>';
     this._mostrar(html);
   },
