@@ -112,6 +112,9 @@ function loadCoreModules() {
   loadScript(context, 'js/recorrentes.js');
   loadScript(context, 'js/compromissos.js');
   loadScript(context, 'js/assinaturas.js');
+  // Leitura pura de insights: depende de AI_ENGINE/RELATORIOS/ORCAMENTO/TRANSACOES
+  // (todos já carregados acima). analisar() não toca no DOM.
+  loadScript(context, 'js/insights.js');
   loadScript(context, 'js/modules/init-config.js');
   // anexos.js só é carregado pela parte pura (validarArquivo); as funções de
   // IndexedDB não são exercitadas aqui — exigiriam polyfill.
@@ -124,7 +127,7 @@ function loadCoreModules() {
     'TRANSACOES', 'METAS', 'APP_STORE', 'APP_STATE', 'DADOS', 'ACTIONS',
     'RELATORIOS', 'PATRIMONIO', 'CONTAS', 'CONTAS_PAGAR', 'ASSINATURAS', 'ANEXOS',
     'TRANSACTION_SERVICE', 'COMPROMISSOS', 'CARTOES', 'RECORRENTES', 'AI_ENGINE', 'INIT_CONFIG',
-    'FINANCE_CONTRACT',
+    'FINANCE_CONTRACT', 'INSIGHTS',
   ].forEach(function(k) {
     if (typeof sandbox[k] !== 'undefined') global[k] = sandbox[k];
   });

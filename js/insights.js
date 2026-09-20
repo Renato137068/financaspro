@@ -114,6 +114,24 @@ var INSIGHTS = {
       }
     }
 
+    // ── 1a. Ritmo de gastos acima do mesmo ponto do mês passado ────
+    // A "variação" acima compara o mês fechado; cedo no mês ela engana (o mês
+    // corrente ainda mal começou). Este alerta faz a comparação justa — até o
+    // mesmo dia — e chega enquanto ainda dá para reagir. Só quando o ritmo está
+    // acima (a direção acionável), com base no mês passado e passado o dia 5.
+    if (typeof RELATORIOS !== 'undefined' && typeof RELATORIOS.ritmoGasto === 'function') {
+      var ritmo = RELATORIOS.ritmoGasto(mesAtual, anoAtual, agora);
+      if (ritmo && ritmo.dia >= 5 && ritmo.anterior > 0 && ritmo.variacao != null && ritmo.variacao >= 20) {
+        insights.push({
+          tipo:      'ritmo',
+          msg:       '<i data-lucide="trending-up" aria-hidden="true"></i> Ritmo de gastos ' + ritmo.variacao +
+                     '% acima do mesmo período do mês passado (R$ ' + ritmo.atual.toFixed(2).replace('.', ',') +
+                     ' até o dia ' + ritmo.dia + ' vs R$ ' + ritmo.anterior.toFixed(2).replace('.', ',') + ').',
+          gravidade: ritmo.variacao >= 50 ? 'alta' : 'media'
+        });
+      }
+    }
+
     // ── 1b. Categorias a caminho de estourar ───────────────────────
     // O selo "excedido" só aparece depois do estrago. Aqui o aviso chega
     // enquanto ainda sobra mês para reagir, e já com o teto diário que evita
