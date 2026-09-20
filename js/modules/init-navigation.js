@@ -655,6 +655,7 @@ function mudarAba(nomeAba, opcoes) {
     'config-dados': 'Backup e dados',
     'config-ajuda': 'Ajuda e sobre',
     'config-suporte': 'Suporte técnico',
+    'config-simulador': 'Simulador financeiro',
   };
   if (typeof ariaLive !== 'undefined' && ariaLive.announce) {
     ariaLive.announce('Aba ' + (tabLabels[nomeAba] || nomeAba));
@@ -733,6 +734,9 @@ function mudarAba(nomeAba, opcoes) {
         } else {
           refreshBillingUi();
         }
+      }
+      if (nomeAba === 'config-simulador' && typeof INIT_SIMULADOR !== 'undefined' && INIT_SIMULADOR.render) {
+        INIT_SIMULADOR.render();
       }
       if (nomeAba === 'config' || nomeAba.indexOf('config-') === 0) {
         // Vale para o Perfil e suas sub-telas (config-*): os cartões e toggles

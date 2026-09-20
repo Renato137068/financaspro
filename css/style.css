@@ -58,6 +58,7 @@
 @import './features/assinaturas.css';
 @import './features/relatorios.css';
 @import './features/patrimonio.css';
+@import './features/simulador.css';
 @import './features/anexos.css';
 @import './features/billing.css';
 @import './features/open-finance.css';

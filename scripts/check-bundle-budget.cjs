@@ -30,13 +30,16 @@ const BUDGETS = {
   // reestruturação da aba Perfil, mantendo folga em vez de ficar no limite.
   // 1360→1370 KB (2026-09-13): acompanha o +10 KB do appBundle abaixo.
   // 1370→1385 KB (2026-09-15): acompanha o +10 KB do appBundle (tags/marcadores).
-  precacheTotal: { max: 1385 * KB, label: 'Precache total (1º acesso)' },
+  // 1385→1400 KB (2026-09-20): acompanha o +10 KB do appBundle (simulador financeiro).
+  precacheTotal: { max: 1400 * KB, label: 'Precache total (1º acesso)' },
   // 580→590 KB (2026-09-13): correção do KPI "Folga poupança" no Orçamento
   // (cálculo da folga da fatia de poupança) + referência de ritmo no Resumo
   // adicionam alguns KB de código — aumento intencional.
   // 590→600 KB (2026-09-15): feature de tags/marcadores nos lançamentos
   // (núcleo em transacoes.js + form + filtro no extrato) — aumento intencional.
-  appBundle: { max: 600 * KB, label: 'js/app.bundle.js', file: 'js/app.bundle.js' },
+  // 600→615 KB (2026-09-20): simulador financeiro (simulador.js + init-simulador.js:
+  // à vista vs parcelado, juros compostos e financiamento) — aumento intencional.
+  appBundle: { max: 615 * KB, label: 'js/app.bundle.js', file: 'js/app.bundle.js' },
   vendorBundle: { max: 260 * KB, label: 'js/vendor.bundle.js', file: 'js/vendor.bundle.js' },
   cssBundle: { max: 300 * KB, label: 'CSS bundle', glob: /^css\/index-.*\.css$/ },
   // 100→112 KB (2026-09-12): reestruturação da aba Perfil em menu + sub-telas
