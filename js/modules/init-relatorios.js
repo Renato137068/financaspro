@@ -56,6 +56,28 @@ const INIT_RELATORIOS = {
       }
     }
 
+    // Ritmo de gastos: quanto já saiu no mês até hoje vs. o mesmo dia do mês
+    // passado — o "estou gastando mais rápido que o normal?". Verde quando gasta
+    // menos ou igual, vermelho quando gasta mais. Só a partir do dia 5 (para
+    // não gritar "-100%" com o mês recém-começado) e com base no mês anterior.
+    if (typeof RELATORIOS.ritmoGasto === 'function') {
+      var ritmo = RELATORIOS.ritmoGasto(mes, ano, agora);
+      if (ritmo && ritmo.dia >= 5 && ritmo.anterior > 0 && ritmo.variacao != null) {
+        var ritmoBom = ritmo.diff <= 0;
+        var ritmoCls = ritmoBom ? 'rel-proj--pos' : 'rel-proj--neg';
+        var ritmoIcone = ritmoBom ? 'trending-down' : 'trending-up';
+        var ritmoTxt = ritmoBom
+          ? (ritmo.variacao === 0 ? 'no mesmo ritmo do' : Math.abs(ritmo.variacao) + '% abaixo do')
+          : '+' + ritmo.variacao + '% acima do';
+        html += '<div class="rel-insight rel-proj ' + ritmoCls + '">' +
+          '<i data-lucide="' + ritmoIcone + '" aria-hidden="true"></i> ' +
+          'Até o dia ' + ritmo.dia + ' você gastou <strong>' + UTILS.formatarMoeda(ritmo.atual) + '</strong> · ' +
+          ritmoTxt + ' mesmo período do mês passado ' +
+          '<span class="rel-proj-calc">(' + UTILS.formatarMoeda(ritmo.anterior) + ')</span>' +
+        '</div>';
+      }
+    }
+
     if (a.topCategorias.length > 0) {
       html += '<h4 class="rel-subtitle">Top despesas por categoria</h4><ul class="rel-cat-list">';
       a.topCategorias.forEach(function(c) {

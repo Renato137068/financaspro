@@ -276,6 +276,63 @@ const RELATORIOS = {
         percentual: item.percentual
       };
     });
+  },
+
+  /** Despesa do mês acumulada até o dia `ate` (inclusive), em centavos. */
+  _despesaAcumuladaAte: function(mes, ano, ate) {
+    var cent = 0;
+    if (typeof TRANSACOES === 'undefined') return cent;
+    TRANSACOES.obter({ mes: mes, ano: ano }).forEach(function(t) {
+      if (!t || t.tipo !== CONFIG.TIPO_DESPESA) return;
+      var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(t.data || ''));
+      if (!m) return;
+      if (parseInt(m[3], 10) > ate) return;
+      cent += UTILS.paraCentavos(t.valor);
+    });
+    return cent;
+  },
+
+  /**
+   * Ritmo de gastos: quanto já saiu no mês ATÉ O DIA D, confrontado com o
+   * mesmo ponto do mês anterior — "no dia 20 você já gastou R$ X; no dia 20 do
+   * mês passado eram R$ Y". Responde "estou gastando mais rápido que o meu
+   * normal?" enquanto o mês corre, algo que o comparativo de mês fechado
+   * (compararMesAnterior) só enxerga quando o mês já acabou.
+   *
+   * D = o dia de hoje quando o mês consultado é o corrente; senão o último dia
+   * do mês (comparação de mês inteiro). No mês anterior o corte é o mesmo dia,
+   * limitado ao último dia de lá (31→28 em fevereiro, por exemplo). O dia é
+   * lido em componentes locais para não escorregar no fuso. Só despesa entra;
+   * soma em centavos inteiros.
+   *
+   * @param {number} mes 1-12
+   * @param {number} ano
+   * @param {Date} [hoje]
+   * @returns {?{dia:number, atual:number, anterior:number, diff:number,
+   *   variacao:?number}} variacao em % (null se não havia base no mês anterior)
+   */
+  ritmoGasto: function(mes, ano, hoje) {
+    if (typeof TRANSACOES === 'undefined') return null;
+    hoje = hoje || new Date();
+    var ultimoDia = new Date(ano, mes, 0).getDate();
+    var dia = (hoje.getFullYear() === ano && (hoje.getMonth() + 1) === mes)
+      ? Math.min(hoje.getDate(), ultimoDia)
+      : ultimoDia;
+
+    var prevMes = mes - 1, prevAno = ano;
+    if (prevMes < 1) { prevMes = 12; prevAno -= 1; }
+    var diaPrev = Math.min(dia, new Date(prevAno, prevMes, 0).getDate());
+
+    var atualCent = this._despesaAcumuladaAte(mes, ano, dia);
+    var antCent = this._despesaAcumuladaAte(prevMes, prevAno, diaPrev);
+    var diffCent = atualCent - antCent;
+    return {
+      dia: dia,
+      atual: atualCent / 100,
+      anterior: antCent / 100,
+      diff: diffCent / 100,
+      variacao: antCent > 0 ? Math.round((diffCent / antCent) * 100) : null
+    };
   }
 };
 
