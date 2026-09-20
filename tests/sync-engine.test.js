@@ -130,6 +130,90 @@ describe('SYNC_ENGINE — Fase 1', () => {
     });
   });
 
+  // Regressão: mutação enfileirada DURANTE o POST em voo não pode ser apagada
+  // ao salvar a outbox reconciliada (perda de registro financeiro).
+  function engineComUuidsUnicos(store) {
+    var n = 0;
+    return loadEngine({
+      CONFIG, SYNC_MERGE: SM, UTILS: { gerarUuid: function() { return 'op-' + (++n); } },
+      DADOS: {
+        getTransacoesRaw: () => [], getTransacoes: () => [],
+        _txPtToEn: (tx) => ({ type: tx.tipo, amount: tx.valor, description: tx.descricao, category: tx.categoria, date: (tx.data || '2026-07-09') + 'T00:00:00.000Z' }),
+        _txEnToPt: (x) => x, getConfig: () => ({ recorrentes: [] }), salvarConfig: (c) => c,
+      },
+      storage: store, APP_STORE: null, ACTIONS: null,
+    });
+  }
+
+  test('enqueue durante flush em voo sobrevive (sucesso)', () => {
+    const eng = engineComUuidsUnicos(mockStorage());
+    eng.enqueueTransaction('upsert', { id: 'id-A', tipo: 'despesa', valor: 1, descricao: 'A', data: '2026-07-09', updatedAt: T1 });
+    const opIdA = eng.loadOutbox()[0].opId;
+    const apiFetch = () => {
+      // Concorrente: chega enquanto o POST de A está em voo.
+      eng.enqueueTransaction('upsert', { id: 'id-B', tipo: 'despesa', valor: 2, descricao: 'B', data: '2026-07-09', updatedAt: T2 });
+      return Promise.resolve({ data: { results: [{ opId: opIdA, id: 'id-A', action: 'apply' }] } });
+    };
+    return eng.flush(apiFetch).then(() => {
+      const fila = eng.loadOutbox();
+      expect(fila).toHaveLength(1);       // antes do fix: 0 (B perdida)
+      expect(fila[0].id).toBe('id-B');    // A foi ackada; B sobreviveu
+    });
+  });
+
+  test('enqueue durante flush em voo sobrevive (falha de rede)', () => {
+    const eng = engineComUuidsUnicos(mockStorage());
+    eng.enqueueTransaction('upsert', { id: 'id-A', tipo: 'despesa', valor: 1, descricao: 'A', data: '2026-07-09', updatedAt: T1 });
+    const apiFetch = () => {
+      eng.enqueueTransaction('upsert', { id: 'id-B', tipo: 'despesa', valor: 2, descricao: 'B', data: '2026-07-09', updatedAt: T2 });
+      return Promise.reject(new Error('network'));
+    };
+    return eng.flush(apiFetch).then(() => {
+      const fila = eng.loadOutbox();
+      expect(fila).toHaveLength(2);       // antes do fix: 1 (B perdida)
+      const a = fila.find((m) => m.id === 'id-A');
+      const b = fila.find((m) => m.id === 'id-B');
+      expect(a.attempts).toBe(1);         // a tentada teve attempts bumpado
+      expect(b.attempts).toBe(0);         // a concorrente não
+    });
+  });
+
+  test('orçamento legado sem id sobrevive ao apply de delta (não é apagado)', () => {
+    var cfg = { orcamentos: { alimentacao: { limite: 500, definidoEm: T1 } }, recorrentes: [] };
+    const eng = loadEngine({
+      CONFIG, SYNC_MERGE: SM, UTILS: { gerarUuid: () => UUID },
+      DADOS: {
+        getConfig: () => cfg,
+        salvarConfig: (c) => { cfg = c; return c; },
+        getTransacoesRaw: () => [], getTransacoes: () => [],
+        _txPtToEn: (x) => x, _txEnToPt: (x) => x,
+      },
+      storage: mockStorage(), APP_STORE: null, ACTIONS: null,
+    });
+    // Delta vazio: mesmo assim, o orçamento legado (sem id) não pode sumir.
+    eng._applyBudgetsDelta([]);
+    expect(cfg.orcamentos.alimentacao).toBeTruthy();
+    expect(cfg.orcamentos.alimentacao.limite).toBe(500);
+  });
+
+  test('delta de orçamento do servidor prevalece sobre o legado da mesma categoria', () => {
+    var cfg = { orcamentos: { alimentacao: { limite: 500, definidoEm: T1 } }, recorrentes: [] };
+    const eng = loadEngine({
+      CONFIG, SYNC_MERGE: SM, UTILS: { gerarUuid: () => UUID },
+      DADOS: {
+        getConfig: () => cfg,
+        salvarConfig: (c) => { cfg = c; return c; },
+        getTransacoesRaw: () => [], getTransacoes: () => [],
+        _txPtToEn: (x) => x, _txEnToPt: (x) => x,
+      },
+      storage: mockStorage(), APP_STORE: null, ACTIONS: null,
+    });
+    // Sem FINANCE_CONTRACT no ctx de teste, _budgetEnToPt é identidade — então
+    // o delta já vem em campos PT (categoria/limite).
+    eng._applyBudgetsDelta([{ id: 'srv-1', categoria: 'alimentacao', limite: 800, updatedAt: T2 }]);
+    expect(cfg.orcamentos.alimentacao.limite).toBe(800); // servidor autoritativo
+  });
+
   test('retry re-enfileira rejeitados', () => {
     const mut = { id: UUID, tipo: 'despesa', valor: 1, descricao: 'x', updatedAt: T1 };
     engine.enqueueTransaction('upsert', mut);
