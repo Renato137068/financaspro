@@ -34,4 +34,38 @@ describe('LOCAL_CRYPTO — valor corrompido', function() {
     expect(function() { p = LOCAL_CRYPTO.decrypt(malformado); }).not.toThrow();
     return expect(p).resolves.toBe(malformado);
   });
+
+  test('_deriveKey não cacheia rejeição permanente — permite nova tentativa', async function() {
+    if (typeof crypto === 'undefined' || !crypto.subtle || typeof crypto.subtle.importKey !== 'function') {
+      return; // sem WebCrypto no ambiente: nada a exercitar
+    }
+    LOCAL_CRYPTO.setEnabled(true);
+    LOCAL_CRYPTO._keyPromises = null; // zera cache
+    LOCAL_CRYPTO._keyMats = null;
+
+    var real = crypto.subtle.importKey.bind(crypto.subtle);
+    var writable = true;
+    var calls = 0;
+    try {
+      crypto.subtle.importKey = function() {
+        calls++;
+        if (calls === 1) return Promise.reject(new Error('falha transitória'));
+        return real.apply(crypto.subtle, arguments);
+      };
+    } catch (e) { writable = false; }
+    if (!writable || crypto.subtle.importKey === real) return; // não dá para stubar aqui
+
+    try {
+      await expect(LOCAL_CRYPTO._deriveKey('enc3')).rejects.toBeTruthy();
+      // 2ª chamada: se a rejeição tivesse ficado cacheada, reusaria e rejeitaria
+      // de novo; com o cache limpo, deriva com sucesso.
+      var key = await LOCAL_CRYPTO._deriveKey('enc3');
+      expect(key).toBeTruthy();
+      expect(calls).toBeGreaterThanOrEqual(2);
+    } finally {
+      crypto.subtle.importKey = real;
+      LOCAL_CRYPTO._keyPromises = null;
+      LOCAL_CRYPTO._keyMats = null;
+    }
+  });
 });
