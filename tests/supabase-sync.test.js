@@ -10,8 +10,10 @@ const syncSrc = fs.readFileSync(path.join(root, 'js/core/supabase-sync.js'), 'ut
 
 function isQuotaExceededError(err) {
   if (!err) return false;
+  // Espelha o módulo: cota é identificada pelo marcador na mensagem, não pelo
+  // código P0001 genérico (RAISE EXCEPTION de qualquer validação usa P0001).
   var msg = String(err.message || err.details || err.hint || '');
-  return err.code === 'P0001' || /QUOTA_EXCEEDED:(transaction|account|budget)/.test(msg);
+  return /QUOTA_EXCEEDED:(transaction|account|budget)/.test(msg);
 }
 
 function handleQuotaExceeded(err, billing, utils) {
@@ -50,7 +52,7 @@ function loadSupaSync(mocks) {
         return Promise.resolve({ data: batch, error: null });
       },
       maybeSingle: function() {
-        return Promise.resolve({ data: mocks.userConfig || null, error: null });
+        return Promise.resolve({ data: mocks.userConfig || null, error: mocks.userConfigError || null });
       },
       upsert: function(rows) {
         upserts.push({ table: table, rows: rows });
@@ -197,6 +199,36 @@ describe('supabase-sync — pull mockado', function() {
     var out = await ctx.SUPA_SYNC.pushTx(tx);
     expect(out).toBe(tx);
     expect(billing.onPaymentRequired).toHaveBeenCalled();
+  });
+
+  test('P0001 sem marcador de cota NÃO é tratado como quota (não mostra "assine o Pro")', async function() {
+    // Erro de validação genérico do Postgres (P0001) sem QUOTA_EXCEEDED:
+    // antes era engolido como cota e o usuário via "assine o Pro".
+    var billing = { onPaymentRequired: jest.fn() };
+    var ctx = loadSupaSync({
+      upsertError: { code: 'P0001', message: 'violação de regra de negócio' },
+      billing: billing,
+    });
+    var tx = { id: 'tx1', tipo: 'despesa', valor: 10 };
+    var out = await ctx.SUPA_SYNC.pushTx(tx);
+    expect(out).toBe(tx);                                  // ainda devolve a tx local
+    expect(billing.onPaymentRequired).not.toHaveBeenCalled(); // mas NÃO como cota
+  });
+
+  test('config: erro ao ler UserConfig é avisado (não vira {} em silêncio)', async function() {
+    var warns = [];
+    var origWarn = console.warn;
+    console.warn = function() { warns.push(Array.prototype.join.call(arguments, ' ')); };
+    try {
+      var ctx = loadSupaSync({
+        rows: { Transaction: [], Account: [], Budget: [], RecurringTransaction: [] },
+        userConfigError: { message: 'permissão negada' },
+      });
+      await ctx.SUPA_SYNC.pull();
+    } finally {
+      console.warn = origWarn;
+    }
+    expect(warns.some(function(w) { return /UserConfig/.test(w); })).toBe(true);
   });
 
   test('pushConfig remove pinHash antes de enviar', async function() {

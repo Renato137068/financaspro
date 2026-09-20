@@ -60,9 +60,12 @@
 
   function isQuotaExceededError(err) {
     if (!err) return false;
+    // P0001 é o SQLSTATE genérico de RAISE EXCEPTION — QUALQUER trigger/RPC de
+    // validação usa o mesmo código. Identificar cota só pelo código engolia
+    // erros legítimos e mostrava "assine o Pro" no lugar. O sinal confiável é o
+    // marcador QUOTA_EXCEEDED:<tipo> na mensagem, que o SQL de cota emite.
     var msg = String(err.message || err.details || err.hint || '');
-    return err.code === 'P0001'
-      || new RegExp('QUOTA_EXCEEDED:(' + QUOTA_KINDS + ')').test(msg);
+    return new RegExp('QUOTA_EXCEEDED:(' + QUOTA_KINDS + ')').test(msg);
   }
 
   function handleQuotaExceeded(err) {
@@ -158,6 +161,13 @@
         fetchAllRows(function () { return SB.from('RecurringTransaction').select('*'); }),
         SB.from('UserConfig').select('data').eq('userId', u).maybeSingle()
       ]).then(function (res) {
+        // maybeSingle() resolve {data:null, error} em vez de rejeitar; sem este
+        // aviso, uma falha ao ler o UserConfig virava config {} em silêncio e o
+        // usuário achava que sincronizou. As outras 4 queries já lançam via
+        // fetchAllRows, então caem no catch.
+        if (res[4] && res[4].error && typeof console !== 'undefined' && console.warn) {
+          console.warn('Sync: falha ao ler UserConfig da nuvem —', res[4].error.message || res[4].error);
+        }
         var snapshot = {
           transactions: res[0] || [],
           accounts: res[1] || [],
@@ -197,8 +207,12 @@
       var cloudAccIds = {};
       (cloud.accounts || []).forEach(function (a) { if (a && a.id) cloudAccIds[a.id] = 1; });
       var localAcc = (DADOS.getContas && DADOS.getContas()) || [];
-      // Ids de conta válidos (na nuvem + locais que vão subir) para checagem de FK.
-      var validAccIds = { has: function (id) { return !!cloudAccIds[id] || localAcc.some(function (a) { return a && a.id === id; }); } };
+      // Ids de conta válidos (na nuvem + locais que vão subir) para checagem de
+      // FK. Índice O(1): antes era localAcc.some() por transação → O(contas ×
+      // transações) em todo pull/login.
+      var localAccIds = {};
+      localAcc.forEach(function (a) { if (a && a.id) localAccIds[a.id] = 1; });
+      var validAccIds = { has: function (id) { return !!cloudAccIds[id] || !!localAccIds[id]; } };
 
       var accToPush = localAcc
         .filter(function (a) { return a && a.id && !cloudAccIds[a.id]; })

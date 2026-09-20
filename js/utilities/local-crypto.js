@@ -161,7 +161,7 @@ var LOCAL_CRYPTO = {
     if (this._keyPromises[v] && this._keyMats[v] === matId) return this._keyPromises[v];
     this._keyMats[v] = matId;
 
-    this._keyPromises[v] = crypto.subtle.importKey(
+    var p = crypto.subtle.importKey(
       'raw', new TextEncoder().encode(m.passphrase), { name: 'PBKDF2' }, false, ['deriveKey']
     ).then(function(base) {
       return crypto.subtle.deriveKey(
@@ -169,7 +169,16 @@ var LOCAL_CRYPTO = {
         base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
       );
     });
-    return this._keyPromises[v];
+    // Uma falha transitória (crypto.subtle indisponível por um instante) não
+    // pode ficar cacheada como rejeição PERMANENTE — sem isto, todo encrypt/
+    // decrypt do resto da sessão reusaria a promise rejeitada. Limpa o cache no
+    // erro para permitir nova derivação na próxima chamada. `p` (que ainda
+    // rejeita) segue retornado, então o chamador vê o erro normalmente.
+    p.catch(function() {
+      if (self._keyPromises[v] === p) { self._keyPromises[v] = null; self._keyMats[v] = null; }
+    });
+    this._keyPromises[v] = p;
+    return p;
   },
 
   // Chave legada (SHA-256 do passphrase antigo) — SÓ para decifrar dados 'enc1'.
