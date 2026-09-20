@@ -187,12 +187,16 @@ var RECORRENTES = {
       var devidas = self._competenciasDevidas(rec, ref);
       if (!devidas.length) return;
 
+      // Lê o estado UMA vez por recorrente (não por competência): getTransacoes/
+      // getConfig são leitura + JSON.parse do blob inteiro. O que este laço cria
+      // é rastreado em `feitas` — a mesma proteção que a releitura dava contra
+      // duas competências iguais (dado corrompido) gerarem duplicata.
+      var txs = DADOS.getTransacoes();
+      var processadas = DADOS.getConfig().recorrentesProcessadas || {};
+      var feitas = {};
+
       devidas.forEach(function(d) {
-        // Relê a cada iteração: o que foi criado neste mesmo laço precisa
-        // entrar na verificação, senão duas competências iguais (dado
-        // corrompido) gerariam duplicata.
-        var txs = DADOS.getTransacoes();
-        var processadas = DADOS.getConfig().recorrentesProcessadas || {};
+        if (feitas[d.competencia]) return;
         if (self._jaProcessada(txs, processadas, rec.id, d.competencia)) return;
 
         var tx;
@@ -229,6 +233,7 @@ var RECORRENTES = {
         TRANSACOES._cache = DADOS.getTransacoes();
 
         self._marcarProcessada(rec.id, d.competencia);
+        feitas[d.competencia] = true;
         criadas.push(tx);
       });
     });
