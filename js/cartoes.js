@@ -107,8 +107,11 @@ var CARTOES = {
    * @param {string} dataCompra YYYY-MM-DD
    * @returns {?{competencia:string, fechamento:string, vencimento:string}}
    */
-  faturaDaCompra: function(nomeCartao, dataCompra) {
-    var cartao = this.obter(nomeCartao);
+  faturaDaCompra: function(nomeCartao, dataCompra, cartaoPre) {
+    // cartaoPre: cartão já resolvido, passado pelos laços que iteram muitas
+    // transações do MESMO cartão (fatura/resumo) — evita re-resolver obter()
+    // (getConfig + varredura) por transação, O(N×C) por render do dashboard.
+    var cartao = cartaoPre || this.obter(nomeCartao);
     if (!cartao || !cartao.temCiclo) return null;
 
     var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(dataCompra || ''));
@@ -232,7 +235,7 @@ var CARTOES = {
       if (t.tipo !== CONFIG.TIPO_DESPESA) return;
       if (UTILS.nomeDeConta(t.cartao).toLowerCase() !== alvo) return;
 
-      var f = CARTOES.faturaDaCompra(cartao.nome, t.data);
+      var f = CARTOES.faturaDaCompra(cartao.nome, t.data, cartao);
       if (!f || f.competencia !== competencia) return;
 
       doCartao.push(t);
@@ -407,7 +410,7 @@ var CARTOES = {
         return;
       }
 
-      var f = CARTOES.faturaDaCompra(cartao.nome, t.data);
+      var f = CARTOES.faturaDaCompra(cartao.nome, t.data, cartao);
       if (!f) return;
 
       // Confirmada como paga: sai do limite na hora, mesmo antes de vencer.
