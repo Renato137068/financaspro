@@ -393,10 +393,10 @@ var AI_ENGINE = {
    * @param {Object} config — DADOS.getConfig()
    * @returns {Array} [{ id, tipo, titulo, msg, gravidade, acao, parametros }]
    */
-  gerarAlertas: function(transacoes, config) {
+  gerarAlertas: function(transacoes, config, hoje) {
     config = config || {};
     var alertas  = [];
-    var hoje     = new Date();
+    hoje = hoje || new Date();
     var mesKey   = hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0');
     var agregado = this.agregarPorMes(transacoes);
     var chaves   = Object.keys(agregado).sort();
@@ -514,17 +514,21 @@ var AI_ENGINE = {
       });
     }
 
-    // 7. Projeção de saldo negativo no fim do mês
-    if (diaMes >= 5 && diasRestantes >= 5 && mesSel && mesSel.receitas > 0) {
-      var taxaDiariaDesp = mesSel.despesas / diaMes;
-      var projecaoDesp   = Math.round((mesSel.despesas + taxaDiariaDesp * diasRestantes) * 100) / 100;
-      var saldoProj      = Math.round((mesSel.receitas - projecaoDesp) * 100) / 100;
-      if (saldoProj < 0) {
+    // 7. Projeção de saldo negativo no fim do mês.
+    // Delega a projetarFimMes em vez de refazer a conta aqui: a versão inline
+    // usava taxaDiaria = despesas/diaMes com as despesas do mês INTEIRAS, então
+    // uma parcela futura (parcelamento grava uma transação por parcela na sua
+    // data) era contada duas vezes — no total E no ritmo —, inflando a projeção
+    // e disparando "saldo negativo" falso. projetarFimMes separa realizado de
+    // futuro e soma em centavos, o mesmo erro já corrigido lá.
+    if (diaMes >= 5 && diasRestantes >= 5) {
+      var proj = this.projetarFimMes(transacoes, hoje);
+      if (!proj.dadosInsuficientes && proj.projecaoReceitas > 0 && proj.saldoProjetado < 0) {
         alertas.push({
           id:       'projecao-negativa',
           tipo:     'projecao',
           titulo:   'Projeção: saldo negativo',
-          msg:      'No ritmo atual, você vai gastar R$ ' + projecaoDesp.toFixed(2).replace('.', ',') + ' este mês — saldo estimado: –R$ ' + Math.abs(saldoProj).toFixed(2).replace('.', ',') + '.',
+          msg:      'No ritmo atual, você vai gastar R$ ' + proj.projecaoDespesas.toFixed(2).replace('.', ',') + ' este mês — saldo estimado: –R$ ' + Math.abs(proj.saldoProjetado).toFixed(2).replace('.', ',') + '.',
           gravidade: 'alta'
         });
       }

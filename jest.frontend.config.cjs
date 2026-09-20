@@ -61,7 +61,7 @@ module.exports = {
     // passavam um `filename` relativo ao vm.runInContext — o código rodava, mas
     // o provider v8 não conseguia mapeá-lo de volta ao arquivo. Os pisos agora
     // refletem a cobertura que sempre existiu.
-    'js/ai-engine.js': { lines: 52, functions: 65, branches: 72 },
+    'js/ai-engine.js': { lines: 90, functions: 100, branches: 74 },
     // functions caiu de 95 para 80 porque a instrumentação do funil adicionou
     // funções ao módulo; as linhas seguem em 100%.
     'js/core/setup-guide.js': { lines: 95, functions: 80, branches: 70 },

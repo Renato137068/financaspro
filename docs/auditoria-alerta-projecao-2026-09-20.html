@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auditoria — Alerta de projeção</title>
+<meta name="description" content="Correção de auditoria do FinançasPro: o alerta 'Projeção: saldo negativo' contava parcelas futuras duas vezes e disparava alarme falso. Agora delega a projetarFimMes, que separa despesa realizada da agendada.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --ground:#f5f7f4; --card:#ffffff; --card-2:#fbfcfa;
+    --ink:#15211c; --muted:#59685f; --faint:#89968e; --line:#e4e9e3; --line-2:#eef2ec;
+    --brand:#0e5a41; --brand-2:#2f9c6d; --brand-ink:#0a3d2c;
+    --free:#15803d; --warn:#b4472e;
+    --shadow:0 1px 2px rgba(16,40,30,.05), 0 10px 30px rgba(16,40,30,.06); --shadow-sm:0 1px 2px rgba(16,40,30,.06);
+    --radius:16px; --radius-sm:11px; --maxw:940px;
+  }
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+    --ground:#0d1310; --card:#151c18; --card-2:#121814; --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6; --free:#57c98a; --warn:#f08a6e;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }}
+  :root[data-theme="dark"]{
+    --ground:#0d1310; --card:#151c18; --card-2:#121814; --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6; --free:#57c98a; --warn:#f08a6e;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box} html{-webkit-text-size-adjust:100%}
+  body{background:var(--ground); color:var(--ink); font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; margin:0}
+  .wrap{max-width:var(--maxw); margin:0 auto; padding-inline:20px}
+  code{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.84em; background:var(--line-2); padding:1px 6px; border-radius:6px; color:var(--brand-ink)}
+  :root:not([data-theme="light"]) code,:root[data-theme="dark"] code{color:var(--brand-2)}
+  h1,h2,h3{font-family:"Bricolage Grotesque","IBM Plex Sans",sans-serif; text-wrap:balance; letter-spacing:-.015em; margin:0}
+  .hero{background:radial-gradient(120% 140% at 100% 0%, rgba(47,156,109,.18), transparent 55%), linear-gradient(158deg, var(--brand), var(--brand-ink)); color:#eafff5; border-radius:0 0 26px 26px; box-shadow:var(--shadow); position:relative; overflow:hidden}
+  .hero .wrap{padding-block:34px 30px}
+  .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:#9fe8c9; display:flex; align-items:center; gap:10px; margin-bottom:16px}
+  .eyebrow .dot{width:7px; height:7px; border-radius:50%; background:#7bffc8; box-shadow:0 0 0 4px rgba(123,255,200,.18)}
+  h1{font-size:clamp(28px,5.6vw,44px); line-height:1.03; font-weight:800; color:#fff; max-width:24ch}
+  .hero .lede{margin:16px 0 0; font-size:clamp(15px,2.3vw,18px); max-width:66ch; color:#d5f4e6}
+  .hero .lede b{color:#fff; font-weight:600}
+  section{margin-top:44px}
+  .sec-head{display:flex; align-items:baseline; gap:12px; margin-bottom:8px}
+  .sec-head .k{font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:600; color:var(--brand-2); border:1px solid var(--line); border-radius:8px; padding:3px 9px; background:var(--card)}
+  h2{font-size:clamp(20px,3.4vw,26px); font-weight:700; line-height:1.14}
+  .verdict{background:var(--card); border:1px solid var(--line); border-left:5px solid var(--warn); border-radius:var(--radius); padding:22px 24px; box-shadow:var(--shadow); margin-top:-30px; position:relative; z-index:2}
+  .verdict h2{font-size:19px; margin-bottom:6px}
+  .verdict p{margin:8px 0 0; color:var(--muted); font-size:15px} .verdict b{color:var(--ink)}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:20px 22px; box-shadow:var(--shadow-sm); margin-top:16px}
+  .card p{margin:8px 0 0; color:var(--muted); font-size:14.5px} .card p b{color:var(--ink)}
+  .card h3{font-size:17px; font-weight:700}
+  .ex{margin-top:12px; padding:12px 14px; background:var(--card-2); border:1px solid var(--line-2); border-radius:var(--radius-sm); font-size:14px}
+  .ex b{color:var(--warn)}
+  ul{margin:10px 0 0; padding-left:20px; color:var(--muted); font-size:14.5px} li{margin:5px 0}
+  .gate{display:grid; grid-template-columns:auto 1fr; gap:8px 14px; font-size:14px; margin-top:6px}
+  .gate .ok{color:var(--free); font-weight:700; font-family:"IBM Plex Mono",monospace}
+  footer{margin:56px 0 40px; color:var(--faint); font-size:13px; text-align:center}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow"><span class="dot"></span> Auditoria · FinançasPro v11</div>
+    <h1>Alerta de fim de mês: fim do alarme falso por parcela</h1>
+    <p class="lede">O alerta <b>"Projeção: saldo negativo"</b> refazia a conta por conta própria — somava as despesas do mês inteiras e ainda as espalhava no ritmo diário. Uma <b>parcela futura</b> do mês entrava <b>duas vezes</b>, inflando a projeção e disparando um vermelho que não existia. Agora ele delega a <code>projetarFimMes</code>, que já separa o realizado do agendado.</p>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="verdict">
+    <h2>O bug</h2>
+    <p>O parcelamento — recurso principal do app — grava uma transação por parcela, cada uma na sua data. O item 7 de <code>gerarAlertas</code> fazia <code>taxaDiaria = despesas / diaMes</code> com as despesas do mês <b>inteiras</b> (incluindo a parcela agendada para daqui a alguns dias) e então <code>projeção = despesas + taxaDiaria × diasRestantes</code>. A parcela contava no total <b>e</b> inflava o ritmo. Medido no cenário-padrão: onde o correto projeta ~R$ 5.100, a conta antiga cravava ~R$ 9.300 — e um "saldo negativo" que assustava sem motivo. Alarme falso ensina o usuário a ignorar a tela.</p>
+  </div>
+
+  <section>
+    <div class="sec-head"><span class="k">A CORREÇÃO</span><h2>Delegar, não repetir</h2></div>
+    <div class="card">
+      <p>Exatamente esse erro já havia sido corrigido em <code>AI_ENGINE.projetarFimMes</code>, que separa <b>despesa realizada</b> de <b>despesa futura já agendada</b> (parcelas entram pelo valor cheio, uma vez só) e soma em centavos. O item 7 de <code>gerarAlertas</code> agora chama <code>projetarFimMes</code> em vez de refazer a conta — uma fonte de verdade só.</p>
+      <div class="ex"><b>Bônus de testabilidade</b> — <code>gerarAlertas</code> ganhou um parâmetro opcional <code>hoje</code> (como <code>projetarFimMes</code> já tinha), permitindo testar cada ramo com datas fixas. Chamadas existentes (2 argumentos) seguem idênticas.</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="k">EVIDÊNCIA</span><h2>Gates de verificação</h2></div>
+    <div class="card">
+      <div class="gate">
+        <span class="ok">✓</span><span>Frontend: <b>192 suites, 2154 testes</b> (+7: alarme falso por parcela some, projeção negativa real dispara, sem-receita não projeta, saldo negativo, orçamento excedido/quase, recorrente próximo, sem-receita pós dia 15)</span>
+        <span class="ok">✓</span><span><code>ai-engine.js</code>: cobertura sobe para <b>93,6% linhas / 100% funções</b>; piso elevado de 52/65/72 para 90/100/74</span>
+        <span class="ok">✓</span><span><code>lint</code> · <code>lint:changed</code> · <code>security:xss</code> · <code>a11y-static</code> · <code>css-tokens</code> · <code>contrast</code> · <code>bundle</code> · <code>build</code></span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="k">ARQUIVOS</span><h2>Alterados</h2></div>
+    <div class="card">
+      <ul>
+        <li><code>js/ai-engine.js</code> — <code>gerarAlertas</code> ganha <code>hoje</code> opcional; item 7 delega a <code>projetarFimMes</code>.</li>
+        <li><code>tests/ai-engine-gerar-alertas.test.js</code> — +7 testes (módulos reais via load-sources).</li>
+        <li><code>jest.frontend.config.cjs</code> — piso de <code>ai-engine.js</code> 52/65/72 → 90/100/74.</li>
+        <li><code>docs/auditoria-alerta-projecao-2026-09-20.html</code> — este documento.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    FinançasPro · Auditoria: Alerta de projeção · 2026-09-20
+  </footer>
+
+</div>
+</body>
+</html>
