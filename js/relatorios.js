@@ -129,6 +129,55 @@ const RELATORIOS = {
 
     lista.sort(function(x, y) { return Math.abs(y.diff) - Math.abs(x.diff); });
     return lista;
+  },
+
+  /**
+   * Resumo agregado dos últimos N meses (janela móvel terminando no mês
+   * consultado, inclusive) — o "zoom out" que o app não tinha em números:
+   * total do período, média mensal de despesa, taxa de poupança e o mês mais
+   * caro. Complementa o gráfico de evolução (que só desenha as barras) com os
+   * números por trás dele. Tudo em centavos inteiros.
+   *
+   * @param {number} mes 1-12 (mês final da janela)
+   * @param {number} ano
+   * @param {number} [meses=6] tamanho da janela
+   * @returns {?{meses:number, receitas:number, despesas:number, saldo:number,
+   *   mediaDespesaMensal:number, taxaPoupanca:?number,
+   *   maiorDespesaMes:?{mes:number, ano:number, despesas:number},
+   *   mesesComDados:number}}
+   */
+  resumoPeriodo: function(mes, ano, meses) {
+    if (typeof TRANSACOES === 'undefined') return null;
+    var janela = (meses && meses > 0) ? meses : 6;
+
+    var recCent = 0, despCent = 0, mesesComDados = 0;
+    var maior = null;
+    var m = mes, a = ano;
+    for (var i = 0; i < janela; i++) {
+      var r = this.resumoMes(m, a);
+      var rc = UTILS.paraCentavos(r.receitas);
+      var dc = UTILS.paraCentavos(r.despesas);
+      recCent += rc;
+      despCent += dc;
+      if (r.transacoes > 0) mesesComDados++;
+      if (dc > 0 && (maior === null || dc > maior.cent)) {
+        maior = { mes: m, ano: a, cent: dc };
+      }
+      m -= 1;
+      if (m < 1) { m = 12; a -= 1; }
+    }
+
+    var saldoCent = recCent - despCent;
+    return {
+      meses: janela,
+      receitas: recCent / 100,
+      despesas: despCent / 100,
+      saldo: saldoCent / 100,
+      mediaDespesaMensal: Math.round(despCent / janela) / 100,
+      taxaPoupanca: recCent > 0 ? Math.round((saldoCent / recCent) * 100) : null,
+      maiorDespesaMes: maior ? { mes: maior.mes, ano: maior.ano, despesas: maior.cent / 100 } : null,
+      mesesComDados: mesesComDados
+    };
   }
 };
 

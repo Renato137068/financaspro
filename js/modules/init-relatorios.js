@@ -143,6 +143,26 @@ const INIT_RELATORIOS = {
       }
     }
 
+    // Zoom out: os números por trás do gráfico de evolução — média de despesa,
+    // taxa de poupança e mês mais caro dos últimos 6 meses. Só aparece com
+    // histórico suficiente (>= 3 meses com lançamento), senão engana.
+    if (typeof RELATORIOS.resumoPeriodo === 'function') {
+      var per = RELATORIOS.resumoPeriodo(mes, ano, 6);
+      if (per && per.mesesComDados >= 3) {
+        var MESES_ABREV = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+        html += '<h4 class="rel-subtitle">Últimos 6 meses</h4>';
+        html += '<p class="rel-insight"><i data-lucide="calendar-range" aria-hidden="true"></i> ' +
+          'Despesa média: <strong>' + UTILS.formatarMoeda(per.mediaDespesaMensal) + '/mês</strong>' +
+          (per.taxaPoupanca != null ? ' · poupança do período ' + per.taxaPoupanca + '%' : '') + '.</p>';
+        if (per.maiorDespesaMes) {
+          var mm = per.maiorDespesaMes;
+          html += '<p class="rel-insight"><i data-lucide="trending-up" aria-hidden="true"></i> ' +
+            'Mês mais caro: <strong>' + MESES_ABREV[mm.mes - 1] + '/' + String(mm.ano).slice(2) + '</strong> (' +
+            UTILS.formatarMoeda(mm.despesas) + ').</p>';
+        }
+      }
+    }
+
     el.innerHTML = html;
     if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(el);
   }
