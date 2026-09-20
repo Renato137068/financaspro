@@ -18,3 +18,20 @@ describe('DOM_SAFE_PATCH — ordem de boot', () => {
     expect(src).toMatch(/typeof INIT_FORM !== 'undefined' \? INIT_FORM : null/);
   });
 });
+
+describe('DOM_SAFE.createCategoriaChip — rótulo não vai no innerHTML', () => {
+  // O rótulo pode ser o nome de uma categoria custom (texto do usuário). Num
+  // helper chamado "DOM seguro", ele não pode ser concatenado no innerHTML —
+  // deve entrar como text node. Guard por análise da fonte (a função não tem
+  // chamadores hoje; o teste evita que a regressão volte quando ganhar um).
+  const src = fs.readFileSync(path.join(__dirname, '..', 'js', 'core', 'dom-safe.js'), 'utf8');
+  const bloco = src.slice(src.indexOf('createCategoriaChip:'), src.indexOf('createProgressBar:'));
+
+  test('o innerHTML do chip não concatena options.label', () => {
+    expect(bloco).not.toMatch(/innerHTML\s*=\s*[^;]*options\.label/);
+  });
+
+  test('o rótulo entra como text node', () => {
+    expect(bloco).toMatch(/createTextNode\([^)]*options\.label/);
+  });
+});

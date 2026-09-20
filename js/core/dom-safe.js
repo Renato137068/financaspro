@@ -305,10 +305,16 @@ const DOM_SAFE = {
         'data-action': options.action || 'selecionar-categoria'
       }
     });
+    // O rótulo pode ser o nome de uma categoria CUSTOM (texto do usuário): vai
+    // como TEXT NODE, nunca concatenado no innerHTML — só o ícone (lucide/emoji,
+    // controlado pelo app) usa innerHTML. Assim o helper "DOM seguro" não abre
+    // uma via de injeção pelo próprio rótulo.
     if (options.lucide && typeof lucideIconHtml === 'function') {
-      chip.innerHTML = lucideIconHtml(options.lucide) + ' ' + (options.label || '');
+      chip.innerHTML = lucideIconHtml(options.lucide);
+      chip.appendChild(document.createTextNode(' ' + (options.label || '')));
     } else if (options.emoji && typeof options.emoji === 'string' && options.emoji.indexOf('<') !== -1) {
-      chip.innerHTML = options.emoji + ' ' + (options.label || '');
+      chip.innerHTML = options.emoji;
+      chip.appendChild(document.createTextNode(' ' + (options.label || '')));
     } else {
       chip.textContent = (options.label || options.categoria || '');
     }
