@@ -92,6 +92,115 @@ var COMPROMISSOS = {
   },
 
   /**
+   * O comprometido daqui para frente, mês a mês — a agenda de desembolsos que
+   * `comprometido()` só entrega somada. Responde "quanto já está prometido de
+   * outubro, de novembro, de dezembro", que é o que permite ver um mês pesado
+   * chegando antes de ele chegar.
+   *
+   * Cada mês soma três fontes, pela data em que o dinheiro sai:
+   *   • faturas de cartão AINDA ABERTAS, pelo mês do vencimento;
+   *   • parcelas/despesas futuras fora de cartão cadastrado (senão contaria a
+   *     mesma parcela duas vezes — igual a `comprometido()`), pelo mês da data;
+   *   • contas a pagar pendentes, pelo mês do vencimento (as já vencidas caem
+   *     no primeiro mês da janela, pois ainda são devidas).
+   *
+   * A janela começa no mês corrente. Só despesa; centavos inteiros.
+   *
+   * @param {number} [meses=3] tamanho da janela
+   * @param {Date} [hoje] injetável para teste
+   * @returns {Array<{ano:number, mes:number, cartoes:number, parcelas:number,
+   *   contas:number, total:number}>} do mês corrente para frente
+   */
+  porMes: function(meses, hoje) {
+    var ref = this._agora(hoje);
+    var janela = (meses && meses > 0) ? meses : 3;
+    var hojeIso = UTILS.dataLocalIso(ref);
+
+    // Janela de meses a partir do corrente.
+    var baseIdx = ref.getFullYear() * 12 + ref.getMonth(); // mês 0-based
+    var buckets = [];
+    var porChave = {};
+    for (var d = 0; d < janela; d++) {
+      var idx = baseIdx + d;
+      var ano = Math.floor(idx / 12);
+      var mes = (idx % 12) + 1;
+      var chave = ano + '-' + String(mes).padStart(2, '0');
+      var b = { ano: ano, mes: mes, cartoesCent: 0, parcelasCent: 0, contasCent: 0 };
+      buckets.push(b);
+      porChave[chave] = b;
+    }
+    var chaveDe = function(iso) { return String(iso || '').slice(0, 7); };
+    var primeira = buckets[0];
+    var ultimaChave = buckets[janela - 1].ano + '-' + String(buckets[janela - 1].mes).padStart(2, '0');
+
+    var txs = (typeof DADOS !== 'undefined' && DADOS.getTransacoes)
+      ? DADOS.getTransacoes() : [];
+    var config = (typeof DADOS !== 'undefined' && DADOS.getConfig)
+      ? DADOS.getConfig() : {};
+
+    // ── Parcelas/despesas futuras fora de cartão cadastrado ──────────────────
+    txs.forEach(function(t) {
+      if (!t || t.tipo !== CONFIG.TIPO_DESPESA) return;
+      if (typeof CARTOES !== 'undefined' && CARTOES.obter(t.cartao)) return; // via fatura
+      var data = String(t.data || '').slice(0, 10);
+      if (!(data > hojeIso)) return; // só o que ainda vai sair
+      var b = porChave[chaveDe(data)];
+      if (b) b.parcelasCent += UTILS.paraCentavos(t.valor);
+    });
+
+    // ── Faturas de cartão ainda abertas, pelo mês do vencimento ──────────────
+    if (typeof CARTOES !== 'undefined' && CARTOES.obter) {
+      var cartoes = (config.cartoes || []);
+      cartoes.forEach(function(c) {
+        var nome = UTILS.nomeDeConta(c);
+        var cartao = CARTOES.obter(nome);
+        if (!cartao || !cartao.temCiclo) return;
+        // Enumera competências cujo vencimento pode cair na janela. Um passo a
+        // mais de folga cobre o descolamento competência→vencimento.
+        for (var d = 0; d <= janela; d++) {
+          var comp = CARTOES._competenciaDe(cartao, ref, d);
+          if (!comp) continue;
+          var fat = CARTOES.fatura(nome, comp);
+          if (!fat || !fat.vencimento || fat.total <= 0) continue;
+          // "Ainda vai sair" = vence de hoje em diante e não foi paga. Não uso
+          // fat.status: ele é medido contra o relógio real, e aqui `hoje` é
+          // injetável — a mesma regra de CARTOES.resumo, que COMPROMISSOS usa.
+          if (fat.vencimento < hojeIso) continue;
+          if (CARTOES.faturaEstaPaga(nome, comp)) continue;
+          var b = porChave[chaveDe(fat.vencimento)];
+          if (b) b.cartoesCent += UTILS.paraCentavos(fat.total);
+        }
+      });
+    }
+
+    // ── Contas a pagar pendentes, pelo mês do vencimento ─────────────────────
+    (config.contasPagar || []).forEach(function(conta) {
+      if (!conta || conta.status !== 'pendente') return;
+      var venc = chaveDe(conta.vencimento);
+      var b = porChave[venc];
+      if (!b) {
+        // Vencida (antes da janela) → devida agora, no primeiro mês. Depois da
+        // janela → fora do horizonte, ignora.
+        if (venc && venc < (primeira.ano + '-' + String(primeira.mes).padStart(2, '0'))) b = primeira;
+        else if (venc && venc > ultimaChave) return;
+        else return;
+      }
+      b.contasCent += UTILS.paraCentavos(conta.valor);
+    });
+
+    return buckets.map(function(b) {
+      return {
+        ano: b.ano,
+        mes: b.mes,
+        cartoes: b.cartoesCent / 100,
+        parcelas: b.parcelasCent / 100,
+        contas: b.contasCent / 100,
+        total: (b.cartoesCent + b.parcelasCent + b.contasCent) / 100
+      };
+    });
+  },
+
+  /**
    * Quanto realmente sobra: saldo das contas menos o comprometido.
    *
    * `situacao` existe para a UI escolher a cor sem repetir a regra:
