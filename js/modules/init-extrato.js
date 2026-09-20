@@ -1097,14 +1097,16 @@ const INIT_EXTRATO = {
     var catIcon = INIT_EXTRATO.getCatIcon(t.categoria);
     var catCor = INIT_EXTRATO.getCatCor(t.categoria);
     var isChecked = this.state.selecionados.indexOf(String(t.id)) > -1 ? 'checked' : '';
-    var desc = t.descricao || t.categoria;
+    // Descrição vem guardada escapada; decodifica para exibir/rotular sem escape
+    // duplo. As saídas abaixo continuam passando por escapeHtml, então seguras.
+    var desc = UTILS.desescapeHtml(t.descricao || t.categoria);
 
     return '<div class="ext-tx" role="listitem" tabindex="0" data-id="' + UTILS.escapeHtml(String(t.id)) + '" aria-label="Transação: ' + UTILS.escapeHtml(desc) + '">' +
       '<input type="checkbox" class="tx-checkbox" data-tx-id="' + UTILS.escapeHtml(String(t.id)) + '" ' + isChecked +
         ' aria-label="Selecionar: ' + UTILS.escapeHtml(desc) + '">' +
       '<div class="ext-tx-icon" style="background: ' + catCor + '20; color: ' + catCor + '">' + catIcon + '</div>' +
       '<div class="ext-tx-info">' +
-        '<div class="ext-tx-desc">' + UTILS.escapeHtml(t.descricao || t.categoria) + '</div>' +
+        '<div class="ext-tx-desc">' + UTILS.escapeHtml(desc) + '</div>' +
         '<div class="ext-tx-meta">' +
           '<span class="ext-tx-meta-tag">' + UTILS.escapeHtml(CONFIG.getCatLabel(t.categoria)) + '</span>' +
           '<span>' + dataStr + '</span>' +
@@ -1322,7 +1324,9 @@ const INIT_EXTRATO = {
 
     // Preencher formulário com dados da transação
     document.getElementById('novo-valor').value = UTILS.formatarMoeda(tx.valor);
-    document.getElementById('novo-descricao').value = tx.descricao || '';
+    // Decodifica ao preencher o form: sem isso, salvar reescaparia a descrição
+    // já escapada, corrompendo o dado a cada edição.
+    document.getElementById('novo-descricao').value = UTILS.desescapeHtml(tx.descricao || '');
     document.getElementById('novo-categoria').value = tx.categoria;
     document.getElementById('novo-tipo').value = tx.tipo;
     document.getElementById('novo-data').value = tx.data;
@@ -1447,7 +1451,7 @@ const INIT_EXTRATO = {
       saldoAcumulado += valor;
       
       var tipoStr = t.tipo === CONFIG.TIPO_RECEITA ? 'Receita' : 'Despesa';
-      var descricao = this._neutralizarCsvCelula(t.descricao || '');
+      var descricao = this._neutralizarCsvCelula(UTILS.desescapeHtml(t.descricao || ''));
       var categoria = this._neutralizarCsvCelula(t.categoria);
       
       csv += data + ',"' + descricao + '","' + categoria + '",' + tipoStr + ',' + valor.toFixed(2) + ',' + saldoAcumulado.toFixed(2) + '\n';
@@ -1551,7 +1555,7 @@ const INIT_EXTRATO = {
       var valorClass = t.tipo === CONFIG.TIPO_RECEITA ? 'receita' : 'despesa';
       html += '<tr>';
       html += '<td>' + data + '</td>';
-      html += '<td>' + UTILS.escapeHtml(t.descricao || '') + '</td>';
+      html += '<td>' + UTILS.escapeHtml(UTILS.desescapeHtml(t.descricao || '')) + '</td>';
       html += '<td class="categoria">' + INIT_EXTRATO.getCatIcon(t.categoria) + ' ' + UTILS.escapeHtml(t.categoria) + '</td>';
       html += '<td>' + (t.tipo === CONFIG.TIPO_RECEITA ? 'Receita' : 'Despesa') + '</td>';
       html += '<td class="' + valorClass + '">' + valor + '</td>';

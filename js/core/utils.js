@@ -430,6 +430,22 @@ var UTILS = {
     return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
   },
 
+  // Inverso exato de escapeHtml. Descrições de transação são guardadas já
+  // escapadas (defesa em profundidade, testada em transacoes-real), então
+  // exibi-las com textContent/escapeHtml escaparia DE NOVO — "C&A" viraria
+  // "C&amp;A" na tela, e reeditar reescaparia ("C&amp;amp;A"), corrompendo o
+  // dado a cada edição. Decodificar na hora de mostrar/editar desfaz a primeira
+  // camada; a saída continua passando por textContent ou escapeHtml, então
+  // segue segura. `&amp;` por último para reverter só uma camada.
+  desescapeHtml: function(text) {
+    return String(text == null ? '' : text)
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#0?39;/g, "'")
+      .replace(/&amp;/g, '&');
+  },
+
   labelCategoria: function(key) {
     if (typeof CONFIG !== 'undefined' && CONFIG.getCatLabel) {
       return CONFIG.getCatLabel(key);

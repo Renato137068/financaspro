@@ -30,6 +30,11 @@ function carregarModulo() {
           .replace(/>/g, '&gt;')
           .replace(/"/g, '&quot;');
       },
+      desescapeHtml: function(s) {
+        return String(s == null ? '' : s)
+          .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
+          .replace(/&#0?39;/g, "'").replace(/&amp;/g, '&');
+      },
       formatarMoeda: function(v) { return 'R$ ' + Number(v).toFixed(2).replace('.', ','); }
     },
     TRANSACOES: { obter: function() { return []; } },

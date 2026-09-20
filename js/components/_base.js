@@ -11,6 +11,12 @@
       d.textContent = String(s);
       return d.innerHTML;
     },
+    // Texto guardado escapado (ex.: descrição) → texto puro para exibir via
+    // textContent, sem escape duplo. Ver UTILS.desescapeHtml.
+    dtext: function(s) {
+      if (typeof UTILS !== 'undefined' && UTILS.desescapeHtml) return UTILS.desescapeHtml(s);
+      return String(s == null ? '' : s);
+    },
     moeda: function(v) {
       if (typeof UTILS !== 'undefined' && UTILS.formatarMoeda) return UTILS.formatarMoeda(v);
       return 'R$ ' + Number(v).toFixed(2).replace('.', ',');
