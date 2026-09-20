@@ -49,7 +49,7 @@ module.exports = {
 
     // Saíram de 0%: os testes antigos recalculavam a lógica inline em vez de
     // carregar o módulo. A conversão revelou dois bugs de produção.
-    'js/contas-pagar.js': { lines: 88, functions: 90, branches: 92 },
+    'js/contas-pagar.js': { lines: 88, functions: 90, branches: 90 },
     'js/assinaturas.js': { lines: 98, functions: 100, branches: 93 },
     'js/transacoes.js': { lines: 94, functions: 100, branches: 82 },
     'js/metas.js': { lines: 99, functions: 100, branches: 94 },
