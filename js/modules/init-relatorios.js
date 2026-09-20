@@ -108,6 +108,26 @@ const INIT_RELATORIOS = {
       }
     }
 
+    // Gastos por conta/cartão: por onde o dinheiro saiu, separando cada cartão
+    // e cada conta. Barras proporcionais ao maior; % sobre a despesa do mês. Só
+    // com >= 2 fontes distintas (senão é só "tudo numa conta").
+    if (typeof RELATORIOS.gastoPorFonte === 'function') {
+      var fontes = RELATORIOS.gastoPorFonte(mes, ano);
+      if (fontes.length >= 2) {
+        var maxFonte = fontes[0].total; // já ordenado por gasto desc
+        html += '<h4 class="rel-subtitle">Gastos por conta/cartão</h4><ul class="rel-cat-list">';
+        fontes.slice(0, 6).forEach(function(f) {
+          var pct = maxFonte > 0 ? Math.round((f.total / maxFonte) * 100) : 0;
+          var icone = f.tipo === 'cartao' ? 'credit-card' : (f.tipo === 'conta' ? 'wallet' : 'help-circle');
+          html += '<li class="rel-cat-item"><span class="rel-cat-name">' +
+              '<i data-lucide="' + icone + '" aria-hidden="true"></i> ' + UTILS.escapeHtml(f.fonte) + '</span>' +
+            '<span class="rel-cat-bar-wrap"><span class="rel-cat-bar" style="width:' + pct + '%"></span></span>' +
+            '<span class="rel-cat-val">' + UTILS.formatarMoeda(f.total) + ' (' + f.percentual + '%)</span></li>';
+        });
+        html += '</ul>';
+      }
+    }
+
     // Acima da média: categorias em que o gasto do mês superou a linha de base
     // pessoal (média dos 3 meses anteriores). É o "fora do seu normal" que os
     // concorrentes destacam, sem exigir orçamento configurado. Filtros contra

@@ -333,6 +333,59 @@ const RELATORIOS = {
       diff: diffCent / 100,
       variacao: antCent > 0 ? Math.round((diffCent / antCent) * 100) : null
     };
+  },
+
+  /**
+   * Por onde o dinheiro saiu: despesa do mês por fonte de pagamento — cada
+   * cartão e cada conta separados. Responde "quanto passou no cartão X e quanto
+   * saiu da conta Y", o recorte por meio de pagamento que os cortes por
+   * categoria/marcador/descrição não mostram.
+   *
+   * A fonte é o cartão quando o lançamento tem cartão; senão a conta (banco);
+   * senão "Sem conta". Só despesa entra; soma em centavos inteiros; percentual
+   * sobre a despesa total do mês.
+   *
+   * @param {number} mes 1-12
+   * @param {number} ano
+   * @returns {Array<{fonte:string, tipo:('cartao'|'conta'|'nenhuma'),
+   *   total:number, transacoes:number, percentual:number}>} maior gasto primeiro
+   */
+  gastoPorFonte: function(mes, ano) {
+    if (typeof TRANSACOES === 'undefined') return [];
+    var totalCent = 0;
+    var mapa = {};
+    TRANSACOES.obter({ mes: mes, ano: ano }).forEach(function(t) {
+      if (!t || t.tipo !== CONFIG.TIPO_DESPESA) return;
+      var cent = UTILS.paraCentavos(t.valor);
+      totalCent += cent;
+      var cartao = t.cartao ? String(t.cartao).trim() : '';
+      var banco = t.banco ? String(t.banco).trim() : '';
+      var tipo, nome;
+      if (cartao) { tipo = 'cartao'; nome = cartao; }
+      else if (banco) { tipo = 'conta'; nome = banco; }
+      else { tipo = 'nenhuma'; nome = 'Sem conta'; }
+      var chave = tipo + '\u0000' + nome.toLowerCase();
+      if (!mapa[chave]) mapa[chave] = { fonte: nome, tipo: tipo, totalCent: 0, transacoes: 0 };
+      mapa[chave].totalCent += cent;
+      mapa[chave].transacoes += 1;
+    });
+    return Object.keys(mapa).map(function(k) {
+      var m = mapa[k];
+      return {
+        fonte: m.fonte,
+        tipo: m.tipo,
+        totalCent: m.totalCent,
+        total: m.totalCent / 100,
+        transacoes: m.transacoes,
+        percentual: totalCent > 0 ? Math.round((m.totalCent / totalCent) * 100) : 0
+      };
+    }).sort(function(a, b) {
+      return (b.totalCent - a.totalCent) ||
+        (b.transacoes - a.transacoes) ||
+        a.fonte.localeCompare(b.fonte);
+    }).map(function(m) {
+      return { fonte: m.fonte, tipo: m.tipo, total: m.total, transacoes: m.transacoes, percentual: m.percentual };
+    });
   }
 };
 
