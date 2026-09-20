@@ -4,6 +4,15 @@
  * Depende de: ai-engine.js, dados.js, utils.js
  */
 
+// Soma de dinheiro em centavos inteiros (UTILS.paraCentavos com fallback):
+// somar t.valor em reais com += float derivava o "gasto de hoje" exibido e a
+// média por transação usada no limiar do alerta.
+function _insightsCent(v) {
+  if (typeof UTILS !== 'undefined' && UTILS.paraCentavos) return UTILS.paraCentavos(v);
+  var n = Number(v);
+  return isFinite(n) ? Math.round(n * 100) : 0;
+}
+
 var INSIGHTS = {
 
   _esc: function(s) {
@@ -249,10 +258,10 @@ var INSIGHTS = {
     var diaAtual = hoje.getDate();
     var gastoHoje = txs.filter(function(t) {
       return t.tipo === 'despesa' && parseInt((t.data || '').split('-')[2], 10) === diaAtual;
-    }).reduce(function(a, t) { return a + (Number(t.valor) || 0); }, 0);
+    }).reduce(function(a, t) { return a + _insightsCent(t.valor); }, 0) / 100;
 
     var mediaDesp = txs.filter(function(t) { return t.tipo === 'despesa'; })
-      .reduce(function(a, t) { return a + (Number(t.valor) || 0); }, 0) / Math.max(txs.length, 1);
+      .reduce(function(a, t) { return a + _insightsCent(t.valor); }, 0) / 100 / Math.max(txs.length, 1);
 
     if (gastoHoje > mediaDesp * 2 && gastoHoje > 50) {
       insights.push({

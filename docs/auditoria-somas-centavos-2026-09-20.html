@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auditoria — Somas em centavos (round 2)</title>
+<meta name="description" content="Correção de auditoria do FinançasPro: as últimas somas de dinheiro em float do app (subtotal do dia no extrato, tendência do orçamento e gasto de hoje nos insights) passaram a somar em centavos inteiros. Milestone: todo dinheiro somado em centavos.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --ground:#f5f7f4; --card:#ffffff; --card-2:#fbfcfa;
+    --ink:#15211c; --muted:#59685f; --faint:#89968e; --line:#e4e9e3; --line-2:#eef2ec;
+    --brand:#0e5a41; --brand-2:#2f9c6d; --brand-ink:#0a3d2c;
+    --free:#15803d; --free-bg:#e9f6ec; --warn:#b4472e;
+    --shadow:0 1px 2px rgba(16,40,30,.05), 0 10px 30px rgba(16,40,30,.06); --shadow-sm:0 1px 2px rgba(16,40,30,.06);
+    --radius:16px; --radius-sm:11px; --maxw:940px;
+  }
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+    --ground:#0d1310; --card:#151c18; --card-2:#121814; --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6; --free:#57c98a; --free-bg:#123222; --warn:#f08a6e;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }}
+  :root[data-theme="dark"]{
+    --ground:#0d1310; --card:#151c18; --card-2:#121814; --ink:#e9efe9; --muted:#9db0a4; --faint:#6f8177; --line:#26302a; --line-2:#1e2621;
+    --brand:#3fb083; --brand-2:#57c99a; --brand-ink:#bfe9d6; --free:#57c98a; --free-bg:#123222; --warn:#f08a6e;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 34px rgba(0,0,0,.4); --shadow-sm:0 1px 2px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box} html{-webkit-text-size-adjust:100%}
+  body{background:var(--ground); color:var(--ink); font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; margin:0}
+  .wrap{max-width:var(--maxw); margin:0 auto; padding-inline:20px}
+  code{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.84em; background:var(--line-2); padding:1px 6px; border-radius:6px; color:var(--brand-ink)}
+  :root:not([data-theme="light"]) code,:root[data-theme="dark"] code{color:var(--brand-2)}
+  h1,h2,h3{font-family:"Bricolage Grotesque","IBM Plex Sans",sans-serif; text-wrap:balance; letter-spacing:-.015em; margin:0}
+  .hero{background:radial-gradient(120% 140% at 100% 0%, rgba(47,156,109,.18), transparent 55%), linear-gradient(158deg, var(--brand), var(--brand-ink)); color:#eafff5; border-radius:0 0 26px 26px; box-shadow:var(--shadow); position:relative; overflow:hidden}
+  .hero .wrap{padding-block:34px 30px}
+  .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:#9fe8c9; display:flex; align-items:center; gap:10px; margin-bottom:16px}
+  .eyebrow .dot{width:7px; height:7px; border-radius:50%; background:#7bffc8; box-shadow:0 0 0 4px rgba(123,255,200,.18)}
+  h1{font-size:clamp(28px,5.6vw,44px); line-height:1.03; font-weight:800; color:#fff; max-width:24ch}
+  .hero .lede{margin:16px 0 0; font-size:clamp(15px,2.3vw,18px); max-width:66ch; color:#d5f4e6}
+  .hero .lede b{color:#fff; font-weight:600}
+  section{margin-top:44px}
+  .sec-head{display:flex; align-items:baseline; gap:12px; margin-bottom:8px}
+  .sec-head .k{font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:600; color:var(--brand-2); border:1px solid var(--line); border-radius:8px; padding:3px 9px; background:var(--card)}
+  h2{font-size:clamp(20px,3.4vw,26px); font-weight:700; line-height:1.14}
+  .verdict{background:var(--card); border:1px solid var(--line); border-left:5px solid var(--brand-2); border-radius:var(--radius); padding:22px 24px; box-shadow:var(--shadow); margin-top:-30px; position:relative; z-index:2}
+  .verdict h2{font-size:19px; margin-bottom:6px}
+  .verdict p{margin:8px 0 0; color:var(--muted); font-size:15px} .verdict b{color:var(--ink)}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:20px 22px; box-shadow:var(--shadow-sm); margin-top:16px}
+  .card p{margin:8px 0 0; color:var(--muted); font-size:14.5px} .card p b{color:var(--ink)}
+  .card h3{font-size:17px; font-weight:700}
+  ul{margin:10px 0 0; padding-left:20px; color:var(--muted); font-size:14.5px} li{margin:5px 0}
+  .gate{display:grid; grid-template-columns:auto 1fr; gap:8px 14px; font-size:14px; margin-top:6px}
+  .gate .ok{color:var(--free); font-weight:700; font-family:"IBM Plex Mono",monospace}
+  footer{margin:56px 0 40px; color:var(--faint); font-size:13px; text-align:center}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow"><span class="dot"></span> Auditoria · FinançasPro v11</div>
+    <h1>Todo dinheiro do app agora soma em centavos</h1>
+    <p class="lede">Depois de corrigir o saldo e os totais de exportação do extrato, esta rodada zera os <b>últimos</b> pontos que ainda somavam <code>t.valor</code> em float: o <b>subtotal do dia</b> no extrato, a <b>tendência do orçamento</b> e o <b>gasto de hoje</b> dos insights. Milestone: nenhuma soma de dinheiro do app usa mais ponto flutuante.</p>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="verdict">
+    <h2>Fechando a classe de bug</h2>
+    <p>O padrão do app é somar em <b>centavos inteiros</b> (<code>UTILS.paraCentavos</code>) e dividir por 100 só no fim — porque <code>0,10 + 0,20</code> em float é <code>0,30000000000000004</code>. Restavam três somas fora desse padrão; todas foram alinhadas. A partir daqui, um teste que compare qualquer total do app ao centavo não deve mais divergir.</p>
+  </div>
+
+  <section>
+    <div class="sec-head"><span class="k">A CORREÇÃO</span><h2>Os três pontos</h2></div>
+    <div class="card">
+      <h3><code>js/modules/init-extrato.js</code> — subtotal do dia</h3>
+      <p><code>_renderGruposHtml</code> somava o "Saldo do dia" em float. Passou a usar o helper <code>_extratoCent</code> (introduzido na rodada anterior).</p>
+    </div>
+    <div class="card">
+      <h3><code>js/modules/init-orcamento.js</code> — tendência</h3>
+      <p>A base de comparação (<code>despAnt</code>) era somada em float e confrontada com um saldo já em centavos — a tendência saía por centavos torta. Agora soma via <code>UTILS.paraCentavos</code>, como o resto do módulo.</p>
+    </div>
+    <div class="card">
+      <h3><code>js/insights.js</code> — gasto de hoje</h3>
+      <p>O "Gasto alto hoje" e a média por transação somavam em float. Helper local <code>_insightsCent</code> (com fallback) alinha ambos aos centavos.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="k">EVIDÊNCIA</span><h2>Gates de verificação</h2></div>
+    <div class="card">
+      <div class="gate">
+        <span class="ok">✓</span><span>Frontend: <b>191 suites, 2144 testes</b> (+2: subtotal do dia ao centavo, receitas/despesas fracionadas se cancelam)</span>
+        <span class="ok">✓</span><span>Testes existentes de extrato, insights e orçamento seguem verdes</span>
+        <span class="ok">✓</span><span><code>lint</code> · <code>lint:changed</code> · <code>security:xss</code> · <code>a11y-static</code> · <code>css-tokens</code> · <code>contrast</code> · <code>bundle</code> · <code>build</code></span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="k">ARQUIVOS</span><h2>Alterados</h2></div>
+    <div class="card">
+      <ul>
+        <li><code>js/modules/init-extrato.js</code> — subtotal do dia em centavos.</li>
+        <li><code>js/modules/init-orcamento.js</code> — base da tendência em centavos.</li>
+        <li><code>js/insights.js</code> — helper <code>_insightsCent</code> + gasto de hoje/média em centavos.</li>
+        <li><code>tests/extrato-subtotal-centavos.test.js</code> — +2 testes.</li>
+        <li><code>docs/auditoria-somas-centavos-2026-09-20.html</code> — este documento.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    FinançasPro · Auditoria: Somas em centavos (round 2) · 2026-09-20
+  </footer>
+
+</div>
+</body>
+</html>

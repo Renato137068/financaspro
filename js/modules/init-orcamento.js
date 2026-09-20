@@ -369,10 +369,13 @@ const INIT_ORCAMENTO = {
     // Tendência vs mês anterior (mesmo renda × despesas do mês -1)
     var dAnt = new Date(data.ano, data.mes - 2, 1);
     var txsAnt = TRANSACOES.obter({ mes: dAnt.getMonth() + 1, ano: dAnt.getFullYear() });
-    var despAnt = 0;
+    // Soma em centavos: += t.valor em float derivava a base de comparação, e a
+    // tendência (delta vs saldo atual, já em centavos) saía por centavos torta.
+    var despAntC = 0;
     txsAnt.forEach(function(t) {
-      if (t.tipo === CONFIG.TIPO_DESPESA) despAnt += t.valor;
+      if (t.tipo === CONFIG.TIPO_DESPESA) despAntC += UTILS.paraCentavos(t.valor);
     });
+    var despAnt = despAntC / 100;
     var saldoAnt = data.renda - despAnt;
     var delta = saldo - saldoAnt;
     var trendTxt;
