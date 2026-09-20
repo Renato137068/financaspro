@@ -89,6 +89,26 @@ const INIT_RELATORIOS = {
       }
     }
 
+    // Gastos por dia da semana: o padrão semanal ("você gasta mais aos
+    // sábados"). Barras proporcionais ao maior dia; o pico ganha destaque. Só
+    // aparece quando há despesa no mês.
+    if (typeof RELATORIOS.gastoPorDiaSemana === 'function') {
+      var semana = RELATORIOS.gastoPorDiaSemana(mes, ano);
+      var maxDia = semana.reduce(function(mx, d) { return d.total > mx ? d.total : mx; }, 0);
+      if (maxDia > 0) {
+        var picoIdx = semana.reduce(function(bi, d, i) { return d.total > semana[bi].total ? i : bi; }, 0);
+        html += '<h4 class="rel-subtitle">Gastos por dia da semana</h4><ul class="rel-cat-list">';
+        semana.forEach(function(d, i) {
+          var pct = Math.round((d.total / maxDia) * 100);
+          var nomeCls = i === picoIdx ? 'rel-cat-name rel-cat-name--pico' : 'rel-cat-name';
+          html += '<li class="rel-cat-item"><span class="' + nomeCls + '">' + d.label + '</span>' +
+            '<span class="rel-cat-bar-wrap"><span class="rel-cat-bar" style="width:' + pct + '%"></span></span>' +
+            '<span class="rel-cat-val">' + UTILS.formatarMoeda(d.total) + '</span></li>';
+        });
+        html += '</ul>';
+      }
+    }
+
     // Gastos por marcador: o retorno do relatório sobre as tags. Como uma
     // transação pode ter várias tags, a soma por marcador pode passar do total
     // do mês — por isso cada barra é limitada a 100%, mas o % real é exibido.
