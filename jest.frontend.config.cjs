@@ -80,6 +80,11 @@ module.exports = {
     // por init-form, auto-categorizer e lifecycle. Estava em 0%; agora coberta
     // por categories-real.test.js sobre o módulo de produção.
     'js/categories.js': { lines: 95, functions: 90, branches: 78 },
+
+    // Saldo por conta (dinheiro) + propagarRename (integridade: renomear conta
+    // em todos os lançamentos/config). Boa parte do resto é DOM; o piso guarda
+    // a lógica pura coberta por contas-saldos/-real/-rename.
+    'js/contas.js': { lines: 55, functions: 56, branches: 70 },
   },
   coverageReporters: ['text', 'lcov', 'html'],
   verbose: true,
