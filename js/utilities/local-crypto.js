@@ -87,7 +87,14 @@ var LOCAL_CRYPTO = {
   },
 
   _hexToBytes: function(h) {
-    return new Uint8Array(h.match(/.{2}/g).map(function(x) { return parseInt(x, 16); }));
+    // Robusto contra valor guardado corrompido/truncado: '' ou hex malformado
+    // fazia match() devolver null e null.map lançava SÍNCRONO — fora do alcance
+    // do .catch de decrypt(), derrubando a leitura do armazenamento. Sem match,
+    // devolve bytes vazios: o AES-GCM falha a autenticação e o .catch devolve o
+    // valor, em vez de estourar.
+    var m = String(h == null ? '' : h).match(/.{2}/g);
+    if (!m) return new Uint8Array(0);
+    return new Uint8Array(m.map(function(x) { return parseInt(x, 16); }));
   },
 
   _material: function() {
@@ -202,12 +209,20 @@ var LOCAL_CRYPTO = {
     var parts = value.split(':');
     if (parts.length !== 3) return Promise.resolve(value);
 
-    var versao = parts[0];
-    var iv = this._hexToBytes(parts[1]);
-    var data = this._hexToBytes(parts[2]);
-    var keyPromise = versao === 'enc1'
-      ? this._deriveLegacyKey()
-      : this._deriveKey(versao);
+    // Preparação SÍNCRONA protegida: qualquer erro aqui (hex corrompido,
+    // derivação) precisa degradar para "devolve o valor", não escapar do
+    // decrypt() e derrubar a leitura do armazenamento.
+    var versao, iv, data, keyPromise;
+    try {
+      versao = parts[0];
+      iv = this._hexToBytes(parts[1]);
+      data = this._hexToBytes(parts[2]);
+      keyPromise = versao === 'enc1'
+        ? this._deriveLegacyKey()
+        : this._deriveKey(versao);
+    } catch (e) {
+      return Promise.resolve(value);
+    }
 
     return keyPromise.then(function(key) {
       return crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, data);
