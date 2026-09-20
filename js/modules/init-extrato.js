@@ -4,6 +4,17 @@
  * Responsabilidades: estado do extrato, filtros, renderização
  */
 
+// Soma de dinheiro em centavos inteiros: somar t.valor em reais com += acumula
+// deriva de ponto flutuante (0,10 + 0,20 = 0,30000000000000004), e o saldo do
+// extrato — número que abre a tela — passava a divergir do resumo por centavos
+// após alguns lançamentos. Usa UTILS.paraCentavos quando presente; o fallback
+// mantém os testes (que stubam UTILS sem paraCentavos) funcionando.
+function _extratoCent(v) {
+  if (typeof UTILS !== 'undefined' && UTILS.paraCentavos) return UTILS.paraCentavos(v);
+  var n = Number(v);
+  return isFinite(n) ? Math.round(n * 100) : 0;
+}
+
 const INIT_EXTRATO = {
   /**
    * Estado do extrato
@@ -628,12 +639,13 @@ const INIT_EXTRATO = {
    * Renderiza o resumo do extrato
    */
   renderExtratoResumo: function(txs) {
-    var rec = 0, desp = 0;
+    var recC = 0, despC = 0;
     txs.forEach(function(t) {
-      if (t.tipo === CONFIG.TIPO_RECEITA) rec += t.valor;
-      else if (t.tipo === CONFIG.TIPO_DESPESA) desp += t.valor;
+      if (t.tipo === CONFIG.TIPO_RECEITA) recC += _extratoCent(t.valor);
+      else if (t.tipo === CONFIG.TIPO_DESPESA) despC += _extratoCent(t.valor);
     });
-    var saldo = rec - desp;
+    var rec = recC / 100, desp = despC / 100;
+    var saldo = (recC - despC) / 100;
 
     // Atualizar card principal de saldo
     var saldoEl = document.getElementById('saldo-valor');
@@ -655,16 +667,16 @@ const INIT_EXTRATO = {
     var ehMesCorrente = info.mes === (hoje.getMonth() + 1) && info.ano === hoje.getFullYear();
     var diaLimite = ehMesCorrente ? hoje.getDate() : null;
     function somaSaldoAte(lista, limite) {
-      var s = 0;
+      var sc = 0;
       lista.forEach(function(t) {
         if (limite != null) {
           var dia = parseInt(String(t.data || '').split('-')[2], 10);
           if (!dia || dia > limite) return;
         }
-        if (t.tipo === CONFIG.TIPO_RECEITA) s += t.valor;
-        else if (t.tipo === CONFIG.TIPO_DESPESA) s -= t.valor;
+        if (t.tipo === CONFIG.TIPO_RECEITA) sc += _extratoCent(t.valor);
+        else if (t.tipo === CONFIG.TIPO_DESPESA) sc -= _extratoCent(t.valor);
       });
-      return s;
+      return sc / 100;
     }
     var saldoAnterior = somaSaldoAte(txsAnterior, diaLimite);
     var saldoAtual = ehMesCorrente ? somaSaldoAte(txs, diaLimite) : saldo;
@@ -1395,13 +1407,14 @@ const INIT_EXTRATO = {
     }
 
     // Calcular totais
-    var receitas = 0, despesas = 0;
+    var receitasC = 0, despesasC = 0;
     txs.forEach(function(t) {
-      if (t.tipo === CONFIG.TIPO_RECEITA) receitas += t.valor;
+      if (t.tipo === CONFIG.TIPO_RECEITA) receitasC += _extratoCent(t.valor);
       // Explícito e não `else`: transferência entre contas não é gasto.
-      else if (t.tipo === CONFIG.TIPO_DESPESA) despesas += t.valor;
+      else if (t.tipo === CONFIG.TIPO_DESPESA) despesasC += _extratoCent(t.valor);
     });
-    var saldo = receitas - despesas;
+    var receitas = receitasC / 100, despesas = despesasC / 100;
+    var saldo = (receitasC - despesasC) / 100;
 
     var nomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
     var mesNome = nomes[info.mes - 1];
@@ -1471,13 +1484,14 @@ const INIT_EXTRATO = {
     }
 
     // Calcular totais
-    var receitas = 0, despesas = 0;
+    var receitasC = 0, despesasC = 0;
     txs.forEach(function(t) {
-      if (t.tipo === CONFIG.TIPO_RECEITA) receitas += t.valor;
+      if (t.tipo === CONFIG.TIPO_RECEITA) receitasC += _extratoCent(t.valor);
       // Explícito e não `else`: transferência entre contas não é gasto.
-      else if (t.tipo === CONFIG.TIPO_DESPESA) despesas += t.valor;
+      else if (t.tipo === CONFIG.TIPO_DESPESA) despesasC += _extratoCent(t.valor);
     });
-    var saldo = receitas - despesas;
+    var receitas = receitasC / 100, despesas = despesasC / 100;
+    var saldo = (receitasC - despesasC) / 100;
 
     var nomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
     var mesNome = nomes[info.mes - 1];
