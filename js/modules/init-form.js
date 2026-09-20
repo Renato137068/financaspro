@@ -1500,10 +1500,16 @@ const INIT_FORM = {
     txs.forEach(function(t) {
       if (!t.descricao || !String(t.descricao).trim()) return;
       var key = String(t.descricao).trim();
+      // A descrição é guardada escapada; decodifica para o texto exibido/usado.
+      // Sem isso, a sugestão mostra "C&amp;A" e, ao aplicá-la, preenche o campo
+      // com o valor escapado — que seria reescapado ao salvar, corrompendo.
+      // A chave de agrupamento continua sendo o valor guardado (consistente).
+      var display = (typeof UTILS !== 'undefined' && UTILS.desescapeHtml)
+        ? UTILS.desescapeHtml(key) : key;
 
       if (!mapSug[key]) {
         mapSug[key] = {
-          descricao: key,
+          descricao: display,
           categoria: t.categoria,
           tipo: t.tipo,
           valor: t.valor,
@@ -1522,7 +1528,7 @@ const INIT_FORM = {
       var freqKey = key + '|' + t.categoria + '|' + t.tipo;
       if (!mapFreq[freqKey]) {
         mapFreq[freqKey] = {
-          descricao: key,
+          descricao: display,
           categoria: t.categoria,
           tipo: t.tipo,
           valor: t.valor,

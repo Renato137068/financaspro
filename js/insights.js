@@ -23,6 +23,16 @@ var INSIGHTS = {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   },
 
+  // Descrição de transação vem guardada escapada; ao montar mensagens ela passa
+  // por _esc (escapeHtml), o que escaparia DE NOVO ("C&A" → "C&amp;A" no
+  // alerta). Decodifica antes; a saída ainda passa por _esc, então segue segura.
+  _dtext: function(s) {
+    if (typeof UTILS !== 'undefined' && typeof UTILS.desescapeHtml === 'function') {
+      return UTILS.desescapeHtml(s);
+    }
+    return s == null ? '' : String(s);
+  },
+
   /** Estado de configuração inicial para o guia "Comece aqui". */
   _estadoSetup: function(txs) {
     var cfg = (typeof DADOS !== 'undefined' && DADOS.getConfig) ? DADOS.getConfig() : {};
@@ -79,6 +89,7 @@ var INSIGHTS = {
   analisar: function() {
     var insights = [];
     var esc = this._esc.bind(this);
+    var dtext = this._dtext.bind(this);
     var txs      = typeof TRANSACOES !== 'undefined' ? TRANSACOES.obter() : (typeof DADOS !== 'undefined' ? DADOS.getTransacoes() : []);
     var agora    = new Date();
     var mesAtual = agora.getMonth() + 1;
@@ -295,10 +306,10 @@ var INSIGHTS = {
     padroesRec.slice(0, 2).forEach(function(p) {
       insights.push({
         tipo:       'recorrencia',
-        msg:        '<i data-lucide="refresh-cw" aria-hidden="true"></i> "' + esc(p.descricao) + '" aparece há ' + p.meses + ' meses (média R$ ' + p.valorMedio.toFixed(2).replace('.', ',') + ').',
+        msg:        '<i data-lucide="refresh-cw" aria-hidden="true"></i> "' + esc(dtext(p.descricao)) + '" aparece há ' + p.meses + ' meses (média R$ ' + p.valorMedio.toFixed(2).replace('.', ',') + ').',
         gravidade:  'media',
         acao:       'marcarRecorrente',
-        parametros: { descricao: p.descricao },
+        parametros: { descricao: dtext(p.descricao) },
         botao:      '<i data-lucide="refresh-cw" aria-hidden="true"></i> Marcar recorrente'
       });
     });
@@ -349,7 +360,7 @@ var INSIGHTS = {
       insights.push({
         tipo:      'anomalia',
         msg:       '<i data-lucide="search" aria-hidden="true"></i> Gasto incomum: "'
-                     + esc(a.transacao.descricao || 'Transação') + '" ('
+                     + esc(dtext(a.transacao.descricao) || 'Transação') + '" ('
                      + esc(UTILS.formatarMoeda(a.transacao.valor)) + ') — '
                      + esc(a.motivo) + '.',
         gravidade: 'media'
