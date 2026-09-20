@@ -138,10 +138,15 @@ var COMPROMISSOS = {
     var config = (typeof DADOS !== 'undefined' && DADOS.getConfig)
       ? DADOS.getConfig() : {};
 
-    // ── Parcelas/despesas futuras fora de cartão cadastrado ──────────────────
+    // ── Parcelas/despesas futuras fora da fatura de cartão ───────────────────
     txs.forEach(function(t) {
       if (!t || t.tipo !== CONFIG.TIPO_DESPESA) return;
-      if (typeof CARTOES !== 'undefined' && CARTOES.obter(t.cartao)) return; // via fatura
+      // Cartão COM ciclo entra pela fatura, logo abaixo — contá-lo aqui também
+      // duplicaria. Cartão SEM ciclo não tem fatura por competência para cair
+      // ali, então a despesa futura dele entra aqui pela data, como uma parcela
+      // qualquer; senão sumiria da agenda (mas segue no total comprometido).
+      var cardReg = (typeof CARTOES !== 'undefined') ? CARTOES.obter(t.cartao) : null;
+      if (cardReg && cardReg.temCiclo) return;
       var data = String(t.data || '').slice(0, 10);
       if (!(data > hojeIso)) return; // só o que ainda vai sair
       var b = porChave[chaveDe(data)];

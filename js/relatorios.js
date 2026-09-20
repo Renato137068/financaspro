@@ -400,14 +400,20 @@ const RELATORIOS = {
    * a evolução do ano.
    *
    * @param {number} ano
+   * @param {Date} [hoje] quando o ano é o corrente, o mês em curso fica de fora
+   *   da escolha do mês mais caro/econômico (está incompleto, senão o mês atual
+   *   quase sempre apareceria como "o mais econômico" só por estar pela metade).
    * @returns {?{ano:number, receitas:number, despesas:number, saldo:number,
    *   mediaDespesaMensal:number, taxaPoupanca:?number, mesesComDados:number,
    *   maiorDespesaMes:?{mes:number, despesas:number},
    *   menorDespesaMes:?{mes:number, despesas:number},
    *   meses:Array<{mes:number, receitas:number, despesas:number, saldo:number, transacoes:number}>}}
    */
-  resumoAno: function(ano) {
+  resumoAno: function(ano, hoje) {
     if (typeof TRANSACOES === 'undefined') return null;
+    var mesIncompleto = (hoje && typeof hoje.getFullYear === 'function' && hoje.getFullYear() === ano)
+      ? hoje.getMonth() + 1
+      : 0;
     var recCent = 0, despCent = 0, mesesComDados = 0;
     var maior = null, menor = null;
     var meses = [];
@@ -418,7 +424,9 @@ const RELATORIOS = {
       recCent += rc;
       despCent += dc;
       if (r.transacoes > 0) mesesComDados++;
-      if (dc > 0) {
+      // O mês corrente conta no total e na série, mas não disputa o "mais
+      // caro/econômico": comparar um mês pela metade com meses fechados engana.
+      if (dc > 0 && mes !== mesIncompleto) {
         if (maior === null || dc > maior.cent) maior = { mes: mes, cent: dc };
         if (menor === null || dc < menor.cent) menor = { mes: mes, cent: dc };
       }

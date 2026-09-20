@@ -77,6 +77,29 @@ describe('RELATORIOS.resumoAno', function() {
     expect(r.menorDespesaMes).toMatchObject({ mes: 2, despesas: 100 });
   });
 
+  test('com hoje no ano corrente, o mês em curso não vira "mais econômico"', function() {
+    // Fevereiro fechado com gasto alto; setembro (mês corrente) baixo por estar
+    // pela metade. Sem o corte, setembro apareceria como o mais econômico.
+    lancar({ tipo: 'despesa', valor: 900, data: '2026-02-10' });
+    lancar({ tipo: 'despesa', valor: 400, data: '2026-05-10' });
+    lancar({ tipo: 'despesa', valor: 50, data: '2026-09-03' });
+
+    const hoje = new Date(2026, 8, 15); // 15/set/2026
+    const r = R().resumoAno(2026, hoje);
+    // O mês corrente (set) fica fora da disputa de maior/menor.
+    expect(r.menorDespesaMes).toMatchObject({ mes: 5, despesas: 400 });
+    expect(r.maiorDespesaMes).toMatchObject({ mes: 2, despesas: 900 });
+    // Mas o gasto de setembro segue no total.
+    expect(r.despesas).toBe(1350);
+  });
+
+  test('sem hoje, todos os meses disputam (comportamento puro)', function() {
+    lancar({ tipo: 'despesa', valor: 900, data: '2026-02-10' });
+    lancar({ tipo: 'despesa', valor: 50, data: '2026-09-03' });
+    const r = R().resumoAno(2026);
+    expect(r.menorDespesaMes).toMatchObject({ mes: 9, despesas: 50 });
+  });
+
   test('série meses traz os 12, com valores no mês certo', function() {
     lancar({ tipo: 'despesa', valor: 80, data: '2026-03-10' });
     const r = R().resumoAno(2026);
