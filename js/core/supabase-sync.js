@@ -26,6 +26,14 @@
   function nowIso() { return new Date().toISOString(); }
   function clean(row) {
     Object.keys(row).forEach(function (k) { if (row[k] === undefined) delete row[k]; });
+    // Nunca reenviar deletedAt:null num upsert. Um push de reconciliação (linha
+    // ~203: registro que sumiu da nuvem por ter sido APAGADO em outro aparelho,
+    // mas ainda existe localmente) traria deletedAt:null de txPtToEn e, como o
+    // upsert onConflict faz UPDATE das colunas enviadas, ZERARIA o tombstone da
+    // nuvem — ressuscitando a transação em todos os aparelhos. A exclusão de
+    // verdade vai pelo caminho dedicado (.update({deletedAt: ...})), que não
+    // passa por aqui, então remover o null aqui é seguro.
+    if (row.deletedAt === null) delete row.deletedAt;
     return row;
   }
 

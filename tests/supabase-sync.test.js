@@ -104,7 +104,9 @@ function loadSupaSync(mocks) {
     },
     DADOS: mockDados,
     FINANCE_CONTRACT: {
-      txPtToEn: function(tx) { return { type: tx.tipo, amount: tx.valor }; },
+      // Fiel ao contrato real: txPtToEn emite deletedAt:null (era a origem do
+      // bug de ressurreição — ver teste "reconcile não reenvia deletedAt:null").
+      txPtToEn: function(tx) { return { type: tx.tipo, amount: tx.valor, deletedAt: tx.deletedAt || null }; },
       contaPtToEn: function(c) { return { name: c.nome }; },
     },
     APP_STORE: { dispatch: jest.fn() },
@@ -164,6 +166,25 @@ describe('supabase-sync — pull mockado', function() {
     expect(ctx.mergeCalled).toBe(true);
     expect(ctx.DADOS._lastSnapshot.transactions.length).toBe(1);
     expect(ctx.upserts.some(function(u) { return u.table === 'Account'; })).toBe(true);
+  });
+
+  test('reconcile não reenvia deletedAt:null (não ressuscita exclusão de outro aparelho)', async function() {
+    // Cenário: tx apagada em outro aparelho (tombstone na nuvem) → o pull a
+    // exclui, então some de cloudTxIds; a cópia local (não apagada aqui) entra
+    // no reconcile-up. O payload NÃO pode carregar deletedAt:null, senão o
+    // upsert zeraria o tombstone e a transação voltaria em todos os aparelhos.
+    var ctx = loadSupaSync({
+      rows: { Transaction: [], Account: [], Budget: [], RecurringTransaction: [] },
+      localTx: [{ id: 'tx-A', tipo: 'despesa', valor: 10, updatedAt: new Date().toISOString() }],
+      localContas: [],
+      userConfig: null,
+    });
+
+    await ctx.SUPA_SYNC.pull();
+
+    var txUp = ctx.upserts.find(function(u) { return u.table === 'Transaction'; });
+    expect(txUp).toBeTruthy();
+    expect(Object.prototype.hasOwnProperty.call(txUp.rows[0], 'deletedAt')).toBe(false);
   });
 
   test('pushTx retorna tx local quando quota excedida', async function() {
