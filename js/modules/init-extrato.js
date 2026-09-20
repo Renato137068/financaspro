@@ -938,10 +938,11 @@ const INIT_EXTRATO = {
       var grupo = grupoKeys[i];
       var grupoTxs = gruposOrdenados[grupo];
 
-      var subtotal = 0;
+      var subtotalC = 0;
       grupoTxs.forEach(function(t) {
-        subtotal += t.tipo === CONFIG.TIPO_RECEITA ? t.valor : -t.valor;
+        subtotalC += t.tipo === CONFIG.TIPO_RECEITA ? _extratoCent(t.valor) : -_extratoCent(t.valor);
       });
+      var subtotal = subtotalC / 100;
 
       var itemsHtml = '';
       var renderedThisGroup = 0;
