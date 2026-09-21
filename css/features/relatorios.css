@@ -2,8 +2,27 @@
 .rel-header {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
+  gap: var(--space-2);
   margin-bottom: var(--space-4);
+}
+
+.rel-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.rel-share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  white-space: nowrap;
+}
+
+.rel-share-btn i {
+  width: 1rem;
+  height: 1rem;
 }
 
 .rel-header h3 {

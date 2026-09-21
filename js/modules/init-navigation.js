@@ -237,6 +237,9 @@ const INIT_NAVIGATION = {
       'toggle-graficos': function() { self.toggleGraficos(); },
       'toggle-previsao': function() { self.togglePrevisao(); },
       'toggle-relatorios': function() { self.toggleRelatorios(); },
+      'compartilhar-mes': function() {
+        if (typeof INIT_RELATORIOS !== 'undefined' && INIT_RELATORIOS.compartilhar) INIT_RELATORIOS.compartilhar();
+      },
       'ver-mais-alertas': function() {
         if (typeof ALERTAS !== 'undefined') {
           var painel = document.getElementById('secao-alertas-painel');

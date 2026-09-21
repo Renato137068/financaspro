@@ -25,7 +25,11 @@ const INIT_RELATORIOS = {
     }
 
     var html = '<div class="rel-header"><h3>' + UTILS.escapeHtml(nomeMes) + '</h3>' +
-      '<span class="rel-tx-count">' + a.transacoes + ' lançamentos</span></div>' +
+      '<div class="rel-header-right">' +
+        '<span class="rel-tx-count">' + a.transacoes + ' lançamentos</span>' +
+        '<button type="button" class="btn-ghost btn-sm rel-share-btn" data-action="compartilhar-mes" aria-label="Compartilhar resumo do mês">' +
+          '<i data-lucide="share-2" aria-hidden="true"></i> Compartilhar</button>' +
+      '</div></div>' +
       '<div class="rel-kpis">' +
         '<div class="rel-kpi rel-kpi--rec"><span>Receitas</span><strong>' + UTILS.formatarMoeda(a.receitas) + '</strong>' +
           '<small>' + fmtDiff(cmp.diffReceitas) + ' vs mês ant.</small></div>' +
@@ -294,6 +298,36 @@ const INIT_RELATORIOS = {
     el.innerHTML = html;
     if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(el);
   }
+};
+
+/**
+ * Compartilha o "meu mês em números" (texto puro do RESUMO_MENSAL) via Web
+ * Share; sem ela, cai para a área de transferência. Só leitura, opt-in por
+ * botão — nada sai sem o usuário pedir.
+ */
+INIT_RELATORIOS.compartilhar = function() {
+  if (typeof RESUMO_MENSAL === 'undefined' || !RESUMO_MENSAL.texto) return;
+  var toast = (typeof UTILS !== 'undefined' && UTILS.mostrarToast)
+    ? UTILS.mostrarToast : function() {};
+  var agora = new Date();
+  var texto = RESUMO_MENSAL.texto(agora.getMonth() + 1, agora.getFullYear());
+  if (!texto) { toast('Sem lançamentos neste mês para compartilhar', 'info'); return; }
+
+  try {
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      // Rejeita quando o usuário cancela — engolir é o comportamento certo.
+      navigator.share({ text: texto }).catch(function() {});
+      return;
+    }
+    if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(texto).then(
+        function() { toast('Resumo copiado', 'success'); },
+        function() { toast('Não foi possível copiar', 'error'); }
+      );
+      return;
+    }
+  } catch (e) { /* ambiente sem share/clipboard */ }
+  toast('Compartilhamento indisponível neste dispositivo', 'info');
 };
 
 if (typeof module !== 'undefined' && module.exports) {

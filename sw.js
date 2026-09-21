@@ -142,6 +142,7 @@ const urlsParaCache = [
   "/js/render-core.js",
   "/js/render-dashboard.js",
   "/js/render.js",
+  "/js/resumo-mensal.js",
   "/js/score.js",
   "/js/services/actions.js",
   "/js/services/budgetService.js",
