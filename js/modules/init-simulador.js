@@ -21,8 +21,7 @@ const INIT_SIMULADOR = {
       var action = btn.dataset.action;
       if (action === 'sim-modo') {
         e.preventDefault();
-        self._modo = btn.dataset.modo || 'parcelado';
-        self.render();
+        self._selecionar(btn.dataset.modo, false);
       } else if (action === 'sim-calc-parcelado') {
         e.preventDefault();
         self._calcParcelado();
@@ -102,28 +101,69 @@ const INIT_SIMULADOR = {
       { id: 'meta', rotulo: 'Meta', icone: 'target' },
       { id: 'financiamento', rotulo: 'Financiamento', icone: 'landmark' },
     ];
+    // Tabs WAI-ARIA: roving tabindex (só a ativa no tab order), aria-controls
+    // apontando para o corpo (um painel só, trocado por modo) e aria-selected.
     var tabs = '<div class="sim-tabs" role="tablist" aria-label="Tipo de simulação">';
     for (var i = 0; i < modos.length; i++) {
       var m = modos[i];
       var ativo = m.id === this._modo;
       tabs += '<button type="button" class="sim-tab' + (ativo ? ' sim-tab--ativo' : '') + '"' +
-        ' role="tab" aria-selected="' + (ativo ? 'true' : 'false') + '"' +
+        ' role="tab" id="sim-tab-' + m.id + '"' +
+        ' aria-selected="' + (ativo ? 'true' : 'false') + '"' +
+        ' aria-controls="sim-corpo" tabindex="' + (ativo ? '0' : '-1') + '"' +
         ' data-action="sim-modo" data-modo="' + m.id + '">' +
         '<i data-lucide="' + m.icone + '" aria-hidden="true"></i><span>' + m.rotulo + '</span>' +
         '</button>';
     }
     tabs += '</div>';
 
+    // O corpo é um painel estável (não recriado a cada troca de modo): só o
+    // conteúdo interno muda. Isso mantém a tablist viva para o teclado e o foco.
+    panel.innerHTML = tabs + '<div class="sim-corpo" id="sim-corpo" role="tabpanel"></div>';
+
+    // Setas ←/→, Home/End e roving tabindex via utilitário compartilhado.
+    if (typeof TablistKeyboard !== 'undefined') {
+      var self = this;
+      TablistKeyboard.init(panel.querySelector('.sim-tabs'), {
+        onSelect: function(tab) { self._selecionar(tab.getAttribute('data-modo'), false); }
+      });
+    }
+
+    this._renderCorpo();
+    if (typeof window !== 'undefined' && window.renderLucideIcons) window.renderLucideIcons();
+  },
+
+  /** Troca o modo ativo sem recriar a tablist (preserva foco e teclado). */
+  _selecionar: function(modo, focar) {
+    this._modo = modo || 'parcelado';
+    var panel = document.getElementById('simulador-panel');
+    if (!panel) return;
+    var tabs = panel.querySelectorAll('.sim-tab');
+    for (var i = 0; i < tabs.length; i++) {
+      var on = tabs[i].getAttribute('data-modo') === this._modo;
+      tabs[i].classList.toggle('sim-tab--ativo', on);
+      tabs[i].setAttribute('aria-selected', on ? 'true' : 'false');
+      tabs[i].setAttribute('tabindex', on ? '0' : '-1');
+    }
+    this._renderCorpo();
+    if (focar) {
+      var ativa = panel.querySelector('.sim-tab--ativo');
+      if (ativa) ativa.focus();
+    }
+  },
+
+  /** Renderiza só o corpo (formulário do modo ativo + área de resultado). */
+  _renderCorpo: function() {
+    var corpoEl = document.getElementById('sim-corpo');
+    if (!corpoEl) return;
     var corpo;
     if (this._modo === 'poupar') corpo = this._formPoupar();
     else if (this._modo === 'meta') corpo = this._formMeta();
     else if (this._modo === 'financiamento') corpo = this._formFinanciamento();
     else corpo = this._formParcelado();
-
-    panel.innerHTML = tabs +
-      '<div class="sim-form">' + corpo + '</div>' +
+    corpoEl.setAttribute('aria-labelledby', 'sim-tab-' + this._modo);
+    corpoEl.innerHTML = '<div class="sim-form">' + corpo + '</div>' +
       '<div class="sim-resultado" id="sim-resultado" aria-live="polite"></div>';
-
     if (typeof window !== 'undefined' && window.renderLucideIcons) window.renderLucideIcons();
   },
 
