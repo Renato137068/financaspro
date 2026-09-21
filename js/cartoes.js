@@ -264,16 +264,19 @@ var CARTOES = {
    * 'vazia'          — sem compras; não há o que confirmar
    * 'paga'           — o usuário confirmou o pagamento
    * 'aberta'         — ainda não venceu
+   * 'devida'         — venceu e o usuário confirmou que ainda deve
    * 'nao-confirmada' — venceu e ninguém disse se foi paga
    *
-   * O último estado é o ponto: em vez de assumir em silêncio, o app admite
-   * que não sabe e deixa a UI perguntar.
+   * Os dois últimos são o ponto: em vez de assumir em silêncio, o app admite
+   * que não sabe e deixa a UI perguntar — e, quando o usuário responde "ainda
+   * devo", registra o fato ('devida') em vez de seguir supondo.
    */
   _statusFatura: function(cartao, competencia, totalCent, vencimento) {
     if (!totalCent) return 'vazia';
     if (this.faturaEstaPaga(cartao.nome, competencia)) return 'paga';
     if (!vencimento) return 'aberta';
-    return vencimento < UTILS.dataLocalIso() ? 'nao-confirmada' : 'aberta';
+    if (vencimento >= UTILS.dataLocalIso()) return 'aberta';
+    return this.faturaConfirmadaDevida(cartao.nome, competencia) ? 'devida' : 'nao-confirmada';
   },
 
   // ───────────────────────────────────────────────────────────────────────
@@ -311,11 +314,20 @@ var CARTOES = {
     var cartao = this.obter(nomeCartao);
     if (!cartao || !competencia) return false;
 
+    var chave = this._chaveFatura(cartao.nome, competencia);
     var pagos = Object.assign({}, this._pagamentos());
-    pagos[this._chaveFatura(cartao.nome, competencia)] =
-      String(dataPagamento || UTILS.dataLocalIso()).slice(0, 10);
+    pagos[chave] = String(dataPagamento || UTILS.dataLocalIso()).slice(0, 10);
 
-    DADOS.salvarConfig({ faturasPagas: pagos });
+    // Paga e "ainda devo" são estados mutuamente exclusivos: confirmar o
+    // pagamento apaga qualquer marca de que a fatura seguia devida.
+    var devidas = this._devidas();
+    var patch = { faturasPagas: pagos };
+    if (devidas[chave]) {
+      devidas = Object.assign({}, devidas);
+      delete devidas[chave];
+      patch.faturasDevidas = devidas;
+    }
+    DADOS.salvarConfig(patch);
     return true;
   },
 
@@ -337,6 +349,70 @@ var CARTOES = {
 
   faturaEstaPaga: function(nomeCartao, competencia) {
     return !!this.pagamentoDaFatura(nomeCartao, competencia);
+  },
+
+  // ───────────────────────────────────────────────────────────────────────
+  // FATURA VENCIDA CONFIRMADA COMO "AINDA DEVO"
+  //
+  // A pergunta honesta do `naoConfirmadas` tinha só metade das respostas: dava
+  // pra dizer "sim, paguei" (marcarFaturaPaga), mas não "não, ainda devo". Sem
+  // isso, uma fatura vencida e não paga ficava fora do limite e do comprometido
+  // — o app subestimava a dívida, que é o erro mais perigoso num app de dinheiro.
+  //
+  // A regra do módulo continua a mesma: o app não inventa fatos. A diferença é
+  // que agora o FATO vem do usuário — ele confirma que ainda deve —, então
+  // contar contra o limite deixa de ser suposição e passa a ser o que ele disse.
+  // Vencida SEM resposta segue de fora (conservador, como antes).
+  // ───────────────────────────────────────────────────────────────────────
+
+  _devidas: function() {
+    var config = (typeof DADOS !== 'undefined' && DADOS.getConfig) ? DADOS.getConfig() : {};
+    return config.faturasDevidas || {};
+  },
+
+  /** Data em que o usuário confirmou que ainda deve a fatura, ou null. */
+  confirmacaoDevida: function(nomeCartao, competencia) {
+    return this._devidas()[this._chaveFatura(nomeCartao, competencia)] || null;
+  },
+
+  faturaConfirmadaDevida: function(nomeCartao, competencia) {
+    return !!this.confirmacaoDevida(nomeCartao, competencia);
+  },
+
+  /**
+   * Confirma que uma fatura vencida ainda não foi paga — passa a contar contra
+   * o limite e o comprometido. Exclui o registro de "paga" da mesma competência,
+   * já que os dois estados não coexistem.
+   * @returns {boolean} false se o cartão não existe
+   */
+  confirmarFaturaDevida: function(nomeCartao, competencia, dataConfirmacao) {
+    var cartao = this.obter(nomeCartao);
+    if (!cartao || !competencia) return false;
+
+    var chave = this._chaveFatura(cartao.nome, competencia);
+    var devidas = Object.assign({}, this._devidas());
+    devidas[chave] = String(dataConfirmacao || UTILS.dataLocalIso()).slice(0, 10);
+
+    var patch = { faturasDevidas: devidas };
+    var pagos = this._pagamentos();
+    if (pagos[chave]) {
+      pagos = Object.assign({}, pagos);
+      delete pagos[chave];
+      patch.faturasPagas = pagos;
+    }
+    DADOS.salvarConfig(patch);
+    return true;
+  },
+
+  /** Desfaz o "ainda devo" (o usuário marcou por engano). */
+  desmarcarFaturaDevida: function(nomeCartao, competencia) {
+    var cartao = this.obter(nomeCartao);
+    if (!cartao) return false;
+
+    var devidas = Object.assign({}, this._devidas());
+    delete devidas[this._chaveFatura(cartao.nome, competencia)];
+    DADOS.salvarConfig({ faturasDevidas: devidas });
+    return true;
   },
 
   /** Datas de fechamento e vencimento de uma competência 'YYYY-MM'. */
@@ -398,8 +474,15 @@ var CARTOES = {
       ? DADOS.getTransacoes() : [];
 
     var utilizadoCent = 0;
+    // Parte do utilizado que vem de faturas VENCIDAS que o usuário confirmou que
+    // ainda deve. Separada porque a agenda (COMPROMISSOS.porMes) precisa jogá-la
+    // no mês corrente para a soma continuar batendo com o comprometido.
+    var devidoVencidoCent = 0;
     // Competências vencidas, com valor, e sem confirmação de pagamento.
     var vencidasSemConfirmacao = {};
+    // Competências vencidas que o usuário confirmou que AINDA DEVE (contam no
+    // limite; ficam visíveis para poder desfazer).
+    var vencidasDevidas = {};
 
     txs.forEach(function(t) {
       if (!t || t.tipo !== CONFIG.TIPO_DESPESA) return;
@@ -419,20 +502,33 @@ var CARTOES = {
       // É o caso de quem quita no dia 20 uma fatura que vence dia 28.
       if (CARTOES.faturaEstaPaga(cartao.nome, f.competencia)) return;
 
+      var centT = UTILS.paraCentavos(t.valor);
+
       if (f.vencimento < hojeIso) {
+        var comp = f.competencia;
+        // Venceu e o usuário confirmou que ainda deve: passa a contar no limite
+        // e no comprometido — o fato veio dele, não é mais suposição do app.
+        if (CARTOES.faturaConfirmadaDevida(cartao.nome, comp)) {
+          utilizadoCent += centT;
+          devidoVencidoCent += centT;
+          if (!vencidasDevidas[comp]) {
+            vencidasDevidas[comp] = { competencia: comp, vencimento: f.vencimento, cent: 0 };
+          }
+          vencidasDevidas[comp].cent += centT;
+          return;
+        }
         // Venceu e ninguém confirmou. Continua FORA do cálculo — travar o
         // limite de quem simplesmente não usa o recurso seria pior —, mas
         // fica registrada para a interface poder perguntar em vez de o app
         // decidir sozinho.
-        var comp = f.competencia;
         if (!vencidasSemConfirmacao[comp]) {
           vencidasSemConfirmacao[comp] = { competencia: comp, vencimento: f.vencimento, cent: 0 };
         }
-        vencidasSemConfirmacao[comp].cent += UTILS.paraCentavos(t.valor);
+        vencidasSemConfirmacao[comp].cent += centT;
         return;
       }
 
-      utilizadoCent += UTILS.paraCentavos(t.valor);
+      utilizadoCent += centT;
     });
 
     // Só as três mais recentes: a lista existe para provocar uma ação, não
@@ -443,6 +539,15 @@ var CARTOES = {
       .slice(0, 3)
       .map(function(comp) {
         var r = vencidasSemConfirmacao[comp];
+        return { competencia: r.competencia, vencimento: r.vencimento, total: r.cent / 100 };
+      });
+
+    // Confirmadas como devidas, da mais recente para a mais antiga (para desfazer).
+    var devidas = Object.keys(vencidasDevidas)
+      .sort()
+      .reverse()
+      .map(function(comp) {
+        var r = vencidasDevidas[comp];
         return { competencia: r.competencia, vencimento: r.vencimento, total: r.cent / 100 };
       });
 
@@ -469,7 +574,11 @@ var CARTOES = {
       estourado: limiteCent !== null && utilizadoCent > limiteCent,
       faturaAtual: faturaAtual,
       proximaFatura: proximaFatura,
-      naoConfirmadas: naoConfirmadas
+      naoConfirmadas: naoConfirmadas,
+      // Faturas vencidas confirmadas como "ainda devo" (já contam no utilizado).
+      vencidasDevidas: devidas,
+      // Parte do utilizado que veio delas — usada pela agenda mês a mês.
+      devidoVencido: devidoVencidoCent / 100
     };
   },
 
@@ -628,6 +737,32 @@ var CARTOES = {
                 '<button type="button" class="btn-ghost btn-sm"' +
                   ' data-cartao-acao="pagar" data-cartao="' + nome + '"' +
                   ' data-competencia="' + UTILS.escapeHtml(f.competencia) + '">Sim</button>' +
+                '<button type="button" class="btn-ghost btn-sm"' +
+                  ' data-cartao-acao="devo" data-cartao="' + nome + '"' +
+                  ' data-competencia="' + UTILS.escapeHtml(f.competencia) + '">Não, ainda devo</button>' +
+              '</span>' +
+            '</div>';
+          }).join('') +
+        '</div>';
+      }
+
+      // Faturas vencidas que o usuário confirmou que ainda deve: já contam no
+      // limite. Ficam visíveis para poder marcar como paga ou desfazer o "devo".
+      var devidas = '';
+      if (r.vencidasDevidas && r.vencidasDevidas.length) {
+        devidas = '<div class="cartao-devidas">' +
+          r.vencidasDevidas.map(function(f) {
+            return '<div class="cartao-pendente cartao-devida">' +
+              '<span>Fatura de ' + UTILS.escapeHtml(self._rotuloCompetencia(f.competencia))
+                + ' · ' + UTILS.escapeHtml(UTILS.formatarMoeda(f.total))
+                + ' — em aberto (você confirmou que ainda deve)</span>' +
+              '<span class="cartao-pendente-acoes">' +
+                '<button type="button" class="btn-ghost btn-sm"' +
+                  ' data-cartao-acao="pagar" data-cartao="' + nome + '"' +
+                  ' data-competencia="' + UTILS.escapeHtml(f.competencia) + '">Marcar paga</button>' +
+                '<button type="button" class="btn-ghost btn-sm"' +
+                  ' data-cartao-acao="devo-desfazer" data-cartao="' + nome + '"' +
+                  ' data-competencia="' + UTILS.escapeHtml(f.competencia) + '">Desfazer</button>' +
               '</span>' +
             '</div>';
           }).join('') +
@@ -642,7 +777,7 @@ var CARTOES = {
             (r.bandeira ? '<span class="cartao-bandeira">' + UTILS.escapeHtml(r.bandeira) + '</span>' : '') +
           '</div>' +
         '</div>' +
-        barra + faturas + acaoPagar + pendentes +
+        barra + faturas + acaoPagar + pendentes + devidas +
       '</article>';
     }).join('');
 
@@ -672,18 +807,29 @@ var CARTOES = {
       var nome = btn.dataset.cartao;
       var competencia = btn.dataset.competencia;
       var acao = btn.dataset.cartaoAcao;
-      if (acao !== 'pagar' && acao !== 'desmarcar') return;
+      var ACOES = { pagar: 1, desmarcar: 1, devo: 1, 'devo-desfazer': 1 };
+      if (!ACOES[acao]) return;
 
-      var msg;
+      var rotulo = CARTOES._rotuloCompetencia(competencia);
+      var msg, tom = 'success';
       if (acao === 'desmarcar') {
         CARTOES.desmarcarFaturaPaga(nome, competencia);
-        msg = 'Fatura de ' + CARTOES._rotuloCompetencia(competencia) + ' voltou para em aberto';
+        msg = 'Fatura de ' + rotulo + ' voltou para em aberto';
+        tom = 'info';
+      } else if (acao === 'devo') {
+        CARTOES.confirmarFaturaDevida(nome, competencia);
+        msg = 'Fatura de ' + rotulo + ' contabilizada como ainda devida';
+        tom = 'info';
+      } else if (acao === 'devo-desfazer') {
+        CARTOES.desmarcarFaturaDevida(nome, competencia);
+        msg = 'Fatura de ' + rotulo + ' saiu do limite comprometido';
+        tom = 'info';
       } else {
         CARTOES.marcarFaturaPaga(nome, competencia);
-        msg = 'Fatura de ' + CARTOES._rotuloCompetencia(competencia) + ' marcada como paga';
+        msg = 'Fatura de ' + rotulo + ' marcada como paga';
       }
       if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
-        UTILS.mostrarToast(msg, acao === 'desmarcar' ? 'info' : 'success');
+        UTILS.mostrarToast(msg, tom);
       }
       if (typeof atualizarDashboard === 'function') atualizarDashboard();
     });

@@ -802,3 +802,19 @@
 }
 
 .cartao-pendente-acoes { flex-shrink: 0; }
+
+/* Faturas vencidas que o usuário confirmou que ainda deve: já contam no limite.
+   Mesmo layout do prompt, com um acento de atenção à esquerda. */
+.cartao-devidas {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px dashed var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.cartao-devida {
+  padding-left: var(--space-2);
+  border-left: 2px solid var(--color-warning);
+}
