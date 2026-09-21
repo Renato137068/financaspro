@@ -37,6 +37,15 @@
   border-color: rgba(47, 156, 109, 0.35);
 }
 
+/* Acento de urgência: a meta que precisa de ação salta na lista. */
+.meta-card--atrasada {
+  border-left: 3px solid var(--color-warning);
+}
+
+.meta-card--vencida {
+  border-left: 3px solid var(--color-danger);
+}
+
 .meta-card-header {
   display: flex;
   align-items: flex-start;
