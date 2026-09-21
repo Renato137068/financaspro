@@ -809,6 +809,11 @@ const INIT_CONFIG = {
         }
         break;
 
+      case 'irParaMetas':
+        // Insight de meta fora do ritmo → leva direto para a tela de metas.
+        if (typeof mudarAba === 'function') mudarAba('orcamento', { orcSub: 'metas' });
+        break;
+
       case 'ver-detalhes':
         break;
 

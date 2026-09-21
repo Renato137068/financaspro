@@ -216,6 +216,55 @@ var INSIGHTS = {
       }
     }
 
+    // ── 2c. Metas fora do ritmo ───────────────────────────────────
+    // Criar meta ficou trivial (simulador → Metas); o elo que faltava é o
+    // acompanhamento. Quando uma meta com prazo está atrasada, o número que
+    // resolve é acionável — "aumente o aporte em R$ Z por mês", não um genérico
+    // "você está atrasado". Grátis de propósito: é acompanhamento da própria
+    // meta, não conselho do plano pago. Só a mais urgente — uma lista de metas
+    // atrasadas vira ruído. Erro em metas não pode derrubar o dashboard.
+    if (typeof METAS !== 'undefined' && typeof METAS.listar === 'function' && typeof METAS.calcularProjecao === 'function') {
+      try {
+        var candidatas = [];
+        METAS.listar(true).forEach(function(meta) {
+          if (!meta || !meta.prazo) return;
+          var pj = METAS.calcularProjecao(meta, agora);
+          // 'atrasado' só quando há ritmo demonstrado (ritmoMensal > 0): uma meta
+          // recém-criada tem ritmo 0 e cairia sempre em "atrasado", nagando o
+          // usuário por algo que ele acabou de cadastrar. 'vencida' (prazo no
+          // passado) é inequívoco e vale sempre.
+          if (pj.situacao === 'vencida' || (pj.situacao === 'atrasado' && pj.ritmoMensal > 0)) {
+            candidatas.push({ meta: meta, pj: pj });
+          }
+        });
+        // Vencida antes de atrasada; entre iguais, o maior ajuste é o mais grave.
+        candidatas.sort(function(a, b) {
+          if (a.pj.situacao !== b.pj.situacao) return a.pj.situacao === 'vencida' ? -1 : 1;
+          return (b.pj.ajusteMensal || b.pj.restante || 0) - (a.pj.ajusteMensal || a.pj.restante || 0);
+        });
+        if (candidatas.length) {
+          var c = candidatas[0];
+          var nome = esc(c.meta.titulo || 'Meta');
+          var msgMeta;
+          if (c.pj.situacao === 'vencida') {
+            msgMeta = '<i data-lucide="target" aria-hidden="true"></i> Meta "' + nome +
+              '": prazo vencido — faltam ' + UTILS.formatarMoeda(c.pj.restante) + '.';
+          } else {
+            msgMeta = '<i data-lucide="target" aria-hidden="true"></i> Meta "' + nome +
+              '": no ritmo atual você não chega no prazo. Aumente o aporte em ' +
+              UTILS.formatarMoeda(c.pj.ajusteMensal) + ' por mês.';
+          }
+          insights.push({
+            tipo:      'meta-ritmo',
+            msg:       msgMeta,
+            gravidade: c.pj.situacao === 'vencida' ? 'alta' : 'media',
+            acao:      'irParaMetas',
+            botao:     'Ver meta'
+          });
+        }
+      } catch (e) { /* metas indisponível não pode derrubar o dashboard */ }
+    }
+
     // ── 2. Top categoria de gasto do mês ──────────────────────────
     var topCats = AI_ENGINE.topCategorias(txs, mesKey, 1);
     if (topCats.length > 0) {
