@@ -261,8 +261,12 @@ const INIT_SIMULADOR = {
    */
   _folgaMensal: function() {
     if (typeof RELATORIOS === 'undefined' || !RELATORIOS.resumoPeriodo) return null;
+    // Começa no MÊS PASSADO, não no corrente: o mês em curso está incompleto e
+    // entraria como um mês "cheio" na média, subestimando a folga no começo do
+    // mês e fazendo o veredito oscilar conforme o dia em que se calcula.
     var agora = new Date();
-    var r = RELATORIOS.resumoPeriodo(agora.getMonth() + 1, agora.getFullYear(), 6);
+    var mesAnterior = new Date(agora.getFullYear(), agora.getMonth() - 1, 1);
+    var r = RELATORIOS.resumoPeriodo(mesAnterior.getMonth() + 1, mesAnterior.getFullYear(), 6);
     if (!r || !r.mesesComDados || r.mesesComDados < 2) return null;
     return r.saldo / r.mesesComDados;
   },
@@ -336,6 +340,15 @@ const INIT_SIMULADOR = {
     this._mostrar(html);
   },
 
+  /** hoje + meses como YYYY-MM-DD (local), sem depender de UTILS. */
+  _prazoFallback: function(meses) {
+    var d = new Date();
+    d.setMonth(d.getMonth() + meses);
+    var mm = String(d.getMonth() + 1);
+    var dd = String(d.getDate());
+    return d.getFullYear() + '-' + (mm.length < 2 ? '0' + mm : mm) + '-' + (dd.length < 2 ? '0' + dd : dd);
+  },
+
   /** Cria uma meta a partir do que foi simulado no modo "Meta". */
   _criarMeta: function() {
     if (typeof METAS === 'undefined' || !METAS.criar) return;
@@ -350,10 +363,12 @@ const INIT_SIMULADOR = {
     var nomeEl = document.getElementById('sim-m-nome');
     var titulo = (nomeEl && nomeEl.value ? nomeEl.value : '').trim() || 'Minha meta';
 
-    // Prazo = hoje + meses (data local, no formato YYYY-MM-DD que METAS espera).
-    var prazo = (typeof UTILS !== 'undefined' && UTILS.addMesesClamp)
+    // Prazo = hoje + meses (data local, YYYY-MM-DD, como METAS espera). O
+    // usuário pediu "juntar X em N meses"; se o util não estiver carregado,
+    // computa a data à mão em vez de criar uma meta sem prazo em silêncio.
+    var prazo = (typeof UTILS !== 'undefined' && UTILS.addMesesClamp && UTILS.dataLocalIso)
       ? UTILS.addMesesClamp(UTILS.dataLocalIso(), r.meses)
-      : null;
+      : this._prazoFallback(r.meses);
 
     try {
       METAS.criar({

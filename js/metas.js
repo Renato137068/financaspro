@@ -260,6 +260,11 @@ const METAS = {
     var situacao;
     if (ritmoMensal >= aporteNecessario + margem) situacao = 'adiantado';
     else if (ritmoMensal >= aporteNecessario - margem) situacao = 'no-ritmo';
+    else if (mesesDecorridos < 1) situacao = 'sem-ritmo';
+    // Recém-criada: ritmo ainda não é apurável (nenhum mês decorrido). Chamar de
+    // "atrasado" — com borda vermelha e topo da lista — é nagar o usuário por
+    // algo que ele acabou de cadastrar. Uma meta antiga com R$ 0 guardado, essa
+    // sim, é genuinamente atrasada (mesesDecorridos >= 1, cai no else).
     else situacao = 'atrasado';
 
     var ajuste = situacao === 'atrasado'
@@ -296,6 +301,8 @@ const METAS = {
         return 'Adiantado: no ritmo atual você chega antes do prazo.';
       case 'no-ritmo':
         return 'No ritmo certo: ' + fmt(p.aporteMensalNecessario) + ' por mês.';
+      case 'sem-ritmo':
+        return 'Para o prazo: guarde ' + fmt(p.aporteMensalNecessario) + ' por mês.';
       default:
         return p.previsaoConclusao
           ? 'No ritmo atual, conclui em ' + UTILS.formatarData(p.previsaoConclusao) + '.'

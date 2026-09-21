@@ -229,11 +229,11 @@ var INSIGHTS = {
         METAS.listar(true).forEach(function(meta) {
           if (!meta || !meta.prazo) return;
           var pj = METAS.calcularProjecao(meta, agora);
-          // 'atrasado' só quando há ritmo demonstrado (ritmoMensal > 0): uma meta
-          // recém-criada tem ritmo 0 e cairia sempre em "atrasado", nagando o
-          // usuário por algo que ele acabou de cadastrar. 'vencida' (prazo no
-          // passado) é inequívoco e vale sempre.
-          if (pj.situacao === 'vencida' || (pj.situacao === 'atrasado' && pj.ritmoMensal > 0)) {
+          // 'atrasado' já exclui na origem (metas.js) a meta recém-criada, que
+          // vira 'sem-ritmo' — então aqui não é preciso re-filtrar por ritmo, e
+          // uma meta ANTIGA parada (ritmo 0, mas meses decorridos) continua sendo
+          // sinalizada, como deve. 'vencida' vale sempre.
+          if (pj.situacao === 'vencida' || pj.situacao === 'atrasado') {
             candidatas.push({ meta: meta, pj: pj });
           }
         });

@@ -58,6 +58,31 @@ describe('INSIGHTS — meta fora do ritmo', function() {
     expect(mr.gravidade).toBe('media');
   });
 
+  test('meta ANTIGA parada (ritmo 0, meses decorridos) é sinalizada', function() {
+    lancarTx();
+    var hoje = new Date();
+    var prazo = new Date(hoje.getFullYear(), hoje.getMonth() + 2, hoje.getDate());
+    var meta = global.METAS.criar({ titulo: 'Parada', valorAlvo: 10000, valorAtual: 0, prazo: isoLocal(prazo) });
+    // Criada há ~3 meses, nada guardado → 'atrasado' legítimo (não 'sem-ritmo').
+    var criada = new Date(hoje.getFullYear(), hoje.getMonth() - 3, hoje.getDate());
+    setCriadoEm(meta.id, criada.toISOString());
+
+    var mr = global.INSIGHTS.analisar().find(function(i) { return i.tipo === 'meta-ritmo'; });
+    expect(mr).toBeTruthy();
+    expect(mr.msg).toContain('Parada');
+  });
+
+  test('meta recém-criada (sem-ritmo) NÃO é sinalizada', function() {
+    lancarTx();
+    var hoje = new Date();
+    var prazo = new Date(hoje.getFullYear(), hoje.getMonth() + 6, hoje.getDate());
+    // Criada agora (criadoEm = hoje, o padrão de METAS.criar): 'sem-ritmo'.
+    global.METAS.criar({ titulo: 'Nova', valorAlvo: 12000, valorAtual: 0, prazo: isoLocal(prazo) });
+
+    var mr = global.INSIGHTS.analisar().find(function(i) { return i.tipo === 'meta-ritmo'; });
+    expect(mr).toBeUndefined();
+  });
+
   test('meta com prazo vencido emite insight de gravidade alta', function() {
     lancarTx();
     var hoje = new Date();
