@@ -31,7 +31,9 @@ const BUDGETS = {
   // 1360→1370 KB (2026-09-13): acompanha o +10 KB do appBundle abaixo.
   // 1370→1385 KB (2026-09-15): acompanha o +10 KB do appBundle (tags/marcadores).
   // 1385→1400 KB (2026-09-20): acompanha o +10 KB do appBundle (simulador financeiro).
-  precacheTotal: { max: 1400 * KB, label: 'Precache total (1º acesso)' },
+  // 1400→1410 KB (2026-09-21): insight de meta + nota "cabe no seu mês" no
+  // simulador (dados reais) — aumento intencional.
+  precacheTotal: { max: 1410 * KB, label: 'Precache total (1º acesso)' },
   // 580→590 KB (2026-09-13): correção do KPI "Folga poupança" no Orçamento
   // (cálculo da folga da fatia de poupança) + referência de ritmo no Resumo
   // adicionam alguns KB de código — aumento intencional.
