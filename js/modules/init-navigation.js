@@ -240,6 +240,9 @@ const INIT_NAVIGATION = {
       'compartilhar-mes': function() {
         if (typeof INIT_RELATORIOS !== 'undefined' && INIT_RELATORIOS.compartilhar) INIT_RELATORIOS.compartilhar();
       },
+      'compartilhar-ano': function() {
+        if (typeof INIT_RELATORIOS !== 'undefined' && INIT_RELATORIOS.compartilharAno) INIT_RELATORIOS.compartilharAno();
+      },
       'ver-mais-alertas': function() {
         if (typeof ALERTAS !== 'undefined') {
           var painel = document.getElementById('secao-alertas-painel');

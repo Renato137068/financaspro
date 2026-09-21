@@ -27,23 +27,11 @@ const INIT_METAS = {
    */
   compartilharPlano: function() {
     if (typeof PLANO_METAS === 'undefined' || !PLANO_METAS.texto) return;
-    var toast = (typeof UTILS !== 'undefined' && UTILS.mostrarToast) ? UTILS.mostrarToast : function() {};
-    var texto = PLANO_METAS.texto(new Date());
-    if (!texto) { toast('Crie uma meta para compartilhar seu plano', 'info'); return; }
-    try {
-      if (typeof navigator !== 'undefined' && navigator.share) {
-        navigator.share({ text: texto }).catch(function() {});
-        return;
-      }
-      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(texto).then(
-          function() { toast('Plano copiado', 'success'); },
-          function() { toast('Não foi possível copiar', 'error'); }
-        );
-        return;
-      }
-    } catch (e) { /* ambiente sem share/clipboard */ }
-    toast('Compartilhamento indisponível neste dispositivo', 'info');
+    if (typeof compartilharTextoUI !== 'function') return;
+    compartilharTextoUI(PLANO_METAS.texto(new Date()), {
+      vazio: 'Crie uma meta para compartilhar seu plano',
+      copiado: 'Plano copiado'
+    });
   },
 
   _iconHtml: function(name) {

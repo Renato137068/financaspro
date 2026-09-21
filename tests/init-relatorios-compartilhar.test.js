@@ -9,10 +9,15 @@ beforeEach(function() {
   toasts = [];
   global.UTILS = { mostrarToast: function(msg, tipo) { toasts.push({ msg: msg, tipo: tipo }); } };
   global.RESUMO_MENSAL = { texto: function() { return global.__texto; } };
+  global.RESUMO_ANUAL = { texto: function() { return global.__textoAno; } };
   global.__texto = 'Meu mês em números — Setembro de 2026';
+  global.__textoAno = 'Meu 2026 em números';
+  // O handler delega ao helper compartilhado, que no browser é global.
+  global.compartilharTextoUI = require('../js/utilities/share-texto.js');
 });
 afterEach(function() {
-  delete global.UTILS; delete global.RESUMO_MENSAL; delete global.__texto; delete global.navigator;
+  delete global.UTILS; delete global.RESUMO_MENSAL; delete global.RESUMO_ANUAL;
+  delete global.__texto; delete global.__textoAno; delete global.navigator; delete global.compartilharTextoUI;
 });
 
 describe('INIT_RELATORIOS.compartilhar', function() {
@@ -42,5 +47,23 @@ describe('INIT_RELATORIOS.compartilhar', function() {
   test('cancelar o share (promise rejeitada) não estoura', function() {
     global.navigator = { share: function() { return Promise.reject(new Error('AbortError')); } };
     expect(function() { INIT_RELATORIOS.compartilhar(); }).not.toThrow();
+  });
+});
+
+describe('INIT_RELATORIOS.compartilharAno', function() {
+  test('compartilha a retrospectiva do ano', function() {
+    var shared = null;
+    global.navigator = { share: function(o) { shared = o; return Promise.resolve(); } };
+    INIT_RELATORIOS.compartilharAno();
+    expect(shared).toEqual({ text: 'Meu 2026 em números' });
+  });
+
+  test('ano sem dados suficientes avisa e não compartilha', function() {
+    global.__textoAno = null;
+    var chamou = false;
+    global.navigator = { share: function() { chamou = true; return Promise.resolve(); } };
+    INIT_RELATORIOS.compartilharAno();
+    expect(chamou).toBe(false);
+    expect(toasts.some(function(t) { return /retrospectiva/i.test(t.msg); })).toBe(true);
   });
 });
