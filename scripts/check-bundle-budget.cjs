@@ -39,7 +39,9 @@ const BUDGETS = {
   // (núcleo em transacoes.js + form + filtro no extrato) — aumento intencional.
   // 600→615 KB (2026-09-20): simulador financeiro (simulador.js + init-simulador.js:
   // à vista vs parcelado, juros compostos e financiamento) — aumento intencional.
-  appBundle: { max: 615 * KB, label: 'js/app.bundle.js', file: 'js/app.bundle.js' },
+  // 615→620 KB (2026-09-21): insight proativo de meta fora do ritmo + botão
+  // "Criar meta no app" no simulador — aumento intencional.
+  appBundle: { max: 620 * KB, label: 'js/app.bundle.js', file: 'js/app.bundle.js' },
   vendorBundle: { max: 260 * KB, label: 'js/vendor.bundle.js', file: 'js/vendor.bundle.js' },
   cssBundle: { max: 300 * KB, label: 'CSS bundle', glob: /^css\/index-.*\.css$/ },
   // 100→112 KB (2026-09-12): reestruturação da aba Perfil em menu + sub-telas
