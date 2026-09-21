@@ -43,7 +43,9 @@ const BUDGETS = {
   // à vista vs parcelado, juros compostos e financiamento) — aumento intencional.
   // 615→620 KB (2026-09-21): insight proativo de meta fora do ritmo + botão
   // "Criar meta no app" no simulador — aumento intencional.
-  appBundle: { max: 620 * KB, label: 'js/app.bundle.js', file: 'js/app.bundle.js' },
+  // 620→626 KB (2026-09-21): compartilhar "meu mês" e "plano de metas"
+  // (resumo-mensal.js + plano-metas.js + handlers) — aumento intencional.
+  appBundle: { max: 626 * KB, label: 'js/app.bundle.js', file: 'js/app.bundle.js' },
   vendorBundle: { max: 260 * KB, label: 'js/vendor.bundle.js', file: 'js/vendor.bundle.js' },
   cssBundle: { max: 300 * KB, label: 'CSS bundle', glob: /^css\/index-.*\.css$/ },
   // 100→112 KB (2026-09-12): reestruturação da aba Perfil em menu + sub-telas
