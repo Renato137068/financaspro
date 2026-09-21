@@ -33,9 +33,13 @@ var PLANO_METAS = {
     });
   },
 
-  /** Soma dos aportes mensais necessários (só metas com prazo têm um). */
-  totalMensal: function(hoje) {
-    return this.linhas(hoje).reduce(function(acc, l) {
+  /**
+   * Soma dos aportes mensais necessários (só metas com prazo têm um). Aceita a
+   * lista já montada para não recalcular a projeção de cada meta duas vezes.
+   */
+  totalMensal: function(hoje, linhasArg) {
+    var linhas = linhasArg || this.linhas(hoje);
+    return linhas.reduce(function(acc, l) {
       return acc + (l.aporteMensalNecessario > 0 ? l.aporteMensalNecessario : 0);
     }, 0);
   },
@@ -58,7 +62,7 @@ var PLANO_METAS = {
       if (l.mensagem) out.push('   ' + l.mensagem);
     });
 
-    var total = this.totalMensal(hoje);
+    var total = this.totalMensal(hoje, linhas);
     if (total > 0) {
       out.push('');
       out.push('Para manter o plano: ' + self._fmt(total) + ' por mês');

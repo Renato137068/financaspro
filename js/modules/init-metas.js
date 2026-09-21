@@ -156,9 +156,13 @@ const INIT_METAS = {
     var ordenadas = this._projecoesOrdenadas(METAS.listar().filter(function(m) {
       return !INIT_METAS._pendenteExclusao[m.id];
     }));
+    // Empty state tem UMA CTA principal ("Criar primeira meta"): esconde o grupo
+    // inteiro do cabeçalho — Nova meta E Compartilhar (esta última seria um beco
+    // sem saída, já que não há plano a compartilhar).
+    var headerAcoes = document.querySelector('#metas-section .metas-header-actions');
     var headerBtn = document.querySelector('#metas-section [data-action="meta-nova"]');
     if (ordenadas.length === 0) {
-      // Uma CTA principal no empty state; esconde o botão do cabeçalho (P1/P2 auditoria)
+      if (headerAcoes) headerAcoes.hidden = true;
       if (headerBtn) headerBtn.hidden = true;
       el.innerHTML = '<div class="meta-empty">' +
         '<div class="meta-empty-icon">' + this._iconHtml('target') + '</div>' +
@@ -167,6 +171,7 @@ const INIT_METAS = {
         '<button type="button" class="btn-primario" data-action="meta-nova">Criar primeira meta</button>' +
       '</div>';
     } else {
+      if (headerAcoes) headerAcoes.hidden = false;
       if (headerBtn) headerBtn.hidden = false;
       el.innerHTML = ordenadas.map(function(x) { return INIT_METAS._renderCard(x.meta, false, x.prog); }).join('');
     }
