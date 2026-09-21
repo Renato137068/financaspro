@@ -37,6 +37,17 @@
   border-color: rgba(47, 156, 109, 0.35);
 }
 
+.metas-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.metas-header-actions i {
+  width: 1rem;
+  height: 1rem;
+}
+
 /* Acento de urgência: a meta que precisa de ação salta na lista. */
 .meta-card--atrasada {
   border-left: 3px solid var(--color-warning);

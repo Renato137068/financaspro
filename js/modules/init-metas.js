@@ -17,7 +17,33 @@ const INIT_METAS = {
       else if (action === 'meta-editar') self.abrirFormEditar(btn.dataset.metaId);
       else if (action === 'meta-aporte') self.abrirFormAporte(btn.dataset.metaId);
       else if (action === 'meta-excluir') self.confirmarExcluir(btn.dataset.metaId);
+      else if (action === 'meta-compartilhar') { e.preventDefault(); self.compartilharPlano(); }
     });
+  },
+
+  /**
+   * Compartilha o plano de metas (texto puro do PLANO_METAS) via Web Share; sem
+   * ela, cai para a área de transferência. Opt-in — nada sai sem o usuário pedir.
+   */
+  compartilharPlano: function() {
+    if (typeof PLANO_METAS === 'undefined' || !PLANO_METAS.texto) return;
+    var toast = (typeof UTILS !== 'undefined' && UTILS.mostrarToast) ? UTILS.mostrarToast : function() {};
+    var texto = PLANO_METAS.texto(new Date());
+    if (!texto) { toast('Crie uma meta para compartilhar seu plano', 'info'); return; }
+    try {
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        navigator.share({ text: texto }).catch(function() {});
+        return;
+      }
+      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(texto).then(
+          function() { toast('Plano copiado', 'success'); },
+          function() { toast('Não foi possível copiar', 'error'); }
+        );
+        return;
+      }
+    } catch (e) { /* ambiente sem share/clipboard */ }
+    toast('Compartilhamento indisponível neste dispositivo', 'info');
   },
 
   _iconHtml: function(name) {

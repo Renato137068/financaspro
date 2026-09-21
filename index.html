@@ -1142,7 +1142,11 @@
     <div class="metas-section perfil-section" id="metas-section">
       <div class="orc-secao-header">
         <h3 class="perfil-section-title">Metas financeiras</h3>
-        <button type="button" class="btn-secundario btn-sm" data-action="meta-nova">Nova meta</button>
+        <div class="metas-header-actions">
+          <button type="button" class="btn-ghost btn-sm" data-action="meta-compartilhar" aria-label="Compartilhar plano de metas">
+            <i data-lucide="share-2" aria-hidden="true"></i> Compartilhar</button>
+          <button type="button" class="btn-secundario btn-sm" data-action="meta-nova">Nova meta</button>
+        </div>
       </div>
       <div id="metas-list" class="metas-list"></div>
     </div>
@@ -2086,6 +2090,7 @@
 <script defer src="js/relatorios.js"></script>
 <script defer src="js/projecao.js"></script>
 <script defer src="js/resumo-mensal.js"></script>
+<script defer src="js/plano-metas.js"></script>
 <script defer src="js/simulador.js"></script>
 <script defer src="js/patrimonio.js"></script>
 <script defer src="js/anexos.js"></script>
