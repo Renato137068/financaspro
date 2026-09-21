@@ -55,6 +55,9 @@ function carregar() {
       },
     },
     BILLING: { onPaymentRequired: function(o) { billingChamado = o; } },
+    RELATORIOS: {
+      resumoPeriodo: function() { return relatoriosResumo; },
+    },
     mudarAba: function(aba, opts) { abasMudadas.push({ aba: aba, opts: opts }); },
   };
   vm.createContext(sandbox);
@@ -67,6 +70,9 @@ var metasCriadas = [];
 var abasMudadas = [];
 var metasQuota = false;
 var billingChamado = null;
+// Sem histórico por padrão (mesesComDados < 2) → nenhuma nota de folga, para
+// não interferir nos testes que não são sobre isso.
+var relatoriosResumo = { saldo: 0, mesesComDados: 0 };
 
 function montarPanel() {
   document.body.innerHTML = '<div id="aba-config-simulador" class="aba ativo"><div id="simulador-panel"></div></div>';
@@ -89,6 +95,7 @@ beforeEach(function() {
   abasMudadas = [];
   metasQuota = false;
   billingChamado = null;
+  relatoriosResumo = { saldo: 0, mesesComDados: 0 };
   montarPanel();
   INIT._modo = 'parcelado';
   INIT.render();
@@ -247,6 +254,45 @@ describe('INIT_SIMULADOR — meta (quanto guardar)', function() {
     expect(metasCriadas.length).toBe(0);
     expect(billingChamado).toBeTruthy();
     expect(abasMudadas.length).toBe(0);
+  });
+});
+
+describe('INIT_SIMULADOR — meta e folga mensal (dados reais)', function() {
+  function simularMeta(obj, meses) {
+    clicar('[data-action="sim-modo"][data-modo="meta"]');
+    set('sim-m-objetivo', obj);
+    set('sim-m-meses', meses);
+    clicar('[data-action="sim-calc-meta"]');
+  }
+
+  test('sem histórico suficiente não mostra nota de folga', function() {
+    relatoriosResumo = { saldo: 500, mesesComDados: 1 }; // < 2 meses
+    simularMeta('1200', '12');
+    expect(document.querySelector('.sim-nota')).toBeFalsy();
+  });
+
+  test('aporte que cabe na folga mostra nota "cabe no seu mês"', function() {
+    relatoriosResumo = { saldo: 6000, mesesComDados: 6 }; // folga ~R$ 1000/mês
+    simularMeta('1200', '12'); // aporte 100/mês
+    var nota = document.querySelector('.sim-nota--ok');
+    expect(nota).toBeTruthy();
+    expect(nota.textContent).toMatch(/cabe no seu mês/i);
+  });
+
+  test('aporte acima da folga mostra aviso "puxado"', function() {
+    relatoriosResumo = { saldo: 600, mesesComDados: 6 }; // folga ~R$ 100/mês
+    simularMeta('12000', '12'); // aporte 1000/mês
+    var nota = document.querySelector('.sim-nota--aviso');
+    expect(nota).toBeTruthy();
+    expect(nota.textContent).toMatch(/puxado/i);
+  });
+
+  test('folga negativa avisa que não há folga', function() {
+    relatoriosResumo = { saldo: -600, mesesComDados: 6 }; // gasta mais que ganha
+    simularMeta('1200', '12');
+    var nota = document.querySelector('.sim-nota--aviso');
+    expect(nota).toBeTruthy();
+    expect(nota.textContent).toMatch(/toda a renda/i);
   });
 });
 

@@ -254,6 +254,40 @@ const INIT_SIMULADOR = {
     this._mostrar(html);
   },
 
+  /**
+   * Folga mensal média do usuário (receitas − despesas por mês) pelos últimos
+   * meses com dados. null quando não há histórico suficiente para uma média
+   * honesta — melhor não opinar do que opinar com base num mês só.
+   */
+  _folgaMensal: function() {
+    if (typeof RELATORIOS === 'undefined' || !RELATORIOS.resumoPeriodo) return null;
+    var agora = new Date();
+    var r = RELATORIOS.resumoPeriodo(agora.getMonth() + 1, agora.getFullYear(), 6);
+    if (!r || !r.mesesComDados || r.mesesComDados < 2) return null;
+    return r.saldo / r.mesesComDados;
+  },
+
+  /** Nota "cabe no seu mês?" comparando o aporte com a folga média. */
+  _notaFolga: function(aporte) {
+    var folga = this._folgaMensal();
+    if (folga == null) return '';
+    if (folga <= 0) {
+      return '<div class="sim-nota sim-nota--aviso">' +
+        '<i data-lucide="alert-circle" aria-hidden="true"></i> ' +
+        'Hoje seus gastos consomem toda a renda — não sobra para este aporte. ' +
+        'Rever o orçamento vem antes de mirar a meta.</div>';
+    }
+    if (aporte <= folga) {
+      return '<div class="sim-nota sim-nota--ok">' +
+        '<i data-lucide="check-circle" aria-hidden="true"></i> ' +
+        'Cabe no seu mês: sobram em média ' + this._fmt(folga) + ' por mês.</div>';
+    }
+    return '<div class="sim-nota sim-nota--aviso">' +
+      '<i data-lucide="alert-circle" aria-hidden="true"></i> ' +
+      'Puxado: sobra em média ' + this._fmt(folga) + ' por mês, menos que o aporte. ' +
+      'Considere um prazo maior ou uma meta menor.</div>';
+  },
+
   _calcMeta: function() {
     var r = SIMULADOR.aporteParaMeta({
       objetivo: this._moeda('sim-m-objetivo'),
@@ -283,6 +317,11 @@ const INIT_SIMULADOR = {
     html += this._linha('Total que você vai guardar', this._fmt(r.totalAportado));
     if (r.jurosGanhos > 0) html += this._linha('Juros ajudam com', this._fmt(r.jurosGanhos), true);
     html += '</div>';
+
+    // Aterrissa o número na realidade do usuário: o aporte cabe na folga que ele
+    // costuma ter no mês? Sem isso o "guarde R$ X/mês" é genérico; com isso vira
+    // conselho pessoal. Só aparece quando há histórico suficiente para uma média.
+    if (!r.jaAlcanca) html += this._notaFolga(r.aporteMensal);
 
     // Transforma o cálculo em ação: cria a meta no app com o objetivo, o prazo
     // e o quanto já se tem. Só oferece quando o módulo de metas existe.
