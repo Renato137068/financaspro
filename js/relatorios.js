@@ -14,12 +14,18 @@ const RELATORIOS = {
 
     txs.forEach(function(t) {
       var cent = UTILS.paraCentavos(t.valor);
-      if (t.tipo === CONFIG.TIPO_RECEITA) receitasCent += cent;
-      else {
+      if (t.tipo === CONFIG.TIPO_RECEITA) {
+        receitasCent += cent;
+      } else if (t.tipo === CONFIG.TIPO_DESPESA) {
         despesasCent += cent;
         var cat = t.categoria || 'outro';
         porCatCent[cat] = (porCatCent[cat] || 0) + cent;
       }
+      // Transferência entre contas do próprio usuário não é receita nem despesa:
+      // o dinheiro só muda de lugar. O `else` cru contava a transferência como
+      // despesa (e a categoria "transferencia" poluía o top) — inflava o gasto
+      // do mês no "meu mês em números", no comparativo, na retrospectiva do ano
+      // e na projeção. TRANSACOES.obterResumoMes já a ignorava; agora bate.
     });
 
     var topCats = Object.keys(porCatCent).sort(function(a, b) { return porCatCent[b] - porCatCent[a]; }).slice(0, 5);
@@ -64,7 +70,10 @@ const RELATORIOS = {
     var porCat = {};
     if (typeof TRANSACOES === 'undefined') return porCat;
     TRANSACOES.obter({ mes: mes, ano: ano }).forEach(function(t) {
-      if (t.tipo === CONFIG.TIPO_RECEITA) return;
+      // Só despesa: excluir receita não bastava — a transferência caía no
+      // "else" e virava uma categoria "transferencia" com linha de base própria,
+      // distorcendo o "estou gastando mais do que o normal?".
+      if (!t || t.tipo !== CONFIG.TIPO_DESPESA) return;
       var cat = t.categoria || 'outro';
       porCat[cat] = (porCat[cat] || 0) + UTILS.paraCentavos(t.valor);
     });
