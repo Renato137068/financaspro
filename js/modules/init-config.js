@@ -1049,24 +1049,40 @@ const INIT_CONFIG = {
   getPeriodoDados: function() {
     var txs = TRANSACOES.obter({});
     if (txs.length === 0) return null;
-    
-    var datas = txs.map(function(t) { return new Date(t.data); });
-    var minDate = new Date(Math.min(...datas));
-    var maxDate = new Date(Math.max(...datas));
-    
+
+    // Datas ISO 'YYYY-MM-DD' são ordenáveis como texto — o menor e o maior saem
+    // de sort() sem parsear a string como Date, que a leria em UTC e, no fuso do
+    // Brasil (UTC-3), jogaria o dia 1º para o mês anterior. calcularMesesEntre lia
+    // getMonth() local sobre essa meia-noite UTC e errava a contagem de meses
+    // gravada no metadados do backup.
+    var datas = txs
+      .map(function(t) { return String(t && t.data || '').split('T')[0]; })
+      .filter(function(d) { return /^\d{4}-\d{2}-\d{2}$/.test(d); })
+      .sort();
+    if (datas.length === 0) return null;
+
+    var inicio = datas[0];
+    var fim = datas[datas.length - 1];
     return {
-      inicio: minDate.toISOString().split('T')[0],
-      fim: maxDate.toISOString().split('T')[0],
-      meses: this.calcularMesesEntre(minDate, maxDate)
+      inicio: inicio,
+      fim: fim,
+      meses: this.calcularMesesEntre(inicio, fim)
     };
   },
 
   /**
-   * Calcula meses entre duas datas
+   * Calcula meses entre duas datas (inclusive). Aceita string ISO 'YYYY-MM-DD'
+   * ou Date; das strings, lê ano/mês por componentes para não depender do fuso.
    */
   calcularMesesEntre: function(data1, data2) {
-    var months = (data2.getFullYear() - data1.getFullYear()) * 12;
-    months += data2.getMonth() - data1.getMonth();
+    function anoMes(d) {
+      if (d && typeof d.getFullYear === 'function') return [d.getFullYear(), d.getMonth() + 1];
+      var p = String(d).split('T')[0].split('-');
+      return [parseInt(p[0], 10), parseInt(p[1], 10)];
+    }
+    var a = anoMes(data1);
+    var b = anoMes(data2);
+    var months = (b[0] - a[0]) * 12 + (b[1] - a[1]);
     return Math.abs(months) + 1;
   },
 
