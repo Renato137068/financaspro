@@ -178,6 +178,15 @@ var COMPROMISSOS = {
           var b = porChave[chaveDe(fat.vencimento)];
           if (b) b.cartoesCent += UTILS.paraCentavos(fat.total);
         }
+
+        // Faturas vencidas que o usuário confirmou que ainda deve entram no
+        // comprometido (via utilizado) mas já venceram, então o laço acima as
+        // pula. São desembolso devido AGORA: caem no primeiro mês da janela.
+        // Sem isto, a soma da agenda não bateria com COMPROMISSOS.comprometido.
+        var resumo = CARTOES.resumo(nome, ref);
+        if (resumo && resumo.devidoVencido > 0) {
+          primeira.cartoesCent += UTILS.paraCentavos(resumo.devidoVencido);
+        }
       });
     }
 
