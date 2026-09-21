@@ -73,7 +73,13 @@ const INIT_METAS = {
       actions = '<div class="meta-card-actions">' + botoes + '</div>';
     }
 
-    return '<article class="meta-card' + (compact ? ' meta-card--compact' : '') + (prog.concluida ? ' meta-card--done' : '') + '">' +
+    // Acento no próprio card (não só na linha de diagnóstico): a meta que pede
+    // atenção salta aos olhos na lista, coerente com o insight que aponta a
+    // mais crítica.
+    var urgClass = prog.situacao === 'vencida' ? ' meta-card--vencida'
+      : (prog.situacao === 'atrasado' ? ' meta-card--atrasada' : '');
+
+    return '<article class="meta-card' + (compact ? ' meta-card--compact' : '') + (prog.concluida ? ' meta-card--done' : urgClass) + '">' +
       '<div class="meta-card-header">' +
         '<span class="meta-card-icon">' + this._iconHtml(meta.icone) + '</span>' +
         '<div class="meta-card-titles">' +
@@ -94,12 +100,42 @@ const INIT_METAS = {
     '</article>';
   },
 
+  /**
+   * Ordem de urgência de uma meta: quanto menor, mais precisa de atenção.
+   * Vencida vem antes de atrasada; concluída vai para o fim.
+   */
+  _ordemUrgencia: function(prog) {
+    if (prog.concluida) return 5;
+    switch (prog.situacao) {
+      case 'vencida': return 0;
+      case 'atrasado': return 1;
+      case 'no-ritmo': return 2;
+      case 'adiantado': return 3;
+      default: return 4; // sem-prazo
+    }
+  },
+
+  /** Ordena metas por urgência; dentro do mesmo grupo, a menos completa antes. */
+  _ordenarPorUrgencia: function(metas) {
+    var self = this;
+    var info = {};
+    metas.forEach(function(m) {
+      var p = METAS.calcularProjecao(m);
+      info[m.id] = { rank: self._ordemUrgencia(p), pct: p.percentual };
+    });
+    return metas.slice().sort(function(a, b) {
+      var ra = info[a.id], rb = info[b.id];
+      if (ra.rank !== rb.rank) return ra.rank - rb.rank;
+      return ra.pct - rb.pct;
+    });
+  },
+
   renderOrcamento: function() {
     var el = document.getElementById('metas-list');
     if (!el || typeof METAS === 'undefined') return;
-    var metas = METAS.listar().filter(function(m) {
+    var metas = this._ordenarPorUrgencia(METAS.listar().filter(function(m) {
       return !INIT_METAS._pendenteExclusao[m.id];
-    });
+    }));
     var headerBtn = document.querySelector('#metas-section [data-action="meta-nova"]');
     if (metas.length === 0) {
       // Uma CTA principal no empty state; esconde o botão do cabeçalho (P1/P2 auditoria)
@@ -121,9 +157,9 @@ const INIT_METAS = {
     var el = document.getElementById('dashboard-metas-resumo');
     var sec = document.getElementById('secao-metas-resumo');
     if (!el || typeof METAS === 'undefined') return;
-    var ativas = METAS.listar(true).filter(function(m) {
+    var ativas = this._ordenarPorUrgencia(METAS.listar(true).filter(function(m) {
       return !INIT_METAS._pendenteExclusao[m.id];
-    }).slice(0, 3);
+    })).slice(0, 3);
     if (sec) sec.style.display = METAS.listar().length === 0 ? 'none' : '';
     if (ativas.length === 0) {
       el.innerHTML = '';
