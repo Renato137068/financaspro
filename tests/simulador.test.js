@@ -142,6 +142,47 @@ describe('SIMULADOR.jurosCompostos', () => {
   });
 });
 
+describe('SIMULADOR.aporteParaMeta', () => {
+  test('meta ou prazo ausente é inválido', () => {
+    expect(SIM.aporteParaMeta({ meses: 12 }).valido).toBe(false);
+    expect(SIM.aporteParaMeta({ objetivo: 1000 }).valido).toBe(false);
+  });
+
+  test('taxa zero: aporte = (meta − inicial) / meses', () => {
+    const r = SIM.aporteParaMeta({ objetivo: 1200, inicial: 0, taxaMensal: 0, meses: 12 });
+    expect(r.valido).toBe(true);
+    expect(r.aporteMensal).toBe(100);
+    expect(r.totalAportado).toBe(1200);
+    expect(r.jurosGanhos).toBe(0);
+  });
+
+  test('taxa zero com inicial: desconta o que já se tem', () => {
+    const r = SIM.aporteParaMeta({ objetivo: 1200, inicial: 200, taxaMensal: 0, meses: 10 });
+    expect(r.aporteMensal).toBe(100);
+  });
+
+  test('é o inverso de jurosCompostos: o aporte achado atinge a meta', () => {
+    const meta = 50000;
+    const r = SIM.aporteParaMeta({ objetivo: meta, inicial: 5000, taxaMensal: 0.008, meses: 36 });
+    expect(r.valido).toBe(true);
+    // Alimenta jurosCompostos com o aporte achado → montante deve bater a meta.
+    const check = SIM.jurosCompostos({
+      principal: 5000, aporteMensal: r.aporteMensal, taxaMensal: 0.008, meses: 36,
+    });
+    expect(check.montante).toBeCloseTo(meta, 0);
+  });
+
+  test('inicial rendendo já cobre a meta → aporte zero e jaAlcanca', () => {
+    const r = SIM.aporteParaMeta({ objetivo: 1000, inicial: 1000, taxaMensal: 0.02, meses: 12 });
+    expect(r.aporteMensal).toBe(0);
+    expect(r.jaAlcanca).toBe(true);
+  });
+
+  test('inicial negativo é inválido', () => {
+    expect(SIM.aporteParaMeta({ objetivo: 1000, inicial: -1, taxaMensal: 0, meses: 12 }).valido).toBe(false);
+  });
+});
+
 describe('SIMULADOR.financiamento', () => {
   test('valor ausente é inválido', () => {
     expect(SIM.financiamento({ numParcelas: 12, taxaMensal: 0.01 }).valido).toBe(false);

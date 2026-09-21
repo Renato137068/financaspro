@@ -61,9 +61,9 @@ beforeAll(function() { INIT = carregar(); INIT.init(); });
 beforeEach(function() { montarPanel(); INIT._modo = 'parcelado'; INIT.render(); });
 
 describe('INIT_SIMULADOR — render', function() {
-  test('render desenha as três abas e o form de parcelado por padrão', function() {
+  test('render desenha as quatro abas e o form de parcelado por padrão', function() {
     var panel = document.getElementById('simulador-panel');
-    expect(panel.querySelectorAll('.sim-tab').length).toBe(3);
+    expect(panel.querySelectorAll('.sim-tab').length).toBe(4);
     expect(document.getElementById('sim-p-vista')).toBeTruthy();
     expect(document.getElementById('sim-p-parcela')).toBeTruthy();
   });
@@ -132,6 +132,38 @@ describe('INIT_SIMULADOR — poupar', function() {
     set('sim-j-taxa', '1');
     set('sim-j-meses', '12');
     clicar('[data-action="sim-calc-juros"]');
+    expect(document.getElementById('sim-resultado').querySelector('.sim-aviso')).toBeTruthy();
+  });
+});
+
+describe('INIT_SIMULADOR — meta (quanto guardar)', function() {
+  test('calcula o aporte mensal e mostra o resultado', function() {
+    clicar('[data-action="sim-modo"][data-modo="meta"]');
+    expect(INIT._modo).toBe('meta');
+    set('sim-m-objetivo', '12000');
+    set('sim-m-meses', '12');
+    clicar('[data-action="sim-calc-meta"]');
+    var out = document.getElementById('sim-resultado');
+    expect(out.textContent).toMatch(/por mês/i);
+    expect(out.textContent).toMatch(/Guardar por mês/i);
+    // sem juros e sem inicial: 12000 / 12 = 1000
+    expect(out.textContent).toMatch(/1000/);
+  });
+
+  test('inicial que já cobre a meta mostra "você já chega lá"', function() {
+    clicar('[data-action="sim-modo"][data-modo="meta"]');
+    set('sim-m-objetivo', '1000');
+    set('sim-m-meses', '12');
+    set('sim-m-inicial', '1000');
+    set('sim-m-taxa', '2');
+    clicar('[data-action="sim-calc-meta"]');
+    expect(document.getElementById('sim-resultado').textContent).toMatch(/já chega lá/i);
+  });
+
+  test('meta ausente mostra aviso', function() {
+    clicar('[data-action="sim-modo"][data-modo="meta"]');
+    set('sim-m-meses', '12');
+    clicar('[data-action="sim-calc-meta"]');
     expect(document.getElementById('sim-resultado').querySelector('.sim-aviso')).toBeTruthy();
   });
 });

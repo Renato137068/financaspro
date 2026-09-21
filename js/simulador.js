@@ -213,6 +213,65 @@ var SIMULADOR = {
   },
 
   /**
+   * Quanto guardar por mês para alcançar uma meta (o inverso de jurosCompostos).
+   *
+   * Resolve para A em  objetivo = P·(1+i)^n + A·((1+i)^n − 1)/i :
+   *   A = (objetivo − P·(1+i)^n) · i / ((1+i)^n − 1)
+   *
+   * Se o valor inicial rendendo já passa da meta, o aporte necessário é zero
+   * (a meta se paga sozinha) — devolve aporteMensal 0 e sinaliza jaAlcanca.
+   *
+   * @param {Object} p
+   * @param {number} p.objetivo     quanto se quer ter ao fim (reais)
+   * @param {number} p.meses        prazo em meses
+   * @param {number} [p.taxaMensal] rendimento mensal decimal (0.008 = 0,8% a.m.)
+   * @param {number} [p.inicial]    valor que já se tem hoje (reais)
+   * @returns {Object} { valido, aporteMensal, totalAportado, jurosGanhos, ... }
+   */
+  aporteParaMeta: function(p) {
+    p = p || {};
+    var objetivo = this._num(p.objetivo, 0);
+    var inicial = this._num(p.inicial, 0);
+    var i = this._num(p.taxaMensal, 0);
+    var n = this._periodos(p.meses);
+
+    if (objetivo <= 0) return { valido: false, motivo: 'Informe o valor da meta.' };
+    if (n <= 0) return { valido: false, motivo: 'Informe o prazo em meses (1 a ' + this.MAX_PERIODOS + ').' };
+    if (inicial < 0) return { valido: false, motivo: 'O valor inicial não pode ser negativo.' };
+    if (i < 0 || i > 1) return { valido: false, motivo: 'Taxa fora da faixa (0 a 100% ao mês).' };
+
+    var fator = Math.pow(1 + i, n);
+    var fvInicial = inicial * fator;
+    // O que o valor inicial já cobre da meta, rendendo. Se cobre tudo, aporte 0.
+    var faltando = objetivo - fvInicial;
+    var jaAlcanca = faltando <= 0;
+
+    var aporte;
+    if (jaAlcanca) {
+      aporte = 0;
+    } else if (Math.abs(i) < 1e-12) {
+      aporte = faltando / n;
+    } else {
+      aporte = faltando * i / (fator - 1);
+    }
+
+    var totalAportado = inicial + aporte * n;
+    var jurosGanhos = objetivo - totalAportado;
+
+    return {
+      valido: true,
+      objetivo: this._cent(objetivo),
+      inicial: this._cent(inicial),
+      meses: n,
+      aporteMensal: this._cent(aporte),
+      totalAportado: this._cent(totalAportado),
+      jurosGanhos: this._cent(jurosGanhos > 0 ? jurosGanhos : 0),
+      jaAlcanca: jaAlcanca,
+      taxaMensal: i
+    };
+  },
+
+  /**
    * Financiamento pela Tabela Price (parcela fixa).
    *
    * Parcela = PV · i / (1 − (1+i)^−n), onde PV = valor − entrada.
