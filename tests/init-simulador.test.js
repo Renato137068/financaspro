@@ -18,11 +18,14 @@ function carregar() {
 
   window.renderLucideIcons = function() {};
 
+  metasCriadas = [];
+  abasMudadas = [];
+
   const sandbox = {
     window: window,
     document: document,
     console: { log: function() {}, warn: function() {}, error: function() {} },
-    Math: Math, Number: Number, JSON: JSON,
+    Math: Math, Number: Number, JSON: JSON, Date: Date,
     parseFloat: parseFloat, parseInt: parseInt, isFinite: isFinite,
     Object: Object, Array: Array, String: String,
     UTILS: {
@@ -34,13 +37,36 @@ function carregar() {
       },
       formatarMoeda: function(v) { return 'R$ ' + Number(v).toFixed(2); },
       escapeHtml: function(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); },
+      mostrarToast: function() {},
+      dataLocalIso: function() { return '2026-09-21'; },
+      addMesesClamp: function(iso, m) {
+        var p = String(iso).slice(0, 10).split('-');
+        var d = new Date(Number(p[0]), Number(p[1]) - 1 + Number(m), Number(p[2]));
+        var mm = String(d.getMonth() + 1).padStart(2, '0');
+        var dd = String(d.getDate()).padStart(2, '0');
+        return d.getFullYear() + '-' + mm + '-' + dd;
+      },
     },
+    METAS: {
+      criar: function(dados) {
+        if (metasQuota) { var err = new Error('Limite'); err.code = 'quota'; throw err; }
+        metasCriadas.push(dados);
+        return dados;
+      },
+    },
+    BILLING: { onPaymentRequired: function(o) { billingChamado = o; } },
+    mudarAba: function(aba, opts) { abasMudadas.push({ aba: aba, opts: opts }); },
   };
   vm.createContext(sandbox);
   vm.runInContext(simSrc, sandbox, { filename: path.join(root, 'js/simulador.js') });
   vm.runInContext(initSrc, sandbox, { filename: path.join(root, 'js/modules/init-simulador.js') });
   return sandbox.INIT_SIMULADOR;
 }
+
+var metasCriadas = [];
+var abasMudadas = [];
+var metasQuota = false;
+var billingChamado = null;
 
 function montarPanel() {
   document.body.innerHTML = '<div id="aba-config-simulador" class="aba ativo"><div id="simulador-panel"></div></div>';
@@ -58,7 +84,15 @@ function clicar(sel) {
 
 var INIT;
 beforeAll(function() { INIT = carregar(); INIT.init(); });
-beforeEach(function() { montarPanel(); INIT._modo = 'parcelado'; INIT.render(); });
+beforeEach(function() {
+  metasCriadas = [];
+  abasMudadas = [];
+  metasQuota = false;
+  billingChamado = null;
+  montarPanel();
+  INIT._modo = 'parcelado';
+  INIT.render();
+});
 
 describe('INIT_SIMULADOR — render', function() {
   test('render desenha as quatro abas e o form de parcelado por padrão', function() {
@@ -165,6 +199,54 @@ describe('INIT_SIMULADOR — meta (quanto guardar)', function() {
     set('sim-m-meses', '12');
     clicar('[data-action="sim-calc-meta"]');
     expect(document.getElementById('sim-resultado').querySelector('.sim-aviso')).toBeTruthy();
+  });
+
+  test('resultado válido oferece o botão de criar meta', function() {
+    clicar('[data-action="sim-modo"][data-modo="meta"]');
+    set('sim-m-objetivo', '12000');
+    set('sim-m-meses', '12');
+    clicar('[data-action="sim-calc-meta"]');
+    expect(document.querySelector('[data-action="sim-criar-meta"]')).toBeTruthy();
+  });
+
+  test('criar meta grava com objetivo/prazo/valorAtual e navega para as metas', function() {
+    clicar('[data-action="sim-modo"][data-modo="meta"]');
+    set('sim-m-objetivo', '12000');
+    set('sim-m-meses', '12');
+    set('sim-m-inicial', '2000');
+    clicar('[data-action="sim-calc-meta"]');
+    set('sim-m-nome', 'Viagem');
+    clicar('[data-action="sim-criar-meta"]');
+
+    expect(metasCriadas.length).toBe(1);
+    var m = metasCriadas[0];
+    expect(m.titulo).toBe('Viagem');
+    expect(m.valorAlvo).toBe(12000);
+    expect(m.valorAtual).toBe(2000);
+    expect(m.icone).toBe('target');
+    expect(m.prazo).toBe('2027-09-21'); // hoje (2026-09-21) + 12 meses
+    expect(abasMudadas).toEqual([{ aba: 'orcamento', opts: { orcSub: 'metas' } }]);
+  });
+
+  test('sem nome usa um título padrão', function() {
+    clicar('[data-action="sim-modo"][data-modo="meta"]');
+    set('sim-m-objetivo', '1000');
+    set('sim-m-meses', '10');
+    clicar('[data-action="sim-calc-meta"]');
+    clicar('[data-action="sim-criar-meta"]');
+    expect(metasCriadas[0].titulo).toBe('Minha meta');
+  });
+
+  test('cota do plano gratuito aciona o paywall e não navega', function() {
+    metasQuota = true;
+    clicar('[data-action="sim-modo"][data-modo="meta"]');
+    set('sim-m-objetivo', '1000');
+    set('sim-m-meses', '10');
+    clicar('[data-action="sim-calc-meta"]');
+    clicar('[data-action="sim-criar-meta"]');
+    expect(metasCriadas.length).toBe(0);
+    expect(billingChamado).toBeTruthy();
+    expect(abasMudadas.length).toBe(0);
   });
 });
 
