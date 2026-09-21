@@ -11,6 +11,7 @@ const root = path.join(__dirname, '..');
 
 function carregar() {
   const simSrc = fs.readFileSync(path.join(root, 'js/simulador.js'), 'utf8');
+  const tablistSrc = fs.readFileSync(path.join(root, 'js/utilities/tablist-keyboard.js'), 'utf8');
   // Mesma conversão do harness load-sources: `const X =` no topo de um módulo
   // vm vira binding léxico e não encosta no global do contexto. `var` encosta.
   const initSrc = fs.readFileSync(path.join(root, 'js/modules/init-simulador.js'), 'utf8')
@@ -27,7 +28,7 @@ function carregar() {
     console: { log: function() {}, warn: function() {}, error: function() {} },
     Math: Math, Number: Number, JSON: JSON, Date: Date,
     parseFloat: parseFloat, parseInt: parseInt, isFinite: isFinite,
-    Object: Object, Array: Array, String: String,
+    Object: Object, Array: Array, String: String, WeakSet: WeakSet,
     UTILS: {
       parseMoeda: function(v) {
         if (typeof v === 'number') return v;
@@ -62,6 +63,7 @@ function carregar() {
   };
   vm.createContext(sandbox);
   vm.runInContext(simSrc, sandbox, { filename: path.join(root, 'js/simulador.js') });
+  vm.runInContext(tablistSrc, sandbox, { filename: path.join(root, 'js/utilities/tablist-keyboard.js') });
   vm.runInContext(initSrc, sandbox, { filename: path.join(root, 'js/modules/init-simulador.js') });
   return sandbox.INIT_SIMULADOR;
 }
@@ -114,6 +116,31 @@ describe('INIT_SIMULADOR — render', function() {
     expect(INIT._modo).toBe('poupar');
     expect(document.getElementById('sim-j-meses')).toBeTruthy();
     expect(document.getElementById('sim-p-vista')).toBeFalsy();
+  });
+
+  test('tablist WAI-ARIA: roving tabindex, aria-controls e tabpanel', function() {
+    var tabs = document.querySelectorAll('.sim-tab');
+    var ativa = document.querySelector('.sim-tab--ativo');
+    expect(ativa.getAttribute('tabindex')).toBe('0');
+    expect(ativa.getAttribute('aria-selected')).toBe('true');
+    // só a ativa fica no tab order
+    var comTab0 = Array.prototype.filter.call(tabs, function(t) { return t.getAttribute('tabindex') === '0'; });
+    expect(comTab0.length).toBe(1);
+    tabs.forEach(function(t) { expect(t.getAttribute('aria-controls')).toBe('sim-corpo'); });
+    var corpo = document.getElementById('sim-corpo');
+    expect(corpo.getAttribute('role')).toBe('tabpanel');
+    expect(corpo.getAttribute('aria-labelledby')).toBe('sim-tab-parcelado');
+  });
+
+  test('setas do teclado trocam o modo (←/→) e movem o roving tabindex', function() {
+    var ativa = document.querySelector('.sim-tab--ativo');
+    ativa.focus();
+    ativa.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    expect(INIT._modo).toBe('poupar'); // parcelado → poupar
+    var nova = document.querySelector('.sim-tab--ativo');
+    expect(nova.getAttribute('data-modo')).toBe('poupar');
+    expect(nova.getAttribute('tabindex')).toBe('0');
+    expect(document.getElementById('sim-j-meses')).toBeTruthy();
   });
 });
 
