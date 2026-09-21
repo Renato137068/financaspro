@@ -847,12 +847,17 @@ var UTILS = {
    * Ancorar os dois lados ao meio-dia elimina a defasagem, e `Math.round`
    * absorve a hora a mais ou a menos na virada do horário de verão.
    */
-  diasAte: function(dataIso) {
-    var hoje = new Date();
-    hoje.setHours(12, 0, 0, 0);
+  diasAte: function(dataIso, hoje) {
+    // `hoje` injetável (padrão: agora): sem ele, um rótulo de data numa view com
+    // data simulada mostraria "vence em N dias" pelo relógio real, divergindo do
+    // resto do card.
+    var base = (hoje && typeof hoje.getTime === 'function' && !isNaN(hoje.getTime()))
+      ? new Date(hoje.getTime())
+      : new Date();
+    base.setHours(12, 0, 0, 0);
     var alvo = new Date(String(dataIso).slice(0, 10) + 'T12:00:00');
     if (isNaN(alvo.getTime())) return NaN;
-    return Math.round((alvo - hoje) / 86400000);
+    return Math.round((alvo - base) / 86400000);
   },
 
   /**

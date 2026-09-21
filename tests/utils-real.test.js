@@ -420,3 +420,25 @@ describe('UTILS.gerarUuid', function() {
     expect(ids.size).toBe(200);
   });
 });
+
+describe('UTILS.diasAte — data de referência injetável', function() {
+  test('sem hoje, usa a data atual', function() {
+    const amanha = new Date();
+    amanha.setDate(amanha.getDate() + 1);
+    const iso = amanha.getFullYear() + '-' +
+      String(amanha.getMonth() + 1).padStart(2, '0') + '-' +
+      String(amanha.getDate()).padStart(2, '0');
+    expect(global.UTILS.diasAte(iso)).toBe(1);
+  });
+
+  test('com hoje injetado, mede a partir dele (não do relógio real)', function() {
+    const hoje = new Date(2026, 7, 3); // 03/08/2026
+    expect(global.UTILS.diasAte('2026-08-05', hoje)).toBe(2);
+    expect(global.UTILS.diasAte('2026-08-03', hoje)).toBe(0);
+    expect(global.UTILS.diasAte('2026-08-01', hoje)).toBe(-2);
+  });
+
+  test('data inválida devolve NaN', function() {
+    expect(Number.isNaN(global.UTILS.diasAte('lixo', new Date(2026, 0, 1)))).toBe(true);
+  });
+});

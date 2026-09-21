@@ -214,8 +214,10 @@ var CARTOES = {
    * @returns {{competencia:string, total:number, transacoes:Array,
    *            fechamento:?string, vencimento:?string}}
    */
-  fatura: function(nomeCartao, competencia) {
-    var cartao = this.obter(nomeCartao);
+  fatura: function(nomeCartao, competencia, cartaoPre) {
+    // cartaoPre evita re-resolver obter() (getConfig + varredura) quando quem
+    // chama já tem o cartão em mãos (ex.: COMPROMISSOS.porMes por competência).
+    var cartao = cartaoPre || this.obter(nomeCartao);
     var vazia = {
       competencia: competencia, total: 0, transacoes: [],
       fechamento: null, vencimento: null
@@ -503,7 +505,7 @@ var CARTOES = {
   /** Rótulo curto do próximo vencimento — o que o usuário precisa saber. */
   _rotuloVencimento: function(fatura, hoje) {
     if (!fatura || !fatura.vencimento) return '';
-    var dias = UTILS.diasAte(fatura.vencimento);
+    var dias = UTILS.diasAte(fatura.vencimento, hoje);
     if (!isFinite(dias)) return '';
     if (dias < 0) return 'vencida';
     if (dias === 0) return 'vence hoje';
@@ -525,7 +527,11 @@ var CARTOES = {
     if (secao) secao.style.display = '';
 
     if (totalEl) {
-      var total = this.totalComprometido(hoje);
+      // Reusa os resumos já calculados em vez de chamar totalComprometido, que
+      // rodaria listarResumos (resumo por cartão + varredura de transações) de novo.
+      var total = resumos.reduce(function(acc, r) {
+        return acc + UTILS.paraCentavos(r.utilizado);
+      }, 0) / 100;
       totalEl.textContent = total > 0 ? UTILS.formatarMoeda(total) + ' em faturas' : '';
     }
 

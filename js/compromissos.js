@@ -160,12 +160,15 @@ var COMPROMISSOS = {
         var nome = UTILS.nomeDeConta(c);
         var cartao = CARTOES.obter(nome);
         if (!cartao || !cartao.temCiclo) return;
-        // Enumera competências cujo vencimento pode cair na janela. Um passo a
-        // mais de folga cobre o descolamento competência→vencimento.
-        for (var d = 0; d <= janela; d++) {
+        // Enumera competências cujo vencimento pode cair na janela. Começa em -1:
+        // num cartão "fecha 28 / vence 5" (vencimento <= fechamento), a fatura da
+        // competência ANTERIOR vence neste mês — sem o -1, o mês corrente perdia
+        // essa fatura (e não batia com CARTOES.totalComprometido). Os guardas
+        // abaixo (vencida, paga, fora da janela) evitam contar a mais.
+        for (var d = -1; d <= janela; d++) {
           var comp = CARTOES._competenciaDe(cartao, ref, d);
           if (!comp) continue;
-          var fat = CARTOES.fatura(nome, comp);
+          var fat = CARTOES.fatura(nome, comp, cartao);
           if (!fat || !fat.vencimento || fat.total <= 0) continue;
           // "Ainda vai sair" = vence de hoje em diante e não foi paga. Não uso
           // fat.status: ele é medido contra o relógio real, e aqui `hoje` é
@@ -223,10 +226,12 @@ var COMPROMISSOS = {
     // uma parcela ser descontada do saldo E somada ao comprometido.
     var saldo = (typeof CONTAS !== 'undefined' && CONTAS.saldoTotal)
       ? CONTAS.saldoTotal({ ate: ref }) : 0;
-    var comp = this.comprometido(ref).total;
+    // Guarda o objeto inteiro (não só .total) para o render reusar sem recalcular
+    // comprometido() — que roda CARTOES.totalComprometido/listarResumos.
+    var comp = this.comprometido(ref);
 
     var saldoCent = UTILS.paraCentavos(saldo);
-    var compCent = UTILS.paraCentavos(comp);
+    var compCent = UTILS.paraCentavos(comp.total);
     var dispCent = saldoCent - compCent;
 
     var situacao;
@@ -238,7 +243,8 @@ var COMPROMISSOS = {
       valor: dispCent / 100,
       saldo: saldoCent / 100,
       comprometido: compCent / 100,
-      situacao: situacao
+      situacao: situacao,
+      detalhe: comp
     };
   },
 
@@ -257,7 +263,7 @@ var COMPROMISSOS = {
     if (!valEl) return;
 
     var d = this.disponivel();
-    var c = this.comprometido();
+    var c = d.detalhe; // já calculado dentro de disponivel(); não recalcula
 
     if (d.saldo === 0 && c.total === 0) {
       if (secao) secao.style.display = 'none';
