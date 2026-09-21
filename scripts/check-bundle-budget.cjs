@@ -35,7 +35,9 @@ const BUDGETS = {
   // simulador (dados reais) — aumento intencional.
   // 1410→1415 KB (2026-09-21): confirmar fatura vencida como "ainda devo"
   // (contabiliza contra o limite/comprometido) — aumento intencional.
-  precacheTotal: { max: 1415 * KB, label: 'Precache total (1º acesso)' },
+  // 1415→1418 KB (2026-09-21): alerta de fatura vencida no topo do dashboard
+  // (lembrete básico que leva às faturas) — aumento intencional.
+  precacheTotal: { max: 1418 * KB, label: 'Precache total (1º acesso)' },
   // 580→590 KB (2026-09-13): correção do KPI "Folga poupança" no Orçamento
   // (cálculo da folga da fatia de poupança) + referência de ritmo no Resumo
   // adicionam alguns KB de código — aumento intencional.
@@ -47,7 +49,9 @@ const BUDGETS = {
   // "Criar meta no app" no simulador — aumento intencional.
   // 620→626 KB (2026-09-21): compartilhar "meu mês" e "plano de metas"
   // (resumo-mensal.js + plano-metas.js + handlers) — aumento intencional.
-  appBundle: { max: 626 * KB, label: 'js/app.bundle.js', file: 'js/app.bundle.js' },
+  // 626→628 KB (2026-09-21): "ainda devo" nas faturas + alerta de fatura
+  // vencida no dashboard — aumento intencional.
+  appBundle: { max: 628 * KB, label: 'js/app.bundle.js', file: 'js/app.bundle.js' },
   vendorBundle: { max: 260 * KB, label: 'js/vendor.bundle.js', file: 'js/vendor.bundle.js' },
   cssBundle: { max: 300 * KB, label: 'CSS bundle', glob: /^css\/index-.*\.css$/ },
   // 100→112 KB (2026-09-12): reestruturação da aba Perfil em menu + sub-telas
