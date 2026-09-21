@@ -31,8 +31,10 @@ const INIT_METAS = {
     return t || 'Meta sem nome';
   },
 
-  _renderCard: function(meta, compact) {
-    var prog = METAS.calcularProjecao(meta);
+  _renderCard: function(meta, compact, progArg) {
+    // Aceita a projeção já calculada (a ordenação computa uma por meta) para
+    // não recalcular calcularProjecao — que varre transações — a cada card.
+    var prog = progArg || METAS.calcularProjecao(meta);
     var barClass = prog.concluida ? 'otimo' : (prog.percentual >= 80 ? 'healthy' : 'attention');
     var prazoTxt = '';
     if (meta.prazo) {
@@ -110,34 +112,38 @@ const INIT_METAS = {
       case 'vencida': return 0;
       case 'atrasado': return 1;
       case 'no-ritmo': return 2;
+      case 'sem-ritmo': return 2; // recém-criada: ativa, mas não urgente
       case 'adiantado': return 3;
       default: return 4; // sem-prazo
     }
   },
 
-  /** Ordena metas por urgência; dentro do mesmo grupo, a menos completa antes. */
-  _ordenarPorUrgencia: function(metas) {
+  /**
+   * Calcula a projeção de cada meta UMA vez e ordena por urgência; dentro do
+   * mesmo grupo, a menos completa antes. Devolve {meta, prog} para a renderização
+   * reusar a projeção em vez de recalculá-la. Não muta o array recebido.
+   */
+  _projecoesOrdenadas: function(metas) {
     var self = this;
-    var info = {};
-    metas.forEach(function(m) {
-      var p = METAS.calcularProjecao(m);
-      info[m.id] = { rank: self._ordemUrgencia(p), pct: p.percentual };
+    var arr = metas.map(function(m) {
+      return { meta: m, prog: METAS.calcularProjecao(m) };
     });
-    return metas.slice().sort(function(a, b) {
-      var ra = info[a.id], rb = info[b.id];
-      if (ra.rank !== rb.rank) return ra.rank - rb.rank;
-      return ra.pct - rb.pct;
+    arr.sort(function(a, b) {
+      var ra = self._ordemUrgencia(a.prog), rb = self._ordemUrgencia(b.prog);
+      if (ra !== rb) return ra - rb;
+      return a.prog.percentual - b.prog.percentual;
     });
+    return arr;
   },
 
   renderOrcamento: function() {
     var el = document.getElementById('metas-list');
     if (!el || typeof METAS === 'undefined') return;
-    var metas = this._ordenarPorUrgencia(METAS.listar().filter(function(m) {
+    var ordenadas = this._projecoesOrdenadas(METAS.listar().filter(function(m) {
       return !INIT_METAS._pendenteExclusao[m.id];
     }));
     var headerBtn = document.querySelector('#metas-section [data-action="meta-nova"]');
-    if (metas.length === 0) {
+    if (ordenadas.length === 0) {
       // Uma CTA principal no empty state; esconde o botão do cabeçalho (P1/P2 auditoria)
       if (headerBtn) headerBtn.hidden = true;
       el.innerHTML = '<div class="meta-empty">' +
@@ -148,7 +154,7 @@ const INIT_METAS = {
       '</div>';
     } else {
       if (headerBtn) headerBtn.hidden = false;
-      el.innerHTML = metas.map(function(m) { return INIT_METAS._renderCard(m, false); }).join('');
+      el.innerHTML = ordenadas.map(function(x) { return INIT_METAS._renderCard(x.meta, false, x.prog); }).join('');
     }
     if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(el);
   },
@@ -157,7 +163,7 @@ const INIT_METAS = {
     var el = document.getElementById('dashboard-metas-resumo');
     var sec = document.getElementById('secao-metas-resumo');
     if (!el || typeof METAS === 'undefined') return;
-    var ativas = this._ordenarPorUrgencia(METAS.listar(true).filter(function(m) {
+    var ativas = this._projecoesOrdenadas(METAS.listar(true).filter(function(m) {
       return !INIT_METAS._pendenteExclusao[m.id];
     })).slice(0, 3);
     if (sec) sec.style.display = METAS.listar().length === 0 ? 'none' : '';
@@ -165,7 +171,7 @@ const INIT_METAS = {
       el.innerHTML = '';
       return;
     }
-    el.innerHTML = ativas.map(function(m) { return INIT_METAS._renderCard(m, true); }).join('');
+    el.innerHTML = ativas.map(function(x) { return INIT_METAS._renderCard(x.meta, true, x.prog); }).join('');
     if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(el);
   },
 

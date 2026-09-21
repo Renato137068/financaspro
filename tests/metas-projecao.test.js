@@ -116,6 +116,24 @@ describe('METAS.calcularProjecao — ritmo e diagnóstico', () => {
     expect(p.previsaoConclusao).toBeNull();
   });
 
+  test('meta recém-criada com prazo não é "atrasada" (é "sem-ritmo")', () => {
+    // Criada hoje, ainda sem mês decorrido: chamar de atrasada seria nagar por
+    // algo recém-cadastrado. A frase apresenta o plano, não uma correção.
+    const m = meta({ criadoEm: HOJE.toISOString(), valorAtual: 0, prazo: '2027-02-10' });
+    const p = METAS.calcularProjecao(m, HOJE);
+    expect(p.situacao).toBe('sem-ritmo');
+    expect(p.ajusteMensal).toBe(0);
+    expect(METAS.mensagemProjecao(m, HOJE)).toMatch(/guarde .* por mês/i);
+  });
+
+  test('meta ANTIGA parada (meses decorridos, R$ 0) continua atrasada', () => {
+    // criadoEm 6 meses atrás (default do helper), nada guardado, prazo próximo:
+    // aqui o "atrasado" é legítimo — houve tempo e o ritmo foi zero.
+    const p = METAS.calcularProjecao(meta({ valorAtual: 0, prazo: '2027-02-10' }), HOJE);
+    expect(p.situacao).toBe('atrasado');
+    expect(p.ritmoMensal).toBe(0);
+  });
+
   test('a previsão de conclusão sai como YYYY-MM-DD', () => {
     const p = METAS.calcularProjecao(
       meta({ valorAtual: 6000, prazo: '2027-02-10' }), HOJE,
