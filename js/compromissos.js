@@ -182,18 +182,36 @@ var COMPROMISSOS = {
     }
 
     // ── Contas a pagar pendentes, pelo mês do vencimento ─────────────────────
+    var primeiraChave = primeira.ano + '-' + String(primeira.mes).padStart(2, '0');
     (config.contasPagar || []).forEach(function(conta) {
       if (!conta || conta.status !== 'pendente') return;
+      var valorCent = UTILS.paraCentavos(conta.valor);
       var venc = chaveDe(conta.vencimento);
+
+      // Conta recorrente é UMA linha que rola o vencimento a cada pagamento
+      // (o futuro nunca é materializado), então projetá-la em CADA mês da janela
+      // a partir do vencimento é o desembolso honesto da agenda — e não duplica
+      // nada. (O KPI "comprometido" a conta uma vez só, de propósito: são
+      // perguntas diferentes — reserva do saldo de hoje vs. agenda mês a mês.)
+      if (conta.recorrente) {
+        if (venc && venc > ultimaChave) return; // 1ª ocorrência depois da janela
+        var inicio = (venc && venc > primeiraChave) ? venc : primeiraChave;
+        buckets.forEach(function(bk) {
+          var chaveBk = bk.ano + '-' + String(bk.mes).padStart(2, '0');
+          if (chaveBk >= inicio) bk.contasCent += valorCent;
+        });
+        return;
+      }
+
       var b = porChave[venc];
       if (!b) {
         // Vencida (antes da janela) → devida agora, no primeiro mês. Depois da
         // janela → fora do horizonte, ignora.
-        if (venc && venc < (primeira.ano + '-' + String(primeira.mes).padStart(2, '0'))) b = primeira;
+        if (venc && venc < primeiraChave) b = primeira;
         else if (venc && venc > ultimaChave) return;
         else return;
       }
-      b.contasCent += UTILS.paraCentavos(conta.valor);
+      b.contasCent += valorCent;
     });
 
     return buckets.map(function(b) {
