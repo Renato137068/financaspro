@@ -10,9 +10,11 @@ beforeEach(function() {
   global.UTILS = { mostrarToast: function(msg, tipo) { toasts.push({ msg: msg, tipo: tipo }); } };
   global.PLANO_METAS = { texto: function() { return global.__texto; } };
   global.__texto = 'Meu plano de metas\n1. Viagem';
+  global.compartilharTextoUI = require('../js/utilities/share-texto.js');
 });
 afterEach(function() {
-  delete global.UTILS; delete global.PLANO_METAS; delete global.__texto; delete global.navigator;
+  delete global.UTILS; delete global.PLANO_METAS; delete global.__texto;
+  delete global.navigator; delete global.compartilharTextoUI;
 });
 
 describe('INIT_METAS.compartilharPlano', function() {

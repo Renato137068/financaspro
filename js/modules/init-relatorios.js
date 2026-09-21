@@ -280,7 +280,11 @@ const INIT_RELATORIOS = {
       var rano = RELATORIOS.resumoAno(ano, agora);
       if (rano && rano.mesesComDados > 6) {
         var MESES_ANO = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
-        html += '<h4 class="rel-subtitle">Retrospectiva de ' + ano + '</h4>';
+        html += '<div class="rel-retro-header">' +
+          '<h4 class="rel-subtitle">Retrospectiva de ' + ano + '</h4>' +
+          '<button type="button" class="btn-ghost btn-sm rel-share-btn" data-action="compartilhar-ano" aria-label="Compartilhar retrospectiva do ano">' +
+            '<i data-lucide="share-2" aria-hidden="true"></i> Compartilhar</button>' +
+          '</div>';
         html += '<p class="rel-insight"><i data-lucide="calendar-days" aria-hidden="true"></i> ' +
           'Despesas do ano: <strong>' + UTILS.formatarMoeda(rano.despesas) + '</strong> · média ' +
           UTILS.formatarMoeda(rano.mediaDespesaMensal) + '/mês' +
@@ -307,27 +311,23 @@ const INIT_RELATORIOS = {
  */
 INIT_RELATORIOS.compartilhar = function() {
   if (typeof RESUMO_MENSAL === 'undefined' || !RESUMO_MENSAL.texto) return;
-  var toast = (typeof UTILS !== 'undefined' && UTILS.mostrarToast)
-    ? UTILS.mostrarToast : function() {};
+  if (typeof compartilharTextoUI !== 'function') return;
   var agora = new Date();
-  var texto = RESUMO_MENSAL.texto(agora.getMonth() + 1, agora.getFullYear());
-  if (!texto) { toast('Sem lançamentos neste mês para compartilhar', 'info'); return; }
+  compartilharTextoUI(RESUMO_MENSAL.texto(agora.getMonth() + 1, agora.getFullYear()), {
+    vazio: 'Sem lançamentos neste mês para compartilhar',
+    copiado: 'Resumo copiado'
+  });
+};
 
-  try {
-    if (typeof navigator !== 'undefined' && navigator.share) {
-      // Rejeita quando o usuário cancela — engolir é o comportamento certo.
-      navigator.share({ text: texto }).catch(function() {});
-      return;
-    }
-    if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(texto).then(
-        function() { toast('Resumo copiado', 'success'); },
-        function() { toast('Não foi possível copiar', 'error'); }
-      );
-      return;
-    }
-  } catch (e) { /* ambiente sem share/clipboard */ }
-  toast('Compartilhamento indisponível neste dispositivo', 'info');
+/** Compartilha a retrospectiva do ano corrente (texto do RESUMO_ANUAL). */
+INIT_RELATORIOS.compartilharAno = function() {
+  if (typeof RESUMO_ANUAL === 'undefined' || !RESUMO_ANUAL.texto) return;
+  if (typeof compartilharTextoUI !== 'function') return;
+  var agora = new Date();
+  compartilharTextoUI(RESUMO_ANUAL.texto(agora.getFullYear(), agora), {
+    vazio: 'Ainda não há um ano de dados para a retrospectiva',
+    copiado: 'Retrospectiva copiada'
+  });
 };
 
 if (typeof module !== 'undefined' && module.exports) {
