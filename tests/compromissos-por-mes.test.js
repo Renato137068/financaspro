@@ -59,6 +59,36 @@ describe('COMPROMISSOS.porMes', function() {
     expect(r[0]).toMatchObject({ ano: 2026, mes: 8, cartoes: 500 });
   });
 
+  test('conta a pagar recorrente aparece em TODOS os meses da janela', function() {
+    // Recorrente é uma linha única que rola o vencimento; na agenda ela é um
+    // desembolso mensal, então precisa aparecer em cada mês daqui pra frente.
+    global.DADOS.salvarConfig({
+      saldosIniciais: { Corrente: 5000 },
+      cartoes: [],
+      contasPagar: [
+        { id: 'aluguel', descricao: 'Aluguel', valor: 1800, vencimento: '2026-08-25', status: 'pendente', recorrente: true },
+        { id: 'luz', descricao: 'Luz', valor: 200, vencimento: '2026-09-10', status: 'pendente' }, // única
+      ],
+    });
+    const r = global.COMPROMISSOS.porMes(3, HOJE); // ago, set, out
+    expect(r[0].contas).toBe(1800);        // ago: aluguel
+    expect(r[1].contas).toBe(1800 + 200);  // set: aluguel recorrente + luz única
+    expect(r[2].contas).toBe(1800);        // out: só o aluguel recorrente
+  });
+
+  test('conta recorrente vencida entra desde o primeiro mês da janela', function() {
+    global.DADOS.salvarConfig({
+      saldosIniciais: { Corrente: 5000 },
+      cartoes: [],
+      contasPagar: [
+        { id: 'net', descricao: 'Internet', valor: 100, vencimento: '2026-07-10', status: 'pendente', recorrente: true },
+      ],
+    });
+    const r = global.COMPROMISSOS.porMes(2, HOJE); // ago, set
+    expect(r[0].contas).toBe(100); // agosto (vencida em julho → devida já)
+    expect(r[1].contas).toBe(100); // setembro
+  });
+
   test('devolve a janela pedida, começando no mês corrente', function() {
     cenario();
     const r = global.COMPROMISSOS.porMes(3, HOJE);
