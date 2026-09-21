@@ -35,6 +35,9 @@ const INIT_SIMULADOR = {
       } else if (action === 'sim-calc-meta') {
         e.preventDefault();
         self._calcMeta();
+      } else if (action === 'sim-criar-meta') {
+        e.preventDefault();
+        self._criarMeta();
       }
     });
 
@@ -280,7 +283,66 @@ const INIT_SIMULADOR = {
     html += this._linha('Total que você vai guardar', this._fmt(r.totalAportado));
     if (r.jurosGanhos > 0) html += this._linha('Juros ajudam com', this._fmt(r.jurosGanhos), true);
     html += '</div>';
+
+    // Transforma o cálculo em ação: cria a meta no app com o objetivo, o prazo
+    // e o quanto já se tem. Só oferece quando o módulo de metas existe.
+    if (typeof METAS !== 'undefined' && METAS.criar) {
+      html += '<div class="sim-cta">' +
+        '<label class="sim-label" for="sim-m-nome">Salvar como meta</label>' +
+        '<input class="form-input sim-input" id="sim-m-nome" maxlength="60" placeholder="Ex.: Viagem, Reserva de emergência">' +
+        '<button type="button" class="btn-secundario sim-btn" data-action="sim-criar-meta">' +
+        '<i data-lucide="target" aria-hidden="true"></i> Criar meta no app</button>' +
+        '</div>';
+    }
     this._mostrar(html);
+  },
+
+  /** Cria uma meta a partir do que foi simulado no modo "Meta". */
+  _criarMeta: function() {
+    if (typeof METAS === 'undefined' || !METAS.criar) return;
+    var r = SIMULADOR.aporteParaMeta({
+      objetivo: this._moeda('sim-m-objetivo'),
+      meses: this._int('sim-m-meses'),
+      inicial: this._moeda('sim-m-inicial'),
+      taxaMensal: this._pct('sim-m-taxa'),
+    });
+    if (!r.valido) { this._erro(r.motivo); return; }
+
+    var nomeEl = document.getElementById('sim-m-nome');
+    var titulo = (nomeEl && nomeEl.value ? nomeEl.value : '').trim() || 'Minha meta';
+
+    // Prazo = hoje + meses (data local, no formato YYYY-MM-DD que METAS espera).
+    var prazo = (typeof UTILS !== 'undefined' && UTILS.addMesesClamp)
+      ? UTILS.addMesesClamp(UTILS.dataLocalIso(), r.meses)
+      : null;
+
+    try {
+      METAS.criar({
+        titulo: titulo,
+        valorAlvo: r.objetivo,
+        valorAtual: r.inicial,
+        prazo: prazo,
+        icone: 'target',
+      });
+    } catch (e) {
+      // Cota do plano gratuito: aciona o paywall se houver; senão, avisa.
+      if (e && e.code === 'quota') {
+        if (typeof BILLING !== 'undefined' && BILLING.onPaymentRequired) {
+          BILLING.onPaymentRequired({ message: 'Limite de metas do plano gratuito. Assine o Pro para criar mais.' });
+        } else if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+          UTILS.mostrarToast('Limite de metas do plano gratuito.', 'warning');
+        }
+      } else if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+        UTILS.mostrarToast((e && e.message) || 'Não foi possível criar a meta.', 'error');
+      }
+      return;
+    }
+
+    if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+      UTILS.mostrarToast('Meta criada', 'success');
+    }
+    // Leva o usuário direto para a meta recém-criada.
+    if (typeof mudarAba === 'function') mudarAba('orcamento', { orcSub: 'metas' });
   },
 
   _calcFinanciamento: function() {
