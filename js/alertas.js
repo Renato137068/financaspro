@@ -18,9 +18,9 @@ var ALERTAS = {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   },
 
-  /** Alertas básicos (FREE na nuvem): saldo e orçamento. */
+  /** Alertas básicos (FREE na nuvem): saldo, orçamento e fatura vencida. */
   _tipoBasico: function(tipo) {
-    return tipo === 'saldo' || tipo === 'orcamento';
+    return tipo === 'saldo' || tipo === 'orcamento' || tipo === 'fatura';
   },
 
   _podeAlertasAvancados: function() {
@@ -131,6 +131,40 @@ var ALERTAS = {
         parametros: { descricao: p.descricao, valor: p.valorMedio }
       });
     });
+    }
+
+    // Faturas de cartão vencidas sem confirmação — lembrete básico (free).
+    //
+    // A seção de cartões fica lá embaixo no dashboard; uma fatura que venceu é
+    // obrigação com prazo e não pode depender de rolar a tela até achá-la. Aqui
+    // a pergunta "foi paga?" sobe para o topo, onde o usuário olha primeiro, e a
+    // ação leva direto para as faturas (onde ele responde "sim, paguei" ou
+    // "não, ainda devo"). Vencida sem resposta segue de fora do limite — este
+    // alerta é o empurrão para responder, não uma decisão do app.
+    if (typeof CARTOES !== 'undefined' && CARTOES.listarResumos) {
+      var pendentesFatura = [];
+      CARTOES.listarResumos().forEach(function(r) {
+        (r.naoConfirmadas || []).forEach(function(f) {
+          pendentesFatura.push({ cartao: r.nome, competencia: f.competencia, total: f.total });
+        });
+      });
+      // Da mais recente para a mais antiga; no máximo duas, para lembrar sem
+      // dominar o topo do dashboard.
+      pendentesFatura.sort(function(a, b) { return a.competencia < b.competencia ? 1 : -1; });
+      pendentesFatura.slice(0, 2).forEach(function(f) {
+        var rot = (typeof CARTOES._rotuloCompetencia === 'function')
+          ? CARTOES._rotuloCompetencia(f.competencia) : f.competencia;
+        alertas.push({
+          id: 'fatura-vencida-' + String(f.cartao).toLowerCase() + '-' + f.competencia,
+          tipo: 'fatura',
+          titulo: 'Fatura vencida',
+          msg: 'Fatura de ' + rot + ' do ' + f.cartao + ' ('
+            + UTILS.formatarMoeda(f.total) + ') venceu — foi paga?',
+          gravidade: 'media',
+          acao: 'verFaturas',
+          parametros: {}
+        });
+      });
     }
 
     // Filtrar dispensados
@@ -329,6 +363,7 @@ var ALERTAS = {
       marcarRecorrente: '<i data-lucide="repeat" aria-hidden="true"></i> Marcar recorrente',
       editarTransacao:  '<i data-lucide="pencil" aria-hidden="true"></i> Ver transação',
       aumentarLimite:   '<i data-lucide="arrow-up" aria-hidden="true"></i> Ajustar limite',
+      verFaturas:       '<i data-lucide="credit-card" aria-hidden="true"></i> Ver faturas',
       abrirPaywall:     '<i data-lucide="sparkles" aria-hidden="true"></i> Ver o Pro'
     };
     return labels[acao] || '<i data-lucide="arrow-right" aria-hidden="true"></i> ' + acao;
@@ -386,6 +421,16 @@ var ALERTAS = {
       case 'abrirPaywall':
         if (typeof INIT_BILLING !== 'undefined' && INIT_BILLING.abrirPaywall) {
           INIT_BILLING.abrirPaywall((params && params.message) || 'Alertas que avisam antes do estouro estão no Pro.');
+        }
+        break;
+      case 'verFaturas':
+        // As faturas ficam na seção de cartões do dashboard (aba resumo).
+        if (typeof APP_STORE !== 'undefined') APP_STORE.ui.setAba('resumo');
+        else if (typeof mudarAba === 'function') mudarAba('resumo');
+        var secCartoes = (typeof document !== 'undefined')
+          ? document.getElementById('secao-cartoes') : null;
+        if (secCartoes && secCartoes.scrollIntoView) {
+          secCartoes.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
         break;
     }
