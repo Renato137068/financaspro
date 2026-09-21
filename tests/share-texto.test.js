@@ -45,8 +45,39 @@ describe('compartilharTextoUI', function() {
     expect(toasts.some(function(t) { return /indisponível/i.test(t.msg); })).toBe(true);
   });
 
-  test('cancelar o share não estoura', function() {
-    global.navigator = { share: function() { return Promise.reject(new Error('AbortError')); } };
-    expect(function() { compartilharTextoUI('oi', {}); }).not.toThrow();
+  test('cancelar o share (AbortError) é silêncio — não copia nem avisa', function() {
+    var copiou = false;
+    var err = new Error('cancel'); err.name = 'AbortError';
+    global.navigator = {
+      share: function() { return Promise.reject(err); },
+      clipboard: { writeText: function() { copiou = true; return Promise.resolve(); } },
+    };
+    compartilharTextoUI('oi', { copiado: 'Copiado' });
+    return Promise.resolve().then(function() { return Promise.resolve(); }).then(function() {
+      expect(copiou).toBe(false);
+      expect(toasts.length).toBe(0);
+    });
+  });
+
+  test('falha real do share cai para copiar', function() {
+    var copiado = null;
+    var err = new Error('no'); err.name = 'NotAllowedError';
+    global.navigator = {
+      share: function() { return Promise.reject(err); },
+      clipboard: { writeText: function(t) { copiado = t; return Promise.resolve(); } },
+    };
+    compartilharTextoUI('oi', { copiado: 'Copiado' });
+    return Promise.resolve().then(function() { return Promise.resolve(); }).then(function() {
+      expect(copiado).toBe('oi');
+    });
+  });
+
+  test('falha real sem clipboard avisa', function() {
+    var err = new Error('no'); err.name = 'NotAllowedError';
+    global.navigator = { share: function() { return Promise.reject(err); } };
+    compartilharTextoUI('oi', {});
+    return Promise.resolve().then(function() { return Promise.resolve(); }).then(function() {
+      expect(toasts.some(function(t) { return /Não foi possível compartilhar/.test(t.msg); })).toBe(true);
+    });
   });
 });
