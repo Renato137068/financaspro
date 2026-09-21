@@ -41,6 +41,24 @@ function cenario() {
 }
 
 describe('COMPROMISSOS.porMes', function() {
+  test('cartão "fecha 28 / vence 5": fatura do ciclo anterior entra no mês corrente', function() {
+    // Regressão: o laço começava em offset 0, e num cartão cujo vencimento é no
+    // mês seguinte ao fechamento a fatura que vence NESTE mês é a da competência
+    // anterior (offset -1). Sem o -1, o mês corrente perdia essa fatura.
+    const HOJE2 = new Date(2026, 7, 3); // 03/08/2026
+    global.DADOS.salvarConfig({
+      saldosIniciais: { Corrente: 5000 },
+      cartoes: [{ nome: 'Cartão', limite: 8000, fechamento: 28, vencimento: 5 }],
+      contasPagar: [],
+    });
+    // Compra em 20/07 → competência de julho (fecha 28/07, vence 05/08).
+    global.TRANSACOES.criar('despesa', 500, 'compras', '2026-07-20', 'Compra', '', 'Cartão');
+
+    const r = global.COMPROMISSOS.porMes(2, HOJE2);
+    // Agosto (mês corrente): a fatura de julho vence 05/08 (>= hoje) → 500.
+    expect(r[0]).toMatchObject({ ano: 2026, mes: 8, cartoes: 500 });
+  });
+
   test('devolve a janela pedida, começando no mês corrente', function() {
     cenario();
     const r = global.COMPROMISSOS.porMes(3, HOJE);
