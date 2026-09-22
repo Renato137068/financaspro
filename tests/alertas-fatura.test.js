@@ -13,6 +13,7 @@ const vm = require('vm');
 function loadAlertas(opts) {
   opts = opts || {};
   const naoConfirmadas = opts.naoConfirmadas || [];
+  const vencidasDevidas = opts.vencidasDevidas || [];
   const canAdvanced = opts.canAdvanced !== false;
   const ctx = {
     BILLING: {
@@ -26,7 +27,7 @@ function loadAlertas(opts) {
     },
     CARTOES: {
       listarResumos: function() {
-        return [{ nome: 'Nubank', naoConfirmadas: naoConfirmadas }];
+        return [{ nome: 'Nubank', naoConfirmadas: naoConfirmadas, vencidasDevidas: vencidasDevidas }];
       },
       _rotuloCompetencia: function(c) { return c; },
     },
@@ -88,5 +89,53 @@ describe('ALERTAS — fatura vencida', function() {
     expect(comps).toContain('fatura-vencida-nubank-2026-06');
     expect(comps).toContain('fatura-vencida-nubank-2026-05');
     expect(comps).not.toContain('fatura-vencida-nubank-2026-04');
+  });
+});
+
+describe('ALERTAS — fatura confirmada como "ainda devo"', function() {
+  test('gera alerta de dívida em aberto, com gravidade alta', function() {
+    const A = loadAlertas({ vencidasDevidas: [{ competencia: '2026-06', vencimento: '2026-06-28', total: 1000 }] });
+    const fat = A.verificar(true).find(function(a) { return a.id === 'fatura-devida-nubank-2026-06'; });
+    expect(fat).toBeTruthy();
+    expect(fat.tipo).toBe('fatura');
+    expect(fat.gravidade).toBe('alta');
+    expect(fat.acao).toBe('verFaturas');
+    expect(fat.msg).toContain('em aberto');
+  });
+
+  test('o usuário FREE também vê (básico)', function() {
+    const A = loadAlertas({
+      canAdvanced: false,
+      vencidasDevidas: [{ competencia: '2026-06', vencimento: '2026-06-28', total: 1000 }],
+    });
+    expect(A.verificar(true).some(function(a) { return a.id === 'fatura-devida-nubank-2026-06'; })).toBe(true);
+  });
+
+  test('não confunde com o lembrete "foi paga?" (id e severidade distintos)', function() {
+    // Uma competência é OU não confirmada OU confirmada devida, nunca as duas —
+    // então nunca há dois alertas para a mesma fatura.
+    const A = loadAlertas({
+      naoConfirmadas: [{ competencia: '2026-05', vencimento: '2026-05-28', total: 200 }],
+      vencidasDevidas: [{ competencia: '2026-06', vencimento: '2026-06-28', total: 300 }],
+    });
+    const ids = A.verificar(true).filter(function(a) { return a.tipo === 'fatura'; }).map(function(a) { return a.id; });
+    expect(ids).toContain('fatura-vencida-nubank-2026-05');
+    expect(ids).toContain('fatura-devida-nubank-2026-06');
+  });
+
+  test('no máximo dois lembretes de dívida, dos mais recentes', function() {
+    const A = loadAlertas({
+      vencidasDevidas: [
+        { competencia: '2026-04', vencimento: '2026-04-28', total: 100 },
+        { competencia: '2026-05', vencimento: '2026-05-28', total: 200 },
+        { competencia: '2026-06', vencimento: '2026-06-28', total: 300 },
+      ],
+    });
+    const devidas = A.verificar(true).filter(function(a) { return a.id.indexOf('fatura-devida-') === 0; });
+    expect(devidas).toHaveLength(2);
+    const ids = devidas.map(function(a) { return a.id; });
+    expect(ids).toContain('fatura-devida-nubank-2026-06');
+    expect(ids).toContain('fatura-devida-nubank-2026-05');
+    expect(ids).not.toContain('fatura-devida-nubank-2026-04');
   });
 });
