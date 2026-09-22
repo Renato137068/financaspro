@@ -664,7 +664,7 @@ const INIT_CONFIG = {
     'ultimoExportoDados', 'ultimoAcessoApp',
     'metas', 'contasPagar', 'assinaturas', 'patrimonio', 'openFinance',
     'onboardingConcluido', 'feedbacks',
-    'saldosIniciais', 'faturasPagas', 'recorrentesProcessadas'
+    'saldosIniciais', 'faturasPagas', 'faturasDevidas', 'recorrentesProcessadas'
   ],
 
   /** P1.1: config serializada no backup sem hash/salt/estado do PIN. */
