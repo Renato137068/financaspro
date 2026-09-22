@@ -660,7 +660,7 @@ const INIT_CONFIG = {
     'nome', 'email', 'telefone', 'nascimento', 'endereco', 'cidade',
     'moeda', 'tema', 'alertaOrcamento', 'lembreteDiario',
     'categoriasCustom', 'bancos', 'cartoes',
-    'renda', 'rendaMensal', 'regra503020',
+    'renda', 'rendaMensal', 'regra503020', 'classificacao503020',
     'ultimoExportoDados', 'ultimoAcessoApp',
     'metas', 'contasPagar', 'assinaturas', 'patrimonio', 'openFinance',
     'onboardingConcluido', 'feedbacks',
