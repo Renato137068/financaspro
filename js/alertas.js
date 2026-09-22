@@ -151,16 +151,41 @@ var ALERTAS = {
       // Da mais recente para a mais antiga; no máximo duas, para lembrar sem
       // dominar o topo do dashboard.
       pendentesFatura.sort(function(a, b) { return a.competencia < b.competencia ? 1 : -1; });
+      var rotuloComp = function(c) {
+        return (typeof CARTOES._rotuloCompetencia === 'function') ? CARTOES._rotuloCompetencia(c) : c;
+      };
       pendentesFatura.slice(0, 2).forEach(function(f) {
-        var rot = (typeof CARTOES._rotuloCompetencia === 'function')
-          ? CARTOES._rotuloCompetencia(f.competencia) : f.competencia;
         alertas.push({
           id: 'fatura-vencida-' + String(f.cartao).toLowerCase() + '-' + f.competencia,
           tipo: 'fatura',
           titulo: 'Fatura vencida',
-          msg: 'Fatura de ' + rot + ' do ' + f.cartao + ' ('
+          msg: 'Fatura de ' + rotuloComp(f.competencia) + ' do ' + f.cartao + ' ('
             + UTILS.formatarMoeda(f.total) + ') venceu — foi paga?',
           gravidade: 'media',
+          acao: 'verFaturas',
+          parametros: {}
+        });
+      });
+
+      // Faturas que o usuário CONFIRMOU que ainda deve: dívida vencida conhecida,
+      // que rende juros a cada dia. Some da lista "foi paga?" ao ser confirmada —
+      // sem este lembrete, o app ficaria mudo justo sobre a dívida mais séria.
+      // Gravidade maior que a pergunta, e dispensável por 7 dias como as demais.
+      var devidasFatura = [];
+      CARTOES.listarResumos().forEach(function(r) {
+        (r.vencidasDevidas || []).forEach(function(f) {
+          devidasFatura.push({ cartao: r.nome, competencia: f.competencia, total: f.total });
+        });
+      });
+      devidasFatura.sort(function(a, b) { return a.competencia < b.competencia ? 1 : -1; });
+      devidasFatura.slice(0, 2).forEach(function(f) {
+        alertas.push({
+          id: 'fatura-devida-' + String(f.cartao).toLowerCase() + '-' + f.competencia,
+          tipo: 'fatura',
+          titulo: 'Fatura em aberto',
+          msg: 'Fatura de ' + rotuloComp(f.competencia) + ' do ' + f.cartao + ' ('
+            + UTILS.formatarMoeda(f.total) + ') está vencida e ainda em aberto.',
+          gravidade: 'alta',
           acao: 'verFaturas',
           parametros: {}
         });
