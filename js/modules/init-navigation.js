@@ -544,6 +544,20 @@ const INIT_NAVIGATION = {
   },
 
   /**
+   * Extrato (chunk 'extrato'). INIT_EXTRATO.init liga os listeners da aba e só
+   * pode rodar uma vez — na primeira carga real do chunk. Com o app sem
+   * bundle (dev, testes), o lifecycle já o inicializou no boot.
+   */
+  carregarChunkExtrato: function(callback) {
+    this._ensureChunk('extrato', function() { return typeof INIT_EXTRATO !== 'undefined'; }, function(justLoaded) {
+      if (justLoaded && typeof INIT_EXTRATO !== 'undefined' && INIT_EXTRATO.init) {
+        UTILS.tentar('INIT_EXTRATO.init', function() { INIT_EXTRATO.init(); });
+      }
+      if (typeof callback === 'function') callback();
+    });
+  },
+
+  /**
    * Simulador (chunk 'simulador') + metas: o CTA "Criar meta no app" só aparece
    * com METAS carregado, e METAS mora no chunk 'metas'. Sem pedir os dois, o
    * botão sumia para quem não tinha aberto Metas na sessão.
@@ -709,11 +723,11 @@ function mudarAba(nomeAba, opcoes) {
         });
       }
       if (nomeAba === 'extrato') {
-        if (typeof INIT_EXTRATO !== 'undefined' && INIT_EXTRATO.filtrarExtrato) {
-          INIT_EXTRATO.filtrarExtrato();
-        } else if (typeof filtrarExtrato === 'function') {
-          filtrarExtrato();
-        }
+        INIT_NAVIGATION.carregarChunkExtrato(function() {
+          if (typeof INIT_EXTRATO !== 'undefined' && INIT_EXTRATO.filtrarExtrato) {
+            INIT_EXTRATO.filtrarExtrato();
+          }
+        });
       }
       if (nomeAba === 'orcamento') {
         var orcSubPref = (opcoes && opcoes.orcSub) ? opcoes.orcSub : null;

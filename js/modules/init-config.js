@@ -797,7 +797,8 @@ const INIT_CONFIG = {
         var cat = btn.dataset.cat;
         mudarAba('extrato');
         setTimeout(function() {
-          INIT_EXTRATO.setFiltroCat(cat);
+          // Wrapper global: carrega o chunk 'extrato' se ainda não chegou.
+          setFiltroCat(cat);
         }, 100);
         break;
 

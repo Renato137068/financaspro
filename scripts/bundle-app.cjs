@@ -45,6 +45,11 @@ const LAZY_CHUNKS = {
   assinaturas: ['js/assinaturas.js', 'js/modules/init-assinaturas.js'],
   patrimonio: ['js/patrimonio.js', 'js/modules/init-patrimonio.js'],
 
+  // Extrato — ao abrir a aba ou por um wrapper global (exportar, editar pelo
+  // alerta, "ver no extrato"). Ícones/cores de categoria ficam no eager
+  // (js/core/categoria-visual.js).
+  extrato: ['js/modules/init-extrato.js'],
+
   // Simulador financeiro — só ao abrir Perfil → Simulador.
   simulador: ['js/simulador.js', 'js/modules/init-simulador.js'],
 

@@ -19,6 +19,15 @@ function _extrato(fn) {
   if (typeof INIT_EXTRATO !== 'undefined' && typeof INIT_EXTRATO[fn] === 'function') {
     return INIT_EXTRATO[fn].apply(INIT_EXTRATO, args);
   }
+  // Em produção o Extrato vem no chunk 'extrato'. Exportar, editar pelo alerta
+  // ou "ver no extrato" podem vir de outra tela antes de ele carregar.
+  if (typeof INIT_NAVIGATION !== 'undefined' && INIT_NAVIGATION.carregarChunkExtrato) {
+    INIT_NAVIGATION.carregarChunkExtrato(function() {
+      if (typeof INIT_EXTRATO !== 'undefined' && typeof INIT_EXTRATO[fn] === 'function') {
+        INIT_EXTRATO[fn].apply(INIT_EXTRATO, args);
+      }
+    });
+  }
 }
 
 function _form(fn) {
@@ -44,8 +53,8 @@ function _modals(fn) {
 
 /* ── Extrato → INIT_EXTRATO ── */
 
-function getCatIcon(cat) { return _extrato('getCatIcon', cat) || ''; }
-function getCatCor(cat) { return _extrato('getCatCor', cat) || '#98a39d'; }
+function getCatIcon(cat) { return CATEGORIA_VISUAL.icone(cat); }
+function getCatCor(cat) { return CATEGORIA_VISUAL.cor(cat); }
 function getExtratoMesAno() { return _extrato('getExtratoMesAno'); }
 function navegarPeriodo(dir) { _extrato('navegarPeriodo', dir); }
 function atualizarPeriodoLabel() { _extrato('atualizarPeriodoLabel'); }

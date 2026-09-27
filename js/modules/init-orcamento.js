@@ -13,7 +13,7 @@ const INIT_ORCAMENTO = {
   },
 
   _getCatIcon: function(cat) {
-    if (typeof INIT_EXTRATO !== 'undefined' && INIT_EXTRATO.getCatIcon) return INIT_EXTRATO.getCatIcon(cat);
+    if (typeof CATEGORIA_VISUAL !== 'undefined') return CATEGORIA_VISUAL.icone(cat);
     return this._lucideHtml('pin');
   },
 
@@ -36,13 +36,13 @@ const INIT_ORCAMENTO = {
   },
 
   _getCatCor: function(cat) {
-    if (typeof INIT_EXTRATO !== 'undefined' && INIT_EXTRATO.getCatCor) return INIT_EXTRATO.getCatCor(cat);
+    if (typeof CATEGORIA_VISUAL !== 'undefined') return CATEGORIA_VISUAL.cor(cat);
     return this._corFallback();
   },
 
   _catLucideName: function(cat) {
-    var map = (typeof INIT_EXTRATO !== 'undefined' && INIT_EXTRATO.CATEGORIA_ICONES) ? INIT_EXTRATO.CATEGORIA_ICONES : {};
-    return map[cat] || map[(cat || '').toLowerCase()] || 'pin';
+    if (typeof CATEGORIA_VISUAL !== 'undefined') return CATEGORIA_VISUAL.nomeIcone(cat);
+    return 'pin';
   },
 
   GRUPOS_503020: ['necessidades', 'desejos', 'poupanca'],

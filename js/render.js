@@ -38,18 +38,14 @@ var RENDER = {
   renderUltimasTransacoes:     function() { if (typeof RENDER_CORE !== 'undefined') RENDER_CORE.scheduleRender('dashboard'); },
 
   // ----------------------------------------------------------------
-  // Extrato — chama o módulo INIT_EXTRATO se disponível, com fallback
-  // para a função global filtrarExtrato() ainda presente em init.js.
+  // Extrato — só redesenha se o módulo já estiver carregado. Em produção
+  // ele vem no chunk 'extrato' e se desenha sozinho ao abrir a aba; chamar o
+  // wrapper global aqui baixaria o chunk no primeiro render do dashboard.
   // ----------------------------------------------------------------
 
   renderExtrato: function() {
     if (typeof INIT_EXTRATO !== 'undefined' && typeof INIT_EXTRATO.filtrarExtrato === 'function') {
       INIT_EXTRATO.filtrarExtrato();
-      return;
-    }
-    if (typeof filtrarExtrato === 'function') {
-      var container = document.getElementById('lista-transacoes');
-      filtrarExtrato(container ? container.dataset.filtroAtual || 'todos' : 'todos');
     }
   },
 

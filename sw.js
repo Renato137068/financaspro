@@ -81,6 +81,7 @@ const urlsParaCache = [
   "/js/config-user.js",
   "/js/contas-pagar.js",
   "/js/contas.js",
+  "/js/core/categoria-visual.js",
   "/js/core/config.js",
   "/js/core/dados.js",
   "/js/core/dom-safe.js",

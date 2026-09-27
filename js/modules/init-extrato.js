@@ -1584,47 +1584,15 @@ const INIT_EXTRATO = {
     }
   },
 
-  /**
-   * Obtém ícone da categoria
-   */
+  /** Ícone da categoria (fonte: CATEGORIA_VISUAL, no bundle principal). */
   getCatIcon: function(cat) {
-    var icon = this.CATEGORIA_ICONES[cat] || this.CATEGORIA_ICONES[cat.toLowerCase()] || 'pin';
-    if (typeof lucideIconHtml === 'function') return lucideIconHtml(icon);
-    return '<i data-lucide="' + icon + '" aria-hidden="true"></i>';
+    return CATEGORIA_VISUAL.icone(cat);
   },
 
-  /**
-   * Obtém cor da categoria
-   */
-  getCatCor: function(cat) { 
-    return this.CATEGORIA_CORES[cat] || this.CATEGORIA_CORES[cat.toLowerCase()] || '#98a39d'; 
+  /** Cor da categoria (fonte: CATEGORIA_VISUAL). */
+  getCatCor: function(cat) {
+    return CATEGORIA_VISUAL.cor(cat);
   }
-};
-
-// Ícones por categoria
-INIT_EXTRATO.CATEGORIA_ICONES = {
-  'salario': 'wallet', 'freelance': 'laptop', 'investimentos': 'trending-up', 'vendas': 'shopping-cart',
-  'alimentacao': 'utensils', 'transporte': 'car', 'utilities': 'zap', 'moradia': 'home',
-  'saude': 'pill', 'educacao': 'book-open', 'entretenimento': 'gamepad-2', 'lazer': 'film',
-  'compras': 'shopping-bag', 'vestuario': 'shirt', 'viagem': 'plane', 'pet': 'paw',
-  'assinaturas': 'tv', 'outro': 'pin', 'outros': 'pin',
-  /* Labels com acento (fallback) */
-  'Salário': 'wallet', 'Alimentação': 'utensils', 'Transporte': 'car', 'Saúde': 'pill',
-  'Educação': 'book-open', 'Moradia': 'home', 'Lazer': 'film', 'Freelance': 'laptop',
-  'Investimentos': 'trending-up', 'Vendas': 'shopping-cart', 'Entretenimento': 'gamepad-2', 'Outros': 'pin',
-  'Utilidades': 'zap'
-};
-
-// Cores por categoria
-INIT_EXTRATO.CATEGORIA_CORES = {
-  'salario': '#2f9c6d', 'freelance': '#6366f1', 'investimentos': '#0ea5e9', 'vendas': '#c98a1e',
-  'alimentacao': '#c9573a', 'transporte': '#8b5cf6', 'utilities': '#06b6d4', 'moradia': '#14b8a6',
-  'saude': '#ec4899', 'educacao': '#3c86a8', 'entretenimento': '#f97316', 'lazer': '#a855f7',
-  'compras': '#e11d48', 'vestuario': '#7c3aed', 'viagem': '#0284c7', 'pet': '#84cc16',
-  'assinaturas': '#6366f1', 'outro': '#98a39d', 'outros': '#98a39d',
-  'Salário': '#2f9c6d', 'Alimentação': '#c9573a', 'Transporte': '#8b5cf6', 'Saúde': '#ec4899',
-  'Educação': '#3c86a8', 'Moradia': '#14b8a6', 'Lazer': '#a855f7', 'Freelance': '#6366f1',
-  'Investimentos': '#0ea5e9', 'Vendas': '#c98a1e', 'Entretenimento': '#f97316', 'Outros': '#98a39d'
 };
 
 // Export para compatibilidade

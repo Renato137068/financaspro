@@ -33,6 +33,24 @@ test.describe('chunks lazy no build de produção', function() {
     await expect(page.locator('[data-action="sim-criar-meta"]')).toBeVisible();
   });
 
+  test('Extrato carrega sob demanda e lista os lançamentos', async function({ page }) {
+    await prepareOfflinePage(page);
+    expect(await page.evaluate(function() { return typeof INIT_EXTRATO; })).toBe('undefined');
+
+    await page.evaluate(function() { mudarAba('extrato'); });
+    await expect(page.locator('#lista-transacoes')).toContainText('Salário');
+    expect(await page.evaluate(function() { return typeof INIT_EXTRATO; })).toBe('object');
+  });
+
+  test('editar pelo alerta abre a transação mesmo antes de abrir o Extrato', async function({ page }) {
+    await prepareOfflinePage(page);
+    await page.evaluate(function() { ALERTAS._executarAcao('editarTransacao', { id: 'e2e-1' }); });
+    await expect(page.locator('#novo-descricao')).toHaveValue('Salário');
+    expect(await page.evaluate(function() {
+      return document.getElementById('form-transacao').dataset.editId;
+    })).toBe('e2e-1');
+  });
+
   test('"Refazer tour" carrega o tour sob demanda', async function({ page }) {
     await prepareOfflinePage(page);
     expect(await page.evaluate(function() { return typeof ONBOARDING; })).toBe('undefined');

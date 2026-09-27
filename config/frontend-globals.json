@@ -78,6 +78,7 @@
     "CALENDARIO": "writable",
     "Capacitor": "writable",
     "CARTOES": "writable",
+    "CATEGORIA_VISUAL": "writable",
     "CATEGORIAS": "writable",
     "CATEGORIES": "writable",
     "CATEGORIZADOR": "writable",
