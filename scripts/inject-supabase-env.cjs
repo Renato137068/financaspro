@@ -4,12 +4,15 @@
  * Uso: SUPABASE_URL=… SUPABASE_ANON_KEY=… node scripts/inject-supabase-env.cjs
  * Sem env vars: no-op (mantém defaults em _FP_CLOUD_*).
  * --clear: zera _FP_ENV_* de volta para ''.
+ * [caminho/config.js]: alvo alternativo (testes operam numa cópia, sem regravar
+ * o js/core/config.js real no meio da suíte).
  */
 'use strict';
 const fs = require('fs');
 const path = require('path');
 
-const cfgPath = path.join(__dirname, '..', 'js', 'core', 'config.js');
+const cfgPath = process.argv.slice(2).find((a) => !a.startsWith('--'))
+  || path.join(__dirname, '..', 'js', 'core', 'config.js');
 let src = fs.readFileSync(cfgPath, 'utf8');
 
 if (!/var _FP_ENV_URL\s*=/.test(src) || !/var _FP_ENV_ANON\s*=/.test(src)) {

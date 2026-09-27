@@ -12,38 +12,26 @@ const path = require('path');
 const root = path.join(__dirname, '..');
 const distSwPath = path.join(root, 'dist', 'sw.js');
 const temDist = fs.existsSync(distSwPath);
+const fingerprint = require('../scripts/source-fingerprint.cjs');
+const { BUDGETS, precacheStats } = require('../scripts/check-bundle-budget.cjs');
 
 /**
- * O `dist/` é mais antigo que o código-fonte?
+ * O `dist/` foi gerado a partir de OUTRO código-fonte?
  *
  * Importa porque os assets do Vite têm hash no nome: editar um CSS muda o nome
  * do arquivo gerado, e o `sw.js` do build anterior passa a apontar para um
  * arquivo que não existe mais. O teste acusaria "precache quebrado" quando o
  * problema real é apenas build desatualizado.
  *
- * No CI a ordem é build → teste, então isso nunca acontece. Localmente,
- * acontece toda vez que alguém mexe no CSS e roda `npm test` sem rebuildar —
- * e um vermelho enganoso é pior que nenhum teste, porque ensina a ignorar.
+ * Compara pelo CONTEÚDO (hash que o build carimba em dist/), não por mtime.
+ * A guarda antiga comparava mtime e pulava estes testes em TODO run de CI:
+ * build-mode-residual.test.js regrava js/core/config.js com o mesmo conteúdo
+ * durante a suíte, e isso bastava para o fonte parecer "mais novo" que o build.
+ * Um dist/ sem carimbo (build anterior a esta guarda) conta como desatualizado.
  */
 function distDesatualizado() {
   if (!temDist) return false;
-  const distMtime = fs.statSync(distSwPath).mtimeMs;
-
-  let maisRecente = 0;
-  for (const dir of ['css', 'js', 'index.html']) {
-    const alvo = path.join(root, dir);
-    if (!fs.existsSync(alvo)) continue;
-    (function varrer(p) {
-      const st = fs.statSync(p);
-      if (st.isDirectory()) {
-        for (const f of fs.readdirSync(p)) varrer(path.join(p, f));
-      } else if (st.mtimeMs > maisRecente) {
-        maisRecente = st.mtimeMs;
-      }
-    })(alvo);
-  }
-
-  return maisRecente > distMtime;
+  return fingerprint.ler() !== fingerprint.calcular();
 }
 
 const desatualizado = distDesatualizado();
@@ -56,14 +44,28 @@ function lerPrecache(file) {
   return JSON.parse(bloco[1]);
 }
 
-if (desatualizado) {
+// No CI o build roda imediatamente antes dos testes. Se mesmo assim o dist/
+// não bate com o fonte, algo reescreveu js/ ou css/ no meio do caminho — e
+// pular em silêncio foi exatamente o que escondeu estes testes por meses.
+const noCI = !!process.env.CI;
+
+if (desatualizado && !noCI) {
   // Aviso explícito: sem ele o desenvolvedor não entende por que os testes de
   // precache simplesmente sumiram do relatório.
   // eslint-disable-next-line no-console
   console.warn(
-    '[sw-precache] dist/ está mais antigo que o código-fonte — testes de precache pulados.\n' +
+    '[sw-precache] dist/ não corresponde ao código-fonte atual — testes de precache pulados.\n' +
     '              Rode `npm run build` para validá-los.',
   );
+}
+
+if (desatualizado && noCI) {
+  test('dist/ corresponde ao código-fonte (CI roda build antes dos testes)', () => {
+    throw new Error(
+      'dist/.source-fingerprint não bate com css/, js/ e index.html. Algum passo entre ' +
+      '`npm run build` e os testes reescreveu o código-fonte — os testes de precache não rodaram.',
+    );
+  });
 }
 
 const descreveDist = (temDist && !desatualizado) ? describe : describe.skip;
@@ -137,19 +139,12 @@ descreveDist('service worker de produção — precache', () => {
     expect(ausentes).toEqual([]);
   });
 
-  test('peso total do primeiro acesso abaixo de 1 MB', () => {
-    const vistos = new Set();
-    let total = 0;
-
-    for (const u of urls) {
-      const rel = u.replace(/^\//, '') || 'index.html';
-      if (vistos.has(rel)) continue;
-      vistos.add(rel);
-      const full = path.join(root, 'dist', rel);
-      if (fs.existsSync(full)) total += fs.statSync(full).size;
-    }
-
-    expect(total).toBeLessThan(1350 * 1024);
+  test('peso total do primeiro acesso dentro do orçamento (check-bundle-budget)', () => {
+    // Mesma conta e mesmo teto do gate de CI: um número copiado aqui divergia
+    // do orçamento a cada aumento registrado lá (e ninguém via, porque este
+    // teste era pulado).
+    const { total } = precacheStats();
+    expect(total).toBeLessThanOrEqual(BUDGETS.precacheTotal.max);
   });
 });
 

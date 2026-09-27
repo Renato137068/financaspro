@@ -2,6 +2,7 @@
  * build-mode-residual.test.js — residuais da reauditoria (local mode, PIN flag, OCR SRI).
  */
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { execSync } = require('child_process');
 
@@ -18,19 +19,29 @@ describe('Build mode local vs cloud', () => {
     expect(cfg).toContain('_FP_ENV_ANON');
   });
 
+  // Os scripts operam numa CÓPIA do config.js. Regravar o real no meio da
+  // suíte (mesmo restaurando o conteúdo) invalidava o build que outros testes
+  // inspecionam — sw-precache.test.js passou meses pulado no CI por isso.
+  let cfgPath;
+  beforeEach(() => {
+    cfgPath = path.join(os.tmpdir(), 'fp-config-' + process.pid + '-' + Date.now() + '.js');
+    fs.copyFileSync(path.join(root, 'js/core/config.js'), cfgPath);
+  });
+  afterEach(() => {
+    try { fs.unlinkSync(cfgPath); } catch (_e) { /* */ }
+  });
+
   test('set-build-mode alterna e restaura cloud', () => {
     const script = path.join(root, 'scripts/set-build-mode.cjs');
-    const cfgPath = path.join(root, 'js/core/config.js');
-    execSync('node "' + script + '" local', { stdio: 'pipe' });
+    execSync('node "' + script + '" local "' + cfgPath + '"', { stdio: 'pipe' });
     expect(fs.readFileSync(cfgPath, 'utf8')).toContain("FP_BUILD_MODE = 'local'");
-    execSync('node "' + script + '" cloud', { stdio: 'pipe' });
+    execSync('node "' + script + '" cloud "' + cfgPath + '"', { stdio: 'pipe' });
     expect(fs.readFileSync(cfgPath, 'utf8')).toContain("FP_BUILD_MODE = 'cloud'");
   });
 
   test('inject-supabase-env sobrescreve e --clear restaura', () => {
     const script = path.join(root, 'scripts/inject-supabase-env.cjs');
-    const cfgPath = path.join(root, 'js/core/config.js');
-    execSync('node "' + script + '"', {
+    execSync('node "' + script + '" "' + cfgPath + '"', {
       stdio: 'pipe',
       env: {
         ...process.env,
@@ -41,7 +52,7 @@ describe('Build mode local vs cloud', () => {
     let cfg = fs.readFileSync(cfgPath, 'utf8');
     expect(cfg).toContain("var _FP_ENV_URL = 'https://example-project.supabase.co'");
     expect(cfg).toContain("var _FP_ENV_ANON = 'test-anon-key'");
-    execSync('node "' + script + '" --clear', { stdio: 'pipe' });
+    execSync('node "' + script + '" --clear "' + cfgPath + '"', { stdio: 'pipe' });
     cfg = fs.readFileSync(cfgPath, 'utf8');
     expect(cfg).toContain("var _FP_ENV_URL = ''");
     expect(cfg).toContain("var _FP_ENV_ANON = ''");

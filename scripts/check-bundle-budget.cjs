@@ -114,52 +114,60 @@ function fmt(bytes) {
   return `${(bytes / KB).toFixed(0)} KB`;
 }
 
-if (!fs.existsSync(dist)) {
-  console.error('[bundle-budget] dist/ ausente — rode `npm run build` antes.');
-  process.exit(reportOnly ? 0 : 1);
-}
-
-const falhas = [];
-console.log('\n[bundle-budget] Orçamento do build de produção\n');
-
-const pc = precacheStats();
-if (pc) {
-  const b = BUDGETS.precacheTotal;
-  const ok = pc.total <= b.max;
-  if (!ok) falhas.push(`${b.label}: ${fmt(pc.total)} (limite ${fmt(b.max)})`);
-  console.log(`  ${ok ? '✓' : '✗'} ${b.label.padEnd(30)} ${fmt(pc.total).padStart(9)}  / ${fmt(b.max)}  (${pc.count} URLs)`);
-
-  if (pc.ausentes.length) {
-    console.log(`\n  ⚠ ${pc.ausentes.length} URL(s) no precache não existem em dist/:`);
-    pc.ausentes.slice(0, 5).forEach(u => console.log(`      ${u}`));
-    falhas.push(`precache referencia ${pc.ausentes.length} arquivo(s) inexistente(s)`);
+function main() {
+  if (!fs.existsSync(dist)) {
+    console.error('[bundle-budget] dist/ ausente — rode `npm run build` antes.');
+    process.exit(reportOnly ? 0 : 1);
   }
-} else {
-  console.log('  ⚠ não foi possível ler o precache de dist/sw.js');
+
+  const falhas = [];
+  console.log('\n[bundle-budget] Orçamento do build de produção\n');
+
+  const pc = precacheStats();
+  if (pc) {
+    const b = BUDGETS.precacheTotal;
+    const ok = pc.total <= b.max;
+    if (!ok) falhas.push(`${b.label}: ${fmt(pc.total)} (limite ${fmt(b.max)})`);
+    console.log(`  ${ok ? '✓' : '✗'} ${b.label.padEnd(30)} ${fmt(pc.total).padStart(9)}  / ${fmt(b.max)}  (${pc.count} URLs)`);
+
+    if (pc.ausentes.length) {
+      console.log(`\n  ⚠ ${pc.ausentes.length} URL(s) no precache não existem em dist/:`);
+      pc.ausentes.slice(0, 5).forEach(u => console.log(`      ${u}`));
+      falhas.push(`precache referencia ${pc.ausentes.length} arquivo(s) inexistente(s)`);
+    }
+  } else {
+    console.log('  ⚠ não foi possível ler o precache de dist/sw.js');
+  }
+
+  for (const [, b] of Object.entries(BUDGETS)) {
+    if (!b.file && !b.glob) continue;
+    const bytes = b.file ? size(b.file) : findByPattern(b.glob).reduce((s, f) => s + size(f), 0);
+    if (bytes === 0) { console.log(`  – ${b.label.padEnd(30)} ${'ausente'.padStart(9)}`); continue; }
+    const ok = bytes <= b.max;
+    if (!ok) falhas.push(`${b.label}: ${fmt(bytes)} (limite ${fmt(b.max)})`);
+    console.log(`  ${ok ? '✓' : '✗'} ${b.label.padEnd(30)} ${fmt(bytes).padStart(9)}  / ${fmt(b.max)}`);
+  }
+
+  if (pc && pc.itens.length) {
+    console.log('\n  Maiores itens do precache:');
+    pc.itens.slice(0, 8).forEach(([rel, bytes]) => {
+      console.log(`      ${fmt(bytes).padStart(9)}  ${rel}`);
+    });
+  }
+
+  if (falhas.length && !reportOnly) {
+    console.error('\n[bundle-budget] ✗ orçamento estourado:\n');
+    falhas.forEach(f => console.error(`   · ${f}`));
+    console.error('\n  Se o aumento for intencional, ajuste BUDGETS neste script');
+    console.error('  no mesmo commit — assim a decisão fica registrada no histórico.\n');
+    process.exit(1);
+  }
+
+  console.log(`\n[bundle-budget] ✓ dentro do orçamento\n`);
 }
 
-for (const [, b] of Object.entries(BUDGETS)) {
-  if (!b.file && !b.glob) continue;
-  const bytes = b.file ? size(b.file) : findByPattern(b.glob).reduce((s, f) => s + size(f), 0);
-  if (bytes === 0) { console.log(`  – ${b.label.padEnd(30)} ${'ausente'.padStart(9)}`); continue; }
-  const ok = bytes <= b.max;
-  if (!ok) falhas.push(`${b.label}: ${fmt(bytes)} (limite ${fmt(b.max)})`);
-  console.log(`  ${ok ? '✓' : '✗'} ${b.label.padEnd(30)} ${fmt(bytes).padStart(9)}  / ${fmt(b.max)}`);
-}
+// BUDGETS é a fonte única dos limites: tests/sw-precache.test.js importa daqui
+// em vez de repetir números que envelhecem em silêncio.
+module.exports = { BUDGETS, precacheStats };
 
-if (pc && pc.itens.length) {
-  console.log('\n  Maiores itens do precache:');
-  pc.itens.slice(0, 8).forEach(([rel, bytes]) => {
-    console.log(`      ${fmt(bytes).padStart(9)}  ${rel}`);
-  });
-}
-
-if (falhas.length && !reportOnly) {
-  console.error('\n[bundle-budget] ✗ orçamento estourado:\n');
-  falhas.forEach(f => console.error(`   · ${f}`));
-  console.error('\n  Se o aumento for intencional, ajuste BUDGETS neste script');
-  console.error('  no mesmo commit — assim a decisão fica registrada no histórico.\n');
-  process.exit(1);
-}
-
-console.log(`\n[bundle-budget] ✓ dentro do orçamento\n`);
+if (require.main === module) main();
