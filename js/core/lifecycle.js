@@ -442,11 +442,10 @@ const LIFECYCLE_BOOT = {
         if (typeof ONBOARDING !== 'undefined' && ONBOARDING.iniciar) ONBOARDING.iniciar();
       }, 400);
 
-      // Recorrentes devidas. Em modo local o próprio cliente materializa —
-      // até aqui isso dependia exclusivamente do worker BullMQ do backend, e
-      // quem usava o app offline cadastrava "Aluguel mensal" e nunca via o
-      // lançamento aparecer. Havendo sessão na nuvem, RECORRENTES.processar
-      // devolve vazio e o worker segue como dono do processo.
+      // Recorrentes devidas: o próprio cliente materializa, no modo local e na
+      // nuvem Supabase (que não tem worker de recorrência — ver
+      // RECORRENTES._ehModoLocal e docs/adr/0004). Só a API Express legada,
+      // quando ativa, deixa o processo com o worker BullMQ.
       if (typeof RECORRENTES !== 'undefined' && RECORRENTES.processarNaAbertura) {
         try { RECORRENTES.processarNaAbertura(); } catch (e) {
           if (typeof OBS !== 'undefined' && OBS.captureError) {

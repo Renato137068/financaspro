@@ -1,15 +1,15 @@
 # FinançasPro
 
-App de finanças pessoais com PWA, experiência mobile/Android e API SaaS opcional. Frontend em JavaScript vanilla; backend com Express, Prisma/Postgres, JWT, Redis/BullMQ e Stripe (opcional).
+App de finanças pessoais com PWA e app Android. Funciona sem conta (dados só no aparelho) e, com conta, sincroniza pelo Supabase (Auth, Postgres com RLS e Edge Functions de billing). Frontend em JavaScript vanilla; schema do banco em Prisma. A API Express em `backend/` é legado congelado ([ADR 0004](docs/adr/0004-supabase-fonte-de-verdade-express-congelado.md)).
 
 ## Funcionalidades
 
 - Dashboard mensal de receitas, despesas e saldo
 - Cadastro de transações, contas, orçamentos e recorrências
 - Extrato com filtros; exportação local livre; na nuvem FREE limitada, Pro ilimitada
-- Autenticação via API com access/refresh token
-- Sincronização local/remota quando a API está configurada
-- Base SaaS com organizações, planos, billing e workers
+- Conta na nuvem com Supabase Auth (e-mail/senha, verificação em duas etapas)
+- Sincronização entre aparelhos pelo Supabase, com RLS por usuário/organização
+- Organizações, planos e assinatura (Google Play e Stripe) via Edge Functions
 
 ## Requisitos
 
@@ -78,12 +78,14 @@ O CI roda lint, testes e build em Node 22 e 24.
 | `js/core/` | Config, persistência, store, validações |
 | `js/modules/` | Inicialização por área da interface |
 | `js/services/` | Actions e serviços reutilizáveis |
-| `backend/` | API Express (rotas, services, middlewares) |
-| `prisma/` | Schema e migrações |
-| `tests/` | Testes unitários e segurança estática |
+| `supabase/` | RLS, funções SQL, Edge Functions e testes pgTAP |
+| `prisma/` | Schema e migrações (dono das tabelas) |
+| `backend/` | API Express — legado congelado, ver `backend/README.md` |
+| `tests/` | Unidade, app inteiro em jsdom (`tests/app-*`) e segurança estática |
+| `e2e/` | Playwright contra o build de produção |
 | `android/` | Projeto Capacitor (gerado após `cap add android`) |
 
-Documentação SaaS: [`docs/ARQUITETURA_SAAS.md`](docs/ARQUITETURA_SAAS.md)  
+Arquitetura: [`docs/ARQUITETURA_SAAS.md`](docs/ARQUITETURA_SAAS.md) · Decisões: [`docs/adr/`](docs/adr/)  
 Publicação Android: [`docs/PLAY_STORE.md`](docs/PLAY_STORE.md)
 
 ## PWA e Android

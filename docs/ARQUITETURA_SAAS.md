@@ -1,353 +1,112 @@
-# FinancasPro - Arquitetura SaaS
+# FinançasPro — Arquitetura
 
-## 1. Analise da arquitetura atual
+Retrato do sistema em 27/09/2026 (versão 11.3.18). As decisões que explicam o
+porquê de cada escolha estão em [`docs/adr/`](adr/).
 
-### Mapa de dependencia
-
-```text
-index.html
-  -> config.js
-  -> categorizador.js
-  -> categorias.js -> DADOS
-  -> aprendizado.js -> DADOS
-  -> parser.js
-  -> score.js
-  -> pipeline.js -> PARSER, CATEGORIZADOR, SCORE, DOM
-  -> dados.js -> localStorage, API HTTP, sessao, CONFIG
-  -> utils.js -> CONFIG, DOM, localStorage probe
-  -> state.js -> DADOS
-  -> transactionService.js -> puro
-  -> budgetService.js -> TRANSACTION_SERVICE
-  -> healthService.js -> localStorage, DADOS, CONFIG_USER
-  -> domUtils.js -> DOM
-  -> validations.js -> CONFIG, UTILS
-  -> transacoes.js -> DADOS, UTILS, TRANSACTION_SERVICE, APP_STATE
-  -> contas.js -> DADOS, UTILS, DOM
-  -> orcamento.js -> DADOS, TRANSACOES, BUDGET_SERVICE, APP_STATE
-  -> automacao.js -> DADOS, TRANSACOES, CATEGORIAS, DOM
-  -> render.js -> TRANSACOES, ORCAMENTO, UTILS, DOM
-  -> insights.js -> DADOS, TRANSACOES
-  -> config-user.js -> DADOS, UTILS, DOM
-  -> pin.js -> DADOS, DOM, WebCrypto
-  -> authController.js -> DADOS, APP_BOOTSTRAP, UTILS, DOM
-  -> app-bootstrap.js -> inicializa todos
-  -> init.js -> eventos, modais, import/export, formularios
-  -> shortcuts.js -> DOM
-  -> sw-register.js -> service worker
-```
-
-### Problemas encontrados
-
-- `init.js` concentra responsabilidades demais: autenticacao, formularios, modais, import/export, navegacao e funcoes utilitarias de UI.
-- `DADOS` mistura persistencia local, chamadas de API, sessao, migracao e sincronizacao.
-- `TRANSACOES`, `UTILS` e `ORCAMENTO` duplicavam regras financeiras de validacao, filtro e agregacao.
-- Dependencias globais ocultas: os modulos dependem da ordem dos `<script>` e de objetos globais (`DADOS`, `UTILS`, `TRANSACOES`).
-- Persistencia local nao tinha schema central para colecoes; parte de orcamento e recorrentes fica dentro de `config`.
-- UI chama regras diretamente; isso dificulta levar a mesma regra para backend.
-
-### Mudancas ja aplicadas
-
-- Criado `js/transactionService.js` com funcoes puras para criar transacao, filtrar, calcular saldo e agregacoes.
-- Criado `js/budgetService.js` com funcoes puras para limites e status de orcamento.
-- Criado `js/state.js` com store central simples e `subscribe`.
-- `transacoes.js`, `orcamento.js` e `dados.js` foram adaptados para usar as novas camadas sem quebrar compatibilidade.
-- Criado `js/authController.js`; autenticacao/sessao saiu de `init.js`.
-- Criado `js/healthService.js`; checagem de storage/backup saiu de `init.js`.
-
-## 2. Auditoria da camada de dados
-
-### Estado atual
-
-- `localStorage`:
-  - `fp-transacoes`
-  - `fp-config`
-  - `fp-contas`
-  - `aprendizado_historico`
-  - `_rascunho_transacao`
-  - `fp-api-token`
-  - `fp-api-user`
-- Backend local atual:
-  - `.data/financaspro.json`
-  - API Node em `backend/server.js`
-
-### Riscos
-
-- Sem constraint real: `localStorage` aceita qualquer shape.
-- Sem backup automatico versionado.
-- Quota do navegador pode falhar.
-- Alteracoes simultaneas em abas diferentes podem sobrescrever dados.
-- Token em `localStorage` facilita roubo por XSS; em SaaS real, preferir session cookie httpOnly ou SDK Supabase.
-- `config` acumula preferencias, orcamentos, PIN e recorrentes; isso dificulta migracao.
-
-### Schema JSON alvo
-
-```json
-{
-  "schemaVersion": 3,
-  "user": {
-    "id": "uuid",
-    "name": "Renato",
-    "email": "renato@email.com",
-    "currency": "BRL",
-    "theme": "light",
-    "createdAt": "2026-05-05T00:00:00.000Z",
-    "updatedAt": "2026-05-05T00:00:00.000Z"
-  },
-  "categories": [
-    {
-      "id": "uuid",
-      "userId": "uuid",
-      "type": "despesa",
-      "slug": "alimentacao",
-      "name": "Alimentacao",
-      "color": "#10b981",
-      "active": true,
-      "createdAt": "2026-05-05T00:00:00.000Z"
-    }
-  ],
-  "transactions": [
-    {
-      "id": "uuid",
-      "userId": "uuid",
-      "type": "despesa",
-      "amount": 150.5,
-      "categoryId": "uuid",
-      "date": "2026-05-05",
-      "description": "Mercado",
-      "accountId": "uuid",
-      "cardId": null,
-      "source": "manual",
-      "createdAt": "2026-05-05T00:00:00.000Z",
-      "updatedAt": "2026-05-05T00:00:00.000Z"
-    }
-  ],
-  "budgets": [
-    {
-      "id": "uuid",
-      "userId": "uuid",
-      "categoryId": "uuid",
-      "month": "2026-05",
-      "limitAmount": 800,
-      "createdAt": "2026-05-05T00:00:00.000Z",
-      "updatedAt": "2026-05-05T00:00:00.000Z"
-    }
-  ]
-}
-```
-
-### Estrategia de migracao
-
-1. Ler `fp-transacoes`, `fp-config`, `fp-contas`.
-2. Criar categorias padrao por slug e manter mapa `slug -> categoryId`.
-3. Converter `transacoes[].tipo` para `transactions[].type`.
-4. Converter `transacoes[].valor` para `transactions[].amount`.
-5. Converter `config.orcamentos` para linhas de `budgets`.
-6. Gravar snapshot migrado com `schemaVersion: 3`.
-7. Manter fallback por uma versao: se backend falhar, app ainda le localStorage legado.
-
-## 3. Backend de baixo custo
-
-Opcao recomendada: Supabase.
-
-### Arquitetura
+## Visão geral
 
 ```text
-SPA Vanilla JS
-  -> Supabase Auth
-  -> Supabase Postgres + Row Level Security
-  -> Edge Functions futuras para rotinas sensiveis
-  -> Storage opcional para anexos/importacoes
+ App (PWA / Android via Capacitor)
+ ├─ scripts clássicos em js/  →  app.bundle.js (eager) + js/lazy/*.bundle.js
+ ├─ dados no aparelho: localStorage + IndexedDB (cifragem opcional AES-GCM)
+ └─ com conta: Supabase
+      ├─ Auth (e-mail/senha, TOTP)
+      ├─ PostgREST direto nas tabelas, protegido por RLS
+      └─ Edge Functions: billing Stripe/Play, convites, trial, relatórios de erro
+ Schema das tabelas: Prisma (prisma/migrations)  ·  RLS e funções: supabase/migrations
+ API Express (backend/): legado congelado — ADR 0004
 ```
 
-### Tabelas
+O app funciona sem conta (modo local, dados só no aparelho). Com conta, os
+mesmos dados sincronizam com o Supabase.
 
-```sql
-profiles (
-  id uuid primary key references auth.users(id),
-  name text not null,
-  currency text not null default 'BRL',
-  theme text not null default 'light',
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-)
+## Frontend
 
-categories (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id),
-  type text not null check (type in ('receita', 'despesa')),
-  slug text not null,
-  name text not null,
-  color text,
-  active boolean not null default true,
-  created_at timestamptz not null default now(),
-  unique(user_id, slug, type)
-)
+- **Scripts clássicos com globais.** Cada `var NOME = {…}` no topo de um
+  arquivo de `js/` é global, e a ordem das tags em `index.html` define as
+  dependências. A migração para ES Modules está em
+  [ADR 0002](adr/0002-migracao-frontend-es-modules.md). O ESLint aplica
+  `no-undef` com a lista gerada em `config/frontend-globals.json`
+  (`npm run globals:update`; o CI confere com `check:globals`).
+- **Organização:** `js/core/` (config, dados, store, sync, utilidades de base),
+  `js/services/` (regras puras), `js/modules/init-*.js` (telas),
+  `js/utilities/` (transversais: OBS, funil, cifragem local, foco),
+  `js/components/` (gráficos).
+- **Build** (`npm run build`): Vite para CSS/HTML, depois
+  `scripts/bundle-app.cjs` concatena e minifica os scripts em
+  `vendor.bundle.js` (supabase-js, lucide) e `app.bundle.js`, e separa os
+  chunks lazy.
+- **Chunks lazy** (`LAZY_CHUNKS` em `scripts/bundle-app.cjs`), carregados por
+  `LAZY.load()` ou `INIT_NAVIGATION._ensureChunk()` na primeira abertura da
+  tela: previsão, relatórios, anexos, metas, assinaturas, patrimônio,
+  simulador, onboarding e `conta` (paywall, Play Billing, 2FA, Open Finance).
+  `tests/lazy-chunks.test.js` exige um carregador para cada chunk.
+- **Orçamento do bundle** (`npm run check:bundle`): o teto só desce,
+  travado por `tests/bundle-budget-teto.test.js`.
+- **Service worker** (`sw.js`, gerado por `scripts/generate-sw-cache.cjs`):
+  precache seletivo do app shell ([ADR 0003](adr/0003-precache-seletivo-service-worker.md));
+  nada de origem cruzada entra no cache. Desligado no app nativo.
+- **CSP de produção** endurecida no build (`scripts/harden-csp.cjs`): sem
+  `unsafe-inline` em script; `connect-src` só com o Supabase.
 
-accounts (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id),
-  name text not null,
-  type text not null,
-  created_at timestamptz not null default now()
-)
+## Dados no aparelho
 
-transactions (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id),
-  type text not null check (type in ('receita', 'despesa')),
-  amount numeric(14,2) not null check (amount > 0),
-  category_id uuid references categories(id),
-  account_id uuid references accounts(id),
-  card_id uuid references accounts(id),
-  date date not null,
-  description text,
-  source text not null default 'manual',
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-)
+- `DADOS` (`js/core/dados.js`) é a única porta de leitura e escrita.
+  Lançamentos ficam no localStorage e migram para o IndexedDB acima de ~2.500
+  itens ou 3 MB.
+- **Cifragem opcional** (`js/utilities/local-crypto.js`): AES-GCM com chave
+  PBKDF2 (600 mil iterações) sobre localStorage, IndexedDB e anexos. Sem frase
+  própria, a chave fica no aparelho; a interface diz isso.
+- **Dinheiro em centavos** nas somas (`UTILS.somarMoeda`), datas por
+  componentes locais (sem deriva de fuso).
+- **Fila de persistência** (`js/core/persist-queue.js`) e merge entre abas e
+  aparelhos (`js/core/sync-merge.js`), com modal de conflito.
 
-budgets (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id),
-  category_id uuid not null references categories(id),
-  month text not null,
-  limit_amount numeric(14,2) not null check (limit_amount > 0),
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  unique(user_id, category_id, month)
-)
-```
+## Nuvem (Supabase)
 
-Todas as tabelas devem ter RLS:
+- **Auth:** `js/core/supabase.js` (`SUPA_AUTH`), sessão persistida no aparelho,
+  TOTP opcional com códigos de recuperação.
+- **Sync:** `js/core/supabase-sync.js` lê e grava direto nas tabelas
+  (`Transaction`, `Account`, `Budget`, `RecurringTransaction`, `UserConfig`),
+  sempre filtrado pela RLS.
+- **Organizações e plano:** `js/core/supabase-billing.js` (`Organization`,
+  `OrganizationMember`, `Invitation`, `Subscription`, `Plan`). As cotas do plano
+  grátis são aplicadas no banco por triggers (`supabase/migrations/*quota*`).
+- **Edge Functions** (`supabase/functions/`, Deno): `play-verify`, `play-rtdn`,
+  `stripe-checkout`, `stripe-portal`, `stripe-cancel`, `stripe-resume`,
+  `stripe-webhook`, `org-invite`, `welcome-trial`, `obs-ingest`. Deploy e
+  secrets em `supabase/functions/README.md`.
+- **Schema:** o Prisma cria as tabelas; `supabase/migrations/` liga a RLS e
+  define funções e triggers. Tabela nova sem RLS reprova o pgTAP
+  `rls_coverage`.
+- **Relatórios de erro:** o OBS envia erros (sanitizados, sem valores nem
+  e-mail) para `obs-ingest`, que grava em `fp_client_error` com retenção de 30
+  dias. O usuário desliga no Perfil.
 
-```sql
-using (auth.uid() = user_id)
-with check (auth.uid() = user_id)
-```
+## API Express (legado)
 
-### Endpoints REST alvo
+`backend/` — Express, Prisma, JWT próprio, BullMQ. **Congelada** pelo
+[ADR 0004](adr/0004-supabase-fonte-de-verdade-express-congelado.md): sem
+funcionalidade nova, só correção de segurança. Veja
+[`backend/README.md`](../backend/README.md) para o que ainda só existe lá.
 
-Com Supabase, os endpoints podem ser PostgREST:
+## Android
 
-```text
-POST   /auth/v1/signup
-POST   /auth/v1/token?grant_type=password
-POST   /auth/v1/logout
-GET    /rest/v1/profiles?id=eq.{userId}
-PATCH  /rest/v1/profiles?id=eq.{userId}
-GET    /rest/v1/categories
-POST   /rest/v1/categories
-PATCH  /rest/v1/categories?id=eq.{id}
-GET    /rest/v1/accounts
-POST   /rest/v1/accounts
-GET    /rest/v1/transactions?date=gte.{inicio}&date=lte.{fim}
-POST   /rest/v1/transactions
-PATCH  /rest/v1/transactions?id=eq.{id}
-DELETE /rest/v1/transactions?id=eq.{id}
-GET    /rest/v1/budgets?month=eq.{yyyy-mm}
-POST   /rest/v1/budgets
-PATCH  /rest/v1/budgets?id=eq.{id}
-```
+Capacitor 8 (`capacitor.config.json`, `android/`). `allowBackup=false`, sem
+cleartext, R8 ligado, depuração desligada, targetSdk 36. Biometria, tela
+segura (FLAG_SECURE) no login/PIN e Google Play Billing por plugin nativo.
 
-## 4. Desacoplamento de regras
+## Qualidade
 
-Implementado agora:
+| Camada | Onde | O que prova |
+|---|---|---|
+| Unidade (frontend) | `tests/*.test.js` (Jest + jsdom) | regras de negócio, com os módulos reais carregados por `tests/helpers/carregar-script.cjs` |
+| App inteiro | `tests/app-*.test.js` + `tests/helpers/app-jsdom.cjs` | telas reais (Novo lançamento, login, paywall) com todos os scripts do `index.html` |
+| Unidade (backend) | `tests/backend/` (Jest ESM) | API Express e o sanitizador de `obs-ingest` |
+| Banco | `supabase/tests/*.test.sql` (pgTAP) | RLS, cotas, MFA, relatórios de erro |
+| Ponta a ponta | `e2e/*.spec.cjs` (Playwright) | build de produção num navegador, incluindo axe e chunks lazy |
 
-- `TRANSACTION_SERVICE.createTransaction`
-- `TRANSACTION_SERVICE.calculateBalance`
-- `TRANSACTION_SERVICE.summarizeMonth`
-- `TRANSACTION_SERVICE.summarizeByCategory`
-- `BUDGET_SERVICE.setBudget`
-- `BUDGET_SERVICE.getStatus`
-
-Proximo corte:
-
-- mover import/export de `init.js` para `importExportService.js`;
-- mover modais para `modalController.js`.
-
-## 5. Estado
-
-Implementado agora:
-
-```text
-APP_STATE.getState()
-APP_STATE.setState(patch)
-APP_STATE.subscribe(listener)
-APP_STATE.hydrateFromDados()
-```
-
-Proximo corte:
-
-- `RENDER` deve receber estado como argumento em vez de chamar `TRANSACOES` e `ORCAMENTO` diretamente.
-- `DADOS` deve virar adapter: `localStorageAdapter` e `apiAdapter`.
-
-## 6. Performance e estrutura
-
-### Estrutura alvo
-
-```text
-src/
-  app/
-    bootstrap.js
-    state.js
-  domain/
-    transactionService.js
-    budgetService.js
-    categoryService.js
-  data/
-    localStorageAdapter.js
-    supabaseAdapter.js
-    repository.js
-  ui/
-    render/
-    controllers/
-  styles/
-    style.css
-```
-
-### Build recomendado
-
-- Vite.
-- Entrada unica: `src/app/bootstrap.js`.
-- Beneficios: ordem de dependencias explicita, minificacao, cache busting, ambiente `.env`.
-
-## 7. Seguranca
-
-### Fluxo real
-
-1. Usuario cria conta no Supabase Auth.
-2. Supabase retorna sessao.
-3. Frontend guarda sessao via SDK.
-4. Todas as consultas usam JWT do Supabase.
-5. RLS garante que cada usuario so ve seus dados.
-
-### Tokens
-
-- Evitar token manual em `localStorage` no SaaS final.
-- Preferir SDK Supabase com refresh token gerenciado.
-- CSP mantido restrito.
-- Sanitizar todo HTML gerado por strings.
-
-## 8. Roadmap priorizado
-
-### Fase 1 - estabilizar sistema atual
-
-- Concluir services puros para categorias, contas e recorrentes.
-- Quebrar `init.js` em controllers.
-- Remover duplicidade de regras em `UTILS`.
-- Criar export de backup versionado.
-
-### Fase 2 - introduzir backend
-
-- Criar projeto Supabase.
-- Aplicar schema SQL e RLS.
-- Criar `supabaseAdapter.js`.
-- Migrar login/cadastro para Supabase Auth.
-- Migrar dados locais para tabelas remotas.
-
-### Fase 3 - escalar
-
-- Vite + estrutura `src/`.
-- Testes unitarios nos services puros.
-- Auditoria de performance.
-- Observabilidade minima: erros, falhas de sync, tempo de carregamento.
+O CI (`.github/workflows/ci.yml`, Node 22 e 24) roda build, lint (com
+`no-undef` no frontend), `npm audit`, orçamento do bundle, contraste WCAG,
+dívida de tokens CSS, varredura de XSS, testes com pisos de cobertura, pgTAP e
+E2E.

@@ -76,6 +76,12 @@ que a *próxima* rota ou o *próximo* asset nasçam desprotegidos.
 
 ### Backend
 
+**Funcionalidade nova de backend vai para o Supabase** — Edge Function em
+`supabase/functions/` ou SQL em `supabase/migrations/` (com RLS e teste pgTAP).
+A API Express em `backend/` está congelada
+([ADR 0004](docs/adr/0004-supabase-fonte-de-verdade-express-congelado.md)):
+só recebe correção de segurança. As regras abaixo valem para essas correções.
+
 ESM, camadas explícitas:
 
 ```
