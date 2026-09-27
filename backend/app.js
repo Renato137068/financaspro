@@ -17,6 +17,7 @@ import healthRouter from './routes/health.js';
 import { BillingService } from './domain/services/billing.service.js';
 import { PlayBillingService } from './domain/services/play-billing.service.js';
 import { BillingRepository } from './domain/repositories/billing.repository.js';
+import { safeEqual } from './lib/safe-equal.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DEV_ROOT  = path.join(__dirname, '..');
@@ -130,7 +131,7 @@ export function createApp() {
         return res.status(503).json({ error: 'nao-configurado' });
       }
       const provided = req.headers['x-rtdn-secret'];
-      if (provided !== secret) {
+      if (!safeEqual(provided, secret)) {
         return res.status(403).json({ error: 'forbidden' });
       }
 

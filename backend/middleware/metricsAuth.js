@@ -1,5 +1,6 @@
 // backend/middleware/metricsAuth.js — protege /metrics* em produção
 import CONFIG from '../config.js';
+import { safeEqual } from '../lib/safe-equal.js';
 
 /**
  * Exige token em produção (header X-Metrics-Token ou ?token=).
@@ -16,7 +17,7 @@ export function requireMetricsAuth(req, res, next) {
 
   // Apenas via header — evita que o token apareça na URL (e nos logs de acesso).
   const provided = req.headers['x-metrics-token'];
-  if (provided !== token) {
+  if (!safeEqual(provided, token)) {
     return res.status(401).json({ error: 'Token de métricas inválido' });
   }
   return next();
