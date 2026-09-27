@@ -23,8 +23,8 @@ const testFiles = fs.readdirSync(__dirname)
   .filter(f => f.endsWith('.test.js'))
   .map(f => ({ nome: f, src: fs.readFileSync(path.join(__dirname, f), 'utf8') }));
 
-/** Nomes dos módulos globais do app, extraídos do .eslintrc (fonte única). */
-const MODULOS_GLOBAIS = Object.keys(require('../.eslintrc.cjs').globals || {})
+/** Nomes dos módulos globais do app (lista gerada de js/, fonte única). */
+const MODULOS_GLOBAIS = Object.keys(require('../config/frontend-globals.json').globals || {})
   .filter(n => /^[A-Z][A-Z_0-9]+$/.test(n));
 
 // Testes que legitimamente não carregam módulo de aplicação: verificam
@@ -58,7 +58,7 @@ describe('integridade da suíte — testes-cópia', () => {
 
       const carregaModuloReal = src.includes('load-sources')
         || src.includes('helpers/app-jsdom')
-        || /readFileSync\([^)]*['"]js['"]/.test(src)
+        || /readFileSync\([^)]*['"]js['"\/]/.test(src)
         || /require\(['"]\.\.\/js\//.test(src)
         // caminho do arquivo real numa constante, executado com vm
         || (/path\.join\([^)]*['"]js['"][^)]*\.js['"]\)/.test(src) && /vm\.runIn/.test(src));

@@ -16,7 +16,6 @@
  *      mostra 100% quando o limite foi de fato atingido.
  */
 const { carregarScript } = require('./helpers/carregar-script.cjs');
-const path = require('path');
 const { loadCoreModules, resetFixtures } = require('./load-sources');
 
 loadCoreModules();

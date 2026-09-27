@@ -439,8 +439,10 @@ var ALERTAS = {
         }
         break;
       case 'editarTransacao':
-        if (params && params.id && typeof abrirModalEdicao === 'function') {
-          abrirModalEdicao(params.id);
+        // Chamava abrirModalEdicao, que não existe em lugar nenhum: o botão do
+        // alerta "Gasto incomum" não fazia nada. A edição mora no extrato.
+        if (params && params.id && typeof INIT_EXTRATO !== 'undefined' && INIT_EXTRATO.editarTransacao) {
+          INIT_EXTRATO.editarTransacao(params.id);
         }
         break;
       case 'abrirPaywall':

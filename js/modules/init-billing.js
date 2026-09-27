@@ -835,11 +835,13 @@ const INIT_BILLING = {
 
   _abrirLogin: function() {
     this._fecharPaywall();
-    if (typeof abrirAuthOverlay === 'function') {
-      abrirAuthOverlay();
-    } else if (typeof setupAuthUI === 'function') {
-      var overlay = document.getElementById('auth-overlay');
-      if (overlay) overlay.style.display = 'flex';
+    // _abrirAuthOverlay (authController) também marca o body e prende o foco
+    // no login; o antigo `abrirAuthOverlay` não existia e só o display mudava.
+    var overlay = document.getElementById('auth-overlay');
+    if (typeof _abrirAuthOverlay === 'function') {
+      _abrirAuthOverlay(overlay);
+    } else if (overlay) {
+      overlay.style.display = 'flex';
     }
   },
 

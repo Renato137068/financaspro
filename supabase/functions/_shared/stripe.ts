@@ -3,7 +3,7 @@
 // Cliente Stripe para Deno + utilidades. Usa o HTTP client baseado em fetch e o
 // SubtleCryptoProvider (verificação de webhook via Web Crypto — o constructEvent
 // síncrono depende do crypto do Node e não roda no Deno).
-import Stripe from "https://esm.sh/stripe@16?target=deno";
+import Stripe from "https://esm.sh/stripe@16.12.0?target=deno";
 
 export function stripeClient(): Stripe {
   const key = Deno.env.get("STRIPE_SECRET_KEY");

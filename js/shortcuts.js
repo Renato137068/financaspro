@@ -28,7 +28,7 @@ var SHORTCUTS = {
       var ov = document.querySelector('.modal-overlay');
       if (ov) {
         ev.preventDefault();
-        if (typeof fecharModal === 'function') fecharModal(); else ov.remove();
+        ov.remove();
       }
       return;
     }

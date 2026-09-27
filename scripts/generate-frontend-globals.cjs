@@ -10,7 +10,7 @@
  * Este script lê cada arquivo de js/ (menos js/vendor) como script e coleta as
  * declarações de topo — var/let/const, function e class — e as atribuições
  * explícitas `window.NOME = …`. O resultado vai para
- * config/frontend-globals.json, que o .eslintrc.cjs usa como `globals`.
+ * config/frontend-globals.json, que o eslint.config.cjs usa como `globals`.
  *
  *   node scripts/generate-frontend-globals.cjs          # regrava o JSON
  *   node scripts/generate-frontend-globals.cjs --check  # falha se estiver defasado

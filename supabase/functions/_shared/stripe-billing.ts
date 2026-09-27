@@ -1,7 +1,7 @@
 // supabase/functions/_shared/stripe-billing.ts
 //
 // Port de backend/domain/services/billing.service.js (checkout + webhook).
-import type Stripe from "https://esm.sh/stripe@16?target=deno";
+import type Stripe from "https://esm.sh/stripe@16.12.0?target=deno";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { assertAllowedRedirectUrl } from "./stripe.ts";
 import { notify } from "./email.ts";
