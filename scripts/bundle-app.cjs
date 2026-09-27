@@ -54,7 +54,9 @@ const LAZY_CHUNKS = {
   // Perfil e suas sub-telas — ao abrir qualquer aba config-* ou por um wrapper
   // global (editar perfil, bancos, categorias, exportar backup). As ações de
   // insight do dashboard ficam no eager (js/modules/insight-acoes.js).
-  config: ['js/modules/init-config.js'],
+  // init-config.js vem dividido: backup e bancos/cartões/categorias são
+  // mixins de INIT_CONFIG e precisam vir depois dele.
+  config: ['js/modules/init-config.js', 'js/modules/config-backup.js', 'js/modules/config-bancos.js'],
 
   // Orçamento (tela) — ao abrir a aba ou uma sub-aba. O cálculo do orçamento
   // (ORCAMENTO, js/orcamento.js) fica no eager: o dashboard usa.

@@ -2,12 +2,9 @@
  * perfil-backup-import.test.js — P1.1 / P1.2 backup e importação da aba Perfil
  * @jest-environment jsdom
  */
-const fs = require('fs');
-const path = require('path');
 const vm = require('vm');
+const { rodarPerfil } = require('./helpers/chunk-perfil.cjs');
 
-const root = path.join(__dirname, '..');
-const src = fs.readFileSync(path.join(root, 'js', 'modules', 'init-config.js'), 'utf8');
 
 function carregarInitConfig(extra) {
   var storedConfig = {
@@ -71,10 +68,7 @@ function carregarInitConfig(extra) {
   sandbox._getCursor = function() { return cursorSaved; };
   sandbox._setStored = function(c) { storedConfig = Object.assign(storedConfig, c); };
 
-  var code = src.replace(/\bconst INIT_CONFIG =/, 'var   INIT_CONFIG =');
-  vm.runInContext(code, vm.createContext(sandbox), {
-    filename: path.join(root, 'js', 'modules', 'init-config.js')
-  });
+  rodarPerfil(vm.createContext(sandbox));
   return sandbox;
 }
 

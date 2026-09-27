@@ -128,6 +128,9 @@ function loadCoreModules() {
   // (todos já carregados acima). analisar() não toca no DOM.
   loadScript(context, 'js/insights.js');
   loadScript(context, 'js/modules/init-config.js');
+  // Mixins de INIT_CONFIG (backup; bancos, cartões e categorias).
+  loadScript(context, 'js/modules/config-backup.js');
+  loadScript(context, 'js/modules/config-bancos.js');
   // anexos.js só é carregado pela parte pura (validarArquivo); as funções de
   // IndexedDB não são exercitadas aqui — exigiriam polyfill.
   loadScript(context, 'js/anexos.js');

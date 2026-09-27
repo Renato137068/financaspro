@@ -14,17 +14,16 @@
  *   2. COMPORTAMENTAL — calcularMesesEntre, agora por componentes de string, dá
  *      a contagem certa (inclusive) — o valor que vai para o backup.
  */
-const fs = require('fs');
-const path = require('path');
 const vm = require('vm');
+const { fontePerfil, rodarPerfil } = require('./helpers/chunk-perfil.cjs');
 
-const root = path.join(__dirname, '..');
-const src = fs.readFileSync(path.join(root, 'js', 'modules', 'init-config.js'), 'utf8');
+// O Perfil inteiro (init-config.js e seus mixins; getPeriodoDados está no de backup).
+const src = fontePerfil();
 
 /** Corpo de uma função do objeto INIT_CONFIG, do cabeçalho até o `},` da coluna 2. */
 function corpoDe(nome) {
   const inicio = src.indexOf(`  ${nome}: function`);
-  if (inicio === -1) throw new Error(`função ${nome} não encontrada em init-config.js`);
+  if (inicio === -1) throw new Error(`função ${nome} não encontrada no Perfil`);
   const fim = src.indexOf('\n  },', inicio);
   return src.slice(inicio, fim === -1 ? src.length : fim);
 }
@@ -42,9 +41,7 @@ function carregar(transacoes) {
     module: { exports: {} },
   };
   sandbox.globalThis = sandbox;
-  vm.runInContext(src.replace(/\bconst INIT_CONFIG =/, 'var   INIT_CONFIG ='),
-    vm.createContext(sandbox), { filename: path.join(root, 'js', 'modules', 'init-config.js') });
-  return sandbox.INIT_CONFIG;
+  return rodarPerfil(vm.createContext(sandbox));
 }
 
 describe('getPeriodoDados — estrutura à prova de fuso', function() {

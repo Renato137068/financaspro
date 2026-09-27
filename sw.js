@@ -113,6 +113,8 @@ const urlsParaCache = [
   "/js/lucide-init.js",
   "/js/metas.js",
   "/js/micro-interactions.js",
+  "/js/modules/config-backup.js",
+  "/js/modules/config-bancos.js",
   "/js/modules/form-sugestoes.js",
   "/js/modules/init-2fa.js",
   "/js/modules/init-anexos.js",

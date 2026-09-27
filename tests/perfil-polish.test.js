@@ -4,10 +4,12 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { fontePerfil } = require('./helpers/chunk-perfil.cjs');
 
 const root = path.join(__dirname, '..');
 const configUser = fs.readFileSync(path.join(root, 'js', 'config-user.js'), 'utf8');
-const initConfig = fs.readFileSync(path.join(root, 'js', 'modules', 'init-config.js'), 'utf8');
+// O Perfil inteiro: init-config.js e seus mixins (backup; bancos e categorias).
+const initConfig = fontePerfil();
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const css = fs.readFileSync(path.join(root, 'css', 'layouts', 'config.css'), 'utf8');
 

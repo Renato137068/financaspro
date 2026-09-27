@@ -21,14 +21,16 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { fontePerfil } = require('./helpers/chunk-perfil.cjs');
 
 const root = path.join(__dirname, '..');
-const src = fs.readFileSync(path.join(root, 'js', 'modules', 'init-config.js'), 'utf8');
+// O Perfil inteiro (init-config.js e seus mixins; o backup está em config-backup.js).
+const src = fontePerfil();
 
 /** Corpo de uma função do objeto INIT_CONFIG, do cabeçalho até o `},` da coluna 2. */
 function corpoDe(nome) {
   const inicio = src.indexOf(`  ${nome}: function`);
-  if (inicio === -1) throw new Error(`função ${nome} não encontrada em init-config.js`);
+  if (inicio === -1) throw new Error(`função ${nome} não encontrada no Perfil`);
   const fim = src.indexOf('\n  },', inicio);
   return src.slice(inicio, fim === -1 ? src.length : fim);
 }
@@ -159,7 +161,7 @@ describe('backup — um único formato', () => {
     });
 
     expect(geradores.map(f => path.relative(root, f))).toEqual([
-      path.join('js', 'modules', 'init-config.js'),
+      path.join('js', 'modules', 'config-backup.js'),
     ]);
   });
 });

@@ -38,7 +38,9 @@ mesmos dados sincronizam com o Supabase.
   clássico sai para um ES Module e volta por `Object.assign` no fim do
   arquivo original, sem mudar quem chama: `dados-express.js` (cliente da API
   Express, congelado) em `DADOS`, `form-sugestoes.js` (autocategorização e
-  autocomplete) em `INIT_FORM`. Nos testes, `tests/helpers/esm-como-script.cjs` os roda via
+  autocomplete) em `INIT_FORM`. Dentro de um chunk lazy o pedaço continua
+  script clássico, no mesmo chunk: `config-backup.js` e `config-bancos.js`
+  em `INIT_CONFIG`. Nos testes, `tests/helpers/esm-como-script.cjs` os roda via
   `vm` sem mudar as posições dos caracteres (cobertura V8).
 - **Organização:** `js/core/` (config, dados, store, sync, utilidades de base),
   `js/services/` (regras puras), `js/modules/init-*.js` (telas),
