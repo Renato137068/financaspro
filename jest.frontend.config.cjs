@@ -11,7 +11,8 @@ module.exports = {
   displayName: 'frontend',
   rootDir: '.',
   testEnvironment: 'jsdom',
-  setupFiles: ['<rootDir>/tests/setup-globals.js'],
+  // guarda-vm-offsets: recusa trecho de js/ rodado fora do offset 0 (ver o arquivo).
+  setupFiles: ['<rootDir>/tests/setup-globals.js', '<rootDir>/tests/guarda-vm-offsets.js'],
   transform: {},
   testMatch: ['<rootDir>/tests/*.test.js'],
   modulePathIgnorePatterns: ['<rootDir>/.aud/'],

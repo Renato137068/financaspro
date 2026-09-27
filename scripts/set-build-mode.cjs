@@ -13,7 +13,9 @@ if (mode !== 'local' && mode !== 'cloud') {
   process.exit(1);
 }
 
-const cfgPath = path.join(__dirname, '..', 'js', 'core', 'config.js');
+// FP_CONFIG_JS: alvo alternativo. Os testes apontam para uma cópia — reescrever
+// o config.js real no meio da suíte muda o arquivo sob as outras suítes.
+const cfgPath = process.env.FP_CONFIG_JS || path.join(__dirname, '..', 'js', 'core', 'config.js');
 let src = fs.readFileSync(cfgPath, 'utf8');
 
 if (!/FP_BUILD_MODE\s*=\s*'(local|cloud)'/.test(src)) {

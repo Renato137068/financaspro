@@ -3,9 +3,33 @@
  */
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const { execSync } = require('child_process');
 
 const root = path.join(__dirname, '..');
+
+/**
+ * Roda um script de build sobre uma CÓPIA de js/core/config.js (FP_CONFIG_JS).
+ * Reescrever o arquivo real no meio da suíte mudava config.js sob as suítes
+ * que rodam em paralelo: elas liam uma versão e a cobertura v8 era medida
+ * contra outra — config.js oscilava de uma rodada para outra, e a guarda de
+ * tests/guarda-vm-offsets.js acusava o descompasso.
+ */
+let cfgPath;
+beforeEach(() => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fp-build-mode-'));
+  cfgPath = path.join(dir, 'config.js');
+  fs.copyFileSync(path.join(root, 'js/core/config.js'), cfgPath);
+});
+afterEach(() => {
+  fs.rmSync(path.dirname(cfgPath), { recursive: true, force: true });
+});
+function rodar(script, args, env) {
+  execSync('node "' + path.join(root, 'scripts', script) + '"' + (args ? ' ' + args : ''), {
+    stdio: 'pipe',
+    env: { ...process.env, ...env, FP_CONFIG_JS: cfgPath },
+  });
+}
 
 describe('Build mode local vs cloud', () => {
   test('config expõe FP_BUILD_MODE e BUILD_MODE', () => {
@@ -19,29 +43,21 @@ describe('Build mode local vs cloud', () => {
   });
 
   test('set-build-mode alterna e restaura cloud', () => {
-    const script = path.join(root, 'scripts/set-build-mode.cjs');
-    const cfgPath = path.join(root, 'js/core/config.js');
-    execSync('node "' + script + '" local', { stdio: 'pipe' });
+    rodar('set-build-mode.cjs', 'local');
     expect(fs.readFileSync(cfgPath, 'utf8')).toContain("FP_BUILD_MODE = 'local'");
-    execSync('node "' + script + '" cloud', { stdio: 'pipe' });
+    rodar('set-build-mode.cjs', 'cloud');
     expect(fs.readFileSync(cfgPath, 'utf8')).toContain("FP_BUILD_MODE = 'cloud'");
   });
 
   test('inject-supabase-env sobrescreve e --clear restaura', () => {
-    const script = path.join(root, 'scripts/inject-supabase-env.cjs');
-    const cfgPath = path.join(root, 'js/core/config.js');
-    execSync('node "' + script + '"', {
-      stdio: 'pipe',
-      env: {
-        ...process.env,
-        SUPABASE_URL: 'https://example-project.supabase.co',
-        SUPABASE_ANON_KEY: 'test-anon-key',
-      },
+    rodar('inject-supabase-env.cjs', '', {
+      SUPABASE_URL: 'https://example-project.supabase.co',
+      SUPABASE_ANON_KEY: 'test-anon-key',
     });
     let cfg = fs.readFileSync(cfgPath, 'utf8');
     expect(cfg).toContain("var _FP_ENV_URL = 'https://example-project.supabase.co'");
     expect(cfg).toContain("var _FP_ENV_ANON = 'test-anon-key'");
-    execSync('node "' + script + '" --clear', { stdio: 'pipe' });
+    rodar('inject-supabase-env.cjs', '--clear');
     cfg = fs.readFileSync(cfgPath, 'utf8');
     expect(cfg).toContain("var _FP_ENV_URL = ''");
     expect(cfg).toContain("var _FP_ENV_ANON = ''");

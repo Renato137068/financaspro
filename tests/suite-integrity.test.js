@@ -243,6 +243,44 @@ describe('integridade da suíte — cada arquivo de js/ carregado de UMA forma',
   });
 });
 
+describe('integridade da suíte — trecho de js/ rodado fora do offset 0', () => {
+  // Um recorte do MEIO de js/x.js rodado com `filename: js/x.js` tem as
+  // posições contadas a partir do início do arquivo: a cobertura das funções
+  // que rodaram cai sobre as primeiras linhas. Nenhuma varredura de texto
+  // enxerga isso com segurança (o recorte pode vir de indexOf, match, uma
+  // função auxiliar...), então a checagem é em tempo de execução, em
+  // tests/guarda-vm-offsets.js. Aqui se confere que ela está ligada e morde.
+  const vm = require('vm');
+  const arquivo = path.join(root, 'js', 'core', 'supabase-sync.js');
+  const codigo = fs.readFileSync(arquivo, 'utf8');
+  const ctx = vm.createContext({});
+  const rodar = (trecho, nome) => () => vm.runInContext(trecho, ctx, { filename: nome });
+
+  test('a guarda está nos setupFiles do frontend', () => {
+    const cfg = require('../jest.frontend.config.cjs');
+    expect(cfg.setupFiles).toContain('<rootDir>/tests/guarda-vm-offsets.js');
+    expect(vm.__guardaOffsets).toBe(true);
+  });
+
+  test('recusa um trecho do meio sob o filename do arquivo real', () => {
+    const meio = codigo.slice(codigo.indexOf('var QUOTA_KINDS'), codigo.indexOf('function _avisarCota'));
+    expect(rodar(meio, arquivo)).toThrow(/não é um prefixo do arquivo em disco/);
+    expect(() => new vm.Script(meio, { filename: arquivo })).toThrow(/não é um prefixo/);
+  });
+
+  test('aceita prefixo, `var   X` e recorte com filename fora de js/', () => {
+    const meio = codigo.slice(codigo.indexOf('var QUOTA_KINDS'), codigo.indexOf('function _avisarCota'));
+    expect(rodar(meio, path.join(__dirname, 'supabase-sync.slice.js'))).not.toThrow();
+
+    const config = path.join(root, 'js', 'core', 'config.js');
+    const src = fs.readFileSync(config, 'utf8').replace(/\bconst CONFIG =/, 'var   CONFIG =');
+    expect(src).toContain('var   CONFIG =');
+    expect(() => new vm.Script(src, { filename: config })).not.toThrow();
+    // Um prefixo pode nem compilar; o que importa é a guarda não recusá-lo.
+    expect(() => new vm.Script(src.slice(0, 300), { filename: config })).not.toThrow(/não é um prefixo/);
+  });
+});
+
 describe('integridade da suíte — módulos sem teste real', () => {
   /**
    * Lista de módulos que hoje NÃO são carregados por nenhum teste. Não é uma

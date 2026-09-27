@@ -5,42 +5,19 @@
  * envelhece calada: quando o SQL v3 passou a recusar metas, contas a pagar,
  * assinaturas e categorias, o teste continuou verde testando a lista antiga de
  * três tipos, enquanto o app mostrava "Limite de uso no plano gratuito" — uma
- * frase que não diz nada. Agora o teste lê a função do fonte de verdade, então
- * um tipo novo no SQL sem tratamento no cliente reprova aqui.
+ * frase que não diz nada. Agora o teste roda o fonte de verdade, então um tipo
+ * novo no SQL sem tratamento no cliente reprova aqui.
+ *
+ * O arquivo inteiro é carregado por carregarScript, e a detecção de cota é
+ * exercitada pelo caminho real — um push que o PostgREST recusa. A versão
+ * anterior recortava QUOTA_KINDS e a função do meio do arquivo e os rodava com
+ * o filename de supabase-sync.js: a cobertura v8 é somada por posição de
+ * caractere, então a execução do recorte caía sobre as primeiras linhas do
+ * arquivo, não sobre as funções que de fato rodaram.
  */
 const fs = require('fs');
 const path = require('path');
-const vm = require('vm');
-
-const ARQUIVO = path.join(__dirname, '..', 'js', 'core', 'supabase-sync.js');
-const SRC = fs.readFileSync(ARQUIVO, 'utf8');
-
-/** Recorta uma declaração `function nome(...) { ... }` por chaves balanceadas. */
-function recortarFuncao(src, nome) {
-  const inicio = src.indexOf('function ' + nome + '(');
-  if (inicio < 0) throw new Error('função não encontrada no fonte: ' + nome);
-  let nivel = 0;
-  for (let j = src.indexOf('{', inicio); j < src.length; j++) {
-    if (src[j] === '{') nivel++;
-    else if (src[j] === '}') {
-      nivel--;
-      if (nivel === 0) return src.slice(inicio, j + 1);
-    }
-  }
-  throw new Error('função sem fechamento: ' + nome);
-}
-
-const linhaKinds = SRC.match(/var QUOTA_KINDS = '[^']+';/);
-if (!linhaKinds) throw new Error('QUOTA_KINDS não encontrado em supabase-sync.js');
-
-const sandbox = {};
-vm.createContext(sandbox);
-vm.runInContext(
-  linhaKinds[0] + '\n' + recortarFuncao(SRC, 'isQuotaExceededError'),
-  sandbox,
-  { filename: ARQUIVO },
-);
-const { isQuotaExceededError, QUOTA_KINDS } = sandbox;
+const { carregarScript } = require('./carregar-script');
 
 /** Tipos que o SQL sabe levantar — a fonte é o texto das migrations. */
 function tiposNoSql() {
@@ -56,50 +33,142 @@ function tiposNoSql() {
   return [...tipos].sort();
 }
 
+// O que o próximo upsert do PostgREST devolve: { error } resolvido, ou uma
+// rejeição crua (`throw null` de um cliente quebrado, por exemplo).
+let resposta;
+const SB = {
+  from: () => ({
+    upsert: () => (resposta.rejeita ? Promise.reject(resposta.valor) : Promise.resolve({ error: resposta.error })),
+  }),
+  auth: { onAuthStateChange: () => {} },
+};
+
+let SUPA_SYNC;
+let avisos;
+
+beforeAll(() => {
+  // supabase-sync.js só se instala com o Supabase ativo e lê SB na carga.
+  global.SB = SB;
+  global.SUPA_AUTH = {
+    isActive: () => true,
+    getSessionSync: () => ({ user: { id: 'user-1' } }),
+  };
+  SUPA_SYNC = carregarScript('js/core/supabase-sync.js', { global: 'SUPA_SYNC' });
+});
+
+afterAll(() => {
+  delete global.SB;
+  delete global.SUPA_AUTH;
+  delete global.SUPA_SYNC;
+});
+
+beforeEach(() => {
+  avisos = [];
+  global.BILLING = { onPaymentRequired: (p) => avisos.push(p.message) };
+  jest.spyOn(console, 'warn').mockImplementation(() => {});
+});
+
+afterEach(() => {
+  delete global.BILLING;
+  delete global.UTILS;
+  console.warn.mockRestore();
+});
+
+const TX = { id: 'tx-1', tipo: 'despesa', valor: 10 };
+
+/** Faz um push que o PostgREST recusa com `error`; devolve o que ele resolveu. */
+function pushRecusado(error) {
+  resposta = { error };
+  return SUPA_SYNC.pushTx(TX);
+}
+
 describe('Supabase quota errors', function() {
-  test('detecta P0001 com mensagem QUOTA_EXCEEDED:transaction', function() {
-    expect(isQuotaExceededError({ code: 'P0001', message: 'QUOTA_EXCEEDED:transaction' })).toBe(true);
+  test('detecta P0001 com mensagem QUOTA_EXCEEDED:transaction', async function() {
+    expect(await pushRecusado({ code: 'P0001', message: 'QUOTA_EXCEEDED:transaction' })).toBe(TX);
+    expect(avisos).toHaveLength(1);
+    expect(console.warn).not.toHaveBeenCalled();
   });
 
-  test('detecta mensagem em details', function() {
-    expect(isQuotaExceededError({ details: 'QUOTA_EXCEEDED:account' })).toBe(true);
+  test('detecta mensagem em details', async function() {
+    await pushRecusado({ details: 'QUOTA_EXCEEDED:account' });
+    expect(avisos).toHaveLength(1);
   });
 
-  test('ignora erro genérico de sync', function() {
-    expect(isQuotaExceededError({ code: '23505', message: 'duplicate key' })).toBe(false);
+  test('ignora erro genérico de sync', async function() {
+    expect(await pushRecusado({ code: '23505', message: 'duplicate key' })).toBe(TX);
+    expect(avisos).toEqual([]);
+    expect(console.warn).toHaveBeenCalledWith('Supabase push falhou:', 'duplicate key');
   });
 
-  test('nulo e indefinido não são quota', function() {
-    expect(isQuotaExceededError(null)).toBe(false);
-    expect(isQuotaExceededError(undefined)).toBe(false);
+  test('P0001 sem o marcador não é cota — o código é o de qualquer RAISE', async function() {
+    await pushRecusado({ code: 'P0001', message: 'violação de regra de negócio' });
+    expect(avisos).toEqual([]);
   });
 
-  test('todo tipo que o SQL levanta é reconhecido pelo cliente', function() {
+  test('nulo e indefinido não são quota', async function() {
+    for (const valor of [null, undefined]) {
+      resposta = { rejeita: true, valor };
+      expect(await SUPA_SYNC.pushTx(TX)).toBe(TX);
+    }
+    expect(avisos).toEqual([]);
+    expect(console.warn).toHaveBeenCalledTimes(2);
+  });
+
+  test('todo tipo que o SQL levanta é reconhecido pelo cliente', async function() {
     const doSql = tiposNoSql();
     expect(doSql.length).toBeGreaterThanOrEqual(5);
-    doSql.forEach(function(kind) {
+    for (const kind of doSql) {
+      avisos = [];
       // Sem o code P0001: aqui interessa a lista de tipos, não o atalho.
-      expect(isQuotaExceededError({ message: 'QUOTA_EXCEEDED:' + kind })).toBe(true);
-      expect(QUOTA_KINDS.split('|')).toContain(kind);
-    });
+      await pushRecusado({ message: 'QUOTA_EXCEEDED:' + kind });
+      expect([kind, avisos.length]).toEqual([kind, 1]);
+    }
   });
 
-  test('um tipo inventado não vira aviso de cota', function() {
-    expect(isQuotaExceededError({ message: 'QUOTA_EXCEEDED:foguete' })).toBe(false);
+  test('um tipo inventado não vira aviso de cota', async function() {
+    await pushRecusado({ message: 'QUOTA_EXCEEDED:foguete' });
+    expect(avisos).toEqual([]);
+  });
+
+  test('pushConta passa pelo mesmo tratamento', async function() {
+    const conta = { id: 'c-1', nome: 'Carteira' };
+    resposta = { error: { message: 'QUOTA_EXCEEDED:account' } };
+    expect(await SUPA_SYNC.pushConta(conta)).toBe(conta);
+    expect(avisos).toHaveLength(1);
   });
 });
 
 describe('Mensagem mostrada ao usuário', function() {
-  const handler = recortarFuncao(SRC, 'handleQuotaExceeded');
-
-  test('prefere a copy do BILLING, que nomeia o que o Pro faz', function() {
-    expect(handler).toContain('BILLING._QUOTAS');
-    expect(handler).toMatch(/msg\.replace\('%L'/);
+  test('prefere a copy do BILLING, que nomeia o que o Pro faz', async function() {
+    global.BILLING._QUOTAS = { goal: { limite: 'maxGoals', msg: 'Você já tem %L metas. O Pro libera quantas quiser.' } };
+    global.BILLING.getLimits = () => ({ maxGoals: 2 });
+    await pushRecusado({ message: 'QUOTA_EXCEEDED:goal' });
+    expect(avisos).toEqual(['Você já tem 2 metas. O Pro libera quantas quiser.']);
   });
 
-  test('o plano B cobre todos os tipos do SQL — nada cai em "uso"', function() {
-    tiposNoSql().forEach(function(kind) {
-      expect(handler).toMatch(new RegExp('\\b' + kind + ':'));
-    });
+  test('limite infinito no BILLING cai no plano B', async function() {
+    global.BILLING._QUOTAS = { goal: { limite: 'maxGoals', msg: '%L metas' } };
+    global.BILLING.getLimits = () => ({ maxGoals: Infinity });
+    await pushRecusado({ message: 'QUOTA_EXCEEDED:goal' });
+    expect(avisos).toEqual(['Limite de metas no plano gratuito. Assine o Pro para continuar.']);
+  });
+
+  test('o plano B cobre todos os tipos do SQL — nada cai em "uso"', async function() {
+    for (const kind of tiposNoSql()) {
+      avisos = [];
+      await pushRecusado({ message: 'QUOTA_EXCEEDED:' + kind });
+      expect([kind, avisos[0]]).toEqual([kind, expect.stringMatching(/^Limite de .+ no plano gratuito/)]);
+      expect([kind, avisos[0]]).not.toEqual([kind, expect.stringContaining('Limite de uso')]);
+    }
+  });
+
+  test('sem BILLING, o aviso sai como toast do UTILS', async function() {
+    delete global.BILLING;
+    global.UTILS = { mostrarToast: jest.fn() };
+    await pushRecusado({ message: 'QUOTA_EXCEEDED:budget' });
+    expect(global.UTILS.mostrarToast).toHaveBeenCalledWith(
+      'Limite de orçamentos no plano gratuito. Assine o Pro para continuar.',
+      'warning',
+    );
   });
 });
