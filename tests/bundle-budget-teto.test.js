@@ -1,0 +1,42 @@
+/**
+ * bundle-budget-teto.test.js — o orçamento do bundle só desce.
+ *
+ * O check de orçamento (scripts/check-bundle-budget.cjs) existia, mas o teto
+ * subia junto com cada feature: sete aumentos só em setembro de 2026, sempre
+ * "intencionais". Um limite que acompanha o tamanho não limita nada.
+ *
+ * Estes valores são o teto máximo aceito. Subir um deles exige editar este
+ * arquivo — o que aparece no diff do PR e força a conversa. Descer é livre:
+ * quando o bundle encolher, baixe o orçamento e este teto juntos.
+ */
+const fs = require('fs');
+const path = require('path');
+
+const TETO_KB = {
+  precacheTotal: 1392,
+  appBundle: 604,
+  vendorBundle: 260,
+  cssBundle: 300,
+  indexHtml: 112,
+};
+
+const src = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'check-bundle-budget.cjs'), 'utf8');
+const bloco = src.slice(src.indexOf('const BUDGETS = {'), src.indexOf('\n};', src.indexOf('const BUDGETS = {')));
+
+function orcamentoKb(chave) {
+  const m = bloco.match(new RegExp('\\n\\s*' + chave + ':\\s*\\{\\s*max:\\s*(\\d+)\\s*\\*\\s*KB'));
+  return m ? Number(m[1]) : null;
+}
+
+describe('orçamento do bundle', () => {
+  test.each(Object.keys(TETO_KB))('%s não passa do teto', (chave) => {
+    const atual = orcamentoKb(chave);
+    expect(atual).not.toBeNull();
+    expect(atual).toBeLessThanOrEqual(TETO_KB[chave]);
+  });
+
+  test('nenhum orçamento novo sem teto aqui', () => {
+    const chaves = [...bloco.matchAll(/\n\s{2}(\w+):\s*\{\s*max:/g)].map((m) => m[1]);
+    expect(chaves.sort()).toEqual(Object.keys(TETO_KB).sort());
+  });
+});

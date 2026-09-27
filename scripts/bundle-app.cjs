@@ -45,6 +45,13 @@ const LAZY_CHUNKS = {
   assinaturas: ['js/assinaturas.js', 'js/modules/init-assinaturas.js'],
   patrimonio: ['js/patrimonio.js', 'js/modules/init-patrimonio.js'],
 
+  // Simulador financeiro — só ao abrir Perfil → Simulador.
+  simulador: ['js/simulador.js', 'js/modules/init-simulador.js'],
+
+  // Tour de boas-vindas — ONBOARDING.iniciar() não abre nada sozinho; o tour
+  // só abre por Perfil → "Refazer tour".
+  onboarding: ['js/onboarding.js'],
+
   // Paywall UI, Play Billing bridge, 2FA e Open Finance — aba Config (e
   // Resumo/Extrato em nuvem para banner). Vão juntos: mesmo gatilho.
   //

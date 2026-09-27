@@ -23,8 +23,11 @@ const reportOnly = process.argv.includes('--report');
 
 const KB = 1024;
 
-// Limites com folga deliberada sobre o valor atual: o objetivo é barrar um
-// salto acidental, não travar o desenvolvimento em cada quilobyte.
+// Limites com pouca folga sobre o valor atual. Desde 27/09 o teto só DESCE:
+// tests/bundle-budget-teto.test.js trava os valores. Feature nova que não cabe
+// vai para um chunk lazy (LAZY_CHUNKS em scripts/bundle-app.cjs) ou paga o
+// espaço tirando algo do eager — subir o teto a cada feature virou carimbo
+// (sete aumentos só em setembro, histórico abaixo).
 const BUDGETS = {
   // 1350→1360 KB (2026-09-12): acompanha o +7 KB do index.html da
   // reestruturação da aba Perfil, mantendo folga em vez de ficar no limite.
@@ -37,7 +40,8 @@ const BUDGETS = {
   // (contabiliza contra o limite/comprometido) — aumento intencional.
   // 1415→1418 KB (2026-09-21): alerta de fatura vencida no topo do dashboard
   // (lembrete básico que leva às faturas) — aumento intencional.
-  precacheTotal: { max: 1418 * KB, label: 'Precache total (1º acesso)' },
+  // 1418→1392 KB (2026-09-27): simulador e tour de boas-vindas viram chunks lazy.
+  precacheTotal: { max: 1392 * KB, label: 'Precache total (1º acesso)' },
   // 580→590 KB (2026-09-13): correção do KPI "Folga poupança" no Orçamento
   // (cálculo da folga da fatia de poupança) + referência de ritmo no Resumo
   // adicionam alguns KB de código — aumento intencional.
@@ -51,7 +55,9 @@ const BUDGETS = {
   // (resumo-mensal.js + plano-metas.js + handlers) — aumento intencional.
   // 626→628 KB (2026-09-21): "ainda devo" nas faturas + alerta de fatura
   // vencida no dashboard — aumento intencional.
-  appBundle: { max: 628 * KB, label: 'js/app.bundle.js', file: 'js/app.bundle.js' },
+  // 628→604 KB (2026-09-27): simulador (19 KB) e onboarding (8 KB) saem do
+  // eager para js/lazy/. Daqui para baixo, só com mais chunks lazy.
+  appBundle: { max: 604 * KB, label: 'js/app.bundle.js', file: 'js/app.bundle.js' },
   vendorBundle: { max: 260 * KB, label: 'js/vendor.bundle.js', file: 'js/vendor.bundle.js' },
   cssBundle: { max: 300 * KB, label: 'CSS bundle', glob: /^css\/index-.*\.css$/ },
   // 100→112 KB (2026-09-12): reestruturação da aba Perfil em menu + sub-telas

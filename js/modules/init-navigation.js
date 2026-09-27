@@ -543,6 +543,23 @@ const INIT_NAVIGATION = {
     finish();
   },
 
+  /**
+   * Simulador (chunk 'simulador') + metas: o CTA "Criar meta no app" só aparece
+   * com METAS carregado, e METAS mora no chunk 'metas'. Sem pedir os dois, o
+   * botão sumia para quem não tinha aberto Metas na sessão.
+   */
+  carregarChunkSimulador: function() {
+    var self = this;
+    // Pelo mesmo caminho da aba Metas, que roda METAS.init na primeira carga.
+    this._carregarSubOrcamento('metas', function() {
+      self._ensureChunk('simulador', function() { return typeof INIT_SIMULADOR !== 'undefined'; }, function() {
+        if (typeof INIT_SIMULADOR === 'undefined') return;
+        UTILS.tentar('INIT_SIMULADOR.init', function() { INIT_SIMULADOR.init(); });
+        if (INIT_SIMULADOR.render) INIT_SIMULADOR.render();
+      });
+    });
+  },
+
   _ensureChunk: function(chunk, isReady, onReady) {
     if (isReady()) { onReady(false); return; }
     if (typeof LAZY === 'undefined' || !LAZY.load) { onReady(false); return; }
@@ -736,9 +753,7 @@ function mudarAba(nomeAba, opcoes) {
           refreshBillingUi();
         }
       }
-      if (nomeAba === 'config-simulador' && typeof INIT_SIMULADOR !== 'undefined' && INIT_SIMULADOR.render) {
-        INIT_SIMULADOR.render();
-      }
+      if (nomeAba === 'config-simulador') INIT_NAVIGATION.carregarChunkSimulador();
       if (nomeAba === 'config' || nomeAba.indexOf('config-') === 0) {
         // Vale para o Perfil e suas sub-telas (config-*): os cartões e toggles
         // moram em containers diferentes, mas o refreshPerfil atualiza todos por

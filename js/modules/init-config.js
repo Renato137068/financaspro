@@ -328,9 +328,14 @@ const INIT_CONFIG = {
     bind('chk-crypto',    'change', function(e) { INIT_CONFIG.toggleCriptografia(!!e.target.checked); });
     bind('chk-obs-erros', 'change', function(e) { DADOS.salvarConfig({ obsErrorsEnabled: !!e.target.checked }); });
     bind('btn-refazer-onboarding', 'click', function() {
-      if (typeof ONBOARDING !== 'undefined' && ONBOARDING.reiniciar) {
-        ONBOARDING.reiniciar();
-      }
+      var abrir = function() {
+        if (typeof ONBOARDING !== 'undefined' && ONBOARDING.reiniciar) ONBOARDING.reiniciar();
+      };
+      // O tour mora no chunk 'onboarding' (só abre por este botão).
+      if (typeof ONBOARDING !== 'undefined' || typeof LAZY === 'undefined') { abrir(); return; }
+      LAZY.load('onboarding').then(abrir).catch(function() {
+        UTILS.mostrarToast('Não foi possível abrir o tour agora. Tente de novo.', 'error');
+      });
     });
   },
 
