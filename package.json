@@ -101,7 +101,7 @@
     "@capacitor/status-bar": "^8.0.3",
     "@capgo/capacitor-native-biometric": "^8.6.11",
     "@prisma/client": "^5.22.0",
-    "@supabase/supabase-js": "^2.112.4",
+    "@supabase/supabase-js": "^2.117.2",
     "bullmq": "^5.13.0",
     "compression": "^1.8.2",
     "dotenv": "^16.4.5",

@@ -42,7 +42,10 @@ const BUDGETS = {
   // (lembrete básico que leva às faturas) — aumento intencional.
   // 1418→1392 KB (2026-09-27): simulador e tour de boas-vindas viram chunks lazy.
   // 1392→1300 KB (2026-09-27): Extrato, Orçamento e Perfil viram chunks lazy.
-  precacheTotal: { max: 1300 * KB, label: 'Precache total (1º acesso)' },
+  // 1300→1305 KB (2026-09-27): supabase-js 2.112 → 2.117 (+6 KB no vendor).
+  // Exceção registrada: o ganho do dia (1418 → 1305) paga a atualização da
+  // biblioteca de login e sync, que não se encolhe por aqui.
+  precacheTotal: { max: 1305 * KB, label: 'Precache total (1º acesso)' },
   // 580→590 KB (2026-09-13): correção do KPI "Folga poupança" no Orçamento
   // (cálculo da folga da fatia de poupança) + referência de ritmo no Resumo
   // adicionam alguns KB de código — aumento intencional.
@@ -62,7 +65,9 @@ const BUDGETS = {
   // Perfil (37 KB) viram chunks lazy; ícones de categoria e ações de insight
   // ficam no eager (categoria-visual.js, insight-acoes.js).
   appBundle: { max: 514 * KB, label: 'js/app.bundle.js', file: 'js/app.bundle.js' },
-  vendorBundle: { max: 260 * KB, label: 'js/vendor.bundle.js', file: 'js/vendor.bundle.js' },
+  // 260→262 KB (2026-09-27): supabase-js 2.112 → 2.117. O vendor é só
+  // supabase-js + lucide; não há o que mover para lazy aqui.
+  vendorBundle: { max: 262 * KB, label: 'js/vendor.bundle.js', file: 'js/vendor.bundle.js' },
   cssBundle: { max: 300 * KB, label: 'CSS bundle', glob: /^css\/index-.*\.css$/ },
   // 100→112 KB (2026-09-12): reestruturação da aba Perfil em menu + sub-telas
   // (divulgação progressiva) adiciona ~7 KB de markup — aumento intencional.

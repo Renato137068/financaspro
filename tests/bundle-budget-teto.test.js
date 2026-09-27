@@ -13,9 +13,10 @@ const fs = require('fs');
 const path = require('path');
 
 const TETO_KB = {
-  precacheTotal: 1300,
+  // 1300→1305 e 260→262 (27/09): supabase-js 2.117; ver check-bundle-budget.cjs.
+  precacheTotal: 1305,
   appBundle: 514,
-  vendorBundle: 260,
+  vendorBundle: 262,
   cssBundle: 300,
   indexHtml: 112,
 };
