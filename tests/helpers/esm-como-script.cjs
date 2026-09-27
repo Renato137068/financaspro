@@ -47,6 +47,36 @@ function ehModulo(codigo) {
   return /^(import|export)\b/m.test(codigo);
 }
 
+const DIRETIVA = "*/'use strict';";
+
+/**
+ * Módulo ES roda em modo estrito; script, não. Sem a diretiva, um método
+ * chamado desacoplado ganharia `this` = global nos testes e undefined no
+ * navegador. A diretiva entra sem deslocar nada: a última linha longa do
+ * comentário de cabeçalho termina em `*\/'use strict';` e o resto do
+ * comentário vira espaço (quebras de linha mantidas).
+ */
+function estrito(codigo, arquivo) {
+  const m = codigo.match(/^\s*\/\*[\s\S]*?\*\//);
+  if (!m) {
+    throw new Error('[esm-como-script] ' + path.relative(process.cwd(), arquivo)
+      + ' precisa começar com um comentário de bloco (o conversor põe o \'use strict\' nele).');
+  }
+  const fim = m[0].length;
+  const corpo = m[0].slice(0, -2);
+  // Última linha do comentário com espaço para a diretiva (e sem o /* de abertura).
+  let fimLinha = corpo.length;
+  while (fimLinha > 0) {
+    const ini = corpo.lastIndexOf('\n', fimLinha - 1) + 1;
+    if (fimLinha - ini >= DIRETIVA.length && ini > corpo.indexOf('/*') + 1) {
+      const pos = fimLinha - DIRETIVA.length;
+      return codigo.slice(0, pos) + DIRETIVA + emBranco(codigo.slice(fimLinha, fim)) + codigo.slice(fim);
+    }
+    fimLinha = ini - 1;
+  }
+  throw new Error('[esm-como-script] comentário de cabeçalho curto demais em ' + arquivo);
+}
+
 /**
  * Converte um ES Module em script de mesmo tamanho.
  * @returns {{codigo:string, importa:Array<{arquivo:string, nomes:Array<{importado:string, local:string}>}>, exporta:Array<{exportado:string, local:string}>}}
@@ -82,6 +112,8 @@ function converter(codigo, arquivo) {
       + ' — import/export fora do subconjunto suportado. Amplie tests/helpers/esm-como-script.cjs.');
   }
 
+  codigo = estrito(codigo, arquivo);
+
   const locais = new Set(exporta.map((e) => e.local));
   codigo = codigo.replace(new RegExp('^(const|let)(\\s+)(' + ID + ')(\\s*=)', 'gm'), (trecho, kw, esp, nome, igual) => {
     if (!locais.has(nome)) return trecho;
@@ -98,16 +130,39 @@ function converter(codigo, arquivo) {
  * @param {object} ctx        contexto vm (o objeto global dele)
  * @param {string} arquivo    caminho absoluto
  * @param {Map}    [cache]    arquivo → exports, compartilhado entre chamadas no mesmo ctx
+ * @param {object} [mocks]    nome exportado → dublê; um import coberto por inteiro não roda
  * @returns {object} exports do módulo ({ default, NOME… })
  */
-function executarModulo(ctx, arquivo, cache) {
-  cache = cache || new Map();
+// Marca de módulo em execução: num ciclo de imports (a importa b, b importa a),
+// quem chega de volta a um módulo ainda rodando não espera por ele.
+const EM_ANDAMENTO = Symbol('em andamento');
+
+// Um cache por contexto: chamadas separadas no mesmo ctx (config.js, depois
+// um módulo que o importa) não rodam o mesmo arquivo duas vezes.
+const cachePorContexto = new WeakMap();
+
+function executarModulo(ctx, arquivo, cache, mocks) {
+  if (!cache) {
+    if (!cachePorContexto.has(ctx)) cachePorContexto.set(ctx, new Map());
+    cache = cachePorContexto.get(ctx);
+  }
+  mocks = mocks || {};
   if (cache.has(arquivo)) return cache.get(arquivo);
   const fonte = fs.readFileSync(arquivo, 'utf8');
   const { codigo, importa, exporta } = converter(fonte, arquivo);
+  cache.set(arquivo, EM_ANDAMENTO);
 
   for (const dep of importa) {
-    const exps = executarModulo(ctx, dep.arquivo, cache);
+    // Dublê para todos os nomes deste import: o módulo real nem roda (mock).
+    if (dep.nomes.every((n) => Object.prototype.hasOwnProperty.call(mocks, n.importado))) {
+      dep.nomes.forEach((n) => { ctx[n.local] = mocks[n.importado]; });
+      continue;
+    }
+    const exps = executarModulo(ctx, dep.arquivo, cache, mocks);
+    // Ciclo: como no navegador, os nomes do outro módulo só existem quando ele
+    // termina. Aqui eles viram globais do contexto com o mesmo nome, então
+    // quem os usa dentro de funções (a única forma válida num ciclo) os acha.
+    if (exps === EM_ANDAMENTO) continue;
     for (const { importado, local } of dep.nomes) {
       if (!(importado in exps)) {
         throw new Error('[esm-como-script] ' + dep.arquivo + ' não exporta "' + importado + '"');
@@ -127,4 +182,14 @@ function executarModulo(ctx, arquivo, cache) {
   return exps;
 }
 
-module.exports = { ehModulo, converter, executarModulo };
+/** Nomes que o módulo e tudo o que ele importa declaram no topo (exports). */
+function nomesDoGrafo(arquivo, vistos) {
+  vistos = vistos || new Set();
+  if (vistos.has(arquivo)) return [];
+  vistos.add(arquivo);
+  const { importa, exporta } = converter(fs.readFileSync(arquivo, 'utf8'), arquivo);
+  return exporta.map((e) => e.local)
+    .concat(...importa.map((dep) => nomesDoGrafo(dep.arquivo, vistos)));
+}
+
+module.exports = { ehModulo, converter, executarModulo, nomesDoGrafo };

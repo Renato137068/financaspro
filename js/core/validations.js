@@ -7,6 +7,8 @@
  */
 
 import { PASSWORD_POLICY } from './password-policy.js';
+import { CONFIG } from './config.js';
+import { UTILS } from './utils.js';
 
 const VALIDATIONS = {
   // Validar e sanitizar entrada de texto
@@ -16,7 +18,7 @@ const VALIDATIONS = {
 
   // Validar descrição
   validarDescricao: function(descricao) {
-    var texto = this.sanitizarTexto(descricao);
+    var texto = VALIDATIONS.sanitizarTexto(descricao);
     if (!texto || texto.length === 0) {
       return { valido: false, erro: 'Descrição é obrigatória' };
     }
@@ -79,16 +81,16 @@ const VALIDATIONS = {
 
   // Validar transação completa
   validarTransacaoCompleta: function(dados) {
-    var descVal = this.validarDescricao(dados.descricao);
+    var descVal = VALIDATIONS.validarDescricao(dados.descricao);
     if (!descVal.valido) return descVal;
 
-    var valVal = this.validarValor(dados.valor);
+    var valVal = VALIDATIONS.validarValor(dados.valor);
     if (!valVal.valido) return valVal;
 
-    var dataVal = this.validarData(dados.data);
+    var dataVal = VALIDATIONS.validarData(dados.data);
     if (!dataVal.valido) return dataVal;
 
-    var catVal = this.validarCategoria(dados.categoria, dados.tipo);
+    var catVal = VALIDATIONS.validarCategoria(dados.categoria, dados.tipo);
     if (!catVal.valido) return catVal;
 
     return { valido: true };

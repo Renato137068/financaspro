@@ -29,7 +29,9 @@ function carregarDadosReal(extra) {
   for (const rel of ['js/core/config.js', 'js/core/dados.js']) {
     const file = path.join(root, rel);
     // dados.js mistura o cliente Express, que a ponte ESM publica antes dele.
-    if (rel === 'js/core/dados.js') executarModulo(ctx, path.join(root, 'js/core/dados-express.js'));
+    // config.js e dados-express.js são ES Modules (a ponte os publica antes de dados.js).
+    if (rel === 'js/core/config.js') { executarModulo(ctx, file); continue; }
+    if (rel === 'js/core/dados.js') executarModulo(ctx, path.join(root, 'js/core/dados-express.js'), undefined, { UTILS: sandbox.UTILS });
     vm.runInContext(fs.readFileSync(file, 'utf8'), ctx, { filename: file });
   }
   return sandbox;

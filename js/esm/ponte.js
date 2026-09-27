@@ -8,6 +8,8 @@
  * Nenhum módulo daqui pode ler globais de script clássico no carregamento:
  * no build, esta entrada roda antes do app.bundle.js. Só dentro de funções.
  */
+import { CONFIG } from '../core/config.js';
+import { UTILS } from '../core/utils.js';
 import { PASSWORD_POLICY } from '../core/password-policy.js';
 import { VALIDATIONS } from '../core/validations.js';
 import { FINANCE_CONTRACT } from '../core/finance-contract.js';
@@ -22,6 +24,8 @@ import { INSIGHT_ACOES } from '../modules/insight-acoes.js';
 import { DADOS_EXPRESS } from '../core/dados-express.js';
 import { FORM_SUGESTOES } from '../modules/form-sugestoes.js';
 
+window.CONFIG = CONFIG;
+window.UTILS = UTILS;
 window.PASSWORD_POLICY = PASSWORD_POLICY;
 window.VALIDATIONS = VALIDATIONS;
 window.FINANCE_CONTRACT = FINANCE_CONTRACT;

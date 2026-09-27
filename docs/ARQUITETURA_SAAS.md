@@ -32,11 +32,14 @@ mesmos dados sincronizam com o Supabase.
 - **ES Modules pela ponte** ([ADR 0005](adr/0005-ponte-es-modules-entrada-vite.md)).
   `js/esm/ponte.js` é o único `<script type="module">`: importa os módulos
   migrados e os publica em `window` para os scripts clássicos. Módulo novo
-  nasce aqui. Já migrados: o núcleo puro de `js/core` (`PASSWORD_POLICY`,
-  `VALIDATIONS`, `FINANCE_CONTRACT`, `SYNC_MERGE`, `SESSION_LOG`, `IDB_KV`,
-  `CATEGORIA_VISUAL`), os services de transação e orçamento, `INSIGHT_ACOES`,
-  `DADOS_EXPRESS` e `FORM_SUGESTOES`. Entre eles a dependência é `import`
-  (`tests/esm-fundacao.test.js` recusa o uso pelo global).
+  nasce aqui. Já migrados: as bases `CONFIG` e `UTILS`, o núcleo puro de
+  `js/core` (`PASSWORD_POLICY`, `VALIDATIONS`, `FINANCE_CONTRACT`,
+  `SYNC_MERGE`, `SESSION_LOG`, `IDB_KV`, `CATEGORIA_VISUAL`, `TELAS`), os
+  services de transação e orçamento, `INSIGHT_ACOES`, `DADOS_EXPRESS` e
+  `FORM_SUGESTOES`. Entre eles a dependência é `import`, e nenhum usa `this`
+  fora dos mixins: módulo roda em modo estrito, e método passado como
+  callback perde o `this` (`tests/esm-fundacao.test.js` trava as duas
+  regras; o conversor dos testes também roda em modo estrito).
 - **Mixins para quebrar arquivos grandes.** Um pedaço coeso de um objeto
   clássico sai para um ES Module e volta por `Object.assign` no fim do
   arquivo original, sem mudar quem chama: `dados-express.js` (cliente da API

@@ -17,16 +17,16 @@ const SESSION_LOG = {
       tipo: String(tipo)
     };
     if (detalhe != null) evt.detalhe = detalhe;
-    this._eventos.push(evt);
-    if (this._eventos.length > this._max) this._eventos.shift();
+    SESSION_LOG._eventos.push(evt);
+    if (SESSION_LOG._eventos.length > SESSION_LOG._max) SESSION_LOG._eventos.shift();
   },
 
   snapshot: function() {
-    return this._eventos.slice();
+    return SESSION_LOG._eventos.slice();
   },
 
   limpar: function() {
-    this._eventos = [];
+    SESSION_LOG._eventos = [];
   }
 };
 

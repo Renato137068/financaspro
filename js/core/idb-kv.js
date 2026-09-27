@@ -12,13 +12,13 @@ const IDB_KV = {
   _db: null,
 
   isReady: function() {
-    return !!this._db;
+    return !!IDB_KV._db;
   },
 
   init: function() {
-    var self = this;
+    var self = IDB_KV;
     if (typeof indexedDB === 'undefined') return Promise.resolve(false);
-    if (this._db) return Promise.resolve(true);
+    if (IDB_KV._db) return Promise.resolve(true);
     return new Promise(function(resolve) {
       var req = indexedDB.open(self.DB_NAME, self.DB_VERSION);
       req.onupgradeneeded = function(e) {
@@ -39,8 +39,8 @@ const IDB_KV = {
   },
 
   get: function(key) {
-    var self = this;
-    return this.init().then(function(ok) {
+    var self = IDB_KV;
+    return IDB_KV.init().then(function(ok) {
       if (!ok || !self._db) return null;
       return new Promise(function(resolve) {
         var tx = self._db.transaction(self.STORE, 'readonly');
@@ -52,8 +52,8 @@ const IDB_KV = {
   },
 
   set: function(key, value) {
-    var self = this;
-    return this.init().then(function(ok) {
+    var self = IDB_KV;
+    return IDB_KV.init().then(function(ok) {
       if (!ok || !self._db) return false;
       return new Promise(function(resolve) {
         var tx = self._db.transaction(self.STORE, 'readwrite');
@@ -65,8 +65,8 @@ const IDB_KV = {
   },
 
   remove: function(key) {
-    var self = this;
-    return this.init().then(function(ok) {
+    var self = IDB_KV;
+    return IDB_KV.init().then(function(ok) {
       if (!ok || !self._db) return false;
       return new Promise(function(resolve) {
         var tx = self._db.transaction(self.STORE, 'readwrite');

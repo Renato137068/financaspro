@@ -11,6 +11,9 @@
  * `Object.assign(INIT_FORM, FORM_SUGESTOES)`, e eles se chamam por
  * `INIT_FORM.…`. ES Module (ADR 0005), publicado por js/esm/ponte.js.
  */
+
+import { CONFIG } from '../core/config.js';
+import { UTILS } from '../core/utils.js';
 const FORM_SUGESTOES = {
   /**
    * 7. AUTO-CATEGORIZAÇÃO

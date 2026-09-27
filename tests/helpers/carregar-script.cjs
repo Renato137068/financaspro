@@ -17,11 +17,13 @@
  * ES Module (import/export) roda pelo conversor de mesmo tamanho de
  * esm-como-script.cjs, com os imports carregados antes no mesmo sandbox. A
  * função devolve o export default, ou o objeto de exports se não houver.
+ * Para trocar um import por um dublê, passe-o em `extras` com o nome do
+ * export: `carregarScript('js/modules/x.js', { UTILS: dubleDeUtils })`.
  */
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const { ehModulo, executarModulo } = require('./esm-como-script.cjs');
+const { ehModulo, executarModulo, nomesDoGrafo } = require('./esm-como-script.cjs');
 
 const ROOT = path.join(__dirname, '..', '..');
 
@@ -50,11 +52,17 @@ function carregarScript(rel, extras) {
       enumerable: false,
     });
   });
+  const codigo = fs.readFileSync(arquivo, 'utf8');
+  const modulo = ehModulo(codigo);
+  // Os nomes que o grafo do módulo declara ficam só no sandbox: sem isso, o
+  // `var UTILS` de um import escreveria pelo getter no global do teste e
+  // atropelaria o dublê que ele montou.
+  if (modulo) nomesDoGrafo(arquivo).forEach((nome) => { delete sandbox[nome]; });
   Object.assign(sandbox, { module: mod, exports: mod.exports }, extras || {});
   const ctx = vm.createContext(sandbox);
-  const codigo = fs.readFileSync(arquivo, 'utf8');
-  if (ehModulo(codigo)) {
-    const exps = executarModulo(ctx, arquivo);
+  if (modulo) {
+    // `extras` com o nome de um export substitui aquele import (mock).
+    const exps = executarModulo(ctx, arquivo, undefined, extras);
     return 'default' in exps ? exps.default : exps;
   }
   vm.runInContext(codigo, ctx, { filename: arquivo });

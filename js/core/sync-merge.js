@@ -36,8 +36,8 @@ const SYNC_MERGE = {
    * @returns {Array} novo cache local
    */
   mergeDelta: function(local, pendingIds, delta) {
-    var pend = this._pendingSet(pendingIds);
-    var self = this;
+    var pend = SYNC_MERGE._pendingSet(pendingIds);
+    var self = SYNC_MERGE;
     var mapa = {};
     (Array.isArray(local) ? local : []).forEach(function(r) {
       if (r && r.id != null) mapa[r.id] = r;
@@ -84,8 +84,8 @@ const SYNC_MERGE = {
   detectarConflitos: function(local, pendingIds, delta, opts) {
     opts = opts || {};
     var janela = opts.janelaMs || 60000;
-    var pend = this._pendingSet(pendingIds);
-    var self = this;
+    var pend = SYNC_MERGE._pendingSet(pendingIds);
+    var self = SYNC_MERGE;
     var mapaLocal = {};
     (Array.isArray(local) ? local : []).forEach(function(r) {
       if (r && r.id != null) mapaLocal[r.id] = r;
@@ -119,7 +119,7 @@ const SYNC_MERGE = {
       if (!d || d.id == null) return false;
       return res[d.id] !== 'local';
     });
-    var merged = this.mergeDelta(local, pendingIds, deltaFiltrado);
+    var merged = SYNC_MERGE.mergeDelta(local, pendingIds, deltaFiltrado);
     var mapa = {};
     merged.forEach(function(r) { if (r && r.id != null) mapa[r.id] = r; });
     // A escolha do usuário é autoritativa — sobrepõe o LWW. Sem forçar o

@@ -36,12 +36,12 @@ const CATEGORIA_VISUAL = {
   /** Nome do ícone lucide da categoria ('pin' quando desconhecida). */
   nomeIcone: function(cat) {
     var c = cat == null ? '' : String(cat);
-    return this.ICONES[c] || this.ICONES[c.toLowerCase()] || 'pin';
+    return CATEGORIA_VISUAL.ICONES[c] || CATEGORIA_VISUAL.ICONES[c.toLowerCase()] || 'pin';
   },
 
   /** HTML do ícone da categoria. */
   icone: function(cat) {
-    var nome = this.nomeIcone(cat);
+    var nome = CATEGORIA_VISUAL.nomeIcone(cat);
     if (typeof lucideIconHtml === 'function') return lucideIconHtml(nome);
     return '<i data-lucide="' + nome + '" aria-hidden="true"></i>';
   },
@@ -49,7 +49,7 @@ const CATEGORIA_VISUAL = {
   /** Cor (hex) da categoria. */
   cor: function(cat) {
     var c = cat == null ? '' : String(cat);
-    return this.CORES[c] || this.CORES[c.toLowerCase()] || this.COR_PADRAO;
+    return CATEGORIA_VISUAL.CORES[c] || CATEGORIA_VISUAL.CORES[c.toLowerCase()] || CATEGORIA_VISUAL.COR_PADRAO;
   }
 };
 

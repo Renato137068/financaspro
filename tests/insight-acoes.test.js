@@ -34,7 +34,8 @@ beforeEach(() => {
       cb();
     },
   };
-  IA = carregarScript('js/modules/insight-acoes.js');
+  // O dublê de UTILS substitui o import do módulo.
+  IA = carregarScript('js/modules/insight-acoes.js', { UTILS: global.UTILS });
 });
 
 afterEach(() => {

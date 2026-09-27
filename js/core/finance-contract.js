@@ -9,21 +9,21 @@ const FINANCE_CONTRACT = {
   UUID_RE: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
 
   isUuid: function(v) {
-    return typeof v === 'string' && this.UUID_RE.test(v);
+    return typeof v === 'string' && FINANCE_CONTRACT.UUID_RE.test(v);
   },
 
   /** Resolve nome, id legado ou UUID para UUID de conta. */
   resolveAccountId: function(ref, contas) {
     if (ref == null || ref === '') return null;
     var s = String(ref).trim();
-    if (this.isUuid(s)) return s;
+    if (FINANCE_CONTRACT.isUuid(s)) return s;
     var lista = Array.isArray(contas) ? contas : [];
     for (var i = 0; i < lista.length; i++) {
       var c = lista[i];
       if (!c) continue;
-      if (c.id === s) return this.isUuid(c.id) ? c.id : null;
+      if (c.id === s) return FINANCE_CONTRACT.isUuid(c.id) ? c.id : null;
       if (c.nome && c.nome.toLowerCase() === s.toLowerCase()) {
-        return this.isUuid(c.id) ? c.id : null;
+        return FINANCE_CONTRACT.isUuid(c.id) ? c.id : null;
       }
     }
     return null;
@@ -32,7 +32,7 @@ const FINANCE_CONTRACT = {
   /** Rótulo legível para exibição local a partir de UUID. */
   accountLabel: function(ref, contas) {
     if (!ref) return '';
-    if (!this.isUuid(String(ref))) return String(ref);
+    if (!FINANCE_CONTRACT.isUuid(String(ref))) return String(ref);
     var lista = Array.isArray(contas) ? contas : [];
     for (var i = 0; i < lista.length; i++) {
       if (lista[i] && lista[i].id === ref) return lista[i].nome || ref;
@@ -74,16 +74,16 @@ const FINANCE_CONTRACT = {
   txPtToEn: function(tx, contas) {
     if (!tx || typeof tx !== 'object') return tx;
     var contasRef = contas || (typeof DADOS !== 'undefined' && DADOS && DADOS.getContas ? DADOS.getContas() : []);
-    var accountId = tx.accountId || this.resolveAccountId(tx.banco, contasRef);
+    var accountId = tx.accountId || FINANCE_CONTRACT.resolveAccountId(tx.banco, contasRef);
     var targetAccountId = tx.contaDestinoId
-      || this.resolveAccountId(tx.contaDestinoId || tx.contaDestino, contasRef);
+      || FINANCE_CONTRACT.resolveAccountId(tx.contaDestinoId || tx.contaDestino, contasRef);
     return {
       type: tx.tipo,
-      amount: this._parseAmount(tx.valor),
+      amount: FINANCE_CONTRACT._parseAmount(tx.valor),
       description: tx.descricao || 'Sem descrição',
       category: tx.categoria || 'outro',
       subcategory: tx.subcategoria || undefined,
-      date: this._toIsoDate(tx.data),
+      date: FINANCE_CONTRACT._toIsoDate(tx.data),
       accountId: accountId,
       targetAccountId: targetAccountId,
       tags: Array.isArray(tx.tags) ? tx.tags : [],
@@ -105,10 +105,10 @@ const FINANCE_CONTRACT = {
       subcategoria: tx.subcategory || '',
       data: tx.date ? String(tx.date).substring(0, 10) : '',
       descricao: tx.description || '',
-      banco: this.accountLabel(accountId, contasRef) || accountId || '',
+      banco: FINANCE_CONTRACT.accountLabel(accountId, contasRef) || accountId || '',
       accountId: accountId || undefined,
       contaDestinoId: contaDestinoId,
-      contaDestino: contaDestinoId ? this.accountLabel(contaDestinoId, contasRef) : '',
+      contaDestino: contaDestinoId ? FINANCE_CONTRACT.accountLabel(contaDestinoId, contasRef) : '',
       cartao: '',
       notas: tx.notes || '',
       tags: tx.tags || [],
@@ -123,7 +123,7 @@ const FINANCE_CONTRACT = {
   contaPtToEn: function(conta) {
     if (!conta || typeof conta !== 'object') return conta;
     var tipo = conta.tipo || 'corrente';
-    var typeEn = this.ACCOUNT_TYPE_PT_TO_EN[tipo] || (this.ACCOUNT_TYPE_EN_TO_PT[tipo] ? tipo : 'checking');
+    var typeEn = FINANCE_CONTRACT.ACCOUNT_TYPE_PT_TO_EN[tipo] || (FINANCE_CONTRACT.ACCOUNT_TYPE_EN_TO_PT[tipo] ? tipo : 'checking');
     return {
       name: conta.nome || conta.name || 'Conta',
       type: typeEn,
@@ -139,7 +139,7 @@ const FINANCE_CONTRACT = {
     return {
       id: ac.id,
       nome: ac.name || '',
-      tipo: this.ACCOUNT_TYPE_EN_TO_PT[tipoEn] || tipoEn,
+      tipo: FINANCE_CONTRACT.ACCOUNT_TYPE_EN_TO_PT[tipoEn] || tipoEn,
       saldo: ac.balance != null ? Number(ac.balance) : 0,
       moeda: ac.currency || 'BRL',
       banco: ac.institution || '',
@@ -154,20 +154,20 @@ const FINANCE_CONTRACT = {
     if (!rec || typeof rec !== 'object') return rec;
     var contasRef = contas || (typeof DADOS !== 'undefined' && DADOS && DADOS.getContas ? DADOS.getContas() : []);
     var freqRaw = (rec.frequencia || rec.frequency || 'mensal').toLowerCase();
-    var freqEn = this.FREQ_PT_TO_EN[freqRaw] || 'monthly';
+    var freqEn = FINANCE_CONTRACT.FREQ_PT_TO_EN[freqRaw] || 'monthly';
     var inicio = rec.dataInicio || rec.inicio || rec.startDate;
     var fim = rec.dataFim || rec.fim || rec.endDate;
     var proximo = rec.proximoVencimento || rec.proxima || rec.nextDue || inicio;
-    var accountId = rec.accountId || this.resolveAccountId(rec.banco, contasRef);
+    var accountId = rec.accountId || FINANCE_CONTRACT.resolveAccountId(rec.banco, contasRef);
     return {
       type: rec.tipo || rec.type || 'despesa',
-      amount: this._parseAmount(rec.valor != null ? rec.valor : rec.amount),
+      amount: FINANCE_CONTRACT._parseAmount(rec.valor != null ? rec.valor : rec.amount),
       description: rec.descricao || rec.description || 'Recorrente',
       category: rec.categoria || rec.category || 'outro',
       frequency: freqEn,
-      startDate: this._toIsoDate(inicio),
-      endDate: fim ? this._toIsoDate(fim) : null,
-      nextDue: this._toIsoDate(proximo),
+      startDate: FINANCE_CONTRACT._toIsoDate(inicio),
+      endDate: fim ? FINANCE_CONTRACT._toIsoDate(fim) : null,
+      nextDue: FINANCE_CONTRACT._toIsoDate(proximo),
       active: rec.ativo !== false && rec.active !== false,
       accountId: accountId || undefined,
     };
@@ -176,7 +176,7 @@ const FINANCE_CONTRACT = {
   recorrenteEnToPt: function(rec, contas) {
     if (!rec || typeof rec !== 'object') return rec;
     var contasRef = contas || (typeof DADOS !== 'undefined' && DADOS && DADOS.getContas ? DADOS.getContas() : []);
-    var freqPt = this.FREQ_EN_TO_PT[rec.frequency] || rec.frequency || 'mensal';
+    var freqPt = FINANCE_CONTRACT.FREQ_EN_TO_PT[rec.frequency] || rec.frequency || 'mensal';
     var accountId = rec.accountId || null;
     return {
       id: rec.id,
@@ -190,7 +190,7 @@ const FINANCE_CONTRACT = {
       proximoVencimento: rec.nextDue ? String(rec.nextDue).substring(0, 10) : '',
       ativo: rec.active !== false,
       accountId: accountId || undefined,
-      banco: this.accountLabel(accountId, contasRef) || '',
+      banco: FINANCE_CONTRACT.accountLabel(accountId, contasRef) || '',
       dataCriacao: rec.createdAt || new Date().toISOString(),
       updatedAt: rec.updatedAt || rec.createdAt || new Date().toISOString(),
       _apiId: rec.id,

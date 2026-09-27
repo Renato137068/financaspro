@@ -75,6 +75,26 @@ describe('fundação ES Modules', () => {
     expect(faltando).toEqual([]);
   });
 
+  // Módulo ES roda em modo estrito: método chamado desacoplado (passado como
+  // callback, ex.: { idFactory: UTILS.gerarId }) recebe `this` undefined. No
+  // script clássico o `this` virava window e o erro passava despercebido. Os
+  // módulos usam o próprio nome; só os mixins (copiados para outro objeto por
+  // Object.assign, como DADOS_EXPRESS em DADOS) dependem de `this` de propósito.
+  test('módulo migrado não usa this, exceto mixins', () => {
+    const js = arquivosJs('js').map((rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8')).join('\n');
+    const mixins = new Set([...js.matchAll(/Object\.assign\(\s*[A-Z_]+\s*,\s*([A-Z_]+)\s*\)/g)].map((m) => m[1]));
+    const comThis = [];
+    for (const rel of grafo) {
+      const arquivo = path.join(ROOT, rel);
+      const { codigo, exporta } = converter(fs.readFileSync(arquivo, 'utf8'), arquivo);
+      if (exporta.some((e) => mixins.has(e.local))) continue;
+      const semComentarios = codigo.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '');
+      if (/\bthis\b/.test(semComentarios)) comThis.push(rel);
+    }
+    expect([...mixins].sort()).toEqual(['DADOS_EXPRESS', 'FORM_SUGESTOES']);
+    expect(comThis).toEqual([]);
+  });
+
   test('sem resto do padrão CommonJS nos módulos', () => {
     for (const rel of grafo) {
       expect(fs.readFileSync(path.join(ROOT, rel), 'utf8')).not.toMatch(/module\.exports|typeof module/);
@@ -99,7 +119,8 @@ describe('fundação ES Modules', () => {
 
   test('a ponte publica os módulos migrados em window', () => {
     const nomes = ['CATEGORIA_VISUAL', 'TRANSACTION_SERVICE', 'BUDGET_SERVICE', 'INSIGHT_ACOES',
-      'PASSWORD_POLICY', 'VALIDATIONS', 'FINANCE_CONTRACT', 'SYNC_MERGE', 'SESSION_LOG', 'IDB_KV', 'TELAS'];
+      'PASSWORD_POLICY', 'VALIDATIONS', 'FINANCE_CONTRACT', 'SYNC_MERGE', 'SESSION_LOG', 'IDB_KV', 'TELAS',
+      'CONFIG', 'UTILS'];
     try {
       carregarScript('js/esm/ponte.js');
       nomes.forEach((n) => expect(typeof window[n]).toBe('object'));

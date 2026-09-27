@@ -10,14 +10,16 @@
  * ES Module (ADR 0005): os scripts clássicos o recebem como global por
  * js/esm/ponte.js.
  */
+
+import { UTILS } from '../core/utils.js';
 const INSIGHT_ACOES = {
   _ligado: false,
 
   /** Um listener delegado no documento para todo [data-insight-action]. */
   init: function() {
-    if (this._ligado) return;
-    this._ligado = true;
-    var self = this;
+    if (INSIGHT_ACOES._ligado) return;
+    INSIGHT_ACOES._ligado = true;
+    var self = INSIGHT_ACOES;
     document.addEventListener('click', function(e) {
       var btn = e.target.closest('[data-insight-action]');
       if (!btn) return;
@@ -76,7 +78,7 @@ const INSIGHT_ACOES = {
         break;
 
       default:
-        this.executar(acao, parametros);
+        INSIGHT_ACOES.executar(acao, parametros);
     }
   },
 

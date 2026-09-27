@@ -5,6 +5,8 @@
  * por js/esm/ponte.js.
  * Pode ser reaproveitado no backend porque nao toca DOM nem localStorage.
  */
+
+import { UTILS } from '../core/utils.js';
 const TRANSACTION_SERVICE = (function() {
   var TIPOS = { RECEITA: 'receita', DESPESA: 'despesa', TRANSFERENCIA: 'transferencia' };
 

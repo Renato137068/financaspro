@@ -22,14 +22,14 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { executarModulo } = require('./helpers/esm-como-script.cjs');
 
 function loadAiEngine() {
   const ctx = vm.createContext({ Date, Math, Number, String, Array, Object, JSON });
   // config.js junto: a mensagem de anomalia traduz o slug da categoria pelo
   // CONFIG.CATEGORIAS_LABELS. Sem ele o teste validaria um fallback que nunca
   // acontece em produção.
-  const cfgFile = path.join(__dirname, '..', 'js', 'core', 'config.js');
-  vm.runInContext(fs.readFileSync(cfgFile, 'utf8'), ctx, { filename: cfgFile });
+  executarModulo(ctx, path.join(__dirname, '..', 'js', 'core', 'config.js'));
 
   const file = path.join(__dirname, '..', 'js', 'ai-engine.js');
   vm.runInContext(fs.readFileSync(file, 'utf8'), ctx, { filename: file });

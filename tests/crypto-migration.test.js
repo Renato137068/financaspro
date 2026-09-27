@@ -15,9 +15,10 @@ const { executarModulo } = require('./helpers/esm-como-script.cjs');
 const ROOT = path.join(__dirname, '..');
 
 function loadInto(context, rel) {
-  let code = fs.readFileSync(path.join(ROOT, rel), 'utf8');
-  code = code.replace(/\bconst (CONFIG) =/g, 'var   $1 ='); // expõe como global do contexto
-  vm.runInContext(code, context, { filename: rel });
+  const arquivo = path.join(ROOT, rel);
+  // config.js é ES Module (ADR 0005): o conversor deixa CONFIG como global do contexto.
+  if (/^(import|export)\b/m.test(fs.readFileSync(arquivo, 'utf8'))) { executarModulo(context, arquivo); return; }
+  vm.runInContext(fs.readFileSync(arquivo, 'utf8'), context, { filename: rel });
 }
 
 let cryptoDescriptor;
