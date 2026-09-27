@@ -505,11 +505,6 @@ const INIT_NAVIGATION = {
     );
   },
 
-  /** @deprecated OCR removido — alias para anexos. */
-  carregarChunkOcr: function(callback) {
-    this.carregarChunkAnexos(callback);
-  },
-
   _carregarSubOrcamento: function(sub, callback) {
     var self = this;
     var finish = function() {

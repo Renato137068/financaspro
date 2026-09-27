@@ -6,12 +6,10 @@ const path = require('path');
 const billingHelpers = require('../js/billing.js');
 
 describe('OCR removido do produto', function() {
-  test('cota OCR é noop (Infinity) em qualquer tier', function() {
-    var free = billingHelpers.ocrQuota({ usesConsumed: 99, tier: 'FREE', consume: true });
-    expect(free.remaining).toBe(Infinity);
-    expect(free.remainingAfter).toBe(Infinity);
-    var pro = billingHelpers.ocrQuota({ usesConsumed: 0, tier: 'PRO' });
-    expect(pro.remaining).toBe(Infinity);
+  test('sem maquinaria de cota OCR no runtime', function() {
+    const billing = fs.readFileSync(path.join(__dirname, '..', 'js/billing.js'), 'utf8');
+    expect(billing).not.toMatch(/ocrRemaining|consumeOcrUse|_OCR_USES_KEY|fp-ocr-uses/);
+    expect(billingHelpers.ocrQuota).toBeUndefined();
   });
 });
 

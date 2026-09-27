@@ -217,9 +217,9 @@ self.addEventListener('message', (event) => {
 // ficariam em texto puro no Cache Storage (fora do LOCAL_CRYPTO) e, como a URL
 // é idêntica entre usuários, poderiam ser servidas a outra sessão no mesmo
 // aparelho quando offline. Tudo fora desta allowlist é network-only.
-const CACHEABLE_CROSS_ORIGIN = new Set([
-  'cdn.jsdelivr.net',
-]);
+// Vazia desde que o OCR (tesseract via jsdelivr) saiu do produto: hoje todo
+// asset é servido da própria origem.
+const CACHEABLE_CROSS_ORIGIN = new Set([]);
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;

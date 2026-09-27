@@ -96,7 +96,7 @@ describe('Billing — tiers e limites', function() {
   test('trial do SKU em 7 dias, Pro de boas-vindas em 14', function() {
     expect(billingHelpers.TRIAL_DAYS).toBe(7);
     expect(billingHelpers.WELCOME_TRIAL_DAYS).toBe(14);
-    expect(billingHelpers.OCR_FREE_PER_MONTH).toBe(5);
+    expect(billingHelpers.OCR_FREE_PER_MONTH).toBeUndefined(); // OCR saiu do produto
   });
 
   test('o preço promovido é o anual (tiers do Play)', function() {

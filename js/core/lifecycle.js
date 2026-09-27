@@ -487,7 +487,6 @@ const LIFECYCLE_BOOT = {
       // Fase 8: IA Nativa
       if (typeof ALERTAS !== 'undefined' && ALERTAS.init) ALERTAS.init();
       if (typeof PREVISAO !== 'undefined' && PREVISAO.init) PREVISAO.init();
-      // OCR/câmera removidos do produto — stub em js/ocr.js não injeta UI.
       if (typeof INSIGHTS !== 'undefined' && INSIGHTS.mostrarOrcamento) {
         setTimeout(function() { INSIGHTS.mostrarOrcamento(); }, 200);
       }

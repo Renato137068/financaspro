@@ -337,11 +337,13 @@ describe('Recuperação — o limite está no banco, não na tela', () => {
 });
 
 describe('CSP — OCR removido do produto', () => {
-  test('ocr.js é stub sem Tesseract', () => {
-    const ocr = fs.readFileSync(path.join(root, 'js/ocr.js'), 'utf8');
-    expect(ocr).not.toContain('CONFIG.TESSERACT_LOCAL');
-    expect(ocr).not.toMatch(/tesseract/i);
-    expect(ocr).toMatch(/no-op|desativado|removido/i);
+  test('ocr.js não existe mais (nem como stub)', () => {
+    expect(fs.existsSync(path.join(root, 'js/ocr.js'))).toBe(false);
+  });
+
+  test('connect-src de produção não libera o CDN do Tesseract (jsdelivr)', () => {
+    const { buildCspConnectSrc } = require('../scripts/csp-connect-src.cjs');
+    expect(buildCspConnectSrc({ prod: true })).not.toMatch(/jsdelivr/);
   });
 
   test('index não carrega script OCR', () => {

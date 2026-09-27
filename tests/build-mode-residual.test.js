@@ -78,11 +78,8 @@ describe('PIN flag plano + tema', () => {
 });
 
 describe('OCR desativado no produto', () => {
-  test('stub OCR sem Tesseract / câmera', () => {
-    const ocr = fs.readFileSync(path.join(root, 'js/ocr.js'), 'utf8');
-    expect(ocr).toMatch(/no-op|desativado|removido/i);
-    expect(ocr).not.toContain('tesseract.js@5.1.1');
-    expect(ocr).not.toContain('btn-ocr-scan');
+  test('sem stub OCR, Tesseract nem scripts de câmera no repositório', () => {
+    expect(fs.existsSync(path.join(root, 'js/ocr.js'))).toBe(false);
     expect(fs.existsSync(path.join(root, 'js/vendor/tesseract.min.js'))).toBe(false);
     expect(fs.existsSync(path.join(root, 'scripts/probe-ocr.cjs'))).toBe(false);
     expect(fs.existsSync(path.join(root, 'scripts/vendor-tesseract.cjs'))).toBe(false);

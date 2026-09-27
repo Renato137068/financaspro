@@ -34,7 +34,7 @@ var BILLING = {
       maxAttachments: 10,
       maxDevices: 1,
       historyMonths: 3,
-      ocrPerMonth: 5,
+      ocrPerMonth: 5, // legado: espelha a coluna do banco (plan-limits-parity); OCR saiu do produto
       aiFeatures: false,
       teamFeatures: false,
       exportCsv: true,
@@ -107,10 +107,6 @@ var BILLING = {
    * pela loja -- por isso nao conflita com o trial de 7 dias do SKU.
    */
   WELCOME_TRIAL_DAYS: 14,
-
-  /** Cota MENSAL de OCR no plano gratuito (renova na virada do mes). */
-  OCR_FREE_PER_MONTH: 5,
-  _OCR_USES_KEY: 'fp-ocr-uses',
 
   TIER_ORDER: { FREE: 0, PRO: 1, BUSINESS: 2 },
 
@@ -331,42 +327,6 @@ var BILLING = {
     return current >= required;
   },
 
-  /** Competencia atual no formato AAAA-MM, para a cota mensal de OCR. */
-  _competenciaAtual: function() {
-    var d = new Date();
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-  },
-
-  /**
-   * Usos de OCR na competencia corrente.
-   *
-   * Antes eram 5 usos VITALICIOS: o usuario queimava os cinco numa tarde e o
-   * recurso desaparecia para sempre, sem nunca mais lembra-lo de que existe.
-   * Cota mensal mantem a lembranca viva e recria o desejo toda virada de mes.
-   */
-  _getOcrUses: function() {
-    try {
-      var raw = localStorage.getItem(this._OCR_USES_KEY);
-      if (!raw) return 0;
-      var parsed = JSON.parse(raw);
-      if (!parsed || parsed.mes !== this._competenciaAtual()) return 0;
-      var n = parseInt(parsed.usos, 10);
-      return isNaN(n) || n < 0 ? 0 : n;
-    } catch (e) {
-      return 0;
-    }
-  },
-
-  /** Quantos OCRs ainda cabem neste mes. OCR removido do produto — sempre ilimitado/noop. */
-  ocrRemaining: function() {
-    return Infinity;
-  },
-
-  /** Consome 1 OCR da cota do mes. No-op: OCR desativado. */
-  consumeOcrUse: function() {
-    return;
-  },
-
   /**
    * Flags de plano. Vale igual dentro e fora da nuvem.
    *
@@ -490,8 +450,6 @@ var BILLING = {
       maxSubscriptions: limits.maxSubscriptions,
       customCategories: this._countCustomCategories(),
       maxCustomCategories: limits.maxCustomCategories,
-      ocrThisMonth: this._getOcrUses(),
-      ocrPerMonth: limits.ocrPerMonth,
       historyMonths: limits.historyMonths,
       tier: this.getTier(),
       enforcing: this.shouldEnforceLimits(),
@@ -1245,31 +1203,11 @@ if (typeof module !== 'undefined' && module.exports) {
     PLAN_LIMITS: BILLING.PLAN_LIMITS,
     TRIAL_DAYS: BILLING.TRIAL_DAYS,
     WELCOME_TRIAL_DAYS: BILLING.WELCOME_TRIAL_DAYS,
-    OCR_FREE_PER_MONTH: BILLING.OCR_FREE_PER_MONTH,
     STATIC_PLANS: BILLING.STATIC_PLANS,
     isWelcomeTrial: BILLING.isWelcomeTrial.bind(BILLING),
     isPlayManaged: BILLING.isPlayManaged.bind(BILLING),
     _useSupabaseBilling: function() {
       return BILLING._useSupabaseBilling();
-    },
-    /** Cota mensal de OCR (usa o localStorage do Jest/jsdom). */
-    ocrQuota: function(opts) {
-      opts = opts || {};
-      var key = BILLING._OCR_USES_KEY;
-      var prevTier = BILLING._cache.tier;
-      BILLING._cache.tier = opts.tier || 'FREE';
-      try {
-        localStorage.setItem(key, JSON.stringify({
-          mes: opts.mes || BILLING._competenciaAtual(),
-          usos: opts.usesConsumed || 0,
-        }));
-      } catch (e) { /* */ }
-      var remaining = BILLING.ocrRemaining();
-      if (opts.consume) BILLING.consumeOcrUse();
-      var out = { remaining: remaining, remainingAfter: BILLING.ocrRemaining() };
-      BILLING._cache.tier = prevTier;
-      try { localStorage.removeItem(key); } catch (e2) { /* */ }
-      return out;
     },
     /** Janela de analise por tier — sem tocar em extrato/exportacao. */
     janelaAnalitica: function(tier) {
