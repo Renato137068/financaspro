@@ -97,6 +97,9 @@ test('a11y — tema escuro (Resumo)', async function({ page }) {
 test('a11y — sub-abas Orçamento (claro e escuro)', async function({ page }) {
   await page.evaluate(function() { mudarAba('orcamento'); });
   await expect(page.locator('#aba-orcamento')).toHaveClass(/ativo/);
+  // No build de produção a tela vem no chunk 'orcamento'; sem esperar, as
+  // trocas de sub-aba abaixo seriam puladas e a auditoria veria a tela errada.
+  await page.waitForFunction(function() { return typeof INIT_ORCAMENTO !== 'undefined'; });
 
   var subs = ['planejamento', 'metas', 'assinaturas', 'patrimonio'];
   for (var i = 0; i < subs.length; i++) {

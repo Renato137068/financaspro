@@ -181,12 +181,12 @@ const INIT_NAVIGATION = {
       },
       'orc-sub-aba': function() {
         var sub = target.dataset.orcSub || 'planejamento';
-        self._carregarSubOrcamento(sub, function() {
-          if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.mudarSubAba) {
-            INIT_ORCAMENTO.mudarSubAba(sub);
-          } else if (typeof mudarSubAbaOrcamento === 'function') {
-            mudarSubAbaOrcamento(sub);
-          }
+        self.carregarChunkOrcamento(function() {
+          self._carregarSubOrcamento(sub, function() {
+            if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.mudarSubAba) {
+              INIT_ORCAMENTO.mudarSubAba(sub);
+            }
+          });
         });
       },
       'abrir-entrada-rapida': function() { safeCall('abrirEntradaRapida'); },
@@ -544,6 +544,17 @@ const INIT_NAVIGATION = {
   },
 
   /**
+   * Orçamento (chunk 'orcamento'). INIT_ORCAMENTO não tem init: só desenha
+   * quando a aba abre. Os globais que ele define (salvarRendaOrcamento…) só
+   * são acionados de dentro da própria tela.
+   */
+  carregarChunkOrcamento: function(callback) {
+    this._ensureChunk('orcamento', function() { return typeof INIT_ORCAMENTO !== 'undefined'; }, function() {
+      if (typeof callback === 'function') callback();
+    });
+  },
+
+  /**
    * Extrato (chunk 'extrato'). INIT_EXTRATO.init liga os listeners da aba e só
    * pode rodar uma vez — na primeira carga real do chunk. Com o app sem
    * bundle (dev, testes), o lifecycle já o inicializou no boot.
@@ -731,7 +742,7 @@ function mudarAba(nomeAba, opcoes) {
       }
       if (nomeAba === 'orcamento') {
         var orcSubPref = (opcoes && opcoes.orcSub) ? opcoes.orcSub : null;
-        INIT_NAVIGATION._carregarSubOrcamento(orcSubPref || 'planejamento', function() {
+        var abrirOrcamento = function() {
           if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.restaurarSubAba) {
             INIT_ORCAMENTO.restaurarSubAba(orcSubPref);
           } else if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.mudarSubAba) {
@@ -739,8 +750,6 @@ function mudarAba(nomeAba, opcoes) {
           }
           if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.renderDashboard) {
             INIT_ORCAMENTO.renderDashboard();
-          } else if (typeof renderOrcamentoDashboard === 'function') {
-            renderOrcamentoDashboard();
           }
           if (orcSubPref === 'metas' && typeof INIT_METAS !== 'undefined' && INIT_METAS.renderOrcamento) {
             INIT_METAS.renderOrcamento();
@@ -751,6 +760,10 @@ function mudarAba(nomeAba, opcoes) {
           if (orcSubPref === 'patrimonio' && typeof INIT_PATRIMONIO !== 'undefined' && INIT_PATRIMONIO.render) {
             INIT_PATRIMONIO.render();
           }
+        };
+        // Primeiro a tela (chunk 'orcamento'), depois a sub-aba pedida.
+        INIT_NAVIGATION.carregarChunkOrcamento(function() {
+          INIT_NAVIGATION._carregarSubOrcamento(orcSubPref || 'planejamento', abrirOrcamento);
         });
       }
       if (nomeAba === 'resumo' || nomeAba === 'extrato') {

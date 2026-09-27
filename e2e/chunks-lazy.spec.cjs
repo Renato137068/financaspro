@@ -42,6 +42,15 @@ test.describe('chunks lazy no build de produção', function() {
     expect(await page.evaluate(function() { return typeof INIT_EXTRATO; })).toBe('object');
   });
 
+  test('Orçamento carrega sob demanda, inclusive por link direto para uma sub-aba', async function({ page }) {
+    await prepareOfflinePage(page);
+    expect(await page.evaluate(function() { return typeof INIT_ORCAMENTO; })).toBe('undefined');
+
+    await page.evaluate(function() { mudarAba('orcamento', { orcSub: 'metas' }); });
+    await page.waitForFunction(function() { return typeof INIT_ORCAMENTO !== 'undefined'; });
+    await expect(page.locator('#orc-sub-tab-metas[aria-selected="true"]')).toHaveCount(1);
+  });
+
   test('editar pelo alerta abre a transação mesmo antes de abrir o Extrato', async function({ page }) {
     await prepareOfflinePage(page);
     await page.evaluate(function() { ALERTAS._executarAcao('editarTransacao', { id: 'e2e-1' }); });

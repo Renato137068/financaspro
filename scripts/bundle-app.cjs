@@ -50,6 +50,10 @@ const LAZY_CHUNKS = {
   // (js/core/categoria-visual.js).
   extrato: ['js/modules/init-extrato.js'],
 
+  // Orçamento (tela) — ao abrir a aba ou uma sub-aba. O cálculo do orçamento
+  // (ORCAMENTO, js/orcamento.js) fica no eager: o dashboard usa.
+  orcamento: ['js/modules/init-orcamento.js'],
+
   // Simulador financeiro — só ao abrir Perfil → Simulador.
   simulador: ['js/simulador.js', 'js/modules/init-simulador.js'],
 
