@@ -16,11 +16,24 @@ const INIT_BILLING = {
   init: function() {
     if (typeof BILLING !== 'undefined') BILLING.init();
     this.refreshPlanoCard();
+    this._ouvirTelas();
     this._handleBillingReturn();
     this._handleInviteReturn();
     this._consumePendingInvite();
     this._reconciliarPlay();
     this._bindResumeReconcile();
+  },
+
+  /**
+   * Telas do Perfil e o Extrato chegam com os próprios chunks (js/core/telas.js),
+   * às vezes depois deste. refreshPlanoCard atualiza tudo o que o billing
+   * escreve nelas (plano, equipe, banner, botões de exportação, subtítulo).
+   */
+  _ouvirTelas: function() {
+    if (this._ouvindoTelas) return;
+    this._ouvindoTelas = true;
+    var self = this;
+    document.addEventListener('fp:tela-carregada', function() { self.refreshPlanoCard(); });
   },
 
   /**

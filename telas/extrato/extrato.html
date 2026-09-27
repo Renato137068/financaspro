@@ -1,0 +1,179 @@
+<!-- Tela "extrato" (#aba-extrato). Vem no chunk lazy "extrato": scripts/generate-telas.cjs
+     gera js/telas/extrato.js a partir deste arquivo. Rode `npm run telas:gerar` depois de editar. -->
+<div class="perfil-header perfil-header-compact">
+  <div class="perfil-card-icon-wrapper" aria-hidden="true"><i data-lucide="clipboard-list"></i></div>
+  <div class="perfil-info">
+    <h2 class="perfil-nome">Extrato</h2>
+    <div class="perfil-meta"><span id="extrato-meta-subtitle">Histórico, filtros e exportação</span></div>
+  </div>
+</div>
+<!-- Header -->
+<div class="extrato-header">
+  <!-- Seletor de período -->
+  <div class="extrato-periodo" role="group" aria-label="Navegação por período">
+    <button class="periodo-nav" id="periodo-prev" data-action="navegar-periodo" data-dir="-1" aria-label="Mês anterior">
+      <i data-lucide="chevron-left" aria-hidden="true"></i>
+    </button>
+    <button class="periodo-label" id="periodo-label-btn" data-action="abrir-calendario">—</button>
+    <input type="month" id="periodo-date-picker" class="periodo-date-picker" style="display:none" aria-label="Selecionar período">
+    <button class="periodo-nav" id="periodo-next" data-action="navegar-periodo" data-dir="1" aria-label="Próximo mês">
+      <i data-lucide="chevron-right" aria-hidden="true"></i>
+    </button>
+  </div>
+
+  <!-- Card Principal de Saldo -->
+  <span class="sr-only" id="extrato-resumo-anuncio" aria-live="polite" aria-atomic="true"></span>
+  <div class="saldo-card">
+    <div class="saldo-card-header">
+      <span class="saldo-label">Saldo do período</span>
+      <!-- Começa oculto: o render mostra o selo só quando há base de
+           comparação. Evita o flash de "+12.5%" fixo antes do boot. -->
+      <div class="saldo-trend" id="saldo-trend" aria-label="Tendência vs mês anterior" style="display:none">
+        <span class="trend-icon" id="trend-icon" aria-hidden="true"></span>
+        <span class="trend-value" id="trend-value"></span>
+        <span class="trend-label" id="trend-label">vs mês anterior</span>
+      </div>
+    </div>
+    <div class="saldo-value" id="saldo-valor" aria-label="Valor total do saldo">R$ 0,00</div>
+    <div class="saldo-meta">
+      <span class="saldo-period" id="saldo-period">—</span>
+    </div>
+  </div>
+
+  <!-- Cards Secundários -->
+  <div class="kpi-cards" role="group" aria-label="Indicadores financeiros">
+    <div class="kpi-card receita">
+      <div class="kpi-icon" aria-hidden="true"><i data-lucide="arrow-down-left"></i></div>
+      <div class="kpi-content">
+        <span class="kpi-label">Entradas</span>
+        <span class="kpi-value" id="kpi-entradas" aria-label="Total de entradas">R$ 0,00</span>
+      </div>
+    </div>
+    <div class="kpi-card despesa">
+      <div class="kpi-icon" aria-hidden="true"><i data-lucide="trending-down"></i></div>
+      <div class="kpi-content">
+        <span class="kpi-label">Saídas</span>
+        <span class="kpi-value" id="kpi-saidas" aria-label="Total de saídas">R$ 0,00</span>
+      </div>
+    </div>
+    <div class="kpi-card movimentacoes">
+      <div class="kpi-icon" aria-hidden="true"><i data-lucide="bar-chart"></i></div>
+      <div class="kpi-content">
+        <span class="kpi-label">Movimentações</span>
+        <span class="kpi-value" id="kpi-movimentacoes" aria-label="Total de movimentações">0</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Busca e filtros -->
+<div class="perfil-section">
+<!-- Busca -->
+<div class="extrato-busca">
+  <i data-lucide="search" class="busca-icon" aria-hidden="true"></i>
+  <input type="text" id="extrato-busca" class="extrato-busca-input" placeholder="Buscar transações..." aria-label="Buscar transações por descrição ou categoria" autocomplete="off">
+</div>
+
+<!-- Filtros -->
+<div class="extrato-filtros" role="group" aria-label="Filtros de transações">
+  <div class="filtros-tipo" role="group" aria-label="Filtro por tipo">
+    <button class="filtro-chip ativo" data-filtro="todos" data-action="filtro-tipo" aria-pressed="true">Todas</button>
+    <button class="filtro-chip" data-filtro="receita" data-action="filtro-tipo" aria-pressed="false">Receitas</button>
+    <button class="filtro-chip" data-filtro="despesa" data-action="filtro-tipo" aria-pressed="false">Despesas</button>
+    <button type="button" class="filtro-chip filtro-chip--avancados" id="btn-filtros-avancados"
+      data-action="toggle-filtros-avancados"
+      aria-expanded="false" aria-controls="extrato-filtros-avancados">
+      <i data-lucide="sliders-horizontal" aria-hidden="true"></i> Filtro
+      <span class="filtro-avancados-count" id="filtro-avancados-count" hidden>0</span>
+    </button>
+  </div>
+
+  <div class="extrato-filtros-avancados" id="extrato-filtros-avancados" hidden>
+    <!-- Valor / período (antes na engrenagem da busca) -->
+    <div class="busca-avancada-container" id="busca-avancada-container">
+      <div class="busca-avancada-content">
+        <div class="busca-avancada-row">
+          <label for="valor-min">Valor mínimo:</label>
+          <input type="text" id="valor-min" class="busca-avancada-input" placeholder="R$ 0,00" inputmode="decimal" autocomplete="off">
+        </div>
+        <div class="busca-avancada-row">
+          <label for="valor-max">Valor máximo:</label>
+          <input type="text" id="valor-max" class="busca-avancada-input" placeholder="R$ 0,00" inputmode="decimal" autocomplete="off">
+        </div>
+        <div class="busca-avancada-row">
+          <label for="data-inicio">Data início:</label>
+          <input type="date" id="data-inicio" class="busca-avancada-input">
+        </div>
+        <div class="busca-avancada-row">
+          <label for="data-fim">Data fim:</label>
+          <input type="date" id="data-fim" class="busca-avancada-input">
+        </div>
+        <button class="btn-aplicar-busca-avancada" id="btn-aplicar-busca-avancada" data-action="aplicar-busca-avancada">Aplicar período e valor</button>
+      </div>
+    </div>
+
+    <div class="filtros-categoria" id="filtros-categoria" role="group" aria-label="Filtro por categoria"></div>
+
+    <!-- Ordenação -->
+    <div class="ordenacao-container" role="group" aria-label="Ordenar por">
+      <div class="ordenacao-campo-grupo" role="group" aria-label="Campo de ordenação">
+        <button type="button" class="ordenacao-campo-btn ativo" data-ordenacao-campo="data" data-action="ordenacao-campo" aria-pressed="true">Data</button>
+        <button type="button" class="ordenacao-campo-btn" data-ordenacao-campo="valor" data-action="ordenacao-campo" aria-pressed="false">Valor</button>
+      </div>
+      <button type="button" class="ordenacao-dir-btn" data-action="toggle-ordenacao-dir" aria-pressed="true" aria-label="Ordenação descendente" title="Maior ou mais recente primeiro">
+        <i data-lucide="arrow-down" aria-hidden="true"></i>
+      </button>
+    </div>
+    <p class="ordenacao-hint" id="ordenacao-hint">Data mais recente primeiro. Toque em Data, Valor ou na seta para mudar.</p>
+
+    <!-- Botão limpar filtros -->
+    <button class="btn-limpar-filtros" data-action="limpar-filtros" aria-label="Limpar todos os filtros">
+      <i data-lucide="rotate-ccw" aria-hidden="true"></i> Limpar filtros
+    </button>
+  </div>
+</div>
+</div>
+
+<!-- Lista de transações -->
+<div class="perfil-section">
+  <h2 class="perfil-section-title">Transações</h2>
+<p class="extrato-lista-meta" id="extrato-lista-meta" aria-live="polite" hidden></p>
+<div class="extrato-lista-viewport" id="extrato-lista-viewport">
+  <div id="extrato-virtual-spacer-top" class="extrato-virtual-spacer" aria-hidden="true"></div>
+  <div id="lista-transacoes"></div>
+  <div id="extrato-virtual-spacer-bottom" class="extrato-virtual-spacer" aria-hidden="true"></div>
+</div>
+
+<!-- Barra de ações em massa (oculta por padrão) -->
+<div class="acoes-massa-bar" id="acoes-massa-bar" style="display:none">
+  <span class="acoes-massa-count" id="acoes-massa-count">0 selecionadas</span>
+  <div class="acoes-massa-buttons">
+    <button class="btn-massa-deletar" data-action="deletar-selecionados"><i data-lucide="trash-2" aria-hidden="true"></i> Deletar</button>
+    <button class="btn-massa-cancelar" data-action="cancelar-selecao">Cancelar</button>
+  </div>
+</div>
+</div>
+
+<!-- Exportação -->
+<div class="perfil-section">
+  <h2 class="perfil-section-title">Exportar</h2>
+  <div class="perfil-cards-grid">
+    <button type="button" class="perfil-card" data-action="exportar-excel" aria-label="Exportar extrato como planilha CSV">
+      <div class="perfil-card-icon-wrapper"><i data-lucide="file-spreadsheet" aria-hidden="true"></i></div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Planilha (CSV)</span>
+        <span class="perfil-card-subtitle">Compatível com Excel e Google Sheets</span>
+      </div>
+      <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+    </button>
+    <button type="button" class="perfil-card" data-action="exportar-pdf" aria-label="Exportar extrato como PDF">
+      <div class="perfil-card-icon-wrapper"><i data-lucide="file-text" aria-hidden="true"></i></div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">PDF</span>
+        <span class="perfil-card-subtitle">Relatório para impressão</span>
+      </div>
+      <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+    </button>
+  </div>
+</div>
+

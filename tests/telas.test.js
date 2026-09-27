@@ -15,7 +15,7 @@ const ROOT = path.join(__dirname, '..');
 const index = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 const bundle = fs.readFileSync(path.join(ROOT, 'scripts', 'bundle-app.cjs'), 'utf8');
 
-const cascas = [...index.matchAll(CASCA)].map((m) => ({ tela: m[1], chunk: m[2] }));
+const cascas = [...index.matchAll(CASCA)].map((m) => ({ tela: m[1], chunk: m[3] }));
 const arquivos = fs.readdirSync(path.join(ROOT, 'telas')).flatMap((chunk) =>
   fs.readdirSync(path.join(ROOT, 'telas', chunk)).map((f) => ({ tela: f.replace(/\.html$/, ''), chunk })));
 

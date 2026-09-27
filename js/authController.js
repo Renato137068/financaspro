@@ -1194,16 +1194,24 @@ function _atualizarBotaoSairAuth() {
 }
 
 function setupLogoutButton() {
-  var btn = document.getElementById('btn-logout');
-  if (!btn || btn.dataset.logoutBound === '1') return;
-  btn.dataset.logoutBound = '1';
-  btn.addEventListener('click', sairDaConta);
+  // Os dois botões são independentes: o do Perfil (#btn-logout) chega com o
+  // chunk 'config' (js/core/telas.js); o do overlay de login está no núcleo.
+  // Ligar um não pode depender de o outro já existir.
+  ['btn-logout', 'auth-exit-btn'].forEach(function(id) {
+    var btn = document.getElementById(id);
+    if (!btn || btn.dataset.logoutBound === '1') return;
+    btn.dataset.logoutBound = '1';
+    btn.addEventListener('click', sairDaConta);
+  });
+}
 
-  var authExit = document.getElementById('auth-exit-btn');
-  if (authExit && authExit.dataset.logoutBound !== '1') {
-    authExit.dataset.logoutBound = '1';
-    authExit.addEventListener('click', sairDaConta);
-  }
+// A tela do Perfil chega depois do boot: liga o botão de sair e o rótulo da sessão.
+if (typeof document !== 'undefined') {
+  document.addEventListener('fp:tela-carregada', function(e) {
+    if (e.detail.nome !== 'config') return;
+    setupLogoutButton();
+    atualizarBarraSessao();
+  });
 }
 
 if (typeof module !== 'undefined' && module.exports) {

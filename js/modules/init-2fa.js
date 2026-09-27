@@ -11,6 +11,15 @@ const INIT_2FA = {
   init: function() {
     this._bindToggle();
     this.refreshUI();
+    if (!this._ouvindoTelas) {
+      // Segurança chega com o chunk 'config' (js/core/telas.js), que pode vir
+      // depois deste. As ligações são idempotentes (data-bound).
+      this._ouvindoTelas = true;
+      var self = this;
+      document.addEventListener('fp:tela-carregada', function(e) {
+        if (e.detail.nome === 'config-seguranca') self.init();
+      });
+    }
   },
 
   _isSupabaseMode: function() {

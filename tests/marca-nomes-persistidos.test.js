@@ -10,6 +10,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { indexComTelas } = require('./helpers/index-com-telas.cjs');
 
 const raiz = path.join(__dirname, '..');
 const ler = (p) => fs.readFileSync(path.join(raiz, p), 'utf8');
@@ -44,7 +45,8 @@ describe('o nome do produto está unificado', function() {
     // uma das notas mais baixas da auditoria. A forma canônica é sem espaço.
     const alvos = ['index.html', 'privacidade.html', 'manifest.json', 'js/core/config.js'];
     for (const alvo of alvos) {
-      const fonte = ler(alvo);
+      // O index.html inclui as telas lazy (telas/), que também são interface.
+      const fonte = alvo === 'index.html' ? indexComTelas() : ler(alvo);
       expect(fonte).toMatch(/FinançasPro/);
       expect(fonte).not.toMatch(/Finanças Pro/);
       expect(fonte).not.toMatch(/FinancasPro/);

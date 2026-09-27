@@ -10,7 +10,8 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..', '..');
-const CASCA = /<div id="aba-([\w-]+)" class="aba" data-tela="\1" aria-busy="true"><!-- telas\/([\w-]+)\/\1\.html --><\/div>/g;
+// Grupos: 1 = tela, 2 = atributos extras da casca (role, aria-label…), 3 = chunk.
+const CASCA = /<div id="aba-([\w-]+)" class="aba"([^>]*?) data-tela="\1" aria-busy="true"><!-- telas\/([\w-]+)\/\1\.html --><\/div>/g;
 
 function conteudoDaTela(chunk, tela) {
   const html = fs.readFileSync(path.join(ROOT, 'telas', chunk, tela + '.html'), 'utf8');
@@ -19,8 +20,8 @@ function conteudoDaTela(chunk, tela) {
 
 function indexComTelas() {
   const index = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
-  return index.replace(CASCA, (_casca, tela, chunk) =>
-    '<div id="aba-' + tela + '" class="aba">\n' + conteudoDaTela(chunk, tela) + '</div>');
+  return index.replace(CASCA, (_casca, tela, extras, chunk) =>
+    '<div id="aba-' + tela + '" class="aba"' + extras + '>\n' + conteudoDaTela(chunk, tela) + '</div>');
 }
 
 module.exports = { indexComTelas, CASCA };

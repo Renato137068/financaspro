@@ -60,12 +60,23 @@ var SHORTCUTS = {
 
     // / foca busca extrato
     if (key === '/') {
-      var busca = document.getElementById('extrato-busca');
-      if (busca) {
-        ev.preventDefault();
-        if (typeof mudarAba === 'function') mudarAba('extrato');
-        setTimeout(function() { busca.focus(); }, 100);
+      if (typeof mudarAba !== 'function') return;
+      ev.preventDefault();
+      var focarBusca = function() {
+        var busca = document.getElementById('extrato-busca');
+        if (busca) setTimeout(function() { busca.focus(); }, 100);
+      };
+      // O Extrato chega com o chunk (js/core/telas.js): na primeira vez o campo
+      // só existe depois que a tela carrega.
+      if (!document.getElementById('extrato-busca')) {
+        document.addEventListener('fp:tela-carregada', function aoCarregar(e) {
+          if (e.detail.nome !== 'extrato') return;
+          document.removeEventListener('fp:tela-carregada', aoCarregar);
+          focarBusca();
+        });
       }
+      mudarAba('extrato');
+      focarBusca();
     }
   },
 

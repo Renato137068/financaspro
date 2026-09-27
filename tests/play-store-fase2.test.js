@@ -3,12 +3,13 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { indexComTelas } = require('./helpers/index-com-telas.cjs');
 
 const root = path.join(__dirname, '..');
 
 describe('Play Store Fase 2 — PIN honesto', () => {
   test('Perfil explica que PIN oculta, não criptografa', () => {
-    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+    const html = indexComTelas();
     expect(html).toContain('perfil-pin-toggle-status');
     expect(html).toMatch(/Oculta saldos.*não criptografa/i);
   });

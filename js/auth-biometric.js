@@ -226,4 +226,12 @@
   };
 
   window.AUTH_BIOMETRIC = AUTH_BIOMETRIC;
+
+  // O card de biometria mora na tela Segurança, que chega com o chunk 'config'
+  // (js/core/telas.js). setupPerfilToggle é idempotente (data-bound).
+  document.addEventListener('fp:tela-carregada', function(e) {
+    if (e.detail.nome !== 'config-seguranca') return;
+    AUTH_BIOMETRIC.setupPerfilToggle();
+    AUTH_BIOMETRIC.refreshBiometricUI();
+  });
 })();

@@ -3,12 +3,13 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { indexComTelas } = require('./helpers/index-com-telas.cjs');
 
 const root = path.join(__dirname, '..');
 
 describe('Honestidade Play Store / privacidade', () => {
   test('meta e manifest não prometem “sem cadastro”', () => {
-    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+    const html = indexComTelas();
     const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'), 'utf8'));
     expect(html).not.toMatch(/sem cadastro/i);
     expect(manifest.description).not.toMatch(/sem cadastro/i);

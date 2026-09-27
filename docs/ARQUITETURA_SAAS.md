@@ -63,10 +63,14 @@ mesmos dados sincronizam com o Supabase.
   (paywall, Play Billing, 2FA, Open Finance).
   `tests/lazy-chunks.test.js` exige um carregador para cada chunk.
 - **Telas fora do `index.html`** ([ADR 0006](adr/0006-telas-lazy-fora-do-index.md)).
-  Telas usadas só por um chunk lazy (Orçamento; Categorias, Ajuda, Suporte e
-  Editar perfil) moram em `telas/<chunk>/<tela>.html`. `npm run telas:gerar`
-  produz `js/telas/<chunk>.js`, que vem com o chunk e preenche a casca do
-  `index.html` via `TELAS` (`js/core/telas.js`); `check:telas` no CI.
+  Toda tela de chunk lazy (Extrato, Orçamento, o Perfil e suas sub-telas, a
+  casca do Simulador) mora em `telas/<chunk>/<tela>.html`. `npm run
+  telas:gerar` produz `js/telas/<chunk>.js`, que vem com o chunk e preenche a
+  casca do `index.html` via `TELAS` (`js/core/telas.js`); `check:telas` no CI.
+  O `index.html` fica com o resumo, o formulário de lançamento e o login.
+  Código do núcleo que escreve numa tela lazy escuta `fp:tela-carregada`:
+  biometria e 2FA (Segurança), billing (plano, exportação, Extrato), Open
+  Finance (Conexões), sessão e botão de sair (Perfil), atalho `/` (Extrato).
 - **Orçamento do bundle** (`npm run check:bundle`): o teto só desce,
   travado por `tests/bundle-budget-teto.test.js`. O código eager do app é a
   soma de `app.bundle.js` e da entrada ESM.

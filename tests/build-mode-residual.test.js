@@ -4,6 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+const { indexComTelas } = require('./helpers/index-com-telas.cjs');
 
 const root = path.join(__dirname, '..');
 
@@ -86,7 +87,7 @@ describe('OCR desativado no produto', () => {
   });
 
   test('index não carrega ocr.js; lifecycle não chama OCR.init', () => {
-    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+    const html = indexComTelas();
     const life = fs.readFileSync(path.join(root, 'js/core/lifecycle.js'), 'utf8');
     expect(html).not.toMatch(/src="js\/ocr\.js"/);
     expect(life).not.toMatch(/OCR\.init/);
@@ -126,7 +127,7 @@ describe('OCR desativado no produto', () => {
     const initBilling = fs.readFileSync(path.join(root, 'js/modules/init-billing.js'), 'utf8');
     const billing = fs.readFileSync(path.join(root, 'js/billing.js'), 'utf8');
     const supa = fs.readFileSync(path.join(root, 'js/core/supabase-billing.js'), 'utf8');
-    const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+    const index = indexComTelas();
     expect(initBilling).toMatch(/abrirEquipe/);
     expect(billing).toMatch(/inviteTeamMember/);
     expect(billing).toMatch(/org-invite/);

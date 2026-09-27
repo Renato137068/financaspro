@@ -508,7 +508,7 @@ function conferirLocal() {
   const tDist = fs.statSync(distSw).mtimeMs;
   let maisRecente = 0;
   let culpado = '';
-  ['js', 'css', 'index.html'].forEach(function(alvo) {
+  ['js', 'css', 'telas', 'index.html'].forEach(function(alvo) {
     const p = path.join(RAIZ, alvo);
     if (!fs.existsSync(p)) return;
     (function varrer(f) {

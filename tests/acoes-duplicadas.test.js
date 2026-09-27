@@ -23,12 +23,14 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { indexComTelas } = require('./helpers/index-com-telas.cjs');
 
 const root = path.join(__dirname, '..');
 const SONDA = path.join(__dirname, 'acoes-duplicadas.probe.js');
 
 function carregarApp() {
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  // Com as telas lazy (telas/) nas cascas: os botões delas também contam.
+  const html = indexComTelas();
   document.documentElement.innerHTML = html;
 
   const sandbox = {

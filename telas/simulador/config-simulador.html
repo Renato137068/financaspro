@@ -1,0 +1,20 @@
+<!-- Tela "config-simulador" (#aba-config-simulador). Vem no chunk lazy "simulador": scripts/generate-telas.cjs
+     gera js/telas/simulador.js a partir deste arquivo. Rode `npm run telas:gerar` depois de editar. -->
+<div class="perfil-header">
+  <div class="perfil-avatar-wrapper">
+    <div class="perfil-avatar" style="background: var(--color-primary-500);" aria-hidden="true"><i data-lucide="calculator"></i></div>
+  </div>
+  <div class="perfil-info">
+    <h2 class="perfil-nome">Simulador financeiro</h2>
+    <div class="perfil-meta"><span>Decida com números, sem cadastrar nada</span></div>
+  </div>
+  <div class="perfil-actions">
+    <button class="perfil-action-btn" data-action="mudar-aba" data-aba="config" aria-label="Perfil e configurações">
+      <i data-lucide="arrow-left" aria-hidden="true"></i>
+    </button>
+  </div>
+</div>
+<div class="perfil-section">
+  <div id="simulador-panel" class="sim-panel"></div>
+</div>
+

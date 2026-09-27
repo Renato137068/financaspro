@@ -15,9 +15,10 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { indexComTelas } = require('./helpers/index-com-telas.cjs');
 
 const root = path.join(__dirname, '..');
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8')
+const html = indexComTelas()
   .replace(/<!--[\s\S]*?-->/g, ''); // comentários não contam
 
 /** Todos os campos interativos que o usuário realmente opera. */

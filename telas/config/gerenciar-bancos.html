@@ -1,0 +1,111 @@
+<!-- Tela "gerenciar-bancos" (#aba-gerenciar-bancos). Vem no chunk lazy "config": scripts/generate-telas.cjs
+     gera js/telas/config.js a partir deste arquivo. Rode `npm run telas:gerar` depois de editar. -->
+<div class="perfil-header">
+  <div class="perfil-avatar-wrapper">
+    <div class="perfil-avatar" style="background: var(--color-primary-500);" aria-hidden="true"><i data-lucide="landmark"></i></div>
+  </div>
+  <div class="perfil-info">
+    <h2 class="perfil-nome">Bancos e Cartões</h2>
+    <div class="perfil-meta">
+      <span>Gerencie suas contas bancárias e cartões</span>
+    </div>
+  </div>
+  <div class="perfil-actions">
+    <button class="perfil-action-btn" data-action="voltar-perfil" aria-label="Voltar para perfil">
+      <i data-lucide="arrow-left" aria-hidden="true"></i>
+    </button>
+  </div>
+</div>
+
+<!-- SEÇÃO BANCOS -->
+<div class="perfil-section">
+  <h2 class="perfil-section-title">Bancos</h2>
+  
+  <!-- FORMULÁRIO PARA ADICIONAR BANCO -->
+  <form id="form-adicionar-banco" class="formulario" autocomplete="off" style="margin-bottom: var(--space-6);">
+    <div class="form-group">
+      <label for="banco-nome">Nome do banco</label>
+      <input type="text" id="banco-nome" placeholder="Ex: Banco do Brasil, Nubank, Itaú" maxlength="50" required>
+      <div class="form-hint">Nome do banco</div>
+    </div>
+
+    <div class="form-group">
+      <label for="banco-tipo">Tipo de conta</label>
+      <select id="banco-tipo" required>
+        <option value="Conta Corrente">Conta Corrente</option>
+        <option value="Conta Poupança">Conta Poupança</option>
+        <option value="Dinheiro">Dinheiro</option>
+      </select>
+      <div class="form-hint">Selecione o tipo de conta bancária</div>
+    </div>
+
+    <button type="submit" class="btn-primario">
+      <i data-lucide="plus" aria-hidden="true"></i> Adicionar banco
+    </button>
+  </form>
+
+  <!-- LISTA DE BANCOS CADASTRADOS -->
+  <h3 class="perfil-section-title" style="font-size: var(--font-size-base); margin-bottom: var(--space-3);">Bancos cadastrados</h3>
+  <div id="bancos-list" class="bancos-list">
+    <!-- Lista será preenchida dinamicamente -->
+  </div>
+</div>
+
+<!-- SEÇÃO CARTÕES -->
+<div class="perfil-section">
+  <h2 class="perfil-section-title">Cartões</h2>
+  
+  <!-- FORMULÁRIO PARA ADICIONAR CARTÃO -->
+  <form id="form-adicionar-cartao" class="formulario" autocomplete="off" style="margin-bottom: var(--space-6);">
+    <div class="form-group">
+      <label for="cartao-nome">Nome do cartão</label>
+      <input type="text" id="cartao-nome" placeholder="Ex: Nubank, Itaú, Visa" maxlength="50" required>
+      <div class="form-hint">Nome do cartão de crédito</div>
+    </div>
+
+    <div class="form-group">
+      <label for="cartao-bandeira">Bandeira</label>
+      <select id="cartao-bandeira" required>
+        <option value="Visa">Visa</option>
+        <option value="Mastercard">Mastercard</option>
+        <option value="Elo">Elo</option>
+        <option value="Hipercard">Hipercard</option>
+        <option value="American Express">American Express</option>
+        <option value="Outra">Outra</option>
+      </select>
+      <div class="form-hint">Selecione a bandeira do cartão</div>
+    </div>
+
+    <div class="form-group">
+      <label for="cartao-limite">Limite (opcional)</label>
+      <input type="text" id="cartao-limite" class="campo-moeda" placeholder="Ex: 8.000 ou 8000" inputmode="decimal" autocomplete="off" aria-describedby="cartao-limite-preview cartao-limite-hint">
+      <p class="campo-moeda-preview" id="cartao-limite-preview" hidden></p>
+      <div class="form-hint" id="cartao-limite-hint">Limite do cartão em reais (aceita 8000, 8.000 ou 8.000,00)</div>
+    </div>
+
+    <!-- Fechamento e vencimento são o que transforma o cartão de rótulo em
+         ciclo: sem eles o app não sabe em qual fatura a compra cai. -->
+    <div class="form-group">
+      <label for="cartao-fechamento">Dia do fechamento (opcional)</label>
+      <input type="number" id="cartao-fechamento" placeholder="20" min="1" max="31" step="1">
+      <div class="form-hint">Compras feitas após esse dia entram na fatura seguinte</div>
+    </div>
+
+    <div class="form-group">
+      <label for="cartao-vencimento">Dia do vencimento (opcional)</label>
+      <input type="number" id="cartao-vencimento" placeholder="28" min="1" max="31" step="1">
+      <div class="form-hint">Dia em que a fatura precisa ser paga</div>
+    </div>
+
+    <button type="submit" class="btn-primario">
+      <i data-lucide="plus" aria-hidden="true"></i> Adicionar cartão
+    </button>
+  </form>
+
+  <!-- LISTA DE CARTÕES CADASTRADOS -->
+  <h3 class="perfil-section-title" style="font-size: var(--font-size-base); margin-bottom: var(--space-3);">Cartões cadastrados</h3>
+  <div id="cartoes-list" class="bancos-list">
+    <!-- Lista será preenchida dinamicamente -->
+  </div>
+</div>
+

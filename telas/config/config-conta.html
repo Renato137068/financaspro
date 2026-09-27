@@ -1,0 +1,47 @@
+<!-- Tela "config-conta" (#aba-config-conta). Vem no chunk lazy "config": scripts/generate-telas.cjs
+     gera js/telas/config.js a partir deste arquivo. Rode `npm run telas:gerar` depois de editar. -->
+<div class="perfil-header">
+  <div class="perfil-avatar-wrapper">
+    <div class="perfil-avatar" style="background: var(--color-primary-500);" aria-hidden="true"><i data-lucide="user"></i></div>
+  </div>
+  <div class="perfil-info">
+    <h2 class="perfil-nome">Conta e plano</h2>
+    <div class="perfil-meta"><span>Dados pessoais, assinatura e equipe</span></div>
+  </div>
+  <div class="perfil-actions">
+    <button class="perfil-action-btn" data-action="mudar-aba" data-aba="config" aria-label="Perfil e configurações">
+      <i data-lucide="arrow-left" aria-hidden="true"></i>
+    </button>
+  </div>
+</div>
+<div class="perfil-section">
+  <div class="perfil-cards-grid">
+    <button type="button" class="perfil-card" data-action="abrir-editar-perfil" aria-label="Editar dados pessoais">
+      <div class="perfil-card-icon-wrapper"><i data-lucide="user" aria-hidden="true"></i></div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Dados pessoais</span>
+        <span class="perfil-card-subtitle">Nome, email e informações de contato</span>
+      </div>
+      <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+    </button>
+
+    <button type="button" class="perfil-card perfil-card--plano-highlight" data-action="abrir-plano" data-requer-nuvem aria-label="Gerenciar plano e assinatura">
+      <div class="perfil-card-icon-wrapper"><i data-lucide="sparkles" aria-hidden="true"></i></div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Plano e assinatura</span>
+        <span class="perfil-card-subtitle" id="perfil-plano-subtitle">Gratuito · uso local</span>
+      </div>
+      <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+    </button>
+
+    <button type="button" class="perfil-card" data-action="abrir-equipe" data-requer-nuvem aria-label="Gerenciar membros da equipe">
+      <div class="perfil-card-icon-wrapper"><i data-lucide="users" aria-hidden="true"></i></div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Equipe</span>
+        <span class="perfil-card-subtitle" id="perfil-equipe-subtitle">Convide até 2 pessoas no Pro (modo casal)</span>
+      </div>
+      <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+    </button>
+  </div>
+</div>
+

@@ -10,6 +10,7 @@ const { carregarScript } = require('./helpers/carregar-script.cjs');
 const fs = require('fs');
 const path = require('path');
 const { fontePerfil } = require('./helpers/chunk-perfil.cjs');
+const { indexComTelas } = require('./helpers/index-com-telas.cjs');
 
 const root = path.join(__dirname, '..');
 const SUPABASE = 'https://projeto.supabase.co';
@@ -82,7 +83,7 @@ describe('OBS — envio de relatórios de erro', function() {
 });
 
 describe('Perfil — controle "Enviar relatórios de erro"', function() {
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const html = indexComTelas();
   const initConfig = fontePerfil();
 
   test('o switch existe, rotulado', function() {

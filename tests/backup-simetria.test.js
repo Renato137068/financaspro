@@ -143,7 +143,8 @@ describe('backup — um único formato', () => {
     (function varrer(dir) {
       for (const nome of fs.readdirSync(dir)) {
         const p = path.join(dir, nome);
-        if (fs.statSync(p).isDirectory()) varrer(p);
+        // js/telas/ é markup gerado (telas/*.html), não código que baixa arquivo.
+        if (fs.statSync(p).isDirectory()) { if (nome !== 'telas') varrer(p); }
         else if (nome.endsWith('.js')) arquivos.push(p);
       }
     })(jsDir);

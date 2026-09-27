@@ -16,6 +16,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { indexComTelas } = require('./helpers/index-com-telas.cjs');
 
 const root = path.join(__dirname, '..');
 
@@ -65,7 +66,7 @@ describe('Cifragem local — o modo passphrase não pode chegar pela metade', ()
     // A UI não pode prometer mais do que o desenho entrega.
     expect(cripto).toMatch(/NÃO protege contra XSS/);
     expect(cripto).toContain('nivelDeProtecao');
-    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+    const html = indexComTelas();
     expect(html).toMatch(/Não cobre XSS/i);
   });
 });

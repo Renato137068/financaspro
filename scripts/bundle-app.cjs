@@ -49,7 +49,8 @@ const LAZY_CHUNKS = {
   // Extrato — ao abrir a aba ou por um wrapper global (exportar, editar pelo
   // alerta, "ver no extrato"). Ícones/cores de categoria ficam no eager
   // (js/core/categoria-visual.js).
-  extrato: ['js/modules/init-extrato.js'],
+  // O markup da tela vem no chunk (js/telas/extrato.js, gerado de telas/).
+  extrato: ['js/telas/extrato.js', 'js/modules/init-extrato.js'],
 
   // Perfil e suas sub-telas — ao abrir qualquer aba config-* ou por um wrapper
   // global (editar perfil, bancos, categorias, exportar backup). As ações de
@@ -66,7 +67,9 @@ const LAZY_CHUNKS = {
   orcamento: ['js/telas/orcamento.js', 'js/modules/init-orcamento.js'],
 
   // Simulador financeiro — só ao abrir Perfil → Simulador.
-  simulador: ['js/simulador.js', 'js/modules/init-simulador.js'],
+  // A casca do simulador (#simulador-panel) vem aqui, não no chunk 'config':
+  // INIT_SIMULADOR.init pode rodar antes de o 'config' chegar.
+  simulador: ['js/telas/simulador.js', 'js/simulador.js', 'js/modules/init-simulador.js'],
 
   // Tour de boas-vindas — ONBOARDING.iniciar() não abre nada sozinho; o tour
   // só abre por Perfil → "Refazer tour".

@@ -80,7 +80,8 @@ mustContain('js/modules/init-billing.js', /SHOW_BUSINESS_PLAN:\s*false/, 'Busine
 mustContain('js/modules/init-billing.js', /abrirEquipe/, 'UI equipe');
 mustContain('js/modules/init-billing.js', /getLifecycleAlert/, 'banner lifecycle');
 
-mustContain('index.html', /data-action="abrir-equipe"/, 'card Equipe no perfil');
+// A tela Conta do Perfil chega com o chunk 'config' (ADR 0006).
+mustContain('telas/config/config-conta.html', /data-action="abrir-equipe"/, 'card Equipe no perfil');
 
 mustContain(
   'supabase/functions/_shared/billing-constants.ts',

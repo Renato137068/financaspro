@@ -5,10 +5,11 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { indexComTelas } = require('./helpers/index-com-telas.cjs');
 
 const root = path.join(__dirname, '..');
 const extratoSrc = fs.readFileSync(path.join(root, 'js', 'modules', 'init-extrato.js'), 'utf8');
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const html = indexComTelas();
 
 function carregarExtrato(extra) {
   var sandbox = Object.assign({

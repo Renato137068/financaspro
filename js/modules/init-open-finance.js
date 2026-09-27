@@ -7,6 +7,14 @@ const INIT_OPEN_FINANCE = {
 
   init: function() {
     this.refreshCard();
+    if (!this._ouvindoTelas) {
+      // Conexões chega com o chunk 'config' (js/core/telas.js).
+      this._ouvindoTelas = true;
+      var self = this;
+      document.addEventListener('fp:tela-carregada', function(e) {
+        if (e.detail.nome === 'config-conexoes') self.refreshCard();
+      });
+    }
   },
 
   refreshCard: function() {

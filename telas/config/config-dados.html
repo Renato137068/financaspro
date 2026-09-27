@@ -1,0 +1,44 @@
+<!-- Tela "config-dados" (#aba-config-dados). Vem no chunk lazy "config": scripts/generate-telas.cjs
+     gera js/telas/config.js a partir deste arquivo. Rode `npm run telas:gerar` depois de editar. -->
+<div class="perfil-header">
+  <div class="perfil-avatar-wrapper">
+    <div class="perfil-avatar" style="background: var(--color-primary-500);" aria-hidden="true"><i data-lucide="download"></i></div>
+  </div>
+  <div class="perfil-info">
+    <h2 class="perfil-nome">Backup e dados</h2>
+    <div class="perfil-meta"><span>Exportar e importar seus dados</span></div>
+  </div>
+  <div class="perfil-actions">
+    <button class="perfil-action-btn" data-action="mudar-aba" data-aba="config" aria-label="Perfil e configurações">
+      <i data-lucide="arrow-left" aria-hidden="true"></i>
+    </button>
+  </div>
+</div>
+<div class="perfil-section">
+  <div class="perfil-cards-grid">
+    <button type="button" class="perfil-card" data-action="exportar-dados" aria-label="Exportar backup de dados">
+      <div class="perfil-card-icon-wrapper"><i data-lucide="download" aria-hidden="true"></i></div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Exportar backup</span>
+        <span class="perfil-card-subtitle" id="perfil-ultimo-backup">Nunca exportado</span>
+        <span class="perfil-card-hint" id="perfil-export-hint">JSON com lançamentos, contas e preferências deste aparelho.</span>
+      </div>
+      <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+    </button>
+
+    <button type="button" class="perfil-card" data-action="abrir-import" aria-label="Importar dados de backup">
+      <div class="perfil-card-icon-wrapper"><i data-lucide="upload" aria-hidden="true"></i></div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Importar dados</span>
+        <span class="perfil-card-subtitle">Restaurar backup JSON</span>
+      </div>
+      <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+    </button>
+  </div>
+  <p class="perfil-dica" id="perfil-dica-multiaba">
+    <i data-lucide="layers" aria-hidden="true"></i>
+    Evite editar em duas abas ao mesmo tempo — a última gravação prevalece. O app avisa quando outra aba altera seus dados.
+  </p>
+  <input type="file" id="import-file" accept=".json" style="display:none" aria-hidden="true">
+</div>
+

@@ -47,7 +47,9 @@ const BUDGETS = {
   // biblioteca de login e sync, que não se encolhe por aqui.
   // 1305→1280 KB (2026-09-27): Orçamento e quatro sub-telas do Perfil saem do
   // index.html e vêm com o chunk (telas/, js/core/telas.js).
-  precacheTotal: { max: 1280 * KB, label: 'Precache total (1º acesso)' },
+  // 1280→1240 KB (2026-09-27): Extrato e as demais telas do Perfil também
+  // saem do index.html (segunda leva de telas/).
+  precacheTotal: { max: 1240 * KB, label: 'Precache total (1º acesso)' },
   // 580→590 KB (2026-09-13): correção do KPI "Folga poupança" no Orçamento
   // (cálculo da folga da fatia de poupança) + referência de ritmo no Resumo
   // adicionam alguns KB de código — aumento intencional.
@@ -82,7 +84,9 @@ const BUDGETS = {
   // 112→85 KB (2026-09-27): telas usadas só por um chunk lazy (Orçamento,
   // Categorias, Ajuda, Suporte, Editar perfil) moram em telas/ e chegam com o
   // chunk; o index.html guarda só a casca de cada uma.
-  indexHtml: { max: 85 * KB, label: 'index.html', file: 'index.html' },
+  // 85→48 KB (2026-09-27): segunda leva — Extrato, Perfil (menu), Conta,
+  // Segurança, Conexões, Preferências, Dados, Bancos e a casca do Simulador.
+  indexHtml: { max: 48 * KB, label: 'index.html', file: 'index.html' },
 };
 
 function size(rel) {

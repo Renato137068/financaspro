@@ -5,9 +5,10 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const { executarModulo } = require('./helpers/esm-como-script.cjs');
+const { indexComTelas } = require('./helpers/index-com-telas.cjs');
 
 const root = path.join(__dirname, '..');
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const html = indexComTelas();
 const dadosSrc = fs.readFileSync(path.join(root, 'js', 'core', 'dados.js'), 'utf8');
 const extratoSrc = fs.readFileSync(path.join(root, 'js', 'modules', 'init-extrato.js'), 'utf8');
 const navSrc = fs.readFileSync(path.join(root, 'js', 'modules', 'init-navigation.js'), 'utf8');
@@ -126,7 +127,7 @@ describe('auditoria — saldo realizado vs projetado', function() {
 
 describe('auditoria — fase 2 (roadmap)', function() {
   const formSrc = fs.readFileSync(path.join(root, 'js', 'modules', 'init-form.js'), 'utf8');
-  const htmlFresh = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const htmlFresh = indexComTelas();
 
   test('edição de transação oferece desfazer por 5s', function() {
     expect(formSrc).toMatch(/agendarExclusao\('edit-tx-'/);
