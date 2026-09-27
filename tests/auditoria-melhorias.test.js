@@ -4,6 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { executarModulo } = require('./helpers/esm-como-script.cjs');
 
 const root = path.join(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
@@ -27,6 +28,8 @@ function carregarDadosReal(extra) {
   const ctx = vm.createContext(sandbox);
   for (const rel of ['js/core/config.js', 'js/core/dados.js']) {
     const file = path.join(root, rel);
+    // dados.js mistura o cliente Express, que a ponte ESM publica antes dele.
+    if (rel === 'js/core/dados.js') executarModulo(ctx, path.join(root, 'js/core/dados-express.js'));
     vm.runInContext(fs.readFileSync(file, 'utf8'), ctx, { filename: file });
   }
   return sandbox;

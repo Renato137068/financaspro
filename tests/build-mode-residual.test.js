@@ -93,7 +93,7 @@ describe('OCR desativado no produto', () => {
   });
 
   test('dados._apiAtiva é false em Capacitor nativo', () => {
-    const dados = fs.readFileSync(path.join(root, 'js/core/dados.js'), 'utf8');
+    const dados = fs.readFileSync(path.join(root, 'js/core/dados-express.js'), 'utf8');
     expect(dados).toMatch(/isNativePlatform[\s\S]{0,120}return false/);
   });
 

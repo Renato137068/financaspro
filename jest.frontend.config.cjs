@@ -45,7 +45,11 @@ module.exports = {
 
     // Telas críticas, exercitadas com o app inteiro em app-novo-lancamento,
     // app-login e app-paywall. Antes: 19% / 6% / 18% de linhas.
-    'js/modules/init-form.js': { lines: 68, functions: 84, branches: 50 },
+    // 27/09: as sugestões saíram para form-sugestoes.js e a entrada rápida,
+    // o lançamento rápido e a troca manual de categoria ganharam teste
+    // (app-novo-atalhos). 68/84/50 → 73/90/54.
+    'js/modules/init-form.js': { lines: 73, functions: 90, branches: 54 },
+    'js/modules/form-sugestoes.js': { lines: 83, functions: 91, branches: 50 },
     'js/authController.js': { lines: 54, functions: 62, branches: 60 },
     'js/modules/init-billing.js': { lines: 45, functions: 47, branches: 38 },
     'js/core/utils.js': { lines: 96, functions: 100, branches: 85 },

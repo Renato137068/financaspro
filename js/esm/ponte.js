@@ -12,8 +12,12 @@ import { CATEGORIA_VISUAL } from '../core/categoria-visual.js';
 import { TRANSACTION_SERVICE } from '../services/transactionService.js';
 import { BUDGET_SERVICE } from '../services/budgetService.js';
 import { INSIGHT_ACOES } from '../modules/insight-acoes.js';
+import { DADOS_EXPRESS } from '../core/dados-express.js';
+import { FORM_SUGESTOES } from '../modules/form-sugestoes.js';
 
 window.CATEGORIA_VISUAL = CATEGORIA_VISUAL;
 window.TRANSACTION_SERVICE = TRANSACTION_SERVICE;
 window.BUDGET_SERVICE = BUDGET_SERVICE;
 window.INSIGHT_ACOES = INSIGHT_ACOES;
+window.DADOS_EXPRESS = DADOS_EXPRESS;
+window.FORM_SUGESTOES = FORM_SUGESTOES;

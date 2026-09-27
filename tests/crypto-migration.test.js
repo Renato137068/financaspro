@@ -10,6 +10,7 @@ const path = require('path');
 const vm = require('vm');
 const { webcrypto } = require('crypto');
 const { TextEncoder, TextDecoder } = require('util');
+const { executarModulo } = require('./helpers/esm-como-script.cjs');
 
 const ROOT = path.join(__dirname, '..');
 
@@ -50,6 +51,7 @@ function freshContext() {
   const ctx = vm.createContext(sandbox);
   loadInto(ctx, 'js/core/config.js');
   loadInto(ctx, 'js/utilities/local-crypto.js');
+  executarModulo(ctx, path.join(ROOT, 'js/core/dados-express.js'));
   loadInto(ctx, 'js/core/dados.js');
   // Expõe ao global para os testes acessarem global.DADOS/LOCAL_CRYPTO/CONFIG.
   ['CONFIG', 'LOCAL_CRYPTO', 'DADOS'].forEach(function(k) {

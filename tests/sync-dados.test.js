@@ -5,6 +5,7 @@ const { carregarScript } = require('./helpers/carregar-script.cjs');
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { executarModulo } = require('./helpers/esm-como-script.cjs');
 
 function loadDados() {
   const storage = new Map();
@@ -45,6 +46,7 @@ function loadDados() {
     filename: path.join(__dirname, '..', 'js', 'core', 'sync-engine.js'),
   });
 
+  executarModulo(ctx, path.join(__dirname, '..', 'js', 'core', 'dados-express.js'));
   const dadosFile = path.join(__dirname, '..', 'js', 'core', 'dados.js');
   vm.runInContext(fs.readFileSync(dadosFile, 'utf8'), ctx, { filename: dadosFile });
   const D = ctx.DADOS;

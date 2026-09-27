@@ -32,8 +32,13 @@ mesmos dados sincronizam com o Supabase.
 - **ES Modules pela ponte** ([ADR 0005](adr/0005-ponte-es-modules-entrada-vite.md)).
   `js/esm/ponte.js` é o único `<script type="module">`: importa os módulos
   migrados (`CATEGORIA_VISUAL`, `TRANSACTION_SERVICE`, `BUDGET_SERVICE`,
-  `INSIGHT_ACOES`) e os publica em `window` para os scripts clássicos. Módulo
-  novo nasce aqui. Nos testes, `tests/helpers/esm-como-script.cjs` os roda via
+  `INSIGHT_ACOES`, `DADOS_EXPRESS`, `FORM_SUGESTOES`) e os publica em `window`
+  para os scripts clássicos. Módulo novo nasce aqui.
+- **Mixins para quebrar arquivos grandes.** Um pedaço coeso de um objeto
+  clássico sai para um ES Module e volta por `Object.assign` no fim do
+  arquivo original, sem mudar quem chama: `dados-express.js` (cliente da API
+  Express, congelado) em `DADOS`, `form-sugestoes.js` (autocategorização e
+  autocomplete) em `INIT_FORM`. Nos testes, `tests/helpers/esm-como-script.cjs` os roda via
   `vm` sem mudar as posições dos caracteres (cobertura V8).
 - **Organização:** `js/core/` (config, dados, store, sync, utilidades de base),
   `js/services/` (regras puras), `js/modules/init-*.js` (telas),
@@ -60,7 +65,8 @@ mesmos dados sincronizam com o Supabase.
 
 ## Dados no aparelho
 
-- `DADOS` (`js/core/dados.js`) é a única porta de leitura e escrita.
+- `DADOS` (`js/core/dados.js`) é a única porta de leitura e escrita. O
+  cliente da API Express legada fica à parte, em `js/core/dados-express.js`.
   Lançamentos ficam no localStorage e migram para o IndexedDB acima de ~2.500
   itens ou 3 MB.
 - **Cifragem opcional** (`js/utilities/local-crypto.js`): AES-GCM com chave

@@ -30,6 +30,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { executarModulo } = require('./helpers/esm-como-script.cjs');
 
 const root = path.join(__dirname, '..');
 
@@ -51,6 +52,8 @@ function carregarDadosReal() {
     const file = path.join(root, rel);
     // filename ABSOLUTO: com caminho relativo o v8 não mapeia o código
     // executado de volta ao arquivo e o módulo aparece com 0% na cobertura.
+    // dados.js mistura o cliente Express, que a ponte ESM publica antes dele.
+    if (rel === 'js/core/dados.js') executarModulo(ctx, path.join(root, 'js/core/dados-express.js'));
     vm.runInContext(fs.readFileSync(file, 'utf8'), ctx, { filename: file });
   }
   return sandbox;
