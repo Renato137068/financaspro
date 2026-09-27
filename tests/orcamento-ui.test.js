@@ -100,7 +100,7 @@ function carregar(extra) {
   sandbox._setConfig = function(c) { Object.assign(config, c); };
   sandbox._orc = function() { return sandbox.ORCAMENTO; };
   sandbox.globalThis = sandbox;
-  var code = src.replace(/\bconst INIT_ORCAMENTO =/, 'var INIT_ORCAMENTO =');
+  var code = src.replace(/\bconst INIT_ORCAMENTO =/, 'var   INIT_ORCAMENTO =');
   vm.runInContext(code, vm.createContext(sandbox), {
     filename: path.join(root, 'js', 'modules', 'init-orcamento.js')
   });

@@ -19,10 +19,11 @@ const PATRIMONIO = global.PATRIMONIO;
 const UTILS = global.UTILS;
 const DADOS = global.DADOS;
 
-// init-patrimonio.js não tem require de utils/patrimonio (referencia globais),
-// então carregá-lo por require não instrumenta os arquivos do core.
+// init-patrimonio.js referencia utils/patrimonio como globais, resolvidos no
+// global do teste (onde loadCoreModules os expôs).
 global.INIT_MODALS = { fpAlert: function() {}, confirm: function(_m, fn) { fn(); } };
-const INIT_PATRIMONIO = require('../js/modules/init-patrimonio.js');
+const { carregarScript } = require('./carregar-script');
+const INIT_PATRIMONIO = carregarScript('js/modules/init-patrimonio.js');
 
 var toasts = [];
 UTILS.mostrarToast = function(msg, tipo) { toasts.push({ msg: msg, tipo: tipo }); };

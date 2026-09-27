@@ -25,7 +25,7 @@ beforeAll(function() {
   sandbox.globalThis = sandbox;
   var ctx = vm.createContext(sandbox);
   var code = fs.readFileSync(path.join(__dirname, '..', 'js', 'modules', 'init-modals.js'), 'utf8');
-  code = code.replace(/\bconst INIT_MODALS =/, 'var INIT_MODALS =');
+  code = code.replace(/\bconst INIT_MODALS =/, 'var   INIT_MODALS =');
   vm.runInContext(code, ctx, { filename: path.join(__dirname, '..', 'js', 'modules', 'init-modals.js') });
   global.INIT_MODALS = sandbox.INIT_MODALS;
 });

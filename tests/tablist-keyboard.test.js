@@ -96,7 +96,7 @@ describe('INIT_ORCAMENTO.mudarSubAba — roving tabindex', function() {
       parseFloat: parseFloat
     };
     sandbox.globalThis = sandbox;
-    var code = orcSrc.replace(/\bconst INIT_ORCAMENTO =/, 'var INIT_ORCAMENTO =');
+    var code = orcSrc.replace(/\bconst INIT_ORCAMENTO =/, 'var   INIT_ORCAMENTO =');
     vm.runInContext(code, vm.createContext(sandbox), { filename: path.join(root, 'js', 'modules', 'init-orcamento.js') });
     return sandbox.INIT_ORCAMENTO;
   }

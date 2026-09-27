@@ -7,7 +7,8 @@
  * isEnabled() NÃO chama getConfig — o ciclo é impossível por construção. Estes
  * testes usam o LOCAL_CRYPTO real.
  */
-const LOCAL_CRYPTO = require('../js/utilities/local-crypto.js');
+const { carregarScript } = require('./carregar-script');
+const LOCAL_CRYPTO = carregarScript('js/utilities/local-crypto.js');
 
 const KEY = 'financaspro_crypto_enabled';
 

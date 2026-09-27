@@ -7,7 +7,8 @@
  * existiu. Agora o selo é escondido nesses casos.
  * @jest-environment jsdom
  */
-const INIT_EXTRATO = require('../js/modules/init-extrato.js');
+const { carregarScript } = require('./carregar-script');
+const INIT_EXTRATO = carregarScript('js/modules/init-extrato.js');
 
 global.CONFIG = Object.assign(global.CONFIG || {}, { TIPO_RECEITA: 'receita', TIPO_DESPESA: 'despesa' });
 global.UTILS = Object.assign(global.UTILS || {}, {

@@ -57,6 +57,7 @@ describe('integridade da suíte — testes-cópia', () => {
       if (ISENTOS.has(nome)) continue;
 
       const carregaModuloReal = src.includes('load-sources')
+        || /carregarScript\(\s*['"]js\//.test(src)
         || /readFileSync\([^)]*['"]js['"]/.test(src)
         || /require\(['"]\.\.\/js\//.test(src);
 
@@ -103,6 +104,26 @@ describe('integridade da suíte — cobertura mensurável', () => {
     expect(problemas).toEqual([]);
   });
 
+  test('reescrever `const X =` em `var X =` preserva o comprimento do código', () => {
+    // O Jest soma a cobertura v8 de um arquivo por posição de caractere. Uma
+    // execução com `var X =` (2 caracteres a menos que `const X =`) fica
+    // deslocada em relação às demais cargas do mesmo arquivo, e o relatório
+    // passa a variar conforme a ordem das suítes — config.js oscilava entre
+    // 158 e 217 de 238 statements em rodadas idênticas. `var   X =` (com
+    // espaços) tem o mesmo comprimento.
+    const problemas = [];
+    const arquivos = [...testFiles, { nome: 'load-sources.js', src: fs.readFileSync(path.join(__dirname, 'load-sources.js'), 'utf8') }];
+
+    for (const { nome, src } of arquivos) {
+      const trocas = src.match(/replace\(\s*\/\\bconst[^/]*\/g?\s*,\s*(['"])var\s*[^'"]*\1/g) || [];
+      for (const troca of trocas) {
+        if (!/(['"])var {3}\S/.test(troca)) problemas.push(`${nome}: ${troca} — use 'var   X =' (3 espaços)`);
+      }
+    }
+
+    expect(problemas).toEqual([]);
+  });
+
   test('todo readFileSync de módulo js/ usa path.join a partir de __dirname', () => {
     // Caminho relativo cru quebra conforme o diretório de execução do Jest.
     const problemas = [];
@@ -115,6 +136,110 @@ describe('integridade da suíte — cobertura mensurável', () => {
     }
 
     expect(problemas).toEqual([]);
+  });
+});
+
+describe('integridade da suíte — cada arquivo de js/ carregado de UMA forma', () => {
+  // O Jest soma a cobertura v8 de um mesmo arquivo por posição de caractere
+  // (mergeProcessCovs) e só DEPOIS desconta o `wrapperLength` do embrulho
+  // CommonJS do require. Se uma suíte carrega js/x.js por require e outra por
+  // vm (sem embrulho), as execuções via vm ficam deslocadas pelo tamanho do
+  // cabeçalho (~90 caracteres) e a cobertura é atribuída ao trecho errado — o
+  // piso do arquivo passa ou falha por ruído. Foi o que fazia sync-merge.js
+  // aparecer com 66% de linhas num módulo coberto por inteiro.
+  //
+  // A forma única é vm (tests/carregar-script.js ou load-sources.js). require()
+  // de js/ só é tolerado para arquivo que NENHUMA suíte carrega por vm.
+
+  const src = (nome) => fs.readFileSync(path.join(__dirname, nome), 'utf8');
+  const norm = (rel) => path.posix.normalize(rel.replace(/\\/g, '/'));
+
+  /** Literais de string de uma lista de argumentos: `'a', "b"` → ['a', 'b']. */
+  const literais = (args) => (args.match(/(['"])[^'"]*\1/g) || []).map(s => s.slice(1, -1));
+
+  /** `path.join(__dirname, '..', 'js', 'core', 'x.js')` → 'js/core/x.js'. */
+  function caminhoDeJoin(args) {
+    const partes = literais(args);
+    const i = partes.findIndex(p => p === 'js' || p.startsWith('js/'));
+    if (i === -1) return null;
+    const rel = partes.slice(i).join('/');
+    return /\.js$/.test(rel) ? norm(rel) : null;
+  }
+
+  /** Arquivos de js/ que a suíte carrega por require(). */
+  function porRequire(codigo) {
+    const achados = new Set();
+    for (const m of codigo.matchAll(/require\(\s*(['"])((?:\.\.\/)+js\/[^'"]+)\1\s*\)/g)) {
+      achados.add(norm(m[2].replace(/^(\.\.\/)+/, '')));
+    }
+    for (const m of codigo.matchAll(/require\(\s*path\.(?:join|resolve)\(([^)]*)\)\s*\)/g)) {
+      const rel = caminhoDeJoin(m[1]);
+      if (rel) achados.add(rel);
+    }
+    return achados;
+  }
+
+  // O que loadCoreModules() executa por vm, lido do próprio load-sources.js.
+  const doLoadSources = new Set(
+    [...src('load-sources.js').matchAll(/loadScript\(\s*context\s*,\s*'([^']+)'\s*\)/g)]
+      .map(m => norm(m[1])),
+  );
+
+  /**
+   * Arquivos de js/ que a suíte carrega por vm. É uma sobre-aproximação de
+   * propósito: numa suíte que usa vm diretamente, todo caminho de js/ citado
+   * conta como carregado (mesmo que só seja lido como texto). Na dúvida, a
+   * guarda acusa — o falso positivo se resolve trocando o require pelo helper.
+   */
+  function porVm(codigo) {
+    const achados = new Set();
+    for (const m of codigo.matchAll(/carregarScript\(\s*(['"])([^'"]+)\1/g)) achados.add(norm(m[2]));
+    if (/\bloadCoreModules\s*\(/.test(codigo)) doLoadSources.forEach(f => achados.add(f));
+    if (/\b(runInContext|runInNewContext|runInThisContext|compileFunction)\b|new\s+vm\.Script\b/.test(codigo)) {
+      for (const m of codigo.matchAll(/(['"])(js\/[^'"]+\.js)\1/g)) achados.add(norm(m[2]));
+      for (const m of codigo.matchAll(/path\.(?:join|resolve)\(([^)]*)\)/g)) {
+        const rel = caminhoDeJoin(m[1]);
+        if (rel) achados.add(rel);
+      }
+    }
+    return achados;
+  }
+
+  // Esta suíte fica de fora: os exemplos de require abaixo são texto de teste.
+  const suites = testFiles
+    .filter(({ nome }) => nome !== 'suite-integrity.test.js')
+    .map(({ nome, src: codigo }) => ({ nome, require: porRequire(codigo), vm: porVm(codigo) }));
+
+  test('o detector enxerga as formas de carga usadas hoje (guarda contra varredura cega)', () => {
+    const vmDe = (nome) => suites.find(s => s.nome === nome).vm;
+    expect(vmDe('utils-real.test.js').has('js/core/config.js')).toBe(true);          // load-sources
+    expect(vmDe('extrato-audit.test.js').has('js/modules/init-extrato.js')).toBe(true); // vm direto
+    expect(vmDe('sync-merge.test.js').has('js/core/sync-merge.js')).toBe(true);      // carregarScript
+    expect(porRequire("require('../js/a.js'); require(path.join(__dirname, '..', 'js', 'b', 'c.js'))"))
+      .toEqual(new Set(['js/a.js', 'js/b/c.js']));
+  });
+
+  test('nenhum arquivo de js/ é carregado por require numa suíte e por vm em outra', () => {
+    const viaVm = new Map();
+    for (const s of suites) {
+      for (const f of s.vm) {
+        if (!viaVm.has(f)) viaVm.set(f, []);
+        viaVm.get(f).push(s.nome);
+      }
+    }
+
+    const conflitos = [];
+    for (const s of suites) {
+      for (const f of s.require) {
+        if (!viaVm.has(f)) continue;
+        const outras = viaVm.get(f);
+        conflitos.push(`${f}: require em ${s.nome}; vm em ${outras.slice(0, 3).join(', ')}`
+          + (outras.length > 3 ? ` (+${outras.length - 3})` : '')
+          + " — troque o require por carregarScript('" + f + "') (tests/carregar-script.js)");
+      }
+    }
+
+    expect(conflitos).toEqual([]);
   });
 });
 

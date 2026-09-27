@@ -71,7 +71,7 @@ function carregarInitConfig(extra) {
   sandbox._getCursor = function() { return cursorSaved; };
   sandbox._setStored = function(c) { storedConfig = Object.assign(storedConfig, c); };
 
-  var code = src.replace(/\bconst INIT_CONFIG =/, 'var INIT_CONFIG =');
+  var code = src.replace(/\bconst INIT_CONFIG =/, 'var   INIT_CONFIG =');
   vm.runInContext(code, vm.createContext(sandbox), {
     filename: path.join(root, 'js', 'modules', 'init-config.js')
   });

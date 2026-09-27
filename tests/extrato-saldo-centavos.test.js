@@ -7,7 +7,8 @@
  * cru (sem toFixed) justamente para expor qualquer deriva.
  * @jest-environment jsdom
  */
-const INIT_EXTRATO = require('../js/modules/init-extrato.js');
+const { carregarScript } = require('./carregar-script');
+const INIT_EXTRATO = carregarScript('js/modules/init-extrato.js');
 
 global.CONFIG = Object.assign(global.CONFIG || {}, { TIPO_RECEITA: 'receita', TIPO_DESPESA: 'despesa' });
 // formatarMoeda cru: NÃO arredonda, então float drift apareceria no texto.

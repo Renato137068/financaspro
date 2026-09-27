@@ -5,7 +5,7 @@
  * inline. Este módulo decide o que o usuário vê como "vencida" e, ao marcar
  * pago, cria uma despesa de verdade no extrato — errar aqui mexe no saldo.
  */
-const { loadCoreModules, resetFixtures } = require('./load-sources');
+const { loadCoreModules, resetFixtures, execNoSandbox } = require('./load-sources');
 
 loadCoreModules();
 
@@ -263,5 +263,81 @@ describe('CONTAS_PAGAR — exclusão', function() {
 
   test('obter devolve null para id inexistente', function() {
     expect(CP().obter('fantasma')).toBeFalsy();
+  });
+});
+
+describe('CONTAS_PAGAR.notificarVencimentos — lembrete do dia', function() {
+  // `Notification` é resolvido como nome livre DENTRO do sandbox do vm, então o
+  // stub precisa ser declarado lá (mexer em global.Notification não chega ao
+  // módulo). O array devolvido é o mesmo que o stub preenche.
+  let notificacoes;
+
+  beforeEach(function() {
+    global.localStorage.clear();
+    notificacoes = execNoSandbox(
+      'var __notificacoes = [];'
+      + 'var Notification = function(titulo, opcoes) { __notificacoes.push({ titulo: titulo, opcoes: opcoes }); };'
+      + 'Notification.permission = "granted";'
+      + '__notificacoes',
+    );
+  });
+
+  afterEach(function() {
+    execNoSandbox('Notification = undefined; __notificacoes = undefined;');
+    global.localStorage.clear();
+  });
+
+  test('avisa uma vez as contas vencidas e as que vencem hoje (não as futuras)', function() {
+    CP().criar({ descricao: 'Luz', valor: 180, vencimento: emDias(-2) });
+    CP().criar({ descricao: 'Água', valor: 90, vencimento: emDias(0) });
+    CP().criar({ descricao: 'Internet', valor: 120, vencimento: emDias(5) });
+
+    CP().notificarVencimentos();
+
+    expect(notificacoes).toHaveLength(1);
+    expect(notificacoes[0].titulo).toBe('Contas a pagar');
+    const corpo = notificacoes[0].opcoes.body;
+    expect(corpo).toMatch(/Luz/);
+    expect(corpo).toMatch(/Água/);
+    expect(corpo).not.toMatch(/Internet/);
+    expect(global.localStorage.getItem('fp-contas-notif-dia')).toBe(global.UTILS.dataLocalIso());
+  });
+
+  test('não repete o aviso no mesmo dia', function() {
+    CP().criar({ descricao: 'Luz', valor: 180, vencimento: emDias(-1) });
+    CP().notificarVencimentos();
+    CP().notificarVencimentos();
+    expect(notificacoes).toHaveLength(1);
+  });
+
+  test('lista no máximo 3 contas e resume o restante', function() {
+    ['A', 'B', 'C', 'D', 'E'].forEach(function(d) {
+      CP().criar({ descricao: 'Conta ' + d, valor: 10, vencimento: emDias(-1) });
+    });
+    CP().notificarVencimentos();
+    const linhas = notificacoes[0].opcoes.body.split('\n');
+    expect(linhas).toHaveLength(4);
+    expect(linhas[3]).toBe('+2 outras');
+  });
+
+  test('sem conta urgente, não incomoda', function() {
+    CP().criar({ descricao: 'Internet', valor: 120, vencimento: emDias(5) });
+    CP().notificarVencimentos();
+    expect(notificacoes).toHaveLength(0);
+    expect(global.localStorage.getItem('fp-contas-notif-dia')).toBeNull();
+  });
+
+  test('sem permissão de notificação, não tenta avisar', function() {
+    execNoSandbox('Notification.permission = "default";');
+    CP().criar({ descricao: 'Luz', valor: 180, vencimento: emDias(-1) });
+    CP().notificarVencimentos();
+    expect(notificacoes).toHaveLength(0);
+  });
+
+  test('falha ao exibir não lança e não marca o dia (tenta de novo depois)', function() {
+    execNoSandbox('Notification = function() { throw new Error("bloqueado"); }; Notification.permission = "granted";');
+    CP().criar({ descricao: 'Luz', valor: 180, vencimento: emDias(-1) });
+    expect(function() { CP().notificarVencimentos(); }).not.toThrow();
+    expect(global.localStorage.getItem('fp-contas-notif-dia')).toBeNull();
   });
 });

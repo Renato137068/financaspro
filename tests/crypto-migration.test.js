@@ -15,8 +15,10 @@ const ROOT = path.join(__dirname, '..');
 
 function loadInto(context, rel) {
   let code = fs.readFileSync(path.join(ROOT, rel), 'utf8');
-  code = code.replace(/\bconst (CONFIG) =/g, 'var $1 ='); // expõe como global do contexto
-  vm.runInContext(code, context, { filename: rel });
+  code = code.replace(/\bconst (CONFIG) =/g, 'var   $1 ='); // expõe como global do contexto
+  // filename absoluto: com o relativo o provider v8 não mapeia a execução de
+  // volta ao arquivo e ela some da cobertura.
+  vm.runInContext(code, context, { filename: path.join(ROOT, rel) });
 }
 
 let cryptoDescriptor;

@@ -11,9 +11,13 @@ function loadScript(context, relativePath) {
   const file = path.join(root, relativePath);
   if (!fs.existsSync(file)) return;
   let code = fs.readFileSync(file, 'utf8');
+  // `const X` → `var   X` (com espaços, MESMO comprimento): vira propriedade do
+  // sandbox sem deslocar nenhum caractere. O Jest soma a cobertura v8 do arquivo
+  // por posição; um `var X` 2 caracteres mais curto desalinharia esta execução
+  // das outras cargas do mesmo arquivo e a cobertura cairia no trecho errado.
   code = code.replace(
     /\bconst (CONFIG|UTILS|VALIDATIONS|SCORE|PARSER|PIPELINE|ORCAMENTO|TRANSACOES|APP_STORE|METAS|RELATORIOS|PATRIMONIO|CONTAS_PAGAR|ASSINATURAS|CONTAS|ANEXOS|INIT_CONFIG) =/g,
-    'var $1 =',
+    'var   $1 =',
   );
   vm.runInContext(code, context, { filename: file });
 }

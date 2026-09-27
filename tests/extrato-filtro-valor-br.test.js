@@ -6,7 +6,8 @@
  * decimal e a leitura usa UTILS.parseMoeda (BR-aware).
  * @jest-environment jsdom
  */
-const INIT_EXTRATO = require('../js/modules/init-extrato.js');
+const { carregarScript } = require('./carregar-script');
+const INIT_EXTRATO = carregarScript('js/modules/init-extrato.js');
 
 // parseMoeda BR-aware (equivalente ao de utils.js) — não fazemos require do
 // utils.js real para não sequestrar a atribuição de cobertura daquele arquivo.

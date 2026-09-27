@@ -1,7 +1,8 @@
 /**
  * password-policy.test.js — alinhamento FE/BE de regras de senha.
  */
-const PASSWORD_POLICY = require('../js/core/password-policy.js');
+const { carregarScript } = require('./carregar-script');
+const PASSWORD_POLICY = carregarScript('js/core/password-policy.js');
 
 describe('PASSWORD_POLICY — alinhado ao backend', () => {
   test('aceita senha com 8+ chars e número', () => {

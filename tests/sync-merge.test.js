@@ -2,16 +2,16 @@
  * sync-merge.test.js — fusão de delta + outbox no cliente (#2, §7).
  * Prova que os bugs de perda de dados D1/D2/D3 ficam resolvidos.
  */
-// require direto, e não vm.runInContext.
+// Carregado por carregarScript (vm), como em sync-engine.test e sync-dados.test.
 //
-// O módulo é puro (zero DOM, zero global) e termina com `module.exports`, então
-// não precisa de sandbox. E carregá-lo pelo mesmo caminho que sync-engine.test
-// e sync-dados.test usam garante UMA única cópia instrumentada: quando cada
-// suíte executava o arquivo no seu próprio vm, o provider v8 registrava várias
-// cópias do mesmo caminho absoluto e mesclava as contagens — o relatório
-// mostrava 66% de linhas e 54% de funções num módulo que os testes cobrem
-// inteiro, e o piso de 95% falhava por ruído de medição.
-const SM = require('../js/core/sync-merge.js');
+// Já houve require() deste arquivo convivendo com execuções via vm, e o
+// relatório mostrava 66% de linhas e 54% de funções num módulo que os testes
+// cobrem inteiro. A causa: o Jest soma a cobertura v8 do arquivo por posição de
+// caractere e só depois desconta o embrulho CommonJS do require — as execuções
+// via vm (sem embrulho) ficam deslocadas e caem no trecho errado. Cada arquivo
+// de js/ precisa ser carregado de UMA forma só; suite-integrity.test.js trava.
+const { carregarScript } = require('./carregar-script');
+const SM = carregarScript('js/core/sync-merge.js');
 const T1 = '2026-07-09T10:00:00Z';
 const T2 = '2026-07-09T11:00:00Z';
 

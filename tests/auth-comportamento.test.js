@@ -136,7 +136,8 @@ describe('Biometria — entrar depois de reabrir o app', () => {
 
 /* ───────────────────────── PIN ───────────────────────── */
 
-const { PIN_SECURITY } = require('../js/pin.js');
+const { carregarScript } = require('./carregar-script');
+const { PIN_SECURITY } = carregarScript('js/pin.js');
 
 describe('PIN — recusa os palpites óbvios', () => {
   test('barra os campeões de tentativa', () => {

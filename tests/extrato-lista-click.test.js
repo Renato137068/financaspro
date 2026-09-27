@@ -47,7 +47,7 @@ function carregarModulo() {
   };
   sandbox.globalThis = sandbox;
   var code = fs.readFileSync(path.join(root, 'js', 'modules', 'init-extrato.js'), 'utf8')
-    .replace(/\bconst INIT_EXTRATO =/, 'var INIT_EXTRATO =');
+    .replace(/\bconst INIT_EXTRATO =/, 'var   INIT_EXTRATO =');
   var ctx = vm.createContext(sandbox);
   vm.runInContext(code, ctx, { filename: path.join(root, 'js', 'modules', 'init-extrato.js') });
   var mod = sandbox.INIT_EXTRATO || ctx.INIT_EXTRATO;

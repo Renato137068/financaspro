@@ -6,7 +6,8 @@
  * devolver null e null.map lançar — fora do alcance do .catch —, estourando a
  * leitura do armazenamento em vez de devolver o valor.
  */
-const LOCAL_CRYPTO = require('../js/utilities/local-crypto.js');
+const { carregarScript } = require('./carregar-script');
+const LOCAL_CRYPTO = carregarScript('js/utilities/local-crypto.js');
 
 beforeEach(function() { global.localStorage.clear(); });
 afterEach(function() { delete global.DADOS; global.localStorage.clear(); });

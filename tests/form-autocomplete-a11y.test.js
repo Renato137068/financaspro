@@ -70,7 +70,7 @@ describe('P1.1 — navegação por teclado (runtime)', function() {
     };
     sandbox.globalThis = sandbox;
     // init-form usa const INIT_FORM — forçar var para o sandbox
-    var code = formSrc.replace(/\bconst INIT_FORM =/, 'var INIT_FORM =');
+    var code = formSrc.replace(/\bconst INIT_FORM =/, 'var   INIT_FORM =');
     var ctx = vm.createContext(sandbox);
     try {
       vm.runInContext(code, ctx, { filename: path.join(root, 'js', 'modules', 'init-form.js') });

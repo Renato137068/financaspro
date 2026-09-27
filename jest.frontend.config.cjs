@@ -40,7 +40,7 @@ module.exports = {
     // módulo migrado para ES Modules e coberto por teste.
     global: { lines: 2, functions: 10, branches: 30 },
     'js/core/utils.js': { lines: 96, functions: 100, branches: 85 },
-    'js/core/store.js': { lines: 99, functions: 100, branches: 84 },
+    'js/core/store.js': { lines: 99, functions: 100, branches: 87 },
     // Era o pior ramo do frontend (35%). O teste `validations-real.test.js`
     // passou a exercitar o módulo de verdade — antes, `validations.test.js`
     // testava uma cópia inline da implementação, que nunca pegaria regressão.
@@ -49,7 +49,8 @@ module.exports = {
 
     // Saíram de 0%: os testes antigos recalculavam a lógica inline em vez de
     // carregar o módulo. A conversão revelou dois bugs de produção.
-    'js/contas-pagar.js': { lines: 88, functions: 90, branches: 90 },
+    // notificarVencimentos ganhou teste (o lembrete diário de conta vencida).
+    'js/contas-pagar.js': { lines: 98, functions: 100, branches: 90 },
     'js/assinaturas.js': { lines: 98, functions: 100, branches: 93 },
     'js/transacoes.js': { lines: 94, functions: 100, branches: 82 },
     'js/metas.js': { lines: 99, functions: 100, branches: 94 },
@@ -74,7 +75,16 @@ module.exports = {
 
     // Regras de orçamento (dinheiro). O budget.test.js roda uma cópia inline
     // (0% do módulo real); budgetService-real.test.js carrega o de produção.
-    'js/services/budgetService.js': { lines: 88, functions: 83, branches: 82 },
+    'js/services/budgetService.js': { lines: 99, functions: 100, branches: 90 },
+
+    // Módulos de segurança que eram carregados por require() numa suíte e por vm
+    // em outras. O Jest soma a cobertura v8 por posição de caractere e só depois
+    // desconta o embrulho CommonJS do require, então as execuções via vm caíam
+    // no trecho errado e o número não significava nada. Com tudo carregado por
+    // vm (tests/carregar-script.js) a medição ficou estável e ganhou piso.
+    // suite-integrity.test.js impede a mistura de voltar.
+    'js/core/password-policy.js': { lines: 99, functions: 100, branches: 93 },
+    'js/utilities/local-crypto.js': { lines: 89, functions: 69, branches: 77 },
 
     // Resolução de categorias (rótulo/ícone/cor/tipo/custom/busca), consumida
     // por init-form, auto-categorizer e lifecycle. Estava em 0%; agora coberta

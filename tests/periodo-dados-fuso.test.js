@@ -42,7 +42,7 @@ function carregar(transacoes) {
     module: { exports: {} },
   };
   sandbox.globalThis = sandbox;
-  vm.runInContext(src.replace(/\bconst INIT_CONFIG =/, 'var INIT_CONFIG ='),
+  vm.runInContext(src.replace(/\bconst INIT_CONFIG =/, 'var   INIT_CONFIG ='),
     vm.createContext(sandbox), { filename: path.join(root, 'js', 'modules', 'init-config.js') });
   return sandbox.INIT_CONFIG;
 }

@@ -26,15 +26,9 @@ function loadEngine(deps) {
     ACTIONS: deps.ACTIONS,
     module: { exports: {} },
   });
-  // SYNC_MERGE entra pelo contexto (deps.SYNC_MERGE), já carregado via require.
-  //
-  // Antes o arquivo era TAMBÉM executado aqui dentro do vm, e o `var
-  // SYNC_MERGE` dessa execução sobrescrevia a instância injetada. FinançasProvam
-  // duas cópias instrumentadas do mesmo caminho absoluto: a do vm, usada de
-  // fato, e a do require, nunca chamada. O provider v8 mesclava as duas e
-  // reportava sync-merge.js com 66% de linhas e 54% de funções — quando os
-  // testes cobrem o módulo inteiro. O piso de 95% do jest.config falhava por
-  // ruído de medição, não por falta de teste.
+  // SYNC_MERGE entra pelo contexto (deps.SYNC_MERGE), já carregado por
+  // carregarScript. Executá-lo de novo aqui dentro faria o `var SYNC_MERGE`
+  // dessa execução sobrescrever a instância injetada.
   const engineFile = path.join(__dirname, '..', 'js', 'core', 'sync-engine.js');
   vm.runInContext(fs.readFileSync(engineFile, 'utf8'), ctx, { filename: engineFile });
   const engine = ctx.SYNC_ENGINE;
@@ -48,7 +42,8 @@ const CONFIG = {
   STORAGE_SYNC_CURSOR: 'fp-sync-cursor',
   STORAGE_TRANSACOES: 'fp-transacoes',
 };
-const SM = require('../js/core/sync-merge.js');
+const { carregarScript } = require('./carregar-script');
+const SM = carregarScript('js/core/sync-merge.js');
 const UUID = '3f2504e0-4f89-41d3-9a0c-0305e82c3301';
 const T1 = '2026-07-09T10:00:00.000Z';
 const T2 = '2026-07-09T11:00:00.000Z';

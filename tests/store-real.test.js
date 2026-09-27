@@ -158,11 +158,48 @@ describe('APP_STORE — persistência e deepMerge', function() {
     expect(S().get('ui.abaAtiva')).toBe('metas');
   });
   test('estado persistido expirado (>7 dias) é ignorado', function() {
+    // O expirado é gravado DEPOIS do reset(): reset() re-persiste 'resumo' e,
+    // na ordem inversa, apagaria o estado antigo antes da leitura — o teste
+    // passaria sem nunca chegar ao ramo de expiração.
+    S().reset();
     var antigo = { ui: { abaAtiva: 'velho' }, timestamp: Date.now() - 8 * 24 * 3600 * 1000 };
     global.localStorage.setItem('fp-store-v2', JSON.stringify(antigo));
+    var warn = jest.spyOn(console, 'warn').mockImplementation(function() {});
+    try {
+      S()._carregarUIPersistido();
+      expect(S().get('ui.abaAtiva')).toBe('resumo'); // não aplicou o expirado
+      expect(warn).toHaveBeenCalledWith(expect.stringMatching(/expirado/));
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  test('estado persistido corrompido não derruba o carregamento', function() {
     S().reset();
-    S()._carregarUIPersistido();
-    expect(S().get('ui.abaAtiva')).toBe('resumo'); // não aplicou o expirado
+    global.localStorage.setItem('fp-store-v2', '{não é json');
+    var warn = jest.spyOn(console, 'warn').mockImplementation(function() {});
+    try {
+      expect(function() { S()._carregarUIPersistido(); }).not.toThrow();
+      expect(S().get('ui.abaAtiva')).toBe('resumo');
+      // O SyntaxError nasce no realm do vm — `expect.any(Error)` do teste não o reconhece.
+      expect(warn).toHaveBeenCalledWith(expect.stringMatching(/carregar/), expect.objectContaining({ name: 'SyntaxError' }));
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  test('falha ao gravar (cota cheia) não interrompe a atualização do estado', function() {
+    var setItem = global.localStorage.setItem;
+    global.localStorage.setItem = function() { throw new Error('QuotaExceededError'); };
+    var warn = jest.spyOn(console, 'warn').mockImplementation(function() {});
+    try {
+      expect(function() { S().set('ui.abaAtiva', 'metas'); }).not.toThrow();
+      expect(S().get('ui.abaAtiva')).toBe('metas'); // memória atualizada mesmo sem persistir
+      expect(warn).toHaveBeenCalledWith(expect.stringMatching(/persistir/), expect.any(Error));
+    } finally {
+      global.localStorage.setItem = setItem;
+      warn.mockRestore();
+    }
   });
 });
 

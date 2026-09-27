@@ -4,6 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { carregarScript } = require('./carregar-script');
 
 function loadDados() {
   const storage = new Map();
@@ -38,7 +39,7 @@ function loadDados() {
     module: { exports: {} },
   });
 
-  ctx.SYNC_MERGE = require('../js/core/sync-merge.js');
+  ctx.SYNC_MERGE = carregarScript('js/core/sync-merge.js');
 
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'js', 'core', 'sync-engine.js'), 'utf8'), ctx, {
     filename: path.join(__dirname, '..', 'js', 'core', 'sync-engine.js'),
