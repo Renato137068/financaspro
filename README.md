@@ -13,7 +13,7 @@ App de finanças pessoais com PWA, experiência mobile/Android e API SaaS opcion
 
 ## Requisitos
 
-- Node.js 18+
+- Node.js 22+
 - npm 9+
 - Postgres (backend completo)
 - Redis opcional (filas/workers)
@@ -67,7 +67,7 @@ npm run lint
 npm run build
 ```
 
-O CI roda lint, testes e build em Node 18 e 20.
+O CI roda lint, testes e build em Node 22 e 24.
 
 ## Arquitetura
 

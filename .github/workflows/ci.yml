@@ -33,7 +33,7 @@ jobs:
           --health-retries 5
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
+        node-version: [22.x, 24.x]
 
     steps:
       - name: Checkout codigo
@@ -87,31 +87,31 @@ jobs:
         run: npm run test:ci
         env:
           INTEGRATION_TEST_DATABASE_URL: postgresql://financaspro:testpass@localhost:5432/financaspro_test
-          SKIP_INTEGRATION: ${{ matrix.node-version == '18.x' && '1' || '' }}
+          SKIP_INTEGRATION: ${{ matrix.node-version == '24.x' && '1' || '' }}
 
       - name: Instalar cliente PostgreSQL + pgTAP (RLS/quota/MFA)
-        if: matrix.node-version == '20.x'
+        if: matrix.node-version == '22.x'
         # postgres:16-alpine (service) não traz a extensão pgtap; instalamos o
         # pacote no runner só pelo pgtap--<versão>.sql, que test-supabase-pgtap.cjs
         # carrega no banco via psql -f (não precisa de CREATE EXTENSION no servidor).
         run: sudo apt-get update && sudo apt-get install -y postgresql-client postgresql-16-pgtap
 
       - name: Testes pgTAP Supabase (RLS, quota, MFA)
-        if: matrix.node-version == '20.x'
+        if: matrix.node-version == '22.x'
         run: npm run test:db:ci
         env:
           INTEGRATION_TEST_DATABASE_URL: postgresql://financaspro:testpass@localhost:5432/financaspro_test
 
       - name: Instalar Chromium (Playwright)
-        if: matrix.node-version == '20.x'
+        if: matrix.node-version == '22.x'
         run: npx playwright install chromium
 
       - name: Smoke boot dist (pageerror)
-        if: matrix.node-version == '20.x'
+        if: matrix.node-version == '22.x'
         run: npm run test:e2e:smoke
 
       - name: Testes E2E
-        if: matrix.node-version == '20.x'
+        if: matrix.node-version == '22.x'
         run: npm run test:e2e
         env:
           E2E_API: '1'
@@ -124,11 +124,11 @@ jobs:
           E2E_TOTP_SECRET: ${{ secrets.E2E_SUPABASE_TOTP_SECRET }}
 
       - name: Gerar relatorio de cobertura
-        if: matrix.node-version == '20.x'
+        if: matrix.node-version == '22.x'
         run: npm run test:coverage
 
       - name: Upload relatorio de cobertura
-        if: matrix.node-version == '20.x'
+        if: matrix.node-version == '22.x'
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report

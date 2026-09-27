@@ -15,7 +15,7 @@ npm run dev          # frontend em :3000
 npm run backend:dev  # API em :4000
 ```
 
-Node 18+ e npm 9+. O Postgres só é necessário para o backend completo; o
+Node 22+ e npm 9+. O Postgres só é necessário para o backend completo; o
 frontend funciona offline sem API — esse é um requisito de produto, não um
 detalhe de implementação.
 
