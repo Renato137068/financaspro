@@ -3,11 +3,13 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { indexComTelas } = require('./helpers/index-com-telas.cjs');
 
 const root = path.join(__dirname, '..');
 const dadosSrc = fs.readFileSync(path.join(root, 'js', 'core', 'dados.js'), 'utf8');
 const idbSrc = fs.readFileSync(path.join(root, 'js', 'core', 'idb-kv.js'), 'utf8');
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+// index.html com as telas lazy (telas/) de volta nas cascas.
+const html = indexComTelas();
 // ES Modules (ADR 0005) entram pela ponte, não por tag no index.html.
 const ponte = fs.readFileSync(path.join(root, 'js', 'esm', 'ponte.js'), 'utf8');
 const reconcilerSrc = fs.readFileSync(path.join(root, 'js', 'utilities', 'finance-reconciler.js'), 'utf8');

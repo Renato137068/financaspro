@@ -99,7 +99,7 @@ describe('fundação ES Modules', () => {
 
   test('a ponte publica os módulos migrados em window', () => {
     const nomes = ['CATEGORIA_VISUAL', 'TRANSACTION_SERVICE', 'BUDGET_SERVICE', 'INSIGHT_ACOES',
-      'PASSWORD_POLICY', 'VALIDATIONS', 'FINANCE_CONTRACT', 'SYNC_MERGE', 'SESSION_LOG', 'IDB_KV'];
+      'PASSWORD_POLICY', 'VALIDATIONS', 'FINANCE_CONTRACT', 'SYNC_MERGE', 'SESSION_LOG', 'IDB_KV', 'TELAS'];
     try {
       carregarScript('js/esm/ponte.js');
       nomes.forEach((n) => expect(typeof window[n]).toBe('object'));

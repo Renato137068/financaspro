@@ -19,6 +19,10 @@ const INIT_NAVIGATION = {
     this.setupNavigation();
     this.setupActionBindings();
     this.initTablists();
+    // O Orçamento chega com o chunk lazy (js/core/telas.js): o tablist dele só
+    // existe depois disso. initTablists ignora o que já está ligado.
+    var self = this;
+    document.addEventListener('fp:tela-carregada', function() { self.initTablists(); });
     this._initialized = true;
   },
 

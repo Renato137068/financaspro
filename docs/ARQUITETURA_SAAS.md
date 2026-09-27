@@ -59,6 +59,11 @@ mesmos dados sincronizam com o Supabase.
   extrato, orçamento, config (Perfil), simulador, onboarding e `conta`
   (paywall, Play Billing, 2FA, Open Finance).
   `tests/lazy-chunks.test.js` exige um carregador para cada chunk.
+- **Telas fora do `index.html`** ([ADR 0006](adr/0006-telas-lazy-fora-do-index.md)).
+  Telas usadas só por um chunk lazy (Orçamento; Categorias, Ajuda, Suporte e
+  Editar perfil) moram em `telas/<chunk>/<tela>.html`. `npm run telas:gerar`
+  produz `js/telas/<chunk>.js`, que vem com o chunk e preenche a casca do
+  `index.html` via `TELAS` (`js/core/telas.js`); `check:telas` no CI.
 - **Orçamento do bundle** (`npm run check:bundle`): o teto só desce,
   travado por `tests/bundle-budget-teto.test.js`. O código eager do app é a
   soma de `app.bundle.js` e da entrada ESM.

@@ -45,7 +45,9 @@ const BUDGETS = {
   // 1300→1305 KB (2026-09-27): supabase-js 2.112 → 2.117 (+6 KB no vendor).
   // Exceção registrada: o ganho do dia (1418 → 1305) paga a atualização da
   // biblioteca de login e sync, que não se encolhe por aqui.
-  precacheTotal: { max: 1305 * KB, label: 'Precache total (1º acesso)' },
+  // 1305→1280 KB (2026-09-27): Orçamento e quatro sub-telas do Perfil saem do
+  // index.html e vêm com o chunk (telas/, js/core/telas.js).
+  precacheTotal: { max: 1280 * KB, label: 'Precache total (1º acesso)' },
   // 580→590 KB (2026-09-13): correção do KPI "Folga poupança" no Orçamento
   // (cálculo da folga da fatia de poupança) + referência de ritmo no Resumo
   // adicionam alguns KB de código — aumento intencional.
@@ -77,7 +79,10 @@ const BUDGETS = {
   cssBundle: { max: 300 * KB, label: 'CSS bundle', glob: /^css\/index-.*\.css$/ },
   // 100→112 KB (2026-09-12): reestruturação da aba Perfil em menu + sub-telas
   // (divulgação progressiva) adiciona ~7 KB de markup — aumento intencional.
-  indexHtml: { max: 112 * KB, label: 'index.html', file: 'index.html' },
+  // 112→85 KB (2026-09-27): telas usadas só por um chunk lazy (Orçamento,
+  // Categorias, Ajuda, Suporte, Editar perfil) moram em telas/ e chegam com o
+  // chunk; o index.html guarda só a casca de cada uma.
+  indexHtml: { max: 85 * KB, label: 'index.html', file: 'index.html' },
 };
 
 function size(rel) {

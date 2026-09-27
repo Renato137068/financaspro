@@ -1,0 +1,316 @@
+<!-- Tela "orcamento" (#aba-orcamento). Vem no chunk lazy "orcamento": scripts/generate-telas.cjs
+     gera js/telas/orcamento.js a partir deste arquivo. Rode `npm run telas:gerar` depois de editar. -->
+<nav class="orc-subnav" aria-label="Seções do orçamento">
+  <div class="orc-tablist" role="tablist" aria-label="Seções do orçamento">
+    <button type="button" class="orc-tab ativo" role="tab"
+      id="orc-sub-tab-planejamento" data-action="orc-sub-aba" data-orc-sub="planejamento"
+      aria-selected="true" aria-controls="orc-sub-panel-planejamento" tabindex="0">Planejamento</button>
+    <button type="button" class="orc-tab" role="tab"
+      id="orc-sub-tab-metas" data-action="orc-sub-aba" data-orc-sub="metas"
+      aria-selected="false" aria-controls="orc-sub-panel-metas" tabindex="-1">Metas</button>
+    <button type="button" class="orc-tab" role="tab"
+      id="orc-sub-tab-assinaturas" data-action="orc-sub-aba" data-orc-sub="assinaturas"
+      aria-selected="false" aria-controls="orc-sub-panel-assinaturas" tabindex="-1">Gastos fixos</button>
+    <button type="button" class="orc-tab" role="tab"
+      id="orc-sub-tab-patrimonio" data-action="orc-sub-aba" data-orc-sub="patrimonio"
+      aria-selected="false" aria-controls="orc-sub-panel-patrimonio" tabindex="-1">Patrimônio</button>
+  </div>
+</nav>
+
+<div id="orc-sub-panel-planejamento" class="orc-sub-panel ativo" role="tabpanel" aria-labelledby="orc-sub-tab-planejamento">
+<!-- Renda mensal (se não definida) -->
+<div class="orc-renda-setup" id="orc-renda-setup">
+  <div class="orc-renda-setup-head">
+    <div class="orc-renda-icon" aria-hidden="true"><i data-lucide="target"></i></div>
+    <div class="orc-renda-copy">
+      <p class="orc-renda-title">Qual sua renda mensal?</p>
+      <p class="orc-renda-desc">Informe para calcular seu orçamento 50/30/20</p>
+    </div>
+  </div>
+  <div class="orc-renda-field">
+    <label class="sr-only" for="orc-renda-valor">Renda mensal em reais</label>
+    <div class="orc-renda-group">
+      <span class="orc-renda-prefix" aria-hidden="true">R$</span>
+      <input type="text" id="orc-renda-valor" class="orc-renda-input" placeholder="0,00" inputmode="decimal" autocomplete="off">
+    </div>
+    <button type="button" class="btn-primario orc-renda-submit" data-action="salvar-renda-orcamento">Definir renda</button>
+  </div>
+</div>
+
+<!-- Dashboard -->
+<div id="orc-dashboard" style="display:none">
+  <div id="orc-live-region" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+  <p class="orc-panel-subtitle">Planejamento 50/30/20 — divida sua renda em Necessidades, Desejos e Poupança</p>
+  <!-- Header Estratégico -->
+  <div class="orc-header">
+    <!-- KPI Principal -->
+    <div class="orc-kpi-main">
+      <div class="orc-kpi-main-content">
+        <div class="orc-kpi-label" title="Renda planejada do mês menos despesas de consumo lançadas">Saldo disponível do orçamento</div>
+        <div class="orc-kpi-value" id="orc-saldo-disponivel" aria-describedby="orc-kpi-saldo-hint">R$ 0,00</div>
+        <p id="orc-kpi-saldo-hint" class="orc-kpi-hint">Base: renda planejada − despesas (não o que entrou de fato)</p>
+        <div class="orc-kpi-meta">
+          <span class="orc-kpi-percent" id="orc-percent-restante">0%</span>
+          <span class="orc-kpi-separator">•</span>
+          <span class="orc-kpi-trend" id="orc-tendencia">vs mês anterior</span>
+        </div>
+      </div>
+      <div class="orc-kpi-trend-indicator" id="orc-trend-indicator">
+        <span class="trend-icon"><i data-lucide="trending-up" aria-hidden="true"></i></span>
+      </div>
+    </div>
+
+    <!-- KPIs Secundários -->
+    <div class="orc-kpi-secondary">
+      <div class="orc-kpi-card">
+        <div class="orc-kpi-card-icon"><i data-lucide="clipboard-list" aria-hidden="true"></i></div>
+        <div class="orc-kpi-card-content">
+          <span class="orc-kpi-card-label" title="Soma da renda usada como base do 50/30/20">Total planejado</span>
+          <span class="orc-kpi-card-value" id="orc-total-planejado">R$ 0,00</span>
+        </div>
+      </div>
+      <div class="orc-kpi-card">
+        <div class="orc-kpi-card-icon"><i data-lucide="check-circle" aria-hidden="true"></i></div>
+        <div class="orc-kpi-card-content">
+          <span class="orc-kpi-card-label" title="Soma das despesas lançadas no mês">Total realizado</span>
+          <span class="orc-kpi-card-value" id="orc-total-realizado">R$ 0,00</span>
+        </div>
+      </div>
+      <div class="orc-kpi-card">
+        <div class="orc-kpi-card-icon"><i data-lucide="alert-triangle" aria-hidden="true"></i></div>
+        <div class="orc-kpi-card-content">
+          <span class="orc-kpi-card-label" title="Categorias acima do limite ou em risco">Críticas</span>
+          <span class="orc-kpi-card-value" id="orc-categorias-criticas">0</span>
+        </div>
+      </div>
+      <div class="orc-kpi-card">
+        <div class="orc-kpi-card-icon"><i data-lucide="trending-up" aria-hidden="true"></i></div>
+        <div class="orc-kpi-card-content">
+          <span class="orc-kpi-card-label" title="Fatia de 20% menos o que você já poupou — base: receitas − despesas do mês">Folga poupança</span>
+          <span class="orc-kpi-card-value" id="orc-economia-mes">R$ 0,00</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ações rápidas -->
+    <div class="perfil-section">
+      <h2 class="perfil-section-title">Ações</h2>
+      <div class="perfil-cards-grid">
+        <button type="button" class="perfil-card" data-action="editar-renda-orcamento" aria-label="Editar renda">
+          <div class="perfil-card-icon-wrapper"><i data-lucide="pencil" aria-hidden="true"></i></div>
+          <div class="perfil-card-content">
+            <span class="perfil-card-title">Editar renda</span>
+            <span class="perfil-card-subtitle">Atualizar valor mensal</span>
+          </div>
+          <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+        </button>
+        <button type="button" class="perfil-card" data-action="editar-regra-503020" aria-label="Personalizar regra">
+          <div class="perfil-card-icon-wrapper"><i data-lucide="settings" aria-hidden="true"></i></div>
+          <div class="perfil-card-content">
+            <span class="perfil-card-title">Personalizar</span>
+            <span class="perfil-card-subtitle">Ajustar regra 50/30/20</span>
+          </div>
+          <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Regra 50/30/20 -->
+  <div class="orc-regra">
+    <div class="orc-regra-card necessidades" id="orc-necessidades">
+      <div class="orc-regra-card-header">
+        <div class="orc-regra-card-left">
+          <div class="orc-regra-card-icon-wrapper">
+            <span class="orc-edit-renda-icon"><i data-lucide="banknote"></i></span>
+          </div>
+          <div class="orc-regra-card-info">
+            <span class="orc-regra-card-nome">Necessidades</span>
+            <span class="orc-regra-card-pct" id="orc-nec-pct">50%</span>
+          </div>
+        </div>
+        <div class="orc-regra-card-status" id="orc-nec-status">
+          <span class="status-badge status-healthy">Saudável</span>
+        </div>
+      </div>
+      <div class="orc-regra-card-body">
+        <div class="orc-regra-card-valor-row">
+          <span class="orc-regra-card-gasto" id="orc-nec-gasto">R$ 0</span>
+          <span class="orc-regra-card-limite">de <span id="orc-nec-limite">R$ 0</span></span>
+        </div>
+        <div class="orc-progress">
+          <div class="orc-progress-fill" id="orc-nec-bar"></div>
+        </div>
+        <div class="orc-regra-card-meta">
+          <span class="orc-regra-card-percent" id="orc-nec-percent">0%</span>
+          <span class="orc-regra-card-label">utilizado</span>
+        </div>
+      </div>
+      <div class="orc-regra-card-footer">
+        <span class="orc-regra-card-cats">Moradia, Alimentação, Transporte, Saúde</span>
+      </div>
+    </div>
+
+    <div class="orc-regra-card desejos" id="orc-desejos">
+      <div class="orc-regra-card-header">
+        <div class="orc-regra-card-left">
+          <div class="orc-regra-card-icon-wrapper">
+            <span class="orc-edit-renda-icon"><i data-lucide="gamepad-2" aria-hidden="true"></i></span>
+          </div>
+          <div class="orc-regra-card-info">
+            <span class="orc-regra-card-nome">Desejos</span>
+            <span class="orc-regra-card-pct" id="orc-des-pct">30%</span>
+          </div>
+        </div>
+        <div class="orc-regra-card-status" id="orc-des-status">
+          <span class="status-badge status-healthy">Saudável</span>
+        </div>
+      </div>
+      <div class="orc-regra-card-body">
+        <div class="orc-regra-card-valor-row">
+          <span class="orc-regra-card-gasto" id="orc-des-gasto">R$ 0</span>
+          <span class="orc-regra-card-limite">de <span id="orc-des-limite">R$ 0</span></span>
+        </div>
+        <div class="orc-progress">
+          <div class="orc-progress-fill" id="orc-des-bar"></div>
+        </div>
+        <div class="orc-regra-card-meta">
+          <span class="orc-regra-card-percent" id="orc-des-percent">0%</span>
+          <span class="orc-regra-card-label">utilizado</span>
+        </div>
+      </div>
+      <div class="orc-regra-card-footer">
+        <span class="orc-regra-card-cats">Lazer, Entretenimento, Compras</span>
+      </div>
+    </div>
+
+    <div class="orc-regra-card poupanca" id="orc-poupanca">
+      <div class="orc-regra-card-header">
+        <div class="orc-regra-card-left">
+          <div class="orc-regra-card-icon-wrapper">
+            <span class="orc-edit-renda-icon"><i data-lucide="piggy-bank" aria-hidden="true"></i></span>
+          </div>
+          <div class="orc-regra-card-info">
+            <span class="orc-regra-card-nome">Poupança</span>
+            <span class="orc-regra-card-pct" id="orc-pou-pct">20%</span>
+          </div>
+        </div>
+        <div class="orc-regra-card-status" id="orc-pou-status">
+          <span class="status-badge status-healthy">Saudável</span>
+        </div>
+      </div>
+      <div class="orc-regra-card-body">
+        <div class="orc-regra-card-valor-row">
+          <span class="orc-regra-card-gasto" id="orc-pou-gasto">R$ 0</span>
+          <span class="orc-regra-card-limite">meta <span id="orc-pou-limite">R$ 0</span></span>
+        </div>
+        <div class="orc-progress poupanca-bar">
+          <div class="orc-progress-fill" id="orc-pou-bar"></div>
+        </div>
+        <div class="orc-regra-card-meta">
+          <span class="orc-regra-card-percent" id="orc-pou-percent">0%</span>
+          <span class="orc-regra-card-label" id="orc-pou-percent-label">alcançado</span>
+        </div>
+      </div>
+      <div class="orc-regra-card-footer">
+        <span class="orc-regra-card-cats">Investimentos, Reserva de emergência</span>
+        <span class="orc-regra-card-base">Base: o que entrou (receitas − despesas), não a renda planejada</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Insights inteligentes -->
+  <div class="orc-insights" id="orc-insights"></div>
+
+  <!-- Detalhamento por Categoria -->
+  <div class="orc-categorias-section perfil-section">
+    <div class="orc-secao-header">
+      <h3 class="perfil-section-title">Detalhes por categoria</h3>
+      <button class="orc-toggle-btn" id="orc-cat-toggle" data-action="toggle-detalhes-categorias" aria-expanded="false">
+        <span class="toggle-label">Expandir</span>
+        <i data-lucide="chevron-down" class="toggle-icon" id="orc-cat-arrow" aria-hidden="true"></i>
+      </button>
+    </div>
+    <div class="orc-categorias" id="orc-categorias" style="display:none">
+      <!-- Categorias Críticas -->
+      <div class="orc-categoria-group" id="orc-group-critical" style="display:none">
+        <div class="orc-group-header">
+          <span class="orc-group-icon"><i data-lucide="alert-triangle"></i></span>
+          <span class="orc-group-title">Categorias Críticas</span>
+          <span class="orc-group-count" id="orc-critical-count">0</span>
+        </div>
+        <div class="orc-group-list" id="orc-critical-list"></div>
+      </div>
+
+      <!-- Categorias em Atenção -->
+      <div class="orc-categoria-group" id="orc-group-attention" style="display:none">
+        <div class="orc-group-header">
+          <span class="orc-group-icon"><i data-lucide="bell"></i></span>
+          <span class="orc-group-title">Requer Atenção</span>
+          <span class="orc-group-count" id="orc-attention-count">0</span>
+        </div>
+        <div class="orc-group-list" id="orc-attention-list"></div>
+      </div>
+
+      <!-- Categorias Saudáveis -->
+      <div class="orc-categoria-group" id="orc-group-healthy" style="display:none">
+        <div class="orc-group-header">
+          <span class="orc-group-icon"><i data-lucide="check-circle"></i></span>
+          <span class="orc-group-title">Categorias Saudáveis</span>
+          <span class="orc-group-count" id="orc-healthy-count">0</span>
+        </div>
+        <div class="orc-group-list" id="orc-healthy-list"></div>
+      </div>
+
+      <!-- Empty State para Categorias -->
+      <div class="orc-categorias-empty" id="orc-categorias-empty" style="display:none">
+        <div class="orc-empty-icon"><i data-lucide="bar-chart" aria-hidden="true"></i></div>
+        <p class="orc-empty-title">Nenhuma categoria com gasto neste mês</p>
+        <p class="orc-empty-desc">Lance uma despesa no Extrato ou em Novo para ver o detalhamento por categoria. Depois você pode ajustar limites em Configurações › Orçamento.</p>
+        <button type="button" class="btn-primario" data-mudar-aba="novo">Registrar primeiro lançamento</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div><!-- /orc-sub-panel-planejamento -->
+
+<!-- Metas financeiras (visível mesmo sem renda definida) -->
+<div id="orc-sub-panel-metas" class="orc-sub-panel" role="tabpanel" hidden aria-labelledby="orc-sub-tab-metas">
+<div class="metas-section perfil-section" id="metas-section">
+  <div class="orc-secao-header">
+    <h3 class="perfil-section-title">Metas financeiras</h3>
+    <div class="metas-header-actions">
+      <button type="button" class="btn-ghost btn-sm" data-action="meta-compartilhar" aria-label="Compartilhar plano de metas">
+        <i data-lucide="share-2" aria-hidden="true"></i> Compartilhar</button>
+      <button type="button" class="btn-secundario btn-sm" data-action="meta-nova">Nova meta</button>
+    </div>
+  </div>
+  <div id="metas-list" class="metas-list"></div>
+</div>
+</div><!-- /orc-sub-panel-metas -->
+
+<!-- Assinaturas -->
+<div id="orc-sub-panel-assinaturas" class="orc-sub-panel" role="tabpanel" hidden aria-labelledby="orc-sub-tab-assinaturas">
+<div class="assinaturas-section perfil-section" id="assinaturas-section">
+  <div class="orc-secao-header">
+    <h3 class="perfil-section-title"><i data-lucide="tv" aria-hidden="true"></i> Gastos fixos</h3>
+    <button type="button" class="btn-secundario btn-sm" data-action="assinatura-nova">Nova assinatura</button>
+  </div>
+  <div id="assinaturas-list" class="assinaturas-list"></div>
+</div>
+</div><!-- /orc-sub-panel-assinaturas -->
+
+<!-- Patrimônio líquido -->
+<div id="orc-sub-panel-patrimonio" class="orc-sub-panel" role="tabpanel" hidden aria-labelledby="orc-sub-tab-patrimonio">
+<div class="patrimonio-section perfil-section" id="patrimonio-section">
+  <div class="orc-secao-header">
+    <h3 class="perfil-section-title"><i data-lucide="landmark" aria-hidden="true"></i> Patrimônio líquido</h3>
+    <div class="pat-header-actions">
+      <button type="button" class="btn-secundario btn-sm" data-action="patrimonio-ativo-nova">+ Ativo</button>
+      <button type="button" class="btn-secundario btn-sm" data-action="patrimonio-divida-nova">+ Dívida</button>
+    </div>
+  </div>
+  <div id="patrimonio-panel" class="patrimonio-panel"></div>
+</div>
+</div><!-- /orc-sub-panel-patrimonio -->
+

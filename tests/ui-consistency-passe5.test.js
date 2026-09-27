@@ -3,10 +3,12 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { indexComTelas } = require('./helpers/index-com-telas.cjs');
 
 const root = path.join(__dirname, '..');
 const orcamento = fs.readFileSync(path.join(root, 'css', 'layouts', 'orcamento.css'), 'utf8');
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+// index.html com as telas lazy (telas/) de volta nas cascas.
+const html = indexComTelas();
 
 describe('P5 — cartões equivalentes', function() {
   test('orcamento-item alinhado ao padrão perfil/meta (xl + shadow-superficie)', function() {

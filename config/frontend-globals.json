@@ -206,6 +206,7 @@
     "SYNC_ENGINE": "writable",
     "SYNC_MERGE": "writable",
     "TablistKeyboard": "writable",
+    "TELAS": "writable",
     "tentarDesbloquear": "writable",
     "toggleAlertaOrcamento": "writable",
     "toggleDetalhesCategorias": "writable",

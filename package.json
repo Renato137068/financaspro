@@ -22,6 +22,8 @@
     "lint:changed": "node scripts/lint-changed.cjs",
     "check:globals": "node scripts/generate-frontend-globals.cjs --check",
     "globals:update": "node scripts/generate-frontend-globals.cjs",
+    "check:telas": "node scripts/generate-telas.cjs --check",
+    "telas:gerar": "node scripts/generate-telas.cjs",
     "security:xss": "node scripts/check-xss-sinks.cjs",
     "docs:openapi": "node scripts/generate-openapi.mjs",
     "test:sync": "node scripts/sync-conflict-test.mjs",

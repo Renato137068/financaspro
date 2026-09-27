@@ -87,6 +87,10 @@ function collectIcons(pascalMap) {
   const sources = walkFiles(path.join(dist, 'js'), []);
   const indexHtml = path.join(dist, 'index.html');
   if (fs.existsSync(indexHtml)) sources.push(indexHtml);
+  // Telas que chegam com o chunk lazy (js/core/telas.js): no js/telas/*.js
+  // gerado, o markup é string JSON e as aspas vêm escapadas (\"help-circle\"),
+  // que o literalRe não pega. A fonte em telas/ tem as aspas normais.
+  walkFiles(path.join(root, 'telas'), sources);
 
   for (const file of sources) {
     if (/app\.bundle\.js$|vendor\.bundle\.js$/.test(file)) continue;

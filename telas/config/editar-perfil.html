@@ -1,0 +1,76 @@
+<!-- Tela "editar-perfil" (#aba-editar-perfil). Vem no chunk lazy "config": scripts/generate-telas.cjs
+     gera js/telas/config.js a partir deste arquivo. Rode `npm run telas:gerar` depois de editar. -->
+<div class="perfil-header">
+  <div class="perfil-avatar-wrapper">
+    <div class="perfil-avatar" id="editar-perfil-avatar">U</div>
+  </div>
+  <div class="perfil-info">
+    <h2 class="perfil-nome">Editar Perfil</h2>
+    <div class="perfil-meta">
+      <span>Atualize suas informações pessoais</span>
+    </div>
+  </div>
+  <div class="perfil-actions">
+    <button class="perfil-action-btn" data-action="voltar-perfil" aria-label="Voltar para perfil">
+      <i data-lucide="arrow-left" aria-hidden="true"></i>
+    </button>
+  </div>
+</div>
+
+<form id="form-editar-perfil" class="formulario perfil-section" autocomplete="off">
+  <h2 class="perfil-section-title">Dados pessoais</h2>
+  <div class="form-group">
+    <label for="editar-nome"><i data-lucide="user" aria-hidden="true"></i> Nome completo</label>
+    <input type="text" id="editar-nome" placeholder="Seu nome completo" maxlength="100" required>
+    <div class="form-hint">Usado para personalização da interface</div>
+  </div>
+
+  <div class="form-group">
+    <label for="editar-email"><i data-lucide="mail" aria-hidden="true"></i> Email</label>
+    <input type="email" id="editar-email" placeholder="seu@email.com" maxlength="100">
+    <div class="form-hint">Opcional - usado para notificações</div>
+  </div>
+
+  <div class="form-group">
+    <label for="editar-telefone"><i data-lucide="smartphone" aria-hidden="true"></i> Telefone</label>
+    <input type="tel" id="editar-telefone" placeholder="(11) 99999-9999" maxlength="15">
+    <div class="form-hint">Opcional - formato: (XX) XXXXX-XXXX</div>
+  </div>
+
+  <div class="form-group">
+    <label for="editar-nascimento"><i data-lucide="cake" aria-hidden="true"></i> Data de nascimento</label>
+    <input type="date" id="editar-nascimento">
+    <div class="form-hint">Opcional</div>
+  </div>
+
+  <div class="form-group">
+    <label for="editar-endereco"><i data-lucide="map-pin" aria-hidden="true"></i> Endereço</label>
+    <input type="text" id="editar-endereco" placeholder="Rua, número, bairro" maxlength="200">
+    <div class="form-hint">Opcional</div>
+  </div>
+
+  <div class="form-group">
+    <label for="editar-cidade"><i data-lucide="building-2" aria-hidden="true"></i> Cidade</label>
+    <input type="text" id="editar-cidade" placeholder="Sua cidade" maxlength="50">
+    <div class="form-hint">Opcional</div>
+  </div>
+
+  <div class="form-group">
+    <label for="editar-moeda"><i data-lucide="coins" aria-hidden="true"></i> Moeda preferida</label>
+    <select id="editar-moeda">
+      <option value="BRL">BRL - Real Brasileiro</option>
+      <option value="USD">USD - Dólar Americano</option>
+      <option value="EUR">EUR - Euro</option>
+    </select>
+    <div class="form-hint">Usada para formatação de valores</div>
+  </div>
+
+  <button type="submit" class="btn-primario">
+    <i data-lucide="check" aria-hidden="true"></i> Salvar alterações
+  </button>
+
+  <button type="button" class="btn-secundario" data-action="cancelar-editar-perfil" style="margin-top: 12px;">
+    Cancelar
+  </button>
+</form>
+

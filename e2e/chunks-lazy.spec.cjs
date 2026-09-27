@@ -62,6 +62,33 @@ test.describe('chunks lazy no build de produção', function() {
     expect(await page.evaluate(function() { return DADOS.getConfig().obsErrorsEnabled; })).toBe(false);
   });
 
+  // Orçamento e sub-telas do Perfil vêm fora do index.html (telas/, com o
+  // chunk). Tela que chega vazia, ou com ícone fora do subset do lucide (que
+  // puxaria a lib completa, ~390 KB), passaria despercebida sem este teste.
+  test('telas que chegam com o chunk aparecem completas e com ícones do subset', async function({ page }) {
+    const pedidos = [];
+    page.on('request', function(req) { pedidos.push(req.url()); });
+    await prepareOfflinePage(page);
+    expect(await page.locator('#aba-orcamento').getAttribute('aria-busy')).toBe('true');
+
+    await page.evaluate(function() { mudarAba('orcamento'); });
+    await expect(page.locator('#aba-orcamento .orc-tablist [role="tab"]').first()).toBeVisible();
+    await expect(page.locator('#aba-orcamento')).not.toHaveAttribute('aria-busy', 'true');
+
+    for (const tela of ['config-categorias', 'config-ajuda', 'config-suporte', 'editar-perfil']) {
+      await page.evaluate(function(t) { mudarAba(t); }, tela);
+      await expect(page.locator('#aba-' + tela)).not.toHaveAttribute('aria-busy', 'true');
+      await expect(page.locator('#aba-' + tela + ' .perfil-header, #aba-' + tela + ' h2').first()).toBeVisible();
+    }
+
+    // Todo <i data-lucide> das telas virou <svg>: nenhum ícone ficou pendente.
+    const pendentes = await page.evaluate(function() {
+      return Array.from(document.querySelectorAll('[data-tela] i[data-lucide]')).map(function(i) { return i.getAttribute('data-lucide'); });
+    });
+    expect(pendentes).toEqual([]);
+    expect(pedidos.filter(function(u) { return u.indexOf('lucide-full') !== -1; })).toEqual([]);
+  });
+
   test('backup pelo lembrete do dashboard baixa o arquivo antes de abrir o Perfil', async function({ page }) {
     await prepareOfflinePage(page);
     const download = page.waitForEvent('download');

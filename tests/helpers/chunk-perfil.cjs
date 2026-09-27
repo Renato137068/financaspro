@@ -20,7 +20,9 @@ function arquivosDoPerfil() {
   return [...m[1].matchAll(/'([^']+)'/g)].map((x) => x[1]);
 }
 
-const ARQUIVOS_PERFIL = arquivosDoPerfil();
+// js/telas/config.js só traz markup (TELAS.registrar); a lógica do Perfil não
+// depende dele, e quem confere markup lê tests/helpers/index-com-telas.cjs.
+const ARQUIVOS_PERFIL = arquivosDoPerfil().filter((rel) => !rel.startsWith('js/telas/'));
 
 /** Fonte de todos os arquivos do Perfil, na ordem do chunk (para testes de texto). */
 function fontePerfil() {

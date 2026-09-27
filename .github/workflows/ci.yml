@@ -60,6 +60,9 @@ jobs:
       - name: Lista de globais do frontend em dia (no-undef)
         run: npm run check:globals
 
+      - name: Telas geradas em dia (telas/ -> js/telas/)
+        run: npm run check:telas
+
       - name: Lint estrito no codigo alterado
         # Congela a divida existente e exige zero avisos no que o PR toca.
         run: npm run lint:changed

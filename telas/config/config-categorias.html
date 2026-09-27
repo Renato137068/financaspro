@@ -1,0 +1,38 @@
+<!-- Tela "config-categorias" (#aba-config-categorias). Vem no chunk lazy "config": scripts/generate-telas.cjs
+     gera js/telas/config.js a partir deste arquivo. Rode `npm run telas:gerar` depois de editar. -->
+<div class="perfil-header">
+  <div class="perfil-avatar-wrapper">
+    <div class="perfil-avatar" style="background: var(--color-primary-500);" aria-hidden="true"><i data-lucide="folder"></i></div>
+  </div>
+  <div class="perfil-info">
+    <h2 class="perfil-nome">Categorias</h2>
+    <div class="perfil-meta"><span>Personalize as categorias dos lançamentos</span></div>
+  </div>
+  <div class="perfil-actions">
+    <button class="perfil-action-btn" data-action="mudar-aba" data-aba="config" aria-label="Perfil e configurações">
+      <i data-lucide="arrow-left" aria-hidden="true"></i>
+    </button>
+  </div>
+</div>
+<div class="perfil-section">
+  <div class="perfil-cards-grid">
+    <button type="button" class="perfil-card" data-action="gerenciar-categorias" data-tipo="despesa" aria-label="Gerenciar categorias de despesa">
+      <div class="perfil-card-icon-wrapper"><i data-lucide="folder" aria-hidden="true"></i></div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Categorias de despesa</span>
+        <span class="perfil-card-subtitle" id="perfil-cats-despesa">7 categorias</span>
+      </div>
+      <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+    </button>
+
+    <button type="button" class="perfil-card" data-action="gerenciar-categorias" data-tipo="receita" aria-label="Gerenciar categorias de receita">
+      <div class="perfil-card-icon-wrapper"><i data-lucide="folder-open" aria-hidden="true"></i></div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Categorias de receita</span>
+        <span class="perfil-card-subtitle" id="perfil-cats-receita">5 categorias</span>
+      </div>
+      <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+    </button>
+  </div>
+</div>
+

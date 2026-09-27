@@ -5,6 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { indexComTelas } = require('./helpers/index-com-telas.cjs');
 
 const root = path.join(__dirname, '..');
 const src = fs.readFileSync(path.join(root, 'js', 'modules', 'init-orcamento.js'), 'utf8');
@@ -292,8 +293,8 @@ describe('Sub-abas Orçamento', function() {
 });
 
 describe('Polimento painel Planejamento', function() {
-  var htmlPath = path.join(__dirname, '..', 'index.html');
-  var htmlOrc = fs.readFileSync(htmlPath, 'utf8');
+  // A tela do Orçamento mora em telas/orcamento/orcamento.html (chunk lazy).
+  var htmlOrc = indexComTelas();
 
   test('subtítulo curto no dashboard; sem perfil-header redundante', function() {
     expect(htmlOrc).toMatch(/orc-panel-subtitle[^>]*>Planejamento 50\/30\/20 — divida sua renda/);

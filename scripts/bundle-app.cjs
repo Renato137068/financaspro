@@ -56,11 +56,14 @@ const LAZY_CHUNKS = {
   // insight do dashboard ficam no eager (js/modules/insight-acoes.js).
   // init-config.js vem dividido: backup e bancos/cartões/categorias são
   // mixins de INIT_CONFIG e precisam vir depois dele.
-  config: ['js/modules/init-config.js', 'js/modules/config-backup.js', 'js/modules/config-bancos.js'],
+  // js/telas/config.js (gerado de telas/config/) traz o markup das sub-telas
+  // e vem antes: quando o init roda, as telas já estão no DOM.
+  config: ['js/telas/config.js', 'js/modules/init-config.js', 'js/modules/config-backup.js', 'js/modules/config-bancos.js'],
 
   // Orçamento (tela) — ao abrir a aba ou uma sub-aba. O cálculo do orçamento
   // (ORCAMENTO, js/orcamento.js) fica no eager: o dashboard usa.
-  orcamento: ['js/modules/init-orcamento.js'],
+  // O markup da tela vem no chunk (js/telas/orcamento.js, gerado de telas/).
+  orcamento: ['js/telas/orcamento.js', 'js/modules/init-orcamento.js'],
 
   // Simulador financeiro — só ao abrir Perfil → Simulador.
   simulador: ['js/simulador.js', 'js/modules/init-simulador.js'],
