@@ -5,7 +5,8 @@
  * mostrar primeiro o que precisa de ação (vencida → atrasada → resto →
  * concluída), coerente com o insight que aponta a meta mais crítica.
  */
-const INIT_METAS = require('../js/modules/init-metas.js');
+const { carregarScript } = require('./helpers/carregar-script.cjs');
+const INIT_METAS = carregarScript('js/modules/init-metas.js');
 
 describe('INIT_METAS._ordemUrgencia', function() {
   test('rankeia por situação (menor = mais urgente)', function() {

@@ -1,6 +1,7 @@
 /**
  * sync-dados.test.js — dados locais não desaparecem com snapshot remoto (Fase 1).
  */
+const { carregarScript } = require('./helpers/carregar-script.cjs');
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
@@ -38,7 +39,7 @@ function loadDados() {
     module: { exports: {} },
   });
 
-  ctx.SYNC_MERGE = require('../js/core/sync-merge.js');
+  ctx.SYNC_MERGE = carregarScript('js/core/sync-merge.js');
 
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'js', 'core', 'sync-engine.js'), 'utf8'), ctx, {
     filename: path.join(__dirname, '..', 'js', 'core', 'sync-engine.js'),

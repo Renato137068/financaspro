@@ -22,7 +22,7 @@ const LISTA = [
 
 function loadInto(context, rel) {
   let code = fs.readFileSync(path.join(ROOT, rel), 'utf8');
-  code = code.replace(/\bconst (CONFIG) =/g, 'var $1 =');
+  code = code.replace(/\bconst (CONFIG) =/g, 'var   $1 =');
   vm.runInContext(code, context, { filename: rel });
 }
 

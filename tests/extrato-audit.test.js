@@ -52,7 +52,7 @@ function carregarExtrato(extra) {
     Math: Math
   }, extra || {});
   sandbox.globalThis = sandbox;
-  var code = extratoSrc.replace(/\bconst INIT_EXTRATO =/, 'var INIT_EXTRATO =');
+  var code = extratoSrc.replace(/\bconst INIT_EXTRATO =/, 'var   INIT_EXTRATO =');
   vm.runInContext(code, vm.createContext(sandbox), {
     filename: path.join(root, 'js', 'modules', 'init-extrato.js')
   });

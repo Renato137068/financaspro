@@ -1,9 +1,10 @@
 /**
  * billing-dual-path.test.js — Supabase preferido; sem fallback Express silencioso.
  */
+const { carregarScript } = require('./helpers/carregar-script.cjs');
 const fs = require('fs');
 const path = require('path');
-const billingHelpers = require('../js/billing.js');
+const billingHelpers = carregarScript('js/billing.js');
 
 const billingSrc = fs.readFileSync(path.join(__dirname, '..', 'js/billing.js'), 'utf8');
 

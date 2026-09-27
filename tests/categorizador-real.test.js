@@ -1,7 +1,8 @@
 /**
  * categorizador-real.test.js — dicionário + fuzzy do módulo real.
  */
-const CATEGORIZADOR = require('../js/categorizador.js');
+const { carregarScript } = require('./helpers/carregar-script.cjs');
+const CATEGORIZADOR = carregarScript('js/categorizador.js');
 
 describe('CATEGORIZADOR.detectar', function() {
   test('reconhece supermercado como alimentação', function() {

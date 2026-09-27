@@ -15,7 +15,7 @@ function carregar() {
   // Mesma conversão do harness load-sources: `const X =` no topo de um módulo
   // vm vira binding léxico e não encosta no global do contexto. `var` encosta.
   const initSrc = fs.readFileSync(path.join(root, 'js/modules/init-simulador.js'), 'utf8')
-    .replace(/\bconst INIT_SIMULADOR =/, 'var INIT_SIMULADOR =');
+    .replace(/\bconst INIT_SIMULADOR =/, 'var   INIT_SIMULADOR =');
 
   window.renderLucideIcons = function() {};
 

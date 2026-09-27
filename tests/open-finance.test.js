@@ -1,8 +1,9 @@
 /**
  * open-finance.test.js — deduplicação e normalização de importação
  */
+const { carregarScript } = require('./helpers/carregar-script.cjs');
 
-var ofHelpers = require('../js/open-finance.js');
+var ofHelpers = carregarScript('js/open-finance.js');
 
 describe('Open Finance — helpers', function() {
   test('normaliza transação com openFinanceId composto', function() {

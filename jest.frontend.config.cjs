@@ -35,10 +35,17 @@ module.exports = {
   coverageThreshold: {
     // Atenção: o Jest remove do grupo "global" todo arquivo que tem piso
     // próprio abaixo. Logo, este número descreve APENAS o restante de js/ —
-    // basicamente a camada de UI. Hoje: ~2,8% linhas / ~12,6% funções.
-    // É a métrica honesta da dívida de teste do frontend e deve subir a cada
-    // módulo migrado para ES Modules e coberto por teste.
-    global: { lines: 2, functions: 10, branches: 30 },
+    // basicamente a camada de UI. Era 2% (valor defasado: a medição real já
+    // passava de 38%). Em 27/09, com o app inteiro rodando nos testes
+    // (tests/helpers/app-jsdom.cjs) e todo js/ carregado de um jeito só
+    // (tests/helpers/carregar-script.cjs), o grupo mede ~65/57/64. Só sobe.
+    global: { lines: 63, functions: 55, branches: 62 },
+
+    // Telas críticas, exercitadas com o app inteiro em app-novo-lancamento,
+    // app-login e app-paywall. Antes: 19% / 6% / 18% de linhas.
+    'js/modules/init-form.js': { lines: 68, functions: 84, branches: 50 },
+    'js/authController.js': { lines: 54, functions: 62, branches: 60 },
+    'js/modules/init-billing.js': { lines: 45, functions: 47, branches: 38 },
     'js/core/utils.js': { lines: 96, functions: 100, branches: 85 },
     'js/core/store.js': { lines: 99, functions: 100, branches: 84 },
     // Era o pior ramo do frontend (35%). O teste `validations-real.test.js`

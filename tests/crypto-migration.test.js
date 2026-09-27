@@ -15,7 +15,7 @@ const ROOT = path.join(__dirname, '..');
 
 function loadInto(context, rel) {
   let code = fs.readFileSync(path.join(ROOT, rel), 'utf8');
-  code = code.replace(/\bconst (CONFIG) =/g, 'var $1 ='); // expõe como global do contexto
+  code = code.replace(/\bconst (CONFIG) =/g, 'var   $1 ='); // expõe como global do contexto
   vm.runInContext(code, context, { filename: rel });
 }
 

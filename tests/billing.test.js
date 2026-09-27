@@ -1,8 +1,9 @@
 /**
  * billing.test.js — Mapeamento de planos e limites SaaS
  */
+const { carregarScript } = require('./helpers/carregar-script.cjs');
 
-var billingHelpers = require('../js/billing.js');
+var billingHelpers = carregarScript('js/billing.js');
 
 describe('Billing — tiers e limites', function() {
   test('mapeia plano local para tier', function() {

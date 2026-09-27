@@ -5,8 +5,9 @@
  *   1. Normalização de separadores de adquirente ("IFD*IFOOD", "MP_SHOPEE").
  *   2. Cobertura ampliada de marcas brasileiras de alta frequência.
  */
-const CATEGORIZADOR = require('../js/categorizador.js');
-const AUTO_CATEGORIZER = require('../js/auto-categorizer.js');
+const { carregarScript } = require('./helpers/carregar-script.cjs');
+const CATEGORIZADOR = carregarScript('js/categorizador.js');
+const AUTO_CATEGORIZER = carregarScript('js/auto-categorizer.js');
 
 describe('normalização de separadores de extrato', function() {
   beforeEach(function() { CATEGORIZADOR._cache.clear(); });

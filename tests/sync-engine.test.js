@@ -1,6 +1,7 @@
 /**
  * sync-engine.test.js — outbox, retry, pull merge e persistência (Fase 1).
  */
+const { carregarScript } = require('./helpers/carregar-script.cjs');
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
@@ -48,7 +49,7 @@ const CONFIG = {
   STORAGE_SYNC_CURSOR: 'fp-sync-cursor',
   STORAGE_TRANSACOES: 'fp-transacoes',
 };
-const SM = require('../js/core/sync-merge.js');
+const SM = carregarScript('js/core/sync-merge.js');
 const UUID = '3f2504e0-4f89-41d3-9a0c-0305e82c3301';
 const T1 = '2026-07-09T10:00:00.000Z';
 const T2 = '2026-07-09T11:00:00.000Z';

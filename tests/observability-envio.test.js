@@ -6,6 +6,7 @@
  * por padrão para a Edge Function obs-ingest do Supabase, com opção de
  * desligar no Perfil; analytics continua opt-in.
  */
+const { carregarScript } = require('./helpers/carregar-script.cjs');
 const fs = require('fs');
 const path = require('path');
 
@@ -16,7 +17,7 @@ function carregarObs(config, supabaseUrl) {
   global.DADOS = { getConfig: function() { return config || {}; } };
   global.CONFIG = { VERSION: '11.3.18', SUPABASE_URL: supabaseUrl === undefined ? SUPABASE : supabaseUrl };
   let OBS;
-  jest.isolateModules(function() { OBS = require('../js/utilities/observability.js'); });
+  jest.isolateModules(function() { OBS = carregarScript('js/utilities/observability.js'); });
   return OBS;
 }
 

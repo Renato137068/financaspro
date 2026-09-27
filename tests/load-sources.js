@@ -11,9 +11,12 @@ function loadScript(context, relativePath) {
   const file = path.join(root, relativePath);
   if (!fs.existsSync(file)) return;
   let code = fs.readFileSync(file, 'utf8');
+  // `var   ` tem o mesmo tamanho de `const `: a cobertura V8 soma as execuções
+  // de um arquivo por posição de caractere, e encurtar o texto desalinhava
+  // estas execuções das que rodam o arquivo intacto (tests/helpers/app-jsdom).
   code = code.replace(
     /\bconst (CONFIG|UTILS|VALIDATIONS|SCORE|PARSER|PIPELINE|ORCAMENTO|TRANSACOES|APP_STORE|METAS|RELATORIOS|PATRIMONIO|CONTAS_PAGAR|ASSINATURAS|CONTAS|ANEXOS|INIT_CONFIG) =/g,
-    'var $1 =',
+    'var   $1 =',
   );
   vm.runInContext(code, context, { filename: file });
 }

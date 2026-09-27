@@ -57,6 +57,7 @@ describe('integridade da suíte — testes-cópia', () => {
       if (ISENTOS.has(nome)) continue;
 
       const carregaModuloReal = src.includes('load-sources')
+        || src.includes('helpers/app-jsdom')
         || /readFileSync\([^)]*['"]js['"]/.test(src)
         || /require\(['"]\.\.\/js\//.test(src)
         // caminho do arquivo real numa constante, executado com vm

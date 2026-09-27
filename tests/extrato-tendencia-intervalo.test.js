@@ -6,7 +6,8 @@
  *   comparando cheio × cheio.
  * @jest-environment jsdom
  */
-const INIT_EXTRATO = require('../js/modules/init-extrato.js');
+const { carregarScript } = require('./helpers/carregar-script.cjs');
+const INIT_EXTRATO = carregarScript('js/modules/init-extrato.js');
 
 global.CONFIG = Object.assign(global.CONFIG || {}, { TIPO_RECEITA: 'receita', TIPO_DESPESA: 'despesa' });
 global.UTILS = Object.assign(global.UTILS || {}, {

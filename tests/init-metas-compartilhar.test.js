@@ -2,7 +2,8 @@
  * init-metas-compartilhar.test.js — botão "Compartilhar plano de metas".
  * @jest-environment node
  */
-const INIT_METAS = require('../js/modules/init-metas.js');
+const { carregarScript } = require('./helpers/carregar-script.cjs');
+const INIT_METAS = carregarScript('js/modules/init-metas.js');
 
 let toasts;
 beforeEach(function() {
@@ -10,7 +11,7 @@ beforeEach(function() {
   global.UTILS = { mostrarToast: function(msg, tipo) { toasts.push({ msg: msg, tipo: tipo }); } };
   global.PLANO_METAS = { texto: function() { return global.__texto; } };
   global.__texto = 'Meu plano de metas\n1. Viagem';
-  global.compartilharTextoUI = require('../js/utilities/share-texto.js');
+  global.compartilharTextoUI = carregarScript('js/utilities/share-texto.js');
 });
 afterEach(function() {
   delete global.UTILS; delete global.PLANO_METAS; delete global.__texto;

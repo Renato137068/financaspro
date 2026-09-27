@@ -21,7 +21,7 @@ const root = path.join(__dirname, '..');
 
 function initConfig() {
   const src = fs.readFileSync(path.join(root, 'js', 'modules', 'init-config.js'), 'utf8')
-    .replace(/\bconst INIT_CONFIG =/, 'var INIT_CONFIG =');
+    .replace(/\bconst INIT_CONFIG =/, 'var   INIT_CONFIG =');
   const sandbox = {
     document: { getElementById: function() { return null; } },
     console: { error: function() {}, warn: function() {}, log: function() {} },

@@ -2,7 +2,8 @@
  * init-relatorios-compartilhar.test.js — botão "Compartilhar meu mês".
  * @jest-environment node
  */
-const INIT_RELATORIOS = require('../js/modules/init-relatorios.js');
+const { carregarScript } = require('./helpers/carregar-script.cjs');
+const INIT_RELATORIOS = carregarScript('js/modules/init-relatorios.js');
 
 let toasts;
 beforeEach(function() {
@@ -13,7 +14,7 @@ beforeEach(function() {
   global.__texto = 'Meu mês em números — Setembro de 2026';
   global.__textoAno = 'Meu 2026 em números';
   // O handler delega ao helper compartilhado, que no browser é global.
-  global.compartilharTextoUI = require('../js/utilities/share-texto.js');
+  global.compartilharTextoUI = carregarScript('js/utilities/share-texto.js');
 });
 afterEach(function() {
   delete global.UTILS; delete global.RESUMO_MENSAL; delete global.RESUMO_ANUAL;

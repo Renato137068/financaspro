@@ -1,9 +1,10 @@
 /**
  * billing-soft-ai-invite.test.js — soft paywall local + invite sem bypass Edge.
  */
+const { carregarScript } = require('./helpers/carregar-script.cjs');
 const fs = require('fs');
 const path = require('path');
-const billingHelpers = require('../js/billing.js');
+const billingHelpers = carregarScript('js/billing.js');
 
 describe('OCR removido do produto', function() {
   test('sem maquinaria de cota OCR no runtime', function() {

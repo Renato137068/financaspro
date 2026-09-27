@@ -2,7 +2,8 @@
  * share-texto.test.js — helper compartilhado de compartilhamento.
  * @jest-environment node
  */
-const compartilharTextoUI = require('../js/utilities/share-texto.js');
+const { carregarScript } = require('./helpers/carregar-script.cjs');
+const compartilharTextoUI = carregarScript('js/utilities/share-texto.js');
 
 let toasts;
 beforeEach(function() {

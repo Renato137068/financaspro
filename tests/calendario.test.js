@@ -5,7 +5,8 @@
  * pendentes + faturas de cartão. Módulo puro; aqui os módulos de origem são
  * stubados para provar só a consolidação (ordem, dedup, total em centavos).
  */
-const CALENDARIO = require('../js/calendario.js');
+const { carregarScript } = require('./helpers/carregar-script.cjs');
+const CALENDARIO = carregarScript('js/calendario.js');
 
 beforeEach(function() {
   global.UTILS = {

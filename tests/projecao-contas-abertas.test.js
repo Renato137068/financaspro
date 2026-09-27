@@ -8,7 +8,8 @@
  *
  * Distinto de projecao.test.js, que cobre AI_ENGINE.projetarFimMes (por ritmo).
  */
-const PROJECAO = require('../js/projecao.js');
+const { carregarScript } = require('./helpers/carregar-script.cjs');
+const PROJECAO = carregarScript('js/projecao.js');
 
 beforeEach(function() {
   global.UTILS = {

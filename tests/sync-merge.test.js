@@ -2,6 +2,7 @@
  * sync-merge.test.js — fusão de delta + outbox no cliente (#2, §7).
  * Prova que os bugs de perda de dados D1/D2/D3 ficam resolvidos.
  */
+const { carregarScript } = require('./helpers/carregar-script.cjs');
 // require direto, e não vm.runInContext.
 //
 // O módulo é puro (zero DOM, zero global) e termina com `module.exports`, então
@@ -11,7 +12,7 @@
 // cópias do mesmo caminho absoluto e mesclava as contagens — o relatório
 // mostrava 66% de linhas e 54% de funções num módulo que os testes cobrem
 // inteiro, e o piso de 95% falhava por ruído de medição.
-const SM = require('../js/core/sync-merge.js');
+const SM = carregarScript('js/core/sync-merge.js');
 const T1 = '2026-07-09T10:00:00Z';
 const T2 = '2026-07-09T11:00:00Z';
 

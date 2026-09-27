@@ -6,7 +6,8 @@
  * categoria corrigida realmente passar a ser sugerida — era o que estava
  * quebrado (a alternativa correta nunca concorria com a primária errada).
  */
-const APRENDIZADO = require('../js/aprendizado.js');
+const { carregarScript } = require('./helpers/carregar-script.cjs');
+const APRENDIZADO = carregarScript('js/aprendizado.js');
 
 beforeEach(function() {
   global.DADOS = { obterAprendizado: function() { return {}; }, salvarAprendizado: function() {} };
