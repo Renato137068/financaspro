@@ -71,6 +71,7 @@ Legenda: 🧑 = você (precisa da conta) · 🤖 = eu faço (código, quando o p
    supabase functions deploy stripe-checkout
    supabase functions deploy play-rtdn      --no-verify-jwt
    supabase functions deploy stripe-webhook --no-verify-jwt
+   supabase functions deploy obs-ingest     --no-verify-jwt  # relatórios de erro
    ```
 
 10. 🧑 **Secrets** (lista completa em `supabase/functions/README.md`):

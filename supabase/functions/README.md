@@ -17,6 +17,8 @@ functions/
   stripe-cancel/index.ts    # POST autenticado (web) — cancel_at_period_end, exige OWNER
   org-invite/index.ts       # POST autenticado — convite + e-mail Resend, exige ADMIN/OWNER
   stripe-webhook/index.ts   # webhook público do Stripe (assinatura via Web Crypto)
+  obs-ingest/index.ts       # público — relatórios de erro do app → fp_client_error
+  _shared/obs-sanitize.js   # allowlist de contexto + máscara de e-mail/valores (testado no Jest)
 ```
 
 ## Secrets (Supabase → Project Settings → Edge Functions → Secrets)
@@ -51,6 +53,10 @@ supabase functions deploy org-invite
 # Server-to-server (Pub/Sub e Stripe) — SEM JWT de usuário
 supabase functions deploy play-rtdn      --no-verify-jwt
 supabase functions deploy stripe-webhook --no-verify-jwt
+
+# Relatórios de erro do app — navigator.sendBeacon não envia header de auth.
+# Exige a migration 20260927120000_client_error_log.sql aplicada antes.
+supabase functions deploy obs-ingest     --no-verify-jwt
 
 supabase secrets set GOOGLE_PLAY_SERVICE_ACCOUNT_JSON="$(cat conta-servico.json)"
 supabase secrets set PLAY_PACKAGE_NAME=com.financaspro.mobile

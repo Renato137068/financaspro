@@ -69,10 +69,13 @@ describe('Play Store Fase 3 — export e criptografia honestos', () => {
       .toContain('id="perfil-export-hint"');
   });
 
-  test('crypto hint menciona localStorage e anexos', () => {
+  test('crypto hint diz o que é cifrado: lançamentos, configurações e anexos', () => {
+    // Desde 27/09 o blob de lançamentos no IndexedDB também é cifrado
+    // (tests/idb-cifragem.test.js); a dica não pode mais dizer que fica em texto.
     const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-    expect(html).toMatch(/localStorage/i);
-    expect(html).toMatch(/anexos/i);
-    expect(html).toMatch(/fp-transacoes|Lançamentos grandes no IndexedDB/i);
+    const card = html.slice(html.indexOf('id="perfil-crypto-card"'), html.indexOf('id="chk-crypto"'));
+    expect(card).toMatch(/lançamentos, configurações e anexos/i);
+    expect(card).toMatch(/não cobre XSS/i);
+    expect(card).not.toMatch(/ficam em texto/i);
   });
 });

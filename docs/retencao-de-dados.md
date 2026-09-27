@@ -27,6 +27,7 @@ para retenção.
 | `VerificationToken` | `expiresAt` | 7 dias | Token vencido é lixo criptográfico. A janela existe só para investigar tentativa de uso indevido. |
 | `Invitation` | `expiresAt` | 30 dias | Guarda o e-mail de alguém que talvez nunca tenha virado usuário — a pessoa com menos motivo para ter dado seu retido aqui. |
 | `JobLog` | `createdAt` | 90 dias | Diagnóstico operacional. Depois de um trimestre ninguém investiga um job isolado. |
+| `fp_client_error` (Supabase) | `created_at` | 30 dias | Relatório de erro do app. Serve para corrigir a falha da versão atual; purgado pela própria Edge Function `obs-ingest`. |
 | `AuditLog` | `createdAt` | 365 dias | Prazo mais longo porque é a prova de quem fez o quê — inclusive a prova de que uma exclusão foi atendida. |
 
 Os prazos são ajustáveis por variável de ambiente (`RETENTION_*_DAYS`, ver

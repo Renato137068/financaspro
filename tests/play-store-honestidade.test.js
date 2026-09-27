@@ -22,9 +22,19 @@ describe('Honestidade Play Store / privacidade', () => {
     expect(priv).toMatch(/N[ãa]o<\/em>\s*criptografa|n[ãa]o criptografa/i);
     expect(priv).toMatch(/duas etapas/i);
     expect(priv).toMatch(/app autenticador/i);
-    expect(priv).toMatch(/2 de setembro de 2026|9 de setembro de 2026/);
+    expect(priv).toMatch(/\d{1,2} de setembro de 2026/);
     expect(priv).toMatch(/tokens de (acesso e )?renova|armazenamento local do WebView/i);
-    expect(priv).toMatch(/fp-transacoes/);
+    // Cifragem cobre os lançamentos também no IndexedDB (27/09).
+    expect(priv).toMatch(/lançamentos e configurações \(em <em>localStorage<\/em> ou IndexedDB\)/);
+    expect(priv).not.toMatch(/<strong>não<\/strong> entram nessa cifragem/);
+  });
+
+  test('privacidade declara os relatórios de erro, a retenção e como desligar', () => {
+    const priv = fs.readFileSync(path.join(root, 'privacidade.html'), 'utf8');
+    expect(priv).toMatch(/Relatórios de erro/);
+    expect(priv).toMatch(/Perfil → Enviar relatórios de erro/);
+    expect(priv).toMatch(/30 dias/);
+    expect(priv).not.toMatch(/n[ãa]o<\/strong> envia telemetria/);
   });
 
   test('Data Safety do beta Play é cenário CLOUD (não “não coleta”)', () => {

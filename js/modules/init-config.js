@@ -83,6 +83,8 @@ const INIT_CONFIG = {
     if (chkAlerta) chkAlerta.checked = !!config.alertaOrcamento;
     var chkLembrete = document.getElementById('chk-lembrete');
     if (chkLembrete) chkLembrete.checked = !!config.lembreteDiario;
+    var chkObs = document.getElementById('chk-obs-erros');
+    if (chkObs) chkObs.checked = config.obsErrorsEnabled !== false;
     var chkPin = document.getElementById('chk-pin');
     if (chkPin) chkPin.checked = !!config.pinAtivo;
     var pinStatus = document.getElementById('perfil-pin-status');
@@ -324,6 +326,7 @@ const INIT_CONFIG = {
     bind('chk-lembrete',  'change', function() { INIT_CONFIG.toggleLembreteDiario(); });
     bind('chk-pin',       'change', function() { if (typeof togglePinSeguranca === 'function') togglePinSeguranca(); });
     bind('chk-crypto',    'change', function(e) { INIT_CONFIG.toggleCriptografia(!!e.target.checked); });
+    bind('chk-obs-erros', 'change', function(e) { DADOS.salvarConfig({ obsErrorsEnabled: !!e.target.checked }); });
     bind('btn-refazer-onboarding', 'click', function() {
       if (typeof ONBOARDING !== 'undefined' && ONBOARDING.reiniciar) {
         ONBOARDING.reiniciar();
@@ -658,7 +661,7 @@ const INIT_CONFIG = {
    */
   _IMPORT_CONFIG_ALLOWED: [
     'nome', 'email', 'telefone', 'nascimento', 'endereco', 'cidade',
-    'moeda', 'tema', 'alertaOrcamento', 'lembreteDiario',
+    'moeda', 'tema', 'alertaOrcamento', 'lembreteDiario', 'obsErrorsEnabled',
     'categoriasCustom', 'bancos', 'cartoes',
     'renda', 'rendaMensal', 'regra503020', 'classificacao503020',
     'ultimoExportoDados', 'ultimoAcessoApp',
