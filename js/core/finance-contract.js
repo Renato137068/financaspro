@@ -1,8 +1,11 @@
 /**
  * finance-contract.js — contrato PT (localStorage) ↔ EN (API).
  * Única fonte de conversão no cliente; dados.js e sync-engine delegam aqui.
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
-var FINANCE_CONTRACT = {
+const FINANCE_CONTRACT = {
   UUID_RE: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
 
   isUuid: function(v) {
@@ -221,6 +224,5 @@ var FINANCE_CONTRACT = {
   },
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = FINANCE_CONTRACT;
-}
+export { FINANCE_CONTRACT };
+export default FINANCE_CONTRACT;

@@ -8,6 +8,12 @@
  * Nenhum módulo daqui pode ler globais de script clássico no carregamento:
  * no build, esta entrada roda antes do app.bundle.js. Só dentro de funções.
  */
+import { PASSWORD_POLICY } from '../core/password-policy.js';
+import { VALIDATIONS } from '../core/validations.js';
+import { FINANCE_CONTRACT } from '../core/finance-contract.js';
+import { SYNC_MERGE } from '../core/sync-merge.js';
+import { SESSION_LOG } from '../core/session-log.js';
+import { IDB_KV } from '../core/idb-kv.js';
 import { CATEGORIA_VISUAL } from '../core/categoria-visual.js';
 import { TRANSACTION_SERVICE } from '../services/transactionService.js';
 import { BUDGET_SERVICE } from '../services/budgetService.js';
@@ -15,6 +21,12 @@ import { INSIGHT_ACOES } from '../modules/insight-acoes.js';
 import { DADOS_EXPRESS } from '../core/dados-express.js';
 import { FORM_SUGESTOES } from '../modules/form-sugestoes.js';
 
+window.PASSWORD_POLICY = PASSWORD_POLICY;
+window.VALIDATIONS = VALIDATIONS;
+window.FINANCE_CONTRACT = FINANCE_CONTRACT;
+window.SYNC_MERGE = SYNC_MERGE;
+window.SESSION_LOG = SESSION_LOG;
+window.IDB_KV = IDB_KV;
 window.CATEGORIA_VISUAL = CATEGORIA_VISUAL;
 window.TRANSACTION_SERVICE = TRANSACTION_SERVICE;
 window.BUDGET_SERVICE = BUDGET_SERVICE;

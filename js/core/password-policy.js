@@ -1,8 +1,11 @@
 /**
  * password-policy.js — regras de senha alinhadas ao backend (registerSchema).
  * Tier 0. Sem dependências.
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
-var PASSWORD_POLICY = {
+const PASSWORD_POLICY = {
   MIN: 8,
   MAX: 128,
   /** Mesmo regex de backend/middleware/validate.js */
@@ -104,6 +107,5 @@ var PASSWORD_POLICY = {
   },
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = PASSWORD_POLICY;
-}
+export { PASSWORD_POLICY };
+export default PASSWORD_POLICY;

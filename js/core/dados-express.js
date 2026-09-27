@@ -15,6 +15,9 @@
  * desvioRelogioMs…) passa a viver no DADOS. ES Module (ADR 0005), publicado
  * por js/esm/ponte.js.
  */
+import { FINANCE_CONTRACT } from './finance-contract.js';
+import { SYNC_MERGE } from './sync-merge.js';
+
 const DADOS_EXPRESS = {
   _apiBaseUrl: function() {
     if (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:') {

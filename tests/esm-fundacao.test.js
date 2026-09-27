@@ -53,6 +53,28 @@ describe('fundação ES Modules', () => {
     }
   });
 
+  test('um módulo migrado usa outro por import, nunca pelo global (ADR 0005)', () => {
+    const info = new Map(grafo.map((rel) => {
+      const arquivo = path.join(ROOT, rel);
+      return [rel, converter(fs.readFileSync(arquivo, 'utf8'), arquivo)];
+    }));
+    const dono = new Map();
+    for (const [rel, { exporta }] of info) {
+      exporta.filter((e) => e.exportado !== 'default').forEach((e) => dono.set(e.local, rel));
+    }
+    const faltando = [];
+    for (const [rel, { codigo, importa, exporta }] of info) {
+      if (rel === 'js/esm/ponte.js') continue;
+      const proprios = new Set(exporta.map((e) => e.local));
+      const importados = new Set(importa.flatMap((i) => i.nomes.map((n) => n.local)));
+      for (const [nome, de] of dono) {
+        if (de === rel || proprios.has(nome) || importados.has(nome)) continue;
+        if (new RegExp('\\b' + nome + '\\b').test(codigo)) faltando.push(rel + ' usa ' + nome + ' sem importar de ' + de);
+      }
+    }
+    expect(faltando).toEqual([]);
+  });
+
   test('sem resto do padrão CommonJS nos módulos', () => {
     for (const rel of grafo) {
       expect(fs.readFileSync(path.join(ROOT, rel), 'utf8')).not.toMatch(/module\.exports|typeof module/);
@@ -76,7 +98,8 @@ describe('fundação ES Modules', () => {
   });
 
   test('a ponte publica os módulos migrados em window', () => {
-    const nomes = ['CATEGORIA_VISUAL', 'TRANSACTION_SERVICE', 'BUDGET_SERVICE', 'INSIGHT_ACOES'];
+    const nomes = ['CATEGORIA_VISUAL', 'TRANSACTION_SERVICE', 'BUDGET_SERVICE', 'INSIGHT_ACOES',
+      'PASSWORD_POLICY', 'VALIDATIONS', 'FINANCE_CONTRACT', 'SYNC_MERGE', 'SESSION_LOG', 'IDB_KV'];
     try {
       carregarScript('js/esm/ponte.js');
       nomes.forEach((n) => expect(typeof window[n]).toBe('object'));

@@ -5,7 +5,8 @@ const fs = require('fs');
 const path = require('path');
 
 const root = path.join(__dirname, '..');
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+// ES Modules (ADR 0005) entram pela ponte, não por tag no index.html.
+const ponte = fs.readFileSync(path.join(root, 'js', 'esm', 'ponte.js'), 'utf8');
 const dadosSrc = fs.readFileSync(path.join(root, 'js', 'core', 'dados.js'), 'utf8');
 const syncSrc = fs.readFileSync(path.join(root, 'js', 'core', 'sync-merge.js'), 'utf8');
 const sessionSrc = fs.readFileSync(path.join(root, 'js', 'core', 'session-log.js'), 'utf8');
@@ -26,8 +27,8 @@ describe('fase 5 — resolução manual de conflitos', function() {
 });
 
 describe('fase 5 — replay de sessão no diagnóstico', function() {
-  test('session-log registrado no index e exportado', function() {
-    expect(html).toMatch(/session-log\.js/);
+  test('session-log carregado pela ponte e exportado', function() {
+    expect(ponte).toMatch(/from '\.\.\/core\/session-log\.js'/);
     expect(sessionSrc).toMatch(/registrar:\s*function/);
     expect(healthSrc).toMatch(/sessao:/);
     expect(healthSrc).toMatch(/SESSION_LOG\.snapshot/);

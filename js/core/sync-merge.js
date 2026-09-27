@@ -6,8 +6,11 @@
  *   D1 — não sobrescreve registros com mutação pendente na outbox.
  *   D2 — tombstone (deletedAt) remove do cache, sem ressurreição.
  *   D3 — merge por registro via updatedAt (LWW), nunca full-replace destrutivo.
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
-var SYNC_MERGE = {
+const SYNC_MERGE = {
   _ms: function(v) {
     if (v == null) return NaN;
     var t = (v instanceof Date) ? v.getTime() : Date.parse(v);
@@ -165,4 +168,5 @@ var SYNC_MERGE = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) { module.exports = SYNC_MERGE; }
+export { SYNC_MERGE };
+export default SYNC_MERGE;

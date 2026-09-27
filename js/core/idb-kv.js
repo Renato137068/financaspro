@@ -1,8 +1,11 @@
 /**
  * idb-kv.js — armazenamento chave-valor em IndexedDB (substituto do localStorage
  * para blobs grandes, ex.: fp-transacoes).
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
-var IDB_KV = {
+const IDB_KV = {
   DB_NAME: 'financaspro-kv',
   DB_VERSION: 1,
   STORE: 'kv',
@@ -74,3 +77,6 @@ var IDB_KV = {
     });
   }
 };
+
+export { IDB_KV };
+export default IDB_KV;

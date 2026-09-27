@@ -10,7 +10,7 @@
  * quase toda guarda de early return estava sem teste — justamente no módulo
  * que decide se um lançamento financeiro entra ou não.
  */
-const { loadCoreModules, resetFixtures, semGlobalNoSandbox } = require('./load-sources');
+const { loadCoreModules, resetFixtures } = require('./load-sources');
 
 loadCoreModules();
 
@@ -321,13 +321,12 @@ describe('VALIDATIONS.validarSenha (real)', function() {
     expect(global.VALIDATIONS.validarSenha('').valido).toBe(false);
   });
 
-  test('sem PASSWORD_POLICY, o fallback ainda barra senha curta', function() {
-    semGlobalNoSandbox('PASSWORD_POLICY', function() {
-      expect(global.VALIDATIONS.validarSenha('curta').valido).toBe(false);
-      // O fallback é deliberadamente mais frouxo: só o comprimento. O backend
-      // continua sendo a autoridade e recusa o resto.
-      expect(global.VALIDATIONS.validarSenha('longaosuficiente').valido).toBe(true);
-    });
+  // Até 27/09/2026 havia um fallback só de comprimento para quando
+  // PASSWORD_POLICY não carregava. Agora validations.js o importa (ES Module):
+  // a regra completa vale sempre.
+  test('aplica a política completa, não só o comprimento', function() {
+    expect(global.VALIDATIONS.validarSenha('longaosuficiente').valido).toBe(false);
+    expect(global.VALIDATIONS.validarSenha('longa0suficiente').valido).toBe(true);
   });
 });
 

@@ -1,9 +1,14 @@
 /**
  * validations.js - Input validation and sanitization
- * Tier 1: Depends on config.js, utils.js
+ * Tier 1: Depends on config.js, utils.js (globais, lidos dentro das funções)
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
 
-var VALIDATIONS = {
+import { PASSWORD_POLICY } from './password-policy.js';
+
+const VALIDATIONS = {
   // Validar e sanitizar entrada de texto
   sanitizarTexto: function(texto) {
     return UTILS.escapeHtml(String(texto).trim());
@@ -91,15 +96,9 @@ var VALIDATIONS = {
 
   /** Alinhado ao registerSchema do backend */
   validarSenha: function(senha) {
-    if (typeof PASSWORD_POLICY !== 'undefined') {
-      return PASSWORD_POLICY.validar(senha);
-    }
-    var s = String(senha == null ? '' : senha);
-    if (s.length < 8) return { valido: false, erro: 'Senha deve ter pelo menos 8 caracteres' };
-    return { valido: true, valor: s };
+    return PASSWORD_POLICY.validar(senha);
   },
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = VALIDATIONS;
-}
+export { VALIDATIONS };
+export default VALIDATIONS;

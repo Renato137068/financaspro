@@ -1,8 +1,11 @@
 /**
  * session-log.js — ring buffer de eventos da sessão (modo suporte).
  * Sem PII: não registra descrições de lançamentos.
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
-var SESSION_LOG = {
+const SESSION_LOG = {
   _max: 80,
   _eventos: [],
 
@@ -27,6 +30,5 @@ var SESSION_LOG = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = SESSION_LOG;
-}
+export { SESSION_LOG };
+export default SESSION_LOG;

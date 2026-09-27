@@ -94,10 +94,8 @@ function loadCoreModules() {
   );
 
   loadScript(context, 'js/core/config.js');
-  // Tier 0, antes de validations.js: sem ele, VALIDATIONS.validarSenha cai no
-  // fallback interno e a suíte passa a testar uma regra MAIS FROUXA que a do
-  // navegador — o formulário aceitaria senha que o backend recusa, e nenhum
-  // teste veria.
+  // validations.js importa PASSWORD_POLICY (ES Module); carregá-lo aqui antes
+  // só deixa o global disponível para os testes que o leem direto.
   loadScript(context, 'js/core/password-policy.js');
   loadScript(context, 'js/core/utils.js');
   loadScript(context, 'js/core/finance-contract.js');
