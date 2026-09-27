@@ -1391,10 +1391,10 @@ var DADOS = {
   },
 
   _storageSetTransacoes: function(transacoes) {
+    var self = this;
     var json = JSON.stringify(transacoes);
     if (this._transacoesBackend === 'idb' && typeof IDB_KV !== 'undefined') {
       this._transacoesCache = transacoes;
-      var self = this;
       this._idbWriteChain = this._idbWriteChain.then(function() {
         return self._idbGravarTransacoes(json);
       }).then(function() {

@@ -48,7 +48,7 @@ afterAll(function() {
   else delete global.crypto;
 });
 
-function contexto() {
+function contexto(extras) {
   global.localStorage.clear();
   const idb = criarIdbFake();
   const sandbox = {
@@ -62,6 +62,7 @@ function contexto() {
     setTimeout: function() { return global.setTimeout.apply(null, arguments); },
     clearTimeout: function() { return global.clearTimeout.apply(null, arguments); },
   };
+  Object.assign(sandbox, extras || {});
   sandbox.globalThis = sandbox;
   const ctx = vm.createContext(sandbox);
   loadInto(ctx, 'js/core/config.js');
@@ -163,6 +164,22 @@ describe('IndexedDB de lançamentos respeita "cifrar dados"', function() {
     expect(DADOS._falhou).toBe(true);
     expect(DADOS._transacoesCache).toEqual([]);
     expect(idb.mapa.get(TX_KEY + '-ilegivel')).toBe(cifradoOriginal);
+  });
+});
+
+describe('localStorage: gravação comum de lançamentos', function() {
+  test('_storageSetTransacoes grava e libera o sync entre abas sem erro', async function() {
+    // Stub mínimo do UTILS (o contexto não carrega utils.js).
+    const { DADOS, LC } = contexto({
+      UTILS: { verificarStorageDisponivel: function() { return { disponivel: true }; } },
+    });
+    LC.setEnabled(false);
+    DADOS._transacoesBackend = 'localStorage';
+
+    expect(function() { DADOS._storageSetTransacoes(LISTA); }).not.toThrow();
+    expect(global.localStorage.getItem(TX_KEY)).toBe(JSON.stringify(LISTA));
+    await new Promise(function(r) { setTimeout(r, 5); });
+    expect(DADOS._ignorarStorageSync).toBe(false);
   });
 });
 
