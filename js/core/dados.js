@@ -1021,18 +1021,17 @@ var DADOS = {
   },
 
   _persistirTransacoesLista: function(lista) {
+    var self = this;
     this._ignorarStorageSync = true;
     if (this._transacoesBackend === 'idb') {
       this._transacoesCache = lista;
       var json = JSON.stringify(lista);
-      var self = this;
       this._idbWriteChain = this._idbWriteChain.then(function() {
         return self._idbGravarTransacoes(json);
       });
     } else {
       this._storageSetRaw(CONFIG.STORAGE_TRANSACOES, JSON.stringify(lista));
     }
-    var self = this;
     setTimeout(function() { self._ignorarStorageSync = false; }, 0);
   },
 
@@ -1416,7 +1415,6 @@ var DADOS = {
       this._ignorarStorageSync = true;
       this._storageSetRaw(CONFIG.STORAGE_TRANSACOES, json);
     } finally {
-      var self = this;
       setTimeout(function() { self._ignorarStorageSync = false; }, 0);
     }
   },

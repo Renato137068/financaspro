@@ -484,12 +484,12 @@ var ALERTAS = {
   // ─────────────────────────────────────────────────────────────────
 
   init: function() {
+    var self = this;
     this.renderizar();
     this.notificarCriticos();
 
     // Reprocessar quando transações mudam
     if (typeof APP_STORE !== 'undefined') {
-      var self = this;
       APP_STORE.subscribe('dados.transacoesVer', function() {
         self._lastCheck = 0; // força re-verificação
         self.renderizar();
@@ -499,7 +499,6 @@ var ALERTAS = {
     // Verificação periódica (a cada 5 min) — só enquanto a aba está visível.
     // Recalcular alerta de orçamento com o app em segundo plano não muda nada
     // que alguém possa ver.
-    var self = this;
     this._timer = UTILS.intervaloVisivel(function() {
       self.renderizar();
     }, this._CHECK_INTERVAL);

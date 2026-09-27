@@ -396,11 +396,11 @@ const INIT_NAVIGATION = {
               })
               : Promise.reject(new Error('Supabase indisponível'));
           } else if (DADOS._apiAtiva && DADOS._apiAtiva()) {
-            var senha = window.prompt('Digite sua senha para confirmar a exclusão da conta:');
-            if (!senha) return;
+            var senhaApi = window.prompt('Digite sua senha para confirmar a exclusão da conta:');
+            if (!senhaApi) return;
             promessa = DADOS._apiFetch('/api/v1/users/me', {
               method: 'DELETE',
-              body: JSON.stringify({ password: senha }),
+              body: JSON.stringify({ password: senhaApi }),
             });
           } else {
             if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {

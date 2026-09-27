@@ -133,11 +133,11 @@ const LIFECYCLE = {
         // Verificar se dependência falhou
         var depFailed = this._failed.find(function(f) { return f.name === dep; });
         if (depFailed) {
-          var error = 'Dependência falhou: ' + dep + ' - ' + depFailed.error;
+          error = 'Dependência falhou: ' + dep + ' - ' + depFailed.error;
           this._markFailed(module, error);
           return module.critical ? Promise.reject({ critical: true, error: error }) : Promise.resolve();
         }
-        var error = 'Dependência não inicializada: ' + dep;
+        error = 'Dependência não inicializada: ' + dep;
         this._markFailed(module, error);
         return module.critical ? Promise.reject({ critical: true, error: error }) : Promise.resolve();
       }

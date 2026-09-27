@@ -392,10 +392,10 @@ var INSIGHTS = {
     if (proAi && typeof AI_ENGINE.sugestaoCorte === 'function') {
       var corte = AI_ENGINE.sugestaoCorte(txs, 0.20);
       if (corte && corte.corteNecessario > 0 && corte.categoriaAlvo) {
-        var catLabel = esc((typeof CONFIG !== 'undefined' && CONFIG.getCatLabel) ? CONFIG.getCatLabel(corte.categoriaAlvo) : corte.categoriaAlvo);
+        var catCorteLabel = esc((typeof CONFIG !== 'undefined' && CONFIG.getCatLabel) ? CONFIG.getCatLabel(corte.categoriaAlvo) : corte.categoriaAlvo);
         insights.push({
           tipo:      'meta',
-          msg:       '<i data-lucide="target" aria-hidden="true"></i> Reduza R$ ' + corte.corteNecessario.toFixed(2).replace('.', ',') + ' em ' + catLabel + ' para atingir 20% de poupança (você está em ' + corte.taxaAtual + '%).',
+          msg:       '<i data-lucide="target" aria-hidden="true"></i> Reduza R$ ' + corte.corteNecessario.toFixed(2).replace('.', ',') + ' em ' + catCorteLabel + ' para atingir 20% de poupança (você está em ' + corte.taxaAtual + '%).',
           gravidade: 'media'
         });
       }

@@ -19,9 +19,8 @@ module.exports = {
     'js/vendor/**',
   ],
   rules: {
-    // Frontend clássico (multi-script via index.html): símbolos existem em
-    // runtime sem import. Tratar no-undef como erro aqui só gera ruído até a
-    // migração ESM; o override em js/** desliga. Backend ESM mantém a regra.
+    // Backend ESM e frontend (via config/frontend-globals.json, no override
+    // de js/**) aplicam a regra.
     'no-undef': 'error',
     'no-unused-vars': ['error', {
       argsIgnorePattern: '^_',
@@ -55,15 +54,21 @@ module.exports = {
       rules: { 'no-console': 'off' },
     },
     {
-      // App vanilla multi-script: handlers HTML, globals de index.html e
-      // atribuições `var FOO = …` exportadas implicitamente. A regra no-undef
-      // e no-unused-vars são comprovadamente inadequadas aqui até ESM.
-      // Bugs reais no frontend continuam cobertos por no-dupe-keys, no-self-assign, etc.
+      // App vanilla multi-script: cada `var FOO = …` no topo de um arquivo é
+      // global e usado pelos outros sem import. Os nomes vêm de
+      // config/frontend-globals.json (gerado por
+      // scripts/generate-frontend-globals.cjs; o CI falha se estiver defasado),
+      // então no-undef pega nome digitado errado em vez de esperar o runtime.
+      // no-unused-vars segue desligado: um global declarado aqui é usado em
+      // outro arquivo, e a regra não enxerga entre scripts.
       files: ['js/**/*.js'],
+      parserOptions: { sourceType: 'script' },
+      globals: require('./config/frontend-globals.json').globals,
       rules: {
-        'no-undef': 'off',
+        'no-undef': ['error', { typeof: false }],
         'no-unused-vars': 'off',
-        'no-redeclare': 'off',
+        // O próprio arquivo que declara `var DADOS` redeclara o global da lista.
+        'no-redeclare': ['error', { builtinGlobals: false }],
       },
     },
   ],
@@ -100,7 +105,6 @@ module.exports = {
     AI_ENGINE: 'readonly',
     ANEXOS: 'readonly',
     APP_STATE: 'readonly',
-    APP_VERSION: 'readonly',
     APRENDIZADO: 'readonly',
     ASSINATURAS: 'readonly',
     AUTO_CATEGORIZER: 'readonly',
@@ -134,7 +138,6 @@ module.exports = {
     METAS: 'readonly',
     MICRO: 'readonly',
     OBS: 'readonly',
-    OCR: 'readonly',
     ONBOARDING: 'writable',
     OPEN_FINANCE: 'readonly',
     PATRIMONIO: 'readonly',
