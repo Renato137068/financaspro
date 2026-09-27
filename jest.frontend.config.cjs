@@ -85,6 +85,12 @@ module.exports = {
     // em todos os lançamentos/config). Boa parte do resto é DOM; o piso guarda
     // a lógica pura coberta por contas-saldos/-real/-rename.
     'js/contas.js': { lines: 55, functions: 56, branches: 70 },
+
+    // Saíram de 0%: as suítes carregavam o módulo com `new Function`, sem
+    // filename, e a cobertura V8 não contava. Agora rodam com vm e o caminho real.
+    'js/core/persist-queue.js': { lines: 68, functions: 74, branches: 68 },
+    'js/utilities/finance-reconciler.js': { lines: 78, functions: 68, branches: 53 },
+    'js/auth-biometric.js': { lines: 57, functions: 55, branches: 56 },
   },
   coverageReporters: ['text', 'lcov', 'html'],
   verbose: true,

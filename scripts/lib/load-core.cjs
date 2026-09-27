@@ -30,7 +30,7 @@ function loadCoreGlobals() {
   const { loadCoreModules, resetFixtures, execNoSandbox } = loadLoader();
   loadCoreModules();
   const budgetPath = path.join(ROOT, 'js', 'services', 'budgetService.js');
-  execNoSandbox(fs.readFileSync(budgetPath, 'utf8'));
+  execNoSandbox(fs.readFileSync(budgetPath, 'utf8'), budgetPath);
   global.BUDGET_SERVICE = execNoSandbox('BUDGET_SERVICE');
   return { resetFixtures, execNoSandbox };
 }

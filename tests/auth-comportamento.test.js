@@ -9,8 +9,28 @@
  */
 const fs = require('fs');
 const path = require('path');
+const vm = require('vm');
 
 const root = path.join(__dirname, '..');
+
+/**
+ * Roda um script de js/ como no navegador, mas com o caminho real do arquivo
+ * (a cobertura V8 do Jest só conta script com filename em js/). Os globais que
+ * o módulo lê são repassados, por getter, ao global do teste — assim um dublê
+ * trocado depois do carregamento continua valendo, como com `new Function`.
+ */
+function rodarComoScript(rel, nomes) {
+  const arquivo = path.join(root, rel);
+  const sandbox = {};
+  nomes.forEach((nome) => {
+    Object.defineProperty(sandbox, nome, {
+      get: () => global[nome],
+      set: (v) => { global[nome] = v; },
+      enumerable: true,
+    });
+  });
+  vm.runInContext(fs.readFileSync(arquivo, 'utf8'), vm.createContext(sandbox), { filename: arquivo });
+}
 
 /* ───────────────────────── Biometria ─────────────────────────
    Bug de origem: ao reabrir o app, a biometria não entrava. O cliente já
@@ -23,9 +43,10 @@ function carregarBiometria(nativo) {
     isNativePlatform: () => true,
     Plugins: { NativeBiometric: nativo },
   };
-  const src = fs.readFileSync(path.join(root, 'js/auth-biometric.js'), 'utf8');
-  // eslint-disable-next-line no-new-func
-  new Function(src)();
+  rodarComoScript('js/auth-biometric.js', [
+    'window', 'document', 'navigator', 'localStorage', 'sessionStorage', 'console',
+    'setTimeout', 'clearTimeout', 'Promise', 'SUPA_AUTH', 'UTILS', 'INIT_MODALS', 'DADOS', 'CONFIG',
+  ]);
   return global.window.AUTH_BIOMETRIC;
 }
 

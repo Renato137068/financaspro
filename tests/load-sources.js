@@ -173,10 +173,11 @@ function resetFixtures() {
  * aqui dentro.
  */
 let _ctx = null;
-function execNoSandbox(expressao) {
+function execNoSandbox(expressao, arquivo) {
   if (!_ctx) throw new Error('loadCoreModules() precisa rodar antes');
+  // `arquivo` (caminho real em js/) faz a cobertura V8 contar o código.
   return vm.runInContext(expressao, _ctx, {
-    filename: path.join(__dirname, 'load-sources.sandbox.js'),
+    filename: arquivo || path.join(__dirname, 'load-sources.sandbox.js'),
   });
 }
 

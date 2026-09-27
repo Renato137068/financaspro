@@ -58,7 +58,9 @@ describe('integridade da suíte — testes-cópia', () => {
 
       const carregaModuloReal = src.includes('load-sources')
         || /readFileSync\([^)]*['"]js['"]/.test(src)
-        || /require\(['"]\.\.\/js\//.test(src);
+        || /require\(['"]\.\.\/js\//.test(src)
+        // caminho do arquivo real numa constante, executado com vm
+        || (/path\.join\([^)]*['"]js['"][^)]*\.js['"]\)/.test(src) && /vm\.runIn/.test(src));
 
       for (const mod of MODULOS_GLOBAIS) {
         const redefine = new RegExp(`^\\s*(const|var|let)\\s+${mod}\\s*=\\s*\\{`, 'm');
