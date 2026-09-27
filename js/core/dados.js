@@ -312,6 +312,19 @@ var DADOS = {
       return Promise.resolve({ key: key, plain: raw });
     });
 
+    // Blob de lançamentos no IndexedDB (backend 'idb'): mesma migração. A
+    // leitura espera as gravações pendentes e só serve para confirmar que o
+    // blob decifra no estado ATUAL do flag — se não decifrar, a migração
+    // aborta como nas chaves do localStorage.
+    var usaIdb = this._transacoesBackend === 'idb' && typeof IDB_KV !== 'undefined';
+    if (usaIdb) {
+      reads.push(this._idbWriteChain.then(function() {
+        return self._idbLerTransacoes();
+      }).then(function(plain) {
+        return { key: CONFIG.STORAGE_TRANSACOES, plain: plain, idb: true };
+      }));
+    }
+
     return Promise.all(reads).then(function(items) {
       // Aborta se algo não decifrou (evita gravar cifrado como se fosse puro).
       for (var i = 0; i < items.length; i++) {
@@ -331,6 +344,16 @@ var DADOS = {
 
         var writes = items.map(function(it) {
           if (it.plain == null) return Promise.resolve();
+          if (it.idb) {
+            // Regrava pela cadeia serial a partir do cache em memória — no
+            // backend 'idb' ele é a fonte de verdade e já inclui qualquer
+            // lançamento salvo enquanto a leitura acima acontecia.
+            self._idbWriteChain = self._idbWriteChain.then(function() {
+              var lista = Array.isArray(self._transacoesCache) ? self._transacoesCache : [];
+              return self._idbGravarTransacoes(JSON.stringify(lista));
+            });
+            return self._idbWriteChain;
+          }
           if (enable) {
             return LOCAL_CRYPTO.encrypt(it.plain).then(function(enc) { localStorage.setItem(it.key, enc); });
           }
@@ -1004,10 +1027,10 @@ var DADOS = {
       var json = JSON.stringify(lista);
       var self = this;
       this._idbWriteChain = this._idbWriteChain.then(function() {
-        return IDB_KV.set(CONFIG.STORAGE_TRANSACOES, json);
+        return self._idbGravarTransacoes(json);
       });
     } else {
-      localStorage.setItem(CONFIG.STORAGE_TRANSACOES, JSON.stringify(lista));
+      this._storageSetRaw(CONFIG.STORAGE_TRANSACOES, JSON.stringify(lista));
     }
     var self = this;
     setTimeout(function() { self._ignorarStorageSync = false; }, 0);
@@ -1093,6 +1116,50 @@ var DADOS = {
     return Array.isArray(parsed) ? parsed : [];
   },
 
+  /**
+   * Grava o blob de lançamentos no IndexedDB pela MESMA regra do localStorage:
+   * cifrado quando "cifrar dados" está ligado. Antes o blob ia em texto puro
+   * para o IDB — justo o maior volume de dados, o de quem tem mais de 2.500
+   * lançamentos, ficava fora da proteção que a opção promete.
+   * Sempre chamado dentro de _idbWriteChain (a cifra é assíncrona; a cadeia
+   * serial impede que um encrypt antigo sobrescreva um novo).
+   */
+  _idbGravarTransacoes: function(json) {
+    var key = CONFIG.STORAGE_TRANSACOES;
+    if (typeof LOCAL_CRYPTO !== 'undefined' && LOCAL_CRYPTO.isEnabled()) {
+      return LOCAL_CRYPTO.wrapStorageValue(key, json).then(function(stored) {
+        return IDB_KV.set(key, stored);
+      });
+    }
+    return IDB_KV.set(key, json);
+  },
+
+  /** Lê o blob de lançamentos do IndexedDB, decifrando se estiver cifrado. */
+  _idbLerTransacoes: function() {
+    var key = CONFIG.STORAGE_TRANSACOES;
+    return IDB_KV.get(key).then(function(data) {
+      if (data && typeof LOCAL_CRYPTO !== 'undefined' && LOCAL_CRYPTO.isEncrypted(data)) {
+        return LOCAL_CRYPTO.unwrapStorageValue(key, data);
+      }
+      return data;
+    });
+  },
+
+  /**
+   * Blob do IDB que não decifrou nem parseou: guarda uma cópia intacta antes
+   * que a próxima gravação o substitua. O decrypt devolve o texto cifrado
+   * quando falha — sem esta cópia, o primeiro lançamento novo gravaria uma
+   * lista vazia por cima de dados que talvez só estejam com a chave errada.
+   */
+  _preservarBlobIlegivel: function(data) {
+    if (!data || typeof IDB_KV === 'undefined') return Promise.resolve(false);
+    var backupKey = CONFIG.STORAGE_TRANSACOES + '-ilegivel';
+    return IDB_KV.get(backupKey).then(function(existente) {
+      if (existente) return false;
+      return IDB_KV.set(backupKey, data);
+    });
+  },
+
   _deveMigrarTransacoesParaIdb: function(data, lista) {
     if (typeof IDB_KV === 'undefined' || !IDB_KV.isReady || !IDB_KV.isReady()) return false;
     if (!Array.isArray(lista)) return false;
@@ -1112,7 +1179,7 @@ var DADOS = {
     var json = JSON.stringify(this._transacoesCache);
     var self = this;
     this._idbWriteChain = this._idbWriteChain.then(function() {
-      return IDB_KV.set(CONFIG.STORAGE_TRANSACOES, json);
+      return self._idbGravarTransacoes(json);
     }).then(function() {
       self._pingTransacoesSync();
     });
@@ -1130,12 +1197,13 @@ var DADOS = {
       try { backend = localStorage.getItem(self.TX_BACKEND_KEY); } catch (e) { backend = null; }
       if (backend === 'idb' && IDB_KV.isReady()) {
         self._transacoesBackend = 'idb';
-        return IDB_KV.get(CONFIG.STORAGE_TRANSACOES).then(function(data) {
+        return self._idbLerTransacoes().then(function(data) {
           try {
             self._transacoesCache = data ? self._parseTransacoesJson(data) : [];
           } catch (e) {
             self._transacoesCache = [];
             self._registrarFalhaLeitura(CONFIG.STORAGE_TRANSACOES, e);
+            return self._preservarBlobIlegivel(data);
           }
         });
       }
@@ -1171,7 +1239,7 @@ var DADOS = {
     }
     var antes = (this._transacoesCache || []).slice();
     var pending = this._pendingTxIds();
-    return IDB_KV.get(CONFIG.STORAGE_TRANSACOES).then(function(data) {
+    return this._idbLerTransacoes().then(function(data) {
       var novas;
       try {
         novas = data ? self._parseTransacoesJson(data) : [];
@@ -1329,7 +1397,7 @@ var DADOS = {
       this._transacoesCache = transacoes;
       var self = this;
       this._idbWriteChain = this._idbWriteChain.then(function() {
-        return IDB_KV.set(CONFIG.STORAGE_TRANSACOES, json);
+        return self._idbGravarTransacoes(json);
       }).then(function() {
         self._pingTransacoesSync();
       });
