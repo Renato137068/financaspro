@@ -139,6 +139,7 @@
     "INIT_PATRIMONIO": "writable",
     "INIT_RELATORIOS": "writable",
     "INIT_SIMULADOR": "writable",
+    "INSIGHT_ACOES": "writable",
     "INSIGHTS": "writable",
     "LAZY": "writable",
     "LIFECYCLE": "writable",

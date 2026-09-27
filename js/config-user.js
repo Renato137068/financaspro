@@ -47,8 +47,18 @@ var CONFIG_USER = {
     if (typeof INIT_CONFIG !== 'undefined' && typeof INIT_CONFIG.exportarDados === 'function') {
       return INIT_CONFIG.exportarDados();
     }
-    // Sem INIT_CONFIG carregado, exportar um formato incompatível seria pior do
-    // que não exportar: o usuário guardaria um backup que não restaura.
+    // O exportador mora no chunk 'config' (Perfil). O lembrete de backup do
+    // dashboard chega aqui antes de o Perfil abrir: carrega e exporta.
+    if (typeof INIT_NAVIGATION !== 'undefined' && INIT_NAVIGATION.carregarChunkConfig) {
+      INIT_NAVIGATION.carregarChunkConfig(function() {
+        if (typeof INIT_CONFIG !== 'undefined' && typeof INIT_CONFIG.exportarDados === 'function') {
+          INIT_CONFIG.exportarDados();
+        }
+      });
+      return;
+    }
+    // Sem o exportador, exportar um formato incompatível seria pior do que não
+    // exportar: o usuário guardaria um backup que não restaura.
     UTILS.mostrarToast('Não foi possível exportar agora. Recarregue a página.', 'error');
   },
 

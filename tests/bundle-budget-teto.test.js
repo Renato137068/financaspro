@@ -13,8 +13,8 @@ const fs = require('fs');
 const path = require('path');
 
 const TETO_KB = {
-  precacheTotal: 1392,
-  appBundle: 604,
+  precacheTotal: 1300,
+  appBundle: 514,
   vendorBundle: 260,
   cssBundle: 300,
   indexHtml: 112,

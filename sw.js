@@ -127,6 +127,7 @@ const urlsParaCache = [
   "/js/modules/init-patrimonio.js",
   "/js/modules/init-relatorios.js",
   "/js/modules/init-simulador.js",
+  "/js/modules/insight-acoes.js",
   "/js/onboarding.js",
   "/js/open-finance.js",
   "/js/orcamento.js",

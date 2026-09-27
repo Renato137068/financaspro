@@ -766,69 +766,13 @@ const INIT_CONFIG = {
     });
   },
 
-  /**
-   * Configura ações de insights
-   */
+  /** Ações de insight moram em INSIGHT_ACOES (bundle principal). */
   setupInsightActions: function() {
-    if (this._insightBound) return;
-    this._insightBound = true;
-
-    document.addEventListener('click', function(e) {
-      var btn = e.target.closest('[data-insight-action]');
-      if (!btn) return;
-      var acao = btn.getAttribute('data-insight-action');
-      var parametros = {};
-      try {
-        parametros = JSON.parse(btn.getAttribute('data-insight-params') || '{}');
-      } catch (_err) {
-        parametros = {};
-      }
-      INIT_CONFIG.handleInsightAction(acao, btn, parametros);
-    });
+    if (typeof INSIGHT_ACOES !== 'undefined') INSIGHT_ACOES.init();
   },
 
-  /**
-   * Processa ações de insights
-   */
   handleInsightAction: function(acao, btn, parametros) {
-    parametros = parametros || {};
-    switch (acao) {
-      case 'filtrar-categoria':
-        var cat = btn.dataset.cat;
-        mudarAba('extrato');
-        setTimeout(function() {
-          // Wrapper global: carrega o chunk 'extrato' se ainda não chegou.
-          setFiltroCat(cat);
-        }, 100);
-        break;
-
-      case 'criar-orcamento':
-        mudarAba('orcamento');
-        setTimeout(function() {
-          var input = document.getElementById('limit-' + btn.dataset.cat);
-          if (input) input.focus();
-        }, 100);
-        break;
-
-      case 'abrirPaywall':
-        // Teaser de insight (assinaturas esquecidas, por ora) levando ao
-        // paywall com o contexto que o gerou — o número em reais vai junto.
-        if (typeof INIT_BILLING !== 'undefined' && INIT_BILLING.abrirPaywall) {
-          INIT_BILLING.abrirPaywall(parametros.message);
-        }
-        break;
-
-      case 'irParaMetas':
-        // Insight de meta fora do ritmo → leva direto para a tela de metas.
-        if (typeof mudarAba === 'function') mudarAba('orcamento', { orcSub: 'metas' });
-        break;
-
-      case 'ver-detalhes':
-        break;
-
-      default:
-        INIT_CONFIG.executarInsight(acao, parametros);
-    }
+    if (typeof INSIGHT_ACOES !== 'undefined') INSIGHT_ACOES.handle(acao, btn, parametros);
   },
 
   /**
@@ -1792,36 +1736,7 @@ const INIT_CONFIG = {
   },
 
   executarInsight: function(acao, parametros) {
-    parametros = parametros || {};
-    if (acao === 'aumentarLimite') {
-      try {
-        ORCAMENTO.definirLimite(parametros.categoria, parametros.novoLimite);
-        UTILS.mostrarToast('Limite de ' + UTILS.labelCategoria(parametros.categoria) +
-          ' → R$ ' + parametros.novoLimite.toFixed(2), 'success');
-      } catch (_e) {
-        UTILS.mostrarToast('Não foi possível atualizar o limite. Tente de novo.', 'error');
-      }
-    }
-
-    if (acao === 'marcarRecorrente') {
-      var catEl = document.getElementById('novo-categoria');
-      var cat = (parametros && parametros.categoria) || (catEl ? catEl.value : '') || 'outro';
-      var valorRec = parametros && parametros.valor ? parseFloat(parametros.valor) : 0;
-      DADOS.salvarRecorrente({
-        tipo: parametros.tipo || 'despesa',
-        categoria: cat,
-        descricao: parametros.descricao || 'Recorrente',
-        frequencia: parametros.frequencia || 'mensal',
-        valor: isNaN(valorRec) ? 0 : valorRec,
-        dataInicio: UTILS.dataLocalIso(),
-        ativo: true
-      });
-      UTILS.mostrarToast('"' + (parametros.descricao || 'Lançamento') + '" marcado como recorrente', 'success');
-    }
-
-    if (typeof INSIGHTS !== 'undefined') {
-      setTimeout(function() { INSIGHTS.mostrar(); }, 150);
-    }
+    if (typeof INSIGHT_ACOES !== 'undefined') INSIGHT_ACOES.executar(acao, parametros);
   }
 };
 

@@ -252,22 +252,14 @@ const INIT_NAVIGATION = {
           }
         }
       },
-      'abrir-editar-perfil': function() { 
-        if (typeof INIT_CONFIG !== 'undefined' && typeof INIT_CONFIG.abrirEditarPerfil === 'function') {
-          INIT_CONFIG.abrirEditarPerfil();
-        }
-      },
+      'abrir-editar-perfil': function() { safeCall('abrirEditarPerfil'); },
       'abrir-equipe': function() {
         if (typeof INIT_BILLING !== 'undefined' && INIT_BILLING.abrirEquipe) {
           INIT_BILLING.abrirEquipe();
         }
       },
       'abrir-editar-renda': function() { safeCall('abrirEditarRenda'); },
-      'abrir-config-bancos': function() { 
-        if (typeof INIT_CONFIG !== 'undefined' && typeof INIT_CONFIG.abrirConfigBancos === 'function') {
-          INIT_CONFIG.abrirConfigBancos();
-        }
-      },
+      'abrir-config-bancos': function() { safeCall('abrirConfigBancos'); },
       'gerenciar-categorias': function() { 
         safeCall('abrirGerenciarCategorias', [target.dataset.tipo]); 
       },
@@ -544,6 +536,20 @@ const INIT_NAVIGATION = {
   },
 
   /**
+   * Perfil (chunk 'config'). INIT_CONFIG.init liga os controles das telas do
+   * Perfil e aplica a visibilidade da nuvem — tudo que ele toca mora nessas
+   * telas. Roda uma vez, na primeira carga real do chunk.
+   */
+  carregarChunkConfig: function(callback) {
+    this._ensureChunk('config', function() { return typeof INIT_CONFIG !== 'undefined'; }, function(justLoaded) {
+      if (justLoaded && typeof INIT_CONFIG !== 'undefined' && INIT_CONFIG.init) {
+        UTILS.tentar('INIT_CONFIG.init', function() { INIT_CONFIG.init(); });
+      }
+      if (typeof callback === 'function') callback();
+    });
+  },
+
+  /**
    * Orçamento (chunk 'orcamento'). INIT_ORCAMENTO não tem init: só desenha
    * quando a aba abre. Os globais que ele define (salvarRendaOrcamento…) só
    * são acionados de dentro da própria tela.
@@ -788,12 +794,13 @@ function mudarAba(nomeAba, opcoes) {
         // Paywall/Play/2FA/Open Finance: chunk 'conta' (~UI). BILLING (quotas)
         // já está no eager. O chunk precisa chegar ANTES do refreshPerfil:
         // refreshPlanoCard/refreshUI checam `typeof X !== 'undefined'`.
-        INIT_NAVIGATION.carregarChunkConta(function() {
-          if (typeof INIT_CONFIG !== 'undefined' && INIT_CONFIG.refreshPerfil) {
-            INIT_CONFIG.refreshPerfil();
-          } else if (typeof renderConfigTab === 'function') {
-            renderConfigTab();
-          }
+        // Primeiro a tela do Perfil (chunk 'config'), depois o 'conta'.
+        INIT_NAVIGATION.carregarChunkConfig(function() {
+          INIT_NAVIGATION.carregarChunkConta(function() {
+            if (typeof INIT_CONFIG !== 'undefined' && INIT_CONFIG.refreshPerfil) {
+              INIT_CONFIG.refreshPerfil();
+            }
+          });
         });
       }
     } catch (e) {

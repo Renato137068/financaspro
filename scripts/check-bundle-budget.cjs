@@ -41,7 +41,8 @@ const BUDGETS = {
   // 1415→1418 KB (2026-09-21): alerta de fatura vencida no topo do dashboard
   // (lembrete básico que leva às faturas) — aumento intencional.
   // 1418→1392 KB (2026-09-27): simulador e tour de boas-vindas viram chunks lazy.
-  precacheTotal: { max: 1392 * KB, label: 'Precache total (1º acesso)' },
+  // 1392→1300 KB (2026-09-27): Extrato, Orçamento e Perfil viram chunks lazy.
+  precacheTotal: { max: 1300 * KB, label: 'Precache total (1º acesso)' },
   // 580→590 KB (2026-09-13): correção do KPI "Folga poupança" no Orçamento
   // (cálculo da folga da fatia de poupança) + referência de ritmo no Resumo
   // adicionam alguns KB de código — aumento intencional.
@@ -57,7 +58,10 @@ const BUDGETS = {
   // vencida no dashboard — aumento intencional.
   // 628→604 KB (2026-09-27): simulador (19 KB) e onboarding (8 KB) saem do
   // eager para js/lazy/. Daqui para baixo, só com mais chunks lazy.
-  appBundle: { max: 604 * KB, label: 'js/app.bundle.js', file: 'js/app.bundle.js' },
+  // 604→514 KB (2026-09-27): telas de Extrato (34 KB), Orçamento (21 KB) e
+  // Perfil (37 KB) viram chunks lazy; ícones de categoria e ações de insight
+  // ficam no eager (categoria-visual.js, insight-acoes.js).
+  appBundle: { max: 514 * KB, label: 'js/app.bundle.js', file: 'js/app.bundle.js' },
   vendorBundle: { max: 260 * KB, label: 'js/vendor.bundle.js', file: 'js/vendor.bundle.js' },
   cssBundle: { max: 300 * KB, label: 'CSS bundle', glob: /^css\/index-.*\.css$/ },
   // 100→112 KB (2026-09-12): reestruturação da aba Perfil em menu + sub-telas

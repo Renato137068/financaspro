@@ -51,6 +51,24 @@ test.describe('chunks lazy no build de produção', function() {
     await expect(page.locator('#orc-sub-tab-metas[aria-selected="true"]')).toHaveCount(1);
   });
 
+  test('Perfil carrega sob demanda e os controles funcionam', async function({ page }) {
+    await prepareOfflinePage(page);
+    expect(await page.evaluate(function() { return typeof INIT_CONFIG; })).toBe('undefined');
+
+    await page.evaluate(function() { mudarAba('config-seguranca'); });
+    await page.waitForFunction(function() { return typeof INIT_CONFIG !== 'undefined'; });
+    // O switch de relatórios de erro só grava se INIT_CONFIG.init ligou os controles.
+    await page.locator('#chk-obs-erros').evaluate(function(el) { el.click(); });
+    expect(await page.evaluate(function() { return DADOS.getConfig().obsErrorsEnabled; })).toBe(false);
+  });
+
+  test('backup pelo lembrete do dashboard baixa o arquivo antes de abrir o Perfil', async function({ page }) {
+    await prepareOfflinePage(page);
+    const download = page.waitForEvent('download');
+    await page.evaluate(function() { CONFIG_USER.exportarDados(); });
+    expect((await download).suggestedFilename()).toMatch(/\.json$/);
+  });
+
   test('editar pelo alerta abre a transação mesmo antes de abrir o Extrato', async function({ page }) {
     await prepareOfflinePage(page);
     await page.evaluate(function() { ALERTAS._executarAcao('editarTransacao', { id: 'e2e-1' }); });

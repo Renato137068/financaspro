@@ -368,6 +368,7 @@ const LIFECYCLE_BOOT = {
       if (typeof INIT_FORM !== 'undefined') INIT_FORM.init();
       if (typeof INIT_EXTRATO !== 'undefined') INIT_EXTRATO.init();
       if (typeof INIT_CONFIG !== 'undefined') INIT_CONFIG.init();
+      if (typeof INSIGHT_ACOES !== 'undefined') INSIGHT_ACOES.init();
       if (typeof INIT_MODALS !== 'undefined') INIT_MODALS.init();
       if (typeof METAS !== 'undefined') METAS.init();
       if (typeof INIT_METAS !== 'undefined') INIT_METAS.init();
