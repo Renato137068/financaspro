@@ -1,7 +1,12 @@
 /**
  * budgetService.js - Regras puras de orcamento.
+ *
+ * ES Module (ADR 0002 / 0005). Os scripts clássicos o recebem como global
+ * por js/esm/ponte.js.
  */
-var BUDGET_SERVICE = (function() {
+import { TRANSACTION_SERVICE } from './transactionService.js';
+
+const BUDGET_SERVICE = (function() {
   function normalizeLimit(limite) {
     var value = typeof limite === 'number' ? limite : parseFloat(String(limite).replace(',', '.'));
     if (!Number.isFinite(value) || value <= 0) throw new Error('Limite deve ser maior que 0');
@@ -45,7 +50,6 @@ var BUDGET_SERVICE = (function() {
   }
 
   function calculateSpent(transacoes, categoria, mes, ano) {
-    if (typeof TRANSACTION_SERVICE === 'undefined') return 0;
     var list = Array.isArray(transacoes) ? transacoes : [];
     var filtered;
     if (mes != null && ano != null) {
@@ -124,6 +128,5 @@ var BUDGET_SERVICE = (function() {
   };
 })();
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = BUDGET_SERVICE;
-}
+export { BUDGET_SERVICE };
+export default BUDGET_SERVICE;

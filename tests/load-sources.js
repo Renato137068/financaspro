@@ -6,11 +6,19 @@ const path = require('path');
 const vm = require('vm');
 
 const root = path.join(__dirname, '..');
+// Caminho absoluto: este arquivo também roda via vm (scripts/lib/load-core.cjs),
+// com o `require` de outro diretório.
+const { ehModulo, executarModulo } = require(path.join(root, 'tests', 'helpers', 'esm-como-script.cjs'));
+
+// Um cache de ES Modules por contexto: cada arquivo roda uma vez, como no navegador.
+let _modulos = new Map();
 
 function loadScript(context, relativePath) {
   const file = path.join(root, relativePath);
   if (!fs.existsSync(file)) return;
   let code = fs.readFileSync(file, 'utf8');
+  // ES Module (ADR 0005): o conversor já deixa os exports como `var` no contexto.
+  if (ehModulo(code)) { executarModulo(context, file, _modulos); return; }
   // `var   ` tem o mesmo tamanho de `const `: a cobertura V8 soma as execuções
   // de um arquivo por posição de caractere, e encurtar o texto desalinhava
   // estas execuções das que rodam o arquivo intacto (tests/helpers/app-jsdom).
@@ -55,6 +63,7 @@ function loadCoreModules() {
   sandbox.globalThis = sandbox;
   const context = vm.createContext(sandbox);
   _ctx = context;
+  _modulos = new Map();
 
   // Fixtures das dependências dos módulos, declarados como `var` no contexto
   // (viram propriedades do sandbox, resolvíveis por nome nu em qualquer versão).
@@ -195,9 +204,16 @@ function semGlobalNoSandbox(nome, fn) {
   }
 }
 
+/** Contexto vm de loadCoreModules(), para carregar mais arquivos nele. */
+function getContext() {
+  if (!_ctx) throw new Error('loadCoreModules() precisa rodar antes');
+  return _ctx;
+}
+
 module.exports = {
   loadCoreModules,
   loadScript,
+  getContext,
   resetFixtures,
   execNoSandbox,
   semGlobalNoSandbox,

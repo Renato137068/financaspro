@@ -17,6 +17,7 @@
 const fs = require('fs');
 const path = require('path');
 const esbuild = require('esbuild');
+const { entradasEsm, grafoEsm } = require('./lib/esm-grafo.cjs');
 
 const root = path.join(__dirname, '..');
 const dist = path.join(root, 'dist');
@@ -97,6 +98,9 @@ function extractScriptPaths(html) {
   let m;
   while ((m = re.exec(html))) {
     if (m[1].startsWith('http')) continue;
+    // ES Modules são do Vite (ADR 0005): ele já juntou a entrada e os imports
+    // num arquivo próprio. Empacotá-lo aqui de novo o faria rodar duas vezes.
+    if (/\btype="module"/.test(m[0])) continue;
     paths.push(m[1].replace(/^\//, ''));
   }
   return paths;
@@ -206,6 +210,15 @@ for (const rel of SEM_PONTO_DE_ENTRADA) {
   fs.unlinkSync(file);
 }
 for (const rel of bundlable) {
+  const file = path.join(dist, rel);
+  if (!fs.existsSync(file)) continue;
+  purgados.push(fs.statSync(file).size);
+  fs.unlinkSync(file);
+}
+// Fontes dos ES Modules: o Vite já as juntou em js/index-<hash>.js. As cópias
+// cruas que o copy-static trouxe de js/ são tão mortas quanto as de cima.
+const esm = grafoEsm(root, entradasEsm(fs.readFileSync(path.join(root, 'index.html'), 'utf8')));
+for (const rel of esm) {
   const file = path.join(dist, rel);
   if (!fs.existsSync(file)) continue;
   purgados.push(fs.statSync(file).size);

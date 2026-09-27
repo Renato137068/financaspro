@@ -4,10 +4,13 @@
  * Morava em INIT_CONFIG (a tela do Perfil), mas os insights aparecem no
  * dashboard e no orçamento. Com o Perfil carregado sob demanda (chunk
  * 'config'), os botões do dashboard ficariam mudos até alguém abrir o Perfil.
- * Aqui fica no bundle principal. INIT_CONFIG mantém os nomes antigos
+ * Aqui fica no carregamento inicial. INIT_CONFIG mantém os nomes antigos
  * (handleInsightAction, executarInsight) delegando para cá.
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
-var INSIGHT_ACOES = {
+const INSIGHT_ACOES = {
   _ligado: false,
 
   /** Um listener delegado no documento para todo [data-insight-action]. */
@@ -111,6 +114,5 @@ var INSIGHT_ACOES = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = INSIGHT_ACOES;
-}
+export { INSIGHT_ACOES };
+export default INSIGHT_ACOES;

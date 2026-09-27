@@ -30,6 +30,8 @@
   <link rel="stylesheet" href="css/features/brand.css">
   <title>FinançasPro</title>
   <script defer src="js/utilities/observability.js"></script>
+  <!-- ES Modules (ADR 0005): publica os módulos migrados como globais. -->
+  <script type="module" src="js/esm/ponte.js"></script>
   <script defer src="js/utilities/funil.js"></script>
   <script defer src="js/utilities/local-crypto.js"></script>
   <script defer src="js/utilities/focus-trap.js"></script>
@@ -2079,7 +2081,6 @@
 <script defer src="js/core/lifecycle.js"></script>
 <!-- Domínio: categorização e parsing -->
 <script defer src="js/categories.js"></script>
-<script defer src="js/core/categoria-visual.js"></script>
 <script defer src="js/categorizador.js"></script>
 <script defer src="js/auto-categorizer.js"></script>
 <script defer src="js/aprendizado.js"></script>
@@ -2088,8 +2089,6 @@
 <script defer src="js/pipeline.js"></script>
 <!-- Services: lógica de negócio sem UI -->
 <script defer src="js/services/actions.js"></script>
-<script defer src="js/services/transactionService.js"></script>
-<script defer src="js/services/budgetService.js"></script>
 <script defer src="js/services/healthService.js"></script>
 <!-- Negócio: transações, orçamento, automação -->
 <script defer src="js/transacoes.js"></script>
@@ -2153,7 +2152,6 @@
 <script defer src="js/modules/init-form.js"></script>
 <script defer src="js/modules/init-extrato.js"></script>
 <script defer src="js/modules/init-config.js"></script>
-<script defer src="js/modules/insight-acoes.js"></script>
 <script defer src="js/modules/init-orcamento.js"></script>
 <script defer src="js/modules/init-metas.js"></script>
 <script defer src="js/modules/init-contas-pagar.js"></script>

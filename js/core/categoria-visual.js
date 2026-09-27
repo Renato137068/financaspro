@@ -6,7 +6,7 @@
  * carregado sob demanda (chunk 'extrato'), quem desenhasse antes de abrir o
  * Extrato ficava sem ícone. Aqui fica no bundle principal, disponível sempre.
  */
-var CATEGORIA_VISUAL = {
+const CATEGORIA_VISUAL = {
   ICONES: {
     'salario': 'wallet', 'freelance': 'laptop', 'investimentos': 'trending-up', 'vendas': 'shopping-cart',
     'alimentacao': 'utensils', 'transporte': 'car', 'utilities': 'zap', 'moradia': 'home',
@@ -53,6 +53,5 @@ var CATEGORIA_VISUAL = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = CATEGORIA_VISUAL;
-}
+export { CATEGORIA_VISUAL };
+export default CATEGORIA_VISUAL;

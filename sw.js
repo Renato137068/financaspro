@@ -104,6 +104,7 @@ const urlsParaCache = [
   "/js/core/sync-merge.js",
   "/js/core/utils.js",
   "/js/core/validations.js",
+  "/js/esm/ponte.js",
   "/js/fp-native-billing-bridge.js",
   "/js/fp-secure-screen.js",
   "/js/init.js",

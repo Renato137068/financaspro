@@ -9,7 +9,8 @@
  *
  * Este script lê cada arquivo de js/ (menos js/vendor) como script e coleta as
  * declarações de topo — var/let/const, function e class — e as atribuições
- * explícitas `window.NOME = …`. O resultado vai para
+ * explícitas `window.NOME = …`. Os ES Modules (ADR 0005) só contribuem com as
+ * atribuições a `window`: o topo deles é escopo de módulo. O resultado vai para
  * config/frontend-globals.json, que o eslint.config.cjs usa como `globals`.
  *
  *   node scripts/generate-frontend-globals.cjs          # regrava o JSON
@@ -18,10 +19,15 @@
 const fs = require('fs');
 const path = require('path');
 const espree = require('espree');
+const { entradasEsm, grafoEsm } = require('./lib/esm-grafo.cjs');
 
 const root = path.join(__dirname, '..');
 const jsDir = path.join(root, 'js');
 const outPath = path.join(root, 'config', 'frontend-globals.json');
+// ES Modules (ADR 0005): declaração de topo é do módulo, não global. Deles só
+// contam as atribuições `window.NOME = …` (a ponte publica os migrados assim).
+const modulos = new Set(grafoEsm(root, entradasEsm(fs.readFileSync(path.join(root, 'index.html'), 'utf8')))
+  .map((rel) => path.join(root, rel)));
 
 // Globais que vêm de bibliotecas de terceiros (js/vendor) ou do runtime nativo.
 const EXTERNOS = ['lucide', 'supabase', 'Capacitor'];
@@ -69,9 +75,10 @@ function coletarWindowAssign(no, alvo) {
 
 function globaisDe(arquivo) {
   const codigo = fs.readFileSync(arquivo, 'utf8');
-  const ast = espree.parse(codigo, { ecmaVersion: 'latest', sourceType: 'script' });
+  const ehModulo = modulos.has(arquivo);
+  const ast = espree.parse(codigo, { ecmaVersion: 'latest', sourceType: ehModulo ? 'module' : 'script' });
   const nomes = new Set();
-  for (const no of ast.body) {
+  for (const no of ehModulo ? [] : ast.body) {
     if (no.type === 'VariableDeclaration') no.declarations.forEach((d) => nomesDoPadrao(d.id, nomes));
     else if ((no.type === 'FunctionDeclaration' || no.type === 'ClassDeclaration') && no.id) nomes.add(no.id.name);
   }

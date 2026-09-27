@@ -1,8 +1,11 @@
 /**
  * transactionService.js - Regras puras de transacoes.
+ *
+ * ES Module (ADR 0002 / 0005). Os scripts clássicos o recebem como global
+ * por js/esm/ponte.js.
  * Pode ser reaproveitado no backend porque nao toca DOM nem localStorage.
  */
-var TRANSACTION_SERVICE = (function() {
+const TRANSACTION_SERVICE = (function() {
   var TIPOS = { RECEITA: 'receita', DESPESA: 'despesa', TRANSFERENCIA: 'transferencia' };
 
   function paraCentavos(value) {
@@ -204,6 +207,5 @@ var TRANSACTION_SERVICE = (function() {
   };
 })();
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = TRANSACTION_SERVICE;
-}
+export { TRANSACTION_SERVICE };
+export default TRANSACTION_SERVICE;

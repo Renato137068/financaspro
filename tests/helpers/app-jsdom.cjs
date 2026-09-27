@@ -19,6 +19,7 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const { JSDOM, VirtualConsole } = require('jsdom');
+const { executarModulo } = require('./esm-como-script.cjs');
 
 const ROOT = path.join(__dirname, '..', '..');
 
@@ -29,6 +30,15 @@ function scriptsDoIndex(html) {
   while ((m = re.exec(html))) {
     if (!/^https?:/.test(m[1])) lista.push(m[1].replace(/^\//, ''));
   }
+  return lista;
+}
+
+/** `<script type="module" src>` do index.html (ES Modules, ADR 0005). */
+function modulosDoIndex(html) {
+  const re = /<script[^>]+type="module"[^>]+src="([^"]+)"[^>]*><\/script>/g;
+  const lista = [];
+  let m;
+  while ((m = re.exec(html))) lista.push(m[1].replace(/^\//, ''));
   return lista;
 }
 
@@ -166,12 +176,15 @@ async function subirApp(opts) {
   Object.entries(opts.storage || {}).forEach(function([k, v]) { w.localStorage.setItem(k, v); });
 
   const ctx = dom.getInternalVMContext();
+  const modulos = new Map();
+  const esm = modulosDoIndex(html);
   for (const rel of scriptsDoIndex(html)) {
     const arquivo = path.join(ROOT, rel);
     if (!fs.existsSync(arquivo)) continue;
     if (rel === 'js/vendor/supabase.js' && supaFalso) { w.supabase = supaFalso; continue; }
     try {
-      vm.runInContext(fs.readFileSync(arquivo, 'utf8'), ctx, { filename: arquivo });
+      if (esm.includes(rel)) executarModulo(ctx, arquivo, modulos);
+      else vm.runInContext(fs.readFileSync(arquivo, 'utf8'), ctx, { filename: arquivo });
     } catch (e) {
       erros.push(rel + ': ' + e.message);
     }
@@ -218,4 +231,4 @@ async function subirApp(opts) {
   };
 }
 
-module.exports = { subirApp, scriptsDoIndex };
+module.exports = { subirApp, scriptsDoIndex, modulosDoIndex };

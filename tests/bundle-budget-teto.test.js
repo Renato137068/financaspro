@@ -15,7 +15,8 @@ const path = require('path');
 const TETO_KB = {
   // 1300→1305 e 260→262 (27/09): supabase-js 2.117; ver check-bundle-budget.cjs.
   precacheTotal: 1305,
-  appBundle: 514,
+  // 514→512 (27/09): a soma passou a incluir a entrada ESM (ADR 0005).
+  appBundle: 512,
   vendorBundle: 262,
   cssBundle: 300,
   indexHtml: 112,

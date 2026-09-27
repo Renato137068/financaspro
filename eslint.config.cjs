@@ -8,7 +8,12 @@
  *   - backend e scripts não enxergam os globais do frontend.
  */
 const globals = require('globals');
+const fs = require('fs');
 const globaisFrontend = require('./config/frontend-globals.json').globals;
+const { entradasEsm, grafoEsm } = require('./scripts/lib/esm-grafo.cjs');
+
+// ES Modules do frontend (ADR 0005): a entrada do index.html e o que ela importa.
+const modulosFrontend = grafoEsm(__dirname, entradasEsm(fs.readFileSync(__dirname + '/index.html', 'utf8')));
 
 const regras = {
   'no-undef': 'error',
@@ -88,6 +93,16 @@ module.exports = [
       'no-unused-vars': 'off',
       // O próprio arquivo que declara `var DADOS` redeclara o global da lista.
       'no-redeclare': ['error', { builtinGlobals: false }],
+    },
+  },
+  {
+    // Os já migrados para ES Modules: escopo de módulo de verdade, então
+    // no-unused-vars volta a enxergar tudo. Ainda leem os globais dos scripts
+    // clássicos (UTILS, DADOS…) dentro das funções.
+    files: modulosFrontend,
+    languageOptions: { sourceType: 'module' },
+    rules: {
+      'no-unused-vars': regras['no-unused-vars'],
     },
   },
   {

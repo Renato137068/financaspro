@@ -8,6 +8,7 @@ porquê de cada escolha estão em [`docs/adr/`](adr/).
 ```text
  App (PWA / Android via Capacitor)
  ├─ scripts clássicos em js/  →  app.bundle.js (eager) + js/lazy/*.bundle.js
+ ├─ ES Modules (js/esm/ponte.js e o que importa)  →  js/index-<hash>.js (Vite)
  ├─ dados no aparelho: localStorage + IndexedDB (cifragem opcional AES-GCM)
  └─ com conta: Supabase
       ├─ Auth (e-mail/senha, TOTP)
@@ -28,21 +29,29 @@ mesmos dados sincronizam com o Supabase.
   [ADR 0002](adr/0002-migracao-frontend-es-modules.md). O ESLint aplica
   `no-undef` com a lista gerada em `config/frontend-globals.json`
   (`npm run globals:update`; o CI confere com `check:globals`).
+- **ES Modules pela ponte** ([ADR 0005](adr/0005-ponte-es-modules-entrada-vite.md)).
+  `js/esm/ponte.js` é o único `<script type="module">`: importa os módulos
+  migrados (`CATEGORIA_VISUAL`, `TRANSACTION_SERVICE`, `BUDGET_SERVICE`,
+  `INSIGHT_ACOES`) e os publica em `window` para os scripts clássicos. Módulo
+  novo nasce aqui. Nos testes, `tests/helpers/esm-como-script.cjs` os roda via
+  `vm` sem mudar as posições dos caracteres (cobertura V8).
 - **Organização:** `js/core/` (config, dados, store, sync, utilidades de base),
   `js/services/` (regras puras), `js/modules/init-*.js` (telas),
   `js/utilities/` (transversais: OBS, funil, cifragem local, foco),
   `js/components/` (gráficos).
-- **Build** (`npm run build`): Vite para CSS/HTML, depois
-  `scripts/bundle-app.cjs` concatena e minifica os scripts em
+- **Build** (`npm run build`): Vite para CSS/HTML e para a entrada ESM, depois
+  `scripts/bundle-app.cjs` concatena e minifica os scripts clássicos em
   `vendor.bundle.js` (supabase-js, lucide) e `app.bundle.js`, e separa os
   chunks lazy.
 - **Chunks lazy** (`LAZY_CHUNKS` em `scripts/bundle-app.cjs`), carregados por
   `LAZY.load()` ou `INIT_NAVIGATION._ensureChunk()` na primeira abertura da
   tela: previsão, relatórios, anexos, metas, assinaturas, patrimônio,
-  simulador, onboarding e `conta` (paywall, Play Billing, 2FA, Open Finance).
+  extrato, orçamento, config (Perfil), simulador, onboarding e `conta`
+  (paywall, Play Billing, 2FA, Open Finance).
   `tests/lazy-chunks.test.js` exige um carregador para cada chunk.
 - **Orçamento do bundle** (`npm run check:bundle`): o teto só desce,
-  travado por `tests/bundle-budget-teto.test.js`.
+  travado por `tests/bundle-budget-teto.test.js`. O código eager do app é a
+  soma de `app.bundle.js` e da entrada ESM.
 - **Service worker** (`sw.js`, gerado por `scripts/generate-sw-cache.cjs`):
   precache seletivo do app shell ([ADR 0003](adr/0003-precache-seletivo-service-worker.md));
   nada de origem cruzada entra no cache. Desligado no app nativo.

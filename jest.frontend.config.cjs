@@ -1,11 +1,13 @@
 /**
  * jest.frontend.config.cjs — suíte do frontend (CommonJS + jsdom).
  *
- * Roda SEM --experimental-vm-modules de propósito: os módulos de js/ são
- * scripts clássicos carregados por <script> e os testes usam require(). Ligar o
- * modo ESM nativo faria o Jest tratar todo .js como módulo (o package.json raiz
- * é "type": "module") e quebraria esses require(). O backend, que é ESM de
- * verdade, roda em jest.backend.config.cjs com a flag ligada.
+ * Roda SEM --experimental-vm-modules de propósito: os testes são CommonJS e
+ * carregam os arquivos de js/ via vm (tests/helpers/carregar-script.cjs). Ligar
+ * o modo ESM nativo faria o Jest tratar todo .js como módulo (o package.json
+ * raiz é "type": "module") e quebraria os require(). Os arquivos de js/ já
+ * migrados para ES Modules (ADR 0005) passam pelo conversor de mesmo tamanho
+ * de tests/helpers/esm-como-script.cjs. O backend, que é ESM de verdade, roda
+ * em jest.backend.config.cjs com a flag ligada.
  */
 module.exports = {
   displayName: 'frontend',

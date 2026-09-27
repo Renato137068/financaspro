@@ -1,9 +1,10 @@
 const { defineConfig } = require('vite');
 
 module.exports = defineConfig({
-  // Vanilla JS app: index.html loads classic <script defer> (no type=module).
-  // Vite warns those tags aren't Rollup entries — expected. Production packaging
-  // is scripts/bundle-app.cjs → app.bundle.js; orphan check is check-dist-orphans.
+  // Vanilla JS app: index.html loads classic <script defer>. Vite warns those
+  // tags aren't Rollup entries — expected; scripts/bundle-app.cjs packs them
+  // into app.bundle.js. The one <script type="module"> (js/esm/ponte.js, ADR
+  // 0005) IS a Vite entry: it and its imports become js/index-<hash>.js.
   // Heavy features use LAZY_CHUNKS to keep the cold-start path lean.
   root: '.',
   base: '/',
@@ -23,10 +24,15 @@ module.exports = defineConfig({
         },
       },
     },
+    // Um chunk só, sem imports dinâmicos: o polyfill de modulepreload seria
+    // código morto no bundle.
+    modulePreload: { polyfill: false },
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: true,
+        // Igual ao bundle-app.cjs: some com os logs de diagnóstico, mas
+        // console.warn/error ficam (último recurso para depurar um relato).
+        pure_funcs: ['console.log', 'console.debug', 'console.info', 'console.trace'],
         drop_debugger: true,
       },
     },

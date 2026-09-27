@@ -27,10 +27,9 @@ function loadLoader() {
 
 /** Módulos frontend + BUDGET_SERVICE no global. */
 function loadCoreGlobals() {
-  const { loadCoreModules, resetFixtures, execNoSandbox } = loadLoader();
+  const { loadCoreModules, loadScript, getContext, resetFixtures, execNoSandbox } = loadLoader();
   loadCoreModules();
-  const budgetPath = path.join(ROOT, 'js', 'services', 'budgetService.js');
-  execNoSandbox(fs.readFileSync(budgetPath, 'utf8'), budgetPath);
+  loadScript(getContext(), 'js/services/budgetService.js');
   global.BUDGET_SERVICE = execNoSandbox('BUDGET_SERVICE');
   return { resetFixtures, execNoSandbox };
 }

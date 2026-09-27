@@ -13,10 +13,15 @@
  * topo fica no sandbox, como ficava no escopo do módulo.
  *
  *   const BILLING = carregarScript('js/billing.js');
+ *
+ * ES Module (import/export) roda pelo conversor de mesmo tamanho de
+ * esm-como-script.cjs, com os imports carregados antes no mesmo sandbox. A
+ * função devolve o export default, ou o objeto de exports se não houver.
  */
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { ehModulo, executarModulo } = require('./esm-como-script.cjs');
 
 const ROOT = path.join(__dirname, '..', '..');
 
@@ -46,7 +51,13 @@ function carregarScript(rel, extras) {
     });
   });
   Object.assign(sandbox, { module: mod, exports: mod.exports }, extras || {});
-  vm.runInContext(fs.readFileSync(arquivo, 'utf8'), vm.createContext(sandbox), { filename: arquivo });
+  const ctx = vm.createContext(sandbox);
+  const codigo = fs.readFileSync(arquivo, 'utf8');
+  if (ehModulo(codigo)) {
+    const exps = executarModulo(ctx, arquivo);
+    return 'default' in exps ? exps.default : exps;
+  }
+  vm.runInContext(codigo, ctx, { filename: arquivo });
   return mod.exports;
 }
 

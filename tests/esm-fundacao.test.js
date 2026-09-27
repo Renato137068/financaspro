@@ -1,0 +1,93 @@
+/**
+ * esm-fundacao.test.js — as regras da migração para ES Modules (ADR 0005).
+ *
+ * Um módulo com `import`/`export` só funciona se for alcançado pela entrada
+ * `<script type="module">` do index.html. Carregado como script clássico
+ * (tag defer ou chunk lazy), é erro de sintaxe e o app para de subir. Fora do
+ * grafo, nenhum navegador o executa.
+ */
+const fs = require('fs');
+const path = require('path');
+const { entradasEsm, grafoEsm } = require('../scripts/lib/esm-grafo.cjs');
+const { ehModulo, converter } = require('./helpers/esm-como-script.cjs');
+const { carregarScript } = require('./helpers/carregar-script.cjs');
+
+function scriptsDoIndex(texto) {
+  return [...texto.matchAll(/<script[^>]+src="([^"]+)"[^>]*><\/script>/g)]
+    .map((m) => m[1]).filter((src) => !/^https?:/.test(src)).map((src) => src.replace(/^\//, ''));
+}
+
+const ROOT = path.join(__dirname, '..');
+const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+const grafo = grafoEsm(ROOT, entradasEsm(html));
+
+function arquivosJs(dir) {
+  return fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true }).flatMap((ent) => {
+    const rel = dir + '/' + ent.name;
+    if (ent.isDirectory()) return ent.name === 'vendor' ? [] : arquivosJs(rel);
+    return ent.name.endsWith('.js') ? [rel] : [];
+  });
+}
+
+describe('fundação ES Modules', () => {
+  test('uma entrada só, a ponte, antes dos scripts do app', () => {
+    expect(entradasEsm(html)).toEqual(['js/esm/ponte.js']);
+    const ordem = scriptsDoIndex(html);
+    // Só o coletor de erros roda antes: no build, a entrada do Vite vai para o
+    // <head>, antes do app.bundle.js. Desenvolvimento e produção na mesma ordem.
+    expect(ordem.indexOf('js/esm/ponte.js')).toBe(ordem.indexOf('js/utilities/observability.js') + 1);
+  });
+
+  test('todo arquivo com import/export em js/ está no grafo da ponte', () => {
+    const modulos = arquivosJs('js').filter((rel) => ehModulo(fs.readFileSync(path.join(ROOT, rel), 'utf8')));
+    expect(modulos.sort()).toEqual([...grafo].sort());
+  });
+
+  test('nenhum módulo é carregado como script clássico', () => {
+    const classicos = scriptsDoIndex(html).filter((rel) => !entradasEsm(html).includes(rel));
+    const bundle = fs.readFileSync(path.join(ROOT, 'scripts', 'bundle-app.cjs'), 'utf8');
+    const lazy = bundle.slice(bundle.indexOf('const LAZY_CHUNKS'), bundle.indexOf('const lazySet'));
+    for (const rel of grafo) {
+      expect(classicos).not.toContain(rel);
+      expect(lazy).not.toContain("'" + rel + "'");
+    }
+  });
+
+  test('sem resto do padrão CommonJS nos módulos', () => {
+    for (const rel of grafo) {
+      expect(fs.readFileSync(path.join(ROOT, rel), 'utf8')).not.toMatch(/module\.exports|typeof module/);
+    }
+  });
+
+  test('a conversão dos testes preserva posição de cada caractere (cobertura V8)', () => {
+    for (const rel of grafo) {
+      const arquivo = path.join(ROOT, rel);
+      const fonte = fs.readFileSync(arquivo, 'utf8');
+      const { codigo } = converter(fonte, arquivo);
+      expect(codigo.length).toBe(fonte.length);
+      expect(codigo.split('\n').length).toBe(fonte.split('\n').length);
+      expect(ehModulo(codigo)).toBe(false);
+    }
+  });
+
+  test('a conversão recusa sintaxe fora do subconjunto', () => {
+    expect(() => converter("export * from './x.js';\n", path.join(ROOT, 'js', 'x.js'))).toThrow(/subconjunto/);
+    expect(() => converter("import('./x.js');\nexport default 1;\n", path.join(ROOT, 'js', 'x.js'))).toThrow(/subconjunto/);
+  });
+
+  test('a ponte publica os módulos migrados em window', () => {
+    const nomes = ['CATEGORIA_VISUAL', 'TRANSACTION_SERVICE', 'BUDGET_SERVICE', 'INSIGHT_ACOES'];
+    try {
+      carregarScript('js/esm/ponte.js');
+      nomes.forEach((n) => expect(typeof window[n]).toBe('object'));
+      // Uma instância só: o BUDGET_SERVICE usa o mesmo TRANSACTION_SERVICE publicado.
+      expect(window.BUDGET_SERVICE.calculateSpent(
+        [{ tipo: 'despesa', categoria: 'lazer', valor: 10.1, data: '2026-09-02' },
+          { tipo: 'despesa', categoria: 'lazer', valor: 0.2, data: '2026-09-03' }],
+        'lazer', 9, 2026,
+      )).toBe(10.3);
+    } finally {
+      nomes.forEach((n) => { delete window[n]; });
+    }
+  });
+});
