@@ -2,6 +2,8 @@
 /**
  * set-build-mode.cjs — alterna CONFIG entre cloud (Play Store) e local (piloto).
  * Uso: node scripts/set-build-mode.cjs local|cloud
+ * FP_CONFIG_PATH aponta para outro config.js (os testes usam uma cópia para não
+ * mexer no arquivo real enquanto outras suítes o leem em paralelo).
  */
 'use strict';
 const fs = require('fs');
@@ -13,7 +15,7 @@ if (mode !== 'local' && mode !== 'cloud') {
   process.exit(1);
 }
 
-const cfgPath = path.join(__dirname, '..', 'js', 'core', 'config.js');
+const cfgPath = process.env.FP_CONFIG_PATH || path.join(__dirname, '..', 'js', 'core', 'config.js');
 let src = fs.readFileSync(cfgPath, 'utf8');
 
 if (!/FP_BUILD_MODE\s*=\s*'(local|cloud)'/.test(src)) {

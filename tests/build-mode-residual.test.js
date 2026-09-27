@@ -2,6 +2,7 @@
  * build-mode-residual.test.js — residuais da reauditoria (local mode, PIN flag, OCR SRI).
  */
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { execSync } = require('child_process');
 
@@ -18,22 +19,37 @@ describe('Build mode local vs cloud', () => {
     expect(cfg).toContain('_FP_ENV_ANON');
   });
 
+  // Os scripts rodam contra uma CÓPIA de config.js: o Jest executa as suítes em
+  // paralelo e ~65 delas leem o arquivo real. Reescrevê-lo no meio da execução
+  // mudava seu tamanho e tornava a cobertura v8 de config.js não determinística
+  // (o merge é por offset de caractere), além de arriscar leitura parcial.
+  let tmpDir;
+  let cfgPath;
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'fp-build-mode-'));
+    cfgPath = path.join(tmpDir, 'config.js');
+    fs.copyFileSync(path.join(root, 'js/core/config.js'), cfgPath);
+  });
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
   test('set-build-mode alterna e restaura cloud', () => {
     const script = path.join(root, 'scripts/set-build-mode.cjs');
-    const cfgPath = path.join(root, 'js/core/config.js');
-    execSync('node "' + script + '" local', { stdio: 'pipe' });
+    const env = { ...process.env, FP_CONFIG_PATH: cfgPath };
+    execSync('node "' + script + '" local', { stdio: 'pipe', env });
     expect(fs.readFileSync(cfgPath, 'utf8')).toContain("FP_BUILD_MODE = 'local'");
-    execSync('node "' + script + '" cloud', { stdio: 'pipe' });
+    execSync('node "' + script + '" cloud', { stdio: 'pipe', env });
     expect(fs.readFileSync(cfgPath, 'utf8')).toContain("FP_BUILD_MODE = 'cloud'");
   });
 
   test('inject-supabase-env sobrescreve e --clear restaura', () => {
     const script = path.join(root, 'scripts/inject-supabase-env.cjs');
-    const cfgPath = path.join(root, 'js/core/config.js');
     execSync('node "' + script + '"', {
       stdio: 'pipe',
       env: {
         ...process.env,
+        FP_CONFIG_PATH: cfgPath,
         SUPABASE_URL: 'https://example-project.supabase.co',
         SUPABASE_ANON_KEY: 'test-anon-key',
       },
@@ -41,10 +57,23 @@ describe('Build mode local vs cloud', () => {
     let cfg = fs.readFileSync(cfgPath, 'utf8');
     expect(cfg).toContain("var _FP_ENV_URL = 'https://example-project.supabase.co'");
     expect(cfg).toContain("var _FP_ENV_ANON = 'test-anon-key'");
-    execSync('node "' + script + '" --clear', { stdio: 'pipe' });
+    execSync('node "' + script + '" --clear', {
+      stdio: 'pipe',
+      env: { ...process.env, FP_CONFIG_PATH: cfgPath },
+    });
     cfg = fs.readFileSync(cfgPath, 'utf8');
     expect(cfg).toContain("var _FP_ENV_URL = ''");
     expect(cfg).toContain("var _FP_ENV_ANON = ''");
+  });
+
+  test('scripts não tocam o config.js real quando FP_CONFIG_PATH está definido', () => {
+    const real = path.join(root, 'js/core/config.js');
+    const antes = fs.readFileSync(real, 'utf8');
+    execSync('node "' + path.join(root, 'scripts/set-build-mode.cjs') + '" local', {
+      stdio: 'pipe',
+      env: { ...process.env, FP_CONFIG_PATH: cfgPath },
+    });
+    expect(fs.readFileSync(real, 'utf8')).toBe(antes);
   });
 
   test('package.json tem android:bundle:local e inject no build', () => {
