@@ -4,11 +4,14 @@
  * @version 11.0
  * @requires UI._utils
  * @module UI.EmptyState
+ *
+ * ES Module (ADR 0005): entra no app por js/components/ui.js, que monta o
+ * namespace UI publicado por js/esm/ponte.js.
  */
 
-(function() {
-  var UI = window.UI || {};
+import { UI_UTILS } from './_base.js';
 
+const EmptyState = (function() {
   function _renderIconEl(container, cfg) {
     var lucideName = cfg.lucide || cfg.icon;
     if (lucideName) {
@@ -28,7 +31,7 @@
   }
 
   function _ctaHtml(cfg) {
-    var esc = UI._utils && UI._utils.esc ? UI._utils.esc : function(s) { return s; };
+    var esc = UI_UTILS && UI_UTILS.esc ? UI_UTILS.esc : function(s) { return s; };
     var texto = cfg.ctaTexto || 'Começar agora';
     return '<i data-lucide="plus" aria-hidden="true"></i> ' + esc(texto);
   }
@@ -37,11 +40,25 @@
     if (typeof renderLucideIcons === 'function') renderLucideIcons(root);
   }
 
+  function _normalizarConfig(config, texto, aba) {
+    if (config && typeof config === 'object' && !Array.isArray(config)) {
+      return config;
+    }
+    return {
+      emoji:    config,
+      titulo:   texto,
+      subtitulo: null,
+      aba:      aba,
+      ctaTexto: null,
+      animado:  true
+    };
+  }
+
   /**
    * Empty state component with animations and configurable CTA
-   * @namespace UI.EmptyState
+   * @namespace EmptyState
    */
-  UI.EmptyState = {
+  return {
     /**
      * Renders an empty state as a DOM element
      * @param {Object|string} config - Configuration object or emoji string (legacy)
@@ -96,7 +113,7 @@
      * @returns {string} The rendered empty state HTML string
      */
     html: function(config, texto, aba) {
-      var esc = UI._utils.esc;
+      var esc = UI_UTILS.esc;
       var cfg = _normalizarConfig(config, texto, aba);
 
       var animClass  = cfg.animado !== false ? ' empty-state--animado' : '';
@@ -123,20 +140,6 @@
       '</div>';
     }
   };
-
-  function _normalizarConfig(config, texto, aba) {
-    if (config && typeof config === 'object' && !Array.isArray(config)) {
-      return config;
-    }
-    return {
-      emoji:    config,
-      titulo:   texto,
-      subtitulo: null,
-      aba:      aba,
-      ctaTexto: null,
-      animado:  true
-    };
-  }
-
-  window.UI = UI;
 })();
+
+export { EmptyState };

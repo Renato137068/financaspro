@@ -71,7 +71,8 @@ describe('fundação ES Modules', () => {
       const semComentarios = codigo.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '');
       for (const [nome, de] of dono) {
         if (de === rel || proprios.has(nome) || importados.has(nome)) continue;
-        if (new RegExp('\\b' + nome + '\\b').test(semComentarios)) faltando.push(rel + ' usa ' + nome + ' sem importar de ' + de);
+        // `obj.NOME` e a chave `NOME:` são propriedades, não o global.
+        if (new RegExp('(?<![.\\w$])' + nome + '\\b(?!\\s*:)').test(semComentarios)) faltando.push(rel + ' usa ' + nome + ' sem importar de ' + de);
       }
     }
     expect(faltando).toEqual([]);
@@ -95,6 +96,24 @@ describe('fundação ES Modules', () => {
     }
     expect([...mixins].sort()).toEqual(['DADOS_EXPRESS', 'FORM_SUGESTOES']);
     expect(comThis).toEqual([]);
+  });
+
+  // No navegador cada módulo tem escopo próprio; nos testes, o conversor roda
+  // todos como script no mesmo contexto, e o que é declarado no topo vira
+  // global dele. Dois módulos com a mesma função auxiliar de topo (ex.: um
+  // `_buildResumoTabela` em cada gráfico) fariam um chamar a do outro só nos
+  // testes. Auxiliar fica dentro de uma IIFE, como em PERSIST_QUEUE.
+  test('nome declarado no topo não se repete entre módulos (contexto único nos testes)', () => {
+    const dono = new Map();
+    const repetidos = [];
+    for (const rel of grafo) {
+      const fonte = fs.readFileSync(path.join(ROOT, rel), 'utf8');
+      for (const m of fonte.matchAll(/^(?:var|let|const|function|class)\s+([A-Za-z_$][\w$]*)/gm)) {
+        if (dono.has(m[1])) repetidos.push(m[1] + ': ' + dono.get(m[1]) + ' e ' + rel);
+        else dono.set(m[1], rel);
+      }
+    }
+    expect(repetidos).toEqual([]);
   });
 
   test('sem resto do padrão CommonJS nos módulos', () => {

@@ -44,13 +44,17 @@ mesmos dados sincronizam com o Supabase.
   resumos e análise (`RESUMO_MENSAL`, `RESUMO_ANUAL`, `PLANO_METAS`,
   `AI_ENGINE`), os services (transação, orçamento, `HEALTH_SERVICE`),
   `INSIGHT_ACOES`, `DADOS_EXPRESS`, `FORM_SUGESTOES` e a UI sem estado
-  (`SETUP_GUIDE`, `SHORTCUTS`, `SKELETON`, `MICRO`). Seguem clássicos o que
+  (`SETUP_GUIDE`, `SHORTCUTS`, `SKELETON`, `MICRO`, `SYNC_INDICATOR`) e os
+  componentes de `js/components/` (cada um exporta o seu objeto e
+  `components/ui.js` monta o `UI`). Seguem clássicos o que
   roda código no carregamento (`ACTIONS`, `DADOS`, `APP_STORE`, sync,
   lifecycle), o `RENDERER_BASE` (protótipo, depende de `this`) e o que mora em
   chunk lazy. Entre eles a dependência é `import`, e nenhum usa `this`
   fora dos mixins: módulo roda em modo estrito, e método passado como
   callback perde o `this` (`tests/esm-fundacao.test.js` trava as duas
-  regras; o conversor dos testes também roda em modo estrito).
+  regras; o conversor dos testes também roda em modo estrito). Nos testes os
+  módulos dividem um contexto só, então função auxiliar de topo fica dentro
+  de uma IIFE (nome de topo repetido entre módulos reprova o teste).
 - **Mixins para quebrar arquivos grandes.** Um pedaço coeso de um objeto
   clássico sai para um ES Module e volta por `Object.assign` no fim do
   arquivo original, sem mudar quem chama: `dados-express.js` (cliente da API

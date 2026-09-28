@@ -1,44 +1,48 @@
-// FinançasPro — LegendaChart: legenda lateral de gráficos
-// v11.0 — Depende de: _base.js
-// cats: [{ nome, valor, cor }]
-(function() {
-  var UI = window.UI || {};
+/**
+ * FinançasPro — LegendaChart: legenda lateral de gráficos
+ * v11.0 — Depende de: _base.js
+ * cats: [{ nome, valor, cor }]
+ *
+ * ES Module (ADR 0005): entra no app por js/components/ui.js, que monta o
+ * namespace UI publicado por js/esm/ponte.js.
+ */
 
-  UI.LegendaChart = {
-    // render(cats, totalDesp) → HTMLElement
-    render: function(cats, totalDesp) {
-      var u = UI._utils;
+import { UI_UTILS } from './_base.js';
 
-      var legenda = document.createElement('div');
-      legenda.className = 'donut-legenda';
+const LegendaChart = {
+  // render(cats, totalDesp) → HTMLElement
+  render: function(cats, totalDesp) {
+    var u = UI_UTILS;
 
-      cats.forEach(function(cat) {
-        var pct = totalDesp > 0 ? Math.round((cat.valor / totalDesp) * 100) : 0;
+    var legenda = document.createElement('div');
+    legenda.className = 'donut-legenda';
 
-        var item = document.createElement('div');
-        item.className = 'legenda-item';
+    cats.forEach(function(cat) {
+      var pct = totalDesp > 0 ? Math.round((cat.valor / totalDesp) * 100) : 0;
 
-        var cor = document.createElement('span');
-        cor.className = 'legenda-cor';
-        cor.style.background = cat.cor;
-        item.appendChild(cor);
+      var item = document.createElement('div');
+      item.className = 'legenda-item';
 
-        var nome = document.createElement('span');
-        nome.className = 'legenda-nome';
-        nome.textContent = u.label(cat.nome);
-        item.appendChild(nome);
+      var cor = document.createElement('span');
+      cor.className = 'legenda-cor';
+      cor.style.background = cat.cor;
+      item.appendChild(cor);
 
-        var pctEl = document.createElement('span');
-        pctEl.className = 'legenda-pct';
-        pctEl.textContent = pct + '%';
-        item.appendChild(pctEl);
+      var nome = document.createElement('span');
+      nome.className = 'legenda-nome';
+      nome.textContent = u.label(cat.nome);
+      item.appendChild(nome);
 
-        legenda.appendChild(item);
-      });
+      var pctEl = document.createElement('span');
+      pctEl.className = 'legenda-pct';
+      pctEl.textContent = pct + '%';
+      item.appendChild(pctEl);
 
-      return legenda;
-    }
-  };
+      legenda.appendChild(item);
+    });
 
-  window.UI = UI;
-})();
+    return legenda;
+  }
+};
+
+export { LegendaChart };

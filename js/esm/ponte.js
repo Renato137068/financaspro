@@ -59,6 +59,8 @@ import { SETUP_GUIDE } from '../core/setup-guide.js';
 import { SHORTCUTS } from '../shortcuts.js';
 import { SKELETON } from '../skeleton.js';
 import { MICRO } from '../micro-interactions.js';
+import { UI } from '../components/ui.js';
+import { SYNC_INDICATOR } from '../utilities/sync-indicator.js';
 
 window.CONFIG = CONFIG;
 window.UTILS = UTILS;
@@ -118,3 +120,5 @@ window.SETUP_GUIDE = SETUP_GUIDE;
 window.SHORTCUTS = SHORTCUTS;
 window.SKELETON = SKELETON;
 window.MICRO = MICRO;
+window.UI = UI;
+window.SYNC_INDICATOR = SYNC_INDICATOR;

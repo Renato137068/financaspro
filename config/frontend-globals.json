@@ -196,6 +196,7 @@
     "SUPA_SYNC": "writable",
     "supabase": "writable",
     "SYNC_ENGINE": "writable",
+    "SYNC_INDICATOR": "writable",
     "SYNC_MERGE": "writable",
     "TablistKeyboard": "writable",
     "TELAS": "writable",

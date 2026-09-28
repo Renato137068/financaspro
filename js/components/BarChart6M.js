@@ -1,12 +1,18 @@
-// FinançasPro — BarChart6M: gráfico de barras dos últimos 6 meses (SVG)
-// v11.0 — Depende de: _base.js
-// dados: [{ mes: string, receitas: number, despesas: number }]
-(function() {
-  var UI = window.UI || {};
+/**
+ * FinançasPro — BarChart6M: gráfico de barras dos últimos 6 meses (SVG)
+ * v11.0 — Depende de: _base.js
+ * dados: [{ mes: string, receitas: number, despesas: number }]
+ *
+ * ES Module (ADR 0005): entra no app por js/components/ui.js, que monta o
+ * namespace UI publicado por js/esm/ponte.js.
+ */
 
+import { UI_UTILS } from './_base.js';
+
+const BarChart6M = (function() {
   function _buildResumoTabela(dados) {
-    var moeda = UI._utils.moeda;
-    var esc = UI._utils.esc;
+    var moeda = UI_UTILS.moeda;
+    var esc = UI_UTILS.esc;
     var rows = dados.map(function(d) {
       if (d.bloqueado) {
         return '<tr><td>' + esc(d.mes) + '</td><td colspan="2">Disponível no plano Pro</td></tr>';
@@ -21,7 +27,7 @@
   }
 
   function _buildSVG(dados) {
-    var moeda = UI._utils.moeda;
+    var moeda = UI_UTILS.moeda;
 
     var maxVal = 0;
     dados.forEach(function(d) { maxVal = Math.max(maxVal, d.receitas, d.despesas); });
@@ -76,7 +82,7 @@
     return svg;
   }
 
-  UI.BarChart6M = {
+  return {
     // render(dados) → HTMLElement — contrato padrão: sempre retorna Element
     render: function(dados) {
       var el = document.createElement('div');
@@ -102,6 +108,6 @@
       return (dados || []).filter(function(d) { return d && d.bloqueado; }).length;
     }
   };
-
-  window.UI = UI;
 })();
+
+export { BarChart6M };
