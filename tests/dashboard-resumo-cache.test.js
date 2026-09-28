@@ -2,7 +2,6 @@
  * dashboard-resumo-cache.test.js — P2.1: memoização de obterResumoMes no ciclo render
  * @jest-environment jsdom
  */
-const path = require('path');
 const vm = require('vm');
 const { carregarDashboard } = require('./helpers/dashboard-renderer.cjs');
 

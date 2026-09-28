@@ -3,7 +3,6 @@
  * reporta em OBS e deixa mensagem discreta no container.
  * @jest-environment jsdom
  */
-const path = require('path');
 const vm = require('vm');
 const { carregarDashboard } = require('./helpers/dashboard-renderer.cjs');
 
