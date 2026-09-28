@@ -12,6 +12,8 @@
  * js/esm/ponte.js.
  */
 
+import { INIT_FORM } from '../modules/init-form.js';
+
 const DOM_SAFE = {
   // ============================================================
   // CRIAÇÃO SEGURA DE ELEMENTOS

@@ -7,9 +7,13 @@
  * que alimenta tudo isso (com cache invalidado ao salvar um lançamento).
  *
  * Saiu de init-form.js, que passava de 2 mil linhas. Os métodos continuam
- * sendo de INIT_FORM: init-form.js os copia com
- * `Object.assign(INIT_FORM, FORM_SUGESTOES)`, e eles se chamam por
+ * sendo de INIT_FORM: este módulo os copia para lá no fim do arquivo
+ * (`Object.assign(INIT_FORM, FORM_SUGESTOES)`), e eles se chamam por
  * `INIT_FORM.…`. ES Module (ADR 0005), publicado por js/esm/ponte.js.
+ *
+ * A cópia mora aqui, e não em init-form.js, para o import ter um sentido só:
+ * se os dois se importassem, quem fosse avaliado primeiro decidiria se o
+ * Object.assign veria FORM_SUGESTOES ainda não inicializado.
  */
 
 import { CONFIG } from '../core/config.js';
@@ -20,6 +24,7 @@ import { CATEGORIAS } from '../auto-categorizer.js';
 import { CATEGORIES } from '../categories.js';
 import { TRANSACOES } from '../transacoes.js';
 import { CONTAS } from '../contas.js';
+import { INIT_FORM } from './init-form.js';
 const FORM_SUGESTOES = {
   /**
    * 7. AUTO-CATEGORIZAÇÃO
@@ -760,6 +765,8 @@ const FORM_SUGESTOES = {
     INIT_FORM._aggCache = null;
   },
 };
+
+Object.assign(INIT_FORM, FORM_SUGESTOES);
 
 export { FORM_SUGESTOES };
 export default FORM_SUGESTOES;

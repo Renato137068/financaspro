@@ -7,6 +7,7 @@
  */
 
 import { UTILS } from './core/utils.js';
+import { INIT_FORM } from './modules/init-form.js';
 
 const MICRO = (function() {
 

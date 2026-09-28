@@ -9,7 +9,6 @@ const { executarModulo } = require('./helpers/esm-como-script.cjs');
 
 const root = path.join(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-const formSrc = fs.readFileSync(path.join(root, 'js', 'modules', 'init-form.js'), 'utf8');
 // setupAutocomplete mora em form-sugestoes.js, que init-form.js mistura em INIT_FORM.
 const sugArquivo = path.join(root, 'js', 'modules', 'form-sugestoes.js');
 const sugSrc = fs.readFileSync(sugArquivo, 'utf8');
@@ -73,12 +72,10 @@ describe('P1.1 — navegação por teclado (runtime)', function() {
       Event: Event
     };
     sandbox.globalThis = sandbox;
-    // init-form usa const INIT_FORM — forçar var para o sandbox
-    var code = formSrc.replace(/\bconst INIT_FORM =/, 'var   INIT_FORM =');
     var ctx = vm.createContext(sandbox);
-    // Como no navegador: a ponte ESM publica as sugestões antes de init-form.js.
+    // Como no navegador: form-sugestoes.js importa init-form.js e copia as
+    // sugestões para INIT_FORM ao carregar.
     executarModulo(ctx, sugArquivo);
-    vm.runInContext(code, ctx, { filename: path.join(root, 'js', 'modules', 'init-form.js') });
     INIT_FORM = sandbox.INIT_FORM;
   });
 

@@ -16,6 +16,7 @@ import { FINANCE_RECONCILER } from '../utilities/finance-reconciler.js';
 import { ALERTAS } from '../alertas.js';
 import { CONFIG_USER } from '../config-user.js';
 import { INIT_MODALS } from './init-modals.js';
+import { INIT_FORM } from './init-form.js';
 
 const INIT_NAVIGATION = {
   _listeners: [],

@@ -73,6 +73,7 @@ import {
   PIN_SECURITY, hashPin, setupPinInputs, togglePinSeguranca, confirmarDesativarPin,
   verificarPinAoAbrir, tentarDesbloquear
 } from '../pin.js';
+import { INIT_FORM } from '../modules/init-form.js';
 
 window.CONFIG = CONFIG;
 window.UTILS = UTILS;
@@ -151,3 +152,4 @@ window.togglePinSeguranca = togglePinSeguranca;
 window.confirmarDesativarPin = confirmarDesativarPin;
 window.verificarPinAoAbrir = verificarPinAoAbrir;
 window.tentarDesbloquear = tentarDesbloquear;
+window.INIT_FORM = INIT_FORM;

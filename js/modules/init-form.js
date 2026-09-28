@@ -4,9 +4,29 @@
  * Responsabilidades: setup completo do form novo, validação, submit
  *
  * Sugestões (autocategorização, contexto de pagamento, autocomplete da
- * descrição) moram em js/modules/form-sugestoes.js e são copiadas para cá no
- * fim do arquivo: quem chama continua usando INIT_FORM.obterSugestaoContextual etc.
+ * descrição) moram em js/modules/form-sugestoes.js, que as copia para
+ * INIT_FORM ao carregar: quem chama continua usando
+ * INIT_FORM.obterSugestaoContextual etc.
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
+
+import { CONFIG } from '../core/config.js';
+import { UTILS } from '../core/utils.js';
+import { FINANCE_CONTRACT } from '../core/finance-contract.js';
+import { DOMUTILS } from '../core/domUtils.js';
+import { FUNIL } from '../utilities/funil.js';
+import { SCORE } from '../score.js';
+import { APRENDIZADO } from '../aprendizado.js';
+import { TRANSACOES } from '../transacoes.js';
+import { ORCAMENTO } from '../orcamento.js';
+import { CONTAS } from '../contas.js';
+import { PIPELINE } from '../pipeline.js';
+import { PERSIST_QUEUE } from '../core/persist-queue.js';
+import { MICRO } from '../micro-interactions.js';
+import { INSIGHTS } from '../insights.js';
+import { RENDER } from '../render.js';
 
 const INIT_FORM = {
   _submitBusy: false,
@@ -16,9 +36,9 @@ const INIT_FORM = {
    * Inicializa sistema de formulário
    */
   init: function() {
-    this.setupFormNovo();
-    this._ligarPersistStatus();
-    this._bindTags();
+    INIT_FORM.setupFormNovo();
+    INIT_FORM._ligarPersistStatus();
+    INIT_FORM._bindTags();
   },
 
   /** Liga o campo de tags: pré-visualiza os chips normalizados enquanto digita. */
@@ -27,7 +47,7 @@ const INIT_FORM = {
     if (!el || el._tagsBound) return;
     el._tagsBound = true;
     el.addEventListener('input', function() { INIT_FORM._renderTagsChips(); });
-    this._renderTagsChips();
+    INIT_FORM._renderTagsChips();
   },
 
   /** Lê e normaliza as tags do formulário. */
@@ -49,12 +69,12 @@ const INIT_FORM = {
 
   _ligarPersistStatus: function() {
     if (typeof PERSIST_QUEUE === 'undefined' || !PERSIST_QUEUE.onChange) return;
-    if (this._persistUnsub) return;
-    var self = this;
-    this._persistUnsub = PERSIST_QUEUE.onChange(function(snap) {
+    if (INIT_FORM._persistUnsub) return;
+    var self = INIT_FORM;
+    INIT_FORM._persistUnsub = PERSIST_QUEUE.onChange(function(snap) {
       self._renderPersistStatus(snap);
     });
-    this._renderPersistStatus(PERSIST_QUEUE.getSnapshot());
+    INIT_FORM._renderPersistStatus(PERSIST_QUEUE.getSnapshot());
   },
 
   _renderPersistStatus: function(snap) {
@@ -160,24 +180,24 @@ const INIT_FORM = {
    */
   setupFormNovo: function() {
     var fns = [
-      this.setupEntradaRapida,
-      this.setupTipoToggle,
-      this.setupMascaraValor,
-      this.setupQuickAmounts,
-      this.setupCategoriaGrid,
-      this.setupDateChips,
-      this.setupExtrasToggle,
-      this.setupRecorrencia,
-      this.setupParcelamento,
-      this.setupAutoCategorizacao,
-      this.setupContextoCategorizacao,
-      this.setupSmartDescriptionSuggestions,
-      this.setupPaymentContextChips,
-      this.setupAutocomplete,
-      this.setupFormSubmit,
-      this.setupParcelaPreview,
-      this.setupFormProgress,
-      this.setupPersistRetry
+      INIT_FORM.setupEntradaRapida,
+      INIT_FORM.setupTipoToggle,
+      INIT_FORM.setupMascaraValor,
+      INIT_FORM.setupQuickAmounts,
+      INIT_FORM.setupCategoriaGrid,
+      INIT_FORM.setupDateChips,
+      INIT_FORM.setupExtrasToggle,
+      INIT_FORM.setupRecorrencia,
+      INIT_FORM.setupParcelamento,
+      INIT_FORM.setupAutoCategorizacao,
+      INIT_FORM.setupContextoCategorizacao,
+      INIT_FORM.setupSmartDescriptionSuggestions,
+      INIT_FORM.setupPaymentContextChips,
+      INIT_FORM.setupAutocomplete,
+      INIT_FORM.setupFormSubmit,
+      INIT_FORM.setupParcelaPreview,
+      INIT_FORM.setupFormProgress,
+      INIT_FORM.setupPersistRetry
     ];
 
     fns.forEach(function(fn) {
@@ -315,7 +335,7 @@ const INIT_FORM = {
   setupTipoToggle: function() {
     document.querySelectorAll('.tipo-btn').forEach(function(btn) {
       btn.addEventListener('click', function() {
-        var tipo = this.dataset.tipo;
+        var tipo = btn.dataset.tipo;
         document.getElementById('novo-tipo').value = tipo;
         INIT_FORM.atualizarTipoIndicator(tipo);
         var grupoParcelas = document.getElementById('grupo-parcelas');
@@ -355,9 +375,9 @@ const INIT_FORM = {
           c.classList.remove('ativo');
           c.setAttribute('aria-pressed', 'false');
         });
-        this.classList.add('ativo');
-        this.setAttribute('aria-pressed', 'true');
-        var offset = parseInt(this.dataset.offset, 10);
+        chip.classList.add('ativo');
+        chip.setAttribute('aria-pressed', 'true');
+        var offset = parseInt(chip.dataset.offset, 10);
         var d = new Date();
         d.setDate(d.getDate() - offset);
         dateInput.value = UTILS.dataLocalIso(d);
@@ -419,9 +439,9 @@ const INIT_FORM = {
     if (!chk || !opcoes) return;
 
     chk.addEventListener('change', function() {
-      opcoes.style.display = this.checked ? 'flex' : 'none';
+      opcoes.style.display = chk.checked ? 'flex' : 'none';
       // Desabilitar parcelamento se recorrente
-      if (this.checked) {
+      if (chk.checked) {
         var chkParc = document.getElementById('chk-parcelado');
         if (chkParc) { 
           chkParc.checked = false; 
@@ -447,8 +467,8 @@ const INIT_FORM = {
     if (!chk || !opcoes) return;
 
     chk.addEventListener('change', function() {
-      opcoes.style.display = this.checked ? 'block' : 'none';
-      if (this.checked) {
+      opcoes.style.display = chk.checked ? 'block' : 'none';
+      if (chk.checked) {
         var chkRec = document.getElementById('chk-recorrente');
         if (chkRec) { 
           chkRec.checked = false; 
@@ -728,7 +748,7 @@ const INIT_FORM = {
     }
   },
 
-  handleFormSubmit: function(e) {
+  handleFormSubmit: function(_e) {
     try {
       if (INIT_FORM._submitBusy) {
         UTILS.mostrarToast('Aguarde gravar o lançamento atual…', 'warning');
@@ -989,10 +1009,6 @@ const INIT_FORM = {
       }
     }
 
-    var parcelCount = 1;
-    if (chkParcelado && chkParcelado.checked && tipo === 'despesa') {
-      parcelCount = parseInt(document.getElementById('num-parcelas').value, 10) || 2;
-    }
     // Sem quota de transacao, de proposito. O teto de 100/mes parava de
     // aceitar os gastos do usuario por volta do dia 15 -- o gratuito virava
     // inutil justamente no mes em que ele mais precisava, e o mes ficava com
@@ -1255,7 +1271,7 @@ const INIT_FORM = {
     INIT_FORM.renderQuickEntries();
   },
 
-  handleOrcamentoSubmit: function(e) {
+  handleOrcamentoSubmit: function(_e) {
     try {
       var cats = ['alimentacao','transporte','moradia','saude','lazer'];
       cats.forEach(function(cat) {
@@ -1332,15 +1348,5 @@ INIT_FORM._catIconHtml = function(slug) {
   return '<i data-lucide="' + icon + '" aria-hidden="true"></i>';
 };
 
-// Sugestões do formulário (ES Module, publicado por js/esm/ponte.js, que roda
-// antes deste script).
-Object.assign(INIT_FORM, FORM_SUGESTOES);
-
-// Export para compatibilidade
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = INIT_FORM;
-}
-
-
-
-
+export { INIT_FORM };
+export default INIT_FORM;
