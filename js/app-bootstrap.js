@@ -2,13 +2,20 @@
  * app-bootstrap.js — Orquestrador de inicialização
  * Responsabilidade única: delegar ao LIFECYCLE e reagir ao resultado.
  * Toda a lógica de módulos vive em lifecycle.js (LIFECYCLE_BOOT).
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
 
-var APP_BOOTSTRAP = {
+import { UTILS } from './core/utils.js';
+import { FUNIL } from './utilities/funil.js';
+import { mudarAba } from './modules/init-navigation.js';
+
+const APP_BOOTSTRAP = {
   _initialized: false,
 
   inicializar: function() {
-    if (this._initialized) {
+    if (APP_BOOTSTRAP._initialized) {
       console.warn('[BOOT] Já inicializado, ignorando...');
       return;
     }
@@ -18,11 +25,11 @@ var APP_BOOTSTRAP = {
       return;
     }
 
-    this._orquestrar();
+    APP_BOOTSTRAP._orquestrar();
   },
 
   _orquestrar: function() {
-    var self = this;
+    var self = APP_BOOTSTRAP;
 
     // Antes de qualquer módulo: é o passo 1 do funil e o marco que data todos
     // os outros ("no dia N de uso, ele encontrou o gate X").
@@ -97,6 +104,5 @@ if (typeof window !== 'undefined') {
   }
 }
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = APP_BOOTSTRAP;
-}
+export { APP_BOOTSTRAP };
+export default APP_BOOTSTRAP;

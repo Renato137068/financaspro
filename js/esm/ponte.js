@@ -80,6 +80,9 @@ import {
   authResendCooldown, _abrirAuthOverlay
 } from '../authController.js';
 import { AUTH_BIOMETRIC } from '../auth-biometric.js';
+import { DAILY_REMINDER } from '../utilities/daily-reminder.js';
+import { APP_BOOTSTRAP } from '../app-bootstrap.js';
+import { INIT_CONTAS_PAGAR } from '../modules/init-contas-pagar.js';
 
 window.CONFIG = CONFIG;
 window.UTILS = UTILS;
@@ -168,3 +171,6 @@ window.sairDaConta = sairDaConta;
 window.authResendCooldown = authResendCooldown;
 window._abrirAuthOverlay = _abrirAuthOverlay;
 window.AUTH_BIOMETRIC = AUTH_BIOMETRIC;
+window.DAILY_REMINDER = DAILY_REMINDER;
+window.APP_BOOTSTRAP = APP_BOOTSTRAP;
+window.INIT_CONTAS_PAGAR = INIT_CONTAS_PAGAR;

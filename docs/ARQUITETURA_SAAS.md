@@ -55,11 +55,22 @@ mesmos dados sincronizam com o Supabase.
   (`INIT_FORM`; o mixin `FORM_SUGESTOES` importa `INIT_FORM` e se copia para
   ele, e não o contrário, para o `Object.assign` nunca ver o mixin ainda não
   inicializado), o billing (`BILLING`) e a autenticação (`authController`,
-  `AUTH_BIOMETRIC`). Seguem
-  clássicos o que roda código no carregamento (`ACTIONS`, `DADOS`,
-  `APP_STORE`, sync, lifecycle), o `pin-guard.js` (roda sem `defer`, antes
-  do primeiro paint), o `supabase-billing.js` (lê `DADOS`, `SB` e
-  `SUPA_AUTH` ao carregar) e o que mora em chunk lazy. Ciclo de import entre migrados é aceito quando nenhum dos
+  `AUTH_BIOMETRIC`), o bootstrap (`APP_BOOTSTRAP`), o lembrete diário e a
+  tela de contas a pagar. Seguem clássicos:
+  - o que roda código no carregamento (`ACTIONS`, `DADOS`, `APP_STORE`,
+    sync, lifecycle);
+  - o que depende da posição na página: `pin-guard.js` (sem `defer`, antes
+    do primeiro paint), `lucide-init.js` (lê o vendor do lucide, que carrega
+    depois da ponte), `fp-secure-screen.js`, `sw-register.js`,
+    `capacitor-init.js` e `supabase-billing.js` (lê `DADOS`, `SB` e
+    `SUPA_AUTH` ao carregar);
+  - o `init.js`: é a camada de compatibilidade dos scripts clássicos
+    (`fpAlert`, `atualizarDashboard`, `setFiltroCat`…). Como módulo, o
+    domínio (contas, cartões, pipeline) passaria a importar a UI inteira só
+    para avisar o painel;
+  - `focus-trap.js` e `aria-live.js` (classes: a regra do `this` ainda não
+    distingue método de classe de método de objeto);
+  - o que mora em chunk lazy. Ciclo de import entre migrados é aceito quando nenhum dos
   dois usa o outro no carregamento (navegação ↔ alertas, navegação ↔
   preferências, formulário ↔ microinterações). Código que roda na carga não
   pode depender do outro lado de um ciclo: quem for avaliado primeiro o veria

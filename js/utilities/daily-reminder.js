@@ -1,6 +1,13 @@
 /**
  * daily-reminder.js — Lembrete diário via Notification API (quando permitido)
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
+
+import { UTILS } from '../core/utils.js';
+import { TRANSACOES } from '../transacoes.js';
+
 const DAILY_REMINDER = {
   _lastKey: 'fp-lembrete-ultimo-dia',
 
@@ -9,14 +16,14 @@ const DAILY_REMINDER = {
   },
 
   requestPermission: function() {
-    if (!this.isSupported()) return Promise.resolve('unsupported');
+    if (!DAILY_REMINDER.isSupported()) return Promise.resolve('unsupported');
     if (Notification.permission === 'granted') return Promise.resolve('granted');
     if (Notification.permission === 'denied') return Promise.resolve('denied');
     return Notification.requestPermission();
   },
 
   notify: function(title, body) {
-    if (!this.isSupported() || Notification.permission !== 'granted') return false;
+    if (!DAILY_REMINDER.isSupported() || Notification.permission !== 'granted') return false;
     try {
       new Notification(title, {
         body: body,
@@ -33,22 +40,25 @@ const DAILY_REMINDER = {
   maybeRemind: function() {
     var config = DADOS.getConfig();
     if (!config || !config.lembreteDiario) return;
-    if (!this.isSupported() || Notification.permission !== 'granted') return;
+    if (!DAILY_REMINDER.isSupported() || Notification.permission !== 'granted') return;
 
     var hoje = UTILS.dataLocalIso();
     try {
-      if (localStorage.getItem(this._lastKey) === hoje) return;
+      if (localStorage.getItem(DAILY_REMINDER._lastKey) === hoje) return;
     } catch (_e) { return; }
 
     var txs = typeof TRANSACOES !== 'undefined' ? TRANSACOES.obter({ mes: new Date().getMonth() + 1, ano: new Date().getFullYear() }) : [];
     var temHoje = txs.some(function(t) { return t.data === hoje; });
     if (temHoje) {
-      try { localStorage.setItem(this._lastKey, hoje); } catch (_e) { /* ignore */ }
+      try { localStorage.setItem(DAILY_REMINDER._lastKey, hoje); } catch (_e) { /* ignore */ }
       return;
     }
 
-    if (this.notify('FinançasPro', 'Você ainda não registrou gastos hoje. Que tal um lançamento rápido?')) {
-      try { localStorage.setItem(this._lastKey, hoje); } catch (_e) { /* ignore */ }
+    if (DAILY_REMINDER.notify('FinançasPro', 'Você ainda não registrou gastos hoje. Que tal um lançamento rápido?')) {
+      try { localStorage.setItem(DAILY_REMINDER._lastKey, hoje); } catch (_e) { /* ignore */ }
     }
   }
 };
+
+export { DAILY_REMINDER };
+export default DAILY_REMINDER;
