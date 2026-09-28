@@ -4,8 +4,15 @@
  * Uso:
  *   FINANCE_RECONCILER.reconcile({ expected: [...], label: 'carga-anual' })
  *   window.__FP_DIAG.reconcile()
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
-var FINANCE_RECONCILER = (function() {
+import { PERSIST_QUEUE } from '../core/persist-queue.js';
+import { TRANSACOES } from '../transacoes.js';
+import { COMPROMISSOS } from '../compromissos.js';
+
+const FINANCE_RECONCILER = (function() {
   function centavos(v) {
     var n = Number(v);
     return Number.isFinite(n) ? Math.round(n * 100) : 0;
@@ -208,6 +215,5 @@ if (typeof window !== 'undefined') {
   };
 }
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = FINANCE_RECONCILER;
-}
+export { FINANCE_RECONCILER };
+export default FINANCE_RECONCILER;

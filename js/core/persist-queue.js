@@ -5,8 +5,14 @@
  * storage (incluindo cifração at-rest). Clique rápido enfileira; não perde.
  *
  * Estados: pending | saving | saved | failed
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
-var PERSIST_QUEUE = (function() {
+import { UTILS } from './utils.js';
+import { TRANSACOES } from '../transacoes.js';
+
+const PERSIST_QUEUE = (function() {
   var STORAGE_KEY = 'fp-persist-queue';
   var items = [];
   var processing = false;
@@ -164,7 +170,7 @@ var PERSIST_QUEUE = (function() {
         next.txId = tx && tx.id;
         return aguardarDisco().then(function() { return tx; });
       })
-      .then(function(tx) {
+      .then(function() {
         // Confirma que o clientKey está no storage (anti-perda silenciosa).
         var conf = txJaExiste(next.clientKey);
         if (!conf) throw new Error('Gravação não confirmada no storage');
@@ -389,6 +395,5 @@ var PERSIST_QUEUE = (function() {
   };
 })();
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = PERSIST_QUEUE;
-}
+export { PERSIST_QUEUE };
+export default PERSIST_QUEUE;

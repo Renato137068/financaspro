@@ -60,8 +60,10 @@ describe('integridade da suíte — testes-cópia', () => {
         || src.includes('helpers/app-jsdom')
         || /readFileSync\([^)]*['"]js['"\/]/.test(src)
         || /require\(['"]\.\.\/js\//.test(src)
-        // caminho do arquivo real numa constante, executado com vm
-        || (/path\.join\([^)]*['"]js['"][^)]*\.js['"]\)/.test(src) && /vm\.runIn/.test(src));
+        // caminho do arquivo real numa constante, executado com vm ou pelo
+        // conversor de ES Module (tests/helpers/esm-como-script.cjs)
+        || (/path\.join\([^)]*['"]js['"][^)]*\.js['"]\)/.test(src)
+          && /vm\.runIn|rodarNoContexto\(|executarModulo\(/.test(src));
 
       for (const mod of MODULOS_GLOBAIS) {
         const redefine = new RegExp(`^\\s*(const|var|let)\\s+${mod}\\s*=\\s*\\{`, 'm');

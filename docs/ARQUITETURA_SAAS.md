@@ -35,14 +35,16 @@ mesmos dados sincronizam com o Supabase.
   nasce aqui. Já migrados: as bases `CONFIG` e `UTILS`, o núcleo puro de
   `js/core` (`PASSWORD_POLICY`, `VALIDATIONS`, `FINANCE_CONTRACT`,
   `SYNC_MERGE`, `SESSION_LOG`, `IDB_KV`, `CATEGORIA_VISUAL`, `TELAS`, `LAZY`,
-  `DOMUTILS`), utilitários (`LOCAL_CRYPTO`, `FUNIL`, `TablistKeyboard`,
+  `DOMUTILS`), a infraestrutura de eventos e persistência (`EVENT_BUS`,
+  `EVENTS`, `DOM_SAFE`, `PERSIST_QUEUE`, `FINANCE_RECONCILER`), utilitários (`LOCAL_CRYPTO`, `FUNIL`, `TablistKeyboard`,
   `compartilharTextoUI`), o domínio de lançamentos (`TRANSACOES`, `ORCAMENTO`,
   `CATEGORIES`, `AUTO_CATEGORIZER`, `CATEGORIZADOR`, `APRENDIZADO`, `PARSER`,
   `SCORE`, `PIPELINE`), contas e compromissos (`CONTAS`, `CARTOES`,
   `RECORRENTES`, `COMPROMISSOS`, `CONTAS_PAGAR`, `CALENDARIO`, `PROJECAO`),
   resumos e análise (`RESUMO_MENSAL`, `RESUMO_ANUAL`, `PLANO_METAS`,
   `AI_ENGINE`), os services (transação, orçamento, `HEALTH_SERVICE`),
-  `INSIGHT_ACOES`, `DADOS_EXPRESS` e `FORM_SUGESTOES`. Seguem clássicos o que
+  `INSIGHT_ACOES`, `DADOS_EXPRESS`, `FORM_SUGESTOES` e a UI sem estado
+  (`SETUP_GUIDE`, `SHORTCUTS`, `SKELETON`, `MICRO`). Seguem clássicos o que
   roda código no carregamento (`ACTIONS`, `DADOS`, `APP_STORE`, sync,
   lifecycle), o `RENDERER_BASE` (protótipo, depende de `this`) e o que mora em
   chunk lazy. Entre eles a dependência é `import`, e nenhum usa `this`

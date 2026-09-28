@@ -34,7 +34,6 @@
   <script type="module" src="js/esm/ponte.js"></script>
       <script defer src="js/utilities/focus-trap.js"></script>
       <script defer src="js/utilities/aria-live.js"></script>
-  <script defer src="js/utilities/finance-reconciler.js"></script>
   <!-- pin-guard NAO usa defer: precisa rodar antes do primeiro paint p/ evitar leak visual -->
   <script src="js/pin-guard.js"></script>
   <script defer src="js/fp-secure-screen.js"></script>
@@ -755,11 +754,7 @@
 
 <!-- SCRIPTS -->
 <!-- Core: infraestrutura (sem dependências externas) -->
-<script defer src="js/core/dom-safe.js"></script>
-<script defer src="js/core/events-catalog.js"></script>
-<script defer src="js/core/event-bus.js"></script>
 <script defer src="js/core/sync-engine.js"></script>
-<script defer src="js/core/persist-queue.js"></script>
 <script defer src="js/core/dados.js"></script>
 <script defer src="js/core/store.js"></script>
 <!-- Supabase Auth (inerte se CONFIG.SUPABASE_URL/ANON_KEY vazios) -->
@@ -798,7 +793,6 @@
 <script defer src="js/render-dashboard.js"></script>
 <script defer src="js/render.js"></script>
 <!-- Fase 8: IA Nativa -->
-<script defer src="js/core/setup-guide.js"></script>
 <script defer src="js/previsao.js"></script>
 <script defer src="js/alertas.js"></script>
 <script defer src="js/insights.js"></script>
@@ -838,12 +832,9 @@
 <script defer src="js/modules/init-2fa.js"></script>
 <script defer src="js/modules/init-open-finance.js"></script>
 <script defer src="js/init.js"></script>
-<script defer src="js/shortcuts.js"></script>
 <script defer src="js/sw-register.js"></script>
 <script defer src="js/capacitor-init.js"></script>
 <!-- Fase 7: UX -->
-<script defer src="js/skeleton.js"></script>
-<script defer src="js/micro-interactions.js"></script>
 <script defer src="js/utilities/sync-indicator.js"></script>
 <!-- jsPDF e SheetJS carregados sob demanda -->
 

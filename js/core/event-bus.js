@@ -7,6 +7,9 @@
  * - Delegação por container (não global)
  * - Cleanup automático
  * - Debuggável
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
 
 const EVENT_BUS = {
@@ -29,25 +32,25 @@ const EVENT_BUS = {
     // Falha fechada: sem mapa de handlers, `handlers[action]` estouraria a cada
     // clique dentro do container — um erro por clique, em silêncio, no console.
     if (!handlers || typeof handlers !== 'object') {
-      if (this._debug) console.warn('[EVENT_BUS] Namespace sem handlers:', namespace);
+      if (EVENT_BUS._debug) console.warn('[EVENT_BUS] Namespace sem handlers:', namespace);
       return false;
     }
 
-    if (this._namespaces.has(namespace)) {
-      this.cleanupNamespace(namespace);
+    if (EVENT_BUS._namespaces.has(namespace)) {
+      EVENT_BUS.cleanupNamespace(namespace);
     }
 
     var container = document.querySelector(containerSelector);
     if (!container) {
-      if (this._debug) console.warn('[EVENT_BUS] Container não encontrado:', containerSelector);
+      if (EVENT_BUS._debug) console.warn('[EVENT_BUS] Container não encontrado:', containerSelector);
       return false;
     }
     
     // Criar bound handler para este namespace
-    var boundHandler = this._createHandler(namespace, handlers);
+    var boundHandler = EVENT_BUS._createHandler(namespace, handlers);
     
     // Registrar
-    this._namespaces.set(namespace, {
+    EVENT_BUS._namespaces.set(namespace, {
       container: container,
       containerSelector: containerSelector,
       handlers: handlers,
@@ -57,9 +60,9 @@ const EVENT_BUS = {
     
     // Attach listener
     container.addEventListener('click', boundHandler);
-    this._activeListeners.push({ namespace: namespace, type: 'click' });
+    EVENT_BUS._activeListeners.push({ namespace: namespace, type: 'click' });
     
-    if (this._debug) console.warn('[EVENT_BUS] Namespace inicializado:', namespace);
+    if (EVENT_BUS._debug) console.warn('[EVENT_BUS] Namespace inicializado:', namespace);
     return true;
   },
   
@@ -67,7 +70,7 @@ const EVENT_BUS = {
    * Cria handler de delegação para um namespace
    */
   _createHandler: function(namespace, handlers) {
-    var self = this;
+    var self = EVENT_BUS;
     
     return function(event) {
       // Encontrar elemento com data-action
@@ -109,28 +112,28 @@ const EVENT_BUS = {
    * Limpa todos os listeners de um namespace
    */
   cleanupNamespace: function(namespace) {
-    var config = this._namespaces.get(namespace);
+    var config = EVENT_BUS._namespaces.get(namespace);
     if (!config) return;
     
     if (config.container && config.boundHandler) {
       config.container.removeEventListener('click', config.boundHandler);
     }
     
-    this._activeListeners = this._activeListeners.filter(function(l) {
+    EVENT_BUS._activeListeners = EVENT_BUS._activeListeners.filter(function(l) {
       return l.namespace !== namespace;
     });
     
-    this._namespaces.delete(namespace);
+    EVENT_BUS._namespaces.delete(namespace);
     
-    if (this._debug) console.warn('[EVENT_BUS] Namespace limpo:', namespace);
+    if (EVENT_BUS._debug) console.warn('[EVENT_BUS] Namespace limpo:', namespace);
   },
   
   /**
    * Limpa todos os namespaces
    */
   cleanupAll: function() {
-    var self = this;
-    this._namespaces.forEach(function(config, namespace) {
+    var self = EVENT_BUS;
+    EVENT_BUS._namespaces.forEach(function(config, namespace) {
       self.cleanupNamespace(namespace);
     });
   },
@@ -139,7 +142,7 @@ const EVENT_BUS = {
    * Re-inicializa um namespace (útil após render dinâmico)
    */
   refreshNamespace: function(namespace) {
-    var config = this._namespaces.get(namespace);
+    var config = EVENT_BUS._namespaces.get(namespace);
     if (!config) return false;
     
     // Re-encontrar container (pode ter sido recriado no DOM)
@@ -152,14 +155,14 @@ const EVENT_BUS = {
     }
     
     // Criar novo bound handler
-    var newHandler = this._createHandler(namespace, config.handlers);
+    var newHandler = EVENT_BUS._createHandler(namespace, config.handlers);
     newContainer.addEventListener('click', newHandler);
     
     // Atualizar config
     config.container = newContainer;
     config.boundHandler = newHandler;
     
-    if (this._debug) console.warn('[EVENT_BUS] Namespace refreshed:', namespace);
+    if (EVENT_BUS._debug) console.warn('[EVENT_BUS] Namespace refreshed:', namespace);
     return true;
   },
   
@@ -168,15 +171,15 @@ const EVENT_BUS = {
   // ============================================================
   
   setDebug: function(enabled) {
-    this._debug = enabled;
+    EVENT_BUS._debug = enabled;
   },
   
   getActiveNamespaces: function() {
-    return Array.from(this._namespaces.keys());
+    return Array.from(EVENT_BUS._namespaces.keys());
   },
   
   isActive: function(namespace) {
-    return this._namespaces.has(namespace);
+    return EVENT_BUS._namespaces.has(namespace);
   }
 };
 
@@ -346,7 +349,4 @@ const EVENT_INIT = {
   }
 };
 
-// Export
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { EVENT_BUS: EVENT_BUS, EVENT_HANDLERS: EVENT_HANDLERS, EVENT_INIT: EVENT_INIT };
-}
+export { EVENT_BUS, EVENT_HANDLERS, EVENT_INIT };

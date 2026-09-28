@@ -1,8 +1,11 @@
 /**
  * setup-guide.js — progresso de configuração inicial ("Comece aqui").
  * Puro, zero DOM. Dá ao iniciante um caminho claro em vez de um dashboard de zeros.
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
-var SETUP_GUIDE = {
+const SETUP_GUIDE = {
   /**
    * @param {Object} estado { perfil, transacao, orcamento, meta } — booleans
    * @returns {{ passos, concluidos, total, percentual, proximo, completo }}
@@ -37,7 +40,7 @@ var SETUP_GUIDE = {
    * @returns {{ texto, cta, chave, concluidos, total }|null}
    */
   mensagemProximoPasso: function(estado) {
-    var p = this.computeProgress(estado);
+    var p = SETUP_GUIDE.computeProgress(estado);
     if (p.completo || !p.proximo) return null;
     return {
       texto:      p.proximo.titulo,
@@ -56,7 +59,7 @@ var SETUP_GUIDE = {
    * @returns {string}
    */
   buildCardHtml: function(estado) {
-    var p = this.computeProgress(estado);
+    var p = SETUP_GUIDE.computeProgress(estado);
     if (p.completo) return '';
     var proxChave = p.proximo ? p.proximo.chave : null;
     var steps = p.passos.map(function(s) {
@@ -135,8 +138,8 @@ var SETUP_GUIDE = {
     var anterior = null;
     try { anterior = p.ler ? p.ler() : null; } catch (e) { anterior = null; }
 
-    var diff = this.diffProgresso(anterior, estado);
-    var progresso = this.computeProgress(estado);
+    var diff = SETUP_GUIDE.diffProgresso(anterior, estado);
+    var progresso = SETUP_GUIDE.computeProgress(estado);
 
     if (track) {
       diff.novos.forEach(function(chave) {
@@ -157,4 +160,5 @@ var SETUP_GUIDE = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) { module.exports = SETUP_GUIDE; }
+export { SETUP_GUIDE };
+export default SETUP_GUIDE;

@@ -1,9 +1,14 @@
 /**
  * micro-interactions.js — microinterações
  * Fase 2 UX — Depende de: (self-contained, roda após DOM pronto)
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
 
-var MICRO = (function() {
+import { UTILS } from './core/utils.js';
+
+const MICRO = (function() {
 
   /* ── Ripple Effect ─────────────────────────────────────── */
 
@@ -363,3 +368,6 @@ if (document.readyState === 'loading') {
 } else {
   MICRO.init();
 }
+
+export { MICRO };
+export default MICRO;

@@ -3,13 +3,12 @@
  * @jest-environment jsdom
  */
 const path = require('path');
-const fs = require('fs');
 const vm = require('vm');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
 
 const ARQUIVO = path.join(__dirname, '..', 'js', 'core', 'persist-queue.js');
 
 function loadPersistQueue() {
-  var code = fs.readFileSync(ARQUIVO, 'utf8');
   var store = {};
   var sessionStorage = {
     getItem: function(k) { return store[k] || null; },
@@ -56,7 +55,7 @@ function loadPersistQueue() {
     document: document, window: window, UTILS: UTILS, DADOS: DADOS, TRANSACOES: TRANSACOES,
     OBS: undefined, Promise: Promise, setTimeout: setTimeout, CustomEvent: CustomEvent,
   });
-  vm.runInContext(code, ctx, { filename: ARQUIVO });
+  rodarNoContexto(ctx, ARQUIVO);
   var PQ = ctx.PERSIST_QUEUE || mod.exports;
   PQ._resetForTests();
   PQ.__txs = txs;

@@ -23,6 +23,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
 const { indexComTelas } = require('./helpers/index-com-telas.cjs');
 
 const root = path.join(__dirname, '..');
@@ -56,10 +57,10 @@ function carregarApp() {
     { filename: path.join(__dirname, 'acoes-duplicadas.fixtures.js') },
   );
 
-  ['js/core/event-bus.js', 'js/modules/init-navigation.js'].forEach((rel) => {
-    vm.runInContext(fs.readFileSync(path.join(root, rel), 'utf8'), ctx, {
-      filename: path.join(root, rel),
-    });
+  // event-bus.js é ES Module; init-navigation.js ainda é script clássico.
+  rodarNoContexto(ctx, path.join(root, 'js/core/event-bus.js'));
+  vm.runInContext(fs.readFileSync(path.join(root, 'js/modules/init-navigation.js'), 'utf8'), ctx, {
+    filename: path.join(root, 'js/modules/init-navigation.js'),
   });
 
   return ctx;

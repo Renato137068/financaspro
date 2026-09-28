@@ -3,8 +3,8 @@
  * @jest-environment jsdom
  */
 const path = require('path');
-const fs = require('fs');
 const vm = require('vm');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
 
 const ARQUIVO = path.join(__dirname, '..', 'js', 'utilities', 'finance-reconciler.js');
 
@@ -24,14 +24,13 @@ describe('FINANCE_RECONCILER', function() {
         return { pending: 0, saving: 0, failed: 0, saved: 2, items: [] };
       }
     };
-    var code = fs.readFileSync(ARQUIVO, 'utf8');
     // vm com o caminho real: com `new Function` a cobertura não contava.
     var mod = { exports: {} };
     var ctx = vm.createContext({
-      TRANSACOES: global.TRANSACOES, PERSIST_QUEUE: global.PERSIST_QUEUE, DADOS: undefined,
+      TRANSACOES: global.TRANSACOES, PERSIST_QUEUE: global.PERSIST_QUEUE, COMPROMISSOS: undefined, DADOS: undefined,
       window: global, module: mod, exports: mod.exports,
     });
-    vm.runInContext(code, ctx, { filename: ARQUIVO });
+    rodarNoContexto(ctx, ARQUIVO);
     FINANCE_RECONCILER = ctx.FINANCE_RECONCILER;
   });
 

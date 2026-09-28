@@ -7,6 +7,8 @@
 
 import { UTILS } from '../core/utils.js';
 import { SESSION_LOG } from '../core/session-log.js';
+import { PERSIST_QUEUE } from '../core/persist-queue.js';
+import { FINANCE_RECONCILER } from '../utilities/finance-reconciler.js';
 const HEALTH_SERVICE = {
   verificarArmazenamento: function() {
     try {

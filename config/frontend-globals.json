@@ -180,7 +180,6 @@
     "sairDaConta": "writable",
     "salvarRendaOrcamento": "writable",
     "SB": "writable",
-    "scheduleDomSafePatch": "writable",
     "SCORE": "writable",
     "SESSION_LOG": "writable",
     "setFiltroCat": "writable",

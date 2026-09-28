@@ -1,10 +1,15 @@
-/* Keyboard shortcuts — desktop power users.
-   Não dispara em inputs/textareas. Modifier-free para velocidade tipo Slack/Linear. */
-var SHORTCUTS = {
+/**
+ * Keyboard shortcuts — desktop power users.
+ * Não dispara em inputs/textareas. Modifier-free para velocidade tipo Slack/Linear.
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
+ */
+const SHORTCUTS = {
   ABAS: { '1': 'resumo', '2': 'novo', '3': 'extrato', '4': 'orcamento', '5': 'config' },
 
   init: function() {
-    var self = this;
+    var self = SHORTCUTS;
     document.addEventListener('keydown', function(ev) { self._handle(ev); });
   },
 
@@ -36,14 +41,14 @@ var SHORTCUTS = {
     // ? mostra ajuda
     if (key === '?' || (ev.shiftKey && key === '/')) {
       ev.preventDefault();
-      this.mostrarAjuda();
+      SHORTCUTS.mostrarAjuda();
       return;
     }
 
     // 1-5 muda aba
-    if (this.ABAS[key] && typeof mudarAba === 'function') {
+    if (SHORTCUTS.ABAS[key] && typeof mudarAba === 'function') {
       ev.preventDefault();
-      mudarAba(this.ABAS[key]);
+      mudarAba(SHORTCUTS.ABAS[key]);
       return;
     }
 
@@ -103,6 +108,5 @@ var SHORTCUTS = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = SHORTCUTS;
-}
+export { SHORTCUTS };
+export default SHORTCUTS;
