@@ -46,7 +46,8 @@ mesmos dados sincronizam com o Supabase.
   `INSIGHT_ACOES`, `DADOS_EXPRESS`, `FORM_SUGESTOES` e a UI sem estado
   (`SETUP_GUIDE`, `SHORTCUTS`, `SKELETON`, `MICRO`, `SYNC_INDICATOR`) e os
   componentes de `js/components/` (cada um exporta o seu objeto e
-  `components/ui.js` monta o `UI`). Seguem clássicos o que
+  `components/ui.js` monta o `UI`), além de `ALERTAS`, `INSIGHTS` e
+  `CONFIG_USER`. Seguem clássicos o que
   roda código no carregamento (`ACTIONS`, `DADOS`, `APP_STORE`, sync,
   lifecycle), o `RENDERER_BASE` (protótipo, depende de `this`) e o que mora em
   chunk lazy. Entre eles a dependência é `import`, e nenhum usa `this`

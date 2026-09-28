@@ -2,9 +2,16 @@
  * alertas.js — Sistema de alertas automáticos inteligentes
  * v11.0 — Fase 8: alertas baseados em AI_ENGINE
  * Depende de: ai-engine.js, dados.js, utils.js
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
 
-var ALERTAS = {
+import { UTILS } from './core/utils.js';
+import { CARTOES } from './cartoes.js';
+import { AI_ENGINE } from './ai-engine.js';
+
+const ALERTAS = {
   _ativos:         [],
   _dispensados:    null,   // Set lazy-init
   _lastCheck:      0,
@@ -34,24 +41,24 @@ var ALERTAS = {
   _STORAGE_KEY: 'fp-alertas-dispensados',
 
   _carregarDispensados: function() {
-    if (this._dispensados) return;
+    if (ALERTAS._dispensados) return;
     try {
-      var raw = localStorage.getItem(this._STORAGE_KEY);
+      var raw = localStorage.getItem(ALERTAS._STORAGE_KEY);
       var arr = raw ? JSON.parse(raw) : [];
       // Limpa dispensados com mais de 7 dias
       var limite = Date.now() - 7 * 24 * 60 * 60 * 1000;
       arr = arr.filter(function(d) { return d.ts > limite; });
-      this._dispensados = new Set(arr.map(function(d) { return d.id; }));
-      this._dispensadosMeta = arr;
+      ALERTAS._dispensados = new Set(arr.map(function(d) { return d.id; }));
+      ALERTAS._dispensadosMeta = arr;
     } catch (e) {
-      this._dispensados = new Set();
-      this._dispensadosMeta = [];
+      ALERTAS._dispensados = new Set();
+      ALERTAS._dispensadosMeta = [];
     }
   },
 
   _salvarDispensados: function() {
     try {
-      localStorage.setItem(this._STORAGE_KEY, JSON.stringify(this._dispensadosMeta || []));
+      localStorage.setItem(ALERTAS._STORAGE_KEY, JSON.stringify(ALERTAS._dispensadosMeta || []));
     } catch (e) { /* silencioso */ }
   },
 
@@ -67,18 +74,18 @@ var ALERTAS = {
    */
   verificar: function(forcar) {
     var agora = Date.now();
-    if (!forcar && agora - this._lastCheck < this._CHECK_INTERVAL) {
-      return this._ativos;
+    if (!forcar && agora - ALERTAS._lastCheck < ALERTAS._CHECK_INTERVAL) {
+      return ALERTAS._ativos;
     }
-    this._lastCheck = agora;
-    this._carregarDispensados();
+    ALERTAS._lastCheck = agora;
+    ALERTAS._carregarDispensados();
 
     var txs    = typeof DADOS !== 'undefined' ? DADOS.getTransacoes() : [];
     var config = typeof DADOS !== 'undefined' ? DADOS.getConfig() : {};
 
     // Alertas do AI_ENGINE
     var alertas = AI_ENGINE.gerarAlertas(txs, config);
-    var avancados = this._podeAlertasAvancados();
+    var avancados = ALERTAS._podeAlertasAvancados();
     var tinhaAvancados = false;
     if (!avancados) {
       tinhaAvancados = alertas.some(function(a) { return !ALERTAS._tipoBasico(a.tipo); });
@@ -193,18 +200,18 @@ var ALERTAS = {
     }
 
     // Filtrar dispensados
-    var self = this;
-    this._ativos = alertas.filter(function(a) {
+    var self = ALERTAS;
+    ALERTAS._ativos = alertas.filter(function(a) {
       return !self._dispensados.has(a.id);
     });
 
     // Ordenar por gravidade
     var ordem = { critica: 0, alta: 1, media: 2, baixa: 3 };
-    this._ativos.sort(function(a, b) {
+    ALERTAS._ativos.sort(function(a, b) {
       return (ordem[a.gravidade] || 9) - (ordem[b.gravidade] || 9);
     });
 
-    return this._ativos;
+    return ALERTAS._ativos;
   },
 
   /**
@@ -212,13 +219,13 @@ var ALERTAS = {
    * @param {string} id
    */
   dispensar: function(id) {
-    this._carregarDispensados();
-    this._dispensados.add(id);
-    this._dispensadosMeta = (this._dispensadosMeta || []).filter(function(d) { return d.id !== id; });
-    this._dispensadosMeta.push({ id: id, ts: Date.now() });
-    this._salvarDispensados();
-    this._ativos = this._ativos.filter(function(a) { return a.id !== id; });
-    this.renderizar();
+    ALERTAS._carregarDispensados();
+    ALERTAS._dispensados.add(id);
+    ALERTAS._dispensadosMeta = (ALERTAS._dispensadosMeta || []).filter(function(d) { return d.id !== id; });
+    ALERTAS._dispensadosMeta.push({ id: id, ts: Date.now() });
+    ALERTAS._salvarDispensados();
+    ALERTAS._ativos = ALERTAS._ativos.filter(function(a) { return a.id !== id; });
+    ALERTAS.renderizar();
   },
 
   // ─────────────────────────────────────────────────────────────────
@@ -232,14 +239,14 @@ var ALERTAS = {
     var el = document.getElementById('dashboard-alertas');
     if (!el) return;
 
-    var alertas = this.verificar();
+    var alertas = ALERTAS.verificar();
 
     if (alertas.length === 0) {
       el.innerHTML = '';
       return;
     }
 
-    var self     = this;
+    var self = ALERTAS;
     var MAX_SHOW = 4; // Limitar exibição inicial
     var visiveis = alertas.slice(0, MAX_SHOW);
     var extras   = alertas.length - MAX_SHOW;
@@ -317,7 +324,7 @@ var ALERTAS = {
     var el = document.getElementById('alertas-painel');
     if (!el) return;
 
-    var alertas = this.verificar(true); // forçar re-verificação
+    var alertas = ALERTAS.verificar(true); // forçar re-verificação
 
     if (alertas.length === 0) {
       el.innerHTML = '<div class="alertas-vazio" role="status"><i data-lucide="check-circle" aria-hidden="true"></i> Nenhum alerta ativo. Finanças em ordem!</div>';
@@ -325,7 +332,7 @@ var ALERTAS = {
       return;
     }
 
-    var self = this;
+    var self = ALERTAS;
     var classesGravidade = {
       critica: 'alerta-critico',
       alta:    'alerta-alto',
@@ -397,8 +404,8 @@ var ALERTAS = {
   _mostrarTodos: function() {
     var el = document.getElementById('dashboard-alertas');
     if (!el) return;
-    var alertas  = this._ativos;
-    var self     = this;
+    var alertas  = ALERTAS._ativos;
+    var self = ALERTAS;
     var classesG = { critica: 'alerta-critico', alta: 'alerta-alto', media: 'alerta-medio', baixa: 'alerta-baixo' };
     var html = alertas.map(function(a) {
       var cls   = classesG[a.gravidade] || 'alerta-baixo';
@@ -472,7 +479,7 @@ var ALERTAS = {
    * Mostra toast para alertas críticos/altos não dispensados.
    */
   notificarCriticos: function() {
-    var alertas = this.verificar();
+    var alertas = ALERTAS.verificar();
     var criticos = alertas.filter(function(a) { return a.gravidade === 'critica' || a.gravidade === 'alta'; });
 
     criticos.slice(0, 1).forEach(function(a) {
@@ -487,9 +494,9 @@ var ALERTAS = {
   // ─────────────────────────────────────────────────────────────────
 
   init: function() {
-    var self = this;
-    this.renderizar();
-    this.notificarCriticos();
+    var self = ALERTAS;
+    ALERTAS.renderizar();
+    ALERTAS.notificarCriticos();
 
     // Reprocessar quando transações mudam
     if (typeof APP_STORE !== 'undefined') {
@@ -502,12 +509,11 @@ var ALERTAS = {
     // Verificação periódica (a cada 5 min) — só enquanto a aba está visível.
     // Recalcular alerta de orçamento com o app em segundo plano não muda nada
     // que alguém possa ver.
-    this._timer = UTILS.intervaloVisivel(function() {
+    ALERTAS._timer = UTILS.intervaloVisivel(function() {
       self.renderizar();
-    }, this._CHECK_INTERVAL);
+    }, ALERTAS._CHECK_INTERVAL);
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = ALERTAS;
-}
+export { ALERTAS };
+export default ALERTAS;

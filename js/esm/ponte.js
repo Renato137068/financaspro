@@ -61,6 +61,9 @@ import { SKELETON } from '../skeleton.js';
 import { MICRO } from '../micro-interactions.js';
 import { UI } from '../components/ui.js';
 import { SYNC_INDICATOR } from '../utilities/sync-indicator.js';
+import { ALERTAS } from '../alertas.js';
+import { INSIGHTS } from '../insights.js';
+import { CONFIG_USER } from '../config-user.js';
 
 window.CONFIG = CONFIG;
 window.UTILS = UTILS;
@@ -122,3 +125,6 @@ window.SKELETON = SKELETON;
 window.MICRO = MICRO;
 window.UI = UI;
 window.SYNC_INDICATOR = SYNC_INDICATOR;
+window.ALERTAS = ALERTAS;
+window.INSIGHTS = INSIGHTS;
+window.CONFIG_USER = CONFIG_USER;

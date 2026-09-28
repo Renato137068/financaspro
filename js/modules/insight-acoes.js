@@ -13,6 +13,7 @@
 
 import { UTILS } from '../core/utils.js';
 import { ORCAMENTO } from '../orcamento.js';
+import { INSIGHTS } from '../insights.js';
 const INSIGHT_ACOES = {
   _ligado: false,
 

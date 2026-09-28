@@ -9,6 +9,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
 
 const root = path.join(__dirname, '..');
 
@@ -52,7 +53,7 @@ function carregar({ tema, sistemaEscuro = false, semMatchMedia = false }) {
   vm.createContext(sandbox);
 
   const file = path.join(root, 'js', 'config-user.js');
-  vm.runInContext(fs.readFileSync(file, 'utf8'), sandbox, { filename: file });
+  rodarNoContexto(sandbox, file);
 
   return { CONFIG_USER: sandbox.CONFIG_USER, html, config, chamadas };
 }

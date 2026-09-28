@@ -1,25 +1,32 @@
 /**
  * config-user.js - User Configuration and Settings
  * Tier 1: Depends on config.js, dados.js, utils.js
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
 
-var CONFIG_USER = {
+import { UTILS } from './core/utils.js';
+import { TRANSACOES } from './transacoes.js';
+import { ORCAMENTO } from './orcamento.js';
+
+const CONFIG_USER = {
   init: function() {
-    this.setupFormConfig();
-    this.aplicarTema();
-    this.observarTemaDoSistema();
+    CONFIG_USER.setupFormConfig();
+    CONFIG_USER.aplicarTema();
+    CONFIG_USER.observarTemaDoSistema();
   },
 
   setupFormConfig: function() {
     var formConfig = document.getElementById('form-config');
     if (formConfig) {
-      var self = this;
+      var self = CONFIG_USER;
       formConfig.addEventListener('submit', function(e) {
         e.preventDefault();
         self.salvarConfiguracao();
       });
     }
-    this.preencherConfig();
+    CONFIG_USER.preencherConfig();
   },
 
   preencherConfig: function() {
@@ -107,11 +114,11 @@ var CONFIG_USER = {
   temaEfetivo: function(config) {
     var cfg = config || DADOS.getConfig();
     if (cfg.tema === 'dark' || cfg.tema === 'light') return cfg.tema;
-    return this.prefereEscuroNoSistema() ? 'dark' : 'light';
+    return CONFIG_USER.prefereEscuroNoSistema() ? 'dark' : 'light';
   },
 
   aplicarTema: function() {
-    var isDark = this.temaEfetivo() === 'dark';
+    var isDark = CONFIG_USER.temaEfetivo() === 'dark';
     if (isDark) {
       document.documentElement.setAttribute('data-theme', 'dark');
     } else {
@@ -130,11 +137,11 @@ var CONFIG_USER = {
    * nunca é sobrescrita.
    */
   observarTemaDoSistema: function() {
-    if (this._observandoTema) return;
+    if (CONFIG_USER._observandoTema) return;
     try {
       if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
       var mq = window.matchMedia('(prefers-color-scheme: dark)');
-      var self = this;
+      var self = CONFIG_USER;
       var aoMudar = function() {
         var cfg = DADOS.getConfig();
         if (cfg.tema === 'dark' || cfg.tema === 'light') return; // decisão do usuário manda
@@ -143,23 +150,19 @@ var CONFIG_USER = {
       // addEventListener é o caminho moderno; addListener cobre WebView antiga.
       if (typeof mq.addEventListener === 'function') mq.addEventListener('change', aoMudar);
       else if (typeof mq.addListener === 'function') mq.addListener(aoMudar);
-      this._observandoTema = true;
+      CONFIG_USER._observandoTema = true;
     } catch (e) { /* sem matchMedia, segue com o tema resolvido no boot */ }
   },
 
   toggleTema: function() {
     // A partir do primeiro toggle o tema passa a ser escolha explícita e deixa
     // de acompanhar o sistema.
-    var novoTema = this.temaEfetivo() === 'dark' ? 'light' : 'dark';
+    var novoTema = CONFIG_USER.temaEfetivo() === 'dark' ? 'light' : 'dark';
     DADOS.salvarConfig({ tema: novoTema });
-    this.aplicarTema();
+    CONFIG_USER.aplicarTema();
     UTILS.mostrarToast(novoTema === 'dark' ? 'Modo escuro ativado' : 'Modo claro ativado', 'success');
   }
 };
 
-// Exporta para teste como os demais módulos. Também resolve o aviso de
-// "variável não usada": num script clássico o objeto é consumido via global,
-// o que o linter não enxerga.
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = CONFIG_USER;
-}
+export { CONFIG_USER };
+export default CONFIG_USER;
