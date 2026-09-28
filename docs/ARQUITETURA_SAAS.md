@@ -47,10 +47,12 @@ mesmos dados sincronizam com o Supabase.
   (`SETUP_GUIDE`, `SHORTCUTS`, `SKELETON`, `MICRO`, `SYNC_INDICATOR`) e os
   componentes de `js/components/` (cada um exporta o seu objeto e
   `components/ui.js` monta o `UI`), além de `ALERTAS`, `INSIGHTS` e
-  `CONFIG_USER`. Seguem clássicos o que
-  roda código no carregamento (`ACTIONS`, `DADOS`, `APP_STORE`, sync,
-  lifecycle), o `RENDERER_BASE` (protótipo, depende de `this`) e o que mora em
-  chunk lazy. Entre eles a dependência é `import`, e nenhum usa `this`
+  `CONFIG_USER`, e a renderização do painel (`RENDER_CORE`,
+  `RENDERER_BASE`, `RENDER_DASHBOARD`, `RENDER`; o renderer herda do
+  `RENDERER_BASE` por `Object.create` e chama os métodos pelo nome, não por
+  `this`). Seguem clássicos o que roda código no carregamento (`ACTIONS`,
+  `DADOS`, `APP_STORE`, sync, lifecycle), as telas de auth, billing,
+  navegação, formulário e PIN, e o que mora em chunk lazy. Entre eles a dependência é `import`, e nenhum usa `this`
   fora dos mixins: módulo roda em modo estrito, e método passado como
   callback perde o `this` (`tests/esm-fundacao.test.js` trava as duas
   regras; o conversor dos testes também roda em modo estrito). Nos testes os

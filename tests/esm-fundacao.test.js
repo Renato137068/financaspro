@@ -67,8 +67,9 @@ describe('fundação ES Modules', () => {
       if (rel === 'js/esm/ponte.js') continue;
       const proprios = new Set(exporta.map((e) => e.local));
       const importados = new Set(importa.flatMap((i) => i.nomes.map((n) => n.local)));
-      // Citar o nome num comentário não é usar.
-      const semComentarios = codigo.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '');
+      // Citar o nome num comentário ou numa string ('Indicador ok') não é usar.
+      const semComentarios = codigo.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '')
+        .replace(/'(?:\\.|[^'\\\n])*'|"(?:\\.|[^"\\\n])*"/g, "''");
       for (const [nome, de] of dono) {
         if (de === rel || proprios.has(nome) || importados.has(nome)) continue;
         // `obj.NOME` e a chave `NOME:` são propriedades, não o global.

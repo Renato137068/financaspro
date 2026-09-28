@@ -64,6 +64,9 @@ import { SYNC_INDICATOR } from '../utilities/sync-indicator.js';
 import { ALERTAS } from '../alertas.js';
 import { INSIGHTS } from '../insights.js';
 import { CONFIG_USER } from '../config-user.js';
+import { RENDER_CORE, RENDERER_BASE } from '../render-core.js';
+import { RENDER_DASHBOARD } from '../render-dashboard.js';
+import { RENDER } from '../render.js';
 
 window.CONFIG = CONFIG;
 window.UTILS = UTILS;
@@ -128,3 +131,7 @@ window.SYNC_INDICATOR = SYNC_INDICATOR;
 window.ALERTAS = ALERTAS;
 window.INSIGHTS = INSIGHTS;
 window.CONFIG_USER = CONFIG_USER;
+window.RENDER_CORE = RENDER_CORE;
+window.RENDERER_BASE = RENDERER_BASE;
+window.RENDER_DASHBOARD = RENDER_DASHBOARD;
+window.RENDER = RENDER;

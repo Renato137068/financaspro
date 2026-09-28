@@ -22,6 +22,7 @@ import { UTILS } from './utils.js';
 import { TRANSACOES } from '../transacoes.js';
 import { ORCAMENTO } from '../orcamento.js';
 import { CONTAS } from '../contas.js';
+import { RENDER } from '../render.js';
 
 const DADOS_EXPRESS = {
   _apiBaseUrl: function() {

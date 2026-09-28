@@ -7,16 +7,21 @@
  *   - render-core.js       → motor de renderização seletiva
  *
  * Manter este arquivo fino: apenas delegação, sem lógica de domínio.
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
 
-var RENDER = {
+import { RENDER_CORE } from './render-core.js';
+
+const RENDER = {
 
   init: function() {
     if (typeof RENDER_CORE !== 'undefined') {
       RENDER_CORE.renderAll();
     }
-    this.renderExtrato();
-    this.atualizarHeaderSaldo();
+    RENDER.renderExtrato();
+    RENDER.atualizarHeaderSaldo();
     if (typeof OBS !== 'undefined' && OBS.markRender) OBS.markRender();
   },
 
@@ -53,6 +58,5 @@ var RENDER = {
   atualizarHeaderSaldo: function() {}
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = RENDER;
-}
+export { RENDER };
+export default RENDER;

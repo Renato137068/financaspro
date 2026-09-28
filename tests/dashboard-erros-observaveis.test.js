@@ -3,9 +3,9 @@
  * reporta em OBS e deixa mensagem discreta no container.
  * @jest-environment jsdom
  */
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { carregarDashboard } = require('./helpers/dashboard-renderer.cjs');
 
 var RENDER_DASHBOARD;
 var obsCalls;
@@ -68,9 +68,7 @@ beforeAll(function() {
   sandbox.globalThis = sandbox;
   var ctx = vm.createContext(sandbox);
 
-  var file = path.join(__dirname, '..', 'js', 'render-dashboard.js');
-  vm.runInContext(fs.readFileSync(file, 'utf8'), ctx, { filename: file });
-  RENDER_DASHBOARD = sandbox.window.RENDER_DASHBOARD;
+  RENDER_DASHBOARD = carregarDashboard(ctx);
 });
 
 beforeEach(function() {

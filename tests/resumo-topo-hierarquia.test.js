@@ -9,6 +9,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { carregarDashboard } = require('./helpers/dashboard-renderer.cjs');
 
 var RD;
 var txs = [];
@@ -27,9 +28,7 @@ beforeAll(function() {
   };
   sandbox.window.UI = {}; sandbox.globalThis = sandbox;
   var ctx = vm.createContext(sandbox);
-  var file = path.join(__dirname, '..', 'js', 'render-dashboard.js');
-  vm.runInContext(fs.readFileSync(file, 'utf8'), ctx, { filename: file });
-  RD = sandbox.window.RENDER_DASHBOARD;
+  RD = carregarDashboard(ctx);
 });
 
 beforeEach(function() {
