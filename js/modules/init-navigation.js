@@ -2,7 +2,20 @@
  * init-navigation.js - Sistema de navegação e abas
  * Extraído do init.js para modularização
  * Responsabilidades: navegação entre abas, action bindings
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
+
+import { UTILS } from '../core/utils.js';
+import { TablistKeyboard } from '../utilities/tablist-keyboard.js';
+import { LAZY } from '../core/lazy-load.js';
+import { CONTAS } from '../contas.js';
+import { HEALTH_SERVICE } from '../services/healthService.js';
+import { FINANCE_RECONCILER } from '../utilities/finance-reconciler.js';
+import { ALERTAS } from '../alertas.js';
+import { CONFIG_USER } from '../config-user.js';
+import { INIT_MODALS } from './init-modals.js';
 
 const INIT_NAVIGATION = {
   _listeners: [],
@@ -12,18 +25,18 @@ const INIT_NAVIGATION = {
    * Inicializa sistema de navegação
    */
   init: function() {
-    if (this._initialized) {
+    if (INIT_NAVIGATION._initialized) {
       console.warn('[INIT_NAVIGATION] Já inicializado, ignorando...');
       return;
     }
-    this.setupNavigation();
-    this.setupActionBindings();
-    this.initTablists();
+    INIT_NAVIGATION.setupNavigation();
+    INIT_NAVIGATION.setupActionBindings();
+    INIT_NAVIGATION.initTablists();
     // O Orçamento chega com o chunk lazy (js/core/telas.js): o tablist dele só
     // existe depois disso. initTablists ignora o que já está ligado.
-    var self = this;
+    var self = INIT_NAVIGATION;
     document.addEventListener('fp:tela-carregada', function() { self.initTablists(); });
-    this._initialized = true;
+    INIT_NAVIGATION._initialized = true;
   },
 
   /**
@@ -49,11 +62,11 @@ const INIT_NAVIGATION = {
    * Limpa listeners (útil para re-inicialização)
    */
   cleanup: function() {
-    this._listeners.forEach(function(fn) {
+    INIT_NAVIGATION._listeners.forEach(function(fn) {
       document.removeEventListener('click', fn);
     });
-    this._listeners = [];
-    this._initialized = false;
+    INIT_NAVIGATION._listeners = [];
+    INIT_NAVIGATION._initialized = false;
   },
 
   /**
@@ -105,7 +118,7 @@ const INIT_NAVIGATION = {
     document.addEventListener('click', handlerMudarAba);
     document.addEventListener('click', handlerAction);
 
-    this._listeners.push(handlerMudarAba, handlerAction);
+    INIT_NAVIGATION._listeners.push(handlerMudarAba, handlerAction);
   },
 
   /**
@@ -113,7 +126,7 @@ const INIT_NAVIGATION = {
    */
   handleAction: function(action, target) {
     // ES5 compatible (sem arrow functions)
-    var self = this;
+    var self = INIT_NAVIGATION;
 
     var safeCall = function(fnName, args) {
       if (typeof window[fnName] === 'function') {
@@ -462,7 +475,7 @@ const INIT_NAVIGATION = {
    * na hora, sem nenhuma requisição.
    */
   carregarChunkConta: function(callback) {
-    this._ensureChunk(
+    INIT_NAVIGATION._ensureChunk(
       'conta',
       function() { return typeof INIT_BILLING !== 'undefined'; },
       function(justLoaded) {
@@ -489,7 +502,7 @@ const INIT_NAVIGATION = {
   },
 
   carregarChunkAnexos: function(callback) {
-    this._ensureChunk(
+    INIT_NAVIGATION._ensureChunk(
       'anexos',
       function() { return typeof INIT_ANEXOS !== 'undefined'; },
       function(justLoaded) {
@@ -502,12 +515,11 @@ const INIT_NAVIGATION = {
   },
 
   _carregarSubOrcamento: function(sub, callback) {
-    var self = this;
     var finish = function() {
       if (typeof callback === 'function') callback();
     };
     if (sub === 'metas') {
-      this._ensureChunk('metas', function() { return typeof INIT_METAS !== 'undefined'; }, function(justLoaded) {
+      INIT_NAVIGATION._ensureChunk('metas', function() { return typeof INIT_METAS !== 'undefined'; }, function(justLoaded) {
         if (justLoaded) {
           if (typeof METAS !== 'undefined' && METAS.init) METAS.init();
           if (typeof INIT_METAS !== 'undefined' && INIT_METAS.init) INIT_METAS.init();
@@ -517,7 +529,7 @@ const INIT_NAVIGATION = {
       return;
     }
     if (sub === 'assinaturas') {
-      this._ensureChunk('assinaturas', function() { return typeof INIT_ASSINATURAS !== 'undefined'; }, function(justLoaded) {
+      INIT_NAVIGATION._ensureChunk('assinaturas', function() { return typeof INIT_ASSINATURAS !== 'undefined'; }, function(justLoaded) {
         if (justLoaded) {
           if (typeof ASSINATURAS !== 'undefined' && ASSINATURAS.init) ASSINATURAS.init();
           if (typeof INIT_ASSINATURAS !== 'undefined' && INIT_ASSINATURAS.init) INIT_ASSINATURAS.init();
@@ -527,7 +539,7 @@ const INIT_NAVIGATION = {
       return;
     }
     if (sub === 'patrimonio') {
-      this._ensureChunk('patrimonio', function() { return typeof INIT_PATRIMONIO !== 'undefined'; }, function(justLoaded) {
+      INIT_NAVIGATION._ensureChunk('patrimonio', function() { return typeof INIT_PATRIMONIO !== 'undefined'; }, function(justLoaded) {
         if (justLoaded) {
           if (typeof PATRIMONIO !== 'undefined' && PATRIMONIO.init) PATRIMONIO.init();
           if (typeof INIT_PATRIMONIO !== 'undefined' && INIT_PATRIMONIO.init) INIT_PATRIMONIO.init();
@@ -545,7 +557,7 @@ const INIT_NAVIGATION = {
    * telas. Roda uma vez, na primeira carga real do chunk.
    */
   carregarChunkConfig: function(callback) {
-    this._ensureChunk('config', function() { return typeof INIT_CONFIG !== 'undefined'; }, function(justLoaded) {
+    INIT_NAVIGATION._ensureChunk('config', function() { return typeof INIT_CONFIG !== 'undefined'; }, function(justLoaded) {
       if (justLoaded && typeof INIT_CONFIG !== 'undefined' && INIT_CONFIG.init) {
         UTILS.tentar('INIT_CONFIG.init', function() { INIT_CONFIG.init(); });
       }
@@ -559,7 +571,7 @@ const INIT_NAVIGATION = {
    * são acionados de dentro da própria tela.
    */
   carregarChunkOrcamento: function(callback) {
-    this._ensureChunk('orcamento', function() { return typeof INIT_ORCAMENTO !== 'undefined'; }, function() {
+    INIT_NAVIGATION._ensureChunk('orcamento', function() { return typeof INIT_ORCAMENTO !== 'undefined'; }, function() {
       if (typeof callback === 'function') callback();
     });
   },
@@ -570,7 +582,7 @@ const INIT_NAVIGATION = {
    * bundle (dev, testes), o lifecycle já o inicializou no boot.
    */
   carregarChunkExtrato: function(callback) {
-    this._ensureChunk('extrato', function() { return typeof INIT_EXTRATO !== 'undefined'; }, function(justLoaded) {
+    INIT_NAVIGATION._ensureChunk('extrato', function() { return typeof INIT_EXTRATO !== 'undefined'; }, function(justLoaded) {
       if (justLoaded && typeof INIT_EXTRATO !== 'undefined' && INIT_EXTRATO.init) {
         UTILS.tentar('INIT_EXTRATO.init', function() { INIT_EXTRATO.init(); });
       }
@@ -584,9 +596,9 @@ const INIT_NAVIGATION = {
    * botão sumia para quem não tinha aberto Metas na sessão.
    */
   carregarChunkSimulador: function() {
-    var self = this;
+    var self = INIT_NAVIGATION;
     // Pelo mesmo caminho da aba Metas, que roda METAS.init na primeira carga.
-    this._carregarSubOrcamento('metas', function() {
+    INIT_NAVIGATION._carregarSubOrcamento('metas', function() {
       self._ensureChunk('simulador', function() { return typeof INIT_SIMULADOR !== 'undefined'; }, function() {
         if (typeof INIT_SIMULADOR === 'undefined') return;
         UTILS.tentar('INIT_SIMULADOR.init', function() { INIT_SIMULADOR.init(); });
@@ -616,7 +628,7 @@ const INIT_NAVIGATION = {
     if (arrow) arrow.classList.toggle('expanded', !aberto);
     if (btn)   btn.setAttribute('aria-expanded', String(!aberto));
     if (!aberto) {
-      this._ensureChunk('previsao', function() { return typeof PREVISAO !== 'undefined'; }, function(justLoaded) {
+      INIT_NAVIGATION._ensureChunk('previsao', function() { return typeof PREVISAO !== 'undefined'; }, function(justLoaded) {
         if (typeof PREVISAO === 'undefined') return;
         if (justLoaded && PREVISAO.init) {
           UTILS.tentar('PREVISAO.init', function() { PREVISAO.init(); });
@@ -636,7 +648,7 @@ const INIT_NAVIGATION = {
     if (arrow) arrow.classList.toggle('expanded', !aberto);
     if (btn)   btn.setAttribute('aria-expanded', String(!aberto));
     if (!aberto) {
-      this._ensureChunk('relatorios', function() { return typeof INIT_RELATORIOS !== 'undefined'; }, function() {
+      INIT_NAVIGATION._ensureChunk('relatorios', function() { return typeof INIT_RELATORIOS !== 'undefined'; }, function() {
         if (typeof INIT_RELATORIOS !== 'undefined' && INIT_RELATORIOS.render) {
           INIT_RELATORIOS.render();
         }
@@ -834,7 +846,5 @@ window.__fpHandleAndroidBack = function() {
   return false;
 };
 
-// Export para compatibilidade
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { INIT_NAVIGATION, mudarAba };
-}
+export { INIT_NAVIGATION, mudarAba };
+export default INIT_NAVIGATION;

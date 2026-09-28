@@ -11,6 +11,7 @@ import { UTILS } from './core/utils.js';
 import { FINANCE_CONTRACT } from './core/finance-contract.js';
 import { TRANSACOES } from './transacoes.js';
 import { CARTOES } from './cartoes.js';
+import { INIT_MODALS } from './modules/init-modals.js';
 
 const CONTAS = {
   _cache: [],

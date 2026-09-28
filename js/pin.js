@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 /**
  * @file pin.js — PIN security module
  * @module PIN
@@ -22,10 +21,15 @@
  * Isto é uma TRANCA DE CONVENIÊNCIA contra quem pega o celular na mesa — e a
  * interface deve dizer exatamente isso. Proteção de dado de verdade é a
  * cifragem local (LOCAL_CRYPTO) e a senha da conta.
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
 
+import { UTILS } from './core/utils.js';
+
 /** PIN crypto + rate limit core */
-var PIN_SECURITY = {
+const PIN_SECURITY = {
   /** @type {number} */
   ITERATIONS: 310000,
   /** Hashes antigos continuam válidos e são migrados no primeiro acerto. */
@@ -41,8 +45,8 @@ var PIN_SECURITY = {
 
   syncLockFlag: function(ativo) {
     try {
-      if (ativo) localStorage.setItem(this.LOCK_FLAG_KEY, '1');
-      else localStorage.removeItem(this.LOCK_FLAG_KEY);
+      if (ativo) localStorage.setItem(PIN_SECURITY.LOCK_FLAG_KEY, '1');
+      else localStorage.removeItem(PIN_SECURITY.LOCK_FLAG_KEY);
     } catch (e) { /* noop */ }
   },
 
@@ -74,7 +78,7 @@ var PIN_SECURITY = {
   gerarSalt: function() {
     var salt = new Uint8Array(16);
     crypto.getRandomValues(salt);
-    return this.bytesToHex(salt.buffer);
+    return PIN_SECURITY.bytesToHex(salt.buffer);
   },
 
   /**
@@ -85,9 +89,9 @@ var PIN_SECURITY = {
    */
   derivar: function(pin, saltHex, iteracoes) {
     var encoder = new TextEncoder();
-    var saltBytes = this.hexToBytes(saltHex);
-    var self = this;
-    var n = iteracoes || this.ITERATIONS;
+    var saltBytes = PIN_SECURITY.hexToBytes(saltHex);
+    var self = PIN_SECURITY;
+    var n = iteracoes || PIN_SECURITY.ITERATIONS;
     return crypto.subtle.importKey(
       'raw', encoder.encode(pin), { name: 'PBKDF2' }, false, ['deriveBits']
     ).then(function(key) {
@@ -102,14 +106,14 @@ var PIN_SECURITY = {
 
   /** Iterações do hash guardado — PINs criados antes da migração usam 100k. */
   iteracoesDe: function(algoritmoId) {
-    return algoritmoId === this.ALGORITMO_ID_LEGADO
-      ? this.ITERATIONS_LEGADO
-      : this.ITERATIONS;
+    return algoritmoId === PIN_SECURITY.ALGORITMO_ID_LEGADO
+      ? PIN_SECURITY.ITERATIONS_LEGADO
+      : PIN_SECURITY.ITERATIONS;
   },
 
   /** Hash antigo → precisa ser regravado depois de um acerto. */
   precisaMigrar: function(algoritmoId) {
-    return algoritmoId !== this.ALGORITMO_ID;
+    return algoritmoId !== PIN_SECURITY.ALGORITMO_ID;
   },
 
   /**
@@ -135,7 +139,7 @@ var PIN_SECURITY = {
     if (/^(\d)\1{3}$/.test(p)) {
       return { fraco: true, motivo: 'Evite quatro dígitos iguais — é dos primeiros que se tenta.' };
     }
-    if (this.PINS_FRACOS.indexOf(p) >= 0) {
+    if (PIN_SECURITY.PINS_FRACOS.indexOf(p) >= 0) {
       return { fraco: true, motivo: 'Esse é um dos PINs mais usados no mundo. Escolha outro.' };
     }
     // Sequências: 1234, 3456, 8765…
@@ -191,9 +195,9 @@ var PIN_SECURITY = {
     var config = DADOS.getConfig();
     var tentativas = (config.pinTentativas || 0) + 1;
     var update = { pinTentativas: tentativas };
-    if (tentativas >= this.MAX_TENTATIVAS) {
-      var excesso = tentativas - this.MAX_TENTATIVAS;
-      var espera = this.BLOQUEIO_BASE_MS * Math.pow(2, excesso);
+    if (tentativas >= PIN_SECURITY.MAX_TENTATIVAS) {
+      var excesso = tentativas - PIN_SECURITY.MAX_TENTATIVAS;
+      var espera = PIN_SECURITY.BLOQUEIO_BASE_MS * Math.pow(2, excesso);
       update.pinBloqueadoAte = Date.now() + espera;
     }
     DADOS.salvarConfig(update);
@@ -212,13 +216,13 @@ var PIN_SECURITY = {
    * @returns {{bloqueadoSegundos:number, tentativasRestantes:number, mensagem:string}}
    */
   registrarFalhaMsg: function() {
-    var bloqAte = this.registrarFalha();
+    var bloqAte = PIN_SECURITY.registrarFalha();
     var cfg = DADOS.getConfig();
     if (bloqAte > Date.now()) {
       var seg = Math.ceil((bloqAte - Date.now()) / 1000);
       return { bloqueadoSegundos: seg, tentativasRestantes: 0, mensagem: 'Muitas tentativas. Bloqueado por ' + seg + 's' };
     }
-    var rest = Math.max(0, this.MAX_TENTATIVAS - (cfg.pinTentativas || 0));
+    var rest = Math.max(0, PIN_SECURITY.MAX_TENTATIVAS - (cfg.pinTentativas || 0));
     return { bloqueadoSegundos: 0, tentativasRestantes: rest, mensagem: 'PIN incorreto. ' + rest + ' tentativa(s) restante(s)' };
   }
 };
@@ -558,6 +562,7 @@ function tentarDesbloquear() {
   });
 }
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { PIN_SECURITY: PIN_SECURITY, hashPin: hashPin };
-}
+export {
+  PIN_SECURITY, hashPin, setupPinInputs, togglePinSeguranca, confirmarDesativarPin,
+  verificarPinAoAbrir, tentarDesbloquear
+};

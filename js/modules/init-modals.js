@@ -3,7 +3,13 @@
  * Extraído do init.js para modularização
  * Responsabilidades: fpAlert, fpConfirm, modais de configuração
  * @requires js/utilities/focus-trap.js
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
+
+import { CONFIG } from '../core/config.js';
+import { UTILS } from '../core/utils.js';
 
 // Load focus trap utility (already defined in focus-trap.js)
 // FocusTrap is available globally, no need to redeclare
@@ -22,7 +28,7 @@ const INIT_MODALS = {
    * @param {string} htmlContent - Conteúdo HTML do modal
    */
   alert: function(htmlContent) {
-    this.fpAlert(htmlContent);
+    INIT_MODALS.fpAlert(htmlContent);
   },
 
   /**
@@ -32,7 +38,7 @@ const INIT_MODALS = {
    * @param {Function} onNo - Callback para cancelamento
    */
   confirm: function(msg, onOk, onNo) {
-    this.fpConfirm(msg, onOk, onNo);
+    INIT_MODALS.fpConfirm(msg, onOk, onNo);
   },
 
   /**
@@ -145,7 +151,7 @@ const INIT_MODALS = {
 
     var destrutivo = (typeof options.danger === 'boolean')
       ? options.danger
-      : this._isDestrutivo(msg);
+      : INIT_MODALS._isDestrutivo(msg);
     var okClass = destrutivo ? 'btn-confirmar-danger' : 'btn-confirmar-primary';
     var okLabel = options.okLabel || 'Confirmar';
     var cancelLabel = options.cancelLabel || 'Cancelar';
@@ -227,7 +233,7 @@ const INIT_MODALS = {
       '<i data-lucide="alert-triangle" aria-hidden="true"></i> Se for bug, inclua: o que fez, o que esperava, o que aconteceu.' +
       '</div>';
     
-    this.fpAlert(html, { trustedHtml: true, title: 'Enviar feedback' });
+    INIT_MODALS.fpAlert(html, { trustedHtml: true, title: 'Enviar feedback' });
     
     setTimeout(function() {
       var overlay = document.querySelector('.modal-overlay');
@@ -310,7 +316,7 @@ const INIT_MODALS = {
       'Envie feedback: Config → Enviar Feedback' +
       '</div>';
     
-    this.fpAlert(html, { trustedHtml: true, title: 'Novidades' });
+    INIT_MODALS.fpAlert(html, { trustedHtml: true, title: 'Novidades' });
     
     setTimeout(function() {
       var overlay = document.querySelector('.modal-overlay');
@@ -319,7 +325,5 @@ const INIT_MODALS = {
   }
 };
 
-// Export para compatibilidade
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = INIT_MODALS;
-}
+export { INIT_MODALS };
+export default INIT_MODALS;

@@ -50,9 +50,14 @@ mesmos dados sincronizam com o Supabase.
   `CONFIG_USER`, e a renderização do painel (`RENDER_CORE`,
   `RENDERER_BASE`, `RENDER_DASHBOARD`, `RENDER`; o renderer herda do
   `RENDERER_BASE` por `Object.create` e chama os métodos pelo nome, não por
-  `this`). Seguem clássicos o que roda código no carregamento (`ACTIONS`,
-  `DADOS`, `APP_STORE`, sync, lifecycle), as telas de auth, billing,
-  navegação, formulário e PIN, e o que mora em chunk lazy. Entre eles a dependência é `import`, e nenhum usa `this`
+  `this`), a navegação (`INIT_NAVIGATION`, `mudarAba`), os modais
+  (`INIT_MODALS`) e o PIN (`PIN_SECURITY` e as funções de tela). Seguem
+  clássicos o que roda código no carregamento (`ACTIONS`, `DADOS`,
+  `APP_STORE`, sync, lifecycle), o `pin-guard.js` (roda sem `defer`, antes
+  do primeiro paint), as telas de auth, billing e formulário, e o que mora
+  em chunk lazy. Ciclo de import entre migrados é aceito quando nenhum dos
+  dois usa o outro no carregamento (navegação ↔ alertas, navegação ↔
+  preferências). Entre eles a dependência é `import`, e nenhum usa `this`
   fora dos mixins: módulo roda em modo estrito, e método passado como
   callback perde o `this` (`tests/esm-fundacao.test.js` trava as duas
   regras; o conversor dos testes também roda em modo estrito). Nos testes os

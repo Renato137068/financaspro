@@ -26,6 +26,7 @@ function loadAlertas(opts) {
       detectarPadroesRecorrentes: function() { return []; },
     },
     CARTOES: undefined,
+    mudarAba: undefined,
     DADOS: { getTransacoes: function() { return [{ id: 1 }]; }, getConfig: function() { return {}; } },
     UTILS: {
       escapeHtml: function(s) { return String(s); },
@@ -38,7 +39,7 @@ function loadAlertas(opts) {
     module: { exports: {} },
   };
   vm.createContext(ctx);
-  // ES Module: UTILS, CARTOES e AI_ENGINE do ctx substituem os imports.
+  // ES Module: UTILS, CARTOES, AI_ENGINE e mudarAba do ctx substituem os imports.
   rodarNoContexto(ctx, path.join(__dirname, '..', 'js', 'alertas.js'));
   return ctx.ALERTAS;
 }

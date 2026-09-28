@@ -5,6 +5,9 @@
  * ES Module (ADR 0005): os scripts clássicos o recebem como global por
  * js/esm/ponte.js.
  */
+
+import { mudarAba } from './modules/init-navigation.js';
+
 const SHORTCUTS = {
   ABAS: { '1': 'resumo', '2': 'novo', '3': 'extrato', '4': 'orcamento', '5': 'config' },
 

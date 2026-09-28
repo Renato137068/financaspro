@@ -9,6 +9,8 @@
 import { UTILS } from './core/utils.js';
 import { TRANSACOES } from './transacoes.js';
 import { ORCAMENTO } from './orcamento.js';
+import { INIT_NAVIGATION } from './modules/init-navigation.js';
+import { INIT_MODALS } from './modules/init-modals.js';
 
 const CONFIG_USER = {
   init: function() {

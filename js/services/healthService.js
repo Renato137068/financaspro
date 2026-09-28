@@ -10,6 +10,7 @@ import { SESSION_LOG } from '../core/session-log.js';
 import { PERSIST_QUEUE } from '../core/persist-queue.js';
 import { FINANCE_RECONCILER } from '../utilities/finance-reconciler.js';
 import { CONFIG_USER } from '../config-user.js';
+import { INIT_MODALS } from '../modules/init-modals.js';
 const HEALTH_SERVICE = {
   verificarArmazenamento: function() {
     try {

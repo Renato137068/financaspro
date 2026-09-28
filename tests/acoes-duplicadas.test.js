@@ -52,16 +52,16 @@ function carregarApp() {
   vm.runInContext(
     'var UTILS = { mostrarToast: function(){}, comCarregamento: function(b, fn){ return fn(); } };'
     + 'var DADOS = { getConfig: function(){ return {}; } };'
-    + 'var mudarAba = function(){};',
+    + 'var mudarAba = function(){};'
+    // Imports da navegação que o teste não usa: ausentes (dublê undefined).
+    + 'var TablistKeyboard, LAZY, CONTAS, HEALTH_SERVICE, FINANCE_RECONCILER, ALERTAS, CONFIG_USER, INIT_MODALS;',
     ctx,
     { filename: path.join(__dirname, 'acoes-duplicadas.fixtures.js') },
   );
 
-  // event-bus.js é ES Module; init-navigation.js ainda é script clássico.
+  // Os dois são ES Modules: o que o ctx já tem entra como dublê dos imports.
   rodarNoContexto(ctx, path.join(root, 'js/core/event-bus.js'));
-  vm.runInContext(fs.readFileSync(path.join(root, 'js/modules/init-navigation.js'), 'utf8'), ctx, {
-    filename: path.join(root, 'js/modules/init-navigation.js'),
-  });
+  rodarNoContexto(ctx, path.join(root, 'js/modules/init-navigation.js'));
 
   return ctx;
 }

@@ -67,6 +67,12 @@ import { CONFIG_USER } from '../config-user.js';
 import { RENDER_CORE, RENDERER_BASE } from '../render-core.js';
 import { RENDER_DASHBOARD } from '../render-dashboard.js';
 import { RENDER } from '../render.js';
+import { INIT_NAVIGATION, mudarAba } from '../modules/init-navigation.js';
+import { INIT_MODALS } from '../modules/init-modals.js';
+import {
+  PIN_SECURITY, hashPin, setupPinInputs, togglePinSeguranca, confirmarDesativarPin,
+  verificarPinAoAbrir, tentarDesbloquear
+} from '../pin.js';
 
 window.CONFIG = CONFIG;
 window.UTILS = UTILS;
@@ -135,3 +141,13 @@ window.RENDER_CORE = RENDER_CORE;
 window.RENDERER_BASE = RENDERER_BASE;
 window.RENDER_DASHBOARD = RENDER_DASHBOARD;
 window.RENDER = RENDER;
+window.INIT_NAVIGATION = INIT_NAVIGATION;
+window.mudarAba = mudarAba;
+window.INIT_MODALS = INIT_MODALS;
+window.PIN_SECURITY = PIN_SECURITY;
+window.hashPin = hashPin;
+window.setupPinInputs = setupPinInputs;
+window.togglePinSeguranca = togglePinSeguranca;
+window.confirmarDesativarPin = confirmarDesativarPin;
+window.verificarPinAoAbrir = verificarPinAoAbrir;
+window.tentarDesbloquear = tentarDesbloquear;

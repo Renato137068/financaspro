@@ -5,7 +5,7 @@
  * Dois defeitos corrigidos na mudança: "abrir paywall" não fazia nada sem o
  * chunk 'conta', e "criar orçamento" focava o campo antes de a tela existir.
  */
-const { carregarScript } = require('./helpers/carregar-script.cjs');
+const { carregarScript, viaGlobal } = require('./helpers/carregar-script.cjs');
 
 let IA;
 let chamadas;
@@ -34,8 +34,12 @@ beforeEach(() => {
       cb();
     },
   };
-  // O dublê de UTILS substitui o import do módulo.
-  IA = carregarScript('js/modules/insight-acoes.js', { UTILS: global.UTILS });
+  // Os dublês substituem os imports do módulo. INIT_NAVIGATION e mudarAba
+  // repassam ao global na hora da chamada: cada teste troca o que está lá.
+  IA = carregarScript('js/modules/insight-acoes.js', Object.assign({
+    UTILS: global.UTILS,
+    mudarAba: (...args) => global.mudarAba(...args),
+  }, viaGlobal('INIT_NAVIGATION')));
 });
 
 afterEach(() => {
