@@ -69,4 +69,25 @@ function carregarScript(rel, extras) {
   return mod.exports;
 }
 
-module.exports = { carregarScript };
+/**
+ * Dublês que repassam ao global do teste na hora do uso: para módulos ES
+ * carregados uma vez só, enquanto cada teste troca global.UTILS etc.
+ *   carregarScript('js/projecao.js', viaGlobal('UTILS', 'CONTAS_PAGAR'))
+ * Sem o global, cada propriedade lida é undefined (os guardas do módulo,
+ * como `X.metodo && X.metodo()`, caem no caminho de ausência).
+ */
+function viaGlobal(...nomes) {
+  const extras = {};
+  nomes.forEach((nome) => {
+    extras[nome] = new Proxy({}, {
+      get: (_alvo, chave) => {
+        const atual = globalThis[nome];
+        return atual == null ? undefined : atual[chave];
+      },
+      has: (_alvo, chave) => globalThis[nome] != null && chave in globalThis[nome],
+    });
+  });
+  return extras;
+}
+
+module.exports = { carregarScript, viaGlobal };

@@ -1,6 +1,13 @@
 /**
  * contas-pagar.js — Contas a pagar com vencimento e recorrência
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
+
+import { CONFIG } from './core/config.js';
+import { UTILS } from './core/utils.js';
+import { TRANSACOES } from './transacoes.js';
 const CONTAS_PAGAR = {
   init: function() {
     var config = DADOS.getConfig();
@@ -12,11 +19,11 @@ const CONTAS_PAGAR = {
   },
 
   listarPendentes: function() {
-    return this.listar().filter(function(c) { return c.status === 'pendente'; });
+    return CONTAS_PAGAR.listar().filter(function(c) { return c.status === 'pendente'; });
   },
 
   obter: function(id) {
-    return this.listar().filter(function(c) { return c.id === id; })[0] || null;
+    return CONTAS_PAGAR.listar().filter(function(c) { return c.id === id; })[0] || null;
   },
 
   _salvarLista: function(lista) {
@@ -43,7 +50,7 @@ const CONTAS_PAGAR = {
       errConta.code = 'quota';
       throw errConta;
     }
-    var v = this._validar(dados);
+    var v = CONTAS_PAGAR._validar(dados);
 
     var conta = {
       id: UTILS.gerarId(),
@@ -55,9 +62,9 @@ const CONTAS_PAGAR = {
       status: 'pendente',
       criadoEm: new Date().toISOString()
     };
-    var lista = this.listar();
+    var lista = CONTAS_PAGAR.listar();
     lista.push(conta);
-    this._salvarLista(lista);
+    CONTAS_PAGAR._salvarLista(lista);
     return conta;
   },
 
@@ -67,14 +74,14 @@ const CONTAS_PAGAR = {
    * passa por `criar`: recriar perderia o registro e reconsumiria a cota.
    */
   editar: function(id, dados) {
-    var lista = this.listar();
+    var lista = CONTAS_PAGAR.listar();
     var idx = -1;
     for (var i = 0; i < lista.length; i++) {
       if (lista[i].id === id) { idx = i; break; }
     }
     if (idx < 0) throw new Error('Conta não encontrada');
 
-    var v = this._validar(dados);
+    var v = CONTAS_PAGAR._validar(dados);
     lista[idx] = Object.assign({}, lista[idx], {
       descricao: v.descricao,
       valor: v.valor,
@@ -82,12 +89,12 @@ const CONTAS_PAGAR = {
       categoria: dados.categoria || lista[idx].categoria || 'outro',
       recorrente: !!dados.recorrente
     });
-    this._salvarLista(lista);
+    CONTAS_PAGAR._salvarLista(lista);
     return lista[idx];
   },
 
   excluir: function(id) {
-    this._salvarLista(this.listar().filter(function(c) { return c.id !== id; }));
+    CONTAS_PAGAR._salvarLista(CONTAS_PAGAR.listar().filter(function(c) { return c.id !== id; }));
   },
 
   /**
@@ -103,9 +110,9 @@ const CONTAS_PAGAR = {
   },
 
   marcarPago: function(id, registrarDespesa) {
-    var conta = this.obter(id);
+    var conta = CONTAS_PAGAR.obter(id);
     if (!conta) throw new Error('Conta não encontrada');
-    var lista = this.listar();
+    var lista = CONTAS_PAGAR.listar();
     var idx = -1;
     for (var i = 0; i < lista.length; i++) {
       if (lista[i].id === id) { idx = i; break; }
@@ -129,7 +136,7 @@ const CONTAS_PAGAR = {
     if (conta.recorrente) {
       lista[idx] = Object.assign({}, conta, {
         status: 'pendente',
-        vencimento: this._addMes(conta.vencimento),
+        vencimento: CONTAS_PAGAR._addMes(conta.vencimento),
         ultimoPagamento: new Date().toISOString()
       });
     } else {
@@ -138,7 +145,7 @@ const CONTAS_PAGAR = {
         pagoEm: new Date().toISOString()
       });
     }
-    this._salvarLista(lista);
+    CONTAS_PAGAR._salvarLista(lista);
     return lista[idx];
   },
 
@@ -160,7 +167,7 @@ const CONTAS_PAGAR = {
 
   situacao: function(conta) {
     if (conta.status === 'pago') return 'pago';
-    var dias = this.diasAteVencimento(conta.vencimento);
+    var dias = CONTAS_PAGAR.diasAteVencimento(conta.vencimento);
     if (dias < 0) return 'vencida';
     if (dias === 0) return 'hoje';
     if (dias <= 3) return 'proxima';
@@ -170,17 +177,17 @@ const CONTAS_PAGAR = {
   listarNoMes: function(mes, ano) {
     var mm = String(mes).padStart(2, '0');
     var prefix = ano + '-' + mm;
-    return this.listarPendentes().filter(function(c) {
+    return CONTAS_PAGAR.listarPendentes().filter(function(c) {
       return c.vencimento.indexOf(prefix) === 0;
     });
   },
 
   resumo: function() {
-    var pendentes = this.listarPendentes();
+    var pendentes = CONTAS_PAGAR.listarPendentes();
     var hoje = new Date();
     var mes = hoje.getMonth() + 1;
     var ano = hoje.getFullYear();
-    var noMes = this.listarNoMes(mes, ano);
+    var noMes = CONTAS_PAGAR.listarNoMes(mes, ano);
     var vencidas = pendentes.filter(function(c) { return CONTAS_PAGAR.situacao(c) === 'vencida'; });
     // Soma em centavos inteiros, como Resumo/Orçamento/Extrato/Cartões: acumular
     // reais em float faz o total exibido divergir do que o usuário confere.
@@ -202,7 +209,7 @@ const CONTAS_PAGAR = {
       if (localStorage.getItem('fp-contas-notif-dia') === hoje) return;
     } catch (_e) { return; }
 
-    var urgentes = this.listarPendentes().filter(function(c) {
+    var urgentes = CONTAS_PAGAR.listarPendentes().filter(function(c) {
       var s = CONTAS_PAGAR.situacao(c);
       return s === 'vencida' || s === 'hoje';
     });
@@ -224,6 +231,5 @@ const CONTAS_PAGAR = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = CONTAS_PAGAR;
-}
+export { CONTAS_PAGAR };
+export default CONTAS_PAGAR;

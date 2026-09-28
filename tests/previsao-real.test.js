@@ -4,6 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
 
 function loadPrevisao() {
   const aiFile = path.join(__dirname, '..', 'js', 'ai-engine.js');
@@ -27,7 +28,7 @@ function loadPrevisao() {
     BILLING: { canUse: function() { return true; } },
   };
   vm.createContext(ctx);
-  vm.runInContext(fs.readFileSync(aiFile, 'utf8'), ctx, { filename: aiFile });
+  rodarNoContexto(ctx, aiFile);
   vm.runInContext(fs.readFileSync(prevFile, 'utf8'), ctx, { filename: prevFile });
   return ctx.PREVISAO;
 }

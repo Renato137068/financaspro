@@ -17,8 +17,14 @@
  * lê dois campos novos — `fechamento` e `vencimento` — no mesmo objeto. Nenhum
  * dado existente muda de forma, e cartões cadastrados antes continuam
  * funcionando, só que sem ciclo.
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
-var CARTOES = {
+
+import { CONFIG } from './core/config.js';
+import { UTILS } from './core/utils.js';
+const CARTOES = {
 
   /** Normaliza "hoje" aceitando Date de qualquer realm (ver UTILS._ehData). */
   _agora: function(valor) {
@@ -46,7 +52,7 @@ var CARTOES = {
     if (!alvo) return null;
 
     var bruto = null;
-    this._lista().forEach(function(c) {
+    CARTOES._lista().forEach(function(c) {
       if (bruto) return;
       if (UTILS.nomeDeConta(c).toLowerCase() === alvo) bruto = c;
     });
@@ -60,8 +66,8 @@ var CARTOES = {
       };
     }
 
-    var fechamento = this._diaValido(bruto.fechamento);
-    var vencimento = this._diaValido(bruto.vencimento);
+    var fechamento = CARTOES._diaValido(bruto.fechamento);
+    var vencimento = CARTOES._diaValido(bruto.vencimento);
     var limite = (bruto.limite === 0 || bruto.limite) ? Number(bruto.limite) : null;
 
     return {
@@ -87,7 +93,7 @@ var CARTOES = {
   },
 
   _iso: function(ano, mesIdx, dia) {
-    var d = this._diaNoMes(ano, mesIdx, dia);
+    var d = CARTOES._diaNoMes(ano, mesIdx, dia);
     var alvo = new Date(ano, mesIdx, 1);
     return alvo.getFullYear() + '-'
       + String(alvo.getMonth() + 1).padStart(2, '0') + '-'
@@ -111,7 +117,7 @@ var CARTOES = {
     // cartaoPre: cartão já resolvido, passado pelos laços que iteram muitas
     // transações do MESMO cartão (fatura/resumo) — evita re-resolver obter()
     // (getConfig + varredura) por transação, O(N×C) por render do dashboard.
-    var cartao = cartaoPre || this.obter(nomeCartao);
+    var cartao = cartaoPre || CARTOES.obter(nomeCartao);
     if (!cartao || !cartao.temCiclo) return null;
 
     var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(dataCompra || ''));
@@ -122,7 +128,7 @@ var CARTOES = {
     var dia = parseInt(m[3], 10);
 
     // O dia de fechamento efetivo do mês da compra (clampado ao mês real).
-    var fechaNesteMes = this._diaNoMes(ano, mesIdx, cartao.fechamento);
+    var fechaNesteMes = CARTOES._diaNoMes(ano, mesIdx, cartao.fechamento);
 
     // Passou do fechamento? Vai para o ciclo seguinte.
     if (dia > fechaNesteMes) mesIdx += 1;
@@ -141,8 +147,8 @@ var CARTOES = {
 
     return {
       competencia: anoFech + '-' + String(mesFech + 1).padStart(2, '0'),
-      fechamento: this._iso(anoFech, mesFech, cartao.fechamento),
-      vencimento: this._iso(anoVenc, mesVenc, cartao.vencimento)
+      fechamento: CARTOES._iso(anoFech, mesFech, cartao.fechamento),
+      vencimento: CARTOES._iso(anoVenc, mesVenc, cartao.vencimento)
     };
   },
 
@@ -160,7 +166,7 @@ var CARTOES = {
    *             vencimento:string, diasSemJuros:number, temCiclo:boolean}}
    */
   melhorDiaCompra: function(nomeCartao, hoje) {
-    var cartao = this.obter(nomeCartao);
+    var cartao = CARTOES.obter(nomeCartao);
     if (!cartao || !cartao.temCiclo) return null;
 
     var ref = (hoje && typeof hoje.getTime === 'function' && !isNaN(hoje.getTime()))
@@ -170,7 +176,7 @@ var CARTOES = {
 
     // Dia seguinte ao fechamento deste mês, montado como data real para tratar
     // meses curtos (fechar dia 31 em fevereiro cai no último dia real).
-    var melhor = new Date(ano, mesIdx, this._diaNoMes(ano, mesIdx, cartao.fechamento));
+    var melhor = new Date(ano, mesIdx, CARTOES._diaNoMes(ano, mesIdx, cartao.fechamento));
     melhor.setDate(melhor.getDate() + 1);
 
     // Se essa data já passou, aponta para o dia seguinte ao fechamento do
@@ -180,7 +186,7 @@ var CARTOES = {
       var mesProx = mesIdx + 1;
       var anoProx = ano + Math.floor(mesProx / 12);
       mesProx = ((mesProx % 12) + 12) % 12;
-      melhor = new Date(anoProx, mesProx, this._diaNoMes(anoProx, mesProx, cartao.fechamento));
+      melhor = new Date(anoProx, mesProx, CARTOES._diaNoMes(anoProx, mesProx, cartao.fechamento));
       melhor.setDate(melhor.getDate() + 1);
     }
 
@@ -188,7 +194,7 @@ var CARTOES = {
       + String(melhor.getMonth() + 1).padStart(2, '0') + '-'
       + String(melhor.getDate()).padStart(2, '0');
 
-    var fat = this.faturaDaCompra(cartao.nome, iso);
+    var fat = CARTOES.faturaDaCompra(cartao.nome, iso);
     if (!fat) return null;
 
     // Ambos ao meio-dia: contar dias entre 00:00 e 12:00 escorregaria de fuso.
@@ -217,7 +223,7 @@ var CARTOES = {
   fatura: function(nomeCartao, competencia, cartaoPre) {
     // cartaoPre evita re-resolver obter() (getConfig + varredura) quando quem
     // chama já tem o cartão em mãos (ex.: COMPROMISSOS.porMes por competência).
-    var cartao = cartaoPre || this.obter(nomeCartao);
+    var cartao = cartaoPre || CARTOES.obter(nomeCartao);
     var vazia = {
       competencia: competencia, total: 0, transacoes: [],
       fechamento: null, vencimento: null
@@ -254,7 +260,7 @@ var CARTOES = {
       transacoes: doCartao,
       fechamento: datas.fechamento,
       vencimento: datas.vencimento,
-      status: this._statusFatura(cartao, competencia, totalCent, datas.vencimento)
+      status: CARTOES._statusFatura(cartao, competencia, totalCent, datas.vencimento)
     };
   },
 
@@ -273,10 +279,10 @@ var CARTOES = {
    */
   _statusFatura: function(cartao, competencia, totalCent, vencimento) {
     if (!totalCent) return 'vazia';
-    if (this.faturaEstaPaga(cartao.nome, competencia)) return 'paga';
+    if (CARTOES.faturaEstaPaga(cartao.nome, competencia)) return 'paga';
     if (!vencimento) return 'aberta';
     if (vencimento >= UTILS.dataLocalIso()) return 'aberta';
-    return this.faturaConfirmadaDevida(cartao.nome, competencia) ? 'devida' : 'nao-confirmada';
+    return CARTOES.faturaConfirmadaDevida(cartao.nome, competencia) ? 'devida' : 'nao-confirmada';
   },
 
   // ───────────────────────────────────────────────────────────────────────
@@ -311,16 +317,16 @@ var CARTOES = {
    * @returns {boolean} false se o cartão não existe
    */
   marcarFaturaPaga: function(nomeCartao, competencia, dataPagamento) {
-    var cartao = this.obter(nomeCartao);
+    var cartao = CARTOES.obter(nomeCartao);
     if (!cartao || !competencia) return false;
 
-    var chave = this._chaveFatura(cartao.nome, competencia);
-    var pagos = Object.assign({}, this._pagamentos());
+    var chave = CARTOES._chaveFatura(cartao.nome, competencia);
+    var pagos = Object.assign({}, CARTOES._pagamentos());
     pagos[chave] = String(dataPagamento || UTILS.dataLocalIso()).slice(0, 10);
 
     // Paga e "ainda devo" são estados mutuamente exclusivos: confirmar o
     // pagamento apaga qualquer marca de que a fatura seguia devida.
-    var devidas = this._devidas();
+    var devidas = CARTOES._devidas();
     var patch = { faturasPagas: pagos };
     if (devidas[chave]) {
       devidas = Object.assign({}, devidas);
@@ -333,22 +339,22 @@ var CARTOES = {
 
   /** Desfaz o registro de pagamento (o usuário marcou por engano). */
   desmarcarFaturaPaga: function(nomeCartao, competencia) {
-    var cartao = this.obter(nomeCartao);
+    var cartao = CARTOES.obter(nomeCartao);
     if (!cartao) return false;
 
-    var pagos = Object.assign({}, this._pagamentos());
-    delete pagos[this._chaveFatura(cartao.nome, competencia)];
+    var pagos = Object.assign({}, CARTOES._pagamentos());
+    delete pagos[CARTOES._chaveFatura(cartao.nome, competencia)];
     DADOS.salvarConfig({ faturasPagas: pagos });
     return true;
   },
 
   /** Data em que a fatura foi paga, ou null. */
   pagamentoDaFatura: function(nomeCartao, competencia) {
-    return this._pagamentos()[this._chaveFatura(nomeCartao, competencia)] || null;
+    return CARTOES._pagamentos()[CARTOES._chaveFatura(nomeCartao, competencia)] || null;
   },
 
   faturaEstaPaga: function(nomeCartao, competencia) {
-    return !!this.pagamentoDaFatura(nomeCartao, competencia);
+    return !!CARTOES.pagamentoDaFatura(nomeCartao, competencia);
   },
 
   // ───────────────────────────────────────────────────────────────────────
@@ -372,11 +378,11 @@ var CARTOES = {
 
   /** Data em que o usuário confirmou que ainda deve a fatura, ou null. */
   confirmacaoDevida: function(nomeCartao, competencia) {
-    return this._devidas()[this._chaveFatura(nomeCartao, competencia)] || null;
+    return CARTOES._devidas()[CARTOES._chaveFatura(nomeCartao, competencia)] || null;
   },
 
   faturaConfirmadaDevida: function(nomeCartao, competencia) {
-    return !!this.confirmacaoDevida(nomeCartao, competencia);
+    return !!CARTOES.confirmacaoDevida(nomeCartao, competencia);
   },
 
   /**
@@ -386,15 +392,15 @@ var CARTOES = {
    * @returns {boolean} false se o cartão não existe
    */
   confirmarFaturaDevida: function(nomeCartao, competencia, dataConfirmacao) {
-    var cartao = this.obter(nomeCartao);
+    var cartao = CARTOES.obter(nomeCartao);
     if (!cartao || !competencia) return false;
 
-    var chave = this._chaveFatura(cartao.nome, competencia);
-    var devidas = Object.assign({}, this._devidas());
+    var chave = CARTOES._chaveFatura(cartao.nome, competencia);
+    var devidas = Object.assign({}, CARTOES._devidas());
     devidas[chave] = String(dataConfirmacao || UTILS.dataLocalIso()).slice(0, 10);
 
     var patch = { faturasDevidas: devidas };
-    var pagos = this._pagamentos();
+    var pagos = CARTOES._pagamentos();
     if (pagos[chave]) {
       pagos = Object.assign({}, pagos);
       delete pagos[chave];
@@ -406,11 +412,11 @@ var CARTOES = {
 
   /** Desfaz o "ainda devo" (o usuário marcou por engano). */
   desmarcarFaturaDevida: function(nomeCartao, competencia) {
-    var cartao = this.obter(nomeCartao);
+    var cartao = CARTOES.obter(nomeCartao);
     if (!cartao) return false;
 
-    var devidas = Object.assign({}, this._devidas());
-    delete devidas[this._chaveFatura(cartao.nome, competencia)];
+    var devidas = Object.assign({}, CARTOES._devidas());
+    delete devidas[CARTOES._chaveFatura(cartao.nome, competencia)];
     DADOS.salvarConfig({ faturasDevidas: devidas });
     return true;
   },
@@ -431,15 +437,15 @@ var CARTOES = {
     }
 
     return {
-      fechamento: this._iso(ano, mesIdx, cartao.fechamento),
-      vencimento: this._iso(anoVenc, mesVenc, cartao.vencimento)
+      fechamento: CARTOES._iso(ano, mesIdx, cartao.fechamento),
+      vencimento: CARTOES._iso(anoVenc, mesVenc, cartao.vencimento)
     };
   },
 
   /** Competência de um deslocamento de meses a partir de hoje. */
   _competenciaDe: function(cartao, hoje, deslocamento) {
     var hojeIso = UTILS.dataLocalIso(hoje);
-    var atual = this.faturaDaCompra(cartao.nome, hojeIso);
+    var atual = CARTOES.faturaDaCompra(cartao.nome, hojeIso);
     if (!atual) return null;
     if (!deslocamento) return atual.competencia;
 
@@ -463,10 +469,10 @@ var CARTOES = {
    * @param {Date} [hoje] injetável para teste
    */
   resumo: function(nomeCartao, hoje) {
-    var cartao = this.obter(nomeCartao);
+    var cartao = CARTOES.obter(nomeCartao);
     if (!cartao) return null;
 
-    var ref = this._agora(hoje);
+    var ref = CARTOES._agora(hoje);
     var hojeIso = UTILS.dataLocalIso(ref);
     var alvo = cartao.nome.toLowerCase();
 
@@ -557,10 +563,10 @@ var CARTOES = {
     var faturaAtual = null;
     var proximaFatura = null;
     if (cartao.temCiclo) {
-      var compAtual = this._competenciaDe(cartao, ref, 0);
-      var compProx = this._competenciaDe(cartao, ref, 1);
-      if (compAtual) faturaAtual = this.fatura(cartao.nome, compAtual);
-      if (compProx) proximaFatura = this.fatura(cartao.nome, compProx);
+      var compAtual = CARTOES._competenciaDe(cartao, ref, 0);
+      var compProx = CARTOES._competenciaDe(cartao, ref, 1);
+      if (compAtual) faturaAtual = CARTOES.fatura(cartao.nome, compAtual);
+      if (compProx) proximaFatura = CARTOES.fatura(cartao.nome, compProx);
     }
 
     return {
@@ -584,8 +590,8 @@ var CARTOES = {
 
   /** Resumo de todos os cartões, do mais comprometido para o menos. */
   listarResumos: function(hoje) {
-    var self = this;
-    return this._lista()
+    var self = CARTOES;
+    return CARTOES._lista()
       .map(function(c) { return self.resumo(UTILS.nomeDeConta(c), hoje); })
       .filter(Boolean)
       .sort(function(a, b) { return b.utilizado - a.utilizado; });
@@ -596,7 +602,7 @@ var CARTOES = {
    * Consumido por COMPROMISSOS para compor o "disponível para gastar".
    */
   totalComprometido: function(hoje) {
-    var cent = this.listarResumos(hoje).reduce(function(acc, r) {
+    var cent = CARTOES.listarResumos(hoje).reduce(function(acc, r) {
       return acc + UTILS.paraCentavos(r.utilizado);
     }, 0);
     return cent / 100;
@@ -628,7 +634,7 @@ var CARTOES = {
     var totalEl = document.getElementById('cartoes-total');
     if (!lista) return;
 
-    var resumos = this.listarResumos(hoje);
+    var resumos = CARTOES.listarResumos(hoje);
     if (resumos.length === 0) {
       if (secao) secao.style.display = 'none';
       return;
@@ -644,7 +650,7 @@ var CARTOES = {
       totalEl.textContent = total > 0 ? UTILS.formatarMoeda(total) + ' em faturas' : '';
     }
 
-    var self = this;
+    var self = CARTOES;
     lista.innerHTML = resumos.map(function(r) {
       var nome = UTILS.escapeHtml(r.nome);
 
@@ -782,7 +788,7 @@ var CARTOES = {
     }).join('');
 
     if (typeof renderLucideIcons === 'function') renderLucideIcons(lista);
-    this._bindAcoes(lista);
+    CARTOES._bindAcoes(lista);
   },
 
   /** '2026-08' → 'agosto/2026' */
@@ -797,8 +803,8 @@ var CARTOES = {
   _acoesBound: false,
 
   _bindAcoes: function(container) {
-    if (this._acoesBound || !container) return;
-    this._acoesBound = true;
+    if (CARTOES._acoesBound || !container) return;
+    CARTOES._acoesBound = true;
 
     container.addEventListener('click', function(e) {
       var btn = e.target.closest('[data-cartao-acao]');
@@ -836,6 +842,5 @@ var CARTOES = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = CARTOES;
-}
+export { CARTOES };
+export default CARTOES;

@@ -2,9 +2,9 @@
  * assinaturas-esquecidas.test.js — detector de assinaturas esquecidas (#32)
  * Testa o AI_ENGINE real (carregado via vm), com data e transações fixas.
  */
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
 
 function loadAiEngine() {
   const ctx = vm.createContext({ Date, Math, Number, String, Array, Object, JSON });
@@ -12,8 +12,7 @@ function loadAiEngine() {
   // executado no vm de volta ao arquivo-fonte. Com nome relativo o teste passa
   // mas o módulo aparece com 0% de cobertura no relatório.
   const file = path.join(__dirname, '..', 'js', 'ai-engine.js');
-  const code = fs.readFileSync(file, 'utf8');
-  vm.runInContext(code, ctx, { filename: file });
+  rodarNoContexto(ctx, file);
   return ctx.AI_ENGINE;
 }
 const AI = loadAiEngine();

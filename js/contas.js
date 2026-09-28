@@ -1,7 +1,18 @@
-// FinançasPro — Contas e Cartões
-// v11.0 — Depende de: config.js, dados.js, utils.js
+/**
+ * contas.js — FinançasPro: contas e cartões.
+ * v11.0 — Depende de: config.js, dados.js, utils.js
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
+ */
 
-var CONTAS = {
+import { CONFIG } from './core/config.js';
+import { UTILS } from './core/utils.js';
+import { FINANCE_CONTRACT } from './core/finance-contract.js';
+import { TRANSACOES } from './transacoes.js';
+import { CARTOES } from './cartoes.js';
+
+const CONTAS = {
   _cache: [],
 
   _lucide: function(name) {
@@ -10,14 +21,14 @@ var CONTAS = {
   },
 
   init: function() {
-    this._cache = DADOS.getContas();
+    CONTAS._cache = DADOS.getContas();
   },
 
-  getAll: function() { return this._cache; },
+  getAll: function() { return CONTAS._cache; },
 
   getById: function(id) {
-    for (var i = 0; i < this._cache.length; i++) {
-      if (this._cache[i].id === id) return this._cache[i];
+    for (var i = 0; i < CONTAS._cache.length; i++) {
+      if (CONTAS._cache[i].id === id) return CONTAS._cache[i];
     }
     return null;
   },
@@ -31,7 +42,7 @@ var CONTAS = {
   },
 
   icone: function(tipo) {
-    return this._lucide(this.iconeLucide(tipo));
+    return CONTAS._lucide(CONTAS.iconeLucide(tipo));
   },
 
   tipoLabel: function(tipo) {
@@ -44,7 +55,7 @@ var CONTAS = {
   },
 
   getNome: function(id) {
-    var c = this.getById(id);
+    var c = CONTAS.getById(id);
     if (!c) return '';
     return c.nome;
   },
@@ -68,20 +79,20 @@ var CONTAS = {
     if (!t) return '';
     var id = t[campoId];
     if (id) {
-      var c = this.getById(id);
-      if (c && c.nome) return this._chaveConta(c.nome);
+      var c = CONTAS.getById(id);
+      if (c && c.nome) return CONTAS._chaveConta(c.nome);
       if (typeof FINANCE_CONTRACT !== 'undefined' && DADOS && DADOS.getContas) {
         var label = FINANCE_CONTRACT.accountLabel(id, DADOS.getContas());
-        if (label && label !== id) return this._chaveConta(label);
+        if (label && label !== id) return CONTAS._chaveConta(label);
       }
     }
-    return this._chaveConta(t[campoNome]);
+    return CONTAS._chaveConta(t[campoNome]);
   },
 
   propagarRename: function(accountId, nomeAntigo, nomeNovo) {
     if (!accountId || !nomeAntigo || !nomeNovo) return { txs: 0 };
-    var oldKey = this._chaveConta(nomeAntigo);
-    var newKey = this._chaveConta(nomeNovo);
+    var oldKey = CONTAS._chaveConta(nomeAntigo);
+    var newKey = CONTAS._chaveConta(nomeNovo);
     if (!oldKey || !newKey || oldKey === newKey) return { txs: 0 };
 
     var raw = DADOS.getTransacoesRaw ? DADOS.getTransacoesRaw() : DADOS.getTransacoes();
@@ -90,12 +101,12 @@ var CONTAS = {
       var t = raw[i];
       if (!t || t.deletedAt) continue;
       var mudou = false;
-      if (t.accountId === accountId || this._chaveConta(t.banco) === oldKey) {
+      if (t.accountId === accountId || CONTAS._chaveConta(t.banco) === oldKey) {
         t.banco = nomeNovo;
         t.accountId = accountId;
         mudou = true;
       }
-      if (t.contaDestinoId === accountId || this._chaveConta(t.contaDestino) === oldKey) {
+      if (t.contaDestinoId === accountId || CONTAS._chaveConta(t.contaDestino) === oldKey) {
         t.contaDestino = nomeNovo;
         t.contaDestinoId = accountId;
         mudou = true;
@@ -247,7 +258,7 @@ var CONTAS = {
 
   /** Soma de todas as contas — a resposta para "quanto eu tenho?". */
   saldoTotal: function(opts) {
-    var cent = this.saldos(opts).reduce(function(acc, c) {
+    var cent = CONTAS.saldos(opts).reduce(function(acc, c) {
       return acc + UTILS.paraCentavos(c.saldo);
     }, 0);
     return cent / 100;
@@ -255,7 +266,7 @@ var CONTAS = {
 
   /** Define o saldo inicial de uma conta (o que havia antes de usar o app). */
   definirSaldoInicial: function(nome, valor) {
-    var chave = this._chaveConta(nome);
+    var chave = CONTAS._chaveConta(nome);
     if (!chave) return null;
     var config = DADOS.getConfig();
     var iniciais = Object.assign({}, config.saldosIniciais || {});
@@ -278,19 +289,19 @@ var CONTAS = {
       lista.push(dados);
     }
     DADOS.salvarContas(lista);
-    this._cache = lista;
+    CONTAS._cache = lista;
     return dados;
   },
 
   deletar: function(id) {
     if (typeof DADOS.deletarConta === 'function') {
       DADOS.deletarConta(id);
-      this._cache = DADOS.getContas();
+      CONTAS._cache = DADOS.getContas();
       return;
     }
     var lista = DADOS.getContas().filter(function(c) { return c.id !== id; });
     DADOS.salvarContas(lista);
-    this._cache = lista;
+    CONTAS._cache = lista;
   },
 
   renderSelect: function(selectId) {
@@ -298,7 +309,7 @@ var CONTAS = {
     if (!sel) return;
     var val = sel.value;
     sel.innerHTML = '<option value="">— Sem conta —</option>' +
-      this._cache.map(function(c) {
+      CONTAS._cache.map(function(c) {
         return '<option value="' + UTILS.escapeHtml(c.id) + '">' +
           UTILS.escapeHtml(c.nome) + ' (' + CONTAS.tipoLabel(c.tipo) + ')</option>';
       }).join('');
@@ -313,12 +324,12 @@ var CONTAS = {
     var sel = document.getElementById(selectId);
     if (!sel) return;
     var val = sel.value;
-    var contas = this._cache.length ? this._cache : (typeof DADOS !== 'undefined' ? DADOS.getContas() : []);
+    var contas = CONTAS._cache.length ? CONTAS._cache : (typeof DADOS !== 'undefined' ? DADOS.getContas() : []);
     var config = typeof DADOS !== 'undefined' && DADOS.getConfig ? DADOS.getConfig() : {};
     var bancosLegado = config.bancos || [];
     var nomesVistos = {};
     var opts = ['<option value="">Sem banco</option>'];
-    var self = this;
+    var self = CONTAS;
 
     contas.forEach(function(c) {
       if (!c || !c.nome) return;
@@ -337,7 +348,7 @@ var CONTAS = {
 
     sel.innerHTML = opts.join('');
     if (val) {
-      var resolved = this.resolveBancoSelectValue(val);
+      var resolved = CONTAS.resolveBancoSelectValue(val);
       if (resolved) sel.value = resolved;
     }
   },
@@ -347,7 +358,7 @@ var CONTAS = {
     if (!ref) return '';
     var s = String(ref).trim();
     if (typeof FINANCE_CONTRACT !== 'undefined' && FINANCE_CONTRACT.isUuid(s)) return s;
-    var contas = this._cache.length ? this._cache : (typeof DADOS !== 'undefined' ? DADOS.getContas() : []);
+    var contas = CONTAS._cache.length ? CONTAS._cache : (typeof DADOS !== 'undefined' ? DADOS.getContas() : []);
     if (typeof FINANCE_CONTRACT !== 'undefined') {
       var id = FINANCE_CONTRACT.resolveAccountId(s, contas);
       if (id) return id;
@@ -364,7 +375,7 @@ var CONTAS = {
   mesmaConta: function(a, b) {
     if (!a || !b) return false;
     if (a === b) return true;
-    var contas = this._cache.length ? this._cache : (typeof DADOS !== 'undefined' ? DADOS.getContas() : []);
+    var contas = CONTAS._cache.length ? CONTAS._cache : (typeof DADOS !== 'undefined' ? DADOS.getContas() : []);
     if (typeof FINANCE_CONTRACT !== 'undefined') {
       var idA = FINANCE_CONTRACT.resolveAccountId(a, contas);
       var idB = FINANCE_CONTRACT.resolveAccountId(b, contas);
@@ -389,7 +400,7 @@ var CONTAS = {
     var totalEl = document.getElementById('contas-saldo-total');
     if (!el) return;
 
-    var contas = this.saldos();
+    var contas = CONTAS.saldos();
 
     // Sem conta nenhuma a seção não aparece: um card vazio dizendo "nenhuma
     // conta" só ocupa espaço num dashboard que já tem cards demais.
@@ -400,11 +411,11 @@ var CONTAS = {
     if (secao) secao.style.display = '';
 
     if (totalEl) {
-      totalEl.textContent = UTILS.formatarMoeda(this.saldoTotal());
-      totalEl.classList.toggle('negativo', this.saldoTotal() < 0);
+      totalEl.textContent = UTILS.formatarMoeda(CONTAS.saldoTotal());
+      totalEl.classList.toggle('negativo', CONTAS.saldoTotal() < 0);
     }
 
-    var self = this;
+    var self = CONTAS;
     el.innerHTML = contas.map(function(c) {
       var nome = c.semConta ? 'Sem conta definida' : c.nome;
       var negativo = c.saldo < 0 ? ' negativo' : '';
@@ -428,7 +439,7 @@ var CONTAS = {
 
   /** Nomes de conta conhecidos, para os selects do formulário. */
   _nomesDeContas: function() {
-    return this.saldos()
+    return CONTAS.saldos()
       .filter(function(c) { return !c.semConta; })
       .map(function(c) { return c.nome; });
   },
@@ -443,7 +454,7 @@ var CONTAS = {
    * é o mais complexo do app.
    */
   abrirFormTransferencia: function() {
-    var nomes = this._nomesDeContas();
+    var nomes = CONTAS._nomesDeContas();
 
     if (nomes.length < 2) {
       UTILS.mostrarToast('Cadastre pelo menos duas contas para transferir', 'warning');
@@ -505,12 +516,12 @@ var CONTAS = {
   renderLista: function() {
     var el = document.getElementById('contas-lista');
     if (!el) return;
-    if (this._cache.length === 0) {
+    if (CONTAS._cache.length === 0) {
       el.innerHTML = '<p style="color:var(--text-light);font-size:13px;padding:8px 0">Nenhuma conta cadastrada</p>';
       return;
     }
-    var self = this;
-    el.innerHTML = this._cache.map(function(c) {
+    var self = CONTAS;
+    el.innerHTML = CONTAS._cache.map(function(c) {
       var ico = self.icone(c.tipo);
       var tag = self.tipoLabel(c.tipo);
       var idEsc = UTILS.escapeHtml(c.id);
@@ -531,8 +542,8 @@ var CONTAS = {
 
     if (typeof renderLucideIcons === 'function') renderLucideIcons(el);
 
-    if (!this._listenerAttached) {
-      this._listenerAttached = true;
+    if (!CONTAS._listenerAttached) {
+      CONTAS._listenerAttached = true;
       el.addEventListener('click', function(ev) {
         var btn = ev.target.closest('[data-conta-action]');
         if (!btn) return;
@@ -545,7 +556,7 @@ var CONTAS = {
   },
 
   abrirModal: function(id) {
-    var c = id ? this.getById(id) : null;
+    var c = id ? CONTAS.getById(id) : null;
     var old = document.getElementById('modal-conta-ov');
     if (old) old.remove();
     var ov = document.createElement('div');
@@ -614,22 +625,22 @@ var CONTAS = {
       return;
     }
     var dados = { nome: nomeEl.value.trim(), tipo: tipoEl ? tipoEl.value : 'corrente' };
-    var old = id ? this.getById(id) : null;
+    var old = id ? CONTAS.getById(id) : null;
     var nomeAntigo = old ? old.nome : null;
     if (id) dados.id = id;
-    var salvo = this.salvar(dados);
+    var salvo = CONTAS.salvar(dados);
     if (id && nomeAntigo && nomeAntigo !== dados.nome) {
-      var r = this.propagarRename(salvo.id || id, nomeAntigo, dados.nome);
-      if (r.txs > 0 && typeof this.renderSaldos === 'function') this.renderSaldos();
+      var r = CONTAS.propagarRename(salvo.id || id, nomeAntigo, dados.nome);
+      if (r.txs > 0 && typeof CONTAS.renderSaldos === 'function') CONTAS.renderSaldos();
     }
-    this.fecharModal();
-    this.renderLista();
-    this.renderSelect('novo-conta');
+    CONTAS.fecharModal();
+    CONTAS.renderLista();
+    CONTAS.renderSelect('novo-conta');
     UTILS.mostrarToast('Conta salva', 'success');
   },
 
   confirmarDeletar: function(id) {
-    var c = this.getById(id);
+    var c = CONTAS.getById(id);
     if (!c) return;
     fpConfirm('Remover "' + c.nome + '"?', function() {
       CONTAS.deletar(id);
@@ -640,6 +651,5 @@ var CONTAS = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = CONTAS;
-}
+export { CONTAS };
+export default CONTAS;

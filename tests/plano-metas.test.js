@@ -2,9 +2,9 @@
  * plano-metas.test.js — texto compartilhável do plano de metas (PLANO_METAS).
  * Módulo puro carregado em vm com METAS/UTILS mockados.
  */
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
 
 const root = path.join(__dirname, '..');
 
@@ -19,8 +19,7 @@ function carregar(metasAtivas, projecoes, mensagens) {
     },
   };
   vm.createContext(ctx);
-  vm.runInContext(fs.readFileSync(path.join(root, 'js/plano-metas.js'), 'utf8'), ctx,
-    { filename: path.join(root, 'js/plano-metas.js') });
+  rodarNoContexto(ctx, path.join(root, 'js/plano-metas.js'));
   return ctx.PLANO_METAS;
 }
 

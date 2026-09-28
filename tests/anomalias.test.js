@@ -19,10 +19,10 @@
  * outlier puxa a média e o desvio para cima e se esconde. A mediana não se move
  * com um ponto extremo, então o gasto atípico continua atípico.
  */
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const { executarModulo } = require('./helpers/esm-como-script.cjs');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
 
 function loadAiEngine() {
   const ctx = vm.createContext({ Date, Math, Number, String, Array, Object, JSON });
@@ -32,7 +32,7 @@ function loadAiEngine() {
   executarModulo(ctx, path.join(__dirname, '..', 'js', 'core', 'config.js'));
 
   const file = path.join(__dirname, '..', 'js', 'ai-engine.js');
-  vm.runInContext(fs.readFileSync(file, 'utf8'), ctx, { filename: file });
+  rodarNoContexto(ctx, file);
   return ctx.AI_ENGINE;
 }
 const AI = loadAiEngine();

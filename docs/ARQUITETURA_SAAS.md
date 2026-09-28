@@ -38,8 +38,14 @@ mesmos dados sincronizam com o Supabase.
   `DOMUTILS`), utilitários (`LOCAL_CRYPTO`, `FUNIL`, `TablistKeyboard`,
   `compartilharTextoUI`), o domínio de lançamentos (`TRANSACOES`, `ORCAMENTO`,
   `CATEGORIES`, `AUTO_CATEGORIZER`, `CATEGORIZADOR`, `APRENDIZADO`, `PARSER`,
-  `SCORE`), os services de transação e orçamento, `INSIGHT_ACOES`,
-  `DADOS_EXPRESS` e `FORM_SUGESTOES`. Entre eles a dependência é `import`, e nenhum usa `this`
+  `SCORE`, `PIPELINE`), contas e compromissos (`CONTAS`, `CARTOES`,
+  `RECORRENTES`, `COMPROMISSOS`, `CONTAS_PAGAR`, `CALENDARIO`, `PROJECAO`),
+  resumos e análise (`RESUMO_MENSAL`, `RESUMO_ANUAL`, `PLANO_METAS`,
+  `AI_ENGINE`), os services (transação, orçamento, `HEALTH_SERVICE`),
+  `INSIGHT_ACOES`, `DADOS_EXPRESS` e `FORM_SUGESTOES`. Seguem clássicos o que
+  roda código no carregamento (`ACTIONS`, `DADOS`, `APP_STORE`, sync,
+  lifecycle), o `RENDERER_BASE` (protótipo, depende de `this`) e o que mora em
+  chunk lazy. Entre eles a dependência é `import`, e nenhum usa `this`
   fora dos mixins: módulo roda em modo estrito, e método passado como
   callback perde o `this` (`tests/esm-fundacao.test.js` trava as duas
   regras; o conversor dos testes também roda em modo estrito).

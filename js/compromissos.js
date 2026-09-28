@@ -18,8 +18,16 @@
  * pelo mesmo motivo do saldo por conta — um número guardado precisa ser mantido
  * em sincronia com registros que são editados e apagados, e é assim que nascem
  * divergências que ninguém consegue explicar depois.
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
-var COMPROMISSOS = {
+
+import { CONFIG } from './core/config.js';
+import { UTILS } from './core/utils.js';
+import { CONTAS } from './contas.js';
+import { CARTOES } from './cartoes.js';
+const COMPROMISSOS = {
 
   /** Normaliza "hoje", aceitando Date de qualquer realm (ver METAS._agora). */
   _agora: function(valor) {
@@ -36,7 +44,7 @@ var COMPROMISSOS = {
    * @returns {{parcelasFuturas:number, contasPagar:number, total:number}}
    */
   comprometido: function(hoje) {
-    var ref = this._agora(hoje);
+    var ref = COMPROMISSOS._agora(hoje);
     var hojeIso = UTILS.dataLocalIso(ref);
 
     var txs = (typeof DADOS !== 'undefined' && DADOS.getTransacoes)
@@ -112,7 +120,7 @@ var COMPROMISSOS = {
    *   contas:number, total:number}>} do mês corrente para frente
    */
   porMes: function(meses, hoje) {
-    var ref = this._agora(hoje);
+    var ref = COMPROMISSOS._agora(hoje);
     var janela = (meses && meses > 0) ? meses : 3;
     var hojeIso = UTILS.dataLocalIso(ref);
 
@@ -247,7 +255,7 @@ var COMPROMISSOS = {
    * @returns {{valor:number, saldo:number, comprometido:number, situacao:string}}
    */
   disponivel: function(hoje) {
-    var ref = this._agora(hoje);
+    var ref = COMPROMISSOS._agora(hoje);
     // Mesma data de corte nos dois lados: o saldo conta o que já aconteceu até
     // hoje, o comprometido conta o que vem depois. Usar datas diferentes faria
     // uma parcela ser descontada do saldo E somada ao comprometido.
@@ -255,7 +263,7 @@ var COMPROMISSOS = {
       ? CONTAS.saldoTotal({ ate: ref }) : 0;
     // Guarda o objeto inteiro (não só .total) para o render reusar sem recalcular
     // comprometido() — que roda CARTOES.totalComprometido/listarResumos.
-    var comp = this.comprometido(ref);
+    var comp = COMPROMISSOS.comprometido(ref);
 
     var saldoCent = UTILS.paraCentavos(saldo);
     var compCent = UTILS.paraCentavos(comp.total);
@@ -289,7 +297,7 @@ var COMPROMISSOS = {
     var detEl = document.getElementById('kpi-comprometido-detalhe');
     if (!valEl) return;
 
-    var d = this.disponivel();
+    var d = COMPROMISSOS.disponivel();
     var c = d.detalhe; // já calculado dentro de disponivel(); não recalcula
 
     if (d.saldo === 0 && c.total === 0) {
@@ -321,6 +329,5 @@ var COMPROMISSOS = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = COMPROMISSOS;
-}
+export { COMPROMISSOS };
+export default COMPROMISSOS;

@@ -21,6 +21,7 @@ import { CONFIG } from './config.js';
 import { UTILS } from './utils.js';
 import { TRANSACOES } from '../transacoes.js';
 import { ORCAMENTO } from '../orcamento.js';
+import { CONTAS } from '../contas.js';
 
 const DADOS_EXPRESS = {
   _apiBaseUrl: function() {

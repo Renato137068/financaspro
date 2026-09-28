@@ -192,4 +192,20 @@ function nomesDoGrafo(arquivo, vistos) {
     .concat(...importa.map((dep) => nomesDoGrafo(dep.arquivo, vistos)));
 }
 
-module.exports = { ehModulo, converter, executarModulo, nomesDoGrafo };
+/**
+ * Roda o módulo num contexto que o teste montou com dublês: todo import cujo
+ * nome o contexto já tem como propriedade própria usa o dublê (mock); o resto
+ * carrega o módulo real. Para testes que criam o ctx à mão.
+ */
+function rodarNoContexto(ctx, arquivo) {
+  const { importa } = converter(fs.readFileSync(arquivo, 'utf8'), arquivo);
+  const mocks = {};
+  for (const dep of importa) {
+    for (const { importado, local } of dep.nomes) {
+      if (Object.prototype.hasOwnProperty.call(ctx, local)) mocks[importado] = ctx[local];
+    }
+  }
+  return executarModulo(ctx, arquivo, undefined, mocks);
+}
+
+module.exports = { ehModulo, converter, executarModulo, nomesDoGrafo, rodarNoContexto };

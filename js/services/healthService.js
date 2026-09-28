@@ -1,7 +1,13 @@
 /**
  * healthService.js - checks locais de saude da aplicacao.
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
-var HEALTH_SERVICE = {
+
+import { UTILS } from '../core/utils.js';
+import { SESSION_LOG } from '../core/session-log.js';
+const HEALTH_SERVICE = {
   verificarArmazenamento: function() {
     try {
       var usado = 0;
@@ -126,7 +132,7 @@ var HEALTH_SERVICE = {
   },
 
   _montarListaReplayHtml: function(eventos) {
-    var self = this;
+    var self = HEALTH_SERVICE;
     var html = '';
     (eventos || []).slice().reverse().forEach(function(evt) {
       var hora = evt.iso ? evt.iso.replace('T', ' ').slice(0, 19) : '';
@@ -143,7 +149,7 @@ var HEALTH_SERVICE = {
   },
 
   _montarDocumentoReplayHtml: function(eventos) {
-    var lista = this._montarListaReplayHtml(eventos);
+    var lista = HEALTH_SERVICE._montarListaReplayHtml(eventos);
     var gerado = new Date().toISOString();
     var totalTx = (typeof DADOS !== 'undefined' && DADOS.getTransacoes)
       ? DADOS.getTransacoes().length : null;
@@ -176,7 +182,7 @@ var HEALTH_SERVICE = {
       if (typeof UTILS !== 'undefined') UTILS.mostrarToast('Nenhum evento nesta sessão ainda', 'info');
       return null;
     }
-    var html = this._montarDocumentoReplayHtml(eventos);
+    var html = HEALTH_SERVICE._montarDocumentoReplayHtml(eventos);
     var nome = 'financaspro-replay-' + new Date().toISOString().slice(0, 10) + '.html';
     var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
     var url = URL.createObjectURL(blob);
@@ -204,9 +210,8 @@ var HEALTH_SERVICE = {
     }
     SESSION_LOG.registrar('replay_sessao_aberto', { eventos: eventos.length });
 
-    var self = this;
     var html = '<ol class="session-replay-list" style="text-align:left;margin:0;padding-left:1.2em;max-height:52vh;overflow:auto;line-height:1.5">' +
-      this._montarListaReplayHtml(eventos).replace(/class="det"/g, 'style="color:var(--color-text-secondary,#607269);font-size:13px"') +
+      HEALTH_SERVICE._montarListaReplayHtml(eventos).replace(/class="det"/g, 'style="color:var(--color-text-secondary,#607269);font-size:13px"') +
       '</ol>';
 
     if (typeof INIT_MODALS !== 'undefined' && INIT_MODALS.fpAlert) {
@@ -227,6 +232,5 @@ function verificarBackupAutomatico() {
   return HEALTH_SERVICE.verificarBackupAutomatico();
 }
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = HEALTH_SERVICE;
-}
+export { HEALTH_SERVICE, verificarArmazenamento, verificarBackupAutomatico };
+export default HEALTH_SERVICE;

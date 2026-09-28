@@ -4,6 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
 
 function loadInsights() {
   const root = path.join(__dirname, '..');
@@ -40,7 +41,7 @@ function loadInsights() {
   vm.createContext(ctx);
   const ai = path.join(root, 'js', 'ai-engine.js');
   const ins = path.join(root, 'js', 'insights.js');
-  vm.runInContext(fs.readFileSync(ai, 'utf8'), ctx, { filename: ai });
+  rodarNoContexto(ctx, ai);
   vm.runInContext(fs.readFileSync(ins, 'utf8'), ctx, { filename: ins });
   return ctx.INSIGHTS;
 }

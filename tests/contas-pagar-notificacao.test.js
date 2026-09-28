@@ -5,7 +5,7 @@
  * vez por dia das contas pendentes que vencem hoje ou já venceram. Era o único
  * trecho de contas-pagar.js sem teste.
  */
-const { carregarScript } = require('./helpers/carregar-script.cjs');
+const { carregarScript, viaGlobal } = require('./helpers/carregar-script.cjs');
 
 const HOJE = '2026-09-27';
 const conta = (id, vencimento, extra) => Object.assign(
@@ -26,7 +26,7 @@ function montar(contas, permissao) {
     diasAte: (d) => Math.round((new Date(d + 'T00:00:00') - new Date(HOJE + 'T00:00:00')) / 86400000),
   };
   localStorage.clear();
-  CONTAS_PAGAR = carregarScript('js/contas-pagar.js');
+  CONTAS_PAGAR = carregarScript('js/contas-pagar.js', viaGlobal('UTILS'));
   global.CONTAS_PAGAR = CONTAS_PAGAR;
 }
 

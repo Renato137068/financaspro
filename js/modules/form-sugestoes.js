@@ -19,6 +19,7 @@ import { APRENDIZADO } from '../aprendizado.js';
 import { CATEGORIAS } from '../auto-categorizer.js';
 import { CATEGORIES } from '../categories.js';
 import { TRANSACOES } from '../transacoes.js';
+import { CONTAS } from '../contas.js';
 const FORM_SUGESTOES = {
   /**
    * 7. AUTO-CATEGORIZAÇÃO
