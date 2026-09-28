@@ -6,6 +6,7 @@
  */
 
 import { UTILS } from './core/utils.js';
+import { BILLING } from './billing.js';
 
 const APRENDIZADO = {
   /**

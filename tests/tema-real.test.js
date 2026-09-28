@@ -48,6 +48,8 @@ function carregar({ tema, sistemaEscuro = false, semMatchMedia = false }) {
     },
     UTILS: { mostrarToast: () => {} },
     TRANSACOES: {}, ORCAMENTO: {}, fpConfirm: () => {},
+    // Imports que o tema não usa: ausentes (sem carregar navegação e modais reais).
+    INIT_NAVIGATION: undefined, INIT_MODALS: undefined,
   };
   sandbox.globalThis = sandbox;
   vm.createContext(sandbox);

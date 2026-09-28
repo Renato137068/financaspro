@@ -16,6 +16,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { entradasEsm, grafoEsm } = require('../scripts/lib/esm-grafo.cjs');
 
 const root = path.join(__dirname, '..');
 
@@ -84,8 +85,10 @@ describe('chunks lazy', () => {
     // Se BILLING voltar ao chunk conta, Free no AAB ultrapassa limites até
     // abrir Config: guardas `typeof BILLING !== 'undefined' && !guardQuota`.
     expect(arquivos).not.toContain('js/billing.js');
+    // billing.js é ES Module (ADR 0005): eager por estar no grafo da ponte,
+    // que roda no boot antes do app.bundle.js.
     const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-    expect(html).toMatch(/src="js\/billing\.js"/);
+    expect(grafoEsm(root, entradasEsm(html))).toContain('js/billing.js');
   });
 
   test('lifecycle agenda reconcile Play no boot (RISK-04)', () => {

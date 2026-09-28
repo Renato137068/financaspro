@@ -12,7 +12,8 @@
  *      alarme falso em app financeiro custa exatamente o ativo da marca.
  */
 const { carregarScript } = require('./helpers/carregar-script.cjs');
-const billing = carregarScript('js/billing.js');
+const { regrasDoBilling } = require('./helpers/billing-regras.cjs');
+const billing = regrasDoBilling(carregarScript('js/billing.js'));
 
 const DIA = 86400000;
 

@@ -11,6 +11,7 @@ const { carregarScript } = require('./helpers/carregar-script.cjs');
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
 
 const root = path.join(__dirname, '..');
 
@@ -30,7 +31,8 @@ function rodarComoScript(rel, nomes) {
       enumerable: true,
     });
   });
-  vm.runInContext(fs.readFileSync(arquivo, 'utf8'), vm.createContext(sandbox), { filename: arquivo });
+  // ES Module (ADR 0005): imports com getter no sandbox usam o global vivo.
+  return rodarNoContexto(vm.createContext(sandbox), arquivo);
 }
 
 /* ───────────────────────── Biometria ─────────────────────────
@@ -44,11 +46,10 @@ function carregarBiometria(nativo) {
     isNativePlatform: () => true,
     Plugins: { NativeBiometric: nativo },
   };
-  rodarComoScript('js/auth-biometric.js', [
+  return rodarComoScript('js/auth-biometric.js', [
     'window', 'document', 'navigator', 'localStorage', 'sessionStorage', 'console',
     'setTimeout', 'clearTimeout', 'Promise', 'SUPA_AUTH', 'UTILS', 'INIT_MODALS', 'DADOS', 'CONFIG',
-  ]);
-  return global.window.AUTH_BIOMETRIC;
+  ]).AUTH_BIOMETRIC;
 }
 
 function nativoFake(over) {

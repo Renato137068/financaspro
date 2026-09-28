@@ -10,6 +10,7 @@
  */
 
 import { UTILS } from '../core/utils.js';
+import { BILLING } from '../billing.js';
 
 const SYNC_INDICATOR = (function() {
   var DISMISS_KEY = 'fp-sync-indicator-dismissed';

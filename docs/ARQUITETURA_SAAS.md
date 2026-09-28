@@ -54,11 +54,12 @@ mesmos dados sincronizam com o Supabase.
   (`INIT_MODALS`), o PIN (`PIN_SECURITY` e as funções de tela) e o formulário
   (`INIT_FORM`; o mixin `FORM_SUGESTOES` importa `INIT_FORM` e se copia para
   ele, e não o contrário, para o `Object.assign` nunca ver o mixin ainda não
-  inicializado). Seguem
+  inicializado), o billing (`BILLING`) e a autenticação (`authController`,
+  `AUTH_BIOMETRIC`). Seguem
   clássicos o que roda código no carregamento (`ACTIONS`, `DADOS`,
   `APP_STORE`, sync, lifecycle), o `pin-guard.js` (roda sem `defer`, antes
-  do primeiro paint), as telas de auth e billing, e o que mora em chunk
-  lazy. Ciclo de import entre migrados é aceito quando nenhum dos
+  do primeiro paint), o `supabase-billing.js` (lê `DADOS`, `SB` e
+  `SUPA_AUTH` ao carregar) e o que mora em chunk lazy. Ciclo de import entre migrados é aceito quando nenhum dos
   dois usa o outro no carregamento (navegação ↔ alertas, navegação ↔
   preferências, formulário ↔ microinterações). Código que roda na carga não
   pode depender do outro lado de um ciclo: quem for avaliado primeiro o veria

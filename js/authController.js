@@ -1,7 +1,18 @@
 /**
  * authController.js - UI de autenticacao e sessao.
  * Login em duas etapas (e-mail → senha) estilo app financeiro.
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
+
+import { UTILS } from './core/utils.js';
+import { PASSWORD_POLICY } from './core/password-policy.js';
+import { VALIDATIONS } from './core/validations.js';
+import { TablistKeyboard } from './utilities/tablist-keyboard.js';
+import { INIT_MODALS } from './modules/init-modals.js';
+import { BILLING } from './billing.js';
+import { AUTH_BIOMETRIC } from './auth-biometric.js';
 
 var _authFocusTrap = null;
 var _authDesbloqueadoNestaCarga = false;
@@ -1214,13 +1225,7 @@ if (typeof document !== 'undefined') {
   });
 }
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = {
-    setupAuthUI: setupAuthUI,
-    authLimparAoSair: authLimparAoSair,
-    atualizarBarraSessao: atualizarBarraSessao,
-    setupLogoutButton: setupLogoutButton,
-    sairDaConta: sairDaConta,
-    authResendCooldown: authResendCooldown,
-  };
-}
+export {
+  setupAuthUI, authLimparAoSair, atualizarBarraSessao, setupLogoutButton, sairDaConta,
+  authResendCooldown, _abrirAuthOverlay
+};

@@ -8,6 +8,7 @@
 import { CONFIG } from './core/config.js';
 import { UTILS } from './core/utils.js';
 import { TRANSACOES } from './transacoes.js';
+import { BILLING } from './billing.js';
 const CONTAS_PAGAR = {
   init: function() {
     var config = DADOS.getConfig();

@@ -27,6 +27,7 @@ import { PERSIST_QUEUE } from '../core/persist-queue.js';
 import { MICRO } from '../micro-interactions.js';
 import { INSIGHTS } from '../insights.js';
 import { RENDER } from '../render.js';
+import { BILLING } from '../billing.js';
 
 const INIT_FORM = {
   _submitBusy: false,

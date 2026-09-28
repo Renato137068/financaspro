@@ -7,6 +7,8 @@
  * js/esm/ponte.js.
  */
 
+import { BILLING } from './billing.js';
+
 const CATEGORIES = {
   /**
    * Definição completa de categorias

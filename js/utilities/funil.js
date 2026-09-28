@@ -22,6 +22,9 @@
  * ES Module (ADR 0005): os scripts clássicos o recebem como global por
  * js/esm/ponte.js.
  */
+
+import { BILLING } from '../billing.js';
+
 const FUNIL = (function() {
   'use strict';
 

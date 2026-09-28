@@ -13,12 +13,17 @@ const { ehModulo, executarModulo } = require(path.join(root, 'tests', 'helpers',
 // Um cache de ES Modules por contexto: cada arquivo roda uma vez, como no navegador.
 let _modulos = new Map();
 
+// Imports que o harness deixa ausentes (dublê `undefined`), como sempre foi:
+// sem BILLING, os módulos não aplicam as travas de plano. Quem testa o gating
+// monta o próprio BILLING (tests/billing*.test.js).
+const AUSENTES = { BILLING: undefined };
+
 function loadScript(context, relativePath) {
   const file = path.join(root, relativePath);
   if (!fs.existsSync(file)) return;
   let code = fs.readFileSync(file, 'utf8');
   // ES Module (ADR 0005): o conversor já deixa os exports como `var` no contexto.
-  if (ehModulo(code)) { executarModulo(context, file, _modulos); return; }
+  if (ehModulo(code)) { executarModulo(context, file, _modulos, AUSENTES); return; }
   // `var   ` tem o mesmo tamanho de `const `: a cobertura V8 soma as execuções
   // de um arquivo por posição de caractere, e encurtar o texto desalinhava
   // estas execuções das que rodam o arquivo intacto (tests/helpers/app-jsdom).

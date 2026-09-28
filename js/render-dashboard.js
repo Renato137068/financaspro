@@ -14,6 +14,7 @@ import { TRANSACOES } from './transacoes.js';
 import { ORCAMENTO } from './orcamento.js';
 import { SKELETON } from './skeleton.js';
 import { UI } from './components/ui.js';
+import { BILLING } from './billing.js';
 
 const RENDER_DASHBOARD = (function() {
   var DashboardRenderer = Object.create(RENDERER_BASE);

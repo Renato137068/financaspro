@@ -2,6 +2,7 @@
  * plan-limits-parity.test.js — limites de plano iguais em JS, Express e SQL.
  */
 const { carregarScript } = require('./helpers/carregar-script.cjs');
+const { regrasDoBilling } = require('./helpers/billing-regras.cjs');
 const fs = require('fs');
 const path = require('path');
 
@@ -9,7 +10,7 @@ const ROOT = path.join(__dirname, '..');
 const CANONICAL = JSON.parse(
   fs.readFileSync(path.join(ROOT, 'config/plan-limits.json'), 'utf8'),
 );
-const billing = carregarScript('js/billing.js');
+const billing = regrasDoBilling(carregarScript('js/billing.js'));
 
 /**
  * Todas as chaves do contrato de plano. Manter esta lista fechada e o que

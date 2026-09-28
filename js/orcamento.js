@@ -9,6 +9,7 @@
 import { UTILS } from './core/utils.js';
 import { TRANSACOES } from './transacoes.js';
 import { BUDGET_SERVICE } from './services/budgetService.js';
+import { BILLING } from './billing.js';
 
 const ORCAMENTO = {
   _cache: null,

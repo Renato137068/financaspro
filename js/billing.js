@@ -1,8 +1,18 @@
 /**
  * billing.js — Planos SaaS, paywall e integração Stripe (backend)
  * Depende de: DADOS, CONFIG, UTILS
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
-var BILLING = {
+
+import { UTILS } from './core/utils.js';
+import { FUNIL } from './utilities/funil.js';
+import { TRANSACOES } from './transacoes.js';
+import { ORCAMENTO } from './orcamento.js';
+import { CONTAS } from './contas.js';
+
+const BILLING = {
   _cache: {
     orgId: null,
     subscription: null,
@@ -152,9 +162,9 @@ var BILLING = {
   ],
 
   init: function() {
-    var self = this;
+    var self = BILLING;
     if (typeof DADOS !== 'undefined' && DADOS._nuvemAtiva && DADOS._nuvemAtiva()) {
-      if (this.isCloudUser()) {
+      if (BILLING.isCloudUser()) {
         self.sync().catch(function() {});
       }
     }
@@ -205,11 +215,11 @@ var BILLING = {
    */
   _persistEntitlement: function(sub) {
     try {
-      if (!sub || !sub.plan || !sub.plan.tier || !this._activeStatus(sub.status, sub)) {
-        localStorage.removeItem(this._ENTITLEMENT_KEY);
+      if (!sub || !sub.plan || !sub.plan.tier || !BILLING._activeStatus(sub.status, sub)) {
+        localStorage.removeItem(BILLING._ENTITLEMENT_KEY);
         return;
       }
-      localStorage.setItem(this._ENTITLEMENT_KEY, JSON.stringify({
+      localStorage.setItem(BILLING._ENTITLEMENT_KEY, JSON.stringify({
         tier: sub.plan.tier,
         status: sub.status,
         billingInterval: sub.billingInterval || null,
@@ -228,17 +238,17 @@ var BILLING = {
 
   _readPersistedEntitlement: function() {
     try {
-      var raw = localStorage.getItem(this._ENTITLEMENT_KEY);
+      var raw = localStorage.getItem(BILLING._ENTITLEMENT_KEY);
       if (!raw) return null;
       var snap = JSON.parse(raw);
       if (!snap || !snap.tier) return null;
       var savedAt = Number(snap.savedAt) || 0;
-      if (!savedAt || (Date.now() - savedAt) > this._ENTITLEMENT_MAX_AGE_MS) {
-        localStorage.removeItem(this._ENTITLEMENT_KEY);
+      if (!savedAt || (Date.now() - savedAt) > BILLING._ENTITLEMENT_MAX_AGE_MS) {
+        localStorage.removeItem(BILLING._ENTITLEMENT_KEY);
         return null;
       }
-      if (!this._activeStatus(snap.status, snap)) {
-        localStorage.removeItem(this._ENTITLEMENT_KEY);
+      if (!BILLING._activeStatus(snap.status, snap)) {
+        localStorage.removeItem(BILLING._ENTITLEMENT_KEY);
         return null;
       }
       return snap;
@@ -249,34 +259,34 @@ var BILLING = {
 
   /** Intervalo da assinatura ativa: monthly | yearly | null. */
   getBillingInterval: function() {
-    var sub = this._cache.subscription;
+    var sub = BILLING._cache.subscription;
     if (sub && sub.billingInterval) return sub.billingInterval;
-    var snap = this._readPersistedEntitlement();
+    var snap = BILLING._readPersistedEntitlement();
     return (snap && snap.billingInterval) || null;
   },
 
   getTier: function() {
-    if (this._cache.tier) return this._cache.tier;
-    var sub = this._cache.subscription;
-    if (sub && sub.plan && sub.plan.tier && this._activeStatus(sub.status, sub)) {
+    if (BILLING._cache.tier) return BILLING._cache.tier;
+    var sub = BILLING._cache.subscription;
+    if (sub && sub.plan && sub.plan.tier && BILLING._activeStatus(sub.status, sub)) {
       return sub.plan.tier;
     }
     // Conta nuvem: só confia em entitlement verificado (memória ou snapshot).
     // `config.plano` é espelho de UX e pode ser forjado por backup (RISK-02).
-    if (this.isCloudUser()) {
-      var snap = this._readPersistedEntitlement();
+    if (BILLING.isCloudUser()) {
+      var snap = BILLING._readPersistedEntitlement();
       if (snap && snap.tier) {
         var online = typeof navigator === 'undefined' || navigator.onLine !== false;
         if (online) {
           var age = Date.now() - (Number(snap.savedAt) || 0);
-          if (age > this._ENTITLEMENT_ONLINE_GRACE_MS) return 'FREE';
+          if (age > BILLING._ENTITLEMENT_ONLINE_GRACE_MS) return 'FREE';
         }
         return snap.tier;
       }
       return 'FREE';
     }
     if (typeof DADOS !== 'undefined' && DADOS.getConfig) {
-      return this.tierFromPlano(DADOS.getConfig().plano);
+      return BILLING.tierFromPlano(DADOS.getConfig().plano);
     }
     return 'FREE';
   },
@@ -318,12 +328,12 @@ var BILLING = {
   },
 
   getLimits: function() {
-    return this.PLAN_LIMITS[this.getTier()] || this.PLAN_LIMITS.FREE;
+    return BILLING.PLAN_LIMITS[BILLING.getTier()] || BILLING.PLAN_LIMITS.FREE;
   },
 
   hasTier: function(minTier) {
-    var current = this.TIER_ORDER[this.getTier()] || 0;
-    var required = this.TIER_ORDER[minTier] || 0;
+    var current = BILLING.TIER_ORDER[BILLING.getTier()] || 0;
+    var required = BILLING.TIER_ORDER[minTier] || 0;
     return current >= required;
   },
 
@@ -336,7 +346,7 @@ var BILLING = {
    * tinha o incentivo economico apontando ao contrario.
    */
   canUse: function(feature) {
-    var limits = this.getLimits();
+    var limits = BILLING.getLimits();
     return !!limits[feature];
   },
 
@@ -350,7 +360,7 @@ var BILLING = {
    * @returns {{ meses: number, desde: Date|null, limitado: boolean }}
    */
   janelaAnalitica: function() {
-    var meses = this.getLimits().historyMonths;
+    var meses = BILLING.getLimits().historyMonths;
     if (meses === Infinity || !isFinite(meses)) {
       return { meses: Infinity, desde: null, limitado: false };
     }
@@ -363,7 +373,7 @@ var BILLING = {
 
   /** Limites numericos valem para todo mundo abaixo de PRO, com ou sem login. */
   shouldEnforceLimits: function() {
-    return !this.hasTier('PRO');
+    return !BILLING.hasTier('PRO');
   },
 
   countTransactionsThisMonth: function() {
@@ -378,7 +388,7 @@ var BILLING = {
 
   _countAccountsForLimit: function() {
     var total = 0;
-    var cfg = this._cfg();
+    var cfg = BILLING._cfg();
     total += (cfg.bancos || []).length;
     total += (cfg.cartoes || []).length;
     if (typeof CONTAS !== 'undefined' && CONTAS.listar) {
@@ -398,19 +408,19 @@ var BILLING = {
   },
 
   _countGoals: function() {
-    return (this._cfg().metas || []).length;
+    return (BILLING._cfg().metas || []).length;
   },
 
   _countBillsToPay: function() {
-    return (this._cfg().contasPagar || []).length;
+    return (BILLING._cfg().contasPagar || []).length;
   },
 
   _countSubscriptions: function() {
-    return (this._cfg().assinaturas || []).length;
+    return (BILLING._cfg().assinaturas || []).length;
   },
 
   _countCustomCategories: function() {
-    var custom = this._cfg().categoriasCustom || {};
+    var custom = BILLING._cfg().categoriasCustom || {};
     var total = 0;
     Object.keys(custom).forEach(function(tipo) {
       if (Array.isArray(custom[tipo])) total += custom[tipo].length;
@@ -432,27 +442,27 @@ var BILLING = {
   },
 
   getUsage: function() {
-    var limits = this.getLimits();
+    var limits = BILLING.getLimits();
     return {
-      transactionsThisMonth: this.countTransactionsThisMonth(),
+      transactionsThisMonth: BILLING.countTransactionsThisMonth(),
       maxTransPerMonth: limits.maxTransPerMonth,
-      accounts: this._countAccountsForLimit(),
+      accounts: BILLING._countAccountsForLimit(),
       maxAccounts: limits.maxAccounts,
-      budgets: this._countBudgets(),
+      budgets: BILLING._countBudgets(),
       maxBudgets: limits.maxBudgets,
-      goals: this._countGoals(),
+      goals: BILLING._countGoals(),
       maxGoals: limits.maxGoals,
-      recurring: this._countRecurring(),
+      recurring: BILLING._countRecurring(),
       maxRecurring: limits.maxRecurring,
-      billsToPay: this._countBillsToPay(),
+      billsToPay: BILLING._countBillsToPay(),
       maxBillsToPay: limits.maxBillsToPay,
-      subscriptions: this._countSubscriptions(),
+      subscriptions: BILLING._countSubscriptions(),
       maxSubscriptions: limits.maxSubscriptions,
-      customCategories: this._countCustomCategories(),
+      customCategories: BILLING._countCustomCategories(),
       maxCustomCategories: limits.maxCustomCategories,
       historyMonths: limits.historyMonths,
-      tier: this.getTier(),
-      enforcing: this.shouldEnforceLimits(),
+      tier: BILLING.getTier(),
+      enforcing: BILLING.shouldEnforceLimits(),
     };
   },
 
@@ -501,16 +511,16 @@ var BILLING = {
    */
   checkQuota: function(kind, increment) {
     increment = increment || 1;
-    if (!this.shouldEnforceLimits()) return { allowed: true };
+    if (!BILLING.shouldEnforceLimits()) return { allowed: true };
 
-    var regra = this._QUOTAS[kind];
+    var regra = BILLING._QUOTAS[kind];
     if (!regra) return { allowed: true };
 
-    var limits = this.getLimits();
+    var limits = BILLING.getLimits();
     var teto = limits[regra.limite];
     if (teto === Infinity || !isFinite(teto)) return { allowed: true };
 
-    var usage = this.getUsage();
+    var usage = BILLING.getUsage();
     if ((usage[regra.uso] || 0) + increment <= teto) return { allowed: true };
 
     return {
@@ -522,9 +532,9 @@ var BILLING = {
   },
 
   guardQuota: function(kind, increment, customMsg) {
-    var result = this.checkQuota(kind, increment);
+    var result = BILLING.checkQuota(kind, increment);
     if (!result.allowed) {
-      this.onPaymentRequired({ message: customMsg || result.message, gate: kind });
+      BILLING.onPaymentRequired({ message: customMsg || result.message, gate: kind });
       return false;
     }
     return true;
@@ -536,11 +546,11 @@ var BILLING = {
    * uma prisao.
    */
   getUsageLabel: function() {
-    if (!this.shouldEnforceLimits()) return '';
-    var usage = this.getUsage();
-    var self = this;
+    if (!BILLING.shouldEnforceLimits()) return '';
+    var usage = BILLING.getUsage();
+    var self = BILLING;
     var partes = [];
-    Object.keys(this._QUOTAS).forEach(function(kind) {
+    Object.keys(BILLING._QUOTAS).forEach(function(kind) {
       var regra = self._QUOTAS[kind];
       var teto = usage[regra.limite];
       if (teto === Infinity || !isFinite(teto)) return;
@@ -584,13 +594,13 @@ var BILLING = {
   },
 
   listPlans: function() {
-    var self = this;
+    var self = BILLING;
     var onlyVitrine = function(plans) {
       return (plans || []).filter(function(p) {
         return p && p.tier !== 'BUSINESS';
       });
     };
-    if (this._cache.plans) return Promise.resolve(onlyVitrine(this._cache.plans));
+    if (BILLING._cache.plans) return Promise.resolve(onlyVitrine(BILLING._cache.plans));
     if (typeof DADOS !== 'undefined' && DADOS._supabaseAtivo && DADOS._supabaseAtivo()
         && typeof SUPA_BILLING !== 'undefined' && SUPA_BILLING.isActive()) {
       return SUPA_BILLING.listPlans().then(function(plans) {
@@ -601,7 +611,7 @@ var BILLING = {
       });
     }
     if (typeof DADOS === 'undefined' || !DADOS._apiAtiva || !DADOS._apiAtiva()) {
-      return Promise.resolve(onlyVitrine(this.STATIC_PLANS.slice()));
+      return Promise.resolve(onlyVitrine(BILLING.STATIC_PLANS.slice()));
     }
     return DADOS._apiFetch('/api/v1/billing/plans').then(function(resp) {
       var plans = (resp && resp.data) ? resp.data : self.STATIC_PLANS;
@@ -613,8 +623,8 @@ var BILLING = {
   },
 
   ensureOrg: function() {
-    var self = this;
-    if (this._cache.orgId) return Promise.resolve(this._cache.orgId);
+    var self = BILLING;
+    if (BILLING._cache.orgId) return Promise.resolve(BILLING._cache.orgId);
     if (typeof DADOS !== 'undefined' && DADOS._supabaseAtivo && DADOS._supabaseAtivo()
         && typeof SUPA_BILLING !== 'undefined' && SUPA_BILLING.isActive()) {
       return SUPA_BILLING.ensureOrg().then(function(orgId) {
@@ -653,10 +663,10 @@ var BILLING = {
   },
 
   fetchSubscription: function() {
-    var self = this;
+    var self = BILLING;
     if (typeof DADOS !== 'undefined' && DADOS._supabaseAtivo && DADOS._supabaseAtivo()
         && typeof SUPA_BILLING !== 'undefined' && SUPA_BILLING.isActive()) {
-      return this.ensureOrg().then(function(orgId) {
+      return BILLING.ensureOrg().then(function(orgId) {
         return SUPA_BILLING.fetchSubscription(orgId);
       }).then(function(sub) {
         self._cache.subscription = sub;
@@ -677,7 +687,7 @@ var BILLING = {
         throw err;
       });
     }
-    return this.ensureOrg().then(function(orgId) {
+    return BILLING.ensureOrg().then(function(orgId) {
       return DADOS._apiFetch('/api/v1/billing/' + encodeURIComponent(orgId) + '/subscription');
     }).then(function(sub) {
       self._cache.subscription = sub;
@@ -710,14 +720,14 @@ var BILLING = {
    * cartao e alarme falso -- e alarme falso em app financeiro custa confianca.
    */
   isWelcomeTrial: function(sub) {
-    sub = sub || this._cache.subscription;
+    sub = sub || BILLING._cache.subscription;
     return !!(sub && typeof sub.stripeSubId === 'string'
       && sub.stripeSubId.indexOf('welcome:') === 0);
   },
 
   /** Assinatura gerenciada pelo Google Play (chave play:<token>). */
   isPlayManaged: function(sub) {
-    sub = sub || this._cache.subscription;
+    sub = sub || BILLING._cache.subscription;
     return !!(sub && typeof sub.stripeSubId === 'string'
       && sub.stripeSubId.indexOf('play:') === 0);
   },
@@ -726,7 +736,7 @@ var BILLING = {
     'https://play.google.com/store/account/subscriptions?package=com.financaspro.mobile',
 
   _openPlaySubscriptions: function() {
-    var url = this._PLAY_SUBSCRIPTIONS_URL;
+    var url = BILLING._PLAY_SUBSCRIPTIONS_URL;
     if (typeof window !== 'undefined' && window.open) window.open(url, '_blank');
     return url;
   },
@@ -743,19 +753,19 @@ var BILLING = {
    * login de ninguem.
    */
   claimWelcomeTrial: function() {
-    var self = this;
-    if (!this.isCloudUser()) return Promise.resolve(null);
+    var self = BILLING;
+    if (!BILLING.isCloudUser()) return Promise.resolve(null);
     try {
-      if (localStorage.getItem(this._WELCOME_KEY)) return Promise.resolve(null);
+      if (localStorage.getItem(BILLING._WELCOME_KEY)) return Promise.resolve(null);
     } catch (e) { /* modo privado: tenta e deixa o servidor decidir */ }
 
-    if (!this._useSupabaseBilling()) return Promise.resolve(null);
+    if (!BILLING._useSupabaseBilling()) return Promise.resolve(null);
 
     var marcar = function() {
       try { localStorage.setItem(self._WELCOME_KEY, '1'); } catch (e) { /* */ }
     };
 
-    return this.ensureOrg().then(function(orgId) {
+    return BILLING.ensureOrg().then(function(orgId) {
       return SUPA_BILLING.invoke('welcome-trial', { orgId: orgId });
     }).then(function(out) {
       marcar();
@@ -775,9 +785,9 @@ var BILLING = {
   },
 
   sync: function() {
-    var self = this;
-    if (!this.isCloudUser()) return Promise.resolve(null);
-    return this.fetchSubscription().then(function(sub) {
+    var self = BILLING;
+    if (!BILLING.isCloudUser()) return Promise.resolve(null);
+    return BILLING.fetchSubscription().then(function(sub) {
       var plano = 'free';
       if (sub && sub.plan && sub.plan.tier && self._activeStatus(sub.status, sub)) {
         plano = self.planoFromTier(sub.plan.tier);
@@ -797,14 +807,14 @@ var BILLING = {
   },
 
   subscribe: function(planTier, interval) {
-    var self = this;
-    if (this._useSupabaseBilling()) {
+    var self = BILLING;
+    if (BILLING._useSupabaseBilling()) {
       var err = new Error('Assinatura via Express desativada no path Supabase. Use o checkout.');
       err.code = 'express-subscribe-disabled';
       return Promise.reject(err);
     }
     interval = interval || 'monthly';
-    return this.ensureOrg().then(function(orgId) {
+    return BILLING.ensureOrg().then(function(orgId) {
       return DADOS._apiFetch('/api/v1/billing/' + encodeURIComponent(orgId) + '/subscribe', {
         method: 'POST',
         body: JSON.stringify({ planTier: planTier, interval: interval }),
@@ -820,8 +830,8 @@ var BILLING = {
 
   createCheckout: function(planTier, interval) {
     var base = window.location.href.split('#')[0].split('?')[0];
-    if (this._useSupabaseBilling()) {
-      return this.ensureOrg().then(function(orgId) {
+    if (BILLING._useSupabaseBilling()) {
+      return BILLING.ensureOrg().then(function(orgId) {
         return SUPA_BILLING.invoke('stripe-checkout', {
           orgId: orgId,
           planTier: planTier,
@@ -831,7 +841,7 @@ var BILLING = {
         });
       });
     }
-    return this.ensureOrg().then(function(orgId) {
+    return BILLING.ensureOrg().then(function(orgId) {
       return DADOS._apiFetch('/api/v1/billing/' + encodeURIComponent(orgId) + '/checkout', {
         method: 'POST',
         body: JSON.stringify({
@@ -845,8 +855,8 @@ var BILLING = {
   },
 
   checkoutOrSubscribe: function(planTier, interval) {
-    var self = this;
-    return this.createCheckout(planTier, interval).then(function(session) {
+    var self = BILLING;
+    return BILLING.createCheckout(planTier, interval).then(function(session) {
       if (session && session.url) {
         window.location.href = session.url;
         return { redirected: true };
@@ -867,22 +877,22 @@ var BILLING = {
   },
 
   cancelSubscription: function() {
-    var self = this;
+    var self = BILLING;
     // Roteia pela FONTE do entitlement — não por “é Capacitor”.
     // No Android com trial welcome:/Stripe, abrir a Play Store era um beco sem saída.
-    if (this.isPlayManaged()) {
-      this._openPlaySubscriptions();
+    if (BILLING.isPlayManaged()) {
+      BILLING._openPlaySubscriptions();
       return Promise.resolve(self._cache.subscription);
     }
-    if (this._useSupabaseBilling()) {
-      return this.ensureOrg().then(function(orgId) {
+    if (BILLING._useSupabaseBilling()) {
+      return BILLING.ensureOrg().then(function(orgId) {
         return SUPA_BILLING.invoke('stripe-cancel', { orgId: orgId });
       }).then(function(sub) {
         self._cache.subscription = sub;
         return self.sync().then(function() { return sub; });
       });
     }
-    return this.ensureOrg().then(function(orgId) {
+    return BILLING.ensureOrg().then(function(orgId) {
       return DADOS._apiFetch('/api/v1/billing/' + encodeURIComponent(orgId) + '/cancel', {
         method: 'POST',
         body: '{}',
@@ -895,20 +905,20 @@ var BILLING = {
 
   /** Desfaz cancel_at_period_end (Stripe). No Play, o usuário reativa na loja. */
   resumeSubscription: function() {
-    var self = this;
-    if (this.isPlayManaged()) {
-      this._openPlaySubscriptions();
+    var self = BILLING;
+    if (BILLING.isPlayManaged()) {
+      BILLING._openPlaySubscriptions();
       return Promise.resolve(self._cache.subscription);
     }
-    if (this._useSupabaseBilling()) {
-      return this.ensureOrg().then(function(orgId) {
+    if (BILLING._useSupabaseBilling()) {
+      return BILLING.ensureOrg().then(function(orgId) {
         return SUPA_BILLING.invoke('stripe-resume', { orgId: orgId });
       }).then(function(sub) {
         self._cache.subscription = sub;
         return self.sync().then(function() { return sub; });
       });
     }
-    return this.ensureOrg().then(function(orgId) {
+    return BILLING.ensureOrg().then(function(orgId) {
       return DADOS._apiFetch('/api/v1/billing/' + encodeURIComponent(orgId) + '/resume', {
         method: 'POST',
         body: '{}',
@@ -920,13 +930,13 @@ var BILLING = {
   },
 
   openPortal: function() {
-    if (this.isPlayManaged()) {
-      this._openPlaySubscriptions();
-      return Promise.resolve(this._cache.subscription);
+    if (BILLING.isPlayManaged()) {
+      BILLING._openPlaySubscriptions();
+      return Promise.resolve(BILLING._cache.subscription);
     }
     var returnUrl = window.location.href.split('#')[0];
-    if (this._useSupabaseBilling()) {
-      return this.ensureOrg().then(function(orgId) {
+    if (BILLING._useSupabaseBilling()) {
+      return BILLING.ensureOrg().then(function(orgId) {
         return SUPA_BILLING.invoke('stripe-portal', {
           orgId: orgId,
           returnUrl: returnUrl,
@@ -939,7 +949,7 @@ var BILLING = {
         }
       });
     }
-    return this.ensureOrg().then(function(orgId) {
+    return BILLING.ensureOrg().then(function(orgId) {
       return DADOS._apiFetch('/api/v1/billing/' + encodeURIComponent(orgId) + '/portal', {
         method: 'POST',
         body: JSON.stringify({ returnUrl: returnUrl }),
@@ -954,14 +964,14 @@ var BILLING = {
   },
 
   getStatusLabel: function() {
-    var sub = this._cache.subscription;
+    var sub = BILLING._cache.subscription;
     if (!sub) {
-      return this.isCloudUser() ? 'Gratuito na nuvem' : 'Gratuito · uso local';
+      return BILLING.isCloudUser() ? 'Gratuito na nuvem' : 'Gratuito · uso local';
     }
-    var name = (sub.plan && sub.plan.name) ? sub.plan.name : this.getTier();
+    var name = (sub.plan && sub.plan.name) ? sub.plan.name : BILLING.getTier();
     if (sub.status === 'TRIALING' && sub.trialEndsAt) {
       var d = new Date(sub.trialEndsAt);
-      return this.isWelcomeTrial(sub)
+      return BILLING.isWelcomeTrial(sub)
         ? name + ' · cortesia até ' + d.toLocaleDateString('pt-BR')
         : name + ' · trial até ' + d.toLocaleDateString('pt-BR');
     }
@@ -983,11 +993,11 @@ var BILLING = {
    * Prioridade alta para banner no dashboard.
    */
   getLifecycleAlert: function() {
-    var sub = this._cache.subscription;
-    if (!sub || !this.isCloudUser()) return null;
+    var sub = BILLING._cache.subscription;
+    if (!sub || !BILLING.isCloudUser()) return null;
 
     if (sub.status === 'PAST_DUE') {
-      var aindaNoPeriodo = this._activeStatus('PAST_DUE', sub);
+      var aindaNoPeriodo = BILLING._activeStatus('PAST_DUE', sub);
       return {
         severity: 'warn',
         title: 'Pagamento pendente',
@@ -1004,7 +1014,7 @@ var BILLING = {
       if (!isNaN(ends)) {
         var daysLeft = Math.ceil((ends - Date.now()) / 86400000);
         if (daysLeft >= 0 && daysLeft <= 3) {
-          if (this.isWelcomeTrial(sub)) {
+          if (BILLING.isWelcomeTrial(sub)) {
             return {
               severity: 'info',
               title: daysLeft === 0
@@ -1058,13 +1068,12 @@ var BILLING = {
 
   /** Membros + convites pendentes da org atual (nuvem). */
   listTeam: function() {
-    var self = this;
-    if (!this.isCloudUser()) {
+    if (!BILLING.isCloudUser()) {
       return Promise.reject(new Error('Equipe exige login na nuvem'));
     }
     if (typeof DADOS !== 'undefined' && DADOS._supabaseAtivo && DADOS._supabaseAtivo()
         && typeof SUPA_BILLING !== 'undefined' && SUPA_BILLING.isActive && SUPA_BILLING.isActive()) {
-      return this.ensureOrg().then(function(orgId) {
+      return BILLING.ensureOrg().then(function(orgId) {
         return Promise.all([
           SUPA_BILLING.listMembers(orgId),
           SUPA_BILLING.listInvitations(orgId),
@@ -1073,7 +1082,7 @@ var BILLING = {
         });
       });
     }
-    return this.ensureOrg().then(function(orgId) {
+    return BILLING.ensureOrg().then(function(orgId) {
       return Promise.all([
         DADOS._apiFetch('/api/v1/orgs/' + encodeURIComponent(orgId)),
         DADOS._apiFetch('/api/v1/orgs/' + encodeURIComponent(orgId) + '/invitations').catch(function() {
@@ -1089,17 +1098,17 @@ var BILLING = {
   },
 
   inviteTeamMember: function(email, role) {
-    var self = this;
+    var self = BILLING;
     email = String(email || '').trim().toLowerCase();
     if (!email || email.indexOf('@') < 1) {
       return Promise.reject(new Error('Informe um e-mail válido'));
     }
-    if (!this.canUse('teamFeatures')) {
-      this.onPaymentRequired({ message: 'Convite de membros está disponível a partir do plano Pro.' });
+    if (!BILLING.canUse('teamFeatures')) {
+      BILLING.onPaymentRequired({ message: 'Convite de membros está disponível a partir do plano Pro.' });
       return Promise.reject(new Error('upgrade-necessario'));
     }
-    var limits = this.getLimits();
-    return this.listTeam().then(function(team) {
+    var limits = BILLING.getLimits();
+    return BILLING.listTeam().then(function(team) {
       var seats = (team.members || []).length + (team.invitations || []).length;
       if (limits.maxUsers !== Infinity && seats >= limits.maxUsers) {
         var msg = limits.maxUsers <= 2
@@ -1158,11 +1167,11 @@ var BILLING = {
     if (!invitationId) return Promise.reject(new Error('Convite inválido'));
     if (typeof DADOS !== 'undefined' && DADOS._supabaseAtivo && DADOS._supabaseAtivo()
         && typeof SUPA_BILLING !== 'undefined' && SUPA_BILLING.isActive && SUPA_BILLING.isActive()) {
-      return this.ensureOrg().then(function(orgId) {
+      return BILLING.ensureOrg().then(function(orgId) {
         return SUPA_BILLING.revokeInvitation(orgId, invitationId);
       });
     }
-    return this.ensureOrg().then(function(orgId) {
+    return BILLING.ensureOrg().then(function(orgId) {
       return DADOS._apiFetch(
         '/api/v1/orgs/' + encodeURIComponent(orgId) + '/invitations/' + encodeURIComponent(invitationId),
         { method: 'DELETE' }
@@ -1174,11 +1183,11 @@ var BILLING = {
     if (!userId) return Promise.reject(new Error('Membro inválido'));
     if (typeof DADOS !== 'undefined' && DADOS._supabaseAtivo && DADOS._supabaseAtivo()
         && typeof SUPA_BILLING !== 'undefined' && SUPA_BILLING.isActive && SUPA_BILLING.isActive()) {
-      return this.ensureOrg().then(function(orgId) {
+      return BILLING.ensureOrg().then(function(orgId) {
         return SUPA_BILLING.removeMember(orgId, userId);
       });
     }
-    return this.ensureOrg().then(function(orgId) {
+    return BILLING.ensureOrg().then(function(orgId) {
       return DADOS._apiFetch(
         '/api/v1/orgs/' + encodeURIComponent(orgId) + '/members/' + encodeURIComponent(userId),
         { method: 'DELETE' }
@@ -1187,85 +1196,9 @@ var BILLING = {
   },
 
   invalidateCache: function() {
-    this._cache = { orgId: null, subscription: null, plans: null, tier: null };
+    BILLING._cache = { orgId: null, subscription: null, plans: null, tier: null };
   },
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = {
-    tierFromPlano: BILLING.tierFromPlano.bind(BILLING),
-    planoFromTier: BILLING.planoFromTier.bind(BILLING),
-    getTier: BILLING.getTier.bind(BILLING),
-    getBillingInterval: BILLING.getBillingInterval.bind(BILLING),
-    _persistEntitlement: BILLING._persistEntitlement.bind(BILLING),
-    _readPersistedEntitlement: BILLING._readPersistedEntitlement.bind(BILLING),
-    _ENTITLEMENT_KEY: BILLING._ENTITLEMENT_KEY,
-    PLAN_LIMITS: BILLING.PLAN_LIMITS,
-    TRIAL_DAYS: BILLING.TRIAL_DAYS,
-    WELCOME_TRIAL_DAYS: BILLING.WELCOME_TRIAL_DAYS,
-    STATIC_PLANS: BILLING.STATIC_PLANS,
-    isWelcomeTrial: BILLING.isWelcomeTrial.bind(BILLING),
-    isPlayManaged: BILLING.isPlayManaged.bind(BILLING),
-    _useSupabaseBilling: function() {
-      return BILLING._useSupabaseBilling();
-    },
-    /** Janela de analise por tier — sem tocar em extrato/exportacao. */
-    janelaAnalitica: function(tier) {
-      var prev = BILLING._cache.tier;
-      BILLING._cache.tier = tier || 'FREE';
-      var out = BILLING.janelaAnalitica();
-      BILLING._cache.tier = prev;
-      return out;
-    },
-    /** A assinatura ainda vale? Expoe a regra de expiracao de trial. */
-    entitlementAtivo: function(sub) {
-      return BILLING._activeStatus(sub && sub.status, sub);
-    },
-    getLifecycleAlert: function(sub, isCloud) {
-      if (!isCloud || !sub) return null;
-      var prev = BILLING._cache.subscription;
-      var prevCloud = BILLING.isCloudUser;
-      BILLING._cache.subscription = sub;
-      BILLING.isCloudUser = function() { return true; };
-      var out = BILLING.getLifecycleAlert();
-      BILLING._cache.subscription = prev;
-      BILLING.isCloudUser = prevCloud;
-      return out;
-    },
-    /**
-     * Flag de plano. `isCloud` nao entra mais na conta: desde 2026-09 os
-     * limites valem igual dentro e fora da nuvem. O parametro segue aceito
-     * para nao quebrar chamadas antigas, mas e ignorado de proposito.
-     */
-    canUseFeature: function(feature, tier, _isCloud) {
-      var limits = BILLING.PLAN_LIMITS[tier] || BILLING.PLAN_LIMITS.FREE;
-      return !!limits[feature];
-    },
-    shouldEnforceLimits: function(tier, _isCloud) {
-      return (BILLING.TIER_ORDER[tier] || 0) < (BILLING.TIER_ORDER.PRO || 1);
-    },
-    /** Quota pura, sem DOM: `usage` traz os contadores ja apurados. */
-    checkQuota: function(kind, tier, _isCloud, usage, increment) {
-      increment = increment || 1;
-      if ((BILLING.TIER_ORDER[tier] || 0) >= (BILLING.TIER_ORDER.PRO || 1)) {
-        return { allowed: true };
-      }
-      var regra = BILLING._QUOTAS[kind];
-      if (!regra) return { allowed: true };
-      var limits = BILLING.PLAN_LIMITS[tier] || BILLING.PLAN_LIMITS.FREE;
-      var teto = limits[regra.limite];
-      if (teto === Infinity || !isFinite(teto)) return { allowed: true };
-      usage = usage || {};
-      if ((usage[regra.uso] || 0) + increment > teto) {
-        return { allowed: false, kind: kind, limit: teto };
-      }
-      return { allowed: true };
-    },
-    hasTier: function(currentTier, minTier) {
-      var current = BILLING.TIER_ORDER[currentTier] || 0;
-      var required = BILLING.TIER_ORDER[minTier] || 0;
-      return current >= required;
-    },
-    BILLING: BILLING,
-  };
-}
+export { BILLING };
+export default BILLING;

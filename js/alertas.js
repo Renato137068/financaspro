@@ -11,6 +11,7 @@ import { UTILS } from './core/utils.js';
 import { CARTOES } from './cartoes.js';
 import { AI_ENGINE } from './ai-engine.js';
 import { mudarAba } from './modules/init-navigation.js';
+import { BILLING } from './billing.js';
 
 const ALERTAS = {
   _ativos:         [],

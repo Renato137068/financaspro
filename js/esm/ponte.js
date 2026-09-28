@@ -74,6 +74,12 @@ import {
   verificarPinAoAbrir, tentarDesbloquear
 } from '../pin.js';
 import { INIT_FORM } from '../modules/init-form.js';
+import { BILLING } from '../billing.js';
+import {
+  setupAuthUI, authLimparAoSair, atualizarBarraSessao, setupLogoutButton, sairDaConta,
+  authResendCooldown, _abrirAuthOverlay
+} from '../authController.js';
+import { AUTH_BIOMETRIC } from '../auth-biometric.js';
 
 window.CONFIG = CONFIG;
 window.UTILS = UTILS;
@@ -153,3 +159,12 @@ window.confirmarDesativarPin = confirmarDesativarPin;
 window.verificarPinAoAbrir = verificarPinAoAbrir;
 window.tentarDesbloquear = tentarDesbloquear;
 window.INIT_FORM = INIT_FORM;
+window.BILLING = BILLING;
+window.setupAuthUI = setupAuthUI;
+window.authLimparAoSair = authLimparAoSair;
+window.atualizarBarraSessao = atualizarBarraSessao;
+window.setupLogoutButton = setupLogoutButton;
+window.sairDaConta = sairDaConta;
+window.authResendCooldown = authResendCooldown;
+window._abrirAuthOverlay = _abrirAuthOverlay;
+window.AUTH_BIOMETRIC = AUTH_BIOMETRIC;
