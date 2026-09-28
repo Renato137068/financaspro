@@ -77,6 +77,7 @@ const urlsParaCache = [
   "/js/components/LegendaChart.js",
   "/js/components/ProgressBar.js",
   "/js/components/_base.js",
+  "/js/components/ui.js",
   "/js/compromissos.js",
   "/js/config-user.js",
   "/js/contas-pagar.js",
