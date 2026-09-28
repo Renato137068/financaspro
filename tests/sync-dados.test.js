@@ -5,7 +5,7 @@ const { carregarScript } = require('./helpers/carregar-script.cjs');
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const { executarModulo } = require('./helpers/esm-como-script.cjs');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
 
 function loadDados() {
   const storage = new Map();
@@ -42,11 +42,12 @@ function loadDados() {
 
   ctx.SYNC_MERGE = carregarScript('js/core/sync-merge.js');
 
-  vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'js', 'core', 'sync-engine.js'), 'utf8'), ctx, {
-    filename: path.join(__dirname, '..', 'js', 'core', 'sync-engine.js'),
-  });
-
-  executarModulo(ctx, path.join(__dirname, '..', 'js', 'core', 'dados-express.js'));
+  // ES Modules: o que o ctx tem (APP_STORE, ACTIONS, UTILS…) entra como
+  // dublê dos imports; FINANCE_CONTRACT e ORCAMENTO ficam ausentes, como antes.
+  ctx.FINANCE_CONTRACT = undefined;
+  ctx.ORCAMENTO = undefined;
+  rodarNoContexto(ctx, path.join(__dirname, '..', 'js', 'core', 'sync-engine.js'));
+  rodarNoContexto(ctx, path.join(__dirname, '..', 'js', 'core', 'dados-express.js'));
   const dadosFile = path.join(__dirname, '..', 'js', 'core', 'dados.js');
   vm.runInContext(fs.readFileSync(dadosFile, 'utf8'), ctx, { filename: dadosFile });
   const D = ctx.DADOS;

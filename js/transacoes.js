@@ -12,6 +12,7 @@ import { UTILS } from './core/utils.js';
 import { VALIDATIONS } from './core/validations.js';
 import { FINANCE_CONTRACT } from './core/finance-contract.js';
 import { TRANSACTION_SERVICE } from './services/transactionService.js';
+import { APP_STATE } from './core/store.js';
 
 /**
  * @typedef {Object} ResumoMes

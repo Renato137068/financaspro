@@ -55,10 +55,13 @@ mesmos dados sincronizam com o Supabase.
   (`INIT_FORM`; o mixin `FORM_SUGESTOES` importa `INIT_FORM` e se copia para
   ele, e não o contrário, para o `Object.assign` nunca ver o mixin ainda não
   inicializado), o billing (`BILLING`) e a autenticação (`authController`,
-  `AUTH_BIOMETRIC`), o bootstrap (`APP_BOOTSTRAP`), o lembrete diário e a
-  tela de contas a pagar. Seguem clássicos:
-  - o que roda código no carregamento (`ACTIONS`, `DADOS`, `APP_STORE`,
-    sync, lifecycle);
+  `AUTH_BIOMETRIC`), o bootstrap (`APP_BOOTSTRAP`), o lembrete diário, a
+  tela de contas a pagar e o núcleo de estado e boot (`APP_STORE`,
+  `APP_STATE`, `ACTIONS`, `SYNC_ENGINE`, `LIFECYCLE`, `LIFECYCLE_BOOT`). O
+  `LIFECYCLE` é a raiz de composição e importa quase o app inteiro; quem é
+  folha (ex.: `HEALTH_SERVICE`) o lê tarde, por `window`, para não puxar
+  tudo. Seguem clássicos:
+  - o `DADOS` (usado por 31 módulos; fatia própria);
   - o que depende da posição na página: `pin-guard.js` (sem `defer`, antes
     do primeiro paint), `lucide-init.js` (lê o vendor do lucide, que carrega
     depois da ponte), `fp-secure-screen.js`, `sw-register.js`,
@@ -77,7 +80,10 @@ mesmos dados sincronizam com o Supabase.
   sem inicializar. Entre eles a dependência é `import`, e nenhum usa `this`
   fora dos mixins: módulo roda em modo estrito, e método passado como
   callback perde o `this` (`tests/esm-fundacao.test.js` trava as duas
-  regras; o conversor dos testes também roda em modo estrito). Nos testes os
+  regras; o conversor dos testes também roda em modo estrito). A ordem de
+  boot também é travada: o mesmo teste avalia o grafo inteiro da ponte com
+  cada global clássico virando um getter que anota quem o leu, e com o
+  documento em 'interactive', como no navegador. Nos testes os
   módulos dividem um contexto só, então função auxiliar de topo fica dentro
   de uma IIFE (nome de topo repetido entre módulos reprova o teste).
 - **Mixins para quebrar arquivos grandes.** Um pedaço coeso de um objeto

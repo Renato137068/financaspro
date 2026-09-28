@@ -90,4 +90,4 @@ function viaGlobal(...nomes) {
   return extras;
 }
 
-module.exports = { carregarScript, viaGlobal };
+module.exports = { carregarScript, viaGlobal, nomesDoGlobal };

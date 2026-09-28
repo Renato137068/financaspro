@@ -9,8 +9,9 @@
 const fs = require('fs');
 const path = require('path');
 const { entradasEsm, grafoEsm } = require('../scripts/lib/esm-grafo.cjs');
-const { ehModulo, converter } = require('./helpers/esm-como-script.cjs');
-const { carregarScript } = require('./helpers/carregar-script.cjs');
+const vm = require('vm');
+const { ehModulo, converter, executarModulo, nomesDoGrafo } = require('./helpers/esm-como-script.cjs');
+const { carregarScript, nomesDoGlobal } = require('./helpers/carregar-script.cjs');
 
 function scriptsDoIndex(texto) {
   return [...texto.matchAll(/<script[^>]+src="([^"]+)"[^>]*><\/script>/g)]
@@ -155,5 +156,45 @@ describe('fundação ES Modules', () => {
     } finally {
       nomes.forEach((n) => { delete window[n]; });
     }
+  });
+
+  // A ponte roda antes dos scripts clássicos (no build, antes do app.bundle.js).
+  // Módulo que lê um global clássico ao carregar acha `undefined` e segue
+  // quieto, sem erro — `typeof DADOS !== 'undefined'` na carga desliga um
+  // recurso sem ninguém perceber. Aqui cada global clássico é um getter que
+  // anota quem o leu enquanto o grafo inteiro da ponte é avaliado.
+  test('nenhum módulo lê global de script clássico ao carregar (ordem de boot)', () => {
+    const ponte = path.join(ROOT, 'js', 'esm', 'ponte.js');
+    const doGrafo = new Set(nomesDoGrafo(ponte));
+    const classicos = Object.keys(require('../config/frontend-globals.json').globals)
+      .filter((n) => !doGrafo.has(n));
+    const lidos = new Set();
+    const antes = new Set(Object.keys(window));
+    // Como em carregarScript: os globais do jsdom só resolvem no vm com getter.
+    const sandbox = Object.create(globalThis);
+    const soClassicos = new Set(classicos);
+    nomesDoGlobal().forEach((nome) => {
+      if (soClassicos.has(nome)) return;
+      Object.defineProperty(sandbox, nome, { get: () => globalThis[nome], configurable: true });
+    });
+    classicos.forEach((nome) => {
+      Object.defineProperty(sandbox, nome, {
+        get: () => { lidos.add(nome); return undefined; },
+        configurable: true,
+      });
+    });
+    // No navegador, módulo roda com o documento em 'interactive': quem espera o
+    // DOMContentLoaded (que só dispara depois dos scripts clássicos) espera. O
+    // jsdom do teste já está em 'complete'; sem isto, esses módulos rodariam
+    // o init na hora e acusariam leituras que não acontecem de verdade.
+    Object.defineProperty(document, 'readyState', { get: () => 'interactive', configurable: true });
+    try {
+      executarModulo(vm.createContext(sandbox), ponte);
+    } finally {
+      delete document.readyState;
+      Object.keys(window).filter((k) => !antes.has(k)).forEach((k) => { delete window[k]; });
+    }
+    expect(classicos.length).toBeGreaterThan(20);
+    expect([...lidos].sort()).toEqual([]);
   });
 });

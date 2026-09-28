@@ -89,8 +89,10 @@ const HEALTH_SERVICE = {
       },
       fila: (typeof PERSIST_QUEUE !== 'undefined' && PERSIST_QUEUE.getSnapshot)
         ? PERSIST_QUEUE.getSnapshot() : null,
-      lifecycle: (typeof LIFECYCLE !== 'undefined' && LIFECYCLE.getStatus)
-        ? LIFECYCLE.getStatus() : null,
+      // Busca tardia: o LIFECYCLE é a raiz de composição e importa o app
+      // inteiro; um serviço-folha não pode depender dele só para um diagnóstico.
+      lifecycle: (typeof window !== 'undefined' && window.LIFECYCLE && window.LIFECYCLE.getStatus)
+        ? window.LIFECYCLE.getStatus() : null,
       sessao: (typeof SESSION_LOG !== 'undefined' && SESSION_LOG.snapshot)
         ? SESSION_LOG.snapshot() : []
     };

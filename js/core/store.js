@@ -8,6 +8,9 @@
  * - ui: { abaAtiva, filtros, formulario }           // Estado da interface
  * - cache: { transacoes, config, orcamentos }         // Cache temporário
  * - sync: { online, pending, lastSyncAt }           // Estado de sincronização
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
 
 const APP_STORE = {
@@ -80,11 +83,11 @@ const APP_STORE = {
   // ============================================================
   
   init: function() {
-    if (this._initialized) return;
+    if (APP_STORE._initialized) return;
     
-    this._carregarUIPersistido();
-    this._setupAutoSave();
-    this._initialized = true;
+    APP_STORE._carregarUIPersistido();
+    APP_STORE._setupAutoSave();
+    APP_STORE._initialized = true;
     
     console.warn('[APP_STORE] Inicializado');
   },
@@ -99,10 +102,10 @@ const APP_STORE = {
    * @returns {*} Valor clonado
    */
   get: function(path) {
-    if (!path) return this._clone(this._state);
+    if (!path) return APP_STORE._clone(APP_STORE._state);
     
     var keys = path.split('.');
-    var value = this._state;
+    var value = APP_STORE._state;
     
     for (var i = 0; i < keys.length; i++) {
       if (value && typeof value === 'object' && keys[i] in value) {
@@ -112,7 +115,7 @@ const APP_STORE = {
       }
     }
     
-    return this._clone(value);
+    return APP_STORE._clone(value);
   },
   
   /**
@@ -126,7 +129,7 @@ const APP_STORE = {
     options = options || {};
     
     var keys = path.split('.');
-    var target = this._state;
+    var target = APP_STORE._state;
     
     // Navegar até o objeto pai
     for (var i = 0; i < keys.length - 1; i++) {
@@ -137,21 +140,21 @@ const APP_STORE = {
     }
     
     var key = keys[keys.length - 1];
-    var oldValue = this._clone(target[key]);
-    var newValue = this._clone(value);
+    var oldValue = APP_STORE._clone(target[key]);
+    var newValue = APP_STORE._clone(value);
     
     target[key] = newValue;
     
     // Notificar subscribers (a menos que silent)
     if (!options.silent) {
-      this._notify(path, newValue, oldValue);
+      APP_STORE._notify(path, newValue, oldValue);
     }
     
     // Persistir se necessário
     var shouldPersist = options.persist === true || 
                        (options.persist !== false && path.startsWith('ui.'));
     if (shouldPersist) {
-      this._persistirUI();
+      APP_STORE._persistirUI();
     }
     
     return newValue;
@@ -163,14 +166,14 @@ const APP_STORE = {
    * @param {Object} options - Opções
    */
   patch: function(patch, options) {
-    var self = this;
+    var self = APP_STORE;
     Object.keys(patch).forEach(function(path) {
       self.set(path, patch[path], Object.assign({}, options, { silent: true }));
     });
     if (!options || !options.silent) {
-      this._notify('*', this._clone(this._state), null);
+      APP_STORE._notify('*', APP_STORE._clone(APP_STORE._state), null);
     }
-    return this.get();
+    return APP_STORE.get();
   },
   
   /**
@@ -183,12 +186,12 @@ const APP_STORE = {
     if (typeof callback !== 'function') return function() {};
     
     // ID sequencial + timestamp para evitar colisão
-    this._subscriberIdCounter++;
-    var id = Date.now() + '_' + this._subscriberIdCounter + '_' + Math.random().toString(36).substr(2, 5);
-    this._subscribers.set(id, { path: path || '*', callback: callback, active: true });
+    APP_STORE._subscriberIdCounter++;
+    var id = Date.now() + '_' + APP_STORE._subscriberIdCounter + '_' + Math.random().toString(36).substr(2, 5);
+    APP_STORE._subscribers.set(id, { path: path || '*', callback: callback, active: true });
     
     // Retornar função de unsubscribe
-    var self = this;
+    var self = APP_STORE;
     return function() {
       var sub = self._subscribers.get(id);
       if (sub) sub.active = false;
@@ -203,8 +206,7 @@ const APP_STORE = {
    * @param {Function} condition - (value) => boolean, quando verificar
    */
   once: function(path, callback, condition) {
-    var self = this;
-    var unsubscribe = this.subscribe(path, function(newVal, oldVal, changedPath) {
+    var unsubscribe = APP_STORE.subscribe(path, function(newVal, oldVal, changedPath) {
       if (!condition || condition(newVal)) {
         callback(newVal, oldVal, changedPath);
         unsubscribe();
@@ -223,7 +225,7 @@ const APP_STORE = {
    * @param {Function} handler - (payload) => void | Promise
    */
   registerActionHandler: function(actionType, handler) {
-    this._actionHandlers[actionType] = handler;
+    APP_STORE._actionHandlers[actionType] = handler;
   },
 
   /**
@@ -234,15 +236,15 @@ const APP_STORE = {
    */
   dispatch: function(actionType, payload) {
     // Registrar no log circular
-    this._actionLog.push({ type: actionType, payload: payload, time: Date.now() });
-    if (this._actionLog.length > this._actionLogMaxSize) {
-      this._actionLog.shift();
+    APP_STORE._actionLog.push({ type: actionType, payload: payload, time: Date.now() });
+    if (APP_STORE._actionLog.length > APP_STORE._actionLogMaxSize) {
+      APP_STORE._actionLog.shift();
     }
 
-    var handler = this._actionHandlers[actionType];
+    var handler = APP_STORE._actionHandlers[actionType];
     if (!handler) {
       // Ação sem handler: notifica subscribers para compatibilidade futura
-      this._notify('action:' + actionType, payload, null);
+      APP_STORE._notify('action:' + actionType, payload, null);
       return;
     }
 
@@ -268,7 +270,7 @@ const APP_STORE = {
    * @returns {*}
    */
   select: function(selectorFn) {
-    return selectorFn(this._clone(this._state));
+    return selectorFn(APP_STORE._clone(APP_STORE._state));
   },
 
   /**
@@ -276,7 +278,7 @@ const APP_STORE = {
    * Útil para debug: APP_STORE.getActionLog()
    */
   getActionLog: function() {
-    return this._actionLog.slice();
+    return APP_STORE._actionLog.slice();
   },
 
   // ============================================================
@@ -287,7 +289,7 @@ const APP_STORE = {
     try {
       // Clonar para evitar referência direta e corrupção
       var estadoParaSalvar = {
-        ui: this._clone(this._state.ui),
+        ui: APP_STORE._clone(APP_STORE._state.ui),
         timestamp: Date.now()
       };
       localStorage.setItem('fp-store-v2', JSON.stringify(estadoParaSalvar));
@@ -305,7 +307,7 @@ const APP_STORE = {
         if (estado.timestamp && (Date.now() - estado.timestamp) < 7 * 24 * 60 * 60 * 1000) {
           if (estado.ui && typeof estado.ui === 'object') {
             // Deep merge para preservar estrutura padrão
-            this._state.ui = this._deepMerge(this._state.ui, estado.ui);
+            APP_STORE._state.ui = APP_STORE._deepMerge(APP_STORE._state.ui, estado.ui);
           }
         } else {
           console.warn('[APP_STORE] Estado persistido expirado (>7 dias)');
@@ -320,13 +322,13 @@ const APP_STORE = {
    * Deep merge simples para objetos
    */
   _deepMerge: function(target, source) {
-    var result = this._clone(target);
+    var result = APP_STORE._clone(target);
     for (var key in source) {
       if (source.hasOwnProperty(key)) {
         if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
           result[key] = result[key] && typeof result[key] === 'object' 
-            ? this._deepMerge(result[key], source[key]) 
-            : this._clone(source[key]);
+            ? APP_STORE._deepMerge(result[key], source[key]) 
+            : APP_STORE._clone(source[key]);
         } else {
           result[key] = source[key];
         }
@@ -348,16 +350,16 @@ const APP_STORE = {
    * Fica mais barato E mais seguro que o setInterval cego de antes.
    */
   _setupAutoSave: function() {
-    this.stopAutoSave();
-    var self = this;
+    APP_STORE.stopAutoSave();
+    var self = APP_STORE;
 
-    this._autoSaveInterval = setInterval(function() {
+    APP_STORE._autoSaveInterval = setInterval(function() {
       self._persistirUI();
     }, 30000);
 
     if (typeof document === 'undefined' || !document || !document.addEventListener) return;
 
-    this._autoSaveVisibilidade = function() {
+    APP_STORE._autoSaveVisibilidade = function() {
       if (document.visibilityState === 'hidden') {
         self._persistirUI();                       // grava antes de sumir
         clearInterval(self._autoSaveInterval);
@@ -368,21 +370,21 @@ const APP_STORE = {
         self._autoSaveInterval = setInterval(function() { self._persistirUI(); }, 30000);
       }
     };
-    document.addEventListener('visibilitychange', this._autoSaveVisibilidade);
+    document.addEventListener('visibilitychange', APP_STORE._autoSaveVisibilidade);
   },
 
   /**
    * Para auto-save (útil para logout)
    */
   stopAutoSave: function() {
-    if (this._autoSaveInterval) {
-      clearInterval(this._autoSaveInterval);
-      this._autoSaveInterval = null;
+    if (APP_STORE._autoSaveInterval) {
+      clearInterval(APP_STORE._autoSaveInterval);
+      APP_STORE._autoSaveInterval = null;
     }
-    if (this._autoSaveVisibilidade && typeof document !== 'undefined'
+    if (APP_STORE._autoSaveVisibilidade && typeof document !== 'undefined'
         && document && document.removeEventListener) {
-      document.removeEventListener('visibilitychange', this._autoSaveVisibilidade);
-      this._autoSaveVisibilidade = null;
+      document.removeEventListener('visibilitychange', APP_STORE._autoSaveVisibilidade);
+      APP_STORE._autoSaveVisibilidade = null;
     }
   },
   
@@ -391,8 +393,7 @@ const APP_STORE = {
   // ============================================================
   
   _notify: function(path, newValue, oldValue) {
-    var self = this;
-    this._subscribers.forEach(function(sub, id) {
+    APP_STORE._subscribers.forEach(function(sub, _id) {
       // Pular se unsubscribed
       if (!sub.active) return;
       
@@ -426,21 +427,21 @@ const APP_STORE = {
    * Obtém snapshot completo (para debug)
    */
   snapshot: function() {
-    return this._clone(this._state);
+    return APP_STORE._clone(APP_STORE._state);
   },
   
   /**
    * Reseta estado para padrões
    */
   reset: function() {
-    this._state.ui = {
+    APP_STORE._state.ui = {
       abaAtiva: 'resumo',
       filtros: { tipo: 'todos', categoria: null, busca: '', mesOffset: 0 },
       formulario: { editId: null, dadosRascunho: {} }
     };
-    this._state.cache = { transacoes: null, config: null, orcamentos: null, ultimaAtualizacao: null };
-    this._persistirUI();
-    this._notify('*', this._clone(this._state), null);
+    APP_STORE._state.cache = { transacoes: null, config: null, orcamentos: null, ultimaAtualizacao: null };
+    APP_STORE._persistirUI();
+    APP_STORE._notify('*', APP_STORE._clone(APP_STORE._state), null);
   },
   
   // ============================================================
@@ -453,9 +454,9 @@ const APP_STORE = {
    * Subscribers observam os campos *Ver para saber quando re-ler de DADOS.
    */
   hydrateFromDados: function() {
-    if (typeof DADOS === 'undefined') return this.get();
+    if (typeof DADOS === 'undefined') return APP_STORE.get();
 
-    return this.patch({
+    return APP_STORE.patch({
       'dados.sessao': DADOS.getSessao ? DADOS.getSessao() : { token: null, user: null }
     }, { silent: true });
   },
@@ -571,7 +572,7 @@ const APP_STORE = {
 // Mantido apenas para código legado em init.js e módulos antigos.
 // ============================================================
 
-var APP_STATE = {
+const APP_STATE = {
   // Delega diretamente para APP_STORE com API compatível
   
   getState: function() {
@@ -609,7 +610,4 @@ var APP_STATE = {
   }
 };
 
-// Export para módulos
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { APP_STORE: APP_STORE, APP_STATE: APP_STATE };
-}
+export { APP_STORE, APP_STATE };

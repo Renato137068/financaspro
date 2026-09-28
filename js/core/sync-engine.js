@@ -2,8 +2,20 @@
  * sync-engine.js — outbox durável, pull incremental e flush com backoff (sync v2).
  * Depende de: CONFIG, SYNC_MERGE, UTILS (opcional), DADOS (para conversão PT↔EN).
  * Testável via _storage injetado e apiFetch mockado.
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
-var SYNC_ENGINE = {
+
+import { CONFIG } from './config.js';
+import { UTILS } from './utils.js';
+import { FINANCE_CONTRACT } from './finance-contract.js';
+import { SYNC_MERGE } from './sync-merge.js';
+import { ORCAMENTO } from '../orcamento.js';
+import { APP_STORE } from './store.js';
+import { ACTIONS } from '../services/actions.js';
+
+const SYNC_ENGINE = {
   _storage: null,
   _backoffMs: 1000,
   _backoffMax: 60000,
@@ -11,12 +23,12 @@ var SYNC_ENGINE = {
   _flushing: false,
 
   _getStorage: function() {
-    if (this._storage) return this._storage;
+    if (SYNC_ENGINE._storage) return SYNC_ENGINE._storage;
     return (typeof localStorage !== 'undefined') ? localStorage : null;
   },
 
   _readJson: function(key, fallback) {
-    var st = this._getStorage();
+    var st = SYNC_ENGINE._getStorage();
     if (!st) return fallback;
     try {
       var raw = st.getItem(key);
@@ -28,7 +40,7 @@ var SYNC_ENGINE = {
   },
 
   _writeJson: function(key, value) {
-    var st = this._getStorage();
+    var st = SYNC_ENGINE._getStorage();
     if (!st) return false;
     st.setItem(key, JSON.stringify(value));
     return true;
@@ -36,27 +48,27 @@ var SYNC_ENGINE = {
 
   loadOutbox: function() {
     var key = (typeof CONFIG !== 'undefined' && CONFIG.STORAGE_OUTBOX) || 'fp-outbox';
-    return this._readJson(key, []);
+    return SYNC_ENGINE._readJson(key, []);
   },
 
   saveOutbox: function(fila) {
     var key = (typeof CONFIG !== 'undefined' && CONFIG.STORAGE_OUTBOX) || 'fp-outbox';
-    this._writeJson(key, fila || []);
-    this._notifyOutbox(fila);
+    SYNC_ENGINE._writeJson(key, fila || []);
+    SYNC_ENGINE._notifyOutbox(fila);
   },
 
   getCursor: function() {
     var key = (typeof CONFIG !== 'undefined' && CONFIG.STORAGE_SYNC_CURSOR) || 'fp-sync-cursor';
-    return this._readJson(key, null);
+    return SYNC_ENGINE._readJson(key, null);
   },
 
   setCursor: function(cursor) {
     var key = (typeof CONFIG !== 'undefined' && CONFIG.STORAGE_SYNC_CURSOR) || 'fp-sync-cursor';
-    if (cursor) this._writeJson(key, cursor);
+    if (cursor) SYNC_ENGINE._writeJson(key, cursor);
   },
 
   pendingIds: function(entity) {
-    var fila = this.loadOutbox();
+    var fila = SYNC_ENGINE.loadOutbox();
     if (entity) {
       return fila.filter(function(m) { return m.entity === entity; }).map(function(m) { return m.id; });
     }
@@ -64,7 +76,7 @@ var SYNC_ENGINE = {
   },
 
   outboxCount: function() {
-    return this.loadOutbox().length;
+    return SYNC_ENGINE.loadOutbox().length;
   },
 
   _gerarOpId: function() {
@@ -77,20 +89,20 @@ var SYNC_ENGINE = {
   },
 
   _enqueue: function(entity, op, record, payload) {
-    if (!record || !record.id) return this.loadOutbox();
+    if (!record || !record.id) return SYNC_ENGINE.loadOutbox();
     var mut = {
-      opId: this._gerarOpId(),
+      opId: SYNC_ENGINE._gerarOpId(),
       entity: entity,
       id: record.id,
       op: op,
-      clientUpdatedAt: record.updatedAt || record.dataCriacao || this._nowIso(),
+      clientUpdatedAt: record.updatedAt || record.dataCriacao || SYNC_ENGINE._nowIso(),
       payload: op === 'upsert' ? payload : undefined,
       attempts: 0,
-      enqueuedAt: this._nowIso(),
+      enqueuedAt: SYNC_ENGINE._nowIso(),
     };
-    var fila = SYNC_MERGE.outboxEnqueue(this.loadOutbox(), mut);
-    this.saveOutbox(fila);
-    this.scheduleFlush();
+    var fila = SYNC_MERGE.outboxEnqueue(SYNC_ENGINE.loadOutbox(), mut);
+    SYNC_ENGINE.saveOutbox(fila);
+    SYNC_ENGINE.scheduleFlush();
     return fila;
   },
 
@@ -100,7 +112,7 @@ var SYNC_ENGINE = {
    * @param {Object} tx registro PT local
    */
   enqueueTransaction: function(op, tx) {
-    return this._enqueue('transaction', op, tx, op === 'upsert' ? this._txToPayload(tx) : undefined);
+    return SYNC_ENGINE._enqueue('transaction', op, tx, op === 'upsert' ? SYNC_ENGINE._txToPayload(tx) : undefined);
   },
 
   enqueueAccount: function(op, conta) {
@@ -111,7 +123,7 @@ var SYNC_ENGINE = {
         : conta;
       if (payload && conta.ativo === false) payload.active = false;
     }
-    return this._enqueue('account', op, conta, payload);
+    return SYNC_ENGINE._enqueue('account', op, conta, payload);
   },
 
   enqueueRecurring: function(op, rec) {
@@ -122,7 +134,7 @@ var SYNC_ENGINE = {
         : rec;
       if (payload && rec.ativo === false) payload.active = false;
     }
-    return this._enqueue('recurring', op, rec, payload);
+    return SYNC_ENGINE._enqueue('recurring', op, rec, payload);
   },
 
   enqueueBudget: function(op, budget) {
@@ -133,7 +145,7 @@ var SYNC_ENGINE = {
         : budget;
       if (payload && budget.ativo === false) payload.active = false;
     }
-    return this._enqueue('budget', op, budget, payload);
+    return SYNC_ENGINE._enqueue('budget', op, budget, payload);
   },
 
   _txToPayload: function(tx) {
@@ -240,10 +252,10 @@ var SYNC_ENGINE = {
   },
 
   scheduleFlush: function(delayMs) {
-    var self = this;
-    if (this._flushTimer) return;
+    var self = SYNC_ENGINE;
+    if (SYNC_ENGINE._flushTimer) return;
     var delay = delayMs != null ? delayMs : 300;
-    this._flushTimer = setTimeout(function() {
+    SYNC_ENGINE._flushTimer = setTimeout(function() {
       self._flushTimer = null;
       self.flush().catch(function(err) {
         // flush() já despacha SYNC_FALHAR em falha de rede; isto cobre throws inesperados.
@@ -257,9 +269,9 @@ var SYNC_ENGINE = {
   },
 
   _nextBackoff: function(attempts) {
-    var base = this._backoffMs * Math.pow(2, Math.min(attempts || 0, 6));
+    var base = SYNC_ENGINE._backoffMs * Math.pow(2, Math.min(attempts || 0, 6));
     var jitter = Math.floor(Math.random() * 500);
-    return Math.min(base + jitter, this._backoffMax);
+    return Math.min(base + jitter, SYNC_ENGINE._backoffMax);
   },
 
   /**
@@ -267,15 +279,15 @@ var SYNC_ENGINE = {
    * @param {Function} [apiFetch] injetável para testes
    */
   flush: function(apiFetch) {
-    var self = this;
-    if (this._flushing) return Promise.resolve({ ok: false, reason: 'busy' });
-    var fila = this.loadOutbox();
+    var self = SYNC_ENGINE;
+    if (SYNC_ENGINE._flushing) return Promise.resolve({ ok: false, reason: 'busy' });
+    var fila = SYNC_ENGINE.loadOutbox();
     if (!fila.length) return Promise.resolve({ ok: true, flushed: 0 });
 
-    var fetchFn = apiFetch || this._defaultFetch();
+    var fetchFn = apiFetch || SYNC_ENGINE._defaultFetch();
     if (!fetchFn) return Promise.resolve({ ok: false, reason: 'no-api' });
 
-    this._flushing = true;
+    SYNC_ENGINE._flushing = true;
     if (typeof APP_STORE !== 'undefined' && APP_STORE && typeof ACTIONS !== 'undefined' && ACTIONS) {
       APP_STORE.dispatch(ACTIONS.SYNC_INICIAR);
     }
@@ -361,11 +373,11 @@ var SYNC_ENGINE = {
    * Pull incremental e merge seguro no cache local de transações.
    */
   pull: function(apiFetch) {
-    var self = this;
-    var fetchFn = apiFetch || this._defaultFetch();
+    var self = SYNC_ENGINE;
+    var fetchFn = apiFetch || SYNC_ENGINE._defaultFetch();
     if (!fetchFn) return Promise.resolve({ ok: false, reason: 'no-api' });
 
-    var since = this.getCursor();
+    var since = SYNC_ENGINE.getCursor();
     var qs = since ? ('?since=' + encodeURIComponent(since)) : '';
 
     return fetchFn('/api/v1/sync' + qs).then(function(resp) {
@@ -383,8 +395,8 @@ var SYNC_ENGINE = {
   _applyDeltaToLocal: function(deltaEn) {
     if (typeof DADOS === 'undefined') return 0;
     var local = DADOS.getTransacoesRaw ? DADOS.getTransacoesRaw() : DADOS.getTransacoes();
-    var pending = this.pendingIds('transaction');
-    var deltaPt = deltaEn.map(this._txEnToPt.bind(this));
+    var pending = SYNC_ENGINE.pendingIds('transaction');
+    var deltaPt = deltaEn.map(SYNC_ENGINE._txEnToPt);
     var merged = SYNC_MERGE.mergeDelta(local, pending, deltaPt);
     DADOS._storageSetTransacoes(merged);
     return merged.length;
@@ -393,8 +405,8 @@ var SYNC_ENGINE = {
   _applyAccountsDelta: function(deltaEn) {
     if (typeof DADOS === 'undefined' || !DADOS.getContasRaw) return 0;
     var local = DADOS.getContasRaw();
-    var pending = this.pendingIds('account');
-    var deltaPt = deltaEn.map(this._contaEnToPt.bind(this));
+    var pending = SYNC_ENGINE.pendingIds('account');
+    var deltaPt = deltaEn.map(SYNC_ENGINE._contaEnToPt);
     var merged = SYNC_MERGE.mergeDelta(local, pending, deltaPt);
     var visiveis = merged.filter(function(c) { return !c.deletedAt && c.ativo !== false; });
     DADOS._storageSetRaw(
@@ -408,8 +420,8 @@ var SYNC_ENGINE = {
     if (typeof DADOS === 'undefined') return 0;
     var config = DADOS.getConfig();
     var local = Array.isArray(config.recorrentes) ? config.recorrentes : [];
-    var pending = this.pendingIds('recurring');
-    var deltaPt = deltaEn.map(this._recEnToPt.bind(this));
+    var pending = SYNC_ENGINE.pendingIds('recurring');
+    var deltaPt = deltaEn.map(SYNC_ENGINE._recEnToPt);
     var merged = SYNC_MERGE.mergeDelta(local, pending, deltaPt);
     var visiveis = merged.filter(function(r) { return !r.deletedAt && r.ativo !== false; });
     config.recorrentes = visiveis;
@@ -420,9 +432,9 @@ var SYNC_ENGINE = {
   _applyBudgetsDelta: function(deltaEn) {
     if (typeof DADOS === 'undefined') return 0;
     var config = DADOS.getConfig();
-    var local = this._orcamentosToArray(config.orcamentos || {});
-    var pending = this.pendingIds('budget');
-    var deltaPt = deltaEn.map(this._budgetEnToPt.bind(this));
+    var local = SYNC_ENGINE._orcamentosToArray(config.orcamentos || {});
+    var pending = SYNC_ENGINE.pendingIds('budget');
+    var deltaPt = deltaEn.map(SYNC_ENGINE._budgetEnToPt);
     var merged = SYNC_MERGE.mergeDelta(local, pending, deltaPt);
     // mergeDelta chaveia por id e descarta locais SEM id. Orçamentos legados
     // (criados antes de o app atribuir id) somem no primeiro sync v2 — até com
@@ -433,7 +445,7 @@ var SYNC_ENGINE = {
     local.forEach(function(b) {
       if (b && b.id == null && b.categoria && !cobertas[b.categoria]) merged.push(b);
     });
-    config.orcamentos = this._arrayToOrcamentos(merged);
+    config.orcamentos = SYNC_ENGINE._arrayToOrcamentos(merged);
     DADOS.salvarConfig(config, { skipPush: true });
     if (typeof ORCAMENTO !== 'undefined' && ORCAMENTO._carregarOrcamentos) {
       ORCAMENTO._carregarOrcamentos();
@@ -449,9 +461,9 @@ var SYNC_ENGINE = {
     var deltaEn = snapshot.transactions.map(function(tx) {
       return Object.assign({}, tx, { updatedAt: tx.updatedAt || tx.createdAt });
     });
-    this._applyDeltaToLocal(deltaEn);
+    SYNC_ENGINE._applyDeltaToLocal(deltaEn);
     if (snapshot.meta && snapshot.meta.syncedAt) {
-      this.setCursor(snapshot.meta.syncedAt);
+      SYNC_ENGINE.setCursor(snapshot.meta.syncedAt);
     }
   },
 
@@ -461,11 +473,11 @@ var SYNC_ENGINE = {
    * @param {string} [since] ISO — default: cursor local
    */
   pullAll: function(apiFetch, since) {
-    var self = this;
-    var fetchFn = apiFetch || this._defaultFetch();
+    var self = SYNC_ENGINE;
+    var fetchFn = apiFetch || SYNC_ENGINE._defaultFetch();
     if (!fetchFn) return Promise.resolve({ ok: false, reason: 'no-api' });
 
-    var baseSince = since != null ? since : this.getCursor();
+    var baseSince = since != null ? since : SYNC_ENGINE.getCursor();
     var total = 0;
     var batch = (typeof CONFIG !== 'undefined' && CONFIG.SYNC_DELTA_BATCH_SIZE) || 500;
 
@@ -497,9 +509,9 @@ var SYNC_ENGINE = {
 
   /** Ciclo completo: pull paginado → flush */
   syncCycle: function(apiFetch) {
-    var self = this;
-    var fetchFn = apiFetch || this._defaultFetch();
-    return this.pullAll(fetchFn).then(function() {
+    var self = SYNC_ENGINE;
+    var fetchFn = apiFetch || SYNC_ENGINE._defaultFetch();
+    return SYNC_ENGINE.pullAll(fetchFn).then(function() {
       return self.flush(fetchFn);
     });
   },
@@ -519,13 +531,12 @@ var SYNC_ENGINE = {
 
   /** Para testes — reseta timers e backoff */
   _reset: function() {
-    if (this._flushTimer) clearTimeout(this._flushTimer);
-    this._flushTimer = null;
-    this._flushing = false;
-    this._backoffMs = 1000;
+    if (SYNC_ENGINE._flushTimer) clearTimeout(SYNC_ENGINE._flushTimer);
+    SYNC_ENGINE._flushTimer = null;
+    SYNC_ENGINE._flushing = false;
+    SYNC_ENGINE._backoffMs = 1000;
   },
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = SYNC_ENGINE;
-}
+export { SYNC_ENGINE };
+export default SYNC_ENGINE;

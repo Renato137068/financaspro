@@ -12,6 +12,7 @@ import { CARTOES } from './cartoes.js';
 import { AI_ENGINE } from './ai-engine.js';
 import { mudarAba } from './modules/init-navigation.js';
 import { BILLING } from './billing.js';
+import { APP_STORE } from './core/store.js';
 
 const ALERTAS = {
   _ativos:         [],

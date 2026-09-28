@@ -24,6 +24,9 @@ import { ORCAMENTO } from '../orcamento.js';
 import { CONTAS } from '../contas.js';
 import { RENDER } from '../render.js';
 import { BILLING } from '../billing.js';
+import { APP_STORE } from './store.js';
+import { ACTIONS } from '../services/actions.js';
+import { SYNC_ENGINE } from './sync-engine.js';
 
 const DADOS_EXPRESS = {
   _apiBaseUrl: function() {

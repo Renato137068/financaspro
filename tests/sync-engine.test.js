@@ -2,7 +2,7 @@
  * sync-engine.test.js — outbox, retry, pull merge e persistência (Fase 1).
  */
 const { carregarScript } = require('./helpers/carregar-script.cjs');
-const fs = require('fs');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
 const path = require('path');
 const vm = require('vm');
 
@@ -25,6 +25,9 @@ function loadEngine(deps) {
     DADOS: deps.DADOS,
     APP_STORE: deps.APP_STORE,
     ACTIONS: deps.ACTIONS,
+    // Imports que o teste não monta: ausentes (os guardas do módulo os pulam).
+    FINANCE_CONTRACT: undefined,
+    ORCAMENTO: undefined,
     module: { exports: {} },
   });
   // SYNC_MERGE entra pelo contexto (deps.SYNC_MERGE), já carregado via require.
@@ -37,8 +40,8 @@ function loadEngine(deps) {
   // testes cobrem o módulo inteiro. O piso de 95% do jest.config falhava por
   // ruído de medição, não por falta de teste.
   const engineFile = path.join(__dirname, '..', 'js', 'core', 'sync-engine.js');
-  vm.runInContext(fs.readFileSync(engineFile, 'utf8'), ctx, { filename: engineFile });
-  const engine = ctx.SYNC_ENGINE;
+  // ES Module (ADR 0005): o que o ctx tem entra como dublê dos imports.
+  const engine = rodarNoContexto(ctx, engineFile).SYNC_ENGINE;
   engine._storage = deps.storage;
   engine._reset();
   return engine;

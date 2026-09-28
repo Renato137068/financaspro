@@ -10,6 +10,7 @@
 import { UTILS } from './core/utils.js';
 import { FUNIL } from './utilities/funil.js';
 import { mudarAba } from './modules/init-navigation.js';
+import { LIFECYCLE, LIFECYCLE_BOOT } from './core/lifecycle.js';
 
 const APP_BOOTSTRAP = {
   _initialized: false,

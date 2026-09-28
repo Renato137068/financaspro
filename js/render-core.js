@@ -13,6 +13,7 @@
  */
 
 import { UTILS } from './core/utils.js';
+import { APP_STORE } from './core/store.js';
 
 const RENDER_CORE = {
   // Cache de elementos DOM para evitar querySelector repetido

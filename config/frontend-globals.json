@@ -13,7 +13,6 @@
     "_form": "writable",
     "_lucideHtml": "writable",
     "_modals": "writable",
-    "_registrarActionHandlers": "writable",
     "abrirChangelog": "writable",
     "abrirConfigBancos": "writable",
     "abrirEdicaoTransacao": "writable",
