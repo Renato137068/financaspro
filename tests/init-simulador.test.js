@@ -6,12 +6,12 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { executarModulo } = require('./helpers/esm-como-script.cjs');
 
 const root = path.join(__dirname, '..');
 
 function carregar() {
   const simSrc = fs.readFileSync(path.join(root, 'js/simulador.js'), 'utf8');
-  const tablistSrc = fs.readFileSync(path.join(root, 'js/utilities/tablist-keyboard.js'), 'utf8');
   // Mesma conversão do harness load-sources: `const X =` no topo de um módulo
   // vm vira binding léxico e não encosta no global do contexto. `var` encosta.
   const initSrc = fs.readFileSync(path.join(root, 'js/modules/init-simulador.js'), 'utf8')
@@ -63,7 +63,7 @@ function carregar() {
   };
   vm.createContext(sandbox);
   vm.runInContext(simSrc, sandbox, { filename: path.join(root, 'js/simulador.js') });
-  vm.runInContext(tablistSrc, sandbox, { filename: path.join(root, 'js/utilities/tablist-keyboard.js') });
+  executarModulo(sandbox, path.join(root, 'js/utilities/tablist-keyboard.js'));
   vm.runInContext(initSrc, sandbox, { filename: path.join(root, 'js/modules/init-simulador.js') });
   return sandbox.INIT_SIMULADOR;
 }

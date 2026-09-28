@@ -14,6 +14,11 @@
 
 import { CONFIG } from '../core/config.js';
 import { UTILS } from '../core/utils.js';
+import { CATEGORIZADOR } from '../categorizador.js';
+import { APRENDIZADO } from '../aprendizado.js';
+import { CATEGORIAS } from '../auto-categorizer.js';
+import { CATEGORIES } from '../categories.js';
+import { TRANSACOES } from '../transacoes.js';
 const FORM_SUGESTOES = {
   /**
    * 7. AUTO-CATEGORIZAÇÃO

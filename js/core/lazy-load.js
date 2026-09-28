@@ -6,8 +6,11 @@
  * resolve quando carregar. Em DEV (index.html cru) os módulos já vêm eager, então
  * os chamadores checam `typeof MODULO !== 'undefined'` antes de pedir o chunk —
  * nunca há fetch de um js/lazy/* inexistente no dev.
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
-var LAZY = {
+const LAZY = {
   _loaded: {},
   _loading: {},
 
@@ -17,10 +20,10 @@ var LAZY = {
    * @returns {Promise<void>}
    */
   load: function(chunk) {
-    if (this._loaded[chunk]) return Promise.resolve();
-    if (this._loading[chunk]) return this._loading[chunk];
+    if (LAZY._loaded[chunk]) return Promise.resolve();
+    if (LAZY._loading[chunk]) return LAZY._loading[chunk];
 
-    var self = this;
+    var self = LAZY;
     var p = new Promise(function(resolve, reject) {
       if (typeof document === 'undefined') { resolve(); return; }
       var s = document.createElement('script');
@@ -38,11 +41,10 @@ var LAZY = {
       document.head.appendChild(s);
     });
 
-    this._loading[chunk] = p;
+    LAZY._loading[chunk] = p;
     return p;
   },
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = LAZY;
-}
+export { LAZY };
+export default LAZY;

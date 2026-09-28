@@ -67,9 +67,11 @@ describe('fundação ES Modules', () => {
       if (rel === 'js/esm/ponte.js') continue;
       const proprios = new Set(exporta.map((e) => e.local));
       const importados = new Set(importa.flatMap((i) => i.nomes.map((n) => n.local)));
+      // Citar o nome num comentário não é usar.
+      const semComentarios = codigo.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '');
       for (const [nome, de] of dono) {
         if (de === rel || proprios.has(nome) || importados.has(nome)) continue;
-        if (new RegExp('\\b' + nome + '\\b').test(codigo)) faltando.push(rel + ' usa ' + nome + ' sem importar de ' + de);
+        if (new RegExp('\\b' + nome + '\\b').test(semComentarios)) faltando.push(rel + ' usa ' + nome + ' sem importar de ' + de);
       }
     }
     expect(faltando).toEqual([]);

@@ -2,6 +2,9 @@
  * categories.js - Fonte única de categorias
  * Objetivo: Eliminar duplicações e centralizar sistema de categorias
  * Design: Single source of truth para todas as operações de categorias
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
 
 const CATEGORIES = {
@@ -46,7 +49,7 @@ const CATEGORIES = {
    * Inicializa sistema de categorias
    */
   init: function() {
-    this.carregarCustomCache();
+    CATEGORIES.carregarCustomCache();
   },
 
   /**
@@ -56,19 +59,19 @@ const CATEGORIES = {
    */
   get: function(slug) {
     // Primeiro tenta nas definições padrão
-    var definicao = this.DEFINICOES[slug];
+    var definicao = CATEGORIES.DEFINICOES[slug];
     if (definicao) return definicao;
 
     // Depois tenta nas customizadas
-    var custom = this.getCustom(slug);
+    var custom = CATEGORIES.getCustom(slug);
     if (custom) return custom;
 
     // Fallback: cria definição básica
     return {
-      label: this.formatarLabel(slug),
+      label: CATEGORIES.formatarLabel(slug),
       icon: 'pin',
       cor: '#98a39d',
-      tipo: this.inferirTipo(slug)
+      tipo: CATEGORIES.inferirTipo(slug)
     };
   },
 
@@ -78,8 +81,8 @@ const CATEGORIES = {
    * @returns {string} Label formatado
    */
   getLabel: function(slug) {
-    var cat = this.get(slug);
-    return cat ? cat.label : this.formatarLabel(slug);
+    var cat = CATEGORIES.get(slug);
+    return cat ? cat.label : CATEGORIES.formatarLabel(slug);
   },
 
   /**
@@ -88,7 +91,7 @@ const CATEGORIES = {
    * @returns {string} Nome do ícone Lucide
    */
   getIcon: function(slug) {
-    var cat = this.get(slug);
+    var cat = CATEGORIES.get(slug);
     return cat ? cat.icon : 'pin';
   },
 
@@ -98,7 +101,7 @@ const CATEGORIES = {
    * @returns {string} Cor hexadecimal
    */
   getCor: function(slug) {
-    var cat = this.get(slug);
+    var cat = CATEGORIES.get(slug);
     return cat ? cat.cor : '#98a39d';
   },
 
@@ -108,8 +111,8 @@ const CATEGORIES = {
    * @returns {string} Tipo ('receita' ou 'despesa')
    */
   getTipo: function(slug) {
-    var cat = this.get(slug);
-    return cat ? cat.tipo : this.inferirTipo(slug);
+    var cat = CATEGORIES.get(slug);
+    return cat ? cat.tipo : CATEGORIES.inferirTipo(slug);
   },
 
   /**
@@ -121,13 +124,13 @@ const CATEGORIES = {
   listarPorTipo: function(tipo, incluirCustom) {
     if (incluirCustom === undefined) incluirCustom = true;
 
-    var padroes = Object.keys(this.DEFINICOES).filter(function(slug) {
-      return this.DEFINICOES[slug].tipo === tipo;
-    }.bind(this));
+    var padroes = Object.keys(CATEGORIES.DEFINICOES).filter(function(slug) {
+      return CATEGORIES.DEFINICOES[slug].tipo === tipo;
+    }.bind(CATEGORIES));
 
     if (!incluirCustom) return padroes;
 
-    var custom = this.listarCustom(tipo);
+    var custom = CATEGORIES.listarCustom(tipo);
     return padroes.concat(custom);
   },
 
@@ -137,15 +140,15 @@ const CATEGORIES = {
    * @returns {Array} Lista de objetos { value, label }
    */
   listarParaForm: function(tipo) {
-    var slugs = this.listarPorTipo(tipo, true);
+    var slugs = CATEGORIES.listarPorTipo(tipo, true);
     
     return slugs.map(function(slug) {
-      var cat = this.get(slug);
+      var cat = CATEGORIES.get(slug);
       return {
         value: slug,
         label: '<i data-lucide="' + cat.icon + '"></i> ' + cat.label
       };
-    }.bind(this));
+    }.bind(CATEGORIES));
   },
 
   /**
@@ -173,11 +176,11 @@ const CATEGORIES = {
   carregarCustomCache: function() {
     try {
       var config = DADOS.getConfig();
-      this.customCache = config.categoriasCustom || {};
-      this.cacheTimestamp = Date.now();
+      CATEGORIES.customCache = config.categoriasCustom || {};
+      CATEGORIES.cacheTimestamp = Date.now();
     } catch (e) {
       console.warn('Erro ao carregar categorias customizadas:', e);
-      this.customCache = {};
+      CATEGORIES.customCache = {};
     }
   },
 
@@ -187,10 +190,10 @@ const CATEGORIES = {
    * @returns {Object|null} Definição customizada
    */
   getCustom: function(slug) {
-    if (!this.customCache) this.carregarCustomCache();
+    if (!CATEGORIES.customCache) CATEGORIES.carregarCustomCache();
 
-    for (var tipo in this.customCache) {
-      if (this.customCache[tipo].includes(slug)) {
+    for (var tipo in CATEGORIES.customCache) {
+      if (CATEGORIES.customCache[tipo].includes(slug)) {
         return {
           label: slug,
           icon: 'sparkles',
@@ -208,8 +211,8 @@ const CATEGORIES = {
    * @returns {Array} Lista de slugs customizados
    */
   listarCustom: function(tipo) {
-    if (!this.customCache) this.carregarCustomCache();
-    return this.customCache[tipo] || [];
+    if (!CATEGORIES.customCache) CATEGORIES.carregarCustomCache();
+    return CATEGORIES.customCache[tipo] || [];
   },
 
   /**
@@ -234,7 +237,7 @@ const CATEGORIES = {
         DADOS.salvarConfig({ categoriasCustom: custom });
         
         // Invalidar cache
-        this.customCache = null;
+        CATEGORIES.customCache = null;
         
         return true;
       }
@@ -263,7 +266,7 @@ const CATEGORIES = {
           DADOS.salvarConfig({ categoriasCustom: custom });
           
           // Invalidar cache
-          this.customCache = null;
+          CATEGORIES.customCache = null;
           
           return true;
         }
@@ -282,7 +285,7 @@ const CATEGORIES = {
    * @returns {boolean} Se existe
    */
   existe: function(slug) {
-    return this.DEFINICOES.hasOwnProperty(slug) || this.getCustom(slug) !== null;
+    return CATEGORIES.DEFINICOES.hasOwnProperty(slug) || CATEGORIES.getCustom(slug) !== null;
   },
 
   /**
@@ -292,7 +295,7 @@ const CATEGORIES = {
    * @returns {boolean} Se é válida
    */
   validar: function(slug, tipoEsperado) {
-    var cat = this.get(slug);
+    var cat = CATEGORIES.get(slug);
     if (!cat) return false;
     
     if (tipoEsperado && cat.tipo !== tipoEsperado) return false;
@@ -310,10 +313,10 @@ const CATEGORIES = {
     var termo = texto.toLowerCase();
     var resultados = [];
     
-    var slugs = tipo ? this.listarPorTipo(tipo, true) : Object.keys(this.DEFINICOES);
+    var slugs = tipo ? CATEGORIES.listarPorTipo(tipo, true) : Object.keys(CATEGORIES.DEFINICOES);
     
     slugs.forEach(function(slug) {
-      var cat = this.get(slug);
+      var cat = CATEGORIES.get(slug);
       var score = 0;
       
       // Score por match exato no slug
@@ -328,7 +331,7 @@ const CATEGORIES = {
       if (score > 0) {
         resultados.push({ slug: slug, score: score, categoria: cat });
       }
-    }.bind(this));
+    }.bind(CATEGORIES));
     
     // Ordenar por score (maior primeiro)
     resultados.sort(function(a, b) { return b.score - a.score; });
@@ -342,12 +345,12 @@ const CATEGORIES = {
    * @returns {Object} Estatísticas
    */
   getEstatisticas: function(tipo) {
-    var slugs = tipo ? this.listarPorTipo(tipo, true) : Object.keys(this.DEFINICOES);
+    var slugs = tipo ? CATEGORIES.listarPorTipo(tipo, true) : Object.keys(CATEGORIES.DEFINICOES);
     
     return {
       total: slugs.length,
-      padroes: slugs.filter(function(slug) { return this.DEFINICOES.hasOwnProperty(slug); }.bind(this)).length,
-      customizadas: slugs.filter(function(slug) { return !this.DEFINICOES.hasOwnProperty(slug); }.bind(this)).length
+      padroes: slugs.filter(function(slug) { return CATEGORIES.DEFINICOES.hasOwnProperty(slug); }.bind(CATEGORIES)).length,
+      customizadas: slugs.filter(function(slug) { return !CATEGORIES.DEFINICOES.hasOwnProperty(slug); }.bind(CATEGORIES)).length
     };
   },
 
@@ -355,8 +358,8 @@ const CATEGORIES = {
    * Limpa cache de categorias customizadas
    */
   limparCache: function() {
-    this.customCache = null;
-    this.cacheTimestamp = null;
+    CATEGORIES.customCache = null;
+    CATEGORIES.cacheTimestamp = null;
   },
 
   /**
@@ -398,7 +401,5 @@ const CATEGORIES = {
   }
 };
 
-// Export para compatibilidade
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = CATEGORIES;
-}
+export { CATEGORIES };
+export default CATEGORIES;

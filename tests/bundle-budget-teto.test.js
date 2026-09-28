@@ -15,9 +15,10 @@ const path = require('path');
 const TETO_KB = {
   // 1300→1305 e 260→262 (27/09): supabase-js 2.117; ver check-bundle-budget.cjs.
   // 1305→1280→1240 e 112→85→48 (27/09): telas lazy fora do index.html (telas/).
-  precacheTotal: 1240,
+  precacheTotal: 1236,
   // 514→512 (27/09): a soma passou a incluir a entrada ESM (ADR 0005).
-  appBundle: 512,
+  // 512→507 (27/09): quarta fatia ESM.
+  appBundle: 507,
   vendorBundle: 262,
   cssBundle: 300,
   indexHtml: 48,

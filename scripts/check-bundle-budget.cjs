@@ -49,7 +49,8 @@ const BUDGETS = {
   // index.html e vêm com o chunk (telas/, js/core/telas.js).
   // 1280→1240 KB (2026-09-27): Extrato e as demais telas do Perfil também
   // saem do index.html (segunda leva de telas/).
-  precacheTotal: { max: 1240 * KB, label: 'Precache total (1º acesso)' },
+  // 1240→1236 KB (2026-09-27): quarta fatia ESM (o Vite minifica melhor os módulos).
+  precacheTotal: { max: 1236 * KB, label: 'Precache total (1º acesso)' },
   // 580→590 KB (2026-09-13): correção do KPI "Folga poupança" no Orçamento
   // (cálculo da folga da fatia de poupança) + referência de ritmo no Resumo
   // adicionam alguns KB de código — aumento intencional.
@@ -68,13 +69,14 @@ const BUDGETS = {
   // 604→514 KB (2026-09-27): telas de Extrato (34 KB), Orçamento (21 KB) e
   // Perfil (37 KB) viram chunks lazy; ícones de categoria e ações de insight
   // ficam no eager (categoria-visual.js, insight-acoes.js).
+  // 512→507 KB (2026-09-27): quarta fatia ESM (utilitários e lançamentos).
   // 514→512 KB (2026-09-27): ícones de categoria e os services de transação
   // e orçamento viram ES Modules; o polyfill de modulepreload fica de fora.
   // Desde a fundação de ES Modules (ADR 0005), o código eager do app vem em
   // dois arquivos: app.bundle.js (scripts clássicos) e js/index-<hash>.js (a
   // entrada ESM que o Vite gera). O teto vale para a soma: migrar um módulo de
   // um para o outro não abre espaço.
-  appBundle: { max: 512 * KB, label: 'App eager (clássico + ESM)', glob: /^js\/(app\.bundle|index-[\w-]+)\.js$/ },
+  appBundle: { max: 507 * KB, label: 'App eager (clássico + ESM)', glob: /^js\/(app\.bundle|index-[\w-]+)\.js$/ },
   // 260→262 KB (2026-09-27): supabase-js 2.112 → 2.117. O vendor é só
   // supabase-js + lucide; não há o que mover para lazy aqui.
   vendorBundle: { max: 262 * KB, label: 'js/vendor.bundle.js', file: 'js/vendor.bundle.js' },

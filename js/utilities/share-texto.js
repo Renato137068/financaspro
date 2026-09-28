@@ -9,7 +9,12 @@
  *     falha REAL cai para copiar/avisar em vez de sumir sem retorno.
  *   - sem share → clipboard.writeText + toast opts.copiado.
  *   - sem nenhum → toast de indisponível.
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
+
+import { UTILS } from '../core/utils.js';
 function compartilharTextoUI(texto, opts) {
   opts = opts || {};
   var toast = (typeof UTILS !== 'undefined' && UTILS.mostrarToast) ? UTILS.mostrarToast : function() {};
@@ -45,6 +50,5 @@ function compartilharTextoUI(texto, opts) {
   toast('Compartilhamento indisponível neste dispositivo', 'info');
 }
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = compartilharTextoUI;
-}
+export { compartilharTextoUI };
+export default compartilharTextoUI;

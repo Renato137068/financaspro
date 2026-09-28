@@ -3,7 +3,10 @@
  * @jest-environment node
  */
 const { carregarScript } = require('./helpers/carregar-script.cjs');
-const compartilharTextoUI = carregarScript('js/utilities/share-texto.js');
+// O módulo importa UTILS; o mock delega ao dublê que cada teste monta em global.UTILS.
+const compartilharTextoUI = carregarScript('js/utilities/share-texto.js', {
+  UTILS: { mostrarToast: function() { return global.UTILS.mostrarToast.apply(null, arguments); } },
+});
 
 let toasts;
 beforeEach(function() {

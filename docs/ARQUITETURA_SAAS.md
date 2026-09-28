@@ -34,9 +34,12 @@ mesmos dados sincronizam com o Supabase.
   migrados e os publica em `window` para os scripts clássicos. Módulo novo
   nasce aqui. Já migrados: as bases `CONFIG` e `UTILS`, o núcleo puro de
   `js/core` (`PASSWORD_POLICY`, `VALIDATIONS`, `FINANCE_CONTRACT`,
-  `SYNC_MERGE`, `SESSION_LOG`, `IDB_KV`, `CATEGORIA_VISUAL`, `TELAS`), os
-  services de transação e orçamento, `INSIGHT_ACOES`, `DADOS_EXPRESS` e
-  `FORM_SUGESTOES`. Entre eles a dependência é `import`, e nenhum usa `this`
+  `SYNC_MERGE`, `SESSION_LOG`, `IDB_KV`, `CATEGORIA_VISUAL`, `TELAS`, `LAZY`,
+  `DOMUTILS`), utilitários (`LOCAL_CRYPTO`, `FUNIL`, `TablistKeyboard`,
+  `compartilharTextoUI`), o domínio de lançamentos (`TRANSACOES`, `ORCAMENTO`,
+  `CATEGORIES`, `AUTO_CATEGORIZER`, `CATEGORIZADOR`, `APRENDIZADO`, `PARSER`,
+  `SCORE`), os services de transação e orçamento, `INSIGHT_ACOES`,
+  `DADOS_EXPRESS` e `FORM_SUGESTOES`. Entre eles a dependência é `import`, e nenhum usa `this`
   fora dos mixins: módulo roda em modo estrito, e método passado como
   callback perde o `this` (`tests/esm-fundacao.test.js` trava as duas
   regras; o conversor dos testes também roda em modo estrito).

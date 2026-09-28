@@ -19,6 +19,8 @@ import { FINANCE_CONTRACT } from './finance-contract.js';
 import { SYNC_MERGE } from './sync-merge.js';
 import { CONFIG } from './config.js';
 import { UTILS } from './utils.js';
+import { TRANSACOES } from '../transacoes.js';
+import { ORCAMENTO } from '../orcamento.js';
 
 const DADOS_EXPRESS = {
   _apiBaseUrl: function() {

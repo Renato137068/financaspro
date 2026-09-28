@@ -11,7 +11,7 @@ beforeEach(function() {
   global.UTILS = { mostrarToast: function(msg, tipo) { toasts.push({ msg: msg, tipo: tipo }); } };
   global.PLANO_METAS = { texto: function() { return global.__texto; } };
   global.__texto = 'Meu plano de metas\n1. Viagem';
-  global.compartilharTextoUI = carregarScript('js/utilities/share-texto.js');
+  global.compartilharTextoUI = carregarScript('js/utilities/share-texto.js', { UTILS: global.UTILS });
 });
 afterEach(function() {
   delete global.UTILS; delete global.PLANO_METAS; delete global.__texto;

@@ -32,12 +32,8 @@
   <script defer src="js/utilities/observability.js"></script>
   <!-- ES Modules (ADR 0005): publica os módulos migrados como globais. -->
   <script type="module" src="js/esm/ponte.js"></script>
-  <script defer src="js/utilities/funil.js"></script>
-  <script defer src="js/utilities/local-crypto.js"></script>
-  <script defer src="js/utilities/focus-trap.js"></script>
-  <script defer src="js/utilities/tablist-keyboard.js"></script>
-  <script defer src="js/utilities/share-texto.js"></script>
-  <script defer src="js/utilities/aria-live.js"></script>
+      <script defer src="js/utilities/focus-trap.js"></script>
+      <script defer src="js/utilities/aria-live.js"></script>
   <script defer src="js/utilities/finance-reconciler.js"></script>
   <!-- pin-guard NAO usa defer: precisa rodar antes do primeiro paint p/ evitar leak visual -->
   <script src="js/pin-guard.js"></script>
@@ -759,8 +755,6 @@
 
 <!-- SCRIPTS -->
 <!-- Core: infraestrutura (sem dependências externas) -->
-<script defer src="js/core/lazy-load.js"></script>
-<script defer src="js/core/domUtils.js"></script>
 <script defer src="js/core/dom-safe.js"></script>
 <script defer src="js/core/events-catalog.js"></script>
 <script defer src="js/core/event-bus.js"></script>
@@ -775,24 +769,16 @@
 <script defer src="js/core/supabase-sync.js"></script>
 <script defer src="js/core/lifecycle.js"></script>
 <!-- Domínio: categorização e parsing -->
-<script defer src="js/categories.js"></script>
-<script defer src="js/categorizador.js"></script>
-<script defer src="js/auto-categorizer.js"></script>
-<script defer src="js/aprendizado.js"></script>
-<script defer src="js/parser.js"></script>
-<script defer src="js/score.js"></script>
 <script defer src="js/pipeline.js"></script>
 <!-- Services: lógica de negócio sem UI -->
 <script defer src="js/services/actions.js"></script>
 <script defer src="js/services/healthService.js"></script>
 <!-- Negócio: transações, orçamento, automação -->
-<script defer src="js/transacoes.js"></script>
 <script defer src="js/utilities/daily-reminder.js"></script>
 <script defer src="js/contas.js"></script>
 <script defer src="js/cartoes.js"></script>
 <script defer src="js/recorrentes.js"></script>
 <script defer src="js/compromissos.js"></script>
-<script defer src="js/orcamento.js"></script>
 <script defer src="js/metas.js"></script>
 <script defer src="js/contas-pagar.js"></script>
 <script defer src="js/calendario.js"></script>

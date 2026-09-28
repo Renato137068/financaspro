@@ -58,7 +58,8 @@ module.exports = {
     // passou a exercitar o módulo de verdade — antes, `validations.test.js`
     // testava uma cópia inline da implementação, que nunca pegaria regressão.
     'js/core/validations.js': { lines: 98, functions: 100, branches: 94 },
-    'js/orcamento.js': { lines: 90, functions: 100, branches: 74 },
+    // 27/09: ES Module; o BUDGET_SERVICE importado tirou os ramos de reserva mortos. 90/100/74 → 92/100/80.
+    'js/orcamento.js': { lines: 92, functions: 100, branches: 80 },
 
     // Saíram de 0%: os testes antigos recalculavam a lógica inline em vez de
     // carregar o módulo. A conversão revelou dois bugs de produção.

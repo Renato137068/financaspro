@@ -1,56 +1,53 @@
 /**
  * orcamento.js - Budget Management
  * Tier 1: Depends on config.js, dados.js, utils.js, transacoes.js
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
 
-var ORCAMENTO = {
+import { UTILS } from './core/utils.js';
+import { TRANSACOES } from './transacoes.js';
+import { BUDGET_SERVICE } from './services/budgetService.js';
+
+const ORCAMENTO = {
   _cache: null,
 
   init: function() {
-    this._carregarOrcamentos();
+    ORCAMENTO._carregarOrcamentos();
   },
 
   _carregarOrcamentos: function() {
     var config = DADOS.getConfig();
-    this._cache = config.orcamentos || {};
+    ORCAMENTO._cache = config.orcamentos || {};
   },
 
   definirLimite: function(categoria, limite) {
-    var isNovo = !this._cache[categoria] || !(this._cache[categoria].limite > 0);
+    var isNovo = !ORCAMENTO._cache[categoria] || !(ORCAMENTO._cache[categoria].limite > 0);
     if (isNovo && typeof BILLING !== 'undefined' && !BILLING.guardQuota('budget', 1)) {
       throw new Error('Limite de orçamentos atingido');
     }
-    if (typeof BUDGET_SERVICE !== 'undefined') {
-      this._cache = BUDGET_SERVICE.setBudget(this._cache, categoria, limite);
-    } else {
-      if (limite <= 0) {
-        throw new Error('Limite deve ser maior que 0');
-      }
-      this._cache[categoria] = {
-        limite: parseFloat(limite),
-        definidoEm: new Date().toISOString()
-      };
-    }
+    ORCAMENTO._cache = BUDGET_SERVICE.setBudget(ORCAMENTO._cache, categoria, limite);
     if (typeof DADOS !== 'undefined' && typeof DADOS.upsertOrcamento === 'function') {
-      var entry = DADOS.upsertOrcamento(categoria, this._cache[categoria].limite);
-      this._cache[categoria] = Object.assign({}, this._cache[categoria], entry);
+      var entry = DADOS.upsertOrcamento(categoria, ORCAMENTO._cache[categoria].limite);
+      ORCAMENTO._cache[categoria] = Object.assign({}, ORCAMENTO._cache[categoria], entry);
     } else {
-      this._salvarOrcamentos();
+      ORCAMENTO._salvarOrcamentos();
     }
     if (typeof APP_STATE !== 'undefined') APP_STATE.setState({ config: DADOS.getConfig() });
-    return this._cache[categoria];
+    return ORCAMENTO._cache[categoria];
   },
 
   obterLimite: function(categoria) {
-    var entry = this._cache[categoria];
+    var entry = ORCAMENTO._cache[categoria];
     return entry ? entry.limite : null;
   },
 
   obterTodos: function() {
     var result = {};
-    var keys = Object.keys(this._cache);
+    var keys = Object.keys(ORCAMENTO._cache);
     for (var i = 0; i < keys.length; i++) {
-      result[keys[i]] = this._cache[keys[i]];
+      result[keys[i]] = ORCAMENTO._cache[keys[i]];
     }
     return result;
   },
@@ -58,63 +55,26 @@ var ORCAMENTO = {
   deletarLimite: function(categoria) {
     if (typeof DADOS !== 'undefined' && typeof DADOS.deletarOrcamento === 'function') {
       DADOS.deletarOrcamento(categoria);
-      delete this._cache[categoria];
+      delete ORCAMENTO._cache[categoria];
     } else {
-      this._cache = typeof BUDGET_SERVICE !== 'undefined'
-        ? BUDGET_SERVICE.removeBudget(this._cache, categoria)
-        : (delete this._cache[categoria], this._cache);
-      this._salvarOrcamentos();
+      ORCAMENTO._cache = BUDGET_SERVICE.removeBudget(ORCAMENTO._cache, categoria);
+      ORCAMENTO._salvarOrcamentos();
     }
     if (typeof APP_STATE !== 'undefined') APP_STATE.setState({ config: DADOS.getConfig() });
   },
 
   calcularGastoMes: function(categoria, mes, ano) {
-    if (typeof BUDGET_SERVICE !== 'undefined') {
-      var txsMes = TRANSACOES.obter({ mes: mes, ano: ano });
-      return BUDGET_SERVICE.calculateSpent(txsMes, categoria, null, null);
-    }
-    var transacoes = TRANSACOES.obter({ mes: mes, ano: ano, categoria: categoria });
-    // Soma em centavos inteiros — acumular reais em float faz mil parcelas de
-    // R$ 0,10 darem 99,9999999999986 e o limite de R$ 100 nunca ser atingido.
-    var totalC = 0;
-    for (var i = 0; i < transacoes.length; i++) {
-      if (transacoes[i].tipo === CONFIG.TIPO_DESPESA) {
-        totalC += UTILS.paraCentavos(transacoes[i].valor);
-      }
-    }
-    return totalC / 100;
+    // BUDGET_SERVICE soma em centavos: acumular reais em float faz mil parcelas
+    // de R$ 0,10 darem 99,9999999999986 e o limite de R$ 100 nunca ser atingido.
+    var txsMes = TRANSACOES.obter({ mes: mes, ano: ano });
+    return BUDGET_SERVICE.calculateSpent(txsMes, categoria, null, null);
   },
 
   obterStatus: function(categoria, mes, ano) {
-    if (typeof BUDGET_SERVICE !== 'undefined') {
-      var txsMes = TRANSACOES.obter({ mes: mes, ano: ano });
-      return BUDGET_SERVICE.getStatus(this._cache, txsMes, categoria, null, null);
-    }
-    var limite = this.obterLimite(categoria);
-    if (!limite) {
-      return {
-        categoria: categoria,
-        limite: null,
-        gasto: 0,
-        percentual: 0,
-        status: 'sem-limite'
-      };
-    }
-    var gasto = this.calcularGastoMes(categoria, mes, ano);
-    // Mesma regra do BUDGET_SERVICE: status e percentual exibido saem da mesma
-    // comparação em centavos, para a tela nunca dizer 100% com selo de alerta.
-    var gastoC = UTILS.paraCentavos(gasto);
-    var limiteC = UTILS.paraCentavos(limite);
-    var excedido = gastoC >= limiteC;
-    var bruto = Math.round((gastoC / limiteC) * 100);
-    return {
-      categoria: categoria,
-      limite: limite,
-      gasto: gasto,
-      percentual: excedido ? bruto : Math.min(99, bruto),
-      status: excedido ? 'excedido' : (gastoC * 100 >= limiteC * 80 ? 'alerta' : 'ok'),
-      restante: Math.max(0, limiteC - gastoC) / 100
-    };
+    // Status e percentual saem da mesma comparação em centavos (BUDGET_SERVICE),
+    // para a tela nunca dizer 100% com selo de alerta.
+    var txsMes = TRANSACOES.obter({ mes: mes, ano: ano });
+    return BUDGET_SERVICE.getStatus(ORCAMENTO._cache, txsMes, categoria, null, null);
   },
 
   /**
@@ -146,8 +106,8 @@ var ORCAMENTO = {
     var diasNoMes = new Date(ano, mes, 0).getDate();
     var diasRestantes = diasNoMes - diasDecorridos;
 
-    var limite = this.obterLimite(categoria);
-    var gasto = this.calcularGastoMes(categoria, mes, ano);
+    var limite = ORCAMENTO.obterLimite(categoria);
+    var gasto = ORCAMENTO.calcularGastoMes(categoria, mes, ano);
 
     var base = {
       categoria: categoria,
@@ -199,8 +159,8 @@ var ORCAMENTO = {
 
   /** Categorias que vão estourar ou já estouraram, da pior para a melhor. */
   categoriasEmRisco: function(hoje) {
-    var self = this;
-    return Object.keys(this._cache)
+    var self = ORCAMENTO;
+    return Object.keys(ORCAMENTO._cache)
       .map(function(cat) { return self.projetarCategoria(cat, hoje); })
       .filter(function(p) { return p.risco === 'vai-estourar' || p.risco === 'estourado'; })
       .sort(function(a, b) { return b.percentual - a.percentual; });
@@ -211,7 +171,7 @@ var ORCAMENTO = {
    * um card que sempre fala vira ruído e para de ser lido.
    */
   mensagemRisco: function(categoria, hoje) {
-    var p = this.projetarCategoria(categoria, hoje);
+    var p = ORCAMENTO.projetarCategoria(categoria, hoje);
     var nome = (typeof UTILS.labelCategoria === 'function')
       ? UTILS.labelCategoria(categoria) : categoria;
 
@@ -230,26 +190,19 @@ var ORCAMENTO = {
   },
 
   obterStatusTodos: function(mes, ano) {
-    if (typeof BUDGET_SERVICE !== 'undefined') {
-      var txsMes = TRANSACOES.obter({ mes: mes, ano: ano });
-      return BUDGET_SERVICE.getAllStatus(this._cache, txsMes, null, null);
-    }
-    var categorias = Object.keys(this._cache);
-    var self = this;
-    return categorias.map(function(cat) {
-      return self.obterStatus(cat, mes, ano);
-    });
+    var txsMes = TRANSACOES.obter({ mes: mes, ano: ano });
+    return BUDGET_SERVICE.getAllStatus(ORCAMENTO._cache, txsMes, null, null);
   },
 
   _salvarOrcamentos: function() {
     var config = DADOS.getConfig();
-    config.orcamentos = this._cache;
+    config.orcamentos = ORCAMENTO._cache;
     DADOS.salvarConfig(config);
     if (typeof APP_STATE !== 'undefined') APP_STATE.setState({ config: config });
     if (typeof DADOS._pushOrcamentoApi === 'function') {
-      var chaves = Object.keys(this._cache);
+      var chaves = Object.keys(ORCAMENTO._cache);
       for (var i = 0; i < chaves.length; i++) {
-        var entry = this._cache[chaves[i]];
+        var entry = ORCAMENTO._cache[chaves[i]];
         if (entry && typeof entry.limite === 'number') {
           DADOS._pushOrcamentoApi(chaves[i], entry.limite);
         }
@@ -258,6 +211,5 @@ var ORCAMENTO = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = ORCAMENTO;
-}
+export { ORCAMENTO };
+export default ORCAMENTO;
