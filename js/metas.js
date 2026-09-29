@@ -1,6 +1,14 @@
 /**
  * metas.js — Metas financeiras (valor alvo, progresso, prazo)
+ *
+ * ES Module (ADR 0005): chega sob demanda no chunk 'metas'
+ * (js/esm/chunks/metas.js, via LAZY.load), que o publica em window.
  */
+
+import { UTILS } from './core/utils.js';
+import { BILLING } from './billing.js';
+import { DADOS } from './core/dados.js';
+
 const METAS = {
   ICONES: {
     viagem: 'plane',
@@ -23,7 +31,7 @@ const METAS = {
   },
 
   obter: function(id) {
-    return this.listar().filter(function(m) { return m.id === id; })[0] || null;
+    return METAS.listar().filter(function(m) { return m.id === id; })[0] || null;
   },
 
   criar: function(dados) {
@@ -49,14 +57,14 @@ const METAS = {
       criadoEm: new Date().toISOString(),
       concluida: false
     };
-    var metas = this.listar();
+    var metas = METAS.listar();
     metas.push(meta);
     DADOS.salvarConfig({ metas: metas });
     return meta;
   },
 
   atualizar: function(id, patch) {
-    var metas = this.listar();
+    var metas = METAS.listar();
     var idx = -1;
     for (var i = 0; i < metas.length; i++) {
       if (metas[i].id === id) { idx = i; break; }
@@ -70,7 +78,7 @@ const METAS = {
   },
 
   excluir: function(id) {
-    var metas = this.listar().filter(function(m) { return m.id !== id; });
+    var metas = METAS.listar().filter(function(m) { return m.id !== id; });
     DADOS.salvarConfig({ metas: metas });
   },
 
@@ -79,7 +87,7 @@ const METAS = {
     // engolia "1.500" como 1,5.
     var v = UTILS.parseMoeda(valor);
     if (!v || v <= 0) throw new Error('Valor inválido');
-    var meta = this.obter(id);
+    var meta = METAS.obter(id);
     if (!meta) throw new Error('Meta não encontrada');
     // Soma em centavos inteiros: aportes sucessivos com += float faziam o
     // valorAtual GUARDADO derivar (0,70 + 0,10 virava 0,7999999999999999).
@@ -87,7 +95,7 @@ const METAS = {
     // porque valorAtual < valorAlvo por uma fração de centavo.
     var somaCent = UTILS.paraCentavos(meta.valorAtual) + UTILS.paraCentavos(v);
     var alvoCent = UTILS.paraCentavos(meta.valorAlvo);
-    return this.atualizar(id, { valorAtual: Math.min(alvoCent, somaCent) / 100 });
+    return METAS.atualizar(id, { valorAtual: Math.min(alvoCent, somaCent) / 100 });
   },
 
   calcularProgresso: function(meta, hoje) {
@@ -180,7 +188,7 @@ const METAS = {
    */
   calcularProjecao: function(meta, hoje) {
     var agora = METAS._agora(hoje);
-    var base = this.calcularProgresso(meta, agora);
+    var base = METAS.calcularProgresso(meta, agora);
 
     var vazio = {
       percentual: base.percentual,
@@ -287,7 +295,7 @@ const METAS = {
 
   /** Frase pronta para a UI. Vazia quando não há nada de acionável a dizer. */
   mensagemProjecao: function(meta, hoje) {
-    var p = this.calcularProjecao(meta, hoje);
+    var p = METAS.calcularProjecao(meta, hoje);
     var fmt = function(v) { return UTILS.formatarMoeda(v); };
 
     switch (p.situacao) {
@@ -311,6 +319,5 @@ const METAS = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = METAS;
-}
+export { METAS };
+export default METAS;

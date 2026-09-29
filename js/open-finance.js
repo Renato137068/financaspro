@@ -1,7 +1,17 @@
 /**
  * open-finance.js — Conexões bancárias (local + nuvem via API)
+ *
+ * ES Module (ADR 0005): chega sob demanda no chunk 'conta'
+ * (js/esm/chunks/conta.js, via LAZY.load), que o publica em window.
  */
-var OPEN_FINANCE = {
+
+import { TRANSACOES } from './transacoes.js';
+import { RENDER } from './render.js';
+import { BILLING } from './billing.js';
+import { DADOS } from './core/dados.js';
+import { INIT_BILLING } from './modules/init-billing.js';
+
+const OPEN_FINANCE = {
   SANDBOX_PROVIDER: 'sandbox',
   BELVO_PROVIDER: 'belvo',
   _cloudConnections: null,
@@ -51,9 +61,9 @@ var OPEN_FINANCE = {
   },
 
   refreshFromApi: function() {
-    var self = this;
-    if (!this.isCloudActive()) {
-      return Promise.resolve(this.listConnections());
+    var self = OPEN_FINANCE;
+    if (!OPEN_FINANCE.isCloudActive()) {
+      return Promise.resolve(OPEN_FINANCE.listConnections());
     }
     return Promise.all([
       DADOS.openFinanceListApi(),
@@ -67,10 +77,10 @@ var OPEN_FINANCE = {
   },
 
   fetchProviders: function() {
-    var self = this;
-    if (this._providers) return Promise.resolve(this._providers);
-    if (!this.isCloudActive()) {
-      return Promise.resolve({ sandbox: true, belvo: false, default: this.SANDBOX_PROVIDER });
+    var self = OPEN_FINANCE;
+    if (OPEN_FINANCE._providers) return Promise.resolve(OPEN_FINANCE._providers);
+    if (!OPEN_FINANCE.isCloudActive()) {
+      return Promise.resolve({ sandbox: true, belvo: false, default: OPEN_FINANCE.SANDBOX_PROVIDER });
     }
     return DADOS.openFinanceProvidersApi().then(function(p) {
       self._providers = p;
@@ -79,15 +89,15 @@ var OPEN_FINANCE = {
   },
 
   isBelvoAvailable: function() {
-    return !!(this._providers && this._providers.belvo);
+    return !!(OPEN_FINANCE._providers && OPEN_FINANCE._providers.belvo);
   },
 
   connectBelvo: function() {
-    var self = this;
-    if (!this._requirePlan()) {
+    var self = OPEN_FINANCE;
+    if (!OPEN_FINANCE._requirePlan()) {
       return Promise.reject(new Error('Open Finance requer plano Pro'));
     }
-    if (!this.isCloudActive()) {
+    if (!OPEN_FINANCE.isCloudActive()) {
       return Promise.reject(new Error('Conexão Belvo requer login na nuvem'));
     }
     return DADOS.openFinanceBelvoWidgetTokenApi().then(function(data) {
@@ -104,9 +114,9 @@ var OPEN_FINANCE = {
   },
 
   completeBelvoLink: function(linkId, bankName) {
-    var self = this;
+    var self = OPEN_FINANCE;
     if (!linkId) return Promise.reject(new Error('Link Belvo inválido'));
-    if (!this.isCloudActive()) {
+    if (!OPEN_FINANCE.isCloudActive()) {
       return Promise.reject(new Error('Login na nuvem necessário'));
     }
     return DADOS.openFinanceBelvoCompleteApi(linkId, bankName).then(function(row) {
@@ -127,24 +137,24 @@ var OPEN_FINANCE = {
     var bankName = params.get('institution') || params.get('institution_name') || 'Conta bancária';
     if (!linkId) return Promise.resolve(null);
 
-    return this.completeBelvoLink(linkId, bankName);
+    return OPEN_FINANCE.completeBelvoLink(linkId, bankName);
   },
 
   listConnections: function() {
-    if (this.isCloudActive() && this._cloudConnections) {
-      return this._cloudConnections;
+    if (OPEN_FINANCE.isCloudActive() && OPEN_FINANCE._cloudConnections) {
+      return OPEN_FINANCE._cloudConnections;
     }
-    return this.getState().connections || [];
+    return OPEN_FINANCE.getState().connections || [];
   },
 
   connectSandbox: function(bankLabel) {
-    var self = this;
-    if (!this._requirePlan()) {
+    var self = OPEN_FINANCE;
+    if (!OPEN_FINANCE._requirePlan()) {
       return Promise.reject(new Error('Open Finance requer plano Pro'));
     }
     bankLabel = (bankLabel || 'Banco Demo').trim() || 'Banco Demo';
 
-    if (this.isCloudActive()) {
+    if (OPEN_FINANCE.isCloudActive()) {
       return DADOS.openFinanceConnectApi(bankLabel).then(function(row) {
         if (!row) throw new Error('Falha ao conectar conta');
         var conn = self._mapApiConnection(row);
@@ -153,23 +163,23 @@ var OPEN_FINANCE = {
       });
     }
 
-    var state = this.getState();
+    var state = OPEN_FINANCE.getState();
     var conn = {
       id: 'of-' + Date.now(),
-      provider: this.SANDBOX_PROVIDER,
+      provider: OPEN_FINANCE.SANDBOX_PROVIDER,
       bankName: bankLabel,
       status: 'linked',
       linkedAt: new Date().toISOString(),
       lastSync: null,
     };
     state.connections.push(conn);
-    this.saveState(state);
+    OPEN_FINANCE.saveState(state);
     return Promise.resolve(conn);
   },
 
   disconnect: function(connectionId) {
-    var self = this;
-    if (this.isCloudActive()) {
+    var self = OPEN_FINANCE;
+    if (OPEN_FINANCE.isCloudActive()) {
       return DADOS.openFinanceDisconnectApi(connectionId).then(function() {
         self._cloudConnections = (self._cloudConnections || []).filter(function(c) {
           return c.id !== connectionId;
@@ -177,11 +187,11 @@ var OPEN_FINANCE = {
       });
     }
 
-    var state = this.getState();
+    var state = OPEN_FINANCE.getState();
     state.connections = (state.connections || []).filter(function(c) {
       return c.id !== connectionId;
     });
-    this.saveState(state);
+    OPEN_FINANCE.saveState(state);
     return Promise.resolve();
   },
 
@@ -189,7 +199,7 @@ var OPEN_FINANCE = {
     var existing = typeof DADOS !== 'undefined' ? DADOS.getTransacoes() : [];
     var imported = 0;
     var skipped = 0;
-    var self = this;
+    var self = OPEN_FINANCE;
 
     (items || []).forEach(function(raw) {
       var norm = self.normalizeMockTransaction(raw, connectionId);
@@ -219,9 +229,9 @@ var OPEN_FINANCE = {
   },
 
   syncConnection: function(connectionId) {
-    var self = this;
+    var self = OPEN_FINANCE;
 
-    if (this.isCloudActive()) {
+    if (OPEN_FINANCE.isCloudActive()) {
       return DADOS.openFinanceSyncApi(connectionId).then(function(result) {
         return DADOS.sincronizarComApi().then(function() {
           if (typeof RENDER !== 'undefined' && RENDER.renderizarTudo) {
@@ -234,7 +244,7 @@ var OPEN_FINANCE = {
       });
     }
 
-    var state = this.getState();
+    var state = OPEN_FINANCE.getState();
     var conn = null;
     for (var i = 0; i < state.connections.length; i += 1) {
       if (state.connections[i].id === connectionId) {
@@ -244,14 +254,14 @@ var OPEN_FINANCE = {
     }
     if (!conn) return Promise.reject(new Error('Conexão não encontrada'));
 
-    var items = conn.provider === this.SANDBOX_PROVIDER
-      ? this.generateSandboxTransactions(conn)
+    var items = conn.provider === OPEN_FINANCE.SANDBOX_PROVIDER
+      ? OPEN_FINANCE.generateSandboxTransactions(conn)
       : [];
 
-    var result = this.importTransactions(items, connectionId);
+    var result = OPEN_FINANCE.importTransactions(items, connectionId);
     conn.lastSync = new Date().toISOString();
     state.lastSync = conn.lastSync;
-    this.saveState(state);
+    OPEN_FINANCE.saveState(state);
 
     if (typeof RENDER !== 'undefined' && RENDER.renderizarTudo) {
       RENDER.renderizarTudo();
@@ -260,7 +270,7 @@ var OPEN_FINANCE = {
   },
 
   getStatusLabel: function() {
-    var conns = this.listConnections().filter(function(c) {
+    var conns = OPEN_FINANCE.listConnections().filter(function(c) {
       return c.status === 'linked';
     });
     if (!conns.length) return 'Nenhuma conta conectada';
@@ -323,12 +333,5 @@ var OPEN_FINANCE = {
   },
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = {
-    SANDBOX_PROVIDER: OPEN_FINANCE.SANDBOX_PROVIDER,
-    findDuplicateExternalId: OPEN_FINANCE.findDuplicateExternalId.bind(OPEN_FINANCE),
-    normalizeMockTransaction: OPEN_FINANCE.normalizeMockTransaction.bind(OPEN_FINANCE),
-    generateSandboxTransactions: OPEN_FINANCE.generateSandboxTransactions.bind(OPEN_FINANCE),
-    handleBelvoCallback: OPEN_FINANCE.handleBelvoCallback.bind(OPEN_FINANCE),
-  };
-}
+export { OPEN_FINANCE };
+export default OPEN_FINANCE;

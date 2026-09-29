@@ -1,9 +1,9 @@
 /**
  * play-billing.test.js — mapeamento SKU + verify/purchase/restore.
  */
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
 
 function loadPlayBilling(overrides) {
   overrides = overrides || {};
@@ -25,14 +25,9 @@ function loadPlayBilling(overrides) {
       isActive: () => true,
       invoke: invoke,
     },
-    module: { exports: {} },
     Promise: Promise,
   });
-  vm.runInContext(
-    fs.readFileSync(path.join(__dirname, '..', 'js', 'play-billing.js'), 'utf8'),
-    ctx,
-    { filename: path.join(__dirname, '..', 'js', 'play-billing.js') },
-  );
+  rodarNoContexto(ctx, path.join(__dirname, '..', 'js', 'play-billing.js'));
   return { PB: ctx.PLAY_BILLING, invoke, apiFetch, ctx };
 }
 

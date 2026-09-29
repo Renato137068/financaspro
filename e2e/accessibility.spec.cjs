@@ -3,7 +3,7 @@
  */
 const { test, expect } = require('@playwright/test');
 const AxeBuilder = require('@axe-core/playwright').default;
-const { prepareOfflinePage } = require('./helpers.cjs');
+const { prepareOfflinePage, carregarChunkConta } = require('./helpers.cjs');
 
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 const BLOQUEANTES = ['serious', 'critical'];
@@ -52,15 +52,12 @@ test('a11y — overlay de auth', async function({ page }) {
 });
 
 test.describe('a11y — paywall / billing (fonte 4322)', function() {
-  // INIT_BILLING no dist (4321) pode ficar no lazy bundle; na fonte o script
-  // clássico expõe o namespace — mesmo padrão de e2e/billing-smoke.spec.cjs.
+  // Código-fonte: o INIT_BILLING chega com o chunk 'conta' (ES Module sob
+  // demanda, como no build), pedido pelo caminho do app.
   test.use({ baseURL: 'http://127.0.0.1:4322' });
 
   test('paywall sem violações serious/critical', async function({ page }) {
-    await page.waitForFunction(function() {
-      return typeof INIT_BILLING !== 'undefined'
-        && typeof INIT_BILLING.abrirPaywall === 'function';
-    }, { timeout: 30000 });
+    await carregarChunkConta(page);
     await page.evaluate(function() {
       INIT_BILLING.abrirPaywall('A11y paywall');
     });

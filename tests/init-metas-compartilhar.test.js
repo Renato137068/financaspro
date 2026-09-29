@@ -2,8 +2,12 @@
  * init-metas-compartilhar.test.js — botão "Compartilhar plano de metas".
  * @jest-environment node
  */
-const { carregarScript } = require('./helpers/carregar-script.cjs');
-const INIT_METAS = carregarScript('js/modules/init-metas.js');
+const { carregarScript, viaGlobal } = require('./helpers/carregar-script.cjs');
+// ES Module: os imports usados aqui repassam ao global de cada teste.
+const INIT_METAS = carregarScript('js/modules/init-metas.js', Object.assign({
+  compartilharTextoUI: (...args) => global.compartilharTextoUI(...args),
+  RENDER_DASHBOARD: undefined, INIT_MODALS: undefined, METAS: undefined,
+}, viaGlobal('UTILS', 'PLANO_METAS')));
 
 let toasts;
 beforeEach(function() {

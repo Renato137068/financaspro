@@ -227,6 +227,14 @@ async function subirApp(opts) {
         return false;
       })();
     },
+    /**
+     * Chunk 'conta' (paywall, 2FA, Open Finance) pelo caminho do app: LAZY.load
+     * e o init() de cada módulo, como ao abrir o Perfil. É ES Module sob
+     * demanda: nem no código-fonte vem no boot.
+     */
+    carregarChunkConta: function() {
+      return new Promise(function(resolve) { w.INIT_NAVIGATION.carregarChunkConta(resolve); });
+    },
     fechar: function() { w.close(); },
   };
 }

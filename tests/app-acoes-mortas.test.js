@@ -32,6 +32,7 @@ test('paywall "Entrar e assinar" abre o login completo (body marcado e foco no e
   overlay.style.display = 'none';
   d.body.classList.remove('auth-overlay-open');
 
+  await app.carregarChunkConta();
   app.global('INIT_BILLING')._abrirLogin();
 
   expect(overlay.style.display).toBe('flex');

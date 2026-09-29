@@ -22,6 +22,11 @@ const CHUNKS_ESM = {
   previsao: function() { return import('../esm/chunks/previsao.js'); },
   onboarding: function() { return import('../esm/chunks/onboarding.js'); },
   relatorios: function() { return import('../esm/chunks/relatorios.js'); },
+  anexos: function() { return import('../esm/chunks/anexos.js'); },
+  metas: function() { return import('../esm/chunks/metas.js'); },
+  assinaturas: function() { return import('../esm/chunks/assinaturas.js'); },
+  patrimonio: function() { return import('../esm/chunks/patrimonio.js'); },
+  conta: function() { return import('../esm/chunks/conta.js'); },
 };
 
 const LAZY = {

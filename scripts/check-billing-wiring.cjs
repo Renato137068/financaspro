@@ -148,7 +148,11 @@ if (/!DADOS\._nuvemAtiva\(\)\).*return;/s.test(read('js/modules/init-billing.js'
 
 mustExist('js/fp-native-billing-bridge.js');
 mustContain('js/fp-native-billing-bridge.js', /__fpNativeBilling/, 'bridge Play nativo');
-mustContain('index.html', /fp-native-billing-bridge\.js/, 'bridge no index');
+// A ponte vem com o chunk 'conta' (ES Module), que a instala antes de publicar
+// PLAY_BILLING; o lifecycle carrega esse chunk no boot do app nativo (RISK-04).
+mustContain('js/esm/chunks/conta.js', /^import \{ instalarPonteBillingNativa \} from '\.\.\/\.\.\/fp-native-billing-bridge\.js';$/m, 'bridge importada pelo chunk conta');
+mustContain('js/esm/chunks/conta.js', /^instalarPonteBillingNativa\(\);$/m, 'bridge instalada pelo chunk conta');
+mustContain('js/core/lifecycle.js', /carregarChunkConta/, 'chunk conta no boot nativo');
 mustContain(
   'android/app/src/main/java/com/financaspro/app/MainActivity.java',
   /PlayBillingPlugin/,

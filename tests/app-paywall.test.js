@@ -53,6 +53,7 @@ describe('Paywall', () => {
 
   test('no modo local o paywall mostra os planos sem botão "Assinar"', async () => {
     app = await subirApp();
+    await app.carregarChunkConta();
     app.global('INIT_BILLING').abrirPaywall();
 
     expect(await app.esperar(() => paywall() && !paywall().querySelector('.billing-loading'))).toBe(true);
@@ -64,6 +65,7 @@ describe('Paywall', () => {
 
   test('Esc fecha o paywall', async () => {
     app = await subirApp();
+    await app.carregarChunkConta();
     app.global('INIT_BILLING').abrirPaywall('Teste');
     expect(await app.esperar(() => paywall())).toBe(true);
 
@@ -74,6 +76,7 @@ describe('Paywall', () => {
 
   test('o X fecha o paywall', async () => {
     app = await subirApp();
+    await app.carregarChunkConta();
     app.global('INIT_BILLING').abrirPaywall('Teste');
     expect(await app.esperar(() => paywall())).toBe(true);
 

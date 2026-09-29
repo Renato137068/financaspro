@@ -1,16 +1,23 @@
 /**
  * init-open-finance.js — UI de conexões Open Finance (sandbox)
+ *
+ * ES Module (ADR 0005): chega sob demanda no chunk 'conta'
+ * (js/esm/chunks/conta.js, via LAZY.load), que o publica em window.
  */
+
+import { UTILS } from '../core/utils.js';
+import { OPEN_FINANCE } from '../open-finance.js';
+
 const INIT_OPEN_FINANCE = {
   _overlay: null,
   _focusTrap: null,
 
   init: function() {
-    this.refreshCard();
-    if (!this._ouvindoTelas) {
+    INIT_OPEN_FINANCE.refreshCard();
+    if (!INIT_OPEN_FINANCE._ouvindoTelas) {
       // Conexões chega com o chunk 'config' (js/core/telas.js).
-      this._ouvindoTelas = true;
-      var self = this;
+      INIT_OPEN_FINANCE._ouvindoTelas = true;
+      var self = INIT_OPEN_FINANCE;
       document.addEventListener('fp:tela-carregada', function(e) {
         if (e.detail.nome === 'config-conexoes') self.refreshCard();
       });
@@ -24,8 +31,8 @@ const INIT_OPEN_FINANCE = {
   },
 
   abrir: function() {
-    var self = this;
-    this._fechar();
+    var self = INIT_OPEN_FINANCE;
+    INIT_OPEN_FINANCE._fechar();
 
     var openModal = function() {
       self._buildModal();
@@ -39,7 +46,7 @@ const INIT_OPEN_FINANCE = {
   },
 
   _buildModal: function() {
-    var self = this;
+    var self = INIT_OPEN_FINANCE;
     var ov = document.createElement('div');
     ov.className = 'modal-overlay of-overlay';
     ov.setAttribute('role', 'dialog');
@@ -63,7 +70,7 @@ const INIT_OPEN_FINANCE = {
       '</div>';
 
     document.body.appendChild(ov);
-    this._overlay = ov;
+    INIT_OPEN_FINANCE._overlay = ov;
 
     ov.addEventListener('click', function(e) {
       if (e.target === ov) self._fechar();
@@ -86,13 +93,13 @@ const INIT_OPEN_FINANCE = {
     });
 
     if (typeof FocusTrap !== 'undefined') {
-      this._focusTrap = new FocusTrap(ov);
-      this._focusTrap.activate();
+      INIT_OPEN_FINANCE._focusTrap = new FocusTrap(ov);
+      INIT_OPEN_FINANCE._focusTrap.activate();
     }
 
     if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(ov);
-    this._renderConnections(ov);
-    this._renderProviderActions(ov);
+    INIT_OPEN_FINANCE._renderConnections(ov);
+    INIT_OPEN_FINANCE._renderProviderActions(ov);
   },
 
   _renderProviderActions: function(ov) {
@@ -114,7 +121,7 @@ const INIT_OPEN_FINANCE = {
 
   _conectarBelvo: function(ov) {
     if (typeof OPEN_FINANCE === 'undefined') return;
-    var self = this;
+    var self = INIT_OPEN_FINANCE;
     OPEN_FINANCE.connectBelvo().then(function() {
       if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
         UTILS.mostrarToast('Complete a conexão na janela Belvo.', 'info');
@@ -138,7 +145,7 @@ const INIT_OPEN_FINANCE = {
 
   _conectarSandbox: function(ov) {
     if (typeof OPEN_FINANCE === 'undefined') return;
-    var self = this;
+    var self = INIT_OPEN_FINANCE;
     OPEN_FINANCE.connectSandbox('Banco Demo').then(function() {
       self.refreshCard();
       self._renderConnections(ov);
@@ -154,7 +161,7 @@ const INIT_OPEN_FINANCE = {
 
   _sync: function(connectionId, ov) {
     if (!connectionId || typeof OPEN_FINANCE === 'undefined') return;
-    var self = this;
+    var self = INIT_OPEN_FINANCE;
     OPEN_FINANCE.syncConnection(connectionId).then(function(result) {
       self.refreshCard();
       self._renderConnections(ov, result);
@@ -173,7 +180,7 @@ const INIT_OPEN_FINANCE = {
 
   _desconectar: function(connectionId, ov) {
     if (!connectionId || typeof OPEN_FINANCE === 'undefined') return;
-    var self = this;
+    var self = INIT_OPEN_FINANCE;
     OPEN_FINANCE.disconnect(connectionId).then(function() {
       self.refreshCard();
       self._renderConnections(ov);
@@ -222,17 +229,16 @@ const INIT_OPEN_FINANCE = {
   },
 
   _fechar: function() {
-    if (this._focusTrap) {
-      this._focusTrap.deactivate();
-      this._focusTrap = null;
+    if (INIT_OPEN_FINANCE._focusTrap) {
+      INIT_OPEN_FINANCE._focusTrap.deactivate();
+      INIT_OPEN_FINANCE._focusTrap = null;
     }
-    if (this._overlay) {
-      this._overlay.remove();
-      this._overlay = null;
+    if (INIT_OPEN_FINANCE._overlay) {
+      INIT_OPEN_FINANCE._overlay.remove();
+      INIT_OPEN_FINANCE._overlay = null;
     }
   },
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = INIT_OPEN_FINANCE;
-}
+export { INIT_OPEN_FINANCE };
+export default INIT_OPEN_FINANCE;

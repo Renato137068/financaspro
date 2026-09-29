@@ -1,13 +1,22 @@
 /**
  * init-assinaturas.js — UI do rastreador de assinaturas
+ *
+ * ES Module (ADR 0005): chega sob demanda no chunk 'assinaturas'
+ * (js/esm/chunks/assinaturas.js, via LAZY.load), que o publica em window.
  */
+
+import { UTILS } from '../core/utils.js';
+import { RENDER_DASHBOARD } from '../render-dashboard.js';
+import { INIT_MODALS } from './init-modals.js';
+import { ASSINATURAS } from '../assinaturas.js';
+
 const INIT_ASSINATURAS = {
   _bound: false,
 
   init: function() {
-    if (this._bound) return;
-    this._bound = true;
-    var self = this;
+    if (INIT_ASSINATURAS._bound) return;
+    INIT_ASSINATURAS._bound = true;
+    var self = INIT_ASSINATURAS;
     document.addEventListener('click', function(e) {
       var btn = e.target.closest('[data-action]');
       if (!btn) return;
@@ -31,7 +40,7 @@ const INIT_ASSINATURAS = {
     var cobrancaTxt = dias === 0 ? 'Cobra hoje' : dias === 1 ? 'Amanhã' : 'Em ' + dias + ' dias · ' + UTILS.formatarData(prox);
     return '<article class="sub-card' + (a.ativa === false ? ' sub-card--inactive' : '') + '">' +
       '<div class="sub-card-main">' +
-        '<span class="sub-card-icon">' + this._icon(a.icone) + '</span>' +
+        '<span class="sub-card-icon">' + INIT_ASSINATURAS._icon(a.icone) + '</span>' +
         '<div class="sub-card-info">' +
           '<h4 class="sub-card-title">' + UTILS.escapeHtml(a.nome) + '</h4>' +
           '<span class="sub-card-meta">' + UTILS.escapeHtml(cobrancaTxt) + '</span>' +
@@ -129,8 +138,8 @@ const INIT_ASSINATURAS = {
   },
 
   abrirFormNova: function(preset) {
-    var self = this;
-    INIT_MODALS.fpAlert(this._formHtml(preset), {
+    var self = INIT_ASSINATURAS;
+    INIT_MODALS.fpAlert(INIT_ASSINATURAS._formHtml(preset), {
       trustedHtml: true,
       title: 'Nova assinatura',
       okLabel: 'Salvar',
@@ -144,15 +153,15 @@ const INIT_ASSINATURAS = {
         }
       }
     });
-    this._bindCampoMoeda();
+    INIT_ASSINATURAS._bindCampoMoeda();
   },
 
   abrirFormEdicao: function(id) {
     var a = ASSINATURAS.obter(id);
     if (!a) return;
-    var self = this;
+    var self = INIT_ASSINATURAS;
     var preset = { nome: a.nome, valor: a.valor, dia: a.diaCobranca };
-    INIT_MODALS.fpAlert(this._formHtml(preset), {
+    INIT_MODALS.fpAlert(INIT_ASSINATURAS._formHtml(preset), {
       trustedHtml: true,
       title: 'Editar assinatura',
       okLabel: 'Salvar',
@@ -161,7 +170,7 @@ const INIT_ASSINATURAS = {
         return false;
       }
     });
-    this._bindCampoMoeda();
+    INIT_ASSINATURAS._bindCampoMoeda();
   },
 
   _salvarNova: function(overlay) {
@@ -173,8 +182,8 @@ const INIT_ASSINATURAS = {
       });
       overlay.remove();
       UTILS.mostrarToast('Assinatura salva', 'success');
-      this.render();
-      this.renderResumo();
+      INIT_ASSINATURAS.render();
+      INIT_ASSINATURAS.renderResumo();
     } catch (e) {
       UTILS.mostrarToast(e.message || 'Erro', 'error');
     }
@@ -189,28 +198,28 @@ const INIT_ASSINATURAS = {
       });
       overlay.remove();
       UTILS.mostrarToast('Assinatura atualizada', 'success');
-      this.render();
-      this.renderResumo();
+      INIT_ASSINATURAS.render();
+      INIT_ASSINATURAS.renderResumo();
     } catch (e) {
       UTILS.mostrarToast(e.message || 'Erro', 'error');
     }
   },
 
   importarSugestao: function(nome, valor) {
-    this.abrirFormNova({ nome: nome, valor: parseFloat(valor) });
+    INIT_ASSINATURAS.abrirFormNova({ nome: nome, valor: parseFloat(valor) });
   },
 
   toggle: function(id) {
     ASSINATURAS.toggleAtiva(id);
-    this.render();
-    this.renderResumo();
+    INIT_ASSINATURAS.render();
+    INIT_ASSINATURAS.renderResumo();
     UTILS.mostrarToast('Assinatura atualizada', 'info');
   },
 
   confirmarExcluir: function(id) {
     var a = ASSINATURAS.obter(id);
     if (!a) return;
-    var self = this;
+    var self = INIT_ASSINATURAS;
     var msg = 'Excluir assinatura "' + a.nome + '"?';
     var fn = function() {
       ASSINATURAS.excluir(id);
@@ -223,10 +232,6 @@ const INIT_ASSINATURAS = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = INIT_ASSINATURAS;
-}
-
 /* P2.5: ordem 30 — após contas a pagar */
 (function() {
   if (typeof RENDER_DASHBOARD === 'undefined' || !RENDER_DASHBOARD.onRender) return;
@@ -236,3 +241,6 @@ if (typeof module !== 'undefined' && module.exports) {
     if (INIT_ASSINATURAS.renderResumo) INIT_ASSINATURAS.renderResumo();
   }, 30);
 })();
+
+export { INIT_ASSINATURAS };
+export default INIT_ASSINATURAS;

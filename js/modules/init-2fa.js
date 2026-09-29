@@ -2,20 +2,28 @@
  * init-2fa.js — UI de verificação em duas etapas (TOTP)
  * Express: /api/v1/auth/totp/*
  * Supabase: auth.mfa.* (TOTP)
+ *
+ * ES Module (ADR 0005): chega sob demanda no chunk 'conta'
+ * (js/esm/chunks/conta.js, via LAZY.load), que o publica em window.
  */
+
+import { UTILS } from '../core/utils.js';
+import { INIT_MODALS } from './init-modals.js';
+import { DADOS } from '../core/dados.js';
+
 const INIT_2FA = {
   _enabled: false,
   _factorId: null,
   _enrollFactorId: null,
 
   init: function() {
-    this._bindToggle();
-    this.refreshUI();
-    if (!this._ouvindoTelas) {
+    INIT_2FA._bindToggle();
+    INIT_2FA.refreshUI();
+    if (!INIT_2FA._ouvindoTelas) {
       // Segurança chega com o chunk 'config' (js/core/telas.js), que pode vir
       // depois deste. As ligações são idempotentes (data-bound).
-      this._ouvindoTelas = true;
-      var self = this;
+      INIT_2FA._ouvindoTelas = true;
+      var self = INIT_2FA;
       document.addEventListener('fp:tela-carregada', function(e) {
         if (e.detail.nome === 'config-seguranca') self.init();
       });
@@ -28,7 +36,7 @@ const INIT_2FA = {
   },
 
   isAvailable: function() {
-    if (this._isSupabaseMode()) {
+    if (INIT_2FA._isSupabaseMode()) {
       return typeof SUPA_AUTH !== 'undefined'
         && SUPA_AUTH.getSessionSync
         && !!(SUPA_AUTH.getSessionSync() && SUPA_AUTH.getSessionSync().user);
@@ -68,7 +76,7 @@ const INIT_2FA = {
       return;
     }
 
-    if (!this.isAvailable()) {
+    if (!INIT_2FA.isAvailable()) {
       if (card) card.classList.add('perfil-card-disabled');
       chk.disabled = true;
       chk.checked = false;
@@ -79,8 +87,8 @@ const INIT_2FA = {
     if (card) card.classList.remove('perfil-card-disabled');
     chk.disabled = false;
 
-    var self = this;
-    var statusPromise = this._isSupabaseMode()
+    var self = INIT_2FA;
+    var statusPromise = INIT_2FA._isSupabaseMode()
       ? SUPA_AUTH.mfaStatus()
       : DADOS.totpStatusApi();
 
@@ -101,7 +109,7 @@ const INIT_2FA = {
     var chk = document.getElementById('chk-2fa');
     if (!chk || chk.dataset.bound === '1') return;
     chk.dataset.bound = '1';
-    var self = this;
+    var self = INIT_2FA;
 
     chk.addEventListener('change', function() {
       var wantOn = chk.checked;
@@ -120,10 +128,10 @@ const INIT_2FA = {
   },
 
   _abrirSetup: function() {
-    var self = this;
-    if (!this.isAvailable()) return;
+    var self = INIT_2FA;
+    if (!INIT_2FA.isAvailable()) return;
 
-    var start = this._isSupabaseMode()
+    var start = INIT_2FA._isSupabaseMode()
       ? SUPA_AUTH.mfaEnrollStart()
       : DADOS._apiFetch('/api/v1/auth/totp/setup', { method: 'POST', body: '{}' })
         .then(function(resp) {
@@ -141,7 +149,7 @@ const INIT_2FA = {
   },
 
   _modalSetup: function(data) {
-    var self = this;
+    var self = INIT_2FA;
     var html =
       '<div class="totp-setup">' +
         '<p>Escaneie o QR code no Google Authenticator, Authy ou similar:</p>' +
@@ -191,13 +199,13 @@ const INIT_2FA = {
     if (!card) return;
 
     // Só faz sentido com 2FA ligado e na nuvem.
-    if (!this._enabled || !this._isSupabaseMode() || typeof SUPA_AUTH === 'undefined'
+    if (!INIT_2FA._enabled || !INIT_2FA._isSupabaseMode() || typeof SUPA_AUTH === 'undefined'
         || !SUPA_AUTH.mfaRecoveryCount) {
       card.hidden = true;
       return;
     }
     card.hidden = false;
-    this._bindRecoveryBtn();
+    INIT_2FA._bindRecoveryBtn();
     if (status) status.textContent = 'Verificando…';
     SUPA_AUTH.mfaRecoveryCount().then(function(n) {
       if (!status) return;
@@ -215,7 +223,7 @@ const INIT_2FA = {
     var btn = document.getElementById('btn-recovery-gerar');
     if (!btn || btn.dataset.bound === '1') return;
     btn.dataset.bound = '1';
-    var self = this;
+    var self = INIT_2FA;
     btn.addEventListener('click', function() {
       if (typeof INIT_MODALS === 'undefined' || !INIT_MODALS.fpConfirm) {
         self._gerarRecovery();
@@ -231,7 +239,7 @@ const INIT_2FA = {
   },
 
   _gerarRecovery: function() {
-    var self = this;
+    var self = INIT_2FA;
     var btn = document.getElementById('btn-recovery-gerar');
     if (btn) btn.disabled = true;
     return SUPA_AUTH.mfaRecoveryGenerate().then(function(codigos) {
@@ -283,7 +291,7 @@ const INIT_2FA = {
   },
 
   _abrirDisable: function() {
-    var self = this;
+    var self = INIT_2FA;
     if (typeof INIT_MODALS === 'undefined' || !INIT_MODALS.fpAlert) return;
 
     var html =
@@ -328,6 +336,5 @@ const INIT_2FA = {
   },
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = INIT_2FA;
-}
+export { INIT_2FA };
+export default INIT_2FA;

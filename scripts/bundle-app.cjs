@@ -33,18 +33,10 @@ const VENDOR_PREFIX = 'js/vendor/';
 // Features opcionais movidas para fora do bundle eager e carregadas sob demanda
 // via LAZY.load(). Só entram aqui módulos autocontidos, disparados por ação do
 // usuário e referenciados SEMPRE atrás de `typeof X !== 'undefined'`.
-// Chunk que virou ES Module (previsão, relatórios, tour) sai desta lista: é
-// import() dinâmico em js/core/lazy-load.js (CHUNKS_ESM), e o Vite o divide.
+// Chunk que virou ES Module (previsão, relatórios, tour, anexos, metas,
+// gastos fixos, patrimônio, conta) sai desta lista: é import() dinâmico em
+// js/core/lazy-load.js (CHUNKS_ESM), e o Vite o divide.
 const LAZY_CHUNKS = {
-  // Anexos de comprovante só ao abrir Novo (~anexos fora do 1º acesso).
-  // OCR foi removido do produto; o chunk mantém só anexos manuais.
-  anexos: ['js/anexos.js', 'js/modules/init-anexos.js'],
-
-  // Sub-abas de Orçamento — carregadas ao abrir Metas, Gastos fixos ou Patrimônio.
-  metas: ['js/metas.js', 'js/modules/init-metas.js'],
-  assinaturas: ['js/assinaturas.js', 'js/modules/init-assinaturas.js'],
-  patrimonio: ['js/patrimonio.js', 'js/modules/init-patrimonio.js'],
-
   // Extrato — ao abrir a aba ou por um wrapper global (exportar, editar pelo
   // alerta, "ver no extrato"). Ícones/cores de categoria ficam no eager
   // (js/core/categoria-visual.js).
@@ -69,24 +61,6 @@ const LAZY_CHUNKS = {
   // A casca do simulador (#simulador-panel) vem aqui, não no chunk 'config':
   // INIT_SIMULADOR.init pode rodar antes de o 'config' chegar.
   simulador: ['js/telas/simulador.js', 'js/simulador.js', 'js/modules/init-simulador.js'],
-
-  // Paywall UI, Play Billing bridge, 2FA e Open Finance — aba Config (e
-  // Resumo/Extrato em nuvem para banner). Vão juntos: mesmo gatilho.
-  //
-  // IMPORTANTE (RISK-01 / 2026-09): `js/billing.js` NÃO entra neste chunk.
-  // Quotas e canUse rodam em Metas/Contas/OCR/etc. sem abrir Config; se BILLING
-  // só existisse após lazy `conta`, os `typeof BILLING !== 'undefined' &&
-  // !guardQuota` falhavam abertos (Free ultrapassava limites no AAB).
-  // O núcleo BILLING fica no app.bundle.js (eager). Este chunk só traz UI e
-  // compra. tests/lazy-chunks.test.js trava: billing.js fora do lazy + gatilho.
-  conta: [
-    'js/play-billing.js',
-    'js/fp-native-billing-bridge.js',
-    'js/modules/init-billing.js',
-    'js/modules/init-2fa.js',
-    'js/open-finance.js',
-    'js/modules/init-open-finance.js',
-  ],
 };
 const lazySet = new Set(Object.values(LAZY_CHUNKS).reduce((a, b) => a.concat(b), []));
 

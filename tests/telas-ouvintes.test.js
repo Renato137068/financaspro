@@ -35,6 +35,8 @@ function chegar(chunk, tela, preparar) {
 describe('ouvintes de fp:tela-carregada', () => {
   test('Segurança: biometria e 2FA voltam a ter o toggle ligado', async () => {
     app = await subirApp();
+    // O 2FA mora no chunk 'conta', que o app carrega ao abrir o Perfil.
+    await app.carregarChunkConta();
     chegar('config', 'config-seguranca');
     const d = app.document;
     expect(d.getElementById('chk-biometric').dataset.bound).toBe('1');
@@ -52,6 +54,7 @@ describe('ouvintes de fp:tela-carregada', () => {
 
   test('Conta: o billing preenche o plano quando a tela chega', async () => {
     app = await subirApp();
+    await app.carregarChunkConta();
     chegar('config', 'config-conta', (d) => { d.getElementById('perfil-plano-subtitle').textContent = ''; });
     expect(app.document.getElementById('perfil-plano-subtitle').textContent.trim()).not.toBe('');
   });
