@@ -19,6 +19,7 @@ import { INIT_MODALS } from './init-modals.js';
 import { INIT_FORM } from './init-form.js';
 import { BILLING } from '../billing.js';
 import { authLimparAoSair } from '../authController.js';
+import { DADOS } from '../core/dados.js';
 
 const INIT_NAVIGATION = {
   _listeners: [],

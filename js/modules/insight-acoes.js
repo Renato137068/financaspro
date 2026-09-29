@@ -15,6 +15,7 @@ import { UTILS } from '../core/utils.js';
 import { ORCAMENTO } from '../orcamento.js';
 import { INSIGHTS } from '../insights.js';
 import { INIT_NAVIGATION, mudarAba } from './init-navigation.js';
+import { DADOS } from '../core/dados.js';
 const INSIGHT_ACOES = {
   _ligado: false,
 

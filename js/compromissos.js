@@ -27,6 +27,7 @@ import { CONFIG } from './core/config.js';
 import { UTILS } from './core/utils.js';
 import { CONTAS } from './contas.js';
 import { CARTOES } from './cartoes.js';
+import { DADOS } from './core/dados.js';
 const COMPROMISSOS = {
 
   /** Normaliza "hoje", aceitando Date de qualquer realm (ver METAS._agora). */

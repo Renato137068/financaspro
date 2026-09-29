@@ -18,12 +18,20 @@ let _modulos = new Map();
 // monta o próprio BILLING (tests/billing*.test.js).
 const AUSENTES = { BILLING: undefined };
 
+// O DADOS dos módulos é a fixture em memória declarada no contexto (abaixo),
+// não o js/core/dados.js real, que grava no localStorage.
+function dubles(context) {
+  const d = Object.assign({}, AUSENTES);
+  if (Object.prototype.hasOwnProperty.call(context, 'DADOS')) d.DADOS = context.DADOS;
+  return d;
+}
+
 function loadScript(context, relativePath) {
   const file = path.join(root, relativePath);
   if (!fs.existsSync(file)) return;
   let code = fs.readFileSync(file, 'utf8');
   // ES Module (ADR 0005): o conversor já deixa os exports como `var` no contexto.
-  if (ehModulo(code)) { executarModulo(context, file, _modulos, AUSENTES); return; }
+  if (ehModulo(code)) { executarModulo(context, file, _modulos, dubles(context)); return; }
   // `var   ` tem o mesmo tamanho de `const `: a cobertura V8 soma as execuções
   // de um arquivo por posição de caractere, e encurtar o texto desalinhava
   // estas execuções das que rodam o arquivo intacto (tests/helpers/app-jsdom).

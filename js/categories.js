@@ -8,6 +8,7 @@
  */
 
 import { BILLING } from './billing.js';
+import { DADOS } from './core/dados.js';
 
 const CATEGORIES = {
   /**

@@ -13,6 +13,8 @@
  * js/esm/ponte.js.
  */
 
+import { DADOS } from './dados.js';
+
 const APP_STORE = {
   // ============================================================
   // ESTADO INTERNO

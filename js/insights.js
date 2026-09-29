@@ -14,6 +14,7 @@ import { ORCAMENTO } from './orcamento.js';
 import { AI_ENGINE } from './ai-engine.js';
 import { SETUP_GUIDE } from './core/setup-guide.js';
 import { BILLING } from './billing.js';
+import { DADOS } from './core/dados.js';
 
 // Soma de dinheiro em centavos inteiros (UTILS.paraCentavos com fallback):
 // somar t.valor em reais com += float derivava o "gasto de hoje" exibido e a

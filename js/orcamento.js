@@ -11,6 +11,7 @@ import { TRANSACOES } from './transacoes.js';
 import { BUDGET_SERVICE } from './services/budgetService.js';
 import { BILLING } from './billing.js';
 import { APP_STATE } from './core/store.js';
+import { DADOS } from './core/dados.js';
 
 const ORCAMENTO = {
   _cache: null,

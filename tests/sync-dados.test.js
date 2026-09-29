@@ -2,7 +2,6 @@
  * sync-dados.test.js — dados locais não desaparecem com snapshot remoto (Fase 1).
  */
 const { carregarScript } = require('./helpers/carregar-script.cjs');
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
@@ -43,13 +42,13 @@ function loadDados() {
   ctx.SYNC_MERGE = carregarScript('js/core/sync-merge.js');
 
   // ES Modules: o que o ctx tem (APP_STORE, ACTIONS, UTILS…) entra como
-  // dublê dos imports; FINANCE_CONTRACT e ORCAMENTO ficam ausentes, como antes.
-  ctx.FINANCE_CONTRACT = undefined;
-  ctx.ORCAMENTO = undefined;
+  // dublê dos imports; FINANCE_CONTRACT, ORCAMENTO e os vizinhos do DADOS que
+  // este teste nunca teve (cifragem, IndexedDB, fila, modais) ficam ausentes.
+  ['FINANCE_CONTRACT', 'ORCAMENTO', 'LOCAL_CRYPTO', 'IDB_KV', 'PERSIST_QUEUE', 'SESSION_LOG', 'INIT_MODALS']
+    .forEach((nome) => { ctx[nome] = undefined; });
   rodarNoContexto(ctx, path.join(__dirname, '..', 'js', 'core', 'sync-engine.js'));
-  rodarNoContexto(ctx, path.join(__dirname, '..', 'js', 'core', 'dados-express.js'));
-  const dadosFile = path.join(__dirname, '..', 'js', 'core', 'dados.js');
-  vm.runInContext(fs.readFileSync(dadosFile, 'utf8'), ctx, { filename: dadosFile });
+  // O sync-engine importa o DADOS (que traz o cliente Express): já carregou.
+  rodarNoContexto(ctx, path.join(__dirname, '..', 'js', 'core', 'dados.js'));
   const D = ctx.DADOS;
   D._apiBaseUrl = () => 'http://localhost:4000';
   ctx.SYNC_ENGINE._storage = mockLs;

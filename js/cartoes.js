@@ -24,6 +24,7 @@
 
 import { CONFIG } from './core/config.js';
 import { UTILS } from './core/utils.js';
+import { DADOS } from './core/dados.js';
 const CARTOES = {
 
   /** Normaliza "hoje" aceitando Date de qualquer realm (ver UTILS._ehData). */

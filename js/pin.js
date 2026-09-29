@@ -27,6 +27,7 @@
  */
 
 import { UTILS } from './core/utils.js';
+import { DADOS } from './core/dados.js';
 
 /** PIN crypto + rate limit core */
 const PIN_SECURITY = {

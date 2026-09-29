@@ -16,6 +16,7 @@ import { SKELETON } from './skeleton.js';
 import { UI } from './components/ui.js';
 import { BILLING } from './billing.js';
 import { APP_STORE } from './core/store.js';
+import { DADOS } from './core/dados.js';
 
 const RENDER_DASHBOARD = (function() {
   var DashboardRenderer = Object.create(RENDERER_BASE);

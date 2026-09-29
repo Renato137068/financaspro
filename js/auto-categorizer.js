@@ -6,6 +6,7 @@
  */
 
 import { CATEGORIES } from './categories.js';
+import { DADOS } from './core/dados.js';
 
 const AUTO_CATEGORIZER = {
   REGRAS: [

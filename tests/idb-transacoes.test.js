@@ -32,7 +32,7 @@ describe('IndexedDB para transações', function() {
   });
 
   test('init retorna Promise para lifecycle aguardar hidratação', function() {
-    expect(dadosSrc).toMatch(/init:\s*function\(\)[\s\S]*return this\._initPromise/);
+    expect(dadosSrc).toMatch(/init:\s*function\(\)[\s\S]*return DADOS\._initPromise/);
   });
 
   test('merge multi-aba usa SYNC_MERGE quando outra aba grava', function() {

@@ -12,6 +12,7 @@
 import { UTILS } from '../core/utils.js';
 import { BILLING } from '../billing.js';
 import { APP_STORE } from '../core/store.js';
+import { DADOS } from '../core/dados.js';
 
 const SYNC_INDICATOR = (function() {
   var DISMISS_KEY = 'fp-sync-indicator-dismissed';

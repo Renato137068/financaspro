@@ -87,6 +87,7 @@ import { APP_STORE, APP_STATE } from '../core/store.js';
 import { ACTIONS } from '../services/actions.js';
 import { SYNC_ENGINE } from '../core/sync-engine.js';
 import { LIFECYCLE, LIFECYCLE_BOOT } from '../core/lifecycle.js';
+import { DADOS } from '../core/dados.js';
 
 window.CONFIG = CONFIG;
 window.UTILS = UTILS;
@@ -184,3 +185,4 @@ window.ACTIONS = ACTIONS;
 window.SYNC_ENGINE = SYNC_ENGINE;
 window.LIFECYCLE = LIFECYCLE;
 window.LIFECYCLE_BOOT = LIFECYCLE_BOOT;
+window.DADOS = DADOS;

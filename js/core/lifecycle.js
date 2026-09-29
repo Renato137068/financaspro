@@ -32,6 +32,7 @@ import { setupAuthUI, atualizarBarraSessao, setupLogoutButton } from '../authCon
 import { DAILY_REMINDER } from '../utilities/daily-reminder.js';
 import { INIT_CONTAS_PAGAR } from '../modules/init-contas-pagar.js';
 import { APP_STORE } from './store.js';
+import { DADOS } from './dados.js';
 
 const LIFECYCLE = {
   // Registro de módulos

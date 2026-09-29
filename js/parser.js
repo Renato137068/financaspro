@@ -6,6 +6,7 @@
  */
 
 import { UTILS } from './core/utils.js';
+import { DADOS } from './core/dados.js';
 
 const PARSER = {
   /**

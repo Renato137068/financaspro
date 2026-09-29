@@ -11,6 +11,7 @@
  */
 import { UTILS } from './utils.js';
 import { TRANSACOES } from '../transacoes.js';
+import { DADOS } from './dados.js';
 
 const PERSIST_QUEUE = (function() {
   var STORAGE_KEY = 'fp-persist-queue';

@@ -7,6 +7,7 @@
 
 import { UTILS } from '../core/utils.js';
 import { TRANSACOES } from '../transacoes.js';
+import { DADOS } from '../core/dados.js';
 
 const DAILY_REMINDER = {
   _lastKey: 'fp-lembrete-ultimo-dia',

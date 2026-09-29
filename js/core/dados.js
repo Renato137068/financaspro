@@ -1,12 +1,35 @@
 /**
  * @file dados.js — Data persistence layer
  * @module DADOS
- * Tier 0. Depende de CONFIG apenas.
  *
  * O cliente da API Express legada (sessão, login, TOTP, Open Finance, sync
  * /api/v1) mora em js/core/dados-express.js e é copiado para cá no fim do
  * arquivo: quem chama continua usando DADOS.loginApi, DADOS._apiFetch etc.
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js. Quase todo o domínio importa o DADOS, e o DADOS importa de
+ * volta quem ele avisa (TRANSACOES, RENDER…): ciclos de import, válidos porque
+ * nenhum dos lados usa o outro ao carregar, só dentro de funções. A exceção
+ * é o DADOS_EXPRESS, lido ao carregar: só este arquivo (e a ponte, depois) o
+ * importa, então ele sempre termina antes do Object.assign lá embaixo.
  */
+
+import { DADOS_EXPRESS } from './dados-express.js';
+import { CONFIG } from './config.js';
+import { UTILS } from './utils.js';
+import { LOCAL_CRYPTO } from '../utilities/local-crypto.js';
+import { IDB_KV } from './idb-kv.js';
+import { SYNC_MERGE } from './sync-merge.js';
+import { SESSION_LOG } from './session-log.js';
+import { PERSIST_QUEUE } from './persist-queue.js';
+import { APP_STORE } from './store.js';
+import { ACTIONS } from '../services/actions.js';
+import { SYNC_ENGINE } from './sync-engine.js';
+import { TRANSACOES } from '../transacoes.js';
+import { ORCAMENTO } from '../orcamento.js';
+import { CONTAS } from '../contas.js';
+import { RENDER } from '../render.js';
+import { INIT_MODALS } from '../modules/init-modals.js';
 
 /**
  * @typedef {Object} Transacao
@@ -39,7 +62,7 @@
  * @property {number} [_schemaVer]
  */
 
-var DADOS = {
+const DADOS = {
   _initialized: false,
   _storageDebounceTimer: null,
   /** Versão atual do schema. Incrementar quando estrutura quebrar compat. */
@@ -73,8 +96,8 @@ var DADOS = {
 
   _storageGetRaw: function(key) {
     if (typeof LOCAL_CRYPTO !== 'undefined' && LOCAL_CRYPTO.isEnabled()) {
-      if (Object.prototype.hasOwnProperty.call(this._plainCache, key)) {
-        return this._plainCache[key];
+      if (Object.prototype.hasOwnProperty.call(DADOS._plainCache, key)) {
+        return DADOS._plainCache[key];
       }
       var raw = localStorage.getItem(key);
       if (!raw) return null;
@@ -82,16 +105,15 @@ var DADOS = {
       // mas encrypt() gera 'enc2:' — com a cifragem ligada, valores enc2 não
       // eram decifrados na leitura (dados apareceriam corrompidos).
       if (LOCAL_CRYPTO.isEncrypted(raw)) {
-        var self = this;
         LOCAL_CRYPTO.unwrapStorageValue(key, raw).then(function(plain) {
-          self._plainCache[key] = plain;
+          DADOS._plainCache[key] = plain;
           if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
             APP_STORE.dispatch(ACTIONS.SYNC_CONCLUIR);
           }
         });
         return null;
       }
-      this._plainCache[key] = raw;
+      DADOS._plainCache[key] = raw;
       return raw;
     }
     return localStorage.getItem(key);
@@ -137,12 +159,12 @@ var DADOS = {
         bytes += (k.length + v.length) * 2;
       }
     } catch (e) {
-      return { bytes: 0, limite: this.LIMITE_STORAGE_BYTES, percentual: 0, disponivel: false };
+      return { bytes: 0, limite: DADOS.LIMITE_STORAGE_BYTES, percentual: 0, disponivel: false };
     }
     return {
       bytes: bytes,
-      limite: this.LIMITE_STORAGE_BYTES,
-      percentual: Math.min(100, Math.round((bytes / this.LIMITE_STORAGE_BYTES) * 100)),
+      limite: DADOS.LIMITE_STORAGE_BYTES,
+      percentual: Math.min(100, Math.round((bytes / DADOS.LIMITE_STORAGE_BYTES) * 100)),
       disponivel: true,
     };
   },
@@ -155,11 +177,11 @@ var DADOS = {
    * do dia em que ele importa.
    */
   verificarCota: function() {
-    var uso = this.usoArmazenamento();
-    if (!uso.disponivel || this._avisouCota) return uso;
-    if (uso.percentual < this._LIMIAR_AVISO * 100) return uso;
+    var uso = DADOS.usoArmazenamento();
+    if (!uso.disponivel || DADOS._avisouCota) return uso;
+    if (uso.percentual < DADOS._LIMIAR_AVISO * 100) return uso;
 
-    this._avisouCota = true;
+    DADOS._avisouCota = true;
     var msgCota = 'Armazenamento em ' + uso.percentual + '%. Exporte um backup e '
       + 'considere apagar lançamentos antigos.';
     if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
@@ -173,8 +195,11 @@ var DADOS = {
         acao: 'Exportar backup',
         fecharAoAcao: false,
         onAcao: function() {
-          if (typeof CONFIG_USER !== 'undefined' && CONFIG_USER.exportarDados) {
-            CONFIG_USER.exportarDados();
+          // Busca tarde, por window: o CONFIG_USER é UI (importa navegação e
+          // formulário), e a camada de dados não arrasta a UI pelo import.
+          var configUser = typeof window !== 'undefined' ? window.CONFIG_USER : null;
+          if (configUser && configUser.exportarDados) {
+            configUser.exportarDados();
           } else if (typeof exportarDados === 'function') {
             exportarDados();
           }
@@ -195,9 +220,8 @@ var DADOS = {
    * @returns {Promise}
    */
   _enqueueDiskWrite: function(job) {
-    var self = this;
-    this._diskWriteChain = this._diskWriteChain.then(job, job);
-    return this._diskWriteChain;
+    DADOS._diskWriteChain = DADOS._diskWriteChain.then(job, job);
+    return DADOS._diskWriteChain;
   },
 
   /**
@@ -206,12 +230,11 @@ var DADOS = {
    * @returns {Promise<boolean>}
    */
   aguardarDisco: function() {
-    var chain = this._diskWriteChain || Promise.resolve();
+    var chain = DADOS._diskWriteChain || Promise.resolve();
     return chain.then(function() { return true; }, function() { return false; });
   },
 
   _storageSetRaw: function(key, value) {
-    var self = this;
 
     function avisarCotaEsgotada() {
       if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
@@ -224,17 +247,17 @@ var DADOS = {
     }
 
     if (typeof LOCAL_CRYPTO !== 'undefined' && LOCAL_CRYPTO.isEnabled()) {
-      this._plainCache[key] = value;
+      DADOS._plainCache[key] = value;
       // Captura `value` neste tick; a cadeia serial evita overwrite invertido.
       var snapshot = value;
-      this._enqueueDiskWrite(function() {
+      DADOS._enqueueDiskWrite(function() {
         return LOCAL_CRYPTO.wrapStorageValue(key, snapshot).then(function(stored) {
           try {
             localStorage.setItem(key, stored);
-            self.verificarCota();
+            DADOS.verificarCota();
             return true;
           } catch (e) {
-            if (self._ehErroDeCota(e)) {
+            if (DADOS._ehErroDeCota(e)) {
               avisarCotaEsgotada();
             }
             console.error('Erro ao persistir storage criptografado:', e);
@@ -247,10 +270,10 @@ var DADOS = {
 
     try {
       localStorage.setItem(key, value);
-      this.verificarCota();
+      DADOS.verificarCota();
       return true;
     } catch (e) {
-      if (this._ehErroDeCota(e)) {
+      if (DADOS._ehErroDeCota(e)) {
         avisarCotaEsgotada();
         return false;
       }
@@ -273,8 +296,7 @@ var DADOS = {
    */
   aplicarCriptografia: function(enable) {
     if (typeof LOCAL_CRYPTO === 'undefined') return Promise.resolve(false);
-    var self = this;
-    var keys = this._CRYPTO_KEYS();
+    var keys = DADOS._CRYPTO_KEYS();
 
     // 1. Lê em texto puro no estado ATUAL (decrypt exige o flag ainda ligado).
     var reads = keys.map(function(key) {
@@ -290,10 +312,10 @@ var DADOS = {
     // leitura espera as gravações pendentes e só serve para confirmar que o
     // blob decifra no estado ATUAL do flag — se não decifrar, a migração
     // aborta como nas chaves do localStorage.
-    var usaIdb = this._transacoesBackend === 'idb' && typeof IDB_KV !== 'undefined';
+    var usaIdb = DADOS._transacoesBackend === 'idb' && typeof IDB_KV !== 'undefined';
     if (usaIdb) {
-      reads.push(this._idbWriteChain.then(function() {
-        return self._idbLerTransacoes();
+      reads.push(DADOS._idbWriteChain.then(function() {
+        return DADOS._idbLerTransacoes();
       }).then(function(plain) {
         return { key: CONFIG.STORAGE_TRANSACOES, plain: plain, idb: true };
       }));
@@ -314,7 +336,7 @@ var DADOS = {
 
       return anexosAntes.then(function() {
         LOCAL_CRYPTO.setEnabled(enable);
-        self._plainCache = {};
+        DADOS._plainCache = {};
 
         var writes = items.map(function(it) {
           if (it.plain == null) return Promise.resolve();
@@ -322,11 +344,11 @@ var DADOS = {
             // Regrava pela cadeia serial a partir do cache em memória — no
             // backend 'idb' ele é a fonte de verdade e já inclui qualquer
             // lançamento salvo enquanto a leitura acima acontecia.
-            self._idbWriteChain = self._idbWriteChain.then(function() {
-              var lista = Array.isArray(self._transacoesCache) ? self._transacoesCache : [];
-              return self._idbGravarTransacoes(JSON.stringify(lista));
+            DADOS._idbWriteChain = DADOS._idbWriteChain.then(function() {
+              var lista = Array.isArray(DADOS._transacoesCache) ? DADOS._transacoesCache : [];
+              return DADOS._idbGravarTransacoes(JSON.stringify(lista));
             });
-            return self._idbWriteChain;
+            return DADOS._idbWriteChain;
           }
           if (enable) {
             return LOCAL_CRYPTO.encrypt(it.plain).then(function(enc) { localStorage.setItem(it.key, enc); });
@@ -347,7 +369,7 @@ var DADOS = {
   },
 
   _storageRemoveRaw: function(key) {
-    delete this._plainCache[key];
+    delete DADOS._plainCache[key];
     localStorage.removeItem(key);
   },
 
@@ -361,40 +383,39 @@ var DADOS = {
 
   /** Nuvem = Supabase OU API Express configurada (billing, login, sync). */
   _nuvemAtiva: function() {
-    if (this._supabaseAtivo()) return true;
-    return this._apiAtiva();
+    if (DADOS._supabaseAtivo()) return true;
+    return DADOS._apiAtiva();
   },
 
   init: function() {
-    if (this._initialized) return Promise.resolve();
-    if (this._initPromise) return this._initPromise;
-    var self = this;
-    this._initPromise = this._prepararStorageTransacoes().then(function() {
-      self._limparTokensLegados();
-      if (self._transacoesBackend !== 'idb' && !self._storageGetRaw(CONFIG.STORAGE_TRANSACOES)) {
-        self._storageSetRaw(CONFIG.STORAGE_TRANSACOES, JSON.stringify([]));
+    if (DADOS._initialized) return Promise.resolve();
+    if (DADOS._initPromise) return DADOS._initPromise;
+    DADOS._initPromise = DADOS._prepararStorageTransacoes().then(function() {
+      DADOS._limparTokensLegados();
+      if (DADOS._transacoesBackend !== 'idb' && !DADOS._storageGetRaw(CONFIG.STORAGE_TRANSACOES)) {
+        DADOS._storageSetRaw(CONFIG.STORAGE_TRANSACOES, JSON.stringify([]));
       }
-      if (!self._storageGetRaw(CONFIG.STORAGE_CONFIG)) {
-        var defaults = Object.assign({}, CONFIG.DEFAULT_CONFIG, { _schemaVer: self.SCHEMA_VERSION });
-        self._storageSetRaw(CONFIG.STORAGE_CONFIG, JSON.stringify(defaults));
+      if (!DADOS._storageGetRaw(CONFIG.STORAGE_CONFIG)) {
+        var defaults = Object.assign({}, CONFIG.DEFAULT_CONFIG, { _schemaVer: DADOS.SCHEMA_VERSION });
+        DADOS._storageSetRaw(CONFIG.STORAGE_CONFIG, JSON.stringify(defaults));
       } else {
-        self._migrarSchema();
+        DADOS._migrarSchema();
       }
       if (typeof APP_STORE !== 'undefined') APP_STORE.hydrateFromDados();
-      self.setupStorageSync();
+      DADOS.setupStorageSync();
       if (typeof SESSION_LOG !== 'undefined') {
-        SESSION_LOG.registrar('init_dados', { backend: self._transacoesBackend || 'localStorage' });
+        SESSION_LOG.registrar('init_dados', { backend: DADOS._transacoesBackend || 'localStorage' });
       }
-      self.sincronizarComApi();
-      self._initialized = true;
+      DADOS.sincronizarComApi();
+      DADOS._initialized = true;
     });
-    return this._initPromise;
+    return DADOS._initPromise;
   },
 
   _mostrarBannerMultiAba: function(mensagem) {
-    if (this._modalConflitoAberto) return;
-    if (this._avisouSyncMultiAba || typeof UTILS === 'undefined' || !UTILS.mostrarBanner) return;
-    this._avisouSyncMultiAba = true;
+    if (DADOS._modalConflitoAberto) return;
+    if (DADOS._avisouSyncMultiAba || typeof UTILS === 'undefined' || !UTILS.mostrarBanner) return;
+    DADOS._avisouSyncMultiAba = true;
     UTILS.mostrarBanner({
       id: 'fp-banner-multiaba',
       tipo: 'info',
@@ -406,7 +427,7 @@ var DADOS = {
   },
 
   _aplicarCacheTransacoes: function(lista) {
-    this._transacoesCache = Array.isArray(lista) ? lista : [];
+    DADOS._transacoesCache = Array.isArray(lista) ? lista : [];
     if (typeof TRANSACOES !== 'undefined') TRANSACOES.init();
     if (typeof ORCAMENTO !== 'undefined') ORCAMENTO.init();
     if (typeof CONTAS !== 'undefined') CONTAS.init();
@@ -414,28 +435,26 @@ var DADOS = {
   },
 
   _persistirTransacoesLista: function(lista) {
-    var self = this;
-    this._ignorarStorageSync = true;
-    if (this._transacoesBackend === 'idb') {
-      this._transacoesCache = lista;
+    DADOS._ignorarStorageSync = true;
+    if (DADOS._transacoesBackend === 'idb') {
+      DADOS._transacoesCache = lista;
       var json = JSON.stringify(lista);
-      this._idbWriteChain = this._idbWriteChain.then(function() {
-        return self._idbGravarTransacoes(json);
+      DADOS._idbWriteChain = DADOS._idbWriteChain.then(function() {
+        return DADOS._idbGravarTransacoes(json);
       });
     } else {
-      this._storageSetRaw(CONFIG.STORAGE_TRANSACOES, JSON.stringify(lista));
+      DADOS._storageSetRaw(CONFIG.STORAGE_TRANSACOES, JSON.stringify(lista));
     }
-    setTimeout(function() { self._ignorarStorageSync = false; }, 0);
+    setTimeout(function() { DADOS._ignorarStorageSync = false; }, 0);
   },
 
   _mostrarModalConflitos: function(conflitos, onResolve) {
-    var self = this;
     if (!conflitos || !conflitos.length || typeof document === 'undefined') {
       if (onResolve) onResolve({});
       return;
     }
     if (typeof INIT_MODALS !== 'undefined' && INIT_MODALS.fpConfirm) {
-      self._modalConflitoAberto = true;
+      DADOS._modalConflitoAberto = true;
       var html = 'Outra aba alterou <strong>' + conflitos.length + '</strong> lançamento(s) que você também modificou.<br><br><ul style="text-align:left;margin:0;padding-left:1.2em">';
       conflitos.forEach(function(c) {
         var titulo = (c.local && c.local.descricao) ? c.local.descricao : 'Lançamento';
@@ -450,12 +469,12 @@ var DADOS = {
       INIT_MODALS.fpConfirm(html, function() {
         var res = {};
         conflitos.forEach(function(c) { res[c.id] = 'local'; });
-        self._modalConflitoAberto = false;
+        DADOS._modalConflitoAberto = false;
         onResolve(res);
       }, function() {
         var res = {};
         conflitos.forEach(function(c) { res[c.id] = 'remote'; });
-        self._modalConflitoAberto = false;
+        DADOS._modalConflitoAberto = false;
         onResolve(res);
       }, { okLabel: 'Manter desta aba', cancelLabel: 'Usar outra aba', danger: false, trustedHtml: true });
       return;
@@ -480,9 +499,8 @@ var DADOS = {
     if (typeof SESSION_LOG !== 'undefined') {
       SESSION_LOG.registrar('conflito_multiaba', { qtd: conflitos.length });
     }
-    var self = this;
     return new Promise(function(resolve) {
-      self._mostrarModalConflitos(conflitos, function(resolucoes) {
+      DADOS._mostrarModalConflitos(conflitos, function(resolucoes) {
         var resultado = (typeof SYNC_MERGE !== 'undefined' && SYNC_MERGE.aplicarResolucoes)
           ? SYNC_MERGE.aplicarResolucoes(locais, pending, remotas, resolucoes)
           : remotas;
@@ -503,7 +521,7 @@ var DADOS = {
   },
 
   _parseTransacoesJson: function(data) {
-    if (!data || data === this.TX_IDB_SENTINEL) return [];
+    if (!data || data === DADOS.TX_IDB_SENTINEL) return [];
     var parsed = JSON.parse(data);
     return Array.isArray(parsed) ? parsed : [];
   },
@@ -555,57 +573,55 @@ var DADOS = {
   _deveMigrarTransacoesParaIdb: function(data, lista) {
     if (typeof IDB_KV === 'undefined' || !IDB_KV.isReady || !IDB_KV.isReady()) return false;
     if (!Array.isArray(lista)) return false;
-    if (lista.length >= this.LIMIAR_MIGRAR_TX_COUNT) return true;
-    if (data && data.length * 2 >= this.LIMIAR_MIGRAR_TX_BYTES) return true;
-    var uso = this.usoArmazenamento();
-    return uso.disponivel && uso.percentual >= this._LIMIAR_AVISO * 100;
+    if (lista.length >= DADOS.LIMIAR_MIGRAR_TX_COUNT) return true;
+    if (data && data.length * 2 >= DADOS.LIMIAR_MIGRAR_TX_BYTES) return true;
+    var uso = DADOS.usoArmazenamento();
+    return uso.disponivel && uso.percentual >= DADOS._LIMIAR_AVISO * 100;
   },
 
   _ativarBackendIdbTransacoes: function(lista) {
-    this._transacoesBackend = 'idb';
-    this._transacoesCache = Array.isArray(lista) ? lista : [];
+    DADOS._transacoesBackend = 'idb';
+    DADOS._transacoesCache = Array.isArray(lista) ? lista : [];
     try {
-      localStorage.setItem(this.TX_BACKEND_KEY, 'idb');
-      localStorage.setItem(CONFIG.STORAGE_TRANSACOES, this.TX_IDB_SENTINEL);
+      localStorage.setItem(DADOS.TX_BACKEND_KEY, 'idb');
+      localStorage.setItem(CONFIG.STORAGE_TRANSACOES, DADOS.TX_IDB_SENTINEL);
     } catch (e) { /* noop */ }
-    var json = JSON.stringify(this._transacoesCache);
-    var self = this;
-    this._idbWriteChain = this._idbWriteChain.then(function() {
-      return self._idbGravarTransacoes(json);
+    var json = JSON.stringify(DADOS._transacoesCache);
+    DADOS._idbWriteChain = DADOS._idbWriteChain.then(function() {
+      return DADOS._idbGravarTransacoes(json);
     }).then(function() {
-      self._pingTransacoesSync();
+      DADOS._pingTransacoesSync();
     });
-    return this._idbWriteChain;
+    return DADOS._idbWriteChain;
   },
 
   _prepararStorageTransacoes: function() {
-    var self = this;
     if (typeof IDB_KV === 'undefined') {
-      self._transacoesBackend = 'localStorage';
+      DADOS._transacoesBackend = 'localStorage';
       return Promise.resolve();
     }
     return IDB_KV.init().then(function() {
       var backend = null;
-      try { backend = localStorage.getItem(self.TX_BACKEND_KEY); } catch (e) { backend = null; }
+      try { backend = localStorage.getItem(DADOS.TX_BACKEND_KEY); } catch (e) { backend = null; }
       if (backend === 'idb' && IDB_KV.isReady()) {
-        self._transacoesBackend = 'idb';
-        return self._idbLerTransacoes().then(function(data) {
+        DADOS._transacoesBackend = 'idb';
+        return DADOS._idbLerTransacoes().then(function(data) {
           try {
-            self._transacoesCache = data ? self._parseTransacoesJson(data) : [];
+            DADOS._transacoesCache = data ? DADOS._parseTransacoesJson(data) : [];
           } catch (e) {
-            self._transacoesCache = [];
-            self._registrarFalhaLeitura(CONFIG.STORAGE_TRANSACOES, e);
-            return self._preservarBlobIlegivel(data);
+            DADOS._transacoesCache = [];
+            DADOS._registrarFalhaLeitura(CONFIG.STORAGE_TRANSACOES, e);
+            return DADOS._preservarBlobIlegivel(data);
           }
         });
       }
-      self._transacoesBackend = 'localStorage';
-      var raw = self._storageGetRaw(CONFIG.STORAGE_TRANSACOES);
+      DADOS._transacoesBackend = 'localStorage';
+      var raw = DADOS._storageGetRaw(CONFIG.STORAGE_TRANSACOES);
       if (!raw) return;
       try {
-        var lista = self._parseTransacoesJson(raw);
-        if (self._deveMigrarTransacoesParaIdb(raw, lista)) {
-          return self._ativarBackendIdbTransacoes(lista);
+        var lista = DADOS._parseTransacoesJson(raw);
+        if (DADOS._deveMigrarTransacoesParaIdb(raw, lista)) {
+          return DADOS._ativarBackendIdbTransacoes(lista);
         }
       } catch (e) {
         console.warn('Migração IDB ignorada:', e);
@@ -615,34 +631,32 @@ var DADOS = {
 
   _pingTransacoesSync: function() {
     try {
-      this._ignorarStorageSync = true;
-      localStorage.setItem(this.TX_SYNC_PING_KEY, String(Date.now()));
+      DADOS._ignorarStorageSync = true;
+      localStorage.setItem(DADOS.TX_SYNC_PING_KEY, String(Date.now()));
     } catch (e) { /* noop */ }
     finally {
-      var self = this;
-      setTimeout(function() { self._ignorarStorageSync = false; }, 0);
+      setTimeout(function() { DADOS._ignorarStorageSync = false; }, 0);
     }
   },
 
   _hidratarTransacoesIdb: function() {
-    var self = this;
-    if (this._transacoesBackend !== 'idb' || typeof IDB_KV === 'undefined') {
+    if (DADOS._transacoesBackend !== 'idb' || typeof IDB_KV === 'undefined') {
       return Promise.resolve(false);
     }
-    var antes = (this._transacoesCache || []).slice();
-    var pending = this._pendingTxIds();
-    return this._idbLerTransacoes().then(function(data) {
+    var antes = (DADOS._transacoesCache || []).slice();
+    var pending = DADOS._pendingTxIds();
+    return DADOS._idbLerTransacoes().then(function(data) {
       var novas;
       try {
-        novas = data ? self._parseTransacoesJson(data) : [];
+        novas = data ? DADOS._parseTransacoesJson(data) : [];
       } catch (e) {
         novas = [];
       }
-      return self._mesclarTransacoesComConflitos(antes, novas, pending).then(function(result) {
+      return DADOS._mesclarTransacoesComConflitos(antes, novas, pending).then(function(result) {
         var merged = result.lista;
-        self._aplicarCacheTransacoes(merged);
+        DADOS._aplicarCacheTransacoes(merged);
         if (JSON.stringify(merged) !== JSON.stringify(novas)) {
-          self._persistirTransacoesLista(merged);
+          DADOS._persistirTransacoesLista(merged);
         }
         return result.conflitos > 0;
       });
@@ -650,25 +664,24 @@ var DADOS = {
   },
 
   _mesclarTransacoesRemotas: function(remoteJson) {
-    if (!remoteJson || remoteJson === this.TX_IDB_SENTINEL) return;
+    if (!remoteJson || remoteJson === DADOS.TX_IDB_SENTINEL) return;
     var form = typeof document !== 'undefined' ? document.getElementById('form-transacao') : null;
     if (form && form.dataset && form.dataset.editId) {
-      this._mostrarBannerMultiAba(
+      DADOS._mostrarBannerMultiAba(
         'Outra aba alterou dados enquanto você edita um lançamento. Recarregue antes de salvar.'
       );
       return;
     }
-    var self = this;
     try {
-      var remotas = this._parseTransacoesJson(remoteJson);
+      var remotas = DADOS._parseTransacoesJson(remoteJson);
       if (!remotas.length && remoteJson !== '[]') return;
-      var locais = this._transacoesBackend === 'idb'
-        ? (this._transacoesCache || []).slice()
-        : this._parseTransacoesJson(this._storageGetRaw(CONFIG.STORAGE_TRANSACOES));
-      var pending = this._pendingTxIds();
-      this._mesclarTransacoesComConflitos(locais, remotas, pending).then(function(result) {
-        self._persistirTransacoesLista(result.lista);
-        self._aplicarCacheTransacoes(result.lista);
+      var locais = DADOS._transacoesBackend === 'idb'
+        ? (DADOS._transacoesCache || []).slice()
+        : DADOS._parseTransacoesJson(DADOS._storageGetRaw(CONFIG.STORAGE_TRANSACOES));
+      var pending = DADOS._pendingTxIds();
+      DADOS._mesclarTransacoesComConflitos(locais, remotas, pending).then(function(result) {
+        DADOS._persistirTransacoesLista(result.lista);
+        DADOS._aplicarCacheTransacoes(result.lista);
       }).catch(function(e) {
         console.warn('Merge multi-aba falhou:', e);
       });
@@ -694,14 +707,14 @@ var DADOS = {
 
   _migrarSchema: function() {
     try {
-      var cfg = this.getConfig();
+      var cfg = DADOS.getConfig();
       var atual = cfg._schemaVer || 1;
-      if (atual >= this.SCHEMA_VERSION) return;
+      if (atual >= DADOS.SCHEMA_VERSION) return;
 
       // v1 → v2: PIN antigo (sem salt PBKDF2) → forçar reset por segurança
       if (atual < 2) {
         if (cfg.pinAtivo && (!cfg.pinSalt || cfg.pinAlgoritmo !== 'pbkdf2-sha256-100k')) {
-          this.salvarConfig({
+          DADOS.salvarConfig({
             pinAtivo: false, pinHash: null, pinSalt: null,
             pinAlgoritmo: null, pinTentativas: 0, pinBloqueadoAte: 0,
             _migracaoPinV2: true // flag para UI avisar usuário
@@ -709,7 +722,7 @@ var DADOS = {
         }
       }
 
-      this.salvarConfig({ _schemaVer: this.SCHEMA_VERSION });
+      DADOS.salvarConfig({ _schemaVer: DADOS.SCHEMA_VERSION });
     } catch (e) {
       console.warn('Migração de schema falhou:', e);
     }
@@ -733,12 +746,12 @@ var DADOS = {
 
   /** Houve falha de leitura nesta sessão? */
   leituraFalhou: function() {
-    return !!this._falhaLeitura;
+    return !!DADOS._falhaLeitura;
   },
 
   /** Detalhe da falha, para a UI explicar o que aconteceu. */
   detalheFalhaLeitura: function() {
-    return this._falhaLeitura;
+    return DADOS._falhaLeitura;
   },
 
   /**
@@ -748,8 +761,8 @@ var DADOS = {
    * os dados do usuário é exportar um backup ANTES de continuar mexendo.
    */
   _registrarFalhaLeitura: function(chave, erro) {
-    if (this._falhaLeitura) return;
-    this._falhaLeitura = { chave: chave, mensagem: erro && erro.message, em: new Date().toISOString() };
+    if (DADOS._falhaLeitura) return;
+    DADOS._falhaLeitura = { chave: chave, mensagem: erro && erro.message, em: new Date().toISOString() };
 
     if (typeof OBS !== 'undefined' && OBS.captureError) {
       OBS.captureError(erro, { contexto: 'DADOS.leitura', chave: chave });
@@ -764,56 +777,55 @@ var DADOS = {
   },
 
   getTransacoesRaw: function() {
-    if (this._transacoesBackend === 'idb') {
-      return Array.isArray(this._transacoesCache) ? this._transacoesCache : [];
+    if (DADOS._transacoesBackend === 'idb') {
+      return Array.isArray(DADOS._transacoesCache) ? DADOS._transacoesCache : [];
     }
     try {
-      var data = this._storageGetRaw(CONFIG.STORAGE_TRANSACOES);
+      var data = DADOS._storageGetRaw(CONFIG.STORAGE_TRANSACOES);
       if (!data) return [];
-      var parsed = this._parseTransacoesJson(data);
+      var parsed = DADOS._parseTransacoesJson(data);
       if (!Array.isArray(parsed)) {
-        this._registrarFalhaLeitura(CONFIG.STORAGE_TRANSACOES,
+        DADOS._registrarFalhaLeitura(CONFIG.STORAGE_TRANSACOES,
           new Error('conteúdo não é uma lista'));
         return [];
       }
       return parsed;
     } catch (e) {
-      this._registrarFalhaLeitura(CONFIG.STORAGE_TRANSACOES, e);
+      DADOS._registrarFalhaLeitura(CONFIG.STORAGE_TRANSACOES, e);
       return [];
     }
   },
 
   _storageSetTransacoes: function(transacoes) {
-    var self = this;
     var json = JSON.stringify(transacoes);
-    if (this._transacoesBackend === 'idb' && typeof IDB_KV !== 'undefined') {
-      this._transacoesCache = transacoes;
-      this._idbWriteChain = this._idbWriteChain.then(function() {
-        return self._idbGravarTransacoes(json);
+    if (DADOS._transacoesBackend === 'idb' && typeof IDB_KV !== 'undefined') {
+      DADOS._transacoesCache = transacoes;
+      DADOS._idbWriteChain = DADOS._idbWriteChain.then(function() {
+        return DADOS._idbGravarTransacoes(json);
       }).then(function() {
-        self._pingTransacoesSync();
+        DADOS._pingTransacoesSync();
       });
       return;
     }
     var check = UTILS.verificarStorageDisponivel(transacoes, CONFIG.STORAGE_TRANSACOES);
     if (!check.disponivel) {
-      if (typeof IDB_KV !== 'undefined' && this._deveMigrarTransacoesParaIdb(json, transacoes)) {
-        this._ativarBackendIdbTransacoes(transacoes);
+      if (typeof IDB_KV !== 'undefined' && DADOS._deveMigrarTransacoesParaIdb(json, transacoes)) {
+        DADOS._ativarBackendIdbTransacoes(transacoes);
         return;
       }
       console.error('Storage indisponível:', check.erro);
       throw new Error(check.erro);
     }
     try {
-      this._ignorarStorageSync = true;
-      this._storageSetRaw(CONFIG.STORAGE_TRANSACOES, json);
+      DADOS._ignorarStorageSync = true;
+      DADOS._storageSetRaw(CONFIG.STORAGE_TRANSACOES, json);
     } finally {
-      setTimeout(function() { self._ignorarStorageSync = false; }, 0);
+      setTimeout(function() { DADOS._ignorarStorageSync = false; }, 0);
     }
   },
 
   getTransacoes: function() {
-    return this.getTransacoesRaw().filter(function(t) {
+    return DADOS.getTransacoesRaw().filter(function(t) {
       return !t.deletedAt;
     });
   },
@@ -827,7 +839,7 @@ var DADOS = {
     var cutoff = new Date();
     cutoff.setMonth(cutoff.getMonth() - meses);
     var cutoffStr = cutoff.toISOString().slice(0, 10);
-    var raw = this.getTransacoesRaw();
+    var raw = DADOS.getTransacoesRaw();
     var pending = (typeof SYNC_ENGINE !== 'undefined' && SYNC_ENGINE.pendingIds)
       ? SYNC_ENGINE.pendingIds()
       : [];
@@ -837,7 +849,7 @@ var DADOS = {
       return d >= cutoffStr;
     });
     if (trimmed.length < raw.length) {
-      this._storageSetTransacoes(trimmed);
+      DADOS._storageSetTransacoes(trimmed);
     }
   },
 
@@ -848,8 +860,8 @@ var DADOS = {
    * @throws {Error} se localStorage cheio
    */
   salvarTransacao: function(transacao) {
-    var transacoes = this.getTransacoesRaw();
-    var syncV2 = this._syncV2Ativo();
+    var transacoes = DADOS.getTransacoesRaw();
+    var syncV2 = DADOS._syncV2Ativo();
 
     // Idempotência local: mesmo clientKey → mesma transação (anti-duplicata).
     if (transacao.clientKey) {
@@ -874,7 +886,7 @@ var DADOS = {
     } else {
       transacoes.push(transacao);
     }
-    this._storageSetTransacoes(transacoes);
+    DADOS._storageSetTransacoes(transacoes);
     var actionType = (typeof ACTIONS !== 'undefined')
       ? (index >= 0 ? ACTIONS.TRANSACAO_EDITAR : ACTIONS.TRANSACAO_CRIAR)
       : null;
@@ -887,7 +899,7 @@ var DADOS = {
       }
       SYNC_ENGINE.enqueueTransaction('upsert', transacao);
     } else {
-      this._pushTransacaoApi(transacao, index >= 0 ? 'PATCH' : 'POST').catch(function(err) {
+      DADOS._pushTransacaoApi(transacao, index >= 0 ? 'PATCH' : 'POST').catch(function(err) {
         if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
           APP_STORE.dispatch(ACTIONS.SYNC_FALHAR, {
             erro: (err && err.message) || 'push-tx',
@@ -899,19 +911,19 @@ var DADOS = {
   },
 
   deletarTransacao: function(id) {
-    var transacoes = this.getTransacoesRaw();
+    var transacoes = DADOS.getTransacoesRaw();
     var index = transacoes.findIndex(function(t) { return t.id === id && !t.deletedAt; });
     if (index >= 0) {
       var now = new Date().toISOString();
-      if (this._syncV2Ativo() && typeof SYNC_ENGINE !== 'undefined') {
+      if (DADOS._syncV2Ativo() && typeof SYNC_ENGINE !== 'undefined') {
         transacoes[index].deletedAt = now;
         transacoes[index].updatedAt = now;
-        this._storageSetTransacoes(transacoes);
+        DADOS._storageSetTransacoes(transacoes);
         SYNC_ENGINE.enqueueTransaction('delete', transacoes[index]);
       } else {
         transacoes.splice(index, 1);
-        this._storageSetTransacoes(transacoes);
-        this._deleteTransacaoApi(id).catch(function(err) {
+        DADOS._storageSetTransacoes(transacoes);
+        DADOS._deleteTransacaoApi(id).catch(function(err) {
           if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
             APP_STORE.dispatch(ACTIONS.SYNC_FALHAR, {
               erro: (err && err.message) || 'delete-tx',
@@ -933,12 +945,12 @@ var DADOS = {
    */
   getConfig: function() {
     try {
-      var data = this._storageGetRaw(CONFIG.STORAGE_CONFIG);
+      var data = DADOS._storageGetRaw(CONFIG.STORAGE_CONFIG);
       if (!data) return Object.assign({}, CONFIG.DEFAULT_CONFIG);
       var parsed = JSON.parse(data);
       return Object.assign({}, CONFIG.DEFAULT_CONFIG, parsed);
     } catch (e) {
-      this._registrarFalhaLeitura(CONFIG.STORAGE_CONFIG, e);
+      DADOS._registrarFalhaLeitura(CONFIG.STORAGE_CONFIG, e);
       return Object.assign({}, CONFIG.DEFAULT_CONFIG);
     }
   },
@@ -950,36 +962,36 @@ var DADOS = {
    */
   salvarConfig: function(config, opts) {
     opts = opts || {};
-    var atual = this.getConfig();
+    var atual = DADOS.getConfig();
     var merged = Object.assign({}, atual, config);
-    this._storageSetRaw(CONFIG.STORAGE_CONFIG, JSON.stringify(merged));
+    DADOS._storageSetRaw(CONFIG.STORAGE_CONFIG, JSON.stringify(merged));
     if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
       APP_STORE.dispatch(ACTIONS.CONFIG_SALVAR, merged);
     }
-    if (!opts.skipPush) this._pushConfigApi(merged);
+    if (!opts.skipPush) DADOS._pushConfigApi(merged);
     return merged;
   },
 
   limparTodos: function() {
-    this._transacoesCache = [];
-    this._transacoesBackend = 'localStorage';
+    DADOS._transacoesCache = [];
+    DADOS._transacoesBackend = 'localStorage';
     try {
-      localStorage.removeItem(this.TX_BACKEND_KEY);
-      localStorage.removeItem(this.TX_SYNC_PING_KEY);
+      localStorage.removeItem(DADOS.TX_BACKEND_KEY);
+      localStorage.removeItem(DADOS.TX_SYNC_PING_KEY);
     } catch (e) { /* noop */ }
     if (typeof IDB_KV !== 'undefined') {
       IDB_KV.remove(CONFIG.STORAGE_TRANSACOES);
     }
-    this._storageRemoveRaw(CONFIG.STORAGE_TRANSACOES);
-    this._storageRemoveRaw(CONFIG.STORAGE_CONFIG);
-    this._initialized = false;
-    this._initPromise = null;
-    return this.init();
+    DADOS._storageRemoveRaw(CONFIG.STORAGE_TRANSACOES);
+    DADOS._storageRemoveRaw(CONFIG.STORAGE_CONFIG);
+    DADOS._initialized = false;
+    DADOS._initPromise = null;
+    return DADOS.init();
   },
 
   getRecorrentes: function() {
     try {
-      var config = this.getConfig();
+      var config = DADOS.getConfig();
       return Array.isArray(config.recorrentes) ? config.recorrentes : [];
     } catch (e) {
       return [];
@@ -987,18 +999,18 @@ var DADOS = {
   },
 
   salvarRecorrente: function(recData) {
-    var syncV2 = this._syncV2Ativo();
-    var config = this.getConfig();
+    var syncV2 = DADOS._syncV2Ativo();
+    var config = DADOS.getConfig();
     if (!Array.isArray(config.recorrentes)) config.recorrentes = [];
     recData.id = recData.id || (syncV2 && UTILS.gerarUuid ? UTILS.gerarUuid() : UTILS.gerarId());
     recData.dataCriacao = recData.dataCriacao || new Date().toISOString();
     recData.updatedAt = new Date().toISOString();
     config.recorrentes.push(recData);
-    this.salvarConfig(config, { skipPush: syncV2 });
+    DADOS.salvarConfig(config, { skipPush: syncV2 });
     if (syncV2 && typeof SYNC_ENGINE !== 'undefined') {
       SYNC_ENGINE.enqueueRecurring('upsert', recData);
     } else {
-      this._pushRecorrenteApi(recData);
+      DADOS._pushRecorrenteApi(recData);
     }
     return recData;
   },
@@ -1010,9 +1022,9 @@ var DADOS = {
    */
   exportarDados: function() {
     return {
-      transacoes: this.getTransacoes(),
-      contas: this.getContas(),
-      config: this.getConfig(),
+      transacoes: DADOS.getTransacoes(),
+      contas: DADOS.getContas(),
+      config: DADOS.getConfig(),
       dataExportacao: new Date().toISOString()
     };
   },
@@ -1020,17 +1032,16 @@ var DADOS = {
   // Sync entre abas: atualiza quando outra aba muda o localStorage.
   // Debounce de 300ms evita múltiplos re-inits em rajadas de escrita.
   setupStorageSync: function() {
-    if (this._storageSyncBound) return;
-    this._storageSyncBound = true;
-    var self = this;
+    if (DADOS._storageSyncBound) return;
+    DADOS._storageSyncBound = true;
     window.addEventListener('storage', function(e) {
-      if (!e.key || self._ignorarStorageSync) return;
+      if (!e.key || DADOS._ignorarStorageSync) return;
 
-      if (e.key === self.TX_SYNC_PING_KEY) {
-        clearTimeout(self._storageDebounceTimer);
-        self._storageDebounceTimer = setTimeout(function() {
-          self._hidratarTransacoesIdb().then(function(teveConflito) {
-            if (!teveConflito) self._mostrarBannerMultiAba();
+      if (e.key === DADOS.TX_SYNC_PING_KEY) {
+        clearTimeout(DADOS._storageDebounceTimer);
+        DADOS._storageDebounceTimer = setTimeout(function() {
+          DADOS._hidratarTransacoesIdb().then(function(teveConflito) {
+            if (!teveConflito) DADOS._mostrarBannerMultiAba();
           });
         }, 300);
         return;
@@ -1040,10 +1051,10 @@ var DADOS = {
         && e.key !== CONFIG.STORAGE_CONFIG
         && e.key !== CONFIG.STORAGE_CONTAS) return;
 
-      clearTimeout(self._storageDebounceTimer);
-      self._storageDebounceTimer = setTimeout(function() {
+      clearTimeout(DADOS._storageDebounceTimer);
+      DADOS._storageDebounceTimer = setTimeout(function() {
         if (e.key === CONFIG.STORAGE_TRANSACOES && e.newValue) {
-          self._mesclarTransacoesRemotas(e.newValue);
+          DADOS._mesclarTransacoesRemotas(e.newValue);
         }
         if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
           APP_STORE.dispatch(ACTIONS.SYNC_CONCLUIR);
@@ -1053,18 +1064,18 @@ var DADOS = {
           if (typeof CONTAS !== 'undefined') CONTAS.init();
           if (typeof RENDER !== 'undefined') RENDER.init();
         }
-        self._mostrarBannerMultiAba();
+        DADOS._mostrarBannerMultiAba();
       }, 300);
     });
   },
 
   salvarAprendizado: function(hist) {
-    this._storageSetRaw(CONFIG.STORAGE_APRENDIZADO, JSON.stringify(hist));
+    DADOS._storageSetRaw(CONFIG.STORAGE_APRENDIZADO, JSON.stringify(hist));
   },
 
   obterAprendizado: function() {
     try {
-      var data = this._storageGetRaw(CONFIG.STORAGE_APRENDIZADO);
+      var data = DADOS._storageGetRaw(CONFIG.STORAGE_APRENDIZADO);
       return data ? JSON.parse(data) : {};
     } catch (e) {
       return {};
@@ -1072,52 +1083,52 @@ var DADOS = {
   },
 
   getContas: function() {
-    return this.getContasRaw().filter(function(c) {
+    return DADOS.getContasRaw().filter(function(c) {
       return c && c.ativo !== false && !c.deletedAt;
     });
   },
 
   getContasRaw: function() {
     try {
-      var data = this._storageGetRaw(CONFIG.STORAGE_CONTAS);
+      var data = DADOS._storageGetRaw(CONFIG.STORAGE_CONTAS);
       if (!data) return [];
       var parsed = JSON.parse(data);
       return Array.isArray(parsed) ? parsed : [];
     } catch (e) {
-      this._registrarFalhaLeitura(CONFIG.STORAGE_CONTAS, e);
+      DADOS._registrarFalhaLeitura(CONFIG.STORAGE_CONTAS, e);
       return [];
     }
   },
 
   upsertConta: function(conta) {
-    var syncV2 = this._syncV2Ativo();
+    var syncV2 = DADOS._syncV2Ativo();
     if (!conta.id) {
       conta.id = (syncV2 && UTILS.gerarUuid) ? UTILS.gerarUuid() : UTILS.gerarId();
     }
     conta.updatedAt = new Date().toISOString();
     conta.ativo = conta.ativo !== false;
-    var lista = this.getContasRaw();
+    var lista = DADOS.getContasRaw();
     var idx = -1;
     for (var i = 0; i < lista.length; i++) {
       if (lista[i].id === conta.id) { idx = i; break; }
     }
     if (idx >= 0) lista[idx] = Object.assign({}, lista[idx], conta);
     else lista.push(conta);
-    this._storageSetRaw(CONFIG.STORAGE_CONTAS, JSON.stringify(lista));
+    DADOS._storageSetRaw(CONFIG.STORAGE_CONTAS, JSON.stringify(lista));
     if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
       APP_STORE.dispatch(ACTIONS.CONTAS_SALVAR, lista);
     }
     if (syncV2 && typeof SYNC_ENGINE !== 'undefined') {
       SYNC_ENGINE.enqueueAccount('upsert', conta);
-    } else if (this._apiAtiva()) {
-      this._pushContasApi(conta);
+    } else if (DADOS._apiAtiva()) {
+      DADOS._pushContasApi(conta);
     }
     return conta;
   },
 
   deletarConta: function(id) {
-    var syncV2 = this._syncV2Ativo();
-    var lista = this.getContasRaw();
+    var syncV2 = DADOS._syncV2Ativo();
+    var lista = DADOS.getContasRaw();
     var alvo = null;
     for (var i = 0; i < lista.length; i++) {
       if (lista[i].id === id) { alvo = lista[i]; break; }
@@ -1128,22 +1139,22 @@ var DADOS = {
       updatedAt: new Date().toISOString(),
     });
     var restante = lista.filter(function(c) { return c.id !== id; });
-    this._storageSetRaw(CONFIG.STORAGE_CONTAS, JSON.stringify(restante));
+    DADOS._storageSetRaw(CONFIG.STORAGE_CONTAS, JSON.stringify(restante));
     if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
       APP_STORE.dispatch(ACTIONS.CONTAS_SALVAR, restante);
     }
     if (syncV2 && typeof SYNC_ENGINE !== 'undefined') {
       SYNC_ENGINE.enqueueAccount('delete', tomb);
-    } else if (this._apiAtiva()) {
-      this._apiFetch('/api/v1/accounts/' + encodeURIComponent(id), { method: 'DELETE' }).catch(function() {});
+    } else if (DADOS._apiAtiva()) {
+      DADOS._apiFetch('/api/v1/accounts/' + encodeURIComponent(id), { method: 'DELETE' }).catch(function() {});
     }
     return true;
   },
 
   upsertOrcamento: function(categoria, limite, periodo) {
-    var syncV2 = this._syncV2Ativo();
+    var syncV2 = DADOS._syncV2Ativo();
     periodo = periodo || 'mensal';
-    var config = this.getConfig();
+    var config = DADOS.getConfig();
     if (!config.orcamentos) config.orcamentos = {};
     var entry = config.orcamentos[categoria] || {};
     if (!entry.id) {
@@ -1154,7 +1165,7 @@ var DADOS = {
     entry.updatedAt = new Date().toISOString();
     entry.periodo = periodo;
     config.orcamentos[categoria] = entry;
-    this.salvarConfig(config, { skipPush: syncV2 });
+    DADOS.salvarConfig(config, { skipPush: syncV2 });
 
     var record = {
       id: entry.id,
@@ -1166,15 +1177,15 @@ var DADOS = {
     };
     if (syncV2 && typeof SYNC_ENGINE !== 'undefined') {
       SYNC_ENGINE.enqueueBudget('upsert', record);
-    } else if (this._apiAtiva()) {
-      this._pushOrcamentoApi(categoria, limite);
+    } else if (DADOS._apiAtiva()) {
+      DADOS._pushOrcamentoApi(categoria, limite);
     }
     return entry;
   },
 
   deletarOrcamento: function(categoria) {
-    var syncV2 = this._syncV2Ativo();
-    var config = this.getConfig();
+    var syncV2 = DADOS._syncV2Ativo();
+    var config = DADOS.getConfig();
     if (!config.orcamentos || !config.orcamentos[categoria]) return false;
     var entry = config.orcamentos[categoria];
     var tomb = {
@@ -1187,7 +1198,7 @@ var DADOS = {
       ativo: false,
     };
     delete config.orcamentos[categoria];
-    this.salvarConfig(config, { skipPush: syncV2 });
+    DADOS.salvarConfig(config, { skipPush: syncV2 });
     if (syncV2 && typeof SYNC_ENGINE !== 'undefined') {
       SYNC_ENGINE.enqueueBudget('delete', tomb);
     }
@@ -1196,22 +1207,18 @@ var DADOS = {
 
   salvarContas: function(contas) {
     var lista = Array.isArray(contas) ? contas : [];
-    this._storageSetRaw(CONFIG.STORAGE_CONTAS, JSON.stringify(lista));
+    DADOS._storageSetRaw(CONFIG.STORAGE_CONTAS, JSON.stringify(lista));
     if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
       APP_STORE.dispatch(ACTIONS.CONTAS_SALVAR, lista);
     }
-    if (lista.length > 0 && !this._syncV2Ativo()) {
-      this._pushContasApi(lista[lista.length - 1]);
+    if (lista.length > 0 && !DADOS._syncV2Ativo()) {
+      DADOS._pushContasApi(lista[lista.length - 1]);
     }
     return lista;
   }
 };
 
-// Cliente da API Express (ES Module, publicado por js/esm/ponte.js, que roda
-// antes deste script). Sem ele, login e sync legados quebrariam em silêncio:
-// melhor falhar alto aqui.
 Object.assign(DADOS, DADOS_EXPRESS);
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = DADOS;
-}
+export { DADOS };
+export default DADOS;

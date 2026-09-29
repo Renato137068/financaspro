@@ -10,6 +10,7 @@
 
 import { CONFIG } from '../core/config.js';
 import { UTILS } from '../core/utils.js';
+import { DADOS } from '../core/dados.js';
 
 // Load focus trap utility (already defined in focus-trap.js)
 // FocusTrap is available globally, no need to redeclare

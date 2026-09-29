@@ -4,6 +4,9 @@
  * ES Module (ADR 0005): os scripts clássicos o recebem como global por
  * js/esm/ponte.js.
  */
+
+import { DADOS } from '../core/dados.js';
+
 const LOCAL_CRYPTO = {
   _keyPromise: null,
 

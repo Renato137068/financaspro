@@ -27,10 +27,9 @@
  * módulo, então ficam ausentes de propósito: exercitar o caminho sem elas é o
  * cenário do primeiro carregamento do app.
  */
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const { executarModulo } = require('./helpers/esm-como-script.cjs');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
 
 const root = path.join(__dirname, '..');
 
@@ -48,16 +47,9 @@ function carregarDadosReal() {
   sandbox.globalThis = sandbox;
   const ctx = vm.createContext(sandbox);
 
-  for (const rel of ['js/core/config.js', 'js/core/dados.js']) {
-    const file = path.join(root, rel);
-    // filename ABSOLUTO: com caminho relativo o v8 não mapeia o código
-    // executado de volta ao arquivo e o módulo aparece com 0% na cobertura.
-    // dados.js mistura o cliente Express, que a ponte ESM publica antes dele.
-    // config.js e dados-express.js são ES Modules (a ponte os publica antes de dados.js).
-    if (rel === 'js/core/config.js') { executarModulo(ctx, file); continue; }
-    if (rel === 'js/core/dados.js') executarModulo(ctx, path.join(root, 'js/core/dados-express.js'), undefined, { UTILS: sandbox.UTILS });
-    vm.runInContext(fs.readFileSync(file, 'utf8'), ctx, { filename: file });
-  }
+  // dados.js é ES Module: traz config.js e o cliente Express pelo grafo de
+  // imports; o que o sandbox tem (UTILS…) entra como dublê.
+  rodarNoContexto(ctx, path.join(root, 'js/core/dados.js'));
   return sandbox;
 }
 

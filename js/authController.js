@@ -13,6 +13,7 @@ import { TablistKeyboard } from './utilities/tablist-keyboard.js';
 import { INIT_MODALS } from './modules/init-modals.js';
 import { BILLING } from './billing.js';
 import { AUTH_BIOMETRIC } from './auth-biometric.js';
+import { DADOS } from './core/dados.js';
 
 var _authFocusTrap = null;
 var _authDesbloqueadoNestaCarga = false;

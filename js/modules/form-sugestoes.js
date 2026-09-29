@@ -25,6 +25,7 @@ import { CATEGORIES } from '../categories.js';
 import { TRANSACOES } from '../transacoes.js';
 import { CONTAS } from '../contas.js';
 import { INIT_FORM } from './init-form.js';
+import { DADOS } from '../core/dados.js';
 const FORM_SUGESTOES = {
   /**
    * 7. AUTO-CATEGORIZAÇÃO

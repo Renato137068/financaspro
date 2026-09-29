@@ -39,7 +39,7 @@ beforeEach(() => {
   IA = carregarScript('js/modules/insight-acoes.js', Object.assign({
     UTILS: global.UTILS,
     mudarAba: (...args) => global.mudarAba(...args),
-  }, viaGlobal('INIT_NAVIGATION')));
+  }, viaGlobal('INIT_NAVIGATION', 'DADOS')));
 });
 
 afterEach(() => {

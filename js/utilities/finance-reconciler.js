@@ -11,6 +11,7 @@
 import { PERSIST_QUEUE } from '../core/persist-queue.js';
 import { TRANSACOES } from '../transacoes.js';
 import { COMPROMISSOS } from '../compromissos.js';
+import { DADOS } from '../core/dados.js';
 
 const FINANCE_RECONCILER = (function() {
   function centavos(v) {

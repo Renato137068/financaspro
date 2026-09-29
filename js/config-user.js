@@ -11,6 +11,7 @@ import { TRANSACOES } from './transacoes.js';
 import { ORCAMENTO } from './orcamento.js';
 import { INIT_NAVIGATION } from './modules/init-navigation.js';
 import { INIT_MODALS } from './modules/init-modals.js';
+import { DADOS } from './core/dados.js';
 
 const CONFIG_USER = {
   init: function() {

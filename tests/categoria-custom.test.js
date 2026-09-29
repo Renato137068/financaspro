@@ -1,8 +1,8 @@
 /**
  * categoria-custom.test.js — custom não colapsa em "outro".
  */
-const { carregarScript } = require('./helpers/carregar-script.cjs');
-const CONFIG = carregarScript('js/core/config.js');
+const { carregarScript, viaGlobal } = require('./helpers/carregar-script.cjs');
+const CONFIG = carregarScript('js/core/config.js', viaGlobal('DADOS'));
 
 describe('CONFIG.normalizeCategoriaFinal — categorias custom', function() {
   var prevDados;

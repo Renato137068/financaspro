@@ -14,6 +14,7 @@ import { SYNC_MERGE } from './sync-merge.js';
 import { ORCAMENTO } from '../orcamento.js';
 import { APP_STORE } from './store.js';
 import { ACTIONS } from '../services/actions.js';
+import { DADOS } from './dados.js';
 
 const SYNC_ENGINE = {
   _storage: null,

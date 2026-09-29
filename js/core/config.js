@@ -15,6 +15,8 @@
  * inject-supabase-env, csp-connect-src e pre-beta-check as leem como texto.
  */
 
+import { DADOS } from './dados.js';
+
 var FP_BUILD_MODE = 'cloud';
 
 function _fpWantLocal() {

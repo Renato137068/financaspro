@@ -131,6 +131,8 @@ function converter(codigo, arquivo) {
  * @param {string} arquivo    caminho absoluto
  * @param {Map}    [cache]    arquivo → exports, compartilhado entre chamadas no mesmo ctx
  * @param {object} [mocks]    nome exportado → dublê; um import coberto por inteiro não roda
+ * @param {object} [opcoes]   { tdz: Set } — anota no Set quem lê um const/let
+ *                            exportado antes de o módulo terminar (ver armarZonaMorta)
  * @returns {object} exports do módulo ({ default, NOME… })
  */
 // Marca de módulo em execução: num ciclo de imports (a importa b, b importa a),
@@ -141,7 +143,32 @@ const EM_ANDAMENTO = Symbol('em andamento');
 // um módulo que o importa) não rodam o mesmo arquivo duas vezes.
 const cachePorContexto = new WeakMap();
 
-function executarModulo(ctx, arquivo, cache, mocks) {
+/**
+ * O conversor troca const/let por var, e var não tem zona morta: lido antes da
+ * atribuição, dá undefined e segue. No navegador, ler um const de um módulo que
+ * ainda não terminou (ciclo de imports) é ReferenceError e o app para, mesmo
+ * dentro de `typeof`. Com { tdz: lidos }, cada const/let exportado vira um
+ * acessor que anota a leitura em `lidos` até a primeira atribuição. Anota em
+ * vez de só lançar: o vm do Node engole a exceção de um acessor do contexto e
+ * trata o nome como ausente, e `typeof NOME` passaria quieto.
+ */
+const RE_LEXICO = new RegExp('^(?:export\\s+)?(?:const|let)\\s+(' + ID + ')', 'gm');
+
+function armarZonaMorta(ctx, fonte, exporta, arquivo, lidos) {
+  const lexicos = new Set([...fonte.matchAll(RE_LEXICO)].map((m) => m[1]));
+  exporta.filter((e) => lexicos.has(e.local)).forEach(({ local }) => {
+    Object.defineProperty(ctx, local, {
+      configurable: true,
+      get: () => {
+        lidos.add(local + ' (de ' + path.relative(process.cwd(), arquivo) + ', ainda carregando)');
+        throw new ReferenceError(local + ' lido antes de terminar de carregar');
+      },
+      set: (v) => { Object.defineProperty(ctx, local, { value: v, writable: true, configurable: true, enumerable: true }); },
+    });
+  });
+}
+
+function executarModulo(ctx, arquivo, cache, mocks, opcoes) {
   if (!cache) {
     if (!cachePorContexto.has(ctx)) cachePorContexto.set(ctx, new Map());
     cache = cachePorContexto.get(ctx);
@@ -151,6 +178,7 @@ function executarModulo(ctx, arquivo, cache, mocks) {
   const fonte = fs.readFileSync(arquivo, 'utf8');
   const { codigo, importa, exporta } = converter(fonte, arquivo);
   cache.set(arquivo, EM_ANDAMENTO);
+  if (opcoes && opcoes.tdz) armarZonaMorta(ctx, fonte, exporta, arquivo, opcoes.tdz);
 
   for (const dep of importa) {
     // Dublê para todos os nomes deste import: o módulo real nem roda (mock).
@@ -158,7 +186,7 @@ function executarModulo(ctx, arquivo, cache, mocks) {
       dep.nomes.forEach((n) => { ctx[n.local] = mocks[n.importado]; });
       continue;
     }
-    const exps = executarModulo(ctx, dep.arquivo, cache, mocks);
+    const exps = executarModulo(ctx, dep.arquivo, cache, mocks, opcoes);
     // Ciclo: como no navegador, os nomes do outro módulo só existem quando ele
     // termina. Aqui eles viram globais do contexto com o mesmo nome, então
     // quem os usa dentro de funções (a única forma válida num ciclo) os acha.
@@ -195,16 +223,24 @@ function nomesDoGrafo(arquivo, vistos) {
 /**
  * Roda o módulo num contexto que o teste montou com dublês: todo import cujo
  * nome o contexto já tem como propriedade própria usa o dublê (mock); o resto
- * carrega o módulo real. Para testes que criam o ctx à mão.
+ * carrega o módulo real. Para testes que criam o ctx à mão. Vale para o grafo
+ * inteiro, não só os imports diretos: com o DADOS importando meio app, o
+ * IDB_KV falso de um teste do DADOS é importado por ele, não pelo módulo raiz.
  */
 function rodarNoContexto(ctx, arquivo) {
-  const { importa } = converter(fs.readFileSync(arquivo, 'utf8'), arquivo);
   const mocks = {};
-  for (const dep of importa) {
-    for (const { importado, local } of dep.nomes) {
-      if (Object.prototype.hasOwnProperty.call(ctx, local)) mocks[importado] = ctx[local];
+  const vistos = new Set();
+  const visitar = (arq) => {
+    if (vistos.has(arq)) return;
+    vistos.add(arq);
+    for (const dep of converter(fs.readFileSync(arq, 'utf8'), arq).importa) {
+      for (const { importado, local } of dep.nomes) {
+        if (Object.prototype.hasOwnProperty.call(ctx, local)) mocks[importado] = ctx[local];
+      }
+      visitar(dep.arquivo);
     }
-  }
+  };
+  visitar(arquivo);
   return executarModulo(ctx, arquivo, undefined, mocks);
 }
 

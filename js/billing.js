@@ -11,6 +11,7 @@ import { FUNIL } from './utilities/funil.js';
 import { TRANSACOES } from './transacoes.js';
 import { ORCAMENTO } from './orcamento.js';
 import { CONTAS } from './contas.js';
+import { DADOS } from './core/dados.js';
 
 const BILLING = {
   _cache: {

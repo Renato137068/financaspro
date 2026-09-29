@@ -7,12 +7,11 @@
  * carregam os módulos reais (config + local-crypto + dados) num contexto vm,
  * com WebCrypto real do Node e um IDB_KV em memória.
  */
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const { webcrypto } = require('crypto');
 const { TextEncoder, TextDecoder } = require('util');
-const { executarModulo } = require('./helpers/esm-como-script.cjs');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
 
 const ROOT = path.join(__dirname, '..');
 const TX_KEY = 'fp-transacoes';
@@ -20,13 +19,6 @@ const LISTA = [
   { id: 't1', tipo: 'despesa', valor: 42.5, categoria: 'alimentacao', data: '2026-09-10', descricao: 'Mercado' },
   { id: 't2', tipo: 'receita', valor: 5000, categoria: 'salario', data: '2026-09-05', descricao: 'Salário' },
 ];
-
-function loadInto(context, rel) {
-  const arquivo = path.join(ROOT, rel);
-  // config.js é ES Module (ADR 0005): o conversor deixa CONFIG como global do contexto.
-  if (/^(import|export)\b/m.test(fs.readFileSync(arquivo, 'utf8'))) { executarModulo(context, arquivo); return; }
-  vm.runInContext(fs.readFileSync(arquivo, 'utf8'), context, { filename: rel });
-}
 
 function criarIdbFake() {
   const mapa = new Map();
@@ -55,6 +47,8 @@ function contexto(extras) {
   const idb = criarIdbFake();
   const sandbox = {
     window: global,
+    // O grafo do DADOS inclui a UI (RENDER, INIT_MODALS…), que toca o DOM ao carregar.
+    document: global.document,
     localStorage: global.localStorage,
     console: global.console,
     crypto: webcrypto,
@@ -67,10 +61,9 @@ function contexto(extras) {
   Object.assign(sandbox, extras || {});
   sandbox.globalThis = sandbox;
   const ctx = vm.createContext(sandbox);
-  loadInto(ctx, 'js/core/config.js');
-  loadInto(ctx, 'js/utilities/local-crypto.js');
-  executarModulo(ctx, path.join(ROOT, 'js/core/dados-express.js'));
-  loadInto(ctx, 'js/core/dados.js');
+  // dados.js (ES Module) traz config, local-crypto e o cliente Express pelo
+  // grafo de imports; o que o sandbox já tem (o IDB_KV em memória) é dublê.
+  rodarNoContexto(ctx, path.join(ROOT, 'js/core/dados.js'));
   return { DADOS: sandbox.DADOS, LC: sandbox.LOCAL_CRYPTO, idb: idb };
 }
 

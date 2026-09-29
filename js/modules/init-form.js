@@ -28,6 +28,7 @@ import { MICRO } from '../micro-interactions.js';
 import { INSIGHTS } from '../insights.js';
 import { RENDER } from '../render.js';
 import { BILLING } from '../billing.js';
+import { DADOS } from '../core/dados.js';
 
 const INIT_FORM = {
   _submitBusy: false,

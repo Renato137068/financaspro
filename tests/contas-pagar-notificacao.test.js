@@ -26,7 +26,7 @@ function montar(contas, permissao) {
     diasAte: (d) => Math.round((new Date(d + 'T00:00:00') - new Date(HOJE + 'T00:00:00')) / 86400000),
   };
   localStorage.clear();
-  CONTAS_PAGAR = carregarScript('js/contas-pagar.js', viaGlobal('UTILS'));
+  CONTAS_PAGAR = carregarScript('js/contas-pagar.js', viaGlobal('UTILS', 'DADOS'));
   global.CONTAS_PAGAR = CONTAS_PAGAR;
 }
 

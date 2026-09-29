@@ -162,8 +162,11 @@ describe('fundação ES Modules', () => {
   // Módulo que lê um global clássico ao carregar acha `undefined` e segue
   // quieto, sem erro — `typeof DADOS !== 'undefined'` na carga desliga um
   // recurso sem ninguém perceber. Aqui cada global clássico é um getter que
-  // anota quem o leu enquanto o grafo inteiro da ponte é avaliado.
-  test('nenhum módulo lê global de script clássico ao carregar (ordem de boot)', () => {
+  // anota quem o leu enquanto o grafo inteiro da ponte é avaliado. E, com os
+  // ciclos de import (o DADOS importa quem o importa), ler ao carregar um const
+  // de módulo que ainda não terminou é ReferenceError no navegador: o { tdz }
+  // do conversor reproduz isso, na ordem de avaliação real.
+  test('nenhum módulo lê global clássico nem const de módulo inacabado ao carregar (ordem de boot)', () => {
     const ponte = path.join(ROOT, 'js', 'esm', 'ponte.js');
     const doGrafo = new Set(nomesDoGrafo(ponte));
     const classicos = Object.keys(require('../config/frontend-globals.json').globals)
@@ -188,13 +191,19 @@ describe('fundação ES Modules', () => {
     // jsdom do teste já está em 'complete'; sem isto, esses módulos rodariam
     // o init na hora e acusariam leituras que não acontecem de verdade.
     Object.defineProperty(document, 'readyState', { get: () => 'interactive', configurable: true });
+    const inacabados = new Set();
+    let erro = null;
     try {
-      executarModulo(vm.createContext(sandbox), ponte);
+      executarModulo(vm.createContext(sandbox), ponte, undefined, undefined, { tdz: inacabados });
+    } catch (e) {
+      erro = e; // leitura direta de um inacabado para a carga; a lista diz qual
     } finally {
       delete document.readyState;
       Object.keys(window).filter((k) => !antes.has(k)).forEach((k) => { delete window[k]; });
     }
     expect(classicos.length).toBeGreaterThan(20);
     expect([...lidos].sort()).toEqual([]);
+    expect([...inacabados].sort()).toEqual([]);
+    if (erro) throw erro;
   });
 });

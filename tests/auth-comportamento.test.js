@@ -7,7 +7,7 @@
  *
  * Cada bloco corresponde a um defeito real já observado no aparelho.
  */
-const { carregarScript } = require('./helpers/carregar-script.cjs');
+const { carregarScript, viaGlobal } = require('./helpers/carregar-script.cjs');
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
@@ -159,7 +159,7 @@ describe('Biometria — entrar depois de reabrir o app', () => {
 
 /* ───────────────────────── PIN ───────────────────────── */
 
-const { PIN_SECURITY } = carregarScript('js/pin.js');
+const { PIN_SECURITY } = carregarScript('js/pin.js', viaGlobal('DADOS'));
 
 describe('PIN — recusa os palpites óbvios', () => {
   test('barra os campeões de tentativa', () => {

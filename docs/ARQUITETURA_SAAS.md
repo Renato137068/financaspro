@@ -57,11 +57,13 @@ mesmos dados sincronizam com o Supabase.
   inicializado), o billing (`BILLING`) e a autenticação (`authController`,
   `AUTH_BIOMETRIC`), o bootstrap (`APP_BOOTSTRAP`), o lembrete diário, a
   tela de contas a pagar e o núcleo de estado e boot (`APP_STORE`,
-  `APP_STATE`, `ACTIONS`, `SYNC_ENGINE`, `LIFECYCLE`, `LIFECYCLE_BOOT`). O
+  `APP_STATE`, `ACTIONS`, `SYNC_ENGINE`, `LIFECYCLE`, `LIFECYCLE_BOOT`) e a
+  camada de dados (`DADOS`, importado por 34 módulos). O
   `LIFECYCLE` é a raiz de composição e importa quase o app inteiro; quem é
   folha (ex.: `HEALTH_SERVICE`) o lê tarde, por `window`, para não puxar
-  tudo. Seguem clássicos:
-  - o `DADOS` (usado por 31 módulos; fatia própria);
+  tudo. Pelo mesmo motivo o `DADOS` acha o `CONFIG_USER` (UI: importa
+  navegação e formulário) por `window`, só no clique de "Exportar backup".
+  Seguem clássicos:
   - o que depende da posição na página: `pin-guard.js` (sem `defer`, antes
     do primeiro paint), `lucide-init.js` (lê o vendor do lucide, que carrega
     depois da ponte), `fp-secure-screen.js`, `sw-register.js`,
@@ -77,13 +79,19 @@ mesmos dados sincronizam com o Supabase.
   dois usa o outro no carregamento (navegação ↔ alertas, navegação ↔
   preferências, formulário ↔ microinterações). Código que roda na carga não
   pode depender do outro lado de um ciclo: quem for avaliado primeiro o veria
-  sem inicializar. Entre eles a dependência é `import`, e nenhum usa `this`
+  sem inicializar. O `DADOS` fecha ciclos com quase todo o domínio (ele
+  importa quem avisa ao gravar: `TRANSACOES`, `RENDER`, `APP_STORE`…); o
+  único import que ele lê na carga é o `DADOS_EXPRESS`, que só ele importa. Entre eles a dependência é `import`, e nenhum usa `this`
   fora dos mixins: módulo roda em modo estrito, e método passado como
   callback perde o `this` (`tests/esm-fundacao.test.js` trava as duas
   regras; o conversor dos testes também roda em modo estrito). A ordem de
   boot também é travada: o mesmo teste avalia o grafo inteiro da ponte com
   cada global clássico virando um getter que anota quem o leu, e com o
-  documento em 'interactive', como no navegador. Nos testes os
+  documento em 'interactive', como no navegador. Na mesma passada, cada
+  `const`/`let` exportado fica em "zona morta" até o módulo terminar
+  (`executarModulo(..., { tdz })`): ler, até por `typeof`, um módulo que
+  ainda está carregando reprova o teste, como seria ReferenceError no
+  navegador. Nos testes os
   módulos dividem um contexto só, então função auxiliar de topo fica dentro
   de uma IIFE (nome de topo repetido entre módulos reprova o teste).
 - **Mixins para quebrar arquivos grandes.** Um pedaço coeso de um objeto
