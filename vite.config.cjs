@@ -5,7 +5,8 @@ module.exports = defineConfig({
   // tags aren't Rollup entries — expected; scripts/bundle-app.cjs packs them
   // into app.bundle.js. The one <script type="module"> (js/esm/ponte.js, ADR
   // 0005) IS a Vite entry: it and its imports become js/index-<hash>.js.
-  // Heavy features use LAZY_CHUNKS to keep the cold-start path lean.
+  // Heavy features load on demand: ES Module chunks via import() in
+  // js/core/lazy-load.js (Vite splits them), classic ones via LAZY_CHUNKS.
   root: '.',
   base: '/',
 
@@ -24,9 +25,10 @@ module.exports = defineConfig({
         },
       },
     },
-    // Um chunk só, sem imports dinâmicos: o polyfill de modulepreload seria
-    // código morto no bundle.
-    modulePreload: { polyfill: false },
+    // Os chunks sob demanda (import() em js/core/lazy-load.js) só importam
+    // o que o boot já carregou: pré-carregar dependências não adianta nada, e
+    // o helper de modulepreload (e o polyfill) seriam código morto no bundle.
+    modulePreload: false,
     minify: 'terser',
     terserOptions: {
       compress: {

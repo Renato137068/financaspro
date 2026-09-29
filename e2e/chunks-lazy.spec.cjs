@@ -105,6 +105,30 @@ test.describe('chunks lazy no build de produção', function() {
     })).toBe('e2e-1');
   });
 
+  // Chunks ES Module (ADR 0005): import() dinâmico, que o Vite divide em
+  // js/<nome>-<hash>.js. Pedidos só ao abrir o painel, e renderizam.
+  test('previsão e relatórios (chunks ES Module) chegam ao abrir o painel', async function({ page }) {
+    const pedidos = [];
+    page.on('request', function(req) {
+      const m = req.url().match(/\/js\/([\w-]+)-[\w-]{8}\.js$/);
+      if (m) pedidos.push(m[1]);
+    });
+    await prepareOfflinePage(page);
+    expect(await page.evaluate(function() { return [typeof PREVISAO, typeof INIT_RELATORIOS]; }))
+      .toEqual(['undefined', 'undefined']);
+    expect(pedidos).not.toContain('previsao');
+
+    await page.evaluate(function() { INIT_NAVIGATION.togglePrevisao(); });
+    await expect(page.locator('#previsao-painel')).not.toBeEmpty();
+    expect(pedidos).toContain('previsao');
+
+    await page.evaluate(function() { INIT_NAVIGATION.toggleRelatorios(); });
+    await expect(page.locator('#relatorios-panel')).not.toBeEmpty();
+    expect(pedidos).toContain('relatorios');
+    expect(await page.evaluate(function() { return [typeof PREVISAO, typeof INIT_RELATORIOS]; }))
+      .toEqual(['object', 'object']);
+  });
+
   test('"Refazer tour" carrega o tour sob demanda', async function({ page }) {
     await prepareOfflinePage(page);
     expect(await page.evaluate(function() { return typeof ONBOARDING; })).toBe('undefined');

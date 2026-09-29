@@ -1,6 +1,14 @@
 /**
  * relatorios.js — Resumos mensais e comparativos (sem DOM)
+ *
+ * ES Module (ADR 0005): chega sob demanda no chunk 'relatorios'
+ * (js/esm/chunks/relatorios.js, via LAZY.load), que o publica em window.
  */
+
+import { CONFIG } from './core/config.js';
+import { UTILS } from './core/utils.js';
+import { TRANSACOES } from './transacoes.js';
+
 const RELATORIOS = {
   resumoMes: function(mes, ano) {
     if (typeof TRANSACOES === 'undefined') return null;
@@ -51,8 +59,8 @@ const RELATORIOS = {
     var prevMes = mes - 1;
     var prevAno = ano;
     if (prevMes < 1) { prevMes = 12; prevAno--; }
-    var atual = this.resumoMes(mes, ano);
-    var anterior = this.resumoMes(prevMes, prevAno);
+    var atual = RELATORIOS.resumoMes(mes, ano);
+    var anterior = RELATORIOS.resumoMes(prevMes, prevAno);
     if (!atual || !anterior) return null;
     // Diffs também em centavos: subtrair dois valores em reais reintroduz a
     // deriva (0,01 não é exato em binário), gerando "-R$ 0,00" espúrios.
@@ -102,7 +110,7 @@ const RELATORIOS = {
     if (typeof TRANSACOES === 'undefined') return [];
     var meses = (janela && janela > 0) ? janela : 3;
 
-    var atualCent = this._despesaPorCategoria(mes, ano);
+    var atualCent = RELATORIOS._despesaPorCategoria(mes, ano);
 
     var somaAntCent = {};
     var mesesComDado = {};
@@ -110,7 +118,7 @@ const RELATORIOS = {
     for (var i = 0; i < meses; i++) {
       m -= 1;
       if (m < 1) { m = 12; a -= 1; }
-      var porCat = this._despesaPorCategoria(m, a);
+      var porCat = RELATORIOS._despesaPorCategoria(m, a);
       Object.keys(porCat).forEach(function(cat) {
         somaAntCent[cat] = (somaAntCent[cat] || 0) + porCat[cat];
         mesesComDado[cat] = (mesesComDado[cat] || 0) + 1;
@@ -163,7 +171,7 @@ const RELATORIOS = {
     var maior = null;
     var m = mes, a = ano;
     for (var i = 0; i < janela; i++) {
-      var r = this.resumoMes(m, a);
+      var r = RELATORIOS.resumoMes(m, a);
       var rc = UTILS.paraCentavos(r.receitas);
       var dc = UTILS.paraCentavos(r.despesas);
       recCent += rc;
@@ -332,8 +340,8 @@ const RELATORIOS = {
     if (prevMes < 1) { prevMes = 12; prevAno -= 1; }
     var diaPrev = Math.min(dia, new Date(prevAno, prevMes, 0).getDate());
 
-    var atualCent = this._despesaAcumuladaAte(mes, ano, dia);
-    var antCent = this._despesaAcumuladaAte(prevMes, prevAno, diaPrev);
+    var atualCent = RELATORIOS._despesaAcumuladaAte(mes, ano, dia);
+    var antCent = RELATORIOS._despesaAcumuladaAte(prevMes, prevAno, diaPrev);
     var diffCent = atualCent - antCent;
     return {
       dia: dia,
@@ -427,7 +435,7 @@ const RELATORIOS = {
     var maior = null, menor = null;
     var meses = [];
     for (var mes = 1; mes <= 12; mes++) {
-      var r = this.resumoMes(mes, ano);
+      var r = RELATORIOS.resumoMes(mes, ano);
       var rc = UTILS.paraCentavos(r.receitas);
       var dc = UTILS.paraCentavos(r.despesas);
       recCent += rc;
@@ -458,6 +466,5 @@ const RELATORIOS = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = RELATORIOS;
-}
+export { RELATORIOS };
+export default RELATORIOS;

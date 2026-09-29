@@ -1,6 +1,21 @@
 /**
  * init-relatorios.js — Painel de relatório mensal no dashboard
+ *
+ * ES Module (ADR 0005): chega sob demanda no chunk 'relatorios'
+ * (js/esm/chunks/relatorios.js, via LAZY.load), que o publica em window.
  */
+
+import { UTILS } from '../core/utils.js';
+import { compartilharTextoUI } from '../utilities/share-texto.js';
+import { TRANSACOES } from '../transacoes.js';
+import { COMPROMISSOS } from '../compromissos.js';
+import { CALENDARIO } from '../calendario.js';
+import { PROJECAO } from '../projecao.js';
+import { RESUMO_MENSAL } from '../resumo-mensal.js';
+import { RESUMO_ANUAL } from '../resumo-anual.js';
+import { RENDER_DASHBOARD } from '../render-dashboard.js';
+import { RELATORIOS } from '../relatorios.js';
+
 const INIT_RELATORIOS = {
   render: function() {
     var el = document.getElementById('relatorios-panel');
@@ -330,10 +345,6 @@ INIT_RELATORIOS.compartilharAno = function() {
   });
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = INIT_RELATORIOS;
-}
-
 /* P2.5: ordem 50 — último (como no render() original) */
 (function() {
   if (typeof RENDER_DASHBOARD === 'undefined' || !RENDER_DASHBOARD.onRender) return;
@@ -343,3 +354,6 @@ if (typeof module !== 'undefined' && module.exports) {
     if (INIT_RELATORIOS.render) INIT_RELATORIOS.render();
   }, 50);
 })();
+
+export { INIT_RELATORIOS };
+export default INIT_RELATORIOS;

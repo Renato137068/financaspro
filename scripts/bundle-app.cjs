@@ -33,10 +33,9 @@ const VENDOR_PREFIX = 'js/vendor/';
 // Features opcionais movidas para fora do bundle eager e carregadas sob demanda
 // via LAZY.load(). Só entram aqui módulos autocontidos, disparados por ação do
 // usuário e referenciados SEMPRE atrás de `typeof X !== 'undefined'`.
+// Chunk que virou ES Module (previsão, relatórios, tour) sai desta lista: é
+// import() dinâmico em js/core/lazy-load.js (CHUNKS_ESM), e o Vite o divide.
 const LAZY_CHUNKS = {
-  previsao: ['js/previsao.js'],
-  relatorios: ['js/relatorios.js', 'js/modules/init-relatorios.js'],
-
   // Anexos de comprovante só ao abrir Novo (~anexos fora do 1º acesso).
   // OCR foi removido do produto; o chunk mantém só anexos manuais.
   anexos: ['js/anexos.js', 'js/modules/init-anexos.js'],
@@ -70,10 +69,6 @@ const LAZY_CHUNKS = {
   // A casca do simulador (#simulador-panel) vem aqui, não no chunk 'config':
   // INIT_SIMULADOR.init pode rodar antes de o 'config' chegar.
   simulador: ['js/telas/simulador.js', 'js/simulador.js', 'js/modules/init-simulador.js'],
-
-  // Tour de boas-vindas — ONBOARDING.iniciar() não abre nada sozinho; o tour
-  // só abre por Perfil → "Refazer tour".
-  onboarding: ['js/onboarding.js'],
 
   // Paywall UI, Play Billing bridge, 2FA e Open Finance — aba Config (e
   // Resumo/Extrato em nuvem para banner). Vão juntos: mesmo gatilho.

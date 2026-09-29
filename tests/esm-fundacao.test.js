@@ -8,7 +8,7 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { entradasEsm, grafoEsm } = require('../scripts/lib/esm-grafo.cjs');
+const { entradasEsm, grafoEsm, chunksEsm } = require('../scripts/lib/esm-grafo.cjs');
 const vm = require('vm');
 const { ehModulo, converter, executarModulo, nomesDoGrafo } = require('./helpers/esm-como-script.cjs');
 const { carregarScript, nomesDoGlobal } = require('./helpers/carregar-script.cjs');
@@ -21,6 +21,10 @@ function scriptsDoIndex(texto) {
 const ROOT = path.join(__dirname, '..');
 const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 const grafo = grafoEsm(ROOT, entradasEsm(html));
+// Arquivo → chunk sob demanda a que pertence ('boot' para o grafo estático).
+const chunkDe = new Map();
+for (const [entrada, arquivos] of chunksEsm(ROOT, entradasEsm(html))) arquivos.forEach((rel) => chunkDe.set(rel, entrada));
+const chunk = (rel) => chunkDe.get(rel) || 'boot';
 
 function arquivosJs(dir) {
   return fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true }).flatMap((ent) => {
@@ -66,6 +70,9 @@ describe('fundação ES Modules', () => {
     const faltando = [];
     for (const [rel, { codigo, importa, exporta }] of info) {
       if (rel === 'js/esm/ponte.js') continue;
+      // Nome de um chunk sob demanda, visto de fora dele, não é import: o
+      // módulo só existe depois do LAZY.load, e chega por window (guardado
+      // por `typeof X !== 'undefined'`). Importar puxaria o chunk para o boot.
       const proprios = new Set(exporta.map((e) => e.local));
       const importados = new Set(importa.flatMap((i) => i.nomes.map((n) => n.local)));
       // Citar o nome num comentário ou numa string ('Indicador ok') não é usar.
@@ -73,11 +80,30 @@ describe('fundação ES Modules', () => {
         .replace(/'(?:\\.|[^'\\\n])*'|"(?:\\.|[^"\\\n])*"/g, "''");
       for (const [nome, de] of dono) {
         if (de === rel || proprios.has(nome) || importados.has(nome)) continue;
+        if (chunk(de) !== 'boot' && chunk(de) !== chunk(rel)) continue;
         // `obj.NOME` e a chave `NOME:` são propriedades, não o global.
         if (new RegExp('(?<![.\\w$])' + nome + '\\b(?!\\s*:)').test(semComentarios)) faltando.push(rel + ' usa ' + nome + ' sem importar de ' + de);
       }
     }
     expect(faltando).toEqual([]);
+  });
+
+  // Um import estático de um módulo do chunk, em qualquer módulo do boot, o
+  // traria para o boot em silêncio: o chunk continuaria existindo, vazio.
+  test('o que um chunk sob demanda publica não é carregado pelo boot', () => {
+    const boot = new Set(grafoEsm(ROOT, entradasEsm(html), { soEstatico: true }));
+    const chunks = chunksEsm(ROOT, entradasEsm(html));
+    expect(chunks.size).toBeGreaterThan(0);
+    for (const [entrada, arquivos] of chunks) {
+      expect(entrada).toMatch(/^js\/esm\/chunks\/[\w-]+\.js$/);
+      const { importa } = converter(fs.readFileSync(path.join(ROOT, entrada), 'utf8'), path.join(ROOT, entrada));
+      const publicados = importa.map((i) => path.relative(ROOT, i.arquivo).split(path.sep).join('/'));
+      expect(publicados.length).toBeGreaterThan(0);
+      publicados.forEach((rel) => {
+        expect(boot.has(rel)).toBe(false);
+        expect(arquivos).toContain(rel);
+      });
+    }
   });
 
   // Módulo ES roda em modo estrito: método chamado desacoplado (passado como
@@ -137,7 +163,16 @@ describe('fundação ES Modules', () => {
 
   test('a conversão recusa sintaxe fora do subconjunto', () => {
     expect(() => converter("export * from './x.js';\n", path.join(ROOT, 'js', 'x.js'))).toThrow(/subconjunto/);
-    expect(() => converter("import('./x.js');\nexport default 1;\n", path.join(ROOT, 'js', 'x.js'))).toThrow(/subconjunto/);
+    // import() só com caminho literal: é o que o Vite consegue dividir em chunk.
+    expect(() => converter("/** x */\nconst m = import(caminho);\nexport default m;\n", path.join(ROOT, 'js', 'x.js'))).toThrow(/subconjunto/);
+  });
+
+  test('import() com caminho literal vira __dimp, do mesmo tamanho', () => {
+    const fonte = "/**\n * carregador de teste para o import() dinâmico\n */\nconst L = { abrir: () => import('../esm/chunks/inexistente.js') };\nexport { L };\n";
+    const { codigo, dinamicos } = converter(fonte, path.join(ROOT, 'js', 'core', 'x.js'));
+    expect(codigo.length).toBe(fonte.length);
+    expect(codigo).toContain("__dimp('../esm/chunks/inexistente.js')");
+    expect(dinamicos.map((d) => path.relative(ROOT, d.arquivo))).toEqual([path.join('js', 'esm', 'chunks', 'inexistente.js')]);
   });
 
   test('a ponte publica os módulos migrados em window', () => {

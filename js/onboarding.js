@@ -4,9 +4,17 @@
  *
  * O tour NUNCA abre automaticamente: só após clique explícito em
  * "Iniciar tour" (convite ou Perfil → Tour de boas-vindas).
+ *
+ * ES Module (ADR 0005): chega sob demanda no chunk 'onboarding'
+ * (js/esm/chunks/onboarding.js, via LAZY.load), que o publica em window.
  */
 
-var ONBOARDING = (function() {
+import { UTILS } from './core/utils.js';
+import { TRANSACOES } from './transacoes.js';
+import { INIT_NAVIGATION, mudarAba } from './modules/init-navigation.js';
+import { DADOS } from './core/dados.js';
+
+const ONBOARDING = (function() {
   var _passo   = 0;
   var _overlay = null;
   var _tooltip = null;
@@ -438,3 +446,6 @@ var ONBOARDING = (function() {
     }
   };
 })();
+
+export { ONBOARDING };
+export default ONBOARDING;

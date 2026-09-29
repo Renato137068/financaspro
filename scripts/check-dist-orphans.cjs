@@ -65,6 +65,35 @@ function referenciasDe(conteudo) {
   return refs;
 }
 
+/**
+ * O que um módulo do Vite importa: `import("./x.js")` (chunk sob demanda) e
+ * `from"./x.js"` (o chunk importando a entrada). Caminhos relativos ao
+ * próprio módulo, devolvidos relativos a dist/.
+ */
+function importsDeModulo(conteudo, rel) {
+  const refs = new Set();
+  const re = /(?:\bimport\(\s*|\bfrom\s*)["'](\.{1,2}\/[^"']+\.js)["']/g;
+  let m;
+  while ((m = re.exec(conteudo))) refs.add(path.posix.join(path.posix.dirname(rel), m[1]));
+  return refs;
+}
+
+/** Fecha as referências por import de módulo, a partir dos JS já alcançados. */
+function seguirImports(refs, ler) {
+  const fila = [...refs].filter((r) => r.endsWith('.js'));
+  const vistos = new Set(fila);
+  while (fila.length) {
+    const rel = fila.shift();
+    const conteudo = ler(rel);
+    if (conteudo == null) continue;
+    for (const alvo of importsDeModulo(conteudo, rel)) {
+      refs.add(alvo);
+      if (!vistos.has(alvo)) { vistos.add(alvo); fila.push(alvo); }
+    }
+  }
+  return refs;
+}
+
 function listar(dir, base, out) {
   out = out || [];
   if (!fs.existsSync(dir)) return out;
@@ -108,6 +137,13 @@ function main() {
     }
   }
 
+  // Chunks do Vite (import() de js/core/lazy-load.js): só o bundle ES Module
+  // os cita, com o hash no nome. Seguidos a partir do que o HTML já carrega.
+  seguirImports(refs, (rel) => {
+    const p = path.join(dist, rel);
+    return fs.existsSync(p) ? fs.readFileSync(p, 'utf8') : null;
+  });
+
   const { usados, orfaos } = classificar(listar(path.join(dist, 'js'), 'js')
     .concat(listar(path.join(dist, 'css'), 'css')), refs);
 
@@ -143,4 +179,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { classificar, referenciasDe, ALCANCAVEL_EM_RUNTIME };
+module.exports = { classificar, referenciasDe, importsDeModulo, seguirImports, ALCANCAVEL_EM_RUNTIME };

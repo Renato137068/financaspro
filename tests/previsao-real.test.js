@@ -1,7 +1,6 @@
 /**
  * previsao-real.test.js — cache e formatação do módulo previsao.js.
  */
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
@@ -26,10 +25,11 @@ function loadPrevisao() {
       getConfig: function() { return {}; },
     },
     BILLING: { canUse: function() { return true; } },
+    APP_STORE: undefined,
   };
   vm.createContext(ctx);
   rodarNoContexto(ctx, aiFile);
-  vm.runInContext(fs.readFileSync(prevFile, 'utf8'), ctx, { filename: prevFile });
+  rodarNoContexto(ctx, prevFile);
   return ctx.PREVISAO;
 }
 

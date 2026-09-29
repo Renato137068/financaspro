@@ -13,7 +13,10 @@
  *   - `export const A =`  perde o `export `;
  *   - `const A =` / `let A =` de um nome exportado viram `var   A =` / `var A =`,
  *     para o nome ficar no global do contexto, como os scripts clássicos (os
- *     testes trocam dublês por ele, e o app-jsdom o lê pelo nome).
+ *     testes trocam dublês por ele, e o app-jsdom o lê pelo nome);
+ *   - `import('./c.js')` (chunk sob demanda, caminho literal) vira
+ *     `__dimp('./c.js')`, que roda o módulo no mesmo contexto e devolve uma
+ *     Promise dos exports, como o import() do navegador.
  *
  * Só esse subconjunto de sintaxe é aceito. Qualquer outro import/export no
  * topo do arquivo lança erro: melhor ampliar este conversor de propósito do
@@ -29,6 +32,10 @@ const RE_EXPORT_LISTA = /^export\s*\{([^}]*)\};?/gm;
 const RE_EXPORT_DEFAULT = new RegExp('^export\\s+default\\s+(' + ID + ');?', 'gm');
 const RE_EXPORT_DECL = new RegExp('^export\\s+(?=(?:const|let|var|function|class)\\s+(' + ID + '))', 'gm');
 const RE_SOBRA = /^\s*(import|export)\b/m;
+const RE_IMPORT_DINAMICO = /(?<![\w$.])import(\(\s*(['"])(\.{1,2}\/[^'"]+)\2\s*\))/g;
+const RE_SOBRA_DINAMICO = /(?<![\w$.])import\s*\(/;
+// Mesmo tamanho de `import`: as posições não mudam (cobertura V8).
+const IMPORT_DINAMICO = '__dimp';
 
 function emBranco(trecho) {
   return trecho.replace(/[^\n]/g, ' ');
@@ -84,6 +91,23 @@ function estrito(codigo, arquivo) {
 function converter(codigo, arquivo) {
   const importa = [];
   const exporta = [];
+  const dinamicos = [];
+
+  // Antes do resto: `import('./x.js')` no começo de uma linha não é o import
+  // estático que RE_SOBRA recusa. Procurado com os comentários em branco (um
+  // comentário que cita import() não carrega nada) e trocado no original, na
+  // mesma posição.
+  const semComentarios = (c) => c.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, emBranco);
+  for (const m of semComentarios(codigo).matchAll(RE_IMPORT_DINAMICO)) {
+    dinamicos.push({ rel: m[3], arquivo: path.resolve(path.dirname(arquivo), m[3]) });
+    codigo = codigo.slice(0, m.index) + IMPORT_DINAMICO + codigo.slice(m.index + IMPORT_DINAMICO.length);
+  }
+  const dinamicoSolto = semComentarios(codigo).match(RE_SOBRA_DINAMICO);
+  if (dinamicoSolto) {
+    const linha = codigo.slice(0, dinamicoSolto.index).split('\n').length;
+    throw new Error('[esm-como-script] ' + path.relative(process.cwd(), arquivo) + ':' + linha
+      + ' — import() fora do subconjunto suportado (só caminho literal relativo).');
+  }
 
   codigo = codigo.replace(RE_IMPORT, (trecho, lista, padrao, _q, rel) => {
     const nomes = lista
@@ -120,7 +144,7 @@ function converter(codigo, arquivo) {
     return 'var' + ' '.repeat(kw.length - 3) + esp + nome + igual;
   });
 
-  return { codigo, importa, exporta };
+  return { codigo, importa, exporta, dinamicos };
 }
 
 /**
@@ -168,6 +192,34 @@ function armarZonaMorta(ctx, fonte, exporta, arquivo, lidos) {
   });
 }
 
+/**
+ * `__dimp` do contexto: o import() dinâmico dos módulos convertidos. Um mapa
+ * por contexto, do caminho literal ao arquivo, preenchido por quem o importa.
+ * Dois módulos com o mesmo caminho literal para alvos diferentes lançam: o
+ * mapa não sabe de qual pasta o import() partiu.
+ */
+const dinamicosPorContexto = new WeakMap();
+
+function registrarDinamicos(ctx, dinamicos, cache, mocks, opcoes) {
+  let mapa = dinamicosPorContexto.get(ctx);
+  if (!mapa) {
+    mapa = new Map();
+    dinamicosPorContexto.set(ctx, mapa);
+    ctx[IMPORT_DINAMICO] = (rel) => new Promise((resolve) => {
+      const alvo = mapa.get(rel);
+      if (!alvo) throw new Error('[esm-como-script] import() sem alvo registrado: ' + rel);
+      resolve(executarModulo(ctx, alvo.arquivo, alvo.cache, alvo.mocks, alvo.opcoes));
+    });
+  }
+  for (const d of dinamicos) {
+    const atual = mapa.get(d.rel);
+    if (atual && atual.arquivo !== d.arquivo) {
+      throw new Error('[esm-como-script] import(\'' + d.rel + '\') aponta para arquivos diferentes em módulos diferentes');
+    }
+    mapa.set(d.rel, { arquivo: d.arquivo, cache, mocks, opcoes });
+  }
+}
+
 function executarModulo(ctx, arquivo, cache, mocks, opcoes) {
   if (!cache) {
     if (!cachePorContexto.has(ctx)) cachePorContexto.set(ctx, new Map());
@@ -176,8 +228,9 @@ function executarModulo(ctx, arquivo, cache, mocks, opcoes) {
   mocks = mocks || {};
   if (cache.has(arquivo)) return cache.get(arquivo);
   const fonte = fs.readFileSync(arquivo, 'utf8');
-  const { codigo, importa, exporta } = converter(fonte, arquivo);
+  const { codigo, importa, exporta, dinamicos } = converter(fonte, arquivo);
   cache.set(arquivo, EM_ANDAMENTO);
+  if (dinamicos.length) registrarDinamicos(ctx, dinamicos, cache, mocks, opcoes);
   if (opcoes && opcoes.tdz) armarZonaMorta(ctx, fonte, exporta, arquivo, opcoes.tdz);
 
   for (const dep of importa) {

@@ -45,7 +45,16 @@ function arquivosJs(dir, acc) {
   return acc;
 }
 
+/** Chunks que já são ES Modules: CHUNKS_ESM em js/core/lazy-load.js. */
+function lerChunksEsm() {
+  const src = fs.readFileSync(path.join(root, 'js/core/lazy-load.js'), 'utf8');
+  const bloco = src.slice(src.indexOf('const CHUNKS_ESM'), src.indexOf('const LAZY ='));
+  return [...bloco.matchAll(/^\s{2}(\w+):\s*function\(\)\s*\{\s*return import\('([^']+)'\);/gm)]
+    .map((m) => ({ nome: m[1], entrada: path.join(root, 'js/core', m[2]) }));
+}
+
 const { nomes, arquivos } = lerChunks();
+const chunksEsm = lerChunksEsm();
 const todoJs = arquivosJs(path.join(root, 'js'))
   .map((f) => fs.readFileSync(f, 'utf8'))
   .join('\n');
@@ -62,6 +71,20 @@ describe('chunks lazy', () => {
       "(_ensureChunk|LAZY\\.load)\\(\\s*'" + nome + "'",
     );
     expect(padrao.test(todoJs)).toBe(true);
+  });
+
+  test.each(chunksEsm.map((c) => c.nome))("o chunk ES Module '%s' tem quem o carregue", (nome) => {
+    const padrao = new RegExp("(_ensureChunk|LAZY\\.load)\\(\\s*'" + nome + "'");
+    expect(padrao.test(todoJs)).toBe(true);
+  });
+
+  test('chunks ES Module: entrada existe, nome bate com o arquivo, e não é também chunk clássico', () => {
+    expect(chunksEsm.length).toBeGreaterThan(0);
+    chunksEsm.forEach(({ nome, entrada }) => {
+      expect(fs.existsSync(entrada)).toBe(true);
+      expect(path.basename(entrada, '.js')).toBe(nome);
+      expect(nomes).not.toContain(nome);
+    });
   });
 
   test('todo arquivo listado como lazy existe', () => {

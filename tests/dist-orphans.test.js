@@ -16,10 +16,21 @@
 const path = require('path');
 const fs = require('fs');
 const {
-  classificar, referenciasDe, ALCANCAVEL_EM_RUNTIME,
+  classificar, referenciasDe, seguirImports, ALCANCAVEL_EM_RUNTIME,
 } = require('../scripts/check-dist-orphans.cjs');
 
 describe('extração de referências', () => {
+  test('segue os import() do bundle ES Module até os chunks do Vite', () => {
+    // O nome do chunk leva o hash do build: só o bundle que o importa o cita.
+    const arquivos = {
+      'js/index-abc.js': 'const c={previsao:()=>import("./previsao-x1.js")};',
+      'js/previsao-x1.js': 'import{A as a}from"./index-abc.js";import("./sub-y2.js");',
+      'js/sub-y2.js': 'export{}',
+    };
+    const refs = seguirImports(new Set(['js/index-abc.js']), (rel) => arquivos[rel]);
+    expect([...refs].sort()).toEqual(['js/index-abc.js', 'js/previsao-x1.js', 'js/sub-y2.js']);
+  });
+
   test('lê src e href do HTML, com e sem barra inicial', () => {
     const refs = referenciasDe(
       '<link href="/css/index-abc.css"><script src="js/app.bundle.js"></script>',
