@@ -163,3 +163,28 @@ describe('workflow de release (.github/workflows/release.yml)', () => {
     expect(ignore).toMatch(/keystore\.properties/);
   });
 });
+
+describe('roteiro para ligar a operação (docs/release/ligar-operacao.md)', () => {
+  const roteiro = ler('docs/release/ligar-operacao.md');
+
+  test('cita todo segredo do workflow de release (menos os opcionais de build)', () => {
+    const cabecalho = workflow.slice(0, workflow.indexOf('\non:'));
+    const segredos = [...cabecalho.matchAll(/\b([A-Z][A-Z0-9_]{5,})\b/g)].map((m) => m[1])
+      .filter((s) => !['SUPABASE_URL', 'SUPABASE_ANON_KEY'].includes(s));
+    expect(segredos.length).toBeGreaterThan(5);
+    segredos.forEach((s) => expect(roteiro).toContain(s));
+  });
+
+  test('todo arquivo e toda migração que ele nomeia existem', () => {
+    const caminhos = [...roteiro.matchAll(/`((?:docs|scripts|supabase|\.github)\/[\w./-]+)`/g)].map((m) => m[1]);
+    expect(caminhos.length).toBeGreaterThan(3);
+    caminhos.forEach((c) => expect(fs.existsSync(path.join(ROOT, c))).toBe(true));
+    const migracoes = [...roteiro.matchAll(/`(\d{14}_[\w]+)`/g)].map((m) => m[1]);
+    expect(migracoes.length).toBeGreaterThanOrEqual(3);
+    migracoes.forEach((m) => expect(fs.existsSync(path.join(ROOT, 'supabase/migrations', m + '.sql'))).toBe(true));
+  });
+
+  test('o runbook de release aponta para ele', () => {
+    expect(ler('docs/release/entrega-continua.md')).toContain('(ligar-operacao.md)');
+  });
+});

@@ -5,13 +5,18 @@ Uma tag `vX.Y.Z` publica a versão inteira pelo workflow
 
 1. **Verificar** — a tag é a versão do `package.json`
    (`scripts/release-tag.cjs`), versões alinhadas (`check:version`), lint,
-   testes do frontend, build, orçamento do bundle e `npm audit`.
+   testes do frontend, testes das Edge Functions (`test:edge`), build,
+   orçamento do bundle e `npm audit`.
 2. **Supabase** — `scripts/deploy-supabase.cjs`: `db push` das migrações e o
    deploy de toda Edge Function (as que recebem chamada sem JWT de usuário com
    `--no-verify-jwt`).
 3. **Android** — build, `cap sync`, `bundleRelease` assinado com a keystore de
    upload, conferência da assinatura, AAB anexado a um GitHub Release e, se
    configurado, enviado à faixa de **teste interno** da Play.
+
+Antes da primeira tag, o que só o dono das contas pode fazer (ambiente
+`production`, segredos, painel, Play Console) está em
+[`ligar-operacao.md`](ligar-operacao.md).
 
 Depois disso vem o [smoke em aparelho](smoke-aparelho.md) com o AAB da faixa
 interna; só então a versão é promovida (à mão, no Play Console).
