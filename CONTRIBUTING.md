@@ -46,6 +46,17 @@ faria o Jest tratar todo `.js` como ESM — quebrando os `require()` do frontend
 já que o `package.json` raiz declara `"type": "module"`. Por isso `npm test`
 executa as duas em sequência.
 
+Fora do Jest, duas suítes que o CI também roda:
+
+| Suíte | Comando | Precisa de |
+|---|---|---|
+| Edge Functions (a cobrança de produção) | `npm run test:edge` | Deno 2 |
+| Banco: RLS, cotas, MFA, painel de saúde | `npm run test:db:ci` | Postgres 16 com pgTAP |
+
+Edge Function nova que mexe com dinheiro ganha teste de comportamento em
+`supabase/functions/_testes/` (ver `supabase/functions/README.md`), não teste
+que lê o código como texto.
+
 ### Cobertura
 
 Os limiares em cada config são **pisos calibrados sobre a medição real**, não

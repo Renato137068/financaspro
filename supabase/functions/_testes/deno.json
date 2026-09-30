@@ -1,0 +1,7 @@
+{
+  "imports": {
+    "https://esm.sh/@supabase/supabase-js@2": "./dubles/supabase-js.ts",
+    "https://esm.sh/stripe@16.12.0?target=deno": "./dubles/stripe.ts"
+  },
+  "lock": false
+}

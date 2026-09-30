@@ -91,8 +91,28 @@ Authorization: Bearer <supabase access token>
 { "orgId": "...", "productId": "financaspro.pro.monthly", "purchaseToken": "..." }
 ```
 
+## Testes
+
+`npm run test:edge` (precisa do Deno 2; o CI roda no job "Edge Functions (Deno)"
+e o workflow de release roda antes de publicar). Os testes ficam em `_testes/`
+e executam os módulos de verdade — `play-billing.ts`, `stripe-billing.ts`,
+`db.ts`, `google-play.ts` e os handlers de `stripe-webhook` e `play-rtdn` —
+com dublês trocados pelo import map de `_testes/deno.json`:
+
+```
+_testes/dubles/banco.ts       # banco em memória com a API encadeada do supabase-js
+_testes/dubles/supabase-js.ts # adminClient() devolve esse banco
+_testes/dubles/stripe.ts      # Stripe falso que registra cada chamada
+_testes/dubles/rede.ts        # fetch falso: OAuth e Play API do Google, tokeninfo, Resend
+```
+
+Nenhum teste sai para a rede (uma URL sem rota falha o teste). O JWT da conta
+de serviço é assinado de verdade, com uma chave RSA gerada no teste. Os casos
+vieram de `tests/backend/*billing*.test.js` (o Express congelado), mais os que
+só existem aqui: sandbox só com opt-in, pacote vindo da env, chave legada
+truncada, compra anulada, OIDC do Pub/Sub, liberação do claim quando o
+processamento falha.
+
 ## Ainda a fazer
 
 - Sem `RESEND_API_KEY`, `notify()` só loga (dev/CI). Em produção, configure Resend.
-- Testes: portar os casos de `tests/backend/*billing*.test.js` para testes de
-  function (Deno test) contra um Supabase local.
