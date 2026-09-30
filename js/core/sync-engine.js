@@ -306,9 +306,16 @@ const SYNC_ENGINE = {
       }),
     };
 
-    return fetchFn('/api/v1/sync', {
-      method: 'POST',
-      body: JSON.stringify(body),
+    // Dentro de uma promise: um fetch que lança de forma síncrona (o
+    // _apiFetch lê localStorage antes de devolver a promise, e isso lança em
+    // modo privado do Safari) cai no .catch abaixo. Chamado direto, o throw
+    // escapava sem passar pelo .finally e deixava _flushing preso em true:
+    // toda sincronização seguinte voltava "busy" até recarregar o app.
+    return Promise.resolve().then(function() {
+      return fetchFn('/api/v1/sync', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
     }).then(function(resp) {
       var results = (resp && resp.data && resp.data.results) ? resp.data.results : [];
       var conflicts = [];
