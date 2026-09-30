@@ -7,8 +7,9 @@ porquê de cada escolha estão em [`docs/adr/`](adr/).
 
 ```text
  App (PWA / Android via Capacitor)
- ├─ scripts clássicos em js/  →  app.bundle.js (eager) + js/lazy/*.bundle.js
+ ├─ scripts clássicos em js/  →  app.bundle.js (eager)
  ├─ ES Modules (js/esm/ponte.js e o que importa)  →  js/index-<hash>.js (Vite)
+ │   └─ chunks sob demanda (import() em js/core/lazy-load.js)  →  js/<chunk>-<hash>.js
  ├─ dados no aparelho: localStorage + IndexedDB (cifragem opcional AES-GCM)
  └─ com conta: Supabase
       ├─ Auth (e-mail/senha, TOTP)
@@ -74,9 +75,9 @@ mesmos dados sincronizam com o Supabase.
     domínio (contas, cartões, pipeline) passaria a importar a UI inteira só
     para avisar o painel;
   - `focus-trap.js` e `aria-live.js` (classes: a regra do `this` ainda não
-    distingue método de classe de método de objeto);
-  - os chunks lazy ainda clássicos (`LAZY_CHUNKS`; os ES Module estão
-    abaixo, em "Chunks lazy"). Ciclo de import entre migrados é aceito quando nenhum dos
+    distingue método de classe de método de objeto).
+
+  Ciclo de import entre migrados é aceito quando nenhum dos
   dois usa o outro no carregamento (navegação ↔ alertas, navegação ↔
   preferências, formulário ↔ microinterações). Código que roda na carga não
   pode depender do outro lado de um ciclo: quem for avaliado primeiro o veria
@@ -99,9 +100,9 @@ mesmos dados sincronizam com o Supabase.
   clássico sai para um ES Module e volta por `Object.assign` no fim do
   arquivo original, sem mudar quem chama: `dados-express.js` (cliente da API
   Express, congelado) em `DADOS`, `form-sugestoes.js` (autocategorização e
-  autocomplete) em `INIT_FORM`. Dentro de um chunk lazy o pedaço continua
-  script clássico, no mesmo chunk: `config-backup.js` e `config-bancos.js`
-  em `INIT_CONFIG`. Nos testes, `tests/helpers/esm-como-script.cjs` os roda via
+  autocomplete) em `INIT_FORM`, e no chunk do Perfil `config-backup.js` e
+  `config-bancos.js` em `INIT_CONFIG`. O mixin importa o objeto e se copia
+  para ele ao carregar (o import tem um sentido só). Nos testes, `tests/helpers/esm-como-script.cjs` os roda via
   `vm` sem mudar as posições dos caracteres (cobertura V8).
 - **Organização:** `js/core/` (config, dados, store, sync, utilidades de base),
   `js/services/` (regras puras), `js/modules/init-*.js` (telas),
@@ -109,27 +110,23 @@ mesmos dados sincronizam com o Supabase.
   `js/components/` (gráficos).
 - **Build** (`npm run build`): Vite para CSS/HTML e para a entrada ESM, depois
   `scripts/bundle-app.cjs` concatena e minifica os scripts clássicos em
-  `vendor.bundle.js` (supabase-js, lucide) e `app.bundle.js`, e separa os
-  chunks lazy.
-- **Chunks lazy**, carregados por `LAZY.load()` ou
-  `INIT_NAVIGATION._ensureChunk()` na primeira abertura da tela. Dois tipos:
-  - ES Module (`CHUNKS_ESM` em `js/core/lazy-load.js`): previsão, relatórios
-    e onboarding. Cada um tem uma entrada `js/esm/chunks/<chunk>.js`, pedida
-    por `import()` com caminho literal, que publica os módulos em `window`
-    como a ponte faz no boot. No build o Vite a divide em
-    `js/<chunk>-<hash>.js`, que importa do bundle do boot (mesma instância de
-    `DADOS`, `UTILS`…); no código-fonte é import nativo, então o dev também
-    carrega sob demanda. Nome de módulo de chunk, visto de fora dele, é global
-    guardado por `typeof`, não import (importar o traria para o boot;
-    `esm-fundacao` trava as duas coisas). Nos testes, o conversor troca
-    `import('./x.js')` por `__dimp('./x.js')`, do mesmo tamanho, que roda o
-    módulo no mesmo contexto; o `check-dist-orphans` segue esses imports.
-  - clássico (`LAZY_CHUNKS` em `scripts/bundle-app.cjs`, virando
-    `js/lazy/<chunk>.bundle.js`): anexos, metas, assinaturas, patrimônio,
-    extrato, orçamento, config (Perfil), simulador e `conta` (paywall, Play
-    Billing, 2FA, Open Finance). No dev esses scripts vêm eager.
-  `tests/lazy-chunks.test.js` exige um carregador para cada chunk, dos dois
-  tipos.
+  `vendor.bundle.js` (supabase-js, lucide) e `app.bundle.js`.
+- **Chunks lazy** (`CHUNKS_ESM` em `js/core/lazy-load.js`), carregados por
+  `LAZY.load()` ou `INIT_NAVIGATION._ensureChunk()` na primeira abertura da
+  tela: previsão, relatórios, onboarding, anexos, metas, assinaturas,
+  patrimônio, extrato, orçamento, config (Perfil), simulador e `conta`
+  (paywall, Play Billing, 2FA, Open Finance). Cada um tem uma entrada
+  `js/esm/chunks/<chunk>.js`, pedida por `import()` com caminho literal, que
+  importa primeiro a tela gerada (`js/telas/<chunk>.js`, quando há) e publica
+  os módulos em `window` como a ponte faz no boot. No build o Vite a divide em
+  `js/<chunk>-<hash>.js`, que importa do bundle do boot (mesma instância de
+  `DADOS`, `UTILS`…); no código-fonte é import nativo, então o dev também
+  carrega sob demanda. Nome de módulo de chunk, visto de fora dele, é global
+  guardado por `typeof`, não import (importar o traria para o boot;
+  `esm-fundacao` trava as duas coisas). Nos testes, o conversor troca
+  `import('./x.js')` por `__dimp('./x.js')`, do mesmo tamanho, que roda o
+  módulo no mesmo contexto; o `check-dist-orphans` segue esses imports.
+  `tests/lazy-chunks.test.js` exige um carregador para cada chunk.
 - **Telas fora do `index.html`** ([ADR 0006](adr/0006-telas-lazy-fora-do-index.md)).
   Toda tela de chunk lazy (Extrato, Orçamento, o Perfil e suas sub-telas, a
   casca do Simulador) mora em `telas/<chunk>/<tela>.html`. `npm run

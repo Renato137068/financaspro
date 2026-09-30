@@ -50,12 +50,11 @@ describe('fundação ES Modules', () => {
 
   test('nenhum módulo é carregado como script clássico', () => {
     const classicos = scriptsDoIndex(html).filter((rel) => !entradasEsm(html).includes(rel));
+    for (const rel of grafo) expect(classicos).not.toContain(rel);
+    // O bundle-app não tem mais lista de chunks clássicos: todo chunk sob
+    // demanda é import() (ver chunksEsm).
     const bundle = fs.readFileSync(path.join(ROOT, 'scripts', 'bundle-app.cjs'), 'utf8');
-    const lazy = bundle.slice(bundle.indexOf('const LAZY_CHUNKS'), bundle.indexOf('const lazySet'));
-    for (const rel of grafo) {
-      expect(classicos).not.toContain(rel);
-      expect(lazy).not.toContain("'" + rel + "'");
-    }
+    expect(bundle).not.toMatch(/const LAZY_CHUNKS/);
   });
 
   test('um módulo migrado usa outro por import, nunca pelo global (ADR 0005)', () => {
@@ -110,7 +109,8 @@ describe('fundação ES Modules', () => {
   // callback, ex.: { idFactory: UTILS.gerarId }) recebe `this` undefined. No
   // script clássico o `this` virava window e o erro passava despercebido. Os
   // módulos usam o próprio nome; só os mixins (copiados para outro objeto por
-  // Object.assign, como DADOS_EXPRESS em DADOS) dependem de `this` de propósito.
+  // Object.assign, como DADOS_EXPRESS em DADOS e CONFIG_BACKUP em INIT_CONFIG)
+  // dependem de `this` de propósito.
   test('módulo migrado não usa this, exceto mixins', () => {
     const js = arquivosJs('js').map((rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8')).join('\n');
     const mixins = new Set([...js.matchAll(/Object\.assign\(\s*[A-Z_]+\s*,\s*([A-Z_]+)\s*\)/g)].map((m) => m[1]));
@@ -119,10 +119,13 @@ describe('fundação ES Modules', () => {
       const arquivo = path.join(ROOT, rel);
       const { codigo, exporta } = converter(fs.readFileSync(arquivo, 'utf8'), arquivo);
       if (exporta.some((e) => mixins.has(e.local))) continue;
-      const semComentarios = codigo.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '');
+      // Nem comentário nem string contam: `onclick="f(this)"` num HTML montado
+      // é o elemento clicado, não o `this` do módulo.
+      const semComentarios = codigo.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '')
+        .replace(/'(?:\\.|[^'\\\n])*'|"(?:\\.|[^"\\\n])*"/g, "''");
       if (/\bthis\b/.test(semComentarios)) comThis.push(rel);
     }
-    expect([...mixins].sort()).toEqual(['DADOS_EXPRESS', 'FORM_SUGESTOES']);
+    expect([...mixins].sort()).toEqual(['CONFIG_BACKUP', 'CONFIG_BANCOS', 'DADOS_EXPRESS', 'FORM_SUGESTOES']);
     expect(comThis).toEqual([]);
   });
 

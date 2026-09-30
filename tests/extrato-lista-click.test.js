@@ -2,9 +2,9 @@
  * extrato-lista-click.test.js — P0.1: listener delegado não acumula por render
  * @jest-environment jsdom
  */
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { rodarIsolado } = require('./helpers/esm-como-script.cjs');
 
 const root = path.join(__dirname, '..');
 var INIT_EXTRATO;
@@ -46,10 +46,9 @@ function carregarModulo() {
     Math: Math
   };
   sandbox.globalThis = sandbox;
-  var code = fs.readFileSync(path.join(root, 'js', 'modules', 'init-extrato.js'), 'utf8')
-    .replace(/\bconst INIT_EXTRATO =/, 'var   INIT_EXTRATO =');
   var ctx = vm.createContext(sandbox);
-  vm.runInContext(code, ctx, { filename: path.join(root, 'js', 'modules', 'init-extrato.js') });
+  // ES Module: o sandbox é o dublê dos imports; o que falta fica ausente.
+  rodarIsolado(ctx, path.join(root, 'js', 'modules', 'init-extrato.js'));
   var mod = sandbox.INIT_EXTRATO || ctx.INIT_EXTRATO;
   mod.editarTransacao = function(id) { editCalls.push(id); };
   mod._carregarMais = function() {};

@@ -6,10 +6,26 @@
  * dados e os orçamentos, e o cálculo de meses entre datas.
  *
  * Saiu de init-config.js (1.746 linhas). Os métodos continuam sendo de
- * INIT_CONFIG: este script vem logo depois dele no chunk lazy 'config'
- * (scripts/bundle-app.cjs) e no index.html, e os copia com Object.assign.
+ * INIT_CONFIG: este mixin importa o INIT_CONFIG e se copia para ele com
+ * Object.assign ao carregar (o import tem um sentido só, como no
+ * FORM_SUGESTOES). Os métodos usam `this` como o INIT_CONFIG.
+ *
+ * ES Module (ADR 0005): chega sob demanda no chunk 'config'
+ * (js/esm/chunks/config.js, via LAZY.load), que o importa.
  */
-Object.assign(INIT_CONFIG, {
+
+import { INIT_CONFIG } from './init-config.js';
+import { CONFIG } from '../core/config.js';
+import { UTILS } from '../core/utils.js';
+import { TRANSACOES } from '../transacoes.js';
+import { ORCAMENTO } from '../orcamento.js';
+import { CONTAS } from '../contas.js';
+import { RENDER } from '../render.js';
+import { INIT_MODALS } from './init-modals.js';
+import { SYNC_ENGINE } from '../core/sync-engine.js';
+import { DADOS } from '../core/dados.js';
+
+const CONFIG_BACKUP = {
   /**
    * Valida schema de JSON de importação
    */
@@ -429,4 +445,9 @@ Object.assign(INIT_CONFIG, {
     var months = (b[0] - a[0]) * 12 + (b[1] - a[1]);
     return Math.abs(months) + 1;
   },
-});
+};
+
+Object.assign(INIT_CONFIG, CONFIG_BACKUP);
+
+export { CONFIG_BACKUP };
+export default CONFIG_BACKUP;

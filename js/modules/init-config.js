@@ -7,7 +7,24 @@
  * Backup (importar/exportar) está em config-backup.js; bancos, cartões e
  * categorias, em config-bancos.js. Os dois vêm logo depois deste no chunk
  * lazy 'config' e acrescentam seus métodos a INIT_CONFIG.
+ *
+ * ES Module (ADR 0005): chega sob demanda no chunk 'config'
+ * (js/esm/chunks/config.js, via LAZY.load), que o publica em window.
  */
+
+import { CONFIG } from '../core/config.js';
+import { UTILS } from '../core/utils.js';
+import { LAZY } from '../core/lazy-load.js';
+import { LOCAL_CRYPTO } from '../utilities/local-crypto.js';
+import { INSIGHT_ACOES } from './insight-acoes.js';
+import { CONFIG_USER } from '../config-user.js';
+import { RENDER } from '../render.js';
+import { INIT_MODALS } from './init-modals.js';
+import { togglePinSeguranca } from '../pin.js';
+import { BILLING } from '../billing.js';
+import { AUTH_BIOMETRIC } from '../auth-biometric.js';
+import { DAILY_REMINDER } from '../utilities/daily-reminder.js';
+import { DADOS } from '../core/dados.js';
 
 const INIT_CONFIG = {
   _planoBadgeInfo: function(plano) {
@@ -25,19 +42,19 @@ const INIT_CONFIG = {
    * Inicializa sistema de configurações
    */
   init: function() {
-    this.setupImport();
-    this.setupInsightActions();
+    INIT_CONFIG.setupImport();
+    INIT_CONFIG.setupInsightActions();
     // O logout vive em authController.setupLogoutButton (#btn-logout). Havia
     // aqui uma segunda implementação, ligada a um #logout-btn que não existe no
     // HTML e que limpava 'fp-user-token'/'fp-user-data' — chaves que o app nunca
     // gravou. Além de morta, teria deixado a sessão real intacta se rodasse.
-    this._bindToggles();
-    this._bindKeyboardNavigation();
-    this._bindSairOutrosAparelhos();
-    this._updateDynamicValues();
-    this._bindEditarPerfilEvents();
-    this._bindBancosEvents();
-    this.aplicarVisibilidadeNuvem();
+    INIT_CONFIG._bindToggles();
+    INIT_CONFIG._bindKeyboardNavigation();
+    INIT_CONFIG._bindSairOutrosAparelhos();
+    INIT_CONFIG._updateDynamicValues();
+    INIT_CONFIG._bindEditarPerfilEvents();
+    INIT_CONFIG._bindBancosEvents();
+    INIT_CONFIG.aplicarVisibilidadeNuvem();
   },
 
   /**
@@ -80,7 +97,7 @@ const INIT_CONFIG = {
 
   /** Atualiza perfil + toggles (substitui renderConfigTab legado) */
   refreshPerfil: function() {
-    this._updateDynamicValues();
+    INIT_CONFIG._updateDynamicValues();
     var config = DADOS.getConfig();
     var chk = document.getElementById('chk-darkmode');
     if (chk) chk.checked = config.tema === 'dark';
@@ -105,11 +122,11 @@ const INIT_CONFIG = {
     // uma proteção DESLIGADA em verde lê como "tudo certo", que é o oposto.
     var pinPill = document.getElementById('security-pin-status');
     if (pinPill) pinPill.classList.toggle('security-indicator--neutro', !config.pinAtivo);
-    this._refreshCryptoToggle();
-    this._refreshExportHint();
-    this._refreshSairOutrosBtn();
-    this._updateAppFooter();
-    this._updateLembreteStatus();
+    INIT_CONFIG._refreshCryptoToggle();
+    INIT_CONFIG._refreshExportHint();
+    INIT_CONFIG._refreshSairOutrosBtn();
+    INIT_CONFIG._updateAppFooter();
+    INIT_CONFIG._updateLembreteStatus();
     if (typeof INIT_BILLING !== 'undefined' && INIT_BILLING.refreshPlanoCard) {
       INIT_BILLING.refreshPlanoCard();
     }
@@ -282,8 +299,8 @@ const INIT_CONFIG = {
       } else {
         lastAccessEl.textContent = 'Primeiro acesso neste aparelho';
       }
-      if (!this._acessoRegistrado) {
-        this._acessoRegistrado = true;
+      if (!INIT_CONFIG._acessoRegistrado) {
+        INIT_CONFIG._acessoRegistrado = true;
         try {
           DADOS.salvarConfig({ ultimoAcessoApp: new Date().toISOString() });
         } catch (_e) { /* noop */ }
@@ -376,7 +393,7 @@ const INIT_CONFIG = {
     var btn = document.getElementById('btn-sair-outros');
     if (!btn || btn._fpBoundSairOutros) return;
     btn._fpBoundSairOutros = true;
-    var self = this;
+    var self = INIT_CONFIG;
     self._refreshSairOutrosBtn();
     btn.addEventListener('click', function() {
       var naNuvem = typeof BILLING !== 'undefined' && BILLING.isCloudUser && BILLING.isCloudUser();
@@ -420,8 +437,8 @@ const INIT_CONFIG = {
    * os que aparecem depois (modais). BUTTON/A nativos já tratam Enter/Espaço.
    */
   _bindKeyboardNavigation: function() {
-    if (this._perfilKeyNavBound) return;
-    this._perfilKeyNavBound = true;
+    if (INIT_CONFIG._perfilKeyNavBound) return;
+    INIT_CONFIG._perfilKeyNavBound = true;
     var root = document.getElementById('aba-config') || document;
     root.addEventListener('keydown', function(e) {
       if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -834,7 +851,7 @@ const INIT_CONFIG = {
     }
     if (chk) chk.disabled = true;
     UTILS.mostrarToast(ligar ? 'Cifrando dados…' : 'Removendo cifragem…', 'info');
-    var self = this;
+    var self = INIT_CONFIG;
     DADOS.aplicarCriptografia(ligar).then(function(estado) {
       self._refreshCryptoToggle();
       if (chk) chk.disabled = false;
@@ -854,7 +871,7 @@ const INIT_CONFIG = {
 
     if (!ativo) {
       DADOS.salvarConfig({ lembreteDiario: false });
-      this._updateLembreteStatus();
+      INIT_CONFIG._updateLembreteStatus();
       UTILS.mostrarToast('Lembrete desativado', 'info');
       return;
     }
@@ -865,7 +882,7 @@ const INIT_CONFIG = {
       return;
     }
 
-    var self = this;
+    var self = INIT_CONFIG;
     DAILY_REMINDER.requestPermission().then(function(perm) {
       if (perm !== 'granted') {
         if (chk) chk.checked = false;
@@ -887,6 +904,6 @@ const INIT_CONFIG = {
 };
 
 // Export para compatibilidade
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = INIT_CONFIG;
-}
+
+export { INIT_CONFIG };
+export default INIT_CONFIG;

@@ -5,10 +5,22 @@
  * cartões (com limite e fechamento), e as categorias personalizadas por tipo.
  *
  * Saiu de init-config.js (1.746 linhas). Os métodos continuam sendo de
- * INIT_CONFIG: este script vem logo depois dele no chunk lazy 'config'
- * (scripts/bundle-app.cjs) e no index.html, e os copia com Object.assign.
+ * INIT_CONFIG: este mixin importa o INIT_CONFIG e se copia para ele com
+ * Object.assign ao carregar (o import tem um sentido só, como no
+ * FORM_SUGESTOES). Os métodos usam `this` como o INIT_CONFIG.
+ *
+ * ES Module (ADR 0005): chega sob demanda no chunk 'config'
+ * (js/esm/chunks/config.js, via LAZY.load), que o importa.
  */
-Object.assign(INIT_CONFIG, {
+
+import { INIT_CONFIG } from './init-config.js';
+import { UTILS } from '../core/utils.js';
+import { CARTOES } from '../cartoes.js';
+import { INIT_MODALS } from './init-modals.js';
+import { BILLING } from '../billing.js';
+import { DADOS } from '../core/dados.js';
+
+const CONFIG_BANCOS = {
   /**
    * Abre aba de gerenciamento de bancos
    */
@@ -447,4 +459,9 @@ Object.assign(INIT_CONFIG, {
       UTILS.mostrarToast('Categoria removida', 'success');
     });
   },
-});
+};
+
+Object.assign(INIT_CONFIG, CONFIG_BANCOS);
+
+export { CONFIG_BANCOS };
+export default CONFIG_BANCOS;

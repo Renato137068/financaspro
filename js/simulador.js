@@ -26,8 +26,12 @@
  * na tela ser exato ao centavo, sem arrastar dízima de ponto flutuante.
  *
  * Puro, sem DOM. Sem dependências obrigatórias (UTILS é opcional).
+ *
+ * ES Module (ADR 0005): chega sob demanda no chunk 'simulador'
+ * (js/esm/chunks/simulador.js, via LAZY.load), que o publica em window.
  */
-var SIMULADOR = {
+
+const SIMULADOR = {
 
   /** Teto de parcelas/meses aceito numa simulação (proteção de laço). */
   MAX_PERIODOS: 600,
@@ -48,8 +52,8 @@ var SIMULADOR = {
 
   /** Inteiro >= 1 e <= MAX_PERIODOS, senão 0 (inválido). */
   _periodos: function(v) {
-    var n = Math.floor(this._num(v, 0));
-    if (n < 1 || n > this.MAX_PERIODOS) return 0;
+    var n = Math.floor(SIMULADOR._num(v, 0));
+    if (n < 1 || n > SIMULADOR.MAX_PERIODOS) return 0;
     return n;
   },
 
@@ -112,15 +116,15 @@ var SIMULADOR = {
    */
   compararParcelado: function(p) {
     p = p || {};
-    var precoVista = this._num(p.precoVista, 0);
-    var n = this._periodos(p.numParcelas);
-    var taxaInvest = this._num(p.taxaInvestimento, 0);
+    var precoVista = SIMULADOR._num(p.precoVista, 0);
+    var n = SIMULADOR._periodos(p.numParcelas);
+    var taxaInvest = SIMULADOR._num(p.taxaInvestimento, 0);
 
     var valorParcela;
     if (p.valorParcela != null) {
-      valorParcela = this._num(p.valorParcela, 0);
+      valorParcela = SIMULADOR._num(p.valorParcela, 0);
     } else if (p.precoParcelado != null && n > 0) {
-      valorParcela = this._num(p.precoParcelado, 0) / n;
+      valorParcela = SIMULADOR._num(p.precoParcelado, 0) / n;
     } else {
       valorParcela = 0;
     }
@@ -134,11 +138,11 @@ var SIMULADOR = {
 
     var totalParcelado = valorParcela * n;
     var acrescimo = totalParcelado - precoVista;
-    var taxaMensal = this._taxaEmbutida(precoVista, valorParcela, n);
+    var taxaMensal = SIMULADOR._taxaEmbutida(precoVista, valorParcela, n);
     var taxaAnual = Math.pow(1 + taxaMensal, 12) - 1;
 
     // Valor presente das parcelas descontado pelo que o dinheiro renderia.
-    var vpParcelado = this._valorPresente(valorParcela, taxaInvest, n);
+    var vpParcelado = SIMULADOR._valorPresente(valorParcela, taxaInvest, n);
     // Positivo → parcelar sai mais barato em dinheiro de HOJE, por este valor.
     var economiaParcelar = precoVista - vpParcelado;
 
@@ -150,19 +154,19 @@ var SIMULADOR = {
 
     return {
       valido: true,
-      precoVista: this._cent(precoVista),
+      precoVista: SIMULADOR._cent(precoVista),
       numParcelas: n,
-      valorParcela: this._cent(valorParcela),
-      totalParcelado: this._cent(totalParcelado),
-      acrescimo: this._cent(acrescimo),
+      valorParcela: SIMULADOR._cent(valorParcela),
+      totalParcelado: SIMULADOR._cent(totalParcelado),
+      acrescimo: SIMULADOR._cent(acrescimo),
       acrescimoPct: precoVista > 0 ? Math.round(acrescimo / precoVista * 10000) / 100 : 0,
       taxaMensal: Math.round(taxaMensal * 1000000) / 1000000,
       taxaMensalPct: Math.round(taxaMensal * 10000) / 100,
       taxaAnual: Math.round(taxaAnual * 1000000) / 1000000,
       taxaAnualPct: Math.round(taxaAnual * 10000) / 100,
       taxaInvestimento: taxaInvest,
-      valorPresenteParcelado: this._cent(vpParcelado),
-      economia: this._cent(Math.abs(economiaParcelar)),
+      valorPresenteParcelado: SIMULADOR._cent(vpParcelado),
+      economia: SIMULADOR._cent(Math.abs(economiaParcelar)),
       vantagem: vantagem,
       semJuros: taxaMensal <= 1e-9
     };
@@ -182,12 +186,12 @@ var SIMULADOR = {
    */
   jurosCompostos: function(p) {
     p = p || {};
-    var principal = this._num(p.principal, 0);
-    var aporte = this._num(p.aporteMensal, 0);
-    var i = this._num(p.taxaMensal, 0);
-    var n = this._periodos(p.meses);
+    var principal = SIMULADOR._num(p.principal, 0);
+    var aporte = SIMULADOR._num(p.aporteMensal, 0);
+    var i = SIMULADOR._num(p.taxaMensal, 0);
+    var n = SIMULADOR._periodos(p.meses);
 
-    if (n <= 0) return { valido: false, motivo: 'Informe o prazo em meses (1 a ' + this.MAX_PERIODOS + ').' };
+    if (n <= 0) return { valido: false, motivo: 'Informe o prazo em meses (1 a ' + SIMULADOR.MAX_PERIODOS + ').' };
     if (principal < 0 || aporte < 0) return { valido: false, motivo: 'Valores não podem ser negativos.' };
     if (principal <= 0 && aporte <= 0) return { valido: false, motivo: 'Informe um valor inicial ou um aporte mensal.' };
     if (i < 0 || i > 1) return { valido: false, motivo: 'Taxa fora da faixa (0 a 100% ao mês).' };
@@ -202,9 +206,9 @@ var SIMULADOR = {
 
     return {
       valido: true,
-      montante: this._cent(montante),
-      totalAportado: this._cent(totalAportado),
-      jurosGanhos: this._cent(jurosGanhos),
+      montante: SIMULADOR._cent(montante),
+      totalAportado: SIMULADOR._cent(totalAportado),
+      jurosGanhos: SIMULADOR._cent(jurosGanhos),
       meses: n,
       taxaMensal: i,
       taxaAnual: Math.round(taxaAnual * 1000000) / 1000000,
@@ -230,13 +234,13 @@ var SIMULADOR = {
    */
   aporteParaMeta: function(p) {
     p = p || {};
-    var objetivo = this._num(p.objetivo, 0);
-    var inicial = this._num(p.inicial, 0);
-    var i = this._num(p.taxaMensal, 0);
-    var n = this._periodos(p.meses);
+    var objetivo = SIMULADOR._num(p.objetivo, 0);
+    var inicial = SIMULADOR._num(p.inicial, 0);
+    var i = SIMULADOR._num(p.taxaMensal, 0);
+    var n = SIMULADOR._periodos(p.meses);
 
     if (objetivo <= 0) return { valido: false, motivo: 'Informe o valor da meta.' };
-    if (n <= 0) return { valido: false, motivo: 'Informe o prazo em meses (1 a ' + this.MAX_PERIODOS + ').' };
+    if (n <= 0) return { valido: false, motivo: 'Informe o prazo em meses (1 a ' + SIMULADOR.MAX_PERIODOS + ').' };
     if (inicial < 0) return { valido: false, motivo: 'O valor inicial não pode ser negativo.' };
     if (i < 0 || i > 1) return { valido: false, motivo: 'Taxa fora da faixa (0 a 100% ao mês).' };
 
@@ -260,12 +264,12 @@ var SIMULADOR = {
 
     return {
       valido: true,
-      objetivo: this._cent(objetivo),
-      inicial: this._cent(inicial),
+      objetivo: SIMULADOR._cent(objetivo),
+      inicial: SIMULADOR._cent(inicial),
       meses: n,
-      aporteMensal: this._cent(aporte),
-      totalAportado: this._cent(totalAportado),
-      jurosGanhos: this._cent(jurosGanhos > 0 ? jurosGanhos : 0),
+      aporteMensal: SIMULADOR._cent(aporte),
+      totalAportado: SIMULADOR._cent(totalAportado),
+      jurosGanhos: SIMULADOR._cent(jurosGanhos > 0 ? jurosGanhos : 0),
       jaAlcanca: jaAlcanca,
       taxaMensal: i
     };
@@ -286,13 +290,13 @@ var SIMULADOR = {
    */
   financiamento: function(p) {
     p = p || {};
-    var valor = this._num(p.valor, 0);
-    var entrada = this._num(p.entrada, 0);
-    var i = this._num(p.taxaMensal, 0);
-    var n = this._periodos(p.numParcelas);
+    var valor = SIMULADOR._num(p.valor, 0);
+    var entrada = SIMULADOR._num(p.entrada, 0);
+    var i = SIMULADOR._num(p.taxaMensal, 0);
+    var n = SIMULADOR._periodos(p.numParcelas);
 
     if (valor <= 0) return { valido: false, motivo: 'Informe o valor do bem.' };
-    if (n <= 0) return { valido: false, motivo: 'Informe o nº de parcelas (1 a ' + this.MAX_PERIODOS + ').' };
+    if (n <= 0) return { valido: false, motivo: 'Informe o nº de parcelas (1 a ' + SIMULADOR.MAX_PERIODOS + ').' };
     if (entrada < 0 || entrada >= valor) return { valido: false, motivo: 'A entrada deve ser menor que o valor do bem.' };
     if (i < 0 || i > 1) return { valido: false, motivo: 'Taxa fora da faixa (0 a 100% ao mês).' };
 
@@ -307,13 +311,13 @@ var SIMULADOR = {
 
     return {
       valido: true,
-      valorBem: this._cent(valor),
-      entrada: this._cent(entrada),
-      valorFinanciado: this._cent(pv),
+      valorBem: SIMULADOR._cent(valor),
+      entrada: SIMULADOR._cent(entrada),
+      valorFinanciado: SIMULADOR._cent(pv),
       numParcelas: n,
-      valorParcela: this._cent(parcela),
-      totalPago: this._cent(totalPago),
-      totalJuros: this._cent(totalJuros),
+      valorParcela: SIMULADOR._cent(parcela),
+      totalPago: SIMULADOR._cent(totalPago),
+      totalJuros: SIMULADOR._cent(totalJuros),
       jurosPct: pv > 0 ? Math.round(totalJuros / pv * 10000) / 100 : 0,
       taxaMensal: i,
       taxaMensalPct: Math.round(i * 10000) / 100,
@@ -323,6 +327,5 @@ var SIMULADOR = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = SIMULADOR;
-}
+export { SIMULADOR };
+export default SIMULADOR;

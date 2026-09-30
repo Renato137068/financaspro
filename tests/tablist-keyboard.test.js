@@ -5,12 +5,11 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const { executarModulo } = require('./helpers/esm-como-script.cjs');
+const { executarModulo, rodarIsolado } = require('./helpers/esm-como-script.cjs');
 
 const root = path.join(__dirname, '..');
 const tablistSrc = fs.readFileSync(path.join(root, 'js', 'utilities', 'tablist-keyboard.js'), 'utf8');
 const focusSrc = fs.readFileSync(path.join(root, 'js', 'utilities', 'focus-trap.js'), 'utf8');
-const orcSrc = fs.readFileSync(path.join(root, 'js', 'modules', 'init-orcamento.js'), 'utf8');
 
 function carregarTablistKeyboard() {
   var sandbox = {
@@ -97,8 +96,7 @@ describe('INIT_ORCAMENTO.mudarSubAba — roving tabindex', function() {
       parseFloat: parseFloat
     };
     sandbox.globalThis = sandbox;
-    var code = orcSrc.replace(/\bconst INIT_ORCAMENTO =/, 'var   INIT_ORCAMENTO =');
-    vm.runInContext(code, vm.createContext(sandbox), { filename: path.join(root, 'js', 'modules', 'init-orcamento.js') });
+    rodarIsolado(vm.createContext(sandbox), path.join(root, 'js', 'modules', 'init-orcamento.js'));
     return sandbox.INIT_ORCAMENTO;
   }
 

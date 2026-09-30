@@ -5,6 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { rodarIsolado } = require('./helpers/esm-como-script.cjs');
 const { indexComTelas } = require('./helpers/index-com-telas.cjs');
 
 const root = path.join(__dirname, '..');
@@ -53,10 +54,8 @@ function carregarExtrato(extra) {
     Math: Math
   }, extra || {});
   sandbox.globalThis = sandbox;
-  var code = extratoSrc.replace(/\bconst INIT_EXTRATO =/, 'var   INIT_EXTRATO =');
-  vm.runInContext(code, vm.createContext(sandbox), {
-    filename: path.join(root, 'js', 'modules', 'init-extrato.js')
-  });
+  // ES Module: o sandbox é o dublê dos imports; o que falta fica ausente.
+  rodarIsolado(vm.createContext(sandbox), path.join(root, 'js', 'modules', 'init-extrato.js'));
   var mod = sandbox.INIT_EXTRATO;
   mod.getCatIcon = function() { return ''; };
   mod.getCatCor = function() { return '#000'; };

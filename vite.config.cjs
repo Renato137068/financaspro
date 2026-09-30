@@ -6,7 +6,7 @@ module.exports = defineConfig({
   // into app.bundle.js. The one <script type="module"> (js/esm/ponte.js, ADR
   // 0005) IS a Vite entry: it and its imports become js/index-<hash>.js.
   // Heavy features load on demand: ES Module chunks via import() in
-  // js/core/lazy-load.js (Vite splits them), classic ones via LAZY_CHUNKS.
+  // js/core/lazy-load.js (Vite splits them into js/<chunk>-<hash>.js).
   root: '.',
   base: '/',
 

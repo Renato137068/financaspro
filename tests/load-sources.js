@@ -9,6 +9,7 @@ const root = path.join(__dirname, '..');
 // Caminho absoluto: este arquivo também roda via vm (scripts/lib/load-core.cjs),
 // com o `require` de outro diretório.
 const { ehModulo, executarModulo } = require(path.join(root, 'tests', 'helpers', 'esm-como-script.cjs'));
+const { rodarPerfil } = require(path.join(root, 'tests', 'helpers', 'chunk-perfil.cjs'));
 
 // Um cache de ES Modules por contexto: cada arquivo roda uma vez, como no navegador.
 let _modulos = new Map();
@@ -138,10 +139,11 @@ function loadCoreModules() {
   // Leitura pura de insights: depende de AI_ENGINE/RELATORIOS/ORCAMENTO/TRANSACOES
   // (todos já carregados acima). analisar() não toca no DOM.
   loadScript(context, 'js/insights.js');
-  loadScript(context, 'js/modules/init-config.js');
-  // Mixins de INIT_CONFIG (backup; bancos, cartões e categorias).
-  loadScript(context, 'js/modules/config-backup.js');
-  loadScript(context, 'js/modules/config-bancos.js');
+  // O Perfil (INIT_CONFIG e os mixins de backup e bancos), isolado: os imports
+  // de UI dele (preferências, modais, PIN) ficam ausentes, e o domínio vem do
+  // que já está neste contexto. Carregá-los de verdade puxaria a UI inteira,
+  // que toca o DOM ao carregar (e os scripts de perf rodam sem DOM).
+  rodarPerfil(context);
   // anexos.js só é carregado pela parte pura (validarArquivo); as funções de
   // IndexedDB não são exercitadas aqui — exigiriam polyfill.
   loadScript(context, 'js/anexos.js');

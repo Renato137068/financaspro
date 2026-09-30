@@ -13,17 +13,19 @@ test.describe('chunks lazy no build de produção', function() {
   test('Simulador carrega sob demanda e oferece "Criar meta no app"', async function({ page }) {
     const pedidos = [];
     page.on('request', function(req) {
-      const url = req.url();
-      if (url.indexOf('/js/lazy/') !== -1) pedidos.push(url.split('/js/lazy/')[1]);
+      // Chunk do Vite: js/<chunk>-<hash>.js.
+      const m = req.url().match(/\/js\/([\w-]+)-[\w-]{8}\.js$/);
+      if (m) pedidos.push(m[1]);
     });
     await prepareOfflinePage(page);
 
     // Antes de abrir: nada do simulador no bundle eager.
     expect(await page.evaluate(function() { return typeof INIT_SIMULADOR; })).toBe('undefined');
+    expect(pedidos).not.toContain('simulador');
 
     await page.evaluate(function() { mudarAba('config-simulador'); });
     await expect(page.locator('#simulador-panel [role="tab"]')).toHaveCount(4);
-    expect(pedidos).toContain('simulador.bundle.js');
+    expect(pedidos).toContain('simulador');
 
     // Modo Meta: o CTA depende de METAS, que mora no chunk 'metas'.
     await page.locator('#sim-tab-meta').click();

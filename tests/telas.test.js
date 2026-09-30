@@ -13,15 +13,17 @@ const { indexComTelas, CASCA } = require('./helpers/index-com-telas.cjs');
 
 const ROOT = path.join(__dirname, '..');
 const index = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
-const bundle = fs.readFileSync(path.join(ROOT, 'scripts', 'bundle-app.cjs'), 'utf8');
 
 const cascas = [...index.matchAll(CASCA)].map((m) => ({ tela: m[1], chunk: m[3] }));
 const arquivos = fs.readdirSync(path.join(ROOT, 'telas')).flatMap((chunk) =>
   fs.readdirSync(path.join(ROOT, 'telas', chunk)).map((f) => ({ tela: f.replace(/\.html$/, ''), chunk })));
 
-function listaDoChunk(chunk) {
-  const m = bundle.match(new RegExp('\\n\\s*' + chunk + ':\\s*\\[([^\\]]*)\\]'));
-  return m ? [...m[1].matchAll(/'([^']+)'/g)].map((x) => x[1]) : null;
+/** Imports da entrada do chunk (js/esm/chunks/<chunk>.js), em ordem. */
+function importsDoChunk(chunk) {
+  const arq = path.join(ROOT, 'js', 'esm', 'chunks', chunk + '.js');
+  if (!fs.existsSync(arq)) return null;
+  return [...fs.readFileSync(arq, 'utf8').matchAll(/^import\s+(?:[^'"]*?from\s+)?['"]([^'"]+)['"]/gm)]
+    .map((m) => path.relative(ROOT, path.resolve(path.dirname(arq), m[1])).split(path.sep).join('/'));
 }
 
 describe('telas fora do index.html', () => {
@@ -33,14 +35,14 @@ describe('telas fora do index.html', () => {
     expect((index.match(/data-tela="/g) || []).length).toBe(cascas.length);
   });
 
-  test('js/telas/<chunk>.js é o primeiro do chunk lazy e vem antes dele no index.html', () => {
+  // No ES Module, os imports avaliam em ordem: o markup entra no DOM antes de
+  // o módulo da tela carregar.
+  test('js/telas/<chunk>.js é o primeiro import da entrada do chunk, e o index.html não o carrega', () => {
     for (const chunk of new Set(arquivos.map((a) => a.chunk))) {
-      const lista = listaDoChunk(chunk);
+      const lista = importsDoChunk(chunk);
       expect(lista).not.toBeNull();
       expect(lista[0]).toBe('js/telas/' + chunk + '.js');
-      const posTela = index.indexOf('src="js/telas/' + chunk + '.js"');
-      expect(posTela).toBeGreaterThan(-1);
-      lista.slice(1).forEach((rel) => expect(index.indexOf('src="' + rel + '"')).toBeGreaterThan(posTela));
+      expect(index).not.toContain('src="js/telas/' + chunk + '.js"');
     }
   });
 

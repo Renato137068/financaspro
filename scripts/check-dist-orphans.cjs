@@ -20,17 +20,16 @@
  *
  * ── Por que uma varredura literal não bastaria ──────────────────────────────
  *
- * Dois grupos de arquivos são alcançados por caminho MONTADO em tempo de
- * execução e não aparecem em busca textual:
+ * Os chunks sob demanda (js/<chunk>-<hash>.js, do Vite) só são citados pelo
+ * bundle ES Module que os importa: são seguidos a partir dele (seguirImports).
+ * E um arquivo é alcançado por caminho MONTADO em tempo de execução, que não
+ * aparece em busca textual:
  *
- *   js/lazy/<chunk>.bundle.js   ← lazy-load.js faz 'js/lazy/' + chunk + '.bundle.js'
  *   js/vendor/lucide-full.min.js ← carregado só se algum ícone ficar de fora do subset
  *
- * Apagá-los "porque nada referencia" quebraria previsão, relatórios, billing,
- * 2FA, Open Finance e os ícones de fallback — em produção, silenciosamente,
- * porque todos estão atrás de guardas `typeof X !== 'undefined'`.
- *
- * Por isso a alcançabilidade aqui é declarada, não inferida.
+ * Apagá-lo "porque nada referencia" quebraria os ícones de fallback — em
+ * produção, silenciosamente. Por isso essa alcançabilidade é declarada, não
+ * inferida.
  *
  * Uso:
  *   node scripts/check-dist-orphans.cjs           # falha se sobrou órfão
@@ -47,8 +46,6 @@ const dist = path.join(root, 'dist');
  * textual — cada entrada aqui precisa apontar para o código que a monta.
  */
 const ALCANCAVEL_EM_RUNTIME = [
-  // js/core/lazy-load.js:27 → s.src = 'js/lazy/' + chunk + '.bundle.js'
-  /^js\/lazy\/[a-z0-9-]+\.bundle\.js$/,
   // js/lucide-init.js → fallback quando um ícone fica fora do subset
   /^js\/vendor\/lucide-full\.min\.js$/,
   // OCR removido: não declarar tesseract como alcançável.

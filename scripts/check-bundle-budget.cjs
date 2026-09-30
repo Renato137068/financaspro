@@ -25,7 +25,7 @@ const KB = 1024;
 
 // Limites com pouca folga sobre o valor atual. Desde 27/09 o teto só DESCE:
 // tests/bundle-budget-teto.test.js trava os valores. Feature nova que não cabe
-// vai para um chunk lazy (LAZY_CHUNKS em scripts/bundle-app.cjs) ou paga o
+// vai para um chunk sob demanda (CHUNKS_ESM em js/core/lazy-load.js) ou paga o
 // espaço tirando algo do eager — subir o teto a cada feature virou carimbo
 // (sete aumentos só em setembro, histórico abaixo).
 const BUDGETS = {

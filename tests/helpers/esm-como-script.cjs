@@ -9,6 +9,8 @@
  *
  * Por isso a conversão aqui preserva o tamanho do texto, caractere a caractere:
  *   - `import { A } from './a.js';`  vira espaços (o harness injeta A antes);
+ *   - `import './a.js';` (só pelo efeito, ex.: as telas geradas) vira espaços
+ *     e o harness roda a.js antes;
  *   - `export { A };`, `export default A;` viram espaços;
  *   - `export const A =`  perde o `export `;
  *   - `const A =` / `let A =` de um nome exportado viram `var   A =` / `var A =`,
@@ -28,6 +30,7 @@ const vm = require('vm');
 
 const ID = '[A-Za-z_$][\\w$]*';
 const RE_IMPORT = new RegExp('^import\\s+(?:\\{([^}]*)\\}|(' + ID + '))\\s+from\\s+([\'"])(\\.{1,2}/[^\'"]+)\\3;?', 'gm');
+const RE_IMPORT_EFEITO = /^import\s+(['"])(\.{1,2}\/[^'"]+)\1;?/gm;
 const RE_EXPORT_LISTA = /^export\s*\{([^}]*)\};?/gm;
 const RE_EXPORT_DEFAULT = new RegExp('^export\\s+default\\s+(' + ID + ');?', 'gm');
 const RE_EXPORT_DECL = new RegExp('^export\\s+(?=(?:const|let|var|function|class)\\s+(' + ID + '))', 'gm');
@@ -114,6 +117,10 @@ function converter(codigo, arquivo) {
       ? paresDaLista(lista).map((p) => ({ importado: p.de, local: p.para }))
       : [{ importado: 'default', local: padrao }];
     importa.push({ arquivo: path.resolve(path.dirname(arquivo), rel), nomes });
+    return emBranco(trecho);
+  });
+  codigo = codigo.replace(RE_IMPORT_EFEITO, (trecho, _q, rel) => {
+    importa.push({ arquivo: path.resolve(path.dirname(arquivo), rel), nomes: [] });
     return emBranco(trecho);
   });
   codigo = codigo.replace(RE_EXPORT_LISTA, (trecho, lista) => {
@@ -235,7 +242,8 @@ function executarModulo(ctx, arquivo, cache, mocks, opcoes) {
 
   for (const dep of importa) {
     // Dublê para todos os nomes deste import: o módulo real nem roda (mock).
-    if (dep.nomes.every((n) => Object.prototype.hasOwnProperty.call(mocks, n.importado))) {
+    // Import só pelo efeito (sem nomes) sempre roda.
+    if (dep.nomes.length && dep.nomes.every((n) => Object.prototype.hasOwnProperty.call(mocks, n.importado))) {
       dep.nomes.forEach((n) => { ctx[n.local] = mocks[n.importado]; });
       continue;
     }
@@ -297,4 +305,20 @@ function rodarNoContexto(ctx, arquivo) {
   return executarModulo(ctx, arquivo, undefined, mocks);
 }
 
-module.exports = { ehModulo, converter, executarModulo, nomesDoGrafo, rodarNoContexto };
+/**
+ * Roda o módulo com TODOS os imports diretos como dublês: o que o contexto
+ * tem como propriedade própria, ou `undefined` (ausente), como os globais que
+ * faltavam ao script clássico. Nenhum módulo real além dele roda. Para testes
+ * que montam um contexto mínimo à mão (antes `vm.runInContext` do arquivo).
+ */
+function rodarIsolado(ctx, arquivo) {
+  const mocks = {};
+  for (const dep of converter(fs.readFileSync(arquivo, 'utf8'), arquivo).importa) {
+    for (const { importado, local } of dep.nomes) {
+      mocks[importado] = Object.prototype.hasOwnProperty.call(ctx, local) ? ctx[local] : undefined;
+    }
+  }
+  return executarModulo(ctx, arquivo, undefined, mocks);
+}
+
+module.exports = { ehModulo, converter, executarModulo, nomesDoGrafo, rodarNoContexto, rodarIsolado };

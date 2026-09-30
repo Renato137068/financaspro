@@ -30,39 +30,9 @@ const GENERATED = ['js/vendor.bundle.js', 'js/app.bundle.js'];
 // Prefixo de libs de terceiros que vão para o bundle de vendor (cache longo).
 const VENDOR_PREFIX = 'js/vendor/';
 
-// Features opcionais movidas para fora do bundle eager e carregadas sob demanda
-// via LAZY.load(). Só entram aqui módulos autocontidos, disparados por ação do
-// usuário e referenciados SEMPRE atrás de `typeof X !== 'undefined'`.
-// Chunk que virou ES Module (previsão, relatórios, tour, anexos, metas,
-// gastos fixos, patrimônio, conta) sai desta lista: é import() dinâmico em
-// js/core/lazy-load.js (CHUNKS_ESM), e o Vite o divide.
-const LAZY_CHUNKS = {
-  // Extrato — ao abrir a aba ou por um wrapper global (exportar, editar pelo
-  // alerta, "ver no extrato"). Ícones/cores de categoria ficam no eager
-  // (js/core/categoria-visual.js).
-  // O markup da tela vem no chunk (js/telas/extrato.js, gerado de telas/).
-  extrato: ['js/telas/extrato.js', 'js/modules/init-extrato.js'],
-
-  // Perfil e suas sub-telas — ao abrir qualquer aba config-* ou por um wrapper
-  // global (editar perfil, bancos, categorias, exportar backup). As ações de
-  // insight do dashboard ficam no eager (js/modules/insight-acoes.js).
-  // init-config.js vem dividido: backup e bancos/cartões/categorias são
-  // mixins de INIT_CONFIG e precisam vir depois dele.
-  // js/telas/config.js (gerado de telas/config/) traz o markup das sub-telas
-  // e vem antes: quando o init roda, as telas já estão no DOM.
-  config: ['js/telas/config.js', 'js/modules/init-config.js', 'js/modules/config-backup.js', 'js/modules/config-bancos.js'],
-
-  // Orçamento (tela) — ao abrir a aba ou uma sub-aba. O cálculo do orçamento
-  // (ORCAMENTO, js/orcamento.js) fica no eager: o dashboard usa.
-  // O markup da tela vem no chunk (js/telas/orcamento.js, gerado de telas/).
-  orcamento: ['js/telas/orcamento.js', 'js/modules/init-orcamento.js'],
-
-  // Simulador financeiro — só ao abrir Perfil → Simulador.
-  // A casca do simulador (#simulador-panel) vem aqui, não no chunk 'config':
-  // INIT_SIMULADOR.init pode rodar antes de o 'config' chegar.
-  simulador: ['js/telas/simulador.js', 'js/simulador.js', 'js/modules/init-simulador.js'],
-};
-const lazySet = new Set(Object.values(LAZY_CHUNKS).reduce((a, b) => a.concat(b), []));
+// Os chunks sob demanda são ES Modules (ADR 0005): import() dinâmico em
+// js/core/lazy-load.js (CHUNKS_ESM), que o Vite divide em js/<chunk>-<hash>.js.
+// Aqui só sobram os scripts clássicos do boot.
 
 if (!fs.existsSync(indexPath)) {
   console.log('[bundle-app] dist/index.html ausente — pulando bundle');
@@ -118,19 +88,7 @@ if (!bundlable.length) {
 
 // Preserva a ordem original de declaração dentro de cada grupo.
 const vendorPaths = bundlable.filter((p) => p.startsWith(VENDOR_PREFIX));
-const appPaths = bundlable.filter((p) => !p.startsWith(VENDOR_PREFIX) && !lazySet.has(p));
-
-// Chunks lazy: cada um vira js/lazy/<nome>.bundle.js e NÃO é injetado como tag
-// eager — só carrega quando LAZY.load(<nome>) é chamado.
-const lazyDir = path.join(dist, 'js', 'lazy');
-for (const [name, chunkPaths] of Object.entries(LAZY_CHUNKS)) {
-  const present = chunkPaths.filter((p) => bundlable.indexOf(p) !== -1);
-  if (!present.length) continue;
-  fs.mkdirSync(lazyDir, { recursive: true });
-  const code = minifyConcat(present);
-  fs.writeFileSync(path.join(lazyDir, name + '.bundle.js'), code);
-  console.log('[bundle-app]', present.length, 'lazy →', 'js/lazy/' + name + '.bundle.js (', Math.round(code.length / 1024), 'KB )');
-}
+const appPaths = bundlable.filter((p) => !p.startsWith(VENDOR_PREFIX));
 
 const injects = [];
 
@@ -163,7 +121,7 @@ console.log('[bundle-app] bloqueantes mantidos:', KEEP_BLOCKING.join(', '));
 //
 // Os arquivos crus precisam existir em dist/ porque são a ENTRADA deste script:
 // `minifyConcat` lê `dist/js/*.js`. Terminado o empacotamento, cada um deles
-// virou cópia morta do que está em app.bundle.js / vendor.bundle.js / lazy.
+// virou cópia morta do que está em app.bundle.js / vendor.bundle.js.
 //
 // Ninguém os baixa — o HTML não os referencia mais. Mas `npm run android:sync`
 // empacota dist/ inteiro no APK, então o usuário baixa da loja e guarda no
@@ -202,9 +160,9 @@ for (const rel of esm) {
   fs.unlinkSync(file);
 }
 
-// Diretórios que ficaram vazios após o purge. `js/lazy` e `js/vendor` seguem
-// povoados — são pedidos por caminho montado em runtime, nunca entram em
-// `bundlable`, e apagá-los quebraria os chunks e o fallback de ícones.
+// Diretórios que ficaram vazios após o purge. `js/vendor` segue povoado — o
+// lucide completo é pedido por caminho montado em runtime, nunca entra em
+// `bundlable`, e apagá-lo quebraria o fallback de ícones.
 function limparVazios(dir) {
   if (!fs.existsSync(dir)) return;
   for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {

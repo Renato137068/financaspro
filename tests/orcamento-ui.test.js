@@ -5,6 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { rodarIsolado } = require('./helpers/esm-como-script.cjs');
 const { indexComTelas } = require('./helpers/index-com-telas.cjs');
 
 const root = path.join(__dirname, '..');
@@ -101,10 +102,8 @@ function carregar(extra) {
   sandbox._setConfig = function(c) { Object.assign(config, c); };
   sandbox._orc = function() { return sandbox.ORCAMENTO; };
   sandbox.globalThis = sandbox;
-  var code = src.replace(/\bconst INIT_ORCAMENTO =/, 'var   INIT_ORCAMENTO =');
-  vm.runInContext(code, vm.createContext(sandbox), {
-    filename: path.join(root, 'js', 'modules', 'init-orcamento.js')
-  });
+  // ES Module: o sandbox é o dublê dos imports; o que falta fica ausente.
+  rodarIsolado(vm.createContext(sandbox), path.join(root, 'js', 'modules', 'init-orcamento.js'));
   return sandbox;
 }
 

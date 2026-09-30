@@ -3,8 +3,9 @@
  *
  * Telas usadas só por um chunk lazy (Orçamento, sub-telas do Perfil) ficam em
  * telas/<chunk>/<tela>.html. scripts/generate-telas.cjs as transforma em
- * js/telas/<chunk>.js, um script que entra no próprio chunk (LAZY_CHUNKS) e
- * chama TELAS.registrar para cada tela. O index.html guarda só a casca
+ * js/telas/<chunk>.js, um ES Module que a entrada do chunk
+ * (js/esm/chunks/<chunk>.js) importa primeiro e que chama TELAS.registrar
+ * para cada tela ao carregar. O index.html guarda só a casca
  * (`<div id="aba-<tela>" data-tela="<tela>" aria-busy="true">`), então o HTML
  * do primeiro acesso não carrega markup de tela que talvez nunca abra.
  *

@@ -2,7 +2,22 @@
  * init-extrato.js - Sistema de extrato e filtros
  * Extraído do init.js para modularização
  * Responsabilidades: estado do extrato, filtros, renderização
+ *
+ * ES Module (ADR 0005): chega sob demanda no chunk 'extrato'
+ * (js/esm/chunks/extrato.js, via LAZY.load), que o publica em window.
  */
+
+import { CONFIG } from '../core/config.js';
+import { UTILS } from '../core/utils.js';
+import { TRANSACOES } from '../transacoes.js';
+import { CATEGORIA_VISUAL } from '../core/categoria-visual.js';
+import { UI } from '../components/ui.js';
+import { RENDER } from '../render.js';
+import { mudarAba } from './init-navigation.js';
+import { INIT_MODALS } from './init-modals.js';
+import { INIT_FORM } from './init-form.js';
+import { BILLING } from '../billing.js';
+import { DADOS } from '../core/dados.js';
 
 // Soma de dinheiro em centavos inteiros: somar t.valor em reais com += acumula
 // deriva de ponto flutuante (0,10 + 0,20 = 0,30000000000000004), e o saldo do
@@ -61,14 +76,14 @@ const INIT_EXTRATO = {
    * Inicializa sistema de extrato
    */
   init: function() {
-    this._carregarFiltrosSalvos();
-    this.setupExtratoListeners();
-    this.atualizarPeriodoLabel();
-    this._bindBusca();
-    this._bindKeyboardShortcuts();
-    this.atualizarBadgeFiltrosAvancados();
-    this._syncOrdenacaoUI();
-    this._bindVirtualScroll();
+    INIT_EXTRATO._carregarFiltrosSalvos();
+    INIT_EXTRATO.setupExtratoListeners();
+    INIT_EXTRATO.atualizarPeriodoLabel();
+    INIT_EXTRATO._bindBusca();
+    INIT_EXTRATO._bindKeyboardShortcuts();
+    INIT_EXTRATO.atualizarBadgeFiltrosAvancados();
+    INIT_EXTRATO._syncOrdenacaoUI();
+    INIT_EXTRATO._bindVirtualScroll();
   },
 
   /**
@@ -79,8 +94,8 @@ const INIT_EXTRATO = {
       var filtrosSalvos = localStorage.getItem('extrato_filtros');
       if (filtrosSalvos) {
         var filtros = JSON.parse(filtrosSalvos);
-        this.state.filtroTipo = filtros.filtroTipo || 'todos';
-        this.state.ordenacao = filtros.ordenacao || 'data-desc';
+        INIT_EXTRATO.state.filtroTipo = filtros.filtroTipo || 'todos';
+        INIT_EXTRATO.state.ordenacao = filtros.ordenacao || 'data-desc';
         // Não restauramos busca e categoria para não confundir o usuário
       }
     } catch (e) {
@@ -94,8 +109,8 @@ const INIT_EXTRATO = {
   _salvarFiltros: function() {
     try {
       var filtros = {
-        filtroTipo: this.state.filtroTipo,
-        ordenacao: this.state.ordenacao
+        filtroTipo: INIT_EXTRATO.state.filtroTipo,
+        ordenacao: INIT_EXTRATO.state.ordenacao
       };
       localStorage.setItem('extrato_filtros', JSON.stringify(filtros));
     } catch (e) {
@@ -107,7 +122,7 @@ const INIT_EXTRATO = {
    * Configura atalhos de teclado
    */
   _bindKeyboardShortcuts: function() {
-    var self = this;
+    var self = INIT_EXTRATO;
     document.addEventListener('keydown', function(e) {
       // Só ativa se estiver na aba extrato
       var extratoAba = document.getElementById('aba-extrato');
@@ -149,7 +164,7 @@ const INIT_EXTRATO = {
   },
 
   _bindBusca: function() {
-    var self = this;
+    var self = INIT_EXTRATO;
     var el = document.getElementById('extrato-busca');
     if (el) {
       var debounceTimer = null;
@@ -164,11 +179,11 @@ const INIT_EXTRATO = {
    * Configura listeners do extrato
    */
   setupExtratoListeners: function() {
-    if (this.listenerAttached) return;
-    this.listenerAttached = true;
+    if (INIT_EXTRATO.listenerAttached) return;
+    INIT_EXTRATO.listenerAttached = true;
 
     // Listener para checkbox de transação (não tem data-action)
-    var self = this;
+    var self = INIT_EXTRATO;
     document.addEventListener('click', function(e) {
       var checkbox = e.target.closest('.tx-checkbox');
       if (checkbox) {
@@ -215,10 +230,10 @@ const INIT_EXTRATO = {
    * persistente (#lista-transacoes), evitando handlers acumulados a cada render.
    */
   _bindListaTransacoesClick: function() {
-    if (this.listaTransacoesListener) return;
+    if (INIT_EXTRATO.listaTransacoesListener) return;
     var container = document.getElementById('lista-transacoes');
     if (!container) return;
-    this.listaTransacoesListener = true;
+    INIT_EXTRATO.listaTransacoesListener = true;
     container.addEventListener('click', function(e) {
       var btnTag = e.target.closest('[data-tag-filter]');
       var btnEdit = e.target.closest('.btn-editar');
@@ -266,20 +281,20 @@ const INIT_EXTRATO = {
     var alvo = (typeof TRANSACOES !== 'undefined' && TRANSACOES.normalizarTags)
       ? TRANSACOES.normalizarTags(tag)[0]
       : String(tag == null ? '' : tag).trim().toLowerCase();
-    this.state.filtroTag = (this.state.filtroTag === alvo) ? null : (alvo || null);
-    this.filtrarExtrato();
+    INIT_EXTRATO.state.filtroTag = (INIT_EXTRATO.state.filtroTag === alvo) ? null : (alvo || null);
+    INIT_EXTRATO.filtrarExtrato();
   },
 
   /**
    * Limpa todos os filtros aplicados
    */
   limparFiltros: function() {
-    this.state.filtroTipo = 'todos';
-    this.state.filtroCat = null;
-    this.state.filtroTag = null;
-    this.state.busca = '';
-    this.state.ordenacao = 'data-desc';
-    this.state.buscaAvancada = {
+    INIT_EXTRATO.state.filtroTipo = 'todos';
+    INIT_EXTRATO.state.filtroCat = null;
+    INIT_EXTRATO.state.filtroTag = null;
+    INIT_EXTRATO.state.busca = '';
+    INIT_EXTRATO.state.ordenacao = 'data-desc';
+    INIT_EXTRATO.state.buscaAvancada = {
       valorMin: null,
       valorMax: null,
       dataInicio: null,
@@ -299,9 +314,9 @@ const INIT_EXTRATO = {
     if (dataInicio) dataInicio.value = '';
     if (dataFim) dataFim.value = '';
     
-    this.setFiltroTipo('todos');
-    this.setOrdenacao('data-desc');
-    this.atualizarBadgeFiltrosAvancados();
+    INIT_EXTRATO.setFiltroTipo('todos');
+    INIT_EXTRATO.setOrdenacao('data-desc');
+    INIT_EXTRATO.atualizarBadgeFiltrosAvancados();
     
     UTILS.mostrarToast('Filtros limpos', 'info');
   },
@@ -332,8 +347,8 @@ const INIT_EXTRATO = {
     var btn = document.getElementById('btn-filtros-avancados');
     if (!badge) return;
     var n = 0;
-    if (this.state.filtroCat) n += 1;
-    if (this.state.ordenacao && this.state.ordenacao !== 'data-desc') n += 1;
+    if (INIT_EXTRATO.state.filtroCat) n += 1;
+    if (INIT_EXTRATO.state.ordenacao && INIT_EXTRATO.state.ordenacao !== 'data-desc') n += 1;
     if (n > 0) {
       badge.textContent = String(n);
       badge.hidden = false;
@@ -358,12 +373,12 @@ const INIT_EXTRATO = {
     
     // parseMoeda (BR-aware) em vez de parseFloat: aceita "1.500,00", "1500",
     // "1500,50" etc. Com type=number o campo rejeitava a vírgula do teclado BR.
-    this.state.buscaAvancada.valorMin = valorMin && valorMin.value.trim() ? UTILS.parseMoeda(valorMin.value) : null;
-    this.state.buscaAvancada.valorMax = valorMax && valorMax.value.trim() ? UTILS.parseMoeda(valorMax.value) : null;
-    this.state.buscaAvancada.dataInicio = dataInicio && dataInicio.value ? dataInicio.value : null;
-    this.state.buscaAvancada.dataFim = dataFim && dataFim.value ? dataFim.value : null;
+    INIT_EXTRATO.state.buscaAvancada.valorMin = valorMin && valorMin.value.trim() ? UTILS.parseMoeda(valorMin.value) : null;
+    INIT_EXTRATO.state.buscaAvancada.valorMax = valorMax && valorMax.value.trim() ? UTILS.parseMoeda(valorMax.value) : null;
+    INIT_EXTRATO.state.buscaAvancada.dataInicio = dataInicio && dataInicio.value ? dataInicio.value : null;
+    INIT_EXTRATO.state.buscaAvancada.dataFim = dataFim && dataFim.value ? dataFim.value : null;
     
-    this.filtrarExtrato();
+    INIT_EXTRATO.filtrarExtrato();
     UTILS.mostrarToast('Filtros avançados aplicados', 'success');
     // Valor/período vive dentro de #extrato-filtros-avancados — não esconder o bloco
   },
@@ -373,16 +388,16 @@ const INIT_EXTRATO = {
    */
   toggleSelecao: function(txId, checked) {
     if (checked) {
-      if (this.state.selecionados.indexOf(txId) === -1) {
-        this.state.selecionados.push(txId);
+      if (INIT_EXTRATO.state.selecionados.indexOf(txId) === -1) {
+        INIT_EXTRATO.state.selecionados.push(txId);
       }
     } else {
-      var index = this.state.selecionados.indexOf(txId);
+      var index = INIT_EXTRATO.state.selecionados.indexOf(txId);
       if (index > -1) {
-        this.state.selecionados.splice(index, 1);
+        INIT_EXTRATO.state.selecionados.splice(index, 1);
       }
     }
-    this._atualizarBarraAcoesMassa();
+    INIT_EXTRATO._atualizarBarraAcoesMassa();
   },
 
   /**
@@ -392,9 +407,9 @@ const INIT_EXTRATO = {
     var barra = document.getElementById('acoes-massa-bar');
     var count = document.getElementById('acoes-massa-count');
     
-    if (this.state.selecionados.length > 0) {
+    if (INIT_EXTRATO.state.selecionados.length > 0) {
       if (barra) barra.style.display = 'flex';
-      if (count) count.textContent = this.state.selecionados.length + ' selecionada' + (this.state.selecionados.length > 1 ? 's' : '');
+      if (count) count.textContent = INIT_EXTRATO.state.selecionados.length + ' selecionada' + (INIT_EXTRATO.state.selecionados.length > 1 ? 's' : '');
     } else {
       if (barra) barra.style.display = 'none';
     }
@@ -404,8 +419,8 @@ const INIT_EXTRATO = {
    * Cancela seleção de transações
    */
   cancelarSelecao: function() {
-    this.state.selecionados = [];
-    this._atualizarBarraAcoesMassa();
+    INIT_EXTRATO.state.selecionados = [];
+    INIT_EXTRATO._atualizarBarraAcoesMassa();
     
     // Desmarcar todos os checkboxes
     document.querySelectorAll('.tx-checkbox').forEach(function(cb) {
@@ -417,10 +432,10 @@ const INIT_EXTRATO = {
    * Deleta transações selecionadas
    */
   deletarSelecionados: function() {
-    if (this.state.selecionados.length === 0) return;
+    if (INIT_EXTRATO.state.selecionados.length === 0) return;
 
-    var self = this;
-    var qtd = this.state.selecionados.length;
+    var self = INIT_EXTRATO;
+    var qtd = INIT_EXTRATO.state.selecionados.length;
     INIT_MODALS.confirm('Deseja realmente deletar ' + qtd + ' transação(ões)?', function() {
       var ids = self.state.selecionados.slice();
       self.state.selecionados = [];
@@ -453,7 +468,7 @@ const INIT_EXTRATO = {
    */
   getExtratoMesAno: function() {
     var d = new Date();
-    d.setMonth(d.getMonth() + this.state.mesOffset);
+    d.setMonth(d.getMonth() + INIT_EXTRATO.state.mesOffset);
     return { mes: d.getMonth() + 1, ano: d.getFullYear(), date: d };
   },
 
@@ -461,16 +476,16 @@ const INIT_EXTRATO = {
    * Navega para período anterior/próximo
    */
   navegarPeriodo: function(dir) {
-    this.state.mesOffset += dir;
-    this.atualizarPeriodoLabel();
-    this.filtrarExtrato();
+    INIT_EXTRATO.state.mesOffset += dir;
+    INIT_EXTRATO.atualizarPeriodoLabel();
+    INIT_EXTRATO.filtrarExtrato();
   },
 
   /**
    * Atualiza label do período no UI
    */
   atualizarPeriodoLabel: function() {
-    var info = this.getExtratoMesAno();
+    var info = INIT_EXTRATO.getExtratoMesAno();
     var labelBtn = document.getElementById('periodo-label-btn');
     var datePicker = document.getElementById('periodo-date-picker');
     
@@ -487,21 +502,21 @@ const INIT_EXTRATO = {
     
     // Esconder botão "próximo" se já no mês atual
     var btnNext = document.getElementById('periodo-next');
-    if (btnNext) btnNext.style.visibility = this.state.mesOffset >= 0 ? 'hidden' : 'visible';
+    if (btnNext) btnNext.style.visibility = INIT_EXTRATO.state.mesOffset >= 0 ? 'hidden' : 'visible';
   },
 
   /**
    * Define filtro por tipo
    */
   setFiltroTipo: function(tipo) {
-    this.state.filtroTipo = tipo;
+    INIT_EXTRATO.state.filtroTipo = tipo;
     document.querySelectorAll('#aba-extrato .filtro-chip[data-filtro]').forEach(function(b) {
       var isActive = b.dataset.filtro === tipo;
       b.classList.toggle('ativo', isActive);
       b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
     });
-    this._salvarFiltros();
-    this.filtrarExtrato();
+    INIT_EXTRATO._salvarFiltros();
+    INIT_EXTRATO.filtrarExtrato();
   },
 
   /**
@@ -517,7 +532,7 @@ const INIT_EXTRATO = {
   },
 
   _syncOrdenacaoUI: function() {
-    var parsed = this._parseOrdenacao(this.state.ordenacao);
+    var parsed = INIT_EXTRATO._parseOrdenacao(INIT_EXTRATO.state.ordenacao);
     document.querySelectorAll('.ordenacao-campo-btn').forEach(function(b) {
       var on = b.dataset.ordenacaoCampo === parsed.campo;
       b.classList.toggle('ativo', on);
@@ -546,29 +561,29 @@ const INIT_EXTRATO = {
   },
 
   setOrdenacaoCampo: function(campo) {
-    var parsed = this._parseOrdenacao(this.state.ordenacao);
-    this.setOrdenacao(this._comporOrdenacao(campo, parsed.dir));
+    var parsed = INIT_EXTRATO._parseOrdenacao(INIT_EXTRATO.state.ordenacao);
+    INIT_EXTRATO.setOrdenacao(INIT_EXTRATO._comporOrdenacao(campo, parsed.dir));
   },
 
   toggleOrdenacaoDir: function() {
-    var parsed = this._parseOrdenacao(this.state.ordenacao);
+    var parsed = INIT_EXTRATO._parseOrdenacao(INIT_EXTRATO.state.ordenacao);
     var novaDir = parsed.dir === 'desc' ? 'asc' : 'desc';
-    this.setOrdenacao(this._comporOrdenacao(parsed.campo, novaDir));
+    INIT_EXTRATO.setOrdenacao(INIT_EXTRATO._comporOrdenacao(parsed.campo, novaDir));
   },
 
   setOrdenacao: function(ordenacao) {
-    this.state.ordenacao = ordenacao;
-    this._syncOrdenacaoUI();
-    this._salvarFiltros();
-    this.atualizarBadgeFiltrosAvancados();
-    this.filtrarExtrato();
+    INIT_EXTRATO.state.ordenacao = ordenacao;
+    INIT_EXTRATO._syncOrdenacaoUI();
+    INIT_EXTRATO._salvarFiltros();
+    INIT_EXTRATO.atualizarBadgeFiltrosAvancados();
+    INIT_EXTRATO.filtrarExtrato();
   },
 
   /**
    * Aplica ordenação nas transações
    */
   _aplicarOrdenacao: function(txs) {
-    var ordem = this.state.ordenacao;
+    var ordem = INIT_EXTRATO.state.ordenacao;
     if (!ordem || ordem === 'data-desc') {
       // Ordenação padrão: data descendente (mais recente primeiro)
       return txs.sort(function(a, b) {
@@ -590,18 +605,18 @@ const INIT_EXTRATO = {
    * Define filtro por categoria
    */
   setFiltroCat: function(cat) {
-    if (this.state.filtroCat === cat) {
-      this.state.filtroCat = null;
+    if (INIT_EXTRATO.state.filtroCat === cat) {
+      INIT_EXTRATO.state.filtroCat = null;
     } else {
-      this.state.filtroCat = cat;
+      INIT_EXTRATO.state.filtroCat = cat;
     }
     document.querySelectorAll('.filtro-cat-chip').forEach(function(b) {
-      var isActive = b.dataset.cat === this.state.filtroCat;
+      var isActive = b.dataset.cat === INIT_EXTRATO.state.filtroCat;
       b.classList.toggle('ativo', isActive);
       b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-    }.bind(this));
-    this.atualizarBadgeFiltrosAvancados();
-    this.filtrarExtrato();
+    }.bind(INIT_EXTRATO));
+    INIT_EXTRATO.atualizarBadgeFiltrosAvancados();
+    INIT_EXTRATO.filtrarExtrato();
   },
 
   /**
@@ -616,22 +631,22 @@ const INIT_EXTRATO = {
     var sorted = Object.keys(cats).sort(function(a, b) { return cats[b] - cats[a]; });
     
     container.innerHTML = sorted.map(function(cat) {
-      var isActive = this.state.filtroCat === cat;
+      var isActive = INIT_EXTRATO.state.filtroCat === cat;
       var ativo = isActive ? ' ativo' : '';
       var pressed = isActive ? 'true' : 'false';
       return '<button type="button" class="filtro-cat-chip' + ativo + '" data-cat="' + UTILS.escapeHtml(cat) + '" aria-pressed="' + pressed + '">' +
         INIT_EXTRATO.getCatIcon(cat) + ' ' + UTILS.escapeHtml(CONFIG.getCatLabel(cat)) + ' <span class="cat-count">' + cats[cat] + '</span></button>';
-    }.bind(this)).join('');
+    }.bind(INIT_EXTRATO)).join('');
 
     if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(container);
 
-    if (!this.filtrosCategoriasListener) {
-      this.filtrosCategoriasListener = true;
+    if (!INIT_EXTRATO.filtrosCategoriasListener) {
+      INIT_EXTRATO.filtrosCategoriasListener = true;
       container.addEventListener('click', function(ev) {
         var btn = ev.target.closest('[data-cat]');
         if (!btn) return;
-        this.setFiltroCat(btn.dataset.cat);
-      }.bind(this));
+        INIT_EXTRATO.setFiltroCat(btn.dataset.cat);
+      }.bind(INIT_EXTRATO));
     }
   },
 
@@ -652,7 +667,7 @@ const INIT_EXTRATO = {
     if (saldoEl) saldoEl.textContent = UTILS.formatarMoeda(saldo);
 
     // Calcular tendência vs mês anterior
-    var info = this.getExtratoMesAno();
+    var info = INIT_EXTRATO.getExtratoMesAno();
     var mesAnterior = new Date(info.date);
     mesAnterior.setMonth(mesAnterior.getMonth() - 1);
     var txsAnterior = TRANSACOES.obter({
@@ -737,8 +752,8 @@ const INIT_EXTRATO = {
         ', entradas ' + UTILS.formatarMoeda(rec) +
         ', saídas ' + UTILS.formatarMoeda(desp) +
         ', ' + txs.length + ' movimentações';
-      if (resumoTxt !== this._ultimoResumoAnunciado) {
-        this._ultimoResumoAnunciado = resumoTxt;
+      if (resumoTxt !== INIT_EXTRATO._ultimoResumoAnunciado) {
+        INIT_EXTRATO._ultimoResumoAnunciado = resumoTxt;
         anuncio.textContent = resumoTxt;
       }
     }
@@ -752,36 +767,36 @@ const INIT_EXTRATO = {
     if (!container) return;
     
     if (txs.length === 0) {
-      this._virtualAtivo = false;
-      this._limparSpacersVirtuais();
-      container.innerHTML = this._renderEmptyState();
-      this._atualizarContadorExtrato(0, 0);
+      INIT_EXTRATO._virtualAtivo = false;
+      INIT_EXTRATO._limparSpacersVirtuais();
+      container.innerHTML = INIT_EXTRATO._renderEmptyState();
+      INIT_EXTRATO._atualizarContadorExtrato(0, 0);
       return;
     }
 
     // Agrupar transações por período temporal
-    var grupos = this._agruparTransacoesPorPeriodo(txs);
+    var grupos = INIT_EXTRATO._agruparTransacoesPorPeriodo(txs);
     
     // Reset paginação quando mudam os filtros
-    this.state.virtualScroll.totalItems = txs.length;
-    this.state.virtualScroll.currentPage = 0;
-    this._virtualLastStart = -1;
+    INIT_EXTRATO.state.virtualScroll.totalItems = txs.length;
+    INIT_EXTRATO.state.virtualScroll.currentPage = 0;
+    INIT_EXTRATO._virtualLastStart = -1;
 
-    if (this._usaVirtualizacao(txs)) {
-      this._virtualAtivo = true;
-      this._renderGruposVirtual(txs);
+    if (INIT_EXTRATO._usaVirtualizacao(txs)) {
+      INIT_EXTRATO._virtualAtivo = true;
+      INIT_EXTRATO._renderGruposVirtual(txs);
       return;
     }
 
-    this._virtualAtivo = false;
-    this._limparSpacersVirtuais();
+    INIT_EXTRATO._virtualAtivo = false;
+    INIT_EXTRATO._limparSpacersVirtuais();
 
     // Renderizar grupos
-    this._renderGrupos(grupos, txs);
+    INIT_EXTRATO._renderGrupos(grupos, txs);
   },
 
   _usaVirtualizacao: function(txs) {
-    var limiar = this.state.virtualScroll.virtualThreshold || 100;
+    var limiar = INIT_EXTRATO.state.virtualScroll.virtualThreshold || 100;
     return Array.isArray(txs) && txs.length >= limiar;
   },
 
@@ -793,7 +808,7 @@ const INIT_EXTRATO = {
   },
 
   _atualizarSpacersVirtuais: function(start, rendered, total) {
-    var vs = this.state.virtualScroll;
+    var vs = INIT_EXTRATO.state.virtualScroll;
     var h = vs.estimatedItemHeight || 76;
     var top = document.getElementById('extrato-virtual-spacer-top');
     var bot = document.getElementById('extrato-virtual-spacer-bottom');
@@ -802,7 +817,7 @@ const INIT_EXTRATO = {
   },
 
   _calcularJanelaVirtual: function(total) {
-    var vs = this.state.virtualScroll;
+    var vs = INIT_EXTRATO.state.virtualScroll;
     var win = vs.windowSize || 60;
     var h = vs.estimatedItemHeight || 76;
     var overscan = vs.overscan || 8;
@@ -821,9 +836,9 @@ const INIT_EXTRATO = {
   },
 
   _bindVirtualScroll: function() {
-    if (this._virtualScrollBound || typeof window === 'undefined') return;
-    this._virtualScrollBound = true;
-    var self = this;
+    if (INIT_EXTRATO._virtualScrollBound || typeof window === 'undefined') return;
+    INIT_EXTRATO._virtualScrollBound = true;
+    var self = INIT_EXTRATO;
     var timer;
     window.addEventListener('scroll', function() {
       if (!self._virtualAtivo || !self._listaTxsAtual) return;
@@ -838,19 +853,19 @@ const INIT_EXTRATO = {
     var container = document.getElementById('lista-transacoes');
     if (!container) return;
 
-    var grupos = this._agruparTransacoesPorPeriodo(txs);
-    var gruposOrdenados = this._ordenarGrupos(grupos);
-    this._gruposOrdenadosAtual = gruposOrdenados;
-    this._listaTxsAtual = txs;
-    this._bindListaTransacoesClick();
+    var grupos = INIT_EXTRATO._agruparTransacoesPorPeriodo(txs);
+    var gruposOrdenados = INIT_EXTRATO._ordenarGrupos(grupos);
+    INIT_EXTRATO._gruposOrdenadosAtual = gruposOrdenados;
+    INIT_EXTRATO._listaTxsAtual = txs;
+    INIT_EXTRATO._bindListaTransacoesClick();
 
-    var janela = this._calcularJanelaVirtual(txs.length);
-    if (fromScroll && janela.start === this._virtualLastStart) return;
-    this._virtualLastStart = janela.start;
+    var janela = INIT_EXTRATO._calcularJanelaVirtual(txs.length);
+    if (fromScroll && janela.start === INIT_EXTRATO._virtualLastStart) return;
+    INIT_EXTRATO._virtualLastStart = janela.start;
 
-    var slice = this._renderGruposHtml(gruposOrdenados, janela.start, janela.count);
+    var slice = INIT_EXTRATO._renderGruposHtml(gruposOrdenados, janela.start, janela.count);
     container.innerHTML = slice.html;
-    this._atualizarSpacersVirtuais(janela.start, slice.rendered, txs.length);
+    INIT_EXTRATO._atualizarSpacersVirtuais(janela.start, slice.rendered, txs.length);
 
     var exibidos = janela.start + slice.rendered;
     var el = document.getElementById('extrato-lista-meta');
@@ -874,7 +889,6 @@ const INIT_EXTRATO = {
     ontem.setDate(ontem.getDate() - 1);
     var inicioSemana = new Date(hoje);
     inicioSemana.setDate(hoje.getDate() - hoje.getDay());
-    var inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
 
     txs.forEach(function(t) {
       var dataTx = new Date(t.data + 'T00:00:00');
@@ -931,7 +945,7 @@ const INIT_EXTRATO = {
     var skipped = 0;
     var rendered = 0;
     var grupoKeys = Object.keys(gruposOrdenados);
-    var self = this;
+    var self = INIT_EXTRATO;
 
     for (var i = 0; i < grupoKeys.length; i++) {
       if (rendered >= maxItems) break;
@@ -992,7 +1006,7 @@ const INIT_EXTRATO = {
       el.hidden = true;
       return;
     }
-    var maxRendered = this._maxRenderedExtrato();
+    var maxRendered = INIT_EXTRATO._maxRenderedExtrato();
     var exibidos = Math.min(mostrados, total, maxRendered);
     el.hidden = false;
     if (total > maxRendered && exibidos >= maxRendered) {
@@ -1004,32 +1018,32 @@ const INIT_EXTRATO = {
   },
 
   _maxRenderedExtrato: function() {
-    return this.state.virtualScroll.maxRendered || 500;
+    return INIT_EXTRATO.state.virtualScroll.maxRendered || 500;
   },
 
   _desconectarScrollMaisObserver: function() {
-    if (this._scrollMaisObserver) {
-      this._scrollMaisObserver.disconnect();
-      this._scrollMaisObserver = null;
+    if (INIT_EXTRATO._scrollMaisObserver) {
+      INIT_EXTRATO._scrollMaisObserver.disconnect();
+      INIT_EXTRATO._scrollMaisObserver = null;
     }
   },
 
   _vincularScrollMaisObserver: function(txs) {
-    var self = this;
-    this._desconectarScrollMaisObserver();
+    var self = INIT_EXTRATO;
+    INIT_EXTRATO._desconectarScrollMaisObserver();
     if (typeof IntersectionObserver === 'undefined') return;
     var btn = document.getElementById('btn-carregar-mais');
     if (!btn) return;
-    this._scrollMaisObserver = new IntersectionObserver(function(entries) {
+    INIT_EXTRATO._scrollMaisObserver = new IntersectionObserver(function(entries) {
       entries.forEach(function(entry) {
         if (entry.isIntersecting) self._carregarMais(txs);
       });
     }, { root: null, rootMargin: '160px', threshold: 0 });
-    this._scrollMaisObserver.observe(btn);
+    INIT_EXTRATO._scrollMaisObserver.observe(btn);
   },
 
   _appendControlesPaginacao: function(html, txs, totalShown) {
-    var maxRendered = this._maxRenderedExtrato();
+    var maxRendered = INIT_EXTRATO._maxRenderedExtrato();
     if (totalShown < txs.length && totalShown < maxRendered) {
       var restantes = Math.min(txs.length, maxRendered) - totalShown;
       html += '<button type="button" class="btn-carregar-mais" id="btn-carregar-mais">Carregar mais ('
@@ -1048,25 +1062,25 @@ const INIT_EXTRATO = {
     var container = document.getElementById('lista-transacoes');
     if (!container) return;
 
-    this._listaTxsAtual = txs;
-    this._bindListaTransacoesClick();
+    INIT_EXTRATO._listaTxsAtual = txs;
+    INIT_EXTRATO._bindListaTransacoesClick();
 
-    var gruposOrdenados = this._ordenarGrupos(grupos);
-    this._gruposOrdenadosAtual = gruposOrdenados;
+    var gruposOrdenados = INIT_EXTRATO._ordenarGrupos(grupos);
+    INIT_EXTRATO._gruposOrdenadosAtual = gruposOrdenados;
 
-    var pageSize = this.state.virtualScroll.pageSize;
-    var maxRendered = this._maxRenderedExtrato();
-    var startItem = this.state.virtualScroll.currentPage * pageSize;
+    var pageSize = INIT_EXTRATO.state.virtualScroll.pageSize;
+    var maxRendered = INIT_EXTRATO._maxRenderedExtrato();
+    var startItem = INIT_EXTRATO.state.virtualScroll.currentPage * pageSize;
     var limit = Math.min(pageSize, Math.max(0, maxRendered - startItem));
-    var slice = this._renderGruposHtml(gruposOrdenados, startItem, limit || pageSize);
+    var slice = INIT_EXTRATO._renderGruposHtml(gruposOrdenados, startItem, limit || pageSize);
     var html = slice.html;
     var totalShown = startItem + slice.rendered;
 
-    html = this._appendControlesPaginacao(html, txs, totalShown);
+    html = INIT_EXTRATO._appendControlesPaginacao(html, txs, totalShown);
 
     container.innerHTML = html;
-    this._atualizarContadorExtrato(txs.length, totalShown);
-    this._vincularScrollMaisObserver(txs);
+    INIT_EXTRATO._atualizarContadorExtrato(txs.length, totalShown);
+    INIT_EXTRATO._vincularScrollMaisObserver(txs);
 
     if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(container);
   },
@@ -1082,7 +1096,7 @@ const INIT_EXTRATO = {
   /** Chips das tags de uma transação, clicáveis para filtrar. */
   _tagsHtml: function(t) {
     if (!Array.isArray(t.tags) || !t.tags.length) return '';
-    var ativa = this.state.filtroTag;
+    var ativa = INIT_EXTRATO.state.filtroTag;
     return t.tags.map(function(tg) {
       var on = tg === ativa ? ' ext-tx-tag--ativa' : '';
       return '<button type="button" class="ext-tx-tag' + on + '" data-tag-filter="' +
@@ -1096,7 +1110,7 @@ const INIT_EXTRATO = {
     var dataStr = data.toLocaleDateString('pt-BR');
     var catIcon = INIT_EXTRATO.getCatIcon(t.categoria);
     var catCor = INIT_EXTRATO.getCatCor(t.categoria);
-    var isChecked = this.state.selecionados.indexOf(String(t.id)) > -1 ? 'checked' : '';
+    var isChecked = INIT_EXTRATO.state.selecionados.indexOf(String(t.id)) > -1 ? 'checked' : '';
     // Descrição vem guardada escapada; decodifica para exibir/rotular sem escape
     // duplo. As saídas abaixo continuam passando por escapeHtml, então seguras.
     var desc = UTILS.desescapeHtml(t.descricao || t.categoria);
@@ -1125,12 +1139,12 @@ const INIT_EXTRATO = {
    */
   _renderEmptyState: function() {
     var totalReal = (typeof DADOS !== 'undefined' && DADOS.getTransacoes) ? DADOS.getTransacoes().length : 0;
-    var filtrosAtivos = this.state.filtroTipo !== 'todos' || this.state.filtroCat
-      || this.state.busca
-      || this.state.buscaAvancada.valorMin != null
-      || this.state.buscaAvancada.valorMax != null
-      || this.state.buscaAvancada.dataInicio
-      || this.state.buscaAvancada.dataFim;
+    var filtrosAtivos = INIT_EXTRATO.state.filtroTipo !== 'todos' || INIT_EXTRATO.state.filtroCat
+      || INIT_EXTRATO.state.busca
+      || INIT_EXTRATO.state.buscaAvancada.valorMin != null
+      || INIT_EXTRATO.state.buscaAvancada.valorMax != null
+      || INIT_EXTRATO.state.buscaAvancada.dataInicio
+      || INIT_EXTRATO.state.buscaAvancada.dataFim;
     var opts = totalReal === 0
       ? {
           lucide: 'wallet',
@@ -1185,30 +1199,30 @@ const INIT_EXTRATO = {
    * Carrega mais itens na lista (virtual scrolling)
    */
   _carregarMais: function(txs) {
-    var maxRendered = this._maxRenderedExtrato();
-    var pageSize = this.state.virtualScroll.pageSize;
-    var proximoStart = (this.state.virtualScroll.currentPage + 1) * pageSize;
+    var maxRendered = INIT_EXTRATO._maxRenderedExtrato();
+    var pageSize = INIT_EXTRATO.state.virtualScroll.pageSize;
+    var proximoStart = (INIT_EXTRATO.state.virtualScroll.currentPage + 1) * pageSize;
     if (proximoStart >= maxRendered) return;
 
-    this.state.virtualScroll.currentPage++;
+    INIT_EXTRATO.state.virtualScroll.currentPage++;
     var container = document.getElementById('lista-transacoes');
     if (!container) return;
 
     var btnCarregarMais = document.getElementById('btn-carregar-mais');
     if (btnCarregarMais) btnCarregarMais.remove();
 
-    var startItem = this.state.virtualScroll.currentPage * pageSize;
+    var startItem = INIT_EXTRATO.state.virtualScroll.currentPage * pageSize;
     var limit = Math.min(pageSize, Math.max(0, maxRendered - startItem));
-    var gruposOrdenados = this._gruposOrdenadosAtual || {};
-    var slice = this._renderGruposHtml(gruposOrdenados, startItem, limit || pageSize);
+    var gruposOrdenados = INIT_EXTRATO._gruposOrdenadosAtual || {};
+    var slice = INIT_EXTRATO._renderGruposHtml(gruposOrdenados, startItem, limit || pageSize);
     var html = slice.html;
     var totalShown = startItem + slice.rendered;
 
-    html = this._appendControlesPaginacao(html, txs, totalShown);
+    html = INIT_EXTRATO._appendControlesPaginacao(html, txs, totalShown);
 
     container.insertAdjacentHTML('beforeend', html);
-    this._atualizarContadorExtrato(txs.length, totalShown);
-    this._vincularScrollMaisObserver(txs);
+    INIT_EXTRATO._atualizarContadorExtrato(txs.length, totalShown);
+    INIT_EXTRATO._vincularScrollMaisObserver(txs);
     if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(container);
   },
 
@@ -1218,42 +1232,42 @@ const INIT_EXTRATO = {
   filtrarExtrato: function() {
     var container = document.getElementById('lista-transacoes');
     if (container) {
-      container.innerHTML = this._renderSkeleton();
+      container.innerHTML = INIT_EXTRATO._renderSkeleton();
     }
 
     // Renderização imediata sem delay artificial
-    var info = this.getExtratoMesAno();
+    var info = INIT_EXTRATO.getExtratoMesAno();
     var txs = TRANSACOES.obter({
       mes: info.mes,
       ano: info.ano,
-      tipo: this.state.filtroTipo === 'todos' ? null : this.state.filtroTipo,
-      categoria: this.state.filtroCat,
+      tipo: INIT_EXTRATO.state.filtroTipo === 'todos' ? null : INIT_EXTRATO.state.filtroTipo,
+      categoria: INIT_EXTRATO.state.filtroCat,
       busca: document.getElementById('extrato-busca')?.value || ''
     });
 
     // Aplicar filtros avançados
-    txs = this._aplicarFiltrosAvancados(txs);
+    txs = INIT_EXTRATO._aplicarFiltrosAvancados(txs);
 
-    if (this.state.pendenteExclusao) {
+    if (INIT_EXTRATO.state.pendenteExclusao) {
       txs = txs.filter(function(t) { return !INIT_EXTRATO.state.pendenteExclusao[t.id]; });
     }
 
     // Aplicar ordenação
-    txs = this._aplicarOrdenacao(txs);
+    txs = INIT_EXTRATO._aplicarOrdenacao(txs);
 
-    this.renderFiltrosCategorias(txs);
-    this.renderExtratoResumo(txs);
-    this.renderExtratoLista(txs);
+    INIT_EXTRATO.renderFiltrosCategorias(txs);
+    INIT_EXTRATO.renderExtratoResumo(txs);
+    INIT_EXTRATO.renderExtratoLista(txs);
   },
 
   /**
    * Aplica filtros avançados de valor e data
    */
   _aplicarFiltrosAvancados: function(txs) {
-    var filtros = this.state.buscaAvancada;
+    var filtros = INIT_EXTRATO.state.buscaAvancada;
 
-    if (this.state.filtroTag) {
-      var alvoTag = this.state.filtroTag;
+    if (INIT_EXTRATO.state.filtroTag) {
+      var alvoTag = INIT_EXTRATO.state.filtroTag;
       txs = txs.filter(function(t) {
         return Array.isArray(t.tags) && t.tags.indexOf(alvoTag) !== -1;
       });
@@ -1363,7 +1377,7 @@ const INIT_EXTRATO = {
    * Deleta transação
    */
   deletarTransacao: function(id) {
-    var self = this;
+    var self = INIT_EXTRATO;
     INIT_MODALS.confirm('Tem certeza que deseja deletar esta transação?', function() {
       if (!TRANSACOES.obterPorId(id)) return;
       self.state.pendenteExclusao[id] = true;
@@ -1403,7 +1417,7 @@ const INIT_EXTRATO = {
     // CSV e livre em todos os planos: o dado e do usuario e poder leva-lo
     // embora e argumento de aquisicao ("saia quando quiser"), nao de paywall.
 
-    var info = this.getExtratoMesAno();
+    var info = INIT_EXTRATO.getExtratoMesAno();
     var txs = TRANSACOES.obter({ mes: info.mes, ano: info.ano });
     
     if (txs.length === 0) {
@@ -1451,8 +1465,8 @@ const INIT_EXTRATO = {
       saldoAcumulado += valor;
       
       var tipoStr = t.tipo === CONFIG.TIPO_RECEITA ? 'Receita' : 'Despesa';
-      var descricao = this._neutralizarCsvCelula(UTILS.desescapeHtml(t.descricao || ''));
-      var categoria = this._neutralizarCsvCelula(t.categoria);
+      var descricao = INIT_EXTRATO._neutralizarCsvCelula(UTILS.desescapeHtml(t.descricao || ''));
+      var categoria = INIT_EXTRATO._neutralizarCsvCelula(t.categoria);
       
       csv += data + ',"' + descricao + '","' + categoria + '",' + tipoStr + ',' + valor.toFixed(2) + ',' + saldoAcumulado.toFixed(2) + '\n';
     });
@@ -1480,7 +1494,7 @@ const INIT_EXTRATO = {
       });
       return;
     }
-    var info = this.getExtratoMesAno();
+    var info = INIT_EXTRATO.getExtratoMesAno();
     var txs = TRANSACOES.obter({ mes: info.mes, ano: info.ano });
     
     if (txs.length === 0) {
@@ -1596,6 +1610,6 @@ const INIT_EXTRATO = {
 };
 
 // Export para compatibilidade
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = INIT_EXTRATO;
-}
+
+export { INIT_EXTRATO };
+export default INIT_EXTRATO;

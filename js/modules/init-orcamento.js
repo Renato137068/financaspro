@@ -1,6 +1,17 @@
-﻿/**
+/**
  * init-orcamento.js — Orçamento 50/30/20 (extraído de init.js)
+ *
+ * ES Module (ADR 0005): chega sob demanda no chunk 'orcamento'
+ * (js/esm/chunks/orcamento.js, via LAZY.load), que o publica em window.
  */
+
+import { CONFIG } from '../core/config.js';
+import { UTILS } from '../core/utils.js';
+import { TRANSACOES } from '../transacoes.js';
+import { ORCAMENTO } from '../orcamento.js';
+import { CATEGORIA_VISUAL } from '../core/categoria-visual.js';
+import { DADOS } from '../core/dados.js';
+
 const INIT_ORCAMENTO = {
   REGRA_503020: {
     necessidades: ['alimentacao', 'transporte', 'moradia', 'saude', 'utilities', 'educacao'],
@@ -14,7 +25,7 @@ const INIT_ORCAMENTO = {
 
   _getCatIcon: function(cat) {
     if (typeof CATEGORIA_VISUAL !== 'undefined') return CATEGORIA_VISUAL.icone(cat);
-    return this._lucideHtml('pin');
+    return INIT_ORCAMENTO._lucideHtml('pin');
   },
 
   // Fallback de cor quando o módulo de Extrato não expôs a cor da categoria.
@@ -23,7 +34,7 @@ const INIT_ORCAMENTO = {
   // markup, então precisa sair como hex — por isso lemos o valor computado.
   _corFallbackCache: undefined,
   _corFallback: function() {
-    if (this._corFallbackCache !== undefined) return this._corFallbackCache;
+    if (INIT_ORCAMENTO._corFallbackCache !== undefined) return INIT_ORCAMENTO._corFallbackCache;
     var cor = '#98a39d';
     try {
       if (typeof getComputedStyle === 'function' && typeof document !== 'undefined' && document.documentElement) {
@@ -31,13 +42,13 @@ const INIT_ORCAMENTO = {
         if (v && v.trim()) cor = v.trim();
       }
     } catch (_e) { /* sem DOM/estilo: mantém o hex do token */ }
-    this._corFallbackCache = cor;
+    INIT_ORCAMENTO._corFallbackCache = cor;
     return cor;
   },
 
   _getCatCor: function(cat) {
     if (typeof CATEGORIA_VISUAL !== 'undefined') return CATEGORIA_VISUAL.cor(cat);
-    return this._corFallback();
+    return INIT_ORCAMENTO._corFallback();
   },
 
   _catLucideName: function(cat) {
@@ -68,11 +79,11 @@ const INIT_ORCAMENTO = {
   },
 
   classificarCategoria503020: function(cat) {
-    var over = this._overrideClassificacao(cat);
-    if (over && this.GRUPOS_503020.indexOf(over) !== -1) return over;
+    var over = INIT_ORCAMENTO._overrideClassificacao(cat);
+    if (over && INIT_ORCAMENTO.GRUPOS_503020.indexOf(over) !== -1) return over;
     var c = (cat || '').toLowerCase();
-    if (this.REGRA_503020.necessidades.indexOf(c) !== -1) return 'necessidades';
-    if (this.REGRA_503020.desejos.indexOf(c) !== -1) return 'desejos';
+    if (INIT_ORCAMENTO.REGRA_503020.necessidades.indexOf(c) !== -1) return 'necessidades';
+    if (INIT_ORCAMENTO.REGRA_503020.desejos.indexOf(c) !== -1) return 'desejos';
     return 'desejos';
   },
 
@@ -82,27 +93,27 @@ const INIT_ORCAMENTO = {
    * (Necessidades/Desejos) e passam a somar na poupança do mês.
    */
   definirClassificacao503020: function(cat, grupo) {
-    if (!cat || this.GRUPOS_503020.indexOf(grupo) === -1) return;
+    if (!cat || INIT_ORCAMENTO.GRUPOS_503020.indexOf(grupo) === -1) return;
     var config = DADOS.getConfig() || {};
     var mapa = Object.assign({}, config.classificacao503020 || {});
     mapa[cat] = grupo;
     DADOS.salvarConfig({ classificacao503020: mapa });
-    this.renderDashboard();
+    INIT_ORCAMENTO.renderDashboard();
     var nome = (typeof CONFIG !== 'undefined' && CONFIG.getCatLabel) ? CONFIG.getCatLabel(cat) : cat;
-    var labelGrupo = this._labelGrupo503020(grupo);
+    var labelGrupo = INIT_ORCAMENTO._labelGrupo503020(grupo);
     if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
       UTILS.mostrarToast(nome + ' agora conta como ' + labelGrupo, 'success');
     }
-    this._announce(nome + ' reclassificada como ' + labelGrupo + ' no 50/30/20');
+    INIT_ORCAMENTO._announce(nome + ' reclassificada como ' + labelGrupo + ' no 50/30/20');
   },
 
   /** Alterna a categoria entre Necessidade → Desejo → Poupança. */
   cicloClassificacao503020: function(cat) {
     if (!cat) return;
-    var atual = this.classificarCategoria503020(cat);
-    var idx = this.GRUPOS_503020.indexOf(atual);
-    var prox = this.GRUPOS_503020[(idx + 1) % this.GRUPOS_503020.length];
-    this.definirClassificacao503020(cat, prox);
+    var atual = INIT_ORCAMENTO.classificarCategoria503020(cat);
+    var idx = INIT_ORCAMENTO.GRUPOS_503020.indexOf(atual);
+    var prox = INIT_ORCAMENTO.GRUPOS_503020[(idx + 1) % INIT_ORCAMENTO.GRUPOS_503020.length];
+    INIT_ORCAMENTO.definirClassificacao503020(cat, prox);
   },
 
   salvarRenda: function() {
@@ -116,13 +127,13 @@ const INIT_ORCAMENTO = {
     }
     DADOS.salvarConfig({ renda: val });
     UTILS.mostrarToast('Renda definida', 'success');
-    this.renderDashboard();
-    this._announce('Renda mensal atualizada para ' + UTILS.formatarMoeda(val));
+    INIT_ORCAMENTO.renderDashboard();
+    INIT_ORCAMENTO._announce('Renda mensal atualizada para ' + UTILS.formatarMoeda(val));
     if (typeof INIT_CONFIG !== 'undefined' && INIT_CONFIG.refreshPerfil) INIT_CONFIG.refreshPerfil();
   },
 
   editarRenda: function() {
-    var self = this;
+    var self = INIT_ORCAMENTO;
     var config = DADOS.getConfig();
     var atual = config.renda || 0;
     var html = '<div class="orc-edit-renda-modal">' +
@@ -163,7 +174,7 @@ const INIT_ORCAMENTO = {
   },
 
   editarRegra503020: function() {
-    var self = this;
+    var self = INIT_ORCAMENTO;
     var config = DADOS.getConfig();
     var regra = config.regra503020 || { nec: 50, des: 30, pou: 20 };
     var html = '<div class="orc-edit-regra-modal">' +
@@ -282,7 +293,7 @@ const INIT_ORCAMENTO = {
     var mes = agora.getMonth() + 1;
     var ano = agora.getFullYear();
     var txs = TRANSACOES.obter({ mes: mes, ano: ano });
-    var self = this;
+    var self = INIT_ORCAMENTO;
     // Soma em CENTAVOS (inteiros) e só converte para reais no fim. Somar em
     // float aqui fazia o Orçamento divergir por um centavo do Resumo (que já
     // usa centavos) — dois números do app discordando destrói a confiança.
@@ -345,9 +356,9 @@ const INIT_ORCAMENTO = {
     var saldo = data.saldoDisponivel != null ? data.saldoDisponivel : (data.renda - realizado);
     var pctRestante = data.renda > 0 ? Math.round((saldo / data.renda) * 100) : 0;
 
-    this._updateElement('orc-total-planejado', UTILS.formatarMoeda(data.renda));
-    this._updateElement('orc-total-realizado', UTILS.formatarMoeda(realizado));
-    this._updateElement('orc-saldo-disponivel', UTILS.formatarMoeda(saldo));
+    INIT_ORCAMENTO._updateElement('orc-total-planejado', UTILS.formatarMoeda(data.renda));
+    INIT_ORCAMENTO._updateElement('orc-total-realizado', UTILS.formatarMoeda(realizado));
+    INIT_ORCAMENTO._updateElement('orc-saldo-disponivel', UTILS.formatarMoeda(saldo));
     // "Folga poupança": quanto ainda cabe na fatia de poupança (bate com o
     // tooltip do card). Antes recebia o mesmo `saldo` do KPI ao lado —
     // duplicava a cifra e contradizia o próprio tooltip. Já poupado no mês
@@ -355,8 +366,8 @@ const INIT_ORCAMENTO = {
     // meta batida → folga 0.
     var poupado = Math.max(0, data.poupancaReal != null ? data.poupancaReal : 0);
     var folgaPoupanca = Math.max(0, (data.limPou || 0) - poupado);
-    this._updateElement('orc-economia-mes', UTILS.formatarMoeda(folgaPoupanca));
-    this._updateElement('orc-percent-restante', pctRestante + '% restante');
+    INIT_ORCAMENTO._updateElement('orc-economia-mes', UTILS.formatarMoeda(folgaPoupanca));
+    INIT_ORCAMENTO._updateElement('orc-percent-restante', pctRestante + '% restante');
 
     var criticas = 0;
     if (typeof ORCAMENTO !== 'undefined' && typeof ORCAMENTO.categoriasEmRisco === 'function') {
@@ -364,7 +375,7 @@ const INIT_ORCAMENTO = {
         criticas = ORCAMENTO.categoriasEmRisco(new Date()).length;
       } catch (_e) { criticas = 0; }
     }
-    this._updateElement('orc-categorias-criticas', String(criticas));
+    INIT_ORCAMENTO._updateElement('orc-categorias-criticas', String(criticas));
 
     // Tendência vs mês anterior (mesmo renda × despesas do mês -1)
     var dAnt = new Date(data.ano, data.mes - 2, 1);
@@ -387,16 +398,16 @@ const INIT_ORCAMENTO = {
       var pctDelta = Math.round((delta / Math.abs(saldoAnt)) * 100);
       trendTxt = (pctDelta >= 0 ? '+' : '') + pctDelta + '% vs mês anterior';
     }
-    this._updateElement('orc-tendencia', trendTxt);
+    INIT_ORCAMENTO._updateElement('orc-tendencia', trendTxt);
 
     var indicator = document.getElementById('orc-trend-indicator');
     if (indicator) {
       var iconName = delta >= 0 ? 'trending-up' : 'trending-down';
-      indicator.innerHTML = '<span class="trend-icon">' + this._lucideHtml(iconName) + '</span>';
+      indicator.innerHTML = '<span class="trend-icon">' + INIT_ORCAMENTO._lucideHtml(iconName) + '</span>';
       if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(indicator);
     }
 
-    this._ultimoHeader = {
+    INIT_ORCAMENTO._ultimoHeader = {
       saldo: saldo, realizado: realizado, renda: data.renda, criticas: criticas
     };
   },
@@ -417,19 +428,19 @@ const INIT_ORCAMENTO = {
       }
       if (setupEl) setupEl.style.display = 'none';
       if (dashEl) dashEl.style.display = 'block';
-      var data = this.calculateBudgetData();
-      this._updateElement('orc-nec-pct', data.pNec + '%');
-      this._updateElement('orc-des-pct', data.pDes + '%');
-      this._updateElement('orc-pou-pct', data.pPou + '%');
-      this._renderHeader(data);
-      this._renderCards(data);
-      this.renderInsights(data);
-      this.renderCategorias(data.catGastos, data.renda);
+      var data = INIT_ORCAMENTO.calculateBudgetData();
+      INIT_ORCAMENTO._updateElement('orc-nec-pct', data.pNec + '%');
+      INIT_ORCAMENTO._updateElement('orc-des-pct', data.pDes + '%');
+      INIT_ORCAMENTO._updateElement('orc-pou-pct', data.pPou + '%');
+      INIT_ORCAMENTO._renderHeader(data);
+      INIT_ORCAMENTO._renderCards(data);
+      INIT_ORCAMENTO.renderInsights(data);
+      INIT_ORCAMENTO.renderCategorias(data.catGastos, data.renda);
       if (typeof INIT_METAS !== 'undefined' && INIT_METAS.renderOrcamento) {
         INIT_METAS.renderOrcamento();
       }
-      if (this._ultimoHeader && this._ultimoHeader.criticas > 0) {
-        this._announce(this._ultimoHeader.criticas + ' categoria(s) em risco no orçamento');
+      if (INIT_ORCAMENTO._ultimoHeader && INIT_ORCAMENTO._ultimoHeader.criticas > 0) {
+        INIT_ORCAMENTO._announce(INIT_ORCAMENTO._ultimoHeader.criticas + ' categoria(s) em risco no orçamento');
       }
     } catch (error) {
       console.error('Erro ao renderizar orçamento:', error);
@@ -438,25 +449,25 @@ const INIT_ORCAMENTO = {
   },
 
   _renderCards: function(data) {
-    this._updateElement('orc-nec-gasto', UTILS.formatarMoeda(data.gastoNec));
-    this._updateElement('orc-nec-limite', UTILS.formatarMoeda(data.limNec));
-    this._setProgressBar('orc-nec-bar', data.pctNec, 'Necessidades');
-    this._updateElementClass('orc-nec-bar', 'orc-progress-fill ' + (data.pctNec >= 100 ? 'exceeded' : data.pctNec >= 80 ? 'attention' : 'healthy'));
+    INIT_ORCAMENTO._updateElement('orc-nec-gasto', UTILS.formatarMoeda(data.gastoNec));
+    INIT_ORCAMENTO._updateElement('orc-nec-limite', UTILS.formatarMoeda(data.limNec));
+    INIT_ORCAMENTO._setProgressBar('orc-nec-bar', data.pctNec, 'Necessidades');
+    INIT_ORCAMENTO._updateElementClass('orc-nec-bar', 'orc-progress-fill ' + (data.pctNec >= 100 ? 'exceeded' : data.pctNec >= 80 ? 'attention' : 'healthy'));
     // O rotulo de texto "X% utilizado" tem id proprio (orc-nec-percent) e nao
     // era atualizado: so a barra recebia o valor. A tela mostrava a barra em 36%
     // ao lado de "0% utilizado", que num app de dinheiro le como dado quebrado.
-    this._updateElement('orc-nec-percent', data.pctNec + '%');
+    INIT_ORCAMENTO._updateElement('orc-nec-percent', data.pctNec + '%');
 
-    this._updateElement('orc-des-gasto', UTILS.formatarMoeda(data.gasDes));
-    this._updateElement('orc-des-limite', UTILS.formatarMoeda(data.limDes));
-    this._setProgressBar('orc-des-bar', data.pctDes, 'Desejos');
-    this._updateElementClass('orc-des-bar', 'orc-progress-fill ' + (data.pctDes >= 100 ? 'exceeded' : data.pctDes >= 80 ? 'attention' : 'healthy'));
-    this._updateElement('orc-des-percent', data.pctDes + '%');
+    INIT_ORCAMENTO._updateElement('orc-des-gasto', UTILS.formatarMoeda(data.gasDes));
+    INIT_ORCAMENTO._updateElement('orc-des-limite', UTILS.formatarMoeda(data.limDes));
+    INIT_ORCAMENTO._setProgressBar('orc-des-bar', data.pctDes, 'Desejos');
+    INIT_ORCAMENTO._updateElementClass('orc-des-bar', 'orc-progress-fill ' + (data.pctDes >= 100 ? 'exceeded' : data.pctDes >= 80 ? 'attention' : 'healthy'));
+    INIT_ORCAMENTO._updateElement('orc-des-percent', data.pctDes + '%');
 
-    this._updateElement('orc-pou-gasto', UTILS.formatarMoeda(Math.max(0, data.poupancaReal)));
-    this._updateElement('orc-pou-limite', UTILS.formatarMoeda(data.limPou));
-    this._setProgressBar('orc-pou-bar', data.pctPou, 'Poupança');
-    this._updateElementClass('orc-pou-bar', 'orc-progress-fill ' + (data.pctPou >= 100 ? 'otimo' : data.pctPou >= 50 ? 'healthy' : 'attention'));
+    INIT_ORCAMENTO._updateElement('orc-pou-gasto', UTILS.formatarMoeda(Math.max(0, data.poupancaReal)));
+    INIT_ORCAMENTO._updateElement('orc-pou-limite', UTILS.formatarMoeda(data.limPou));
+    INIT_ORCAMENTO._setProgressBar('orc-pou-bar', data.pctPou, 'Poupança');
+    INIT_ORCAMENTO._updateElementClass('orc-pou-bar', 'orc-progress-fill ' + (data.pctPou >= 100 ? 'otimo' : data.pctPou >= 50 ? 'healthy' : 'attention'));
     // Poupança: no 50/30/20 a "sobra" do mês pode superar muito a meta de 20%,
     // gerando "360% alcançado" — número que assusta e sugere dinheiro guardado
     // que talvez só esteja parado na conta. Limita a exibição a 100% e, ao bater
@@ -464,14 +475,14 @@ const INIT_ORCAMENTO = {
     // Só a poupança é limitada: em Necessidades/Desejos passar de 100% é um
     // alerta real de estouro e deve continuar visível.
     var pouMetaBatida = data.pctPou >= 100;
-    this._updateElement('orc-pou-percent', Math.min(data.pctPou, 100) + '%');
-    this._updateElement('orc-pou-percent-label', pouMetaBatida ? 'meta batida' : 'alcançado');
+    INIT_ORCAMENTO._updateElement('orc-pou-percent', Math.min(data.pctPou, 100) + '%');
+    INIT_ORCAMENTO._updateElement('orc-pou-percent-label', pouMetaBatida ? 'meta batida' : 'alcançado');
   },
 
   renderInsights: function(data) {
     var el = document.getElementById('orc-insights');
     if (!el) return;
-    var self = this;
+    var self = INIT_ORCAMENTO;
     var agora = new Date();
     var diaAtual = agora.getDate();
     var diasNoMes = new Date(agora.getFullYear(), agora.getMonth() + 1, 0).getDate();
@@ -538,7 +549,7 @@ const INIT_ORCAMENTO = {
   },
 
   _catItemHtml: function(cat, val, renda, extraMsg) {
-    var self = this;
+    var self = INIT_ORCAMENTO;
     var pct = renda > 0 ? Math.round((val / renda) * 100) : 0;
     var icon = self._getCatIcon(cat);
     var cor = self._getCatCor(cat);
@@ -588,7 +599,7 @@ const INIT_ORCAMENTO = {
     var agora = new Date();
     var mes = agora.getMonth() + 1;
     var ano = agora.getFullYear();
-    var self = this;
+    var self = INIT_ORCAMENTO;
 
     var cats = {};
     Object.keys(catGastos || {}).forEach(function(c) { cats[c] = true; });
@@ -640,9 +651,9 @@ const INIT_ORCAMENTO = {
     fill(attentionList, attention);
     fill(healthyList, healthy);
 
-    this._updateElement('orc-critical-count', String(critical.length));
-    this._updateElement('orc-attention-count', String(attention.length));
-    this._updateElement('orc-healthy-count', String(healthy.length));
+    INIT_ORCAMENTO._updateElement('orc-critical-count', String(critical.length));
+    INIT_ORCAMENTO._updateElement('orc-attention-count', String(attention.length));
+    INIT_ORCAMENTO._updateElement('orc-healthy-count', String(healthy.length));
 
     if (groupCritical) groupCritical.style.display = critical.length ? '' : 'none';
     if (groupAttention) groupAttention.style.display = attention.length ? '' : 'none';
@@ -662,7 +673,7 @@ const INIT_ORCAMENTO = {
    */
   mudarSubAba: function(nome, opcoes) {
     opcoes = opcoes || {};
-    var permitido = this.SUB_ABAS.indexOf(nome) !== -1 ? nome : 'planejamento';
+    var permitido = INIT_ORCAMENTO.SUB_ABAS.indexOf(nome) !== -1 ? nome : 'planejamento';
     var root = document.getElementById('aba-orcamento');
     if (!root) return;
 
@@ -711,7 +722,7 @@ const INIT_ORCAMENTO = {
           : null;
       } catch (_e) { nome = null; }
     }
-    this.mudarSubAba(nome || 'planejamento');
+    INIT_ORCAMENTO.mudarSubAba(nome || 'planejamento');
   }
 };
 
@@ -726,6 +737,11 @@ function classificarCategoriaOrcamento(btn) {
   INIT_ORCAMENTO.cicloClassificacao503020(btn.getAttribute('data-cat'));
 }
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = INIT_ORCAMENTO;
-}
+// As funções de topo são globais para quem as chama por nome (safeCall da
+// navegação, event-bus): o chunk 'orcamento' as publica em window.
+export {
+  INIT_ORCAMENTO, salvarRendaOrcamento, editarRendaOrcamento, editarRegra503020,
+  toggleDetalhesCategorias, renderOrcamentoDashboard, mudarSubAbaOrcamento,
+  classificarCategoriaOrcamento,
+};
+export default INIT_ORCAMENTO;

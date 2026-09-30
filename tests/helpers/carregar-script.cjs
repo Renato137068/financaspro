@@ -23,7 +23,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const { ehModulo, executarModulo, nomesDoGrafo } = require('./esm-como-script.cjs');
+const { ehModulo, converter, executarModulo, nomesDoGrafo } = require('./esm-como-script.cjs');
 
 const ROOT = path.join(__dirname, '..', '..');
 
@@ -90,4 +90,26 @@ function viaGlobal(...nomes) {
   return extras;
 }
 
-module.exports = { carregarScript, viaGlobal, nomesDoGlobal };
+/**
+ * viaGlobal para todos os imports diretos do módulo: o teste troca global.X
+ * a cada caso, como fazia com o script clássico. Import de função (declarada
+ * com `function` no módulo de origem) vira função que repassa a chamada.
+ *   carregarScript('js/modules/init-extrato.js', viaGlobalDosImports('js/modules/init-extrato.js'))
+ */
+function viaGlobalDosImports(rel) {
+  const arquivo = path.join(ROOT, rel);
+  const extras = {};
+  for (const dep of converter(fs.readFileSync(arquivo, 'utf8'), arquivo).importa) {
+    const origem = fs.readFileSync(dep.arquivo, 'utf8');
+    for (const { importado, local } of dep.nomes) {
+      if (new RegExp('^function\\s+' + importado + '\\b', 'm').test(origem)) {
+        extras[local] = function() { return globalThis[local].apply(this, arguments); };
+      } else {
+        Object.assign(extras, viaGlobal(local));
+      }
+    }
+  }
+  return extras;
+}
+
+module.exports = { carregarScript, viaGlobal, viaGlobalDosImports, nomesDoGlobal };

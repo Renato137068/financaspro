@@ -2,10 +2,11 @@
 /**
  * generate-telas.cjs — transforma telas/<chunk>/<tela>.html em js/telas/<chunk>.js.
  *
- * Cada js/telas/<chunk>.js chama TELAS.registrar('<tela>', '<markup>') para as
- * telas daquele chunk lazy. Ele entra no chunk (LAZY_CHUNKS em
- * scripts/bundle-app.cjs, antes dos scripts da tela) e no index.html (sem
- * build, todo script carrega no boot). Ver js/core/telas.js.
+ * Cada js/telas/<chunk>.js é um ES Module (ADR 0005) que chama
+ * TELAS.registrar('<tela>', '<markup>') para as telas daquele chunk ao
+ * carregar. A entrada do chunk (js/esm/chunks/<chunk>.js) o importa antes dos
+ * módulos da tela: quando o init roda, as telas já estão no DOM. Ver
+ * js/core/telas.js.
  *
  * O comentário de cabeçalho do .html fica de fora, e a indentação vira uma
  * quebra de linha só: o markup sai menor e renderiza igual (nenhuma tela usa
@@ -27,7 +28,13 @@ function gerar() {
     const dir = path.join(origem, chunk);
     if (!fs.statSync(dir).isDirectory()) continue;
     const linhas = [
-      '/* GERADO por scripts/generate-telas.cjs a partir de telas/' + chunk + '/*.html — não edite à mão. */',
+      '/**',
+      ' * GERADO por scripts/generate-telas.cjs a partir de telas/' + chunk + '/<tela>.html — não edite à mão.',
+      ' * ES Module (ADR 0005): a entrada do chunk \'' + chunk + '\' (js/esm/chunks/' + chunk + '.js) o importa',
+      ' * antes dos módulos da tela.',
+      ' */',
+      "import { TELAS } from '../core/telas.js';",
+      '',
     ];
     for (const arq of fs.readdirSync(dir).filter((f) => f.endsWith('.html')).sort()) {
       const tela = arq.replace(/\.html$/, '');
