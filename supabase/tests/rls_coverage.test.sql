@@ -13,12 +13,12 @@
 -- ============================================================================
 
 begin;
-select plan(2);
+select plan(4);
 
 -- ─── 1) Toda tabela base de public tem RLS habilitada ───────────────────────
--- Allowlist (deve permanecer curta e justificada):
---   • _prisma_migrations — histórico interno do Prisma, sem dado de usuário e
---     nunca exposto pelo PostgREST do app.
+-- Sem allowlist: até 30/09 _prisma_migrations ficava de fora "por não ser
+-- exposta pelo PostgREST", o que não era verdade (os privilégios padrão do
+-- Supabase davam SELECT a anon). Fechada em 20261001120000.
 -- Tabelas criadas por extensões (ex.: pgTAP no ambiente de CI) são excluídas
 -- via pg_depend (deptype = 'e'), não por nome — o guard não depende da lista de
 -- extensões instaladas.
@@ -30,7 +30,6 @@ select is_empty(
     where n.nspname = 'public'
       and c.relkind = 'r'                 -- só tabelas base (exclui views/parents particionados)
       and c.relrowsecurity = false        -- RLS desligada
-      and c.relname <> '_prisma_migrations'
       and not exists (                    -- não é objeto de extensão (pgTAP etc.)
         select 1 from pg_depend d
         where d.objid = c.oid
@@ -39,7 +38,17 @@ select is_empty(
       )
     order by c.relname
   $$,
-  'Nenhuma tabela de public está sem RLS (allowlist: _prisma_migrations)'
+  'Nenhuma tabela de public está sem RLS'
+);
+
+-- ─── 1b) O histórico do Prisma não sai pela API ─────────────────────────────
+select ok(
+  not has_table_privilege('anon', 'public._prisma_migrations', 'select'),
+  'anon não tem SELECT em _prisma_migrations'
+);
+select ok(
+  not has_table_privilege('authenticated', 'public._prisma_migrations', 'select'),
+  'authenticated não tem SELECT em _prisma_migrations'
 );
 
 -- ─── 2) fp_plan_limit_config mantém a leitura pública ───────────────────────
