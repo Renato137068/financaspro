@@ -3,7 +3,7 @@
  * obs-ingest sai dela sem dado pessoal nem financeiro.
  */
 import {
-  sanitizarRelatorio, mascararTexto, CHAVES_CONTEXTO, LIMITE_CORPO,
+  sanitizarRelatorio, mascararTexto, CHAVES_CONTEXTO, LIMITE_CORPO, versaoDaSessao,
 } from '../../supabase/functions/_shared/obs-sanitize.js';
 
 function relatorio(data, extra = {}) {
@@ -82,5 +82,30 @@ describe('obs-sanitize — sanitizarRelatorio', () => {
 
   test('limite de corpo é de 8 KB', () => {
     expect(LIMITE_CORPO).toBe(8192);
+  });
+});
+
+describe('obs-sanitize — versaoDaSessao (contagem de uso anônima)', () => {
+  test('aviso de uso válido devolve só a versão', () => {
+    expect(versaoDaSessao({ kind: 'sessao', app: '11.3.18' })).toBe('11.3.18');
+  });
+
+  test('o que vier a mais no aviso não sai daqui: só a versão é lida', () => {
+    const extra = { kind: 'sessao', app: '11.3.18', userId: 'u_1', email: 'a@b.com', data: { saldo: 1234 } };
+    expect(versaoDaSessao(extra)).toBe('11.3.18');
+  });
+
+  test('versão fora de X.Y.Z, sem versão ou outro kind é recusado', () => {
+    expect(versaoDaSessao({ kind: 'sessao', app: 'v11' })).toBeNull();
+    expect(versaoDaSessao({ kind: 'sessao', app: '11.3.18; drop table' })).toBeNull();
+    expect(versaoDaSessao({ kind: 'sessao', app: 11 })).toBeNull();
+    expect(versaoDaSessao({ kind: 'sessao' })).toBeNull();
+    expect(versaoDaSessao({ kind: 'error', app: '11.3.18' })).toBeNull();
+    expect(versaoDaSessao(null)).toBeNull();
+  });
+
+  test('um aviso de uso não passa como relatório de erro (e vice-versa)', () => {
+    expect(sanitizarRelatorio({ kind: 'sessao', app: '11.3.18' }, null)).toBeNull();
+    expect(versaoDaSessao(relatorio({ message: 'x' }))).toBeNull();
   });
 });

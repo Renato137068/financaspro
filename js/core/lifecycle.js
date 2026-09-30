@@ -486,6 +486,11 @@ const LIFECYCLE_BOOT = {
         }
       }
 
+      // Painel de saúde: aviso anônimo de uso (1×/dia, só a versão; mesmo
+      // opt-out dos relatórios de erro). Aqui, e não no OBS, porque a
+      // preferência mora em DADOS, que só está pronto depois do boot.
+      if (typeof OBS !== 'undefined' && OBS.contarSessao) OBS.contarSessao();
+
       // Lembrete diário (se ativo e permissão concedida)
       setTimeout(function() {
         if (typeof DAILY_REMINDER !== 'undefined') DAILY_REMINDER.maybeRemind();

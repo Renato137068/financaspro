@@ -40,6 +40,23 @@ function textoCortado(valor, max) {
   return typeof valor === 'string' && valor ? valor.slice(0, max) : null;
 }
 
+/** Versão do app aceita pelo contador de uso: só X.Y.Z (igual ao CHECK da tabela). */
+const RE_VERSAO = /^\d{1,3}\.\d{1,3}\.\d{1,4}$/;
+
+/**
+ * Aviso de uso do app (OBS.contarSessao): { kind: 'sessao', app: 'X.Y.Z' }.
+ * Só a versão é lida — qualquer outro campo é ignorado, e nada do pedido
+ * (IP, user agent, horário) chega ao banco: ele guarda um contador por dia e
+ * versão (public.fp_app_sessao_dia).
+ *
+ * @param {unknown} entrada
+ * @returns {string|null} a versão, ou null se não é um aviso de uso válido.
+ */
+export function versaoDaSessao(entrada) {
+  if (!entrada || typeof entrada !== 'object' || entrada.kind !== 'sessao') return null;
+  return typeof entrada.app === 'string' && RE_VERSAO.test(entrada.app) ? entrada.app : null;
+}
+
 /**
  * @param {unknown} entrada  corpo JSON enviado pelo OBS ({ kind, ts, url, app, data })
  * @param {string|null} userAgent

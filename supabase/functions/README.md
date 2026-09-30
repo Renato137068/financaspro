@@ -17,7 +17,7 @@ functions/
   stripe-cancel/index.ts    # POST autenticado (web) — cancel_at_period_end, exige OWNER
   org-invite/index.ts       # POST autenticado — convite + e-mail Resend, exige ADMIN/OWNER
   stripe-webhook/index.ts   # webhook público do Stripe (assinatura via Web Crypto)
-  obs-ingest/index.ts       # público — relatórios de erro do app → fp_client_error
+  obs-ingest/index.ts       # público — relatórios de erro → fp_client_error; aviso de uso → fp_app_sessao_dia
   _shared/obs-sanitize.js   # allowlist de contexto + máscara de e-mail/valores (testado no Jest)
 ```
 

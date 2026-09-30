@@ -17,8 +17,15 @@
  *   OBS.captureError(err, { contexto: 'salvarTransacao' })
  *   OBS.track('transacao_criada', { tipo: 'despesa' })
  *   OBS.getBuffer()  // inspeção local (debug)
+ *   OBS.contarSessao() // aviso anônimo de uso, 1×/dia (chamado no boot)
  *
  * Privacidade: nunca serializa valores de transação nem PII por padrão.
+ *
+ * Contagem de uso (painel de saúde): para saber quantos erros cada versão tem
+ * POR SESSÃO, o app avisa que foi aberto — no máximo uma vez por dia (UTC) por
+ * aparelho, só com a versão. Nada de usuário, id, horário ou dado financeiro;
+ * o servidor guarda só um contador por dia e versão, por 30 dias. Segue o
+ * mesmo opt-out e o mesmo destino dos relatórios de erro.
  */
 var OBS = (function() {
   var MAX_BUFFER = 50;
@@ -75,6 +82,50 @@ var OBS = (function() {
         }).catch(function() {});
       }
     } catch (e) { /* observabilidade nunca pode quebrar o app */ }
+  }
+
+  var SESSAO_KEY = 'fp_obs_sessao_dia';
+
+  /** Dia em UTC (AAAA-MM-DD): o mesmo dia que o contador do servidor usa. */
+  function diaUtc() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  /**
+   * Avisa "o app foi aberto hoje nesta versão", uma vez por dia. Volta true se
+   * o aviso saiu. Não conta no limite de erros (MAX_ENVIOS) e não entra no
+   * buffer: não é um evento, é um tique no contador.
+   */
+  function contarSessao() {
+    try {
+      var c = cfg();
+      if (c.obsErrorsEnabled === false) return false;
+      // Coletor próprio (obsEndpoint) recebe erros, não este contador.
+      if (c.obsEndpoint) return false;
+      var base = typeof CONFIG !== 'undefined' && CONFIG.SUPABASE_URL;
+      var versao = typeof CONFIG !== 'undefined' && CONFIG.VERSION;
+      if (!base || !versao) return false; // modo local: nada sai do aparelho
+      var hoje = diaUtc();
+      if (localStorage.getItem(SESSAO_KEY) === hoje) return false;
+      // Marca antes de enviar: se o envio falhar, perde-se um tique — melhor
+      // que contar duas vezes.
+      localStorage.setItem(SESSAO_KEY, hoje);
+      var body = JSON.stringify({ kind: 'sessao', app: String(versao) });
+      var url = base + '/functions/v1/obs-ingest';
+      if (navigator && typeof navigator.sendBeacon === 'function') {
+        navigator.sendBeacon(url, body);
+      } else if (typeof fetch === 'function') {
+        fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: body,
+          keepalive: true
+        }).catch(function() {});
+      } else {
+        return false;
+      }
+      return true;
+    } catch (e) { return false; /* sem localStorage (modo privado) ou sem rede */ }
   }
 
   function captureError(err, context) {
@@ -199,6 +250,7 @@ var OBS = (function() {
   return {
     start: start,
     captureError: captureError,
+    contarSessao: contarSessao,
     track: track,
     getBuffer: function() { return buffer.slice(); },
     recordPerf: recordPerf,

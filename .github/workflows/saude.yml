@@ -1,0 +1,69 @@
+name: Saúde do app
+
+# Painel de saúde (etapa 4 do roadmap): todo dia lê o schema `saude` do
+# Supabase (scripts/saude-relatorio.cjs), publica o relatório no resumo do
+# job e abre uma issue quando a versão mais nova tem erros por 1.000 sessões
+# bem acima da anterior. Sem o segredo, o job só avisa e sai verde.
+#
+# Segredo do repositório (Settings → Secrets → Actions):
+#   SAUDE_DATABASE_URL — conexão direta ao Postgres do Supabase com um papel
+#   que só lê o schema saude (docs/observabilidade/painel-saude.md).
+
+on:
+  schedule:
+    - cron: '17 11 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: saude
+  cancel-in-progress: true
+
+jobs:
+  relatorio:
+    name: Relatório e alerta
+    runs-on: ubuntu-latest
+    env:
+      SAUDE_DATABASE_URL: ${{ secrets.SAUDE_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Segredo configurado?
+        id: segredo
+        run: |
+          if [ -z "$SAUDE_DATABASE_URL" ]; then
+            echo "::notice::SAUDE_DATABASE_URL não configurado — painel de saúde pulado (docs/observabilidade/painel-saude.md)"
+            echo "tem=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "tem=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.segredo.outputs.tem == 'true'
+        with:
+          node-version: 22.x
+
+      # Só node e psql (já no runner): o script não tem dependência do npm.
+      - name: Relatório
+        id: saude
+        if: steps.segredo.outputs.tem == 'true'
+        run: node scripts/saude-relatorio.cjs --saida relatorio.md
+
+      # Uma issue por versão: se já existe aberta, comenta em vez de duplicar.
+      - name: Abrir ou atualizar a issue do alerta
+        if: steps.saude.outputs.alerta == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSAO: ${{ steps.saude.outputs.versao }}
+        run: |
+          TITULO="Saúde: v$VERSAO com mais erros por sessão que a versão anterior"
+          NUM=$(gh issue list --state open --search "in:title \"$TITULO\"" --json number,title \
+            --jq ".[] | select(.title == \"$TITULO\") | .number" | head -n1)
+          if [ -n "$NUM" ]; then
+            gh issue comment "$NUM" --body-file relatorio.md
+          else
+            gh issue create --title "$TITULO" --body-file relatorio.md
+          fi
