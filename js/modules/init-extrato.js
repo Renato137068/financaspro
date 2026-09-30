@@ -13,7 +13,7 @@ import { TRANSACOES } from '../transacoes.js';
 import { CATEGORIA_VISUAL } from '../core/categoria-visual.js';
 import { UI } from '../components/ui.js';
 import { RENDER } from '../render.js';
-import { mudarAba } from './init-navigation.js';
+import { mudarAba, INIT_NAVIGATION } from './init-navigation.js';
 import { INIT_MODALS } from './init-modals.js';
 import { INIT_FORM } from './init-form.js';
 import { BILLING } from '../billing.js';
@@ -250,7 +250,11 @@ const INIT_EXTRATO = {
         e.stopPropagation();
         INIT_EXTRATO.limparFiltros();
       } else if (btnAnexo) {
+        // O stopPropagation impede a linha de abrir a edição, mas também impede
+        // o clique de chegar ao ouvinte do INIT_ANEXOS no document: o
+        // visualizador tem de ser aberto daqui.
         e.stopPropagation();
+        INIT_EXTRATO._verAnexos(btnAnexo.dataset.transacaoId);
       } else if (btnEdit) {
         e.stopPropagation();
         INIT_EXTRATO.editarTransacao(btnEdit.dataset.id);
@@ -1088,9 +1092,29 @@ const INIT_EXTRATO = {
   /**
    * Renderiza um item de transação
    */
+  /**
+   * Botão de ver os comprovantes. Era só um selo decorativo (aria-hidden) e o
+   * _anexoBtnHtml não era chamado: quem anexava um comprovante não tinha onde
+   * abri-lo. O botão não depende do chunk 'anexos' estar carregado — o clique
+   * o carrega (_verAnexos).
+   */
   _anexoBtnHtml: function(t) {
-    if (!t.anexoCount || typeof INIT_ANEXOS === 'undefined') return '';
-    return INIT_ANEXOS.botaoVerHtml(t.id, t.anexoCount);
+    if (!t.anexoCount) return '';
+    var n = Number(t.anexoCount) || 0;
+    return '<button type="button" class="btn-anexo ext-tx-anexo-badge" data-transacao-id="' +
+      UTILS.escapeHtml(String(t.id)) + '" title="Ver comprovante" aria-label="Ver comprovante (' + n + ')">' +
+      '<i data-lucide="paperclip" aria-hidden="true"></i></button>';
+  },
+
+  _verAnexos: function(transacaoId) {
+    var abrir = function() {
+      if (typeof INIT_ANEXOS !== 'undefined') INIT_ANEXOS.abrirVisualizador(transacaoId);
+    };
+    if (typeof INIT_NAVIGATION !== 'undefined' && INIT_NAVIGATION.carregarChunkAnexos) {
+      INIT_NAVIGATION.carregarChunkAnexos(abrir);
+    } else {
+      abrir();
+    }
   },
 
   /** Chips das tags de uma transação, clicáveis para filtrar. */
@@ -1124,7 +1148,7 @@ const INIT_EXTRATO = {
         '<div class="ext-tx-meta">' +
           '<span class="ext-tx-meta-tag">' + UTILS.escapeHtml(CONFIG.getCatLabel(t.categoria)) + '</span>' +
           '<span>' + dataStr + '</span>' +
-          (t.anexoCount ? '<span class="ext-tx-anexo-badge" aria-hidden="true"><i data-lucide="paperclip"></i></span>' : '') +
+          INIT_EXTRATO._anexoBtnHtml(t) +
           INIT_EXTRATO._tagsHtml(t) +
         '</div>' +
       '</div>' +

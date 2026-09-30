@@ -54,6 +54,51 @@ function criarSupabaseFalso(opts) {
   const chamadas = [];
   let sessao = opts.sessao || null;
   const ok = (data) => Promise.resolve({ data: data, error: null });
+  const falha = (message, code) => Promise.resolve({ data: null, error: { message: message, code: code, status: 422 } });
+
+  /* MFA com estado (opts.mfa = { codigo }): cadastrar cria um fator não
+     verificado; o código certo o verifica (ou autoriza removê-lo); errado
+     devolve o erro do Supabase. Códigos de recuperação pelas RPCs reais. */
+  const mfaCfg = opts.mfa || null;
+  const fatores = [];
+  let codigosRecuperacao = [];
+  function mfaComEstado() {
+    return {
+      listFactors: () => ok({ totp: fatores.map((f) => Object.assign({}, f)), all: fatores.slice() }),
+      getAuthenticatorAssuranceLevel: () => {
+        const nivel = fatores.some((f) => f.status === 'verified') ? 'aal2' : 'aal1';
+        return ok({ currentLevel: nivel, nextLevel: nivel });
+      },
+      enroll: (p) => {
+        chamadas.push({ metodo: 'mfa.enroll', tipo: p && p.factorType });
+        const f = { id: 'fator-' + (fatores.length + 1), status: 'unverified', factor_type: 'totp' };
+        fatores.push(f);
+        return ok({ id: f.id, totp: { qr_code: '<svg xmlns="http://www.w3.org/2000/svg"></svg>', secret: 'JBSWY3DPEHPK3PXP' } });
+      },
+      challengeAndVerify: (p) => {
+        chamadas.push({ metodo: 'mfa.challengeAndVerify', code: p.code });
+        const f = fatores.find((x) => x.id === p.factorId);
+        if (!f || p.code !== mfaCfg.codigo) return falha('Invalid TOTP code entered', 'mfa_verification_failed');
+        f.status = 'verified';
+        return ok({});
+      },
+      unenroll: (p) => {
+        chamadas.push({ metodo: 'mfa.unenroll', factorId: p.factorId });
+        const i = fatores.findIndex((x) => x.id === p.factorId);
+        if (i >= 0) fatores.splice(i, 1);
+        return ok({ id: p.factorId });
+      },
+    };
+  }
+  function rpcRecuperacao(nome) {
+    if (nome === 'fp_mfa_recovery_generate') {
+      codigosRecuperacao = ['aaaa-1111', 'bbbb-2222', 'cccc-3333', 'dddd-4444'];
+      chamadas.push({ metodo: 'rpc', nome: nome });
+      return ok(codigosRecuperacao.slice());
+    }
+    if (nome === 'fp_mfa_recovery_count') return ok(codigosRecuperacao.length);
+    return ok(null);
+  }
   const avisar = (evento) => ouvintes.forEach((cb) => { try { cb(evento, sessao); } catch (e) { /* ouvinte do app */ } });
   const consulta = function() {
     const q = {};
@@ -86,14 +131,14 @@ function criarSupabaseFalso(opts) {
       resend: () => ok({}),
       setSession: (s) => { sessao = s; return ok({ session: s }); },
       updateUser: () => ok({ user: sessao && sessao.user }),
-      mfa: {
+      mfa: mfaCfg ? mfaComEstado() : {
         listFactors: () => ok({ totp: [], all: [] }),
         getAuthenticatorAssuranceLevel: () => ok({ currentLevel: 'aal1', nextLevel: 'aal1' }),
         enroll: () => ok({}), challengeAndVerify: () => ok({}), unenroll: () => ok({}),
       },
     },
     from: () => consulta(),
-    rpc: () => ok(null),
+    rpc: (nome) => (mfaCfg ? rpcRecuperacao(nome) : ok(null)),
     channel: () => ({ on() { return this; }, subscribe() { return this; }, unsubscribe() {} }),
     removeChannel: () => {},
   };
@@ -130,7 +175,9 @@ function completarJanela(w) {
  * @param {Array}  [opts.transacoes]   fp-transacoes inicial
  * @param {object} [opts.storage]      chaves extras do localStorage
  * @param {object|boolean} [opts.nuvem] build de nuvem com Supabase falso;
- *                                      { contas: {email: senha}, sessao }
+ *                                      { contas: {email: senha}, sessao, mfa: {codigo} }
+ * @param {string} [opts.agora]       data/hora ISO em que o app "acorda" (o relógio da
+ *                                      janela anda a partir dela); para telas que dependem de hoje
  * @param {Function} [opts.antesDoBoot] (janela, global) depois dos scripts e antes
  *                                      do DOMContentLoaded (para instalar espiões)
  * @returns {Promise<{window, document, erros: string[], fechar: Function}>}
@@ -176,6 +223,13 @@ async function subirApp(opts) {
   Object.entries(opts.storage || {}).forEach(function([k, v]) { w.localStorage.setItem(k, v); });
 
   const ctx = dom.getInternalVMContext();
+  if (opts.agora) {
+    // Date da própria janela (mesmo realm dos scripts, para instanceof valer),
+    // deslocado para `agora` e andando normalmente dali em diante.
+    vm.runInContext('(function(fixo){var R=Date;var d=fixo-R.now();' +
+      'class D extends R{constructor(...a){if(a.length)super(...a);else super(R.now()+d);}static now(){return R.now()+d;}}' +
+      'globalThis.Date=D;})(' + new Date(opts.agora).getTime() + ')', ctx);
+  }
   const modulos = new Map();
   const esm = modulosDoIndex(html);
   for (const rel of scriptsDoIndex(html)) {

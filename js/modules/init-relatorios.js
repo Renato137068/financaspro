@@ -25,7 +25,10 @@ const INIT_RELATORIOS = {
     var mes = agora.getMonth() + 1;
     var ano = agora.getFullYear();
     var cmp = RELATORIOS.compararMesAnterior(mes, ano);
-    if (!cmp) {
+    // compararMesAnterior sempre devolve os dois meses (zerados, se vazios):
+    // sem nenhum lançamento em nenhum deles, a tela mostrava só zeros e um
+    // botão para compartilhar um mês vazio.
+    if (!cmp || (!cmp.atual.transacoes && !cmp.anterior.transacoes)) {
       el.innerHTML = '<p class="rel-empty">Sem dados suficientes para o relatório.</p>';
       return;
     }

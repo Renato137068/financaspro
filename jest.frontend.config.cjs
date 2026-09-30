@@ -85,6 +85,18 @@ module.exports = {
     // o flush preso em "busy" para sempre. Ramos 46% → 88%.
     'js/core/sync-engine.js': { lines: 98, functions: 100, branches: 86 },
 
+    // 30/09: telas que chegam sob demanda (chunks) e só tinham teste das regras.
+    // Agora sobem pelo app inteiro (tests/app-<tela>.test.js). Antes → agora,
+    // em linhas: 2FA 33 → 90, gastos fixos 0 → 98, relatórios 16 → 87,
+    // bancos/categorias 27 → 99, metas 32 → 99, anexos 32 → 98.
+    'js/modules/init-2fa.js': { lines: 88, functions: 100, branches: 68 },
+    'js/modules/init-assinaturas.js': { lines: 95, functions: 100, branches: 78 },
+    'js/modules/init-relatorios.js': { lines: 84, functions: 100, branches: 72 },
+    'js/modules/config-bancos.js': { lines: 96, functions: 100, branches: 78 },
+    'js/modules/init-metas.js': { lines: 96, functions: 100, branches: 71 },
+    'js/anexos.js': { lines: 95, functions: 72, branches: 75 },
+    'js/modules/init-anexos.js': { lines: 87, functions: 83, branches: 77 },
+
     // Estavam realmente em 0%: os testes recalculavam a lógica inline. Ganharam
     // `*-real.test.js` que carregam o módulo de produção.
     'js/patrimonio.js': { lines: 99, functions: 100, branches: 84 },
