@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Reauditoria FinançasPro 11.3.18</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#f5f8f6; --surface:#ffffff; --surface-2:#edf6f2; --line:#d5e2dc;
+  --ink:#10231c; --ink-2:#3c5249; --ink-3:#607a6f;
+  --brand:#12694e; --brand-deep:#0b3d2e; --brand-soft:#d3e9df; --accent:#2fa37b;
+  --ok:#1f7a4f; --ok-bg:#e1f3e9; --warn:#9a5b00; --warn-bg:#fdf0da; --bad:#b3261e; --bad-bg:#fbe4e2; --info:#2d5d8a; --info-bg:#e3edf7;
+  --bar-track:#e3ece8;
+  --f-display:'Plus Jakarta Sans','Inter',-apple-system,'Segoe UI',sans-serif;
+  --f-body:'Inter',-apple-system,'Segoe UI',Roboto,sans-serif;
+  --f-mono:'JetBrains Mono','SFMono-Regular',Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#08140f; --surface:#0f1f18; --surface-2:#132a20; --line:#21392e;
+    --ink:#e6f1ec; --ink-2:#b4c9bf; --ink-3:#86a295;
+    --brand:#5cc49a; --brand-deep:#a9d4c1; --brand-soft:#173a2c; --accent:#74b99c;
+    --ok:#6fd49f; --ok-bg:#133526; --warn:#f0b35a; --warn-bg:#3a2a10; --bad:#ff8a80; --bad-bg:#3d1714; --info:#8dbbe8; --info-bg:#132b40;
+    --bar-track:#1b3228;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#08140f; --surface:#0f1f18; --surface-2:#132a20; --line:#21392e;
+  --ink:#e6f1ec; --ink-2:#b4c9bf; --ink-3:#86a295;
+  --brand:#5cc49a; --brand-deep:#a9d4c1; --brand-soft:#173a2c; --accent:#74b99c;
+  --ok:#6fd49f; --ok-bg:#133526; --warn:#f0b35a; --warn-bg:#3a2a10; --bad:#ff8a80; --bad-bg:#3d1714; --info:#8dbbe8; --info-bg:#132b40;
+  --bar-track:#1b3228;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;margin:0}
+.wrap{max-width:1040px;margin:0 auto;padding-inline:20px;padding-block:32px 64px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;color:var(--ink)}
+h1{font-size:clamp(28px,5vw,40px);font-weight:800;letter-spacing:-.02em;line-height:1.15}
+h2{font-size:22px;font-weight:700;letter-spacing:-.01em}
+h3{font-size:16px;font-weight:700}
+p{margin:0}
+code,.mono{font-family:var(--f-mono);font-size:.86em}
+code{background:var(--surface-2);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--brand)}
+.muted{color:var(--ink-3)}
+section{display:grid;gap:18px;margin-top:48px}
+.sec-head{display:grid;gap:6px}
+.sec-head p{color:var(--ink-2);max-width:68ch}
+a{color:var(--brand)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Header */
+header.top{display:grid;gap:14px}
+.meta{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--ink-3)}
+.meta span strong{color:var(--ink-2);font-weight:600}
+.lede{font-size:17px;color:var(--ink-2);max-width:66ch}
+
+/* Hero score */
+.hero{display:grid;grid-template-columns:minmax(0,260px) minmax(0,1fr);gap:28px;align-items:center;margin-top:28px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px}
+.gauge{position:relative;width:100%;max-width:240px;aspect-ratio:1;margin:0 auto}
+.gauge svg{width:100%;height:100%;display:block}
+.gauge .num{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.gauge .num b{font-family:var(--f-display);font-size:64px;font-weight:800;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
+.gauge .num small{font-size:13px;color:var(--ink-3)}
+.verdicts{display:grid;gap:12px}
+.verdict{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:baseline}
+.verdict p{grid-column:2;color:var(--ink-2);font-size:14px}
+.pill{display:inline-block;font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.warn{background:var(--warn-bg);color:var(--warn)}
+.pill.bad{background:var(--bad-bg);color:var(--bad)}
+.pill.info{background:var(--info-bg);color:var(--info)}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:4px}
+.kpi{border-top:2px solid var(--line);padding-top:8px}
+.kpi b{display:block;font-family:var(--f-display);font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
+.kpi span{font-size:12.5px;color:var(--ink-3)}
+
+/* Ledger */
+.ledger-box{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+table.ledger{width:100%;border-collapse:collapse;min-width:640px;font-variant-numeric:tabular-nums}
+.ledger th{font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);font-weight:600;text-align:left;padding:12px 14px;border-bottom:1px solid var(--line)}
+.ledger td{padding:11px 14px;border-bottom:1px dashed var(--line);vertical-align:middle}
+.ledger tr:last-child td{border-bottom:0}
+.ledger .r{text-align:right}
+.ledger .dim b{display:block;font-weight:600}
+.ledger .dim span{font-size:12.5px;color:var(--ink-3)}
+.ledger .score{font-family:var(--f-mono);font-weight:500;font-size:15px}
+.bar{height:8px;border-radius:4px;background:var(--bar-track);overflow:hidden;min-width:90px}
+.bar i{display:block;height:100%;border-radius:4px}
+.b-ok{background:var(--ok)} .b-warn{background:var(--warn)} .b-bad{background:var(--bad)}
+.ledger tfoot td{border-top:2px solid var(--ink);font-weight:700;padding-top:14px;padding-bottom:14px}
+.ledger tfoot .score{font-size:18px}
+.scale{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:12.5px;color:var(--ink-3)}
+.scale span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px;background:var(--c)}
+
+/* Strengths */
+.strengths{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px 24px;list-style:none;padding:0;margin:0}
+.strengths li{display:grid;grid-template-columns:18px 1fr;gap:10px;font-size:14px;color:var(--ink-2)}
+.strengths li::before{content:"✓";color:var(--ok);font-weight:700}
+.strengths b{color:var(--ink);font-weight:600}
+
+/* Findings */
+.filters{display:flex;flex-wrap:wrap;gap:8px}
+.filters button{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);padding:6px 14px;border-radius:999px;cursor:pointer}
+.filters button[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:var(--surface)}
+.findings{display:grid;gap:12px}
+.finding{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--sev);border-radius:10px;padding:16px 18px;display:grid;gap:8px}
+.finding[data-sev="alta"]{--sev:var(--bad)}
+.finding[data-sev="media"]{--sev:var(--warn)}
+.finding[data-sev="baixa"]{--sev:var(--info)}
+.f-head{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+.f-id{font-family:var(--f-mono);font-size:12.5px;color:var(--ink-3)}
+.finding p{color:var(--ink-2);font-size:14px;max-width:80ch}
+.finding .ev{font-size:13px;color:var(--ink-3)}
+.finding .fix{font-size:14px;color:var(--ink)}
+.finding .fix::before{content:"Correção → ";font-weight:600;color:var(--brand)}
+
+/* Previous P0 */
+.prev{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.prev div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:6px;align-content:start}
+.prev p{font-size:13.5px;color:var(--ink-2)}
+
+/* Roadmap */
+.road{display:grid;gap:0;position:relative}
+.phase{display:grid;grid-template-columns:120px minmax(0,1fr);gap:20px;padding-bottom:28px;position:relative}
+.phase:not(:last-child)::after{content:"";position:absolute;left:59px;top:64px;bottom:0;width:2px;background:var(--line)}
+.p-mark{display:grid;justify-items:center;gap:4px;align-content:start}
+.p-mark .dot{width:56px;height:56px;border-radius:50%;display:grid;place-content:center;background:var(--brand-soft);color:var(--brand-deep);font-family:var(--f-display);font-weight:800;font-size:19px;border:2px solid var(--brand)}
+.p-mark small{font-size:12px;color:var(--ink-3);text-align:center;line-height:1.3}
+.p-body{display:grid;gap:12px}
+.p-title{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:baseline}
+.p-title .proj{font-size:13px;color:var(--ink-3)}
+.p-title .proj b{font-family:var(--f-mono);color:var(--brand);font-weight:500}
+.tasks{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.tasks li{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 14px;align-items:start}
+.tasks li b{font-weight:600}
+.tasks li p{grid-column:1;font-size:13.5px;color:var(--ink-2)}
+.tasks li .tags{grid-column:2;grid-row:1 / span 2;display:flex;flex-direction:column;gap:4px;align-items:flex-end}
+.tag{font-size:11px;font-family:var(--f-mono);color:var(--ink-3);border:1px solid var(--line);border-radius:5px;padding:1px 6px;white-space:nowrap}
+.refs{font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3)}
+
+/* Projection chart */
+.proj-chart{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;overflow-x:auto}
+.proj-chart svg{display:block;width:100%;min-width:520px;height:auto}
+.proj-chart text{font-family:var(--f-body);fill:var(--ink-3);font-size:12px}
+.proj-chart .lbl{fill:var(--ink);font-family:var(--f-mono);font-size:13px;font-weight:500}
+
+/* Evidence */
+.ev-box{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+table.ev{width:100%;border-collapse:collapse;min-width:560px;font-size:14px}
+.ev th,.ev td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line)}
+.ev th{font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+.ev tr:last-child td{border-bottom:0}
+.ev td:first-child{font-family:var(--f-mono);font-size:13px}
+.method{font-size:13.5px;color:var(--ink-2);max-width:80ch;display:grid;gap:8px}
+footer{margin-top:56px;padding-top:16px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink-3)}
+
+@media (max-width:760px){
+  .hero{grid-template-columns:1fr}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .phase{grid-template-columns:64px minmax(0,1fr);gap:14px}
+  .phase:not(:last-child)::after{left:31px;top:52px}
+  .p-mark .dot{width:44px;height:44px;font-size:16px}
+  .tasks li{grid-template-columns:1fr}
+  .tasks li .tags{grid-column:1;grid-row:auto;flex-direction:row;flex-wrap:wrap;align-items:center}
+}
+@media (prefers-reduced-motion:no-preference){
+  .bar i{animation:grow .8s ease-out both}
+  @keyframes grow{from{transform:scaleX(.2);transform-origin:left}to{transform:scaleX(1);transform-origin:left}}
+}
+
+/* Reauditoria: variação e acompanhamento */
+.delta{font-family:var(--f-mono);font-size:12.5px;font-weight:500;white-space:nowrap}
+.delta.up{color:var(--ok)} .delta.eq{color:var(--ink-3)} .delta.down{color:var(--bad)}
+.ledger .before{font-family:var(--f-mono);color:var(--ink-3)}
+.status-box{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+table.status{width:100%;border-collapse:collapse;min-width:620px;font-size:14px}
+.status th,.status td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+.status th{font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+.status tr:last-child td{border-bottom:0}
+.status td:first-child{font-family:var(--f-mono);font-size:13px;color:var(--ink-3);white-space:nowrap}
+.status td b{font-weight:600}
+.status td p{color:var(--ink-2);font-size:13.5px}
+.why{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:8px;font-size:14px;color:var(--ink-2)}
+.why b{color:var(--ink)}
+.why ul{margin:0;padding-left:20px;display:grid;gap:2px}
+.ops{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.ops li{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:4px;font-size:13.5px;color:var(--ink-2)}
+.ops li b{color:var(--ink);font-weight:600;font-size:14px}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <span class="eyebrow">Reauditoria · FinançasPro</span>
+    <h1>Balanço de engenharia e produto, três dias e quatro etapas depois</h1>
+    <p class="lede">Mesma régua, mesmos pesos e mesmo método da auditoria de 27/set, agora sobre o código com as quatro etapas do roadmap entregues. Cada frente foi medida de novo do zero; a nota anterior aparece ao lado para comparação.</p>
+    <div class="meta">
+      <span><strong>Data</strong> 30 set 2026</span>
+      <span><strong>Versão</strong> 11.3.18 · versionCode 49</span>
+      <span><strong>Commit</strong> <span class="mono">6d751b4</span></span>
+      <span><strong>Código</strong> ~123 mil linhas (sem vendor, docs e telas geradas) · 996 arquivos</span>
+      <span><strong>Anterior</strong> <a href="auditoria-completa-2026-09-27.html">27/set · nota 79</a></span>
+    </div>
+  </header>
+
+  <div class="hero" role="group" aria-label="Nota geral">
+    <div class="gauge">
+      <svg viewBox="0 0 200 200" aria-hidden="true">
+        <circle cx="100" cy="100" r="84" fill="none" stroke="var(--bar-track)" stroke-width="14"/>
+        <circle cx="100" cy="100" r="84" fill="none" stroke="var(--brand)" stroke-width="14" stroke-linecap="round"
+          stroke-dasharray="449 527.8" transform="rotate(-90 100 100)"/>
+      </svg>
+      <div class="num"><b>85</b><small>de 100 · era 79 em 27/set</small></div>
+    </div>
+    <div class="verdicts">
+      <div class="verdict"><span class="pill ok">Apto</span><h3>Beta fechado e testes internos</h3><p>Continua apto, agora com erros de produção chegando ao Supabase, release por tag e um painel que compara versões.</p></div>
+      <div class="verdict"><span class="pill warn">Quase</span><h3>Produção aberta em escala</h3><p>Três coisas faltam. As Edge Functions de billing, que viraram a fonte de verdade, não têm teste de comportamento. A operação nova (segredos, painel, primeira tag) ainda não foi ligada. E o smoke em aparelho físico nunca rodou.</p></div>
+      <div class="kpis">
+        <div class="kpi"><b>3.126</b><span>testes Jest verdes (2 pulados), mais 62 pgTAP e 66 E2E</span></div>
+        <div class="kpi"><b>0</b><span>avisos de lint</span></div>
+        <div class="kpi"><b>1</b><span>achado de prioridade alta (eram 3)</span></div>
+        <div class="kpi"><b>0</b><span>vulnerabilidades no npm audit (eram 2)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <section id="notas" aria-labelledby="h-notas">
+    <div class="sec-head">
+      <span class="eyebrow">Notas por frente</span>
+      <h2 id="h-notas">Extrato da nota geral</h2>
+      <p>Pesos iguais aos de 27/set; contribuição = nota × peso. Dez frentes subiram e quatro ficaram onde estavam; nenhuma caiu.</p>
+    </div>
+    <div class="ledger-box">
+      <table class="ledger">
+        <thead><tr><th>Frente</th><th class="r">Peso</th><th>Nota</th><th class="r">Antes</th><th class="r">Agora</th><th class="r">Δ</th><th class="r">Contribuição</th></tr></thead>
+        <tbody id="ledger-body"></tbody>
+        <tfoot><tr><td>Nota geral</td><td class="r">100%</td><td></td><td class="r before">79</td><td class="r score">85</td><td class="r"><span class="delta up">+6</span></td><td class="r score">85,13</td></tr></tfoot>
+      </table>
+    </div>
+    <div class="scale"><span style="--c:var(--ok)">85 ou mais: sólido</span><span style="--c:var(--warn)">70 a 84: bom, com lacunas</span><span style="--c:var(--bad)">abaixo de 70: precisa de atenção</span></div>
+    <div class="why">
+      <p><b>Por que 85 e não os 91 projetados.</b> A projeção de 27/set supunha cada item da etapa entregue por inteiro. Três não chegaram lá:</p>
+      <ul>
+        <li>o bundle inicial caiu para 474 KB, mas a meta era 450;</li>
+        <li>o Express foi congelado, mas continua no repositório;</li>
+        <li>o painel de saúde e o deploy por tag existem no código, mas ninguém os ligou em produção.</li>
+      </ul>
+      <p>E, com o Supabase oficializado como fonte de verdade, apareceu uma lacuna que antes ficava escondida atrás dos 529 testes do Express: as Edge Functions de billing só têm testes que leem o código como texto.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-fortes">
+    <div class="sec-head">
+      <span class="eyebrow">O que já está bem feito</span>
+      <h2 id="h-fortes">Pontos fortes verificados</h2>
+    </div>
+    <ul class="strengths">
+      <li><span><b>Dinheiro em centavos.</b> <code>somarMoeda</code> no app e <code>Decimal(15,2)</code> no Postgres; gates de desempenho com 10 mil lançamentos verdes.</span></li>
+      <li><span><b>Módulos com dependência explícita.</b> O app virou ES Modules com uma entrada só. Um teste avalia a ordem de boot do grafo inteiro, e <code>no-undef</code> voltou a valer.</span></li>
+      <li><span><b>Primeiro acesso mais leve.</b> <code>index.html</code> de 110 para 44 KB, JavaScript inicial de 628 para 474 KB, 12 telas carregadas sob demanda. Os tetos só descem.</span></li>
+      <li><span><b>Erros de produção visíveis.</b> A Edge Function <code>obs-ingest</code> sanitiza (e-mail, valores e números longos mascarados) e aceita opt-out; a contagem de uso não guarda IP nem id.</span></li>
+      <li><span><b>Banco fechado por padrão.</b> Todas as tabelas de dados do <code>public</code> têm RLS. As 13 funções <code>SECURITY DEFINER</code> fixam <code>search_path</code>. O schema <code>saude</code> fica fora da API. 62 testes pgTAP.</span></li>
+      <li><span><b>Release reproduzível.</b> A tag <code>vX.Y.Z</code> confere a versão, roda testes, migra, publica as funções e gera o AAB assinado com a keystore vinda de segredo. A aprovação fica no ambiente <code>production</code>.</span></li>
+      <li><span><b>Interface testada de verdade.</b> O app inteiro sobe no jsdom e roda com cobertura de 70,9% das linhas do frontend, com piso de 63% para a camada de UI. O que antes carregava por <code>eval</code> agora aparece na cobertura.</span></li>
+      <li><span><b>Superfície de ataque menor.</b> CSP de produção sem CDN de terceiros nem <code>unsafe-inline</code> em script. Segredos comparados em tempo constante. Android com <code>allowBackup=false</code>, R8 e targetSdk 36.</span></li>
+      <li><span><b>Nenhum segredo no repositório.</b> A única chave encontrada é a <code>anon</code> do Supabase, pública por desenho; as de teste são fictícias.</span></li>
+    </ul>
+  </section>
+
+  <section id="acompanhamento" aria-labelledby="h-prev">
+    <div class="sec-head">
+      <span class="eyebrow">Acompanhamento</span>
+      <h2 id="h-prev">Os 12 achados de 27/set</h2>
+      <p>Oito resolvidos, três parciais, um aberto. Cada status foi conferido no código deste commit, não no histórico de commits.</p>
+    </div>
+    <div class="status-box">
+      <table class="status">
+        <thead><tr><th>Achado</th><th>Status</th><th>O que o código mostra hoje</th></tr></thead>
+        <tbody>
+          <tr><td>A1</td><td><span class="pill ok">Resolvido</span></td><td><b>Erros de produção</b><p>Erros vão para <code>fp_client_error</code> via <code>obs-ingest</code>, com o envio ligado por padrão e opção de desligar no Perfil. Somam-se o contador anônimo de uso e o schema <code>saude</code>.</p></td></tr>
+          <tr><td>A2</td><td><span class="pill ok">Resolvido</span></td><td><b>Runtime</b><p>CI em 22.x e 24.x, <code>node:22-alpine</code>, <code>engines &gt;=22</code>.</p></td></tr>
+          <tr><td>A3</td><td><span class="pill ok">Resolvido</span></td><td><b>Globais e lint</b><p><code>no-undef</code> ligado com a lista de globais gerada. Sobram 14 scripts clássicos, por decisão documentada. <code>dados.js</code> caiu de 1.753 para 1.224 linhas, <code>init-form.js</code> de 2.073 para 1.354.</p></td></tr>
+          <tr><td>M1</td><td><span class="pill ok">Resolvido</span></td><td><b>IndexedDB sem cifra</b><p>O blob passa por <code>LOCAL_CRYPTO.wrapStorageValue</code> antes de <code>IDB_KV.set</code> (<code>js/core/dados.js</code> linhas 540–544).</p></td></tr>
+          <tr><td>M2</td><td><span class="pill warn">Parcial</span></td><td><b>Orçamento de bundle</b><p>O teto não sobe mais e 12 telas carregam sob demanda. Mas o JS inicial está em 474 de 478 KB (meta: 450) e o precache em 1.202 de 1.205 KB. Virou o achado M3.</p></td></tr>
+          <tr><td>M3</td><td><span class="pill warn">Parcial</span></td><td><b>Dois backends</b><p>O ADR 0004 fez do Supabase a fonte de verdade e congelou o Express. O Express continua no repositório, no CI e no build Docker, porque Open Finance e workers ainda não têm outro destino. Virou o achado M5.</p></td></tr>
+          <tr><td>M4</td><td><span class="pill ok">Resolvido</span></td><td><b>Cobertura da UI</b><p>Linhas cobertas: <code>init-form</code> de 19% para 75%, <code>init-navigation</code> de 16% para 61%, <code>init-billing</code> de 18% para 53%, <code>authController</code> de 6% para 59%. <code>persist-queue</code> passou de invisível para 75%. As telas carregadas sob demanda ficaram para trás (achado M2).</p></td></tr>
+          <tr><td>M5</td><td><span class="pill warn">Parcial</span></td><td><b>Dependências</b><p><code>npm audit</code> zerado, ESLint 10 e supabase-js 2.117. Seguem atrás: Stripe 16 (atual 22), Vite 6 (8), Jest 29 (30), além de Prisma 5, Express 4 e zod 3, que ficam congelados junto com o Express. Virou o achado M4.</p></td></tr>
+          <tr><td>B1</td><td><span class="pill ok">Resolvido</span></td><td><b>Comparação de segredo</b><p><code>timingSafeEqual</code> no RTDN do Express e no token de <code>/metrics</code>.</p></td></tr>
+          <tr><td>B2</td><td><span class="pill ok">Resolvido</span></td><td><b>CDN do OCR na CSP</b><p>O <code>connect-src</code> de produção só tem o próprio app e o projeto Supabase. Saíram a cota de OCR e o stub.</p></td></tr>
+          <tr><td>B3</td><td><span class="pill ok">Resolvido</span></td><td><b>Documentação</b><p>Auditorias em <code>docs/auditorias/</code> com índice verificado no CI, atalhos em <code>scripts/windows/</code> e doc de arquitetura reescrito, com teste de caminhos. Ainda há 21 HTML de features soltos em <code>docs/</code>.</p></td></tr>
+          <tr><td>B4</td><td><span class="pill bad">Aberto</span></td><td><b>Contato de privacidade</b><p>Continua um Gmail pessoal (<code>privacidade.html</code> linhas 58, 89 e 110). Depende de você criar o alias do domínio.</p></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="achados" aria-labelledby="h-achados">
+    <div class="sec-head">
+      <span class="eyebrow">Achados desta auditoria</span>
+      <h2 id="h-achados">O que precisa mudar agora</h2>
+      <p>Numeração nova. Cada achado aponta onde foi verificado; nenhum foi corrigido nesta auditoria.</p>
+    </div>
+    <div class="filters" role="group" aria-label="Filtrar por prioridade">
+      <button type="button" data-f="todos" aria-pressed="true">Todos (9)</button>
+      <button type="button" data-f="alta" aria-pressed="false">Alta (1)</button>
+      <button type="button" data-f="media" aria-pressed="false">Média (5)</button>
+      <button type="button" data-f="baixa" aria-pressed="false">Baixa (3)</button>
+    </div>
+    <div class="findings" id="findings">
+
+      <article class="finding" data-sev="alta">
+        <div class="f-head"><span class="pill bad">Alta</span><span class="f-id">A1 · Billing / testes</span></div>
+        <h3>A cobrança que vale não tem teste de comportamento</h3>
+        <p>Desde o ADR 0004 quem verifica compra da Play, processa RTDN e webhook do Stripe e concede o trial são as Edge Functions: 11 funções e cerca de 1.950 linhas de TypeScript. Nenhum teste as executa. As quatro suítes que as citam leem o arquivo e procuram trechos de texto. Os 529 testes do backend cobrem o Express, que está congelado. Um erro de lógica em renovação, estorno ou período de cancelamento só aparece com cliente pagando.</p>
+        <p class="ev">Evidência: <code>supabase/functions/_shared/play-billing.ts</code>, <code>stripe-billing.ts</code>, <code>db.ts</code>; <code>tests/play-verify-hardening.test.js</code> e <code>tests/play-rtdn-notificacoes.test.js</code> usam <code>readFileSync</code>; nenhum <code>deno test</code> nos workflows. O próprio <code>supabase/functions/README.md</code> lista isso em “Ainda a fazer”.</p>
+        <p class="fix">Testes com <code>deno test</code> para as regras de <code>play-billing.ts</code> e <code>stripe-billing.ts</code>, com <code>fetch</code> e banco dublados. Portar os casos que já existem no Express (renovação, revogação, idempotência, período de cancelamento) e rodar num job do CI.</p>
+      </article>
+
+      <article class="finding" data-sev="media">
+        <div class="f-head"><span class="pill warn">Média</span><span class="f-id">M1 · Sincronização</span></div>
+        <h3>Os caminhos de erro da sincronização quase não são exercitados</h3>
+        <p>O <code>sync-engine.js</code> tem 84% das linhas cobertas, mas só 46% dos ramos, o mesmo número de 27/set. Os ramos que faltam são justamente os de nova tentativa, conflito e resposta parcial do servidor, onde se perde ou duplica lançamento. O <code>lifecycle.js</code>, que decide a ordem de boot e de sincronização, está em 55% dos ramos.</p>
+        <p class="ev">Evidência: <code>npm run test:frontend:unit -- --coverage</code>, <code>coverage/frontend/coverage-summary.json</code>.</p>
+        <p class="fix">Testes de tabela para o <code>sync-engine</code>: falha de rede no meio do lote, 409, 5xx com nova tentativa, sessão expirada durante o envio. Piso próprio de ramos em 75%.</p>
+      </article>
+
+      <article class="finding" data-sev="media">
+        <div class="f-head"><span class="pill warn">Média</span><span class="f-id">M2 · Testes</span></div>
+        <h3>As telas que viraram chunk ficaram sem teste</h3>
+        <p>As telas principais ganharam cobertura; as secundárias, que agora carregam sob demanda, não. Assinaturas e gastos fixos: 0%. Relatórios: 16%. Bancos: 27%. Verificação em duas etapas: 33%. Metas e anexos: 32%. A de 2FA mexe em segurança de conta, e a de relatórios exporta dados do usuário.</p>
+        <p class="ev">Evidência: <code>js/modules/init-assinaturas.js</code> (nenhuma suíte o carrega), <code>init-relatorios.js</code>, <code>config-bancos.js</code>, <code>init-2fa.js</code>, <code>init-metas.js</code>, <code>js/anexos.js</code>.</p>
+        <p class="fix">Subir cada chunk pelo <code>app-jsdom</code> (o carregamento sob demanda já funciona nos testes) e cobrir o fluxo principal de cada tela, começando por 2FA e assinaturas. Piso próprio por arquivo.</p>
+      </article>
+
+      <article class="finding" data-sev="media">
+        <div class="f-head"><span class="pill warn">Média</span><span class="f-id">M3 · Performance</span></div>
+        <h3>O bundle inicial parou a 24 KB da meta, sem folga no teto</h3>
+        <p>O JavaScript inicial está em 474 KB para um teto de 478, e o precache em 1.202 para 1.205 KB. A meta de 27/set era 450 KB. A próxima feature que tocar o boot vai bater no teto, e a tentação será subir o número de novo. O CSS é um arquivo único de 277 KB, todo no precache, incluindo o estilo das telas que já carregam sob demanda.</p>
+        <p class="ev">Evidência: <code>npm run check:bundle</code>; <code>js/index-*.js</code> 435 KB e <code>css/index-*.css</code> 277 KB no <code>dist/</code>.</p>
+        <p class="fix">Levar o CSS de cada tela sob demanda para o chunk dela, tirar do grafo inicial o que só o Perfil ou o billing usam e baixar os tetos junto (o teste já impede subir).</p>
+      </article>
+
+      <article class="finding" data-sev="media">
+        <div class="f-head"><span class="pill warn">Média</span><span class="f-id">M4 · Dependências</span></div>
+        <h3>Stripe das Edge Functions e ferramentas de build duas versões atrás</h3>
+        <p>As Edge Functions usam o Stripe 16.12 (atual 22). O Vite está na 6 (atual 8) e o Jest na 29 (atual 30). Nada disso tem vulnerabilidade conhecida hoje (<code>npm audit</code> zerado), mas cada major que passa encarece o salto. Prisma 5, Express 4, zod 3 e otplib 12 seguem congelados com o Express e saem junto com ele.</p>
+        <p class="ev">Evidência: <code>npm outdated</code>; import do Stripe em <code>supabase/functions/_shared/stripe.ts</code>.</p>
+        <p class="fix">Stripe 22 nas Edge Functions num PR próprio, validado no modo de teste. Vite 8 e Jest 30 um por PR, com o E2E como rede.</p>
+      </article>
+
+      <article class="finding" data-sev="media">
+        <div class="f-head"><span class="pill warn">Média</span><span class="f-id">M5 · Arquitetura</span></div>
+        <h3>O Express congelado ainda custa manutenção e não tem data para sair</h3>
+        <p>São 8,6 mil linhas congeladas, mas que ainda rodam em todo push (smoke, API e integração no <code>test:ci</code>) e geram imagem Docker a cada merge. Continuam sendo atualizadas quando o <code>npm audit</code> acusa algo. O ADR condiciona a remoção a dar destino ao Open Finance (desligado no app) e aos workers de BullMQ, e nenhum dos dois tem plano.</p>
+        <p class="ev">Evidência: <code>docs/adr/0004-supabase-fonte-de-verdade-express-congelado.md</code>; <code>.github/workflows/deploy.yml</code>; script <code>test:ci</code> em <code>package.json</code>.</p>
+        <p class="fix">Decidir o destino do Open Finance (Edge Function quando for liberado, ou sair do escopo) e dos workers (<code>pg_cron</code> ou Edge agendada), com data. Até lá, tirar o build Docker do merge em <code>main</code>.</p>
+      </article>
+
+      <article class="finding" data-sev="baixa">
+        <div class="f-head"><span class="pill info">Baixa</span><span class="f-id">B1 · Supabase</span></div>
+        <h3><code>_prisma_migrations</code> sem RLS e provavelmente legível pela API anônima</h3>
+        <p>É a única tabela do <code>public</code> sem RLS. O teste que a libera diz que ela “nunca é exposta pelo PostgREST”, mas o PostgREST expõe todo o <code>public</code> a quem tem privilégio. Os privilégios padrão do Supabase dão <code>SELECT</code> a <code>anon</code> em tabelas criadas pelo dono, e no banco local ela sai legível por <code>anon</code> e <code>authenticated</code>. O que vaza é pouco (nomes e datas de migração, logs de erro do Prisma), mas é o primeiro alerta do Security Advisor do Supabase.</p>
+        <p class="ev">Evidência: <code>supabase/tests/rls_coverage.test.sql</code> linha 20; consulta a <code>has_table_privilege('anon', …)</code> no Postgres 16 local após todas as migrações.</p>
+        <p class="fix">Migração com <code>alter table public._prisma_migrations enable row level security</code> (sem policy; o Prisma conecta como dono). Tirar a exceção do teste e conferir o Security Advisor no painel.</p>
+      </article>
+
+      <article class="finding" data-sev="baixa">
+        <div class="f-head"><span class="pill info">Baixa</span><span class="f-id">B2 · CI/CD</span></div>
+        <h3>Ação de terceiro recebe a conta de serviço da Play por uma tag móvel</h3>
+        <p>O workflow de release passa <code>PLAY_SERVICE_ACCOUNT_JSON</code> para <code>r0adkll/upload-google-play@v1</code>. Quem controlar essa tag controla o que roda com a chave de publicação. Além disso, <code>actions/checkout@v4</code> e <code>setup-node@v4</code> dependem do Node 20, e o GitHub já força Node 24 com aviso em todo job.</p>
+        <p class="ev">Evidência: <code>.github/workflows/release.yml</code> linha 179; aviso “Node.js 20 is deprecated” nos logs do CI de 30/set.</p>
+        <p class="fix">Fixar a ação de terceiro por SHA do commit e subir <code>checkout</code>/<code>setup-node</code>/<code>setup-java</code>/<code>upload-artifact</code> para a major atual.</p>
+      </article>
+
+      <article class="finding" data-sev="baixa">
+        <div class="f-head"><span class="pill info">Baixa</span><span class="f-id">B3 · Observabilidade</span></div>
+        <h3>O contador de uso aceita avisos forjados</h3>
+        <p>Por ser anônimo, qualquer um pode mandar <code>{kind:'sessao', app:'X.Y.Z'}</code>. O limite é de 30 por minuto por IP e por instância. Inflar as sessões de uma versão baixa a taxa de erros dela e pode esconder uma regressão do alerta diário. O risco é baixo (exige intenção e volume), mas o alerta abre issue sozinho.</p>
+        <p class="ev">Evidência: <code>supabase/functions/obs-ingest/index.ts</code> (<code>MAX_POR_JANELA = 30</code>); <code>scripts/saude-relatorio.cjs</code>.</p>
+        <p class="fix">Ler o relatório junto com o volume de instalações da Play. Se o contador divergir muito, pôr um teto diário por versão proporcional às instalações ou exigir o cabeçalho de origem do app.</p>
+      </article>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-ops">
+    <div class="sec-head">
+      <span class="eyebrow">Fora do código</span>
+      <h2 id="h-ops">Operação que ainda não foi ligada</h2>
+      <p>O código destas peças está pronto e testado, mas elas só valem depois de configuradas. Nenhuma foi verificada em produção, porque a rede desta auditoria não alcança o Supabase nem o domínio público (o <code>check:pre-beta</code> marca esses itens como “não verificado”, não como aprovados).</p>
+    </div>
+    <ul class="ops">
+      <li><b>Migrações e funções no Supabase</b>Aplicar as migrações de 27/set e 30/set e publicar <code>obs-ingest</code> (<code>node scripts/deploy-supabase.cjs</code>).</li>
+      <li><b>Segredos do release</b>Ambiente <code>production</code> com aprovação obrigatória e os segredos listados no cabeçalho de <code>release.yml</code>.</li>
+      <li><b>Painel de saúde</b>Papel de leitura do schema <code>saude</code> e o segredo <code>SAUDE_DATABASE_URL</code> (<code>docs/observabilidade/painel-saude.md</code>).</li>
+      <li><b>Play Console</b>Segurança dos dados: “Registros de falhas / Diagnóstico” e “Outros dados de desempenho do app”.</li>
+      <li><b>Primeira tag e smoke em aparelho</b>Uma tag para a faixa interna e o roteiro de <code>docs/release/smoke-aparelho.md</code> em um aparelho real.</li>
+      <li><b>URLs públicas</b>Confirmar no navegador <code>/privacidade.html</code> e <code>/.well-known/assetlinks.json</code> no domínio do app.</li>
+    </ul>
+  </section>
+
+  <section id="roadmap" aria-labelledby="h-road">
+    <div class="sec-head">
+      <span class="eyebrow">Roadmap de melhorias</span>
+      <h2 id="h-road">De 85 para 92 em três etapas</h2>
+      <p>Mais curto que o anterior porque a base está pronta: o que resta é rede de testes onde o dinheiro passa, folga de performance e tirar o Express de vez. A nota projetada supõe cada etapa entregue por inteiro; a de 27/set mostrou que vale conferir de novo depois.</p>
+    </div>
+
+    <div class="proj-chart" aria-label="Projeção da nota geral por etapa">
+      <svg viewBox="0 0 560 190" role="img" aria-labelledby="proj-t">
+        <title id="proj-t">Nota geral: 27 de setembro 79, hoje 85, após etapa 1 88, após etapa 2 90, após etapa 3 92</title>
+        <!-- escala: y = 170 - (nota-70)*6 ; 70→170, 80→110, 90→50 -->
+        <g stroke="var(--line)" stroke-width="1">
+          <line x1="40" y1="170" x2="540" y2="170"/>
+          <line x1="40" y1="110" x2="540" y2="110" stroke-dasharray="3 4"/>
+          <line x1="40" y1="50" x2="540" y2="50" stroke-dasharray="3 4"/>
+        </g>
+        <text x="32" y="174" text-anchor="end">70</text>
+        <text x="32" y="114" text-anchor="end">80</text>
+        <text x="32" y="54" text-anchor="end">90</text>
+        <polyline points="80,116 180,80" fill="none" stroke="var(--ink-3)" stroke-width="2" stroke-dasharray="4 4"/>
+        <circle cx="80" cy="116" r="5" fill="var(--surface)" stroke="var(--ink-3)" stroke-width="2"/>
+        <path d="M180 80 L290 62 L400 50 L510 38 L510 170 L180 170 Z" fill="var(--brand-soft)" opacity=".7"/>
+        <polyline points="180,80 290,62 400,50 510,38" fill="none" stroke="var(--brand)" stroke-width="2.5"/>
+        <g fill="var(--surface)" stroke="var(--brand)" stroke-width="2.5">
+          <circle cx="290" cy="62" r="5"/><circle cx="400" cy="50" r="5"/><circle cx="510" cy="38" r="5"/>
+        </g>
+        <circle cx="180" cy="80" r="6" fill="var(--brand)"/>
+        <text class="lbl" x="80" y="104" text-anchor="middle">79</text>
+        <text class="lbl" x="180" y="68" text-anchor="middle">85</text>
+        <text class="lbl" x="290" y="50" text-anchor="middle">88</text>
+        <text class="lbl" x="400" y="38" text-anchor="middle">90</text>
+        <text class="lbl" x="510" y="26" text-anchor="middle">92</text>
+        <text x="80" y="188" text-anchor="middle">27/set</text>
+        <text x="180" y="188" text-anchor="middle">Hoje</text>
+        <text x="290" y="188" text-anchor="middle">Etapa 1</text>
+        <text x="400" y="188" text-anchor="middle">Etapa 2</text>
+        <text x="510" y="188" text-anchor="middle">Etapa 3</text>
+      </svg>
+    </div>
+
+    <div class="road">
+      <div class="phase">
+        <div class="p-mark"><span class="dot">1</span><small>esta semana</small></div>
+        <div class="p-body">
+          <div class="p-title"><h3>Rede de proteção onde o dinheiro passa</h3><span class="proj">nota projetada <b>88</b></span></div>
+          <ul class="tasks">
+            <li><b>Testes de comportamento das Edge Functions de billing</b><p><code>deno test</code> para Play e Stripe com dublês de <code>fetch</code> e banco; casos portados do Express; job no CI.</p><span class="tags"><span class="tag">A1</span><span class="tag">~3 dias</span></span></li>
+            <li><b>RLS em <code>_prisma_migrations</code></b><p>Uma migração, o teste sem exceção e conferência no Security Advisor.</p><span class="tags"><span class="tag">B1</span><span class="tag">~30 min</span></span></li>
+            <li><b>Ações do GitHub fixadas e atualizadas</b><p>SHA na ação da Play; majors atuais de checkout, setup-node, setup-java e upload-artifact.</p><span class="tags"><span class="tag">B2</span><span class="tag">~1 h</span></span></li>
+            <li><b>Ligar a operação</b><p>Migrações e funções no Supabase, segredos do release, painel de saúde, Play Console, primeira tag na faixa interna com smoke em aparelho, alias de privacidade.</p><span class="tags"><span class="tag">operação · B4 ant.</span><span class="tag">~1 dia</span></span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="p-mark"><span class="dot">2</span><small>2 a 4 semanas</small></div>
+        <div class="p-body">
+          <div class="p-title"><h3>Fechar as lacunas de teste e de performance</h3><span class="proj">nota projetada <b>90</b></span></div>
+          <ul class="tasks">
+            <li><b>Ramos de erro da sincronização</b><p>Rede caindo no meio do lote, 409, 5xx com nova tentativa, sessão expirada. <code>sync-engine</code> com 75% dos ramos cobertos.</p><span class="tags"><span class="tag">M1</span><span class="tag">~1 semana</span></span></li>
+            <li><b>Telas carregadas sob demanda com teste</b><p>2FA, assinaturas, relatórios, bancos, metas e anexos via <code>app-jsdom</code>, com piso por arquivo.</p><span class="tags"><span class="tag">M2</span><span class="tag">~1 semana</span></span></li>
+            <li><b>Bundle inicial a 450 KB</b><p>CSS de cada tela sob demanda no próprio chunk; tetos de JS, CSS e precache baixados junto.</p><span class="tags"><span class="tag">M3</span><span class="tag">~1 semana</span></span></li>
+            <li><b>Stripe 22 nas Edge Functions</b><p>Depois dos testes da etapa 1, que servem de rede; validado no modo de teste da Stripe.</p><span class="tags"><span class="tag">M4</span><span class="tag">~2 dias</span></span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="p-mark"><span class="dot">3</span><small>1 a 2 meses</small></div>
+        <div class="p-body">
+          <div class="p-title"><h3>Um backend só e manutenção contínua</h3><span class="proj">nota projetada <b>92</b></span></div>
+          <ul class="tasks">
+            <li><b>Remover o Express</b><p>Workers para <code>pg_cron</code> ou Edge agendada; Open Finance para Edge Function quando for liberado. Com isso saem Prisma 5, Express 4, zod 3, otplib 12 e o build Docker.</p><span class="tags"><span class="tag">M5 · M4</span><span class="tag">~2 semanas</span></span></li>
+            <li><b>Vite 8 e Jest 30</b><p>Um PR por major, com o E2E e a cobertura como rede.</p><span class="tags"><span class="tag">M4</span><span class="tag">~2 dias</span></span></li>
+            <li><b>Quebrar os maiores arquivos que restam</b><p><code>init-extrato.js</code> (1.615 linhas), <code>authController.js</code> (1.232) e <code>billing.js</code> (1.205), em módulos de até ~500.</p><span class="tags"><span class="tag">arquitetura</span><span class="tag">~1 semana</span></span></li>
+            <li><b>Contador de uso resistente a forjamento</b><p>Comparar com as instalações da Play e, se preciso, pôr teto diário por versão.</p><span class="tags"><span class="tag">B3</span><span class="tag">~1 dia</span></span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-ev">
+    <div class="sec-head">
+      <span class="eyebrow">Evidência</span>
+      <h2 id="h-ev">Verificações executadas nesta auditoria</h2>
+      <p>Rodadas em 30/set sobre o commit <span class="mono">6d751b4</span>, Node 22. Diferente de 27/set, desta vez E2E e pgTAP também rodaram aqui (Chromium do Playwright e Postgres 16 locais).</p>
+    </div>
+    <div class="ev-box">
+      <table class="ev">
+        <thead><tr><th>Comando</th><th>Resultado</th><th>Detalhe</th></tr></thead>
+        <tbody>
+          <tr><td>test:frontend:unit --coverage</td><td><span class="pill ok">Passou</span></td><td>242 suítes · 2.597 testes · 2 pulados · 70,9% de linhas, 70,4% de ramos</td></tr>
+          <tr><td>test:backend:unit --coverage</td><td><span class="pill ok">Passou</span></td><td>31 suítes · 529 testes · 74,8% de linhas</td></tr>
+          <tr><td>test:db:ci (pgTAP)</td><td><span class="pill ok">Passou</span></td><td>10 arquivos · 62 testes · banco limpo, todas as migrações</td></tr>
+          <tr><td>test:e2e (Playwright)</td><td><span class="pill ok">Passou</span></td><td>66 passando · 6 pulados (Open Finance e nuvem)</td></tr>
+          <tr><td>lint · lint:changed · check:globals</td><td><span class="pill ok">Passou</span></td><td>0 erros · 0 avisos · globais em dia</td></tr>
+          <tr><td>build · check:dist</td><td><span class="pill ok">Passou</span></td><td>0 órfãos · CSP sem origens de terceiros</td></tr>
+          <tr><td>check:bundle</td><td><span class="pill warn">Sem folga</span></td><td>JS inicial 474/478 KB · precache 1.202/1.205 KB · CSS 277/300 KB</td></tr>
+          <tr><td>npm audit</td><td><span class="pill ok">Limpo</span></td><td>0 vulnerabilidades (com e sem dev)</td></tr>
+          <tr><td>check:contrast · check:css · security:xss</td><td><span class="pill ok">Passou</span></td><td>31 pares AA · dívida de tokens estável · 139 arquivos sem sink inseguro</td></tr>
+          <tr><td>check:billing · check:version · check:telas · check:auditorias</td><td><span class="pill ok">Passou</span></td><td>trial 7d · versões alinhadas · telas e índice em dia</td></tr>
+          <tr><td>extrato-perf-gate · persona-g-10k · sync-conflict</td><td><span class="pill ok">Passou</span></td><td>recentes 5,4 ms/op (teto 12) · 10 mil lançamentos ok · resolvedor ok</td></tr>
+          <tr><td>varredura de segredos</td><td><span class="pill ok">Limpa</span></td><td>só a chave <code>anon</code> pública; chaves de teste fictícias</td></tr>
+          <tr><td>check:pre-beta</td><td><span class="pill info">Parcial</span></td><td>build ok; Supabase, assetlinks e privacidade sem rede para verificar</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="method">
+      <p><strong>Método.</strong> Mesma régua e mesmos pesos de 27/set. Cada achado anterior foi conferido no código atual, não no histórico. Rodei todos os gates do repositório, inclusive E2E e pgTAP. Fiz consultas diretas ao catálogo do Postgres para RLS, privilégios e <code>SECURITY DEFINER</code>. Li de novo as áreas que mudaram: ES Modules, Edge Functions, workflows e telemetria.</p>
+      <p><strong>Limites.</strong> Nada foi testado em aparelho físico nem contra o Supabase de produção. As URLs públicas não puderam ser acessadas daqui. As notas medem engenharia e prontidão, não aprovação na Play Store.</p>
+    </div>
+  </section>
+
+  <footer>FinançasPro · Reauditoria · 30 set 2026 · commit 6d751b4 · anterior: 27 set 2026, commit fdc9383, nota 79</footer>
+</div>
+
+<script>
+(function(){
+  // [frente, escopo, peso, antes, agora, motivo]
+  var rows = [
+    ['Segurança','API, Supabase, CSP, Android',15,84,88,'Segredos em tempo constante e CSP limpa; restam _prisma_migrations sem RLS e ação de terceiro por tag.'],
+    ['Integridade financeira','centavos, fatura, transferências',12,88,88,'Sem mudança de lógica; centavos e gates de 10 mil lançamentos seguem verdes.'],
+    ['Sincronização e offline','IDB, fila, merge, conflitos',10,80,81,'persist-queue agora medido (75%); sync-engine ainda em 46% dos ramos.'],
+    ['Qualidade dos testes','unidade, pgTAP, E2E, axe',10,82,86,'70,9% de linhas no frontend e piso de UI em 63%; Edge Functions de billing só com testes de texto.'],
+    ['Arquitetura e manutenção','módulos, acoplamento, tamanho',10,62,80,'ES Modules, no-undef, telas fora do index e uma fonte de verdade; Express ainda no repositório.'],
+    ['Privacidade e LGPD','dados locais, consentimento',8,80,88,'IndexedDB cifrado, telemetria sanitizada com opt-out e textos alinhados; contato ainda pessoal.'],
+    ['CI/CD e runtime','pipeline, Docker, deploy',6,82,88,'Node 22/24 e release por tag até a Play; nunca rodou de verdade e usa ações no Node 20.'],
+    ['Performance','bundle, carga, listas',6,76,83,'JS inicial 628 → 474 KB, index 110 → 44 KB; teto sem folga e CSS de 277 KB.'],
+    ['UX e produto','fluxos, microcopy, recursos',6,85,85,'Sem mudança de produto nesta rodada.'],
+    ['Acessibilidade','contraste, foco, leitores',5,86,86,'Axe no E2E e 31 pares AA, como antes.'],
+    ['Observabilidade','erros, métricas, funil',5,55,84,'Erros e uso chegam ao Supabase, painel por versão e alerta diário; ainda não ligados em produção.'],
+    ['Dependências','versões, vulnerabilidades',3,70,78,'npm audit zerado e ESLint 10; Stripe, Vite e Jest atrás.'],
+    ['Monetização e billing','Stripe, Play, cotas',3,86,86,'Resto de OCR removido; lógica de cobrança em produção sem teste de comportamento.'],
+    ['Repositório e docs','organização, atualização',1,65,85,'Auditorias indexadas, arquitetura reescrita, runbooks de release e saúde.']
+  ];
+  var tb = document.getElementById('ledger-body');
+  var fmt = function(n){ return n.toFixed(2).replace('.', ','); };
+  rows.forEach(function(r){
+    var nota = r[4], d = r[4] - r[3];
+    var cls = nota >= 85 ? 'b-ok' : (nota >= 70 ? 'b-warn' : 'b-bad');
+    var dc = d > 0 ? 'up' : (d < 0 ? 'down' : 'eq');
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td class="dim"><b></b><span></span></td>' +
+      '<td class="r mono">' + r[2] + '%</td>' +
+      '<td><div class="bar" role="img" aria-label="nota ' + nota + ' de 100"><i class="' + cls + '" style="width:' + nota + '%"></i></div></td>' +
+      '<td class="r before">' + r[3] + '</td>' +
+      '<td class="r score">' + nota + '</td>' +
+      '<td class="r"><span class="delta ' + dc + '">' + (d > 0 ? '+' + d : (d === 0 ? '=' : String(d))) + '</span></td>' +
+      '<td class="r score">' + fmt(r[2] * nota / 100) + '</td>';
+    tr.querySelector('b').textContent = r[0];
+    tr.querySelector('span').textContent = r[5];
+    tr.title = r[1];
+    tb.appendChild(tr);
+  });
+
+  var btns = document.querySelectorAll('.filters button');
+  var items = document.querySelectorAll('#findings .finding');
+  btns.forEach(function(b){
+    b.addEventListener('click', function(){
+      var f = b.getAttribute('data-f');
+      btns.forEach(function(x){ x.setAttribute('aria-pressed', String(x === b)); });
+      items.forEach(function(it){ it.hidden = !(f === 'todos' || it.getAttribute('data-sev') === f); });
+    });
+  });
+})();
+</script>
+</body>
+</html>
