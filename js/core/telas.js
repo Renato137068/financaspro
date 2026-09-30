@@ -12,6 +12,9 @@
  * O markup é estático e do próprio app (nada vem do usuário). Quem precisa
  * reagir à chegada de uma tela escuta o evento `fp:tela-carregada` no document.
  *
+ * O CSS usado só pelas telas de um chunk segue o mesmo caminho (TELAS.estilo):
+ * sai do CSS do primeiro acesso e chega com o chunk.
+ *
  * ES Module (ADR 0005), publicado por js/esm/ponte.js.
  */
 const TELAS = {
@@ -34,6 +37,22 @@ const TELAS = {
     TELAS._carregadas[nome] = true;
     if (typeof renderLucideIcons === 'function') renderLucideIcons(casca);
     document.dispatchEvent(new CustomEvent('fp:tela-carregada', { detail: { nome: nome } }));
+  },
+
+  /**
+   * CSS que só as telas de um chunk usam (lista em scripts/generate-telas.cjs).
+   * Entra num <style> no fim do <head> antes do markup, então a tela nunca
+   * aparece sem estilo; fica depois do CSS do boot na cascata — o gerador só
+   * aceita folhas que não disputam seletor com ele. Idempotente.
+   * @param {string} chunk  nome do chunk dono das folhas
+   * @param {string} css    CSS já compactado pelo gerador
+   */
+  estilo: function(chunk, css) {
+    if (document.querySelector('style[data-chunk="' + chunk + '"]')) return;
+    var el = document.createElement('style');
+    el.setAttribute('data-chunk', chunk);
+    el.textContent = css;
+    document.head.appendChild(el);
   },
 
   /** A tela já está no DOM? */

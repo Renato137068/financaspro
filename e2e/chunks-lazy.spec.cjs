@@ -35,6 +35,26 @@ test.describe('chunks lazy no build de produção', function() {
     await expect(page.locator('[data-action="sim-criar-meta"]')).toBeVisible();
   });
 
+  // O CSS da tela chega com o chunk (TELAS.estilo): fora do CSS do primeiro
+  // acesso, mas aplicado antes de a tela aparecer.
+  test('o CSS do Simulador chega com o chunk, não no primeiro acesso', async function({ page }) {
+    await prepareOfflinePage(page);
+    const regrasSim = function() {
+      return Array.from(document.styleSheets).some(function(s) {
+        try {
+          return Array.from(s.cssRules).some(function(r) { return /\.sim-tabs\b/.test(r.selectorText || ''); });
+        } catch (e) { return false; }
+      });
+    };
+    expect(await page.evaluate(regrasSim)).toBe(false);
+
+    await page.evaluate(function() { mudarAba('config-simulador'); });
+    await expect(page.locator('#simulador-panel [role="tab"]')).toHaveCount(4);
+    expect(await page.locator('style[data-chunk="simulador"]').count()).toBe(1);
+    expect(await page.evaluate(regrasSim)).toBe(true);
+    await expect(page.locator('.sim-tabs')).toHaveCSS('display', 'flex');
+  });
+
   test('Extrato carrega sob demanda e lista os lançamentos', async function({ page }) {
     await prepareOfflinePage(page);
     expect(await page.evaluate(function() { return typeof INIT_EXTRATO; })).toBe('undefined');

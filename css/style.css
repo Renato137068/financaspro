@@ -36,7 +36,6 @@
 @import './features/form-novo.css';
 @import './features/auth.css';
 @import './features/skeleton.css';
-@import './features/onboarding.css';
 
 /* ── Dark mode consolidado ────────────────────────────────── */
 @import './themes/dark-mode.css';
@@ -55,14 +54,15 @@
 /* ── Fase 4: Experiência ─────────────────────────── */
 @import './features/contas-pagar.css';
 @import './features/metas.css';
-@import './features/assinaturas.css';
-@import './features/relatorios.css';
-@import './features/patrimonio.css';
-@import './features/simulador.css';
 @import './features/anexos.css';
 @import './features/billing.css';
-@import './features/open-finance.css';
 @import './features/superficie.css';
+
+/* ── Chegam com o chunk, não no primeiro acesso ───────────────
+   onboarding, assinaturas, relatorios, patrimonio, simulador,
+   open-finance e billing-planos: usadas só pelas telas de um chunk
+   sob demanda. scripts/generate-telas.cjs (CSS_DOS_CHUNKS) as embute
+   em js/telas/<chunk>.js e TELAS.estilo as aplica ao carregar. */
 
 /* ── Acabamento visual (overrides finais) ────────────────── */
 

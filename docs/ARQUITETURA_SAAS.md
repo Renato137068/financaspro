@@ -136,6 +136,15 @@ mesmos dados sincronizam com o Supabase.
   Código do núcleo que escreve numa tela lazy escuta `fp:tela-carregada`:
   biometria e 2FA (Segurança), billing (plano, exportação, Extrato), Open
   Finance (Conexões), sessão e botão de sair (Perfil), atalho `/` (Extrato).
+- **CSS que chega com o chunk.** Folha usada só pelas telas de um chunk
+  (onboarding, gastos fixos, relatórios, patrimônio, simulador, Open Finance,
+  paywall/equipe em `billing-planos.css`) fica fora do `css/style.css`:
+  `CSS_DOS_CHUNKS` em `scripts/generate-telas.cjs` a embute, compactada, em
+  `js/telas/<chunk>.js`, e `TELAS.estilo` a aplica num `<style>` antes do
+  markup. Entra depois do CSS do boot, então cada seletor precisa de uma
+  classe da própria tela que o boot não estiliza (`tests/telas.test.js`).
+  Extrato, Orçamento e Perfil (`css/layouts/`) ainda vão no CSS do boot: o
+  resumo e o formulário usam parte das classes deles.
 - **Orçamento do bundle** (`npm run check:bundle`): o teto só desce,
   travado por `tests/bundle-budget-teto.test.js`. O código eager do app é a
   soma de `app.bundle.js` e da entrada ESM.

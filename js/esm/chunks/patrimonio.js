@@ -5,6 +5,8 @@
  * (arquivo próprio do Vite no build) e este arquivo publica os módulos em
  * window, como a ponte faz para o boot.
  */
+// CSS das telas deste chunk (TELAS.estilo), antes de qualquer módulo desenhar.
+import '../../telas/patrimonio.js';
 import { PATRIMONIO } from '../../patrimonio.js';
 import { INIT_PATRIMONIO } from '../../modules/init-patrimonio.js';
 

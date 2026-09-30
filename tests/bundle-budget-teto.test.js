@@ -16,13 +16,14 @@ const TETO_KB = {
   // 1300→1305 e 260→262 (27/09): supabase-js 2.117; ver check-bundle-budget.cjs.
   // 1305→1280→1240 e 112→85→48 (27/09): telas lazy fora do index.html (telas/).
   // 1232→1205 (29/09): DADOS vira ES Module; primeiros chunks ES Module.
-  precacheTotal: 1205,
+  // 1205→1180 e 300→253 (30/09): CSS das telas sob demanda chega com o chunk.
+  precacheTotal: 1180,
   // 514→512 (27/09): a soma passou a incluir a entrada ESM (ADR 0005).
   // 512→507→503 (27–28/09): quarta e quinta fatias ESM.
   // 503→478 (29/09): idem.
   appBundle: 478,
   vendorBundle: 262,
-  cssBundle: 300,
+  cssBundle: 253,
   indexHtml: 48,
 };
 

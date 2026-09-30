@@ -8,6 +8,8 @@
  *
  * O núcleo do BILLING (cotas, canUse) NÃO vem aqui: é do boot (RISK-01).
  */
+// CSS das telas deste chunk (TELAS.estilo), antes de qualquer módulo desenhar.
+import '../../telas/conta.js';
 import { instalarPonteBillingNativa } from '../../fp-native-billing-bridge.js';
 import { PLAY_BILLING } from '../../play-billing.js';
 import { INIT_BILLING } from '../../modules/init-billing.js';

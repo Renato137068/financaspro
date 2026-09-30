@@ -5,6 +5,8 @@
  * (arquivo próprio do Vite no build) e este arquivo os publica em window,
  * como a ponte faz para o boot.
  */
+// CSS das telas deste chunk (TELAS.estilo), antes de qualquer módulo desenhar.
+import '../../telas/relatorios.js';
 import { RELATORIOS } from '../../relatorios.js';
 import { INIT_RELATORIOS } from '../../modules/init-relatorios.js';
 
