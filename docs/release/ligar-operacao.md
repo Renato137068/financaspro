@@ -103,3 +103,36 @@ política de privacidade publicados. Daqui (rede do agente) esses itens
 ficam como "não verificado", nunca como aprovados.
 
 **Conferir:** nenhum item "não verificado" nem "falhou" na saída.
+
+## 9. Stripe no modo de teste
+
+As Edge Functions usam o `stripe@22.6.2` com a API `2026-08-26.dahlia`
+(`supabase/functions/_shared/stripe.ts`). Os testes cobrem a biblioteca de
+verdade com a API simulada (`supabase/functions/_testes/stripe-sdk.test.ts`)
+e os dois formatos de webhook (o antigo, 2024-06-20, e o novo), mas só a API
+do Stripe confere preço, cliente e sessão de verdade. Antes de ligar o
+modo live:
+
+1. No painel do Stripe em **modo de teste**, crie o endpoint de webhook
+   apontando para `https://<PROJECT_REF>.supabase.co/functions/v1/stripe-webhook`,
+   com os cinco eventos de `supabase/functions/README.md` e a versão da API
+   `2026-08-26.dahlia` (o código lê as duas, mas o endpoint novo deve nascer
+   na versão da biblioteca).
+2. Grave `STRIPE_SECRET_KEY` (`sk_test_...`) e `STRIPE_WEBHOOK_SECRET` do
+   endpoint de teste nos segredos das Edge Functions, e os `price_...` de
+   teste em `Plan.stripePriceIdMonthly`/`stripePriceIdYearly`.
+3. No app web, logado como dono da org, assine o Pro com o cartão
+   `4242 4242 4242 4242`.
+4. No Stripe, cancele pelo portal (botão "Gerenciar" do app) e depois
+   cancele de vez pelo painel.
+
+**Conferir:**
+- Passo 3: a linha da org em `Subscription` fica com `stripeSubId` `sub_...`,
+  `status` `TRIALING` e `currentPeriodStart`/`currentPeriodEnd` preenchidos
+  (é o campo que mudou de lugar na API nova).
+- Passo 4: `cancelAtPeriodEnd` vira `true` e, no cancelamento de vez,
+  `status` vira `CANCELED` e o e-mail de cancelamento chega ao cliente (com
+  `RESEND_API_KEY` configurada).
+- *Stripe → Developers → Webhooks → endpoint*: todas as entregas com 200.
+- Opcional, com um *Test clock* passando do fim do teste grátis: a fatura
+  paga cria a linha em `Invoice` e a assinatura vai para `ACTIVE`.

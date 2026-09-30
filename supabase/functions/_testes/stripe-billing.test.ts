@@ -273,16 +273,120 @@ Deno.test("pagamento falho: PAST_DUE, avisa o cliente e não cria fatura", async
   });
 });
 
-Deno.test("assinatura apagada no Stripe: CANCELED e o e-mail diz até quando o acesso vale", async () => {
+Deno.test("assinatura apagada no Stripe: CANCELED e o e-mail (do cliente) diz até quando o acesso vale", async () => {
   await comAmbiente({ ...VARS, RESEND_API_KEY: "re_teste" }, async () => {
     const rede = comResend();
     const sb = banco([{ ...SUB, status: "ACTIVE" }]);
-    await processStripeEvent(sb, cliente(), ev("customer.subscription.deleted", {
-      id: "sub_1", customer_email: "ana@exemplo.com", current_period_end: 1761000000,
+    const st = cliente();
+    stripe.respostas["customers.retrieve"] = (id: string) => ({ id, email: "ana@exemplo.com" });
+    // A assinatura não tem e-mail: ele vem do cliente.
+    await processStripeEvent(sb, st, ev("customer.subscription.deleted", {
+      id: "sub_1", customer: "cus_1", current_period_end: 1761000000,
     }));
     assert.equal(sb.linhas("Subscription")[0].status, "CANCELED");
-    const texto = JSON.parse(rede.pedidosPara(/resend/)[0].corpo).text;
-    assert.match(texto, /acesso ao plano até/);
+    assert.deepEqual(chamadas("customers.retrieve")[0].args, ["cus_1"]);
+    const email = JSON.parse(rede.pedidosPara(/resend/)[0].corpo);
+    assert.deepEqual(email.to, ["ana@exemplo.com"]);
+    assert.match(email.text, /acesso ao plano até/);
+  });
+});
+
+Deno.test("assinatura apagada: cliente sem e-mail, apagado ou fora do ar não derruba o webhook", async () => {
+  await comAmbiente({ ...VARS, RESEND_API_KEY: "re_teste" }, async () => {
+    const rede = comResend();
+    const respostas = [
+      () => ({ id: "cus_1", email: null }),
+      () => ({ id: "cus_1", deleted: true }),
+      () => { throw new Error("Stripe fora do ar"); },
+    ];
+    for (const resposta of respostas) {
+      const sb = banco([{ ...SUB, status: "ACTIVE" }]);
+      const st = cliente();
+      stripe.respostas["customers.retrieve"] = resposta;
+      await processStripeEvent(sb, st, ev("customer.subscription.deleted", { id: "sub_1", customer: "cus_1" }));
+      assert.equal(sb.linhas("Subscription")[0].status, "CANCELED");
+    }
+    assert.equal(rede.pedidosPara(/resend/).length, 0);
+  });
+});
+
+// ─── Formato da API a partir da 2025-03-31 (basil), o do stripe@22 ──────────
+// A fatura aponta a assinatura em parent.subscription_details; o período mora
+// no item da assinatura. O corpo do webhook vem na versão do endpoint do
+// painel, então o formato antigo (acima) continua valendo.
+
+const FATURA_NOVA = {
+  id: "in_n1", object: "invoice", amount_paid: 1990, customer_email: "ana@exemplo.com",
+  status_transitions: { paid_at: 1759000000 }, hosted_invoice_url: "https://h", invoice_pdf: "https://p",
+  parent: { type: "subscription_details", quote_details: null, subscription_details: { subscription: "sub_1", metadata: {} } },
+};
+const ITEM = (inicio: number, fim: number) => ({
+  object: "list", data: [{ id: "si_1", object: "subscription_item", current_period_start: inicio, current_period_end: fim }],
+});
+
+Deno.test("formato novo: fatura paga acha a assinatura pelo parent e grava a fatura", async () => {
+  await comAmbiente(VARS, async () => {
+    const sb = banco([{ ...SUB }]);
+    await processStripeEvent(sb, cliente(), ev("invoice.payment_succeeded", FATURA_NOVA));
+    assert.equal(sb.linhas("Invoice")[0].stripeInvoiceId, "in_n1");
+    assert.equal(sb.linhas("Invoice")[0].subscriptionId, "s1");
+    assert.equal(sb.linhas("Subscription")[0].status, "ACTIVE");
+  });
+});
+
+Deno.test("formato novo: parent com a assinatura expandida e pagamento falho", async () => {
+  await comAmbiente(VARS, async () => {
+    const sb = banco([{ ...SUB, status: "ACTIVE" }]);
+    const fatura = { ...FATURA_NOVA, parent: { type: "subscription_details", subscription_details: { subscription: { id: "sub_1", object: "subscription" } } } };
+    await processStripeEvent(sb, cliente(), ev("invoice.payment_failed", fatura));
+    assert.equal(sb.linhas("Subscription")[0].status, "PAST_DUE");
+  });
+});
+
+Deno.test("formato novo: fatura avulsa (sem assinatura) é ignorada", async () => {
+  await comAmbiente(VARS, async () => {
+    const sb = banco([{ ...SUB }]);
+    await processStripeEvent(sb, cliente(), ev("invoice.payment_succeeded", { ...FATURA_NOVA, parent: null }));
+    assert.equal(sb.escritas.length, 0);
+  });
+});
+
+Deno.test("formato novo: assinatura atualizada lê o período do item", async () => {
+  await comAmbiente(VARS, async () => {
+    const sb = banco([{ ...SUB }]);
+    await processStripeEvent(sb, cliente(), ev("customer.subscription.updated", {
+      id: "sub_1", object: "subscription", status: "active", cancel_at_period_end: false, items: ITEM(1759000000, 1761600000),
+    }));
+    const sub = sb.linhas("Subscription")[0];
+    assert.equal(sub.status, "ACTIVE");
+    assert.equal(sub.currentPeriodStart, new Date(1759000000 * 1000).toISOString());
+    assert.equal(sub.currentPeriodEnd, new Date(1761600000 * 1000).toISOString());
+  });
+});
+
+Deno.test("assinatura atualizada sem período nenhum: grava o status e não apaga o período (antes: exceção e 500 eterno)", async () => {
+  await comAmbiente(VARS, async () => {
+    const sb = banco([{ ...SUB, currentPeriodEnd: "2026-10-01T00:00:00.000Z" }]);
+    await processStripeEvent(sb, cliente(), ev("customer.subscription.updated", { id: "sub_1", status: "canceled", cancel_at_period_end: false }));
+    const sub = sb.linhas("Subscription")[0];
+    assert.equal(sub.status, "CANCELED");
+    assert.equal(sub.currentPeriodEnd, "2026-10-01T00:00:00.000Z");
+  });
+});
+
+Deno.test("formato novo: checkout concluído grava o período do item", async () => {
+  await comAmbiente(VARS, async () => {
+    const st = cliente();
+    stripe.respostas["subscriptions.retrieve"] = () => ({
+      id: "sub_9", object: "subscription", status: "trialing", trial_end: 1759604800, cancel_at_period_end: false,
+      metadata: {}, items: ITEM(1759000000, 1759604800),
+    });
+    const sb = banco();
+    await processStripeEvent(sb, st, ev("checkout.session.completed", SESSAO));
+    const sub = sb.linhas("Subscription")[0];
+    assert.equal(sub.currentPeriodStart, new Date(1759000000 * 1000).toISOString());
+    assert.equal(sub.currentPeriodEnd, new Date(1759604800 * 1000).toISOString());
+    assert.equal(sub.trialEndsAt, new Date(1759604800 * 1000).toISOString());
   });
 });
 

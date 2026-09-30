@@ -1,4 +1,6 @@
-// Substitui https://esm.sh/stripe@16.12.0?target=deno nos testes (deno.json).
+// Substitui npm:stripe@22.6.2 nos testes de comportamento (deno.json). A
+// biblioteca de verdade, na mesma versão, roda em stripe-sdk.test.ts (import
+// "stripe-real"), com o fetch falso no lugar da API.
 // Registra cada chamada à API em `chamadas` e responde com o que o teste
 // configurou em `respostas`. A verificação de assinatura do webhook é da
 // biblioteca do Stripe; aqui a assinatura "valida" passa e qualquer outra
@@ -29,6 +31,7 @@ function registrar(metodo: string, padrao: (...args: any[]) => unknown) {
 export default class Stripe {
   customers = {
     create: registrar("customers.create", () => ({ id: "cus_novo" })),
+    retrieve: registrar("customers.retrieve", (id: string) => ({ id, email: null })),
   };
   checkout = {
     sessions: {

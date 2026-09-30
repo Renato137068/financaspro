@@ -61,6 +61,13 @@ eventos: `invoice.payment_succeeded`, `invoice.payment_failed`,
 `customer.subscription.updated`, `customer.subscription.deleted`,
 `checkout.session.completed`.
 
+Biblioteca: `npm:stripe@22.6.2`, API `2026-08-26.dahlia` (antes: `stripe@16`
+pelo esm.sh, API `2024-06-20`). Nessa API a fatura aponta a assinatura em
+`parent.subscription_details` e o período atual mora no item da assinatura;
+`stripe-billing.ts` lê os dois formatos, porque o corpo do webhook vem na
+versão configurada no endpoint. Conferência no modo de teste do Stripe:
+`docs/release/ligar-operacao.md`, passo 9.
+
 ## Muda no runbook do Play Console
 
 A URL de push do Pub/Sub (em `docs/play-store-billing-runbook.md`, Fase 3) passa
@@ -103,10 +110,12 @@ com dublês trocados pelo import map de `_testes/deno.json`:
 _testes/dubles/banco.ts       # banco em memória com a API encadeada do supabase-js
 _testes/dubles/supabase-js.ts # adminClient() devolve esse banco
 _testes/dubles/stripe.ts      # Stripe falso que registra cada chamada
+_testes/stripe-sdk.test.ts    # a biblioteca do Stripe de verdade ("stripe-real"), com a API simulada por fetch falso
 _testes/dubles/rede.ts        # fetch falso: OAuth e Play API do Google, tokeninfo, Resend
 ```
 
-Nenhum teste sai para a rede (uma URL sem rota falha o teste). O JWT da conta
+Nenhum teste sai para a rede (uma URL sem rota falha o teste); a única
+descarga é a do pacote `npm:stripe` pelo próprio Deno, antes de os testes rodarem. O JWT da conta
 de serviço é assinado de verdade, com uma chave RSA gerada no teste. Os casos
 vieram de `tests/backend/*billing*.test.js` (o Express congelado), mais os que
 só existem aqui: sandbox só com opt-in, pacote vindo da env, chave legada

@@ -7,7 +7,8 @@
  * cobriam a cópia congelada no Express. Os testes em
  * supabase/functions/_testes/ executam os módulos de verdade: banco em
  * memória, Stripe falso e Google por fetch falso, trocados pelo import map de
- * _testes/deno.json. Nenhum teste sai para a rede.
+ * _testes/deno.json. Nenhum teste sai para a rede (o Deno só baixa o pacote
+ * npm:stripe, que stripe-sdk.test.ts usa de verdade, antes de rodar).
  *
  *   npm run test:edge
  *

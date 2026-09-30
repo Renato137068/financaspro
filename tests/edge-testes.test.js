@@ -30,13 +30,33 @@ describe('testes das Edge Functions (Deno)', () => {
       .filter((f) => /\.ts$/.test(f) && !String(f).startsWith('_testes'))
       .forEach((f) => {
         const src = ler(path.join('supabase/functions', String(f)));
-        for (const m of src.matchAll(/from\s+"(https:\/\/esm\.sh\/[^"]+)"/g)) remotos.add(m[1]);
+        for (const m of src.matchAll(/from\s+"((?:https:\/\/esm\.sh\/|npm:)[^"]+)"/g)) remotos.add(m[1]);
       });
     expect(remotos.size).toBeGreaterThan(0);
     remotos.forEach((url) => {
       expect(imports[url]).toMatch(/^\.\/dubles\//);
       expect(fs.existsSync(path.join(ROOT, DIR, imports[url]))).toBe(true);
     });
+  });
+
+  // Achado M4 da reauditoria de 30/09: stripe@16 (API 2024-06-20) → stripe@22.
+  // Os testes de comportamento usam o dublê; stripe-sdk.test.ts usa a
+  // biblioteca de verdade pelo apelido "stripe-real" — na mesma versão que
+  // produção importa, senão testaria uma biblioteca e publicaria outra.
+  test('o Stripe de produção é um só (npm:, versão exata) e o apelido "stripe-real" aponta para ele', () => {
+    const imports = JSON.parse(ler(path.join(DIR, 'deno.json'))).imports;
+    const usados = new Set();
+    fs.readdirSync(path.join(ROOT, 'supabase/functions'), { recursive: true })
+      .filter((f) => /\.ts$/.test(f) && !String(f).startsWith('_testes'))
+      .forEach((f) => {
+        const src = ler(path.join('supabase/functions', String(f)));
+        for (const m of src.matchAll(/from\s+"([^"]*stripe@[^"]+)"/g)) usados.add(m[1]);
+      });
+    expect([...usados]).toEqual([expect.stringMatching(/^npm:stripe@\d+\.\d+\.\d+$/)]);
+    const [spec] = usados;
+    expect(imports['stripe-real']).toBe(spec);
+    expect(fonteTestes).toContain('from "stripe-real"');
+    expect(ler('supabase/functions/_shared/stripe.ts')).toMatch(/apiVersion: STRIPE_API_VERSION/);
   });
 
   test('_testes não é publicado como função (sem index.ts, pasta com _)', () => {

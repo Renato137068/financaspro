@@ -3,7 +3,16 @@
 // Cliente Stripe para Deno + utilidades. Usa o HTTP client baseado em fetch e o
 // SubtleCryptoProvider (verificação de webhook via Web Crypto — o constructEvent
 // síncrono depende do crypto do Node e não roda no Deno).
-import Stripe from "https://esm.sh/stripe@16.12.0?target=deno";
+//
+// Biblioteca pelo npm (o Edge Runtime do Supabase resolve `npm:`), não pelo
+// esm.sh: é o mesmo pacote que o `npm install` baixa, com versão exata, e os
+// testes (_testes/stripe-sdk.test.ts) exercitam essa mesma versão.
+import Stripe from "npm:stripe@22.6.2";
+
+// A versão da API que o stripe@22.6.2 fixa. Mudou o formato de fatura e
+// assinatura em relação à 2024-06-20 (ver stripe-billing.ts); o webhook do
+// painel pode estar em outra versão, e o código lê os dois formatos.
+export const STRIPE_API_VERSION = "2026-08-26.dahlia";
 
 export function stripeClient(): Stripe {
   const key = Deno.env.get("STRIPE_SECRET_KEY");
@@ -13,7 +22,7 @@ export function stripeClient(): Stripe {
     throw e;
   }
   return new Stripe(key, {
-    apiVersion: "2024-06-20",
+    apiVersion: STRIPE_API_VERSION,
     httpClient: Stripe.createFetchHttpClient(),
   });
 }
