@@ -36,6 +36,7 @@
     "build": "node scripts/inject-supabase-env.cjs && node scripts/setup-fonts.cjs && vite build --config vite.config.cjs && node scripts/copy-static.cjs && node scripts/harden-csp.cjs && node scripts/check-dist-orphans.cjs",
     "check:bundle": "node scripts/check-bundle-budget.cjs",
     "check:version": "node scripts/check-version-alignment.cjs",
+    "versao:subir": "node scripts/subir-versao.cjs",
     "check:pre-beta": "node scripts/pre-beta-check.cjs",
     "check:pre-beta:static": "node scripts/pre-beta-check.cjs",
     "check:billing": "node scripts/check-billing-wiring.cjs",

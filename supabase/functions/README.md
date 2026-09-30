@@ -41,31 +41,18 @@ functions/
 
 ## Deploy
 
+Pelo workflow de release (tag `vX.Y.Z`, `docs/release/entrega-continua.md`) ou à
+mão, com o mesmo script. Ele publica toda pasta daqui que tem `index.ts` (as que
+começam com `_` são código compartilhado) e passa `--no-verify-jwt` só às que
+recebem chamada sem JWT de usuário — `play-rtdn` e `stripe-webhook`
+(server-to-server) e `obs-ingest` (`navigator.sendBeacon` não envia header de
+auth). Cada uma dessas diz isso no cabeçalho do `index.ts`, e o teste
+`tests/release-cd.test.js` confere que a lista do script bate.
+
 ```bash
-# Autenticadas (JWT do usuário) — mantêm verify_jwt padrão
-supabase functions deploy play-verify
-supabase functions deploy stripe-checkout
-supabase functions deploy stripe-portal
-supabase functions deploy stripe-cancel
-supabase functions deploy stripe-resume
-supabase functions deploy org-invite
-
-# Server-to-server (Pub/Sub e Stripe) — SEM JWT de usuário
-supabase functions deploy play-rtdn      --no-verify-jwt
-supabase functions deploy stripe-webhook --no-verify-jwt
-
-# Relatórios de erro do app — navigator.sendBeacon não envia header de auth.
-# Exige a migration 20260927120000_client_error_log.sql aplicada antes.
-supabase functions deploy obs-ingest     --no-verify-jwt
-
-supabase secrets set GOOGLE_PLAY_SERVICE_ACCOUNT_JSON="$(cat conta-servico.json)"
-supabase secrets set PLAY_PACKAGE_NAME=com.financaspro.mobile
-supabase secrets set PLAY_RTDN_SECRET=<seu-segredo>
-supabase secrets set STRIPE_SECRET_KEY=sk_live_...
-supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_...
-supabase secrets set APP_URL=https://seu-dominio
-supabase secrets set RESEND_API_KEY=re_...
-supabase secrets set EMAIL_FROM="FinançasPro <noreply@seu-dominio>"
+node scripts/deploy-supabase.cjs --dry-run   # confere os comandos
+node scripts/deploy-supabase.cjs             # db push + todas as funções
+node scripts/deploy-supabase.cjs --so-funcoes
 ```
 
 No dashboard do Stripe, aponte o endpoint de webhook para

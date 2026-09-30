@@ -65,13 +65,11 @@ Legenda: 🧑 = você (precisa da conta) · 🤖 = eu faço (código, quando o p
 
 ## Fase 3 — Edge Functions (billing)
 
-9. 🧑 **Deploy** (Play + Stripe):
+9. 🧑 **Deploy** (todas as funções; migrations junto): pelo workflow de release
+   (tag `vX.Y.Z`, `docs/release/entrega-continua.md`) ou à mão:
    ```bash
-   supabase functions deploy play-verify
-   supabase functions deploy stripe-checkout
-   supabase functions deploy play-rtdn      --no-verify-jwt
-   supabase functions deploy stripe-webhook --no-verify-jwt
-   supabase functions deploy obs-ingest     --no-verify-jwt  # relatórios de erro
+   node scripts/deploy-supabase.cjs --dry-run   # confere
+   node scripts/deploy-supabase.cjs
    ```
 
 10. 🧑 **Secrets** (lista completa em `supabase/functions/README.md`):
