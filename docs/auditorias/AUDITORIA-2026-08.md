@@ -1,10 +1,10 @@
 # Auditoria FinançasPro v11.0 — Agosto/2026
 
 > **Status:** Fases 1, 2 e 3 **concluídas**.
-> — [`FASE-1-INTEGRIDADE-FINANCEIRA.md`](./FASE-1-INTEGRIDADE-FINANCEIRA.md): problemas **1 a 4** e **13**.
-> — [`FASE-2-RECONEXAO.md`](./FASE-2-RECONEXAO.md): problemas **6, 7, 18** e a duplicação de ações descoberta depois.
-> — [`FASE-3-UX-DASHBOARD.md`](./FASE-3-UX-DASHBOARD.md): problemas **9, 10, 17, 19** e um crash em `parser.js` com bancos cadastrados.
-> — [`FASE-4-INTELIGENCIA.md`](./FASE-4-INTELIGENCIA.md): problema **20**, mais dois erros de cálculo que a auditoria não tinha visto — a projeção de fim de mês contava parcelas duas vezes (82% de erro) e o alerta de gasto incomum exibia z-score como se fosse múltiplo da média.
+> — [`FASE-1-INTEGRIDADE-FINANCEIRA.md`](../FASE-1-INTEGRIDADE-FINANCEIRA.md): problemas **1 a 4** e **13**.
+> — [`FASE-2-RECONEXAO.md`](../FASE-2-RECONEXAO.md): problemas **6, 7, 18** e a duplicação de ações descoberta depois.
+> — [`FASE-3-UX-DASHBOARD.md`](../FASE-3-UX-DASHBOARD.md): problemas **9, 10, 17, 19** e um crash em `parser.js` com bancos cadastrados.
+> — [`FASE-4-INTELIGENCIA.md`](../FASE-4-INTELIGENCIA.md): problema **20**, mais dois erros de cálculo que a auditoria não tinha visto — a projeção de fim de mês contava parcelas duas vezes (82% de erro) e o alerta de gasto incomum exibia z-score como se fosse múltiplo da média.
 >
 > **Duas correções ao próprio relatório:**
 >

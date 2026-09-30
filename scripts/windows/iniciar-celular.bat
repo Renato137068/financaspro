@@ -7,9 +7,10 @@ REM  Sobe o app e abre numa janela no tamanho de um telefone
 REM  (390×844), com user-agent Android — como se fosse no celular.
 REM
 REM  Opções:
-REM    iniciar-celular.bat --dist   (build de produção)
+REM    scripts\windows\iniciar-celular.bat --dist   (build de produção)
 REM ============================================================
-cd /d "%~dp0"
+REM Os atalhos moram em scripts\windows; tudo roda a partir da raiz do repo.
+cd /d "%~dp0..\.."
 
 where node >nul 2>nul
 if errorlevel 1 (

@@ -1,8 +1,9 @@
 @echo off
 REM Abre a auditoria massiva no navegador via servidor local (renderiza CSS/JS corretamente).
-cd /d "%~dp0"
+REM Os atalhos moram em scripts\windows; tudo roda a partir da raiz do repo.
+cd /d "%~dp0..\.."
 
-set "URL=http://localhost:3000/docs/auditoria-usuarios-virtuais-2026-08-27.html"
+set "URL=http://localhost:3000/docs/auditorias/auditoria-usuarios-virtuais-2026-08-27.html"
 set "PORTA=3000"
 
 REM Verifica se ja ha servidor na porta 3000

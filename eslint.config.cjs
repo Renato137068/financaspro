@@ -79,6 +79,16 @@ module.exports = [
     rules: { 'no-console': 'off' },
   },
   {
+    // Scripts que sobem os módulos do app por scripts/lib/load-core.cjs (ou
+    // tests/load-sources.js): o loader põe DADOS, TRANSACOES… no global, e o
+    // script os lê pelo nome, como os testes.
+    files: [
+      'scripts/auditoria-*.cjs', 'scripts/extrato-perf-gate.cjs', 'scripts/persona-g-10k.cjs',
+      'scripts/perf-transacoes-bench.cjs', 'scripts/convert-copy-tests.cjs',
+    ],
+    languageOptions: { globals: globaisFrontend },
+  },
+  {
     // App vanilla multi-script: cada `var FOO = …` no topo de um arquivo é
     // global e usado pelos outros sem import. no-unused-vars segue desligado:
     // um global declarado aqui é usado em outro arquivo, e a regra não

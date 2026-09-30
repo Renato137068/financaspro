@@ -8,10 +8,11 @@ REM
 REM  Nao precisa de banco de dados nem de "npm install": os dados
 REM  ficam no localStorage do proprio navegador.
 REM
-REM  Para testar a build de producao: iniciar.bat --dist
+REM  Para testar a build de producao: scripts\windows\iniciar.bat --dist
 REM  (rode "npm run build" antes)
 REM ============================================================
-cd /d "%~dp0"
+REM Os atalhos moram em scripts\windows; tudo roda a partir da raiz do repo.
+cd /d "%~dp0..\.."
 
 where node >nul 2>nul
 if errorlevel 1 (

@@ -24,6 +24,8 @@
     "globals:update": "node scripts/generate-frontend-globals.cjs",
     "check:telas": "node scripts/generate-telas.cjs --check",
     "telas:gerar": "node scripts/generate-telas.cjs",
+    "auditorias:indice": "node scripts/gerar-indice-auditorias.cjs",
+    "check:auditorias": "node scripts/gerar-indice-auditorias.cjs --check",
     "security:xss": "node scripts/check-xss-sinks.cjs",
     "docs:openapi": "node scripts/generate-openapi.mjs",
     "test:sync": "node scripts/sync-conflict-test.mjs",

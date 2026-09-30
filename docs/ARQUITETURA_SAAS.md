@@ -47,7 +47,7 @@ mesmos dados sincronizam com o Supabase.
   `INSIGHT_ACOES`, `DADOS_EXPRESS`, `FORM_SUGESTOES` e a UI sem estado
   (`SETUP_GUIDE`, `SHORTCUTS`, `SKELETON`, `MICRO`, `SYNC_INDICATOR`) e os
   componentes de `js/components/` (cada um exporta o seu objeto e
-  `components/ui.js` monta o `UI`), além de `ALERTAS`, `INSIGHTS` e
+  `js/components/ui.js` monta o `UI`), além de `ALERTAS`, `INSIGHTS` e
   `CONFIG_USER`, e a renderização do painel (`RENDER_CORE`,
   `RENDERER_BASE`, `RENDER_DASHBOARD`, `RENDER`; o renderer herda do
   `RENDERER_BASE` por `Object.create` e chama os métodos pelo nome, não por

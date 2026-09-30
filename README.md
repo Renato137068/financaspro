@@ -59,6 +59,8 @@ Com Docker:
 npm run docker:up
 ```
 
+No Windows, os atalhos de duplo clique (servidor local, modo celular, índice das auditorias) ficam em `scripts/windows/`.
+
 ## Qualidade
 
 ```bash
@@ -86,7 +88,8 @@ O CI roda lint, testes e build em Node 22 e 24.
 | `android/` | Projeto Capacitor (gerado após `cap add android`) |
 
 Arquitetura: [`docs/ARQUITETURA_SAAS.md`](docs/ARQUITETURA_SAAS.md) · Decisões: [`docs/adr/`](docs/adr/)  
-Publicação Android: [`docs/PLAY_STORE.md`](docs/PLAY_STORE.md)
+Publicação Android: [`docs/PLAY_STORE.md`](docs/PLAY_STORE.md)  
+Auditorias (com índice): [`docs/auditorias/`](docs/auditorias/)
 
 ## PWA e Android
 

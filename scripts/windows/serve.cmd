@@ -1,6 +1,7 @@
 @echo off
 setlocal
-cd /d "%~dp0"
+REM Os atalhos moram em scripts\windows; tudo roda a partir da raiz do repo.
+cd /d "%~dp0..\.."
 set "PATH=C:\Program Files\nodejs;%PATH%"
 
 echo Iniciando FinançasPro...

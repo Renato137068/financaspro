@@ -174,6 +174,6 @@ extrato.
 ## O que este documento não cobre
 
 Hierarquia visual, densidade de tela e fluxo de navegação não se avaliam lendo
-CSS. A auditoria em `docs/auditoria-ui-ux-2026.html` declara essa limitação e
-mantém o teste com cinco usuários como item obrigatório — é o que alcança o que
+CSS. As auditorias de UI/UX (`docs/auditorias/`) declaram essa limitação e
+mantêm o teste com cinco usuários como item obrigatório — é o que alcança o que
 a análise estática não alcança.
