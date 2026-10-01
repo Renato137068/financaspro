@@ -1,10 +1,11 @@
 <!-- GERADO por scripts/gerar-indice-auditorias.cjs — não edite à mão. -->
 # Auditorias do FinançasPro
 
-79 relatórios, do mais recente ao mais antigo. As execuções automáticas (JSON e Markdown dos scripts `scripts/auditoria-*.cjs`) ficam em [`execucoes/`](execucoes/).
+80 relatórios, do mais recente ao mais antigo. As execuções automáticas (JSON e Markdown dos scripts `scripts/auditoria-*.cjs`) ficam em [`execucoes/`](execucoes/).
 
 | Data | Relatório |
 |---|---|
+| 01/10/2026 | [Reauditoria FinançasPro 01/out](auditoria-completa-2026-10-01.html) |
 | 30/09/2026 | [Reauditoria FinançasPro 11.3.18](auditoria-completa-2026-09-30.html) |
 | 27/09/2026 | [Balanço FinançasPro 11.3.18](auditoria-completa-2026-09-27.html) |
 | 20/09/2026 | [Auditoria — Alerta de projeção](auditoria-alerta-projecao-2026-09-20.html) |
