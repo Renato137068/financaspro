@@ -5,7 +5,12 @@
  * mostrar primeiro o que precisa de ação (vencida → atrasada → resto →
  * concluída), coerente com o insight que aponta a meta mais crítica.
  */
-const INIT_METAS = require('../js/modules/init-metas.js');
+const { carregarScript, viaGlobal } = require('./helpers/carregar-script.cjs');
+// ES Module: METAS repassa ao global que cada bloco monta; a tela fica sem o resto.
+const INIT_METAS = carregarScript('js/modules/init-metas.js', Object.assign({
+  UTILS: undefined, compartilharTextoUI: undefined, PLANO_METAS: undefined,
+  RENDER_DASHBOARD: undefined, INIT_MODALS: undefined,
+}, viaGlobal('METAS')));
 
 describe('INIT_METAS._ordemUrgencia', function() {
   test('rankeia por situação (menor = mais urgente)', function() {

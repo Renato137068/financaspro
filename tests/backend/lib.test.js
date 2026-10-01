@@ -12,6 +12,7 @@ import { hasPermission, requirePermission, requireRole } from '../../backend/lib
 import { sanitizeUserConfig } from '../../backend/lib/config-sanitize.js';
 import { encryptField, decryptField } from '../../backend/lib/field-crypto.js';
 import { asyncHandler } from '../../backend/lib/async-handler.js';
+import { safeEqual } from '../../backend/lib/safe-equal.js';
 import { mockRes } from './helpers/mocks.js';
 
 // ─── jwt ─────────────────────────────────────────────────────────────────────
@@ -260,5 +261,25 @@ describe('asyncHandler', () => {
     asyncHandler(spy)(req, res, next);
 
     expect(spy).toHaveBeenCalledWith(req, res, next);
+  });
+});
+
+// ─── safe-equal ──────────────────────────────────────────────────────────────
+describe('safeEqual — comparação de segredo em tempo constante', () => {
+  test('aceita valor idêntico', () => {
+    expect(safeEqual('s3cr3t', 's3cr3t')).toBe(true);
+  });
+
+  test('recusa valor diferente, inclusive de outro tamanho', () => {
+    expect(safeEqual('s3cr3x', 's3cr3t')).toBe(false);
+    expect(safeEqual('s3cr3', 's3cr3t')).toBe(false);
+    expect(safeEqual('s3cr3t-e-mais', 's3cr3t')).toBe(false);
+  });
+
+  test('recusa ausente, não-string ou segredo vazio', () => {
+    expect(safeEqual(undefined, 's3cr3t')).toBe(false);
+    expect(safeEqual(['s3cr3t'], 's3cr3t')).toBe(false);
+    expect(safeEqual('', '')).toBe(false);
+    expect(safeEqual('x', null)).toBe(false);
   });
 });

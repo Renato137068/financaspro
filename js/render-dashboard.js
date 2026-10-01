@@ -1,9 +1,24 @@
 /**
  * render-dashboard.js - Renderer da seção Dashboard/Resumo
  * Modularizado — usa componentes UI.* de js/components/
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js. Os métodos usam `DashboardRenderer` pelo nome, não
+ * `this`, como os demais módulos (tests/esm-fundacao.test.js).
  */
 
-(function() {
+import { RENDER_CORE, RENDERER_BASE } from './render-core.js';
+import { CONFIG } from './core/config.js';
+import { UTILS } from './core/utils.js';
+import { TRANSACOES } from './transacoes.js';
+import { ORCAMENTO } from './orcamento.js';
+import { SKELETON } from './skeleton.js';
+import { UI } from './components/ui.js';
+import { BILLING } from './billing.js';
+import { APP_STORE } from './core/store.js';
+import { DADOS } from './core/dados.js';
+
+const RENDER_DASHBOARD = (function() {
   var DashboardRenderer = Object.create(RENDERER_BASE);
 
   // Constantes compartilhadas — fonte única em core/config.js
@@ -108,11 +123,11 @@
   };
 
   /**
-   * P2.1: resumo mensal memoizado no ciclo de render (this._ctx.resumoCache).
+   * P2.1: resumo mensal memoizado no ciclo de render (DashboardRenderer._ctx.resumoCache).
    * Evita refiltrar TRANSACOES.obterResumoMes para o mesmo ano-mes.
    */
   DashboardRenderer._resumoMes = function(mes, ano, opts) {
-    var ctx = this._ctx;
+    var ctx = DashboardRenderer._ctx;
     var vazio = { saldo: 0, receitas: 0, despesas: 0 };
     if (!ctx) return vazio;
     if (!ctx.resumoCache) ctx.resumoCache = {};
@@ -173,24 +188,24 @@
     var orc    = _dadosOrcamento();
     var config = (typeof DADOS !== 'undefined' && DADOS.getConfig) ? DADOS.getConfig() : {};
 
-    this._ctx = {
+    DashboardRenderer._ctx = {
       agora: agora, mes: mes, ano: ano, hoje: hoje, tx: tx, orc: orc, config: config,
       resumoCache: {}
     };
-    this._ctx.resumo = this._resumoMes(mes, ano, { ate: hoje });
-    this._ctx.resumoProjetado = this._resumoMes(mes, ano);
+    DashboardRenderer._ctx.resumo = DashboardRenderer._resumoMes(mes, ano, { ate: hoje });
+    DashboardRenderer._ctx.resumoProjetado = DashboardRenderer._resumoMes(mes, ano);
 
-    this.renderGreeting();
-    this.renderOnboarding();
-    this.renderCardSaldo();
-    this.renderResumo();
-    this.renderComparacaoMesAnterior();
-    this.renderAlertas();
-    this.renderIndicadores();
-    this.renderChartEvolucao();
-    this.renderChartCategorias();
-    this.renderOrcamento();
-    this.renderUltimasTransacoes();
+    DashboardRenderer.renderGreeting();
+    DashboardRenderer.renderOnboarding();
+    DashboardRenderer.renderCardSaldo();
+    DashboardRenderer.renderResumo();
+    DashboardRenderer.renderComparacaoMesAnterior();
+    DashboardRenderer.renderAlertas();
+    DashboardRenderer.renderIndicadores();
+    DashboardRenderer.renderChartEvolucao();
+    DashboardRenderer.renderChartCategorias();
+    DashboardRenderer.renderOrcamento();
+    DashboardRenderer.renderUltimasTransacoes();
 
     for (var hi = 0; hi < _onRenderFns.length; hi++) {
       try {
@@ -200,7 +215,7 @@
       }
     }
 
-    this._ctx = null;
+    DashboardRenderer._ctx = null;
 
     /* Fase 7: Remove skeleton após primeiro render */
     if (typeof SKELETON !== 'undefined' && SKELETON.esconder) {
@@ -228,8 +243,8 @@
       var total = 0;
       if (typeof DADOS !== 'undefined' && DADOS.getTransacoes) {
         total = DADOS.getTransacoes().length;
-      } else if (this._ctx && this._ctx.tx && typeof this._ctx.tx.obter === 'function') {
-        total = this._ctx.tx.obter({}).length;
+      } else if (DashboardRenderer._ctx && DashboardRenderer._ctx.tx && typeof DashboardRenderer._ctx.tx.obter === 'function') {
+        total = DashboardRenderer._ctx.tx.obter({}).length;
       }
       el.hidden = total > 0;
       // A tagline "Método 50/30/20…" explica o método — útil para quem está
@@ -250,23 +265,23 @@
 
   DashboardRenderer.renderGreeting = function() {
     try {
-      var el = this.getEl('dashboard-greeting');
+      var el = DashboardRenderer.getEl('dashboard-greeting');
       if (!el) return;
 
-      var ctx    = this._ctx;
+      var ctx    = DashboardRenderer._ctx;
       var nome   = _nomeExibicao(ctx.config.nome);
       var hora   = ctx.agora.getHours();
       var saudacao = hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite';
       var mesNome  = ctx.agora.toLocaleDateString('pt-BR', { month: 'long' });
       mesNome = mesNome.charAt(0).toUpperCase() + mesNome.slice(1);
 
-      var container = this.create('div', { class: 'greeting-text greeting-text--resumo' });
+      var container = DashboardRenderer.create('div', { class: 'greeting-text greeting-text--resumo' });
 
-      var hello = this.create('span', { class: 'greeting-hello' });
+      var hello = DashboardRenderer.create('span', { class: 'greeting-hello' });
       hello.textContent = saudacao + ', ' + nome + '!';
       container.appendChild(hello);
 
-      var sub = this.create('span', { class: 'greeting-context' });
+      var sub = DashboardRenderer.create('span', { class: 'greeting-context' });
       sub.textContent = 'Resumo de ' + mesNome + ' ' + ctx.ano;
       container.appendChild(sub);
 
@@ -279,35 +294,35 @@
 
   DashboardRenderer.renderCardSaldo = function() {
     try {
-      var el = this.getEl('card-saldo-principal');
+      var el = DashboardRenderer.getEl('card-saldo-principal');
       if (!el) return;
 
-      var saldo    = this._ctx.resumo.saldo || 0;
+      var saldo    = DashboardRenderer._ctx.resumo.saldo || 0;
       var positivo = saldo >= 0;
 
       el.className = 'card-saldo-principal ' + (positivo ? 'saldo-positivo' : 'saldo-negativo');
       _clearEl(el);
 
-      var emojiEl = this.create('div', { class: 'saldo-emoji' });
+      var emojiEl = DashboardRenderer.create('div', { class: 'saldo-emoji' });
       emojiEl.innerHTML = positivo ? '<i data-lucide="trending-up" aria-hidden="true"></i>' : '<i data-lucide="trending-down" aria-hidden="true"></i>';
       el.appendChild(emojiEl);
 
       // Re-renderizar ícones Lucide dinâmicos
 
-      var info = this.create('div', { class: 'saldo-info' });
-      var lbl  = this.create('div', { class: 'saldo-label' });
+      var info = DashboardRenderer.create('div', { class: 'saldo-info' });
+      var lbl  = DashboardRenderer.create('div', { class: 'saldo-label' });
       lbl.textContent = 'Saldo do mês (realizado)';
       lbl.title = 'Soma apenas de lançamentos já ocorridos neste mês, sem contas futuras.';
       info.appendChild(lbl);
 
-      var val = this.create('div', { class: 'saldo-valor' });
-      val.textContent = this.money(saldo);
+      var val = DashboardRenderer.create('div', { class: 'saldo-valor' });
+      val.textContent = DashboardRenderer.money(saldo);
       info.appendChild(val);
 
-      var proj = this._ctx.resumoProjetado;
+      var proj = DashboardRenderer._ctx.resumoProjetado;
       if (proj && Math.abs((proj.saldo || 0) - saldo) >= 0.005) {
-        var hint = this.create('p', { class: 'saldo-projetado-hint' });
-        hint.textContent = 'Projetado no mês (incl. futuros): ' + this.money(proj.saldo || 0);
+        var hint = DashboardRenderer.create('p', { class: 'saldo-projetado-hint' });
+        hint.textContent = 'Projetado no mês (incl. futuros): ' + DashboardRenderer.money(proj.saldo || 0);
         hint.title = 'Inclui lançamentos com data futura ainda não realizados.';
         info.appendChild(hint);
       }
@@ -319,7 +334,7 @@
       var anuncio = document.getElementById('saldo-anuncio');
       if (anuncio && saldo !== _ultimoSaldoAnunciado) {
         _ultimoSaldoAnunciado = saldo;
-        anuncio.textContent = 'Saldo do mês (realizado): ' + this.money(saldo);
+        anuncio.textContent = 'Saldo do mês (realizado): ' + DashboardRenderer.money(saldo);
       }
     } catch (e) {
       _reportarErroRender('cardSaldo', e, el);
@@ -328,11 +343,11 @@
 
   DashboardRenderer.renderResumo = function() {
     try {
-      var resumo = this._ctx.resumo;
-      var elRec  = this.getEl('resumo-receitas');
-      var elDesp = this.getEl('resumo-despesas');
-      if (elRec)  elRec.textContent  = this.money(resumo.receitas  || 0);
-      if (elDesp) elDesp.textContent = this.money(resumo.despesas  || 0);
+      var resumo = DashboardRenderer._ctx.resumo;
+      var elRec  = DashboardRenderer.getEl('resumo-receitas');
+      var elDesp = DashboardRenderer.getEl('resumo-despesas');
+      if (elRec)  elRec.textContent  = DashboardRenderer.money(resumo.receitas  || 0);
+      if (elDesp) elDesp.textContent = DashboardRenderer.money(resumo.despesas  || 0);
     } catch (e) {
       _reportarErroRender('resumo', e, elRec || elDesp);
     }
@@ -340,7 +355,7 @@
 
   DashboardRenderer.renderComparacaoMesAnterior = function() {
     try {
-      var ctx = this._ctx;
+      var ctx = DashboardRenderer._ctx;
       var tx  = ctx.tx;
       if (!tx) return;
 
@@ -348,10 +363,10 @@
       var anoAnt  = ctx.mes === 1 ? ctx.ano - 1 : ctx.ano;
 
       var atual    = ctx.resumo;
-      var anterior = this._resumoMes(mesAnt, anoAnt);
+      var anterior = DashboardRenderer._resumoMes(mesAnt, anoAnt);
 
-      var elRec  = this.getEl('comp-receitas');
-      var elDesp = this.getEl('comp-despesas');
+      var elRec  = DashboardRenderer.getEl('comp-receitas');
+      var elDesp = DashboardRenderer.getEl('comp-despesas');
 
       if (elRec)  elRec.innerHTML  = UI.ComparacaoMes.html(atual.receitas,  anterior.receitas);
       if (elDesp) elDesp.innerHTML = UI.ComparacaoMes.html(atual.despesas, anterior.despesas, true);
@@ -362,10 +377,10 @@
 
   DashboardRenderer.renderAlertas = function() {
     try {
-      var el = this.getEl('dashboard-alertas');
+      var el = DashboardRenderer.getEl('dashboard-alertas');
       if (!el) return;
 
-      var ctx = this._ctx;
+      var ctx = DashboardRenderer._ctx;
       var orc = ctx.orc;
       if (!orc) { _clearEl(el); return; }
 
@@ -389,16 +404,16 @@
 
   DashboardRenderer.renderIndicadores = function() {
     try {
-      var el = this.getEl('dashboard-indicadores');
+      var el = DashboardRenderer.getEl('dashboard-indicadores');
       if (!el) return;
 
-      var ctx    = this._ctx;
+      var ctx    = DashboardRenderer._ctx;
       var resumo = ctx.resumo;
       var renda  = ctx.config.renda || 0;
       var diasNoMes     = new Date(ctx.ano, ctx.mes, 0).getDate();
       var diasRestantes = diasNoMes - ctx.agora.getDate();
 
-      var container = this.create('div', { class: 'indicadores-grid' });
+      var container = DashboardRenderer.create('div', { class: 'indicadores-grid' });
 
       if (renda > 0) {
         var pctGasto = (resumo.despesas / renda) * 100;
@@ -421,19 +436,19 @@
         // de deixar um vazio, convida a configurar — é o número que responde
         // "estou gastando demais?". Leva ao Orçamento › Planejamento, onde a
         // renda é definida. Botão de verdade: acessível e navegável por teclado.
-        var ctaRenda = this.create('button', {
+        var ctaRenda = DashboardRenderer.create('button', {
           type: 'button',
           class: 'indicador indicador-cta',
           'data-mudar-aba': 'orcamento',
           'data-orc-sub': 'planejamento',
           'aria-label': 'Defina sua renda mensal para acompanhar quanto já gastou'
         });
-        var ctaIcon = this.create('span', { class: 'indicador-icon' });
+        var ctaIcon = DashboardRenderer.create('span', { class: 'indicador-icon' });
         ctaIcon.innerHTML = '<i data-lucide="wallet" aria-hidden="true"></i>';
         ctaRenda.appendChild(ctaIcon);
-        var ctaContent = this.create('div', { class: 'indicador-content' });
-        ctaContent.appendChild(this.create('span', { class: 'indicador-valor', textContent: 'Definir' }));
-        ctaContent.appendChild(this.create('span', { class: 'indicador-label', textContent: 'Defina sua renda' }));
+        var ctaContent = DashboardRenderer.create('div', { class: 'indicador-content' });
+        ctaContent.appendChild(DashboardRenderer.create('span', { class: 'indicador-valor', textContent: 'Definir' }));
+        ctaContent.appendChild(DashboardRenderer.create('span', { class: 'indicador-label', textContent: 'Defina sua renda' }));
         ctaRenda.appendChild(ctaContent);
         container.appendChild(ctaRenda);
       }
@@ -480,7 +495,7 @@
 
         container.appendChild(UI.Indicador.render(
           'trending-down',
-          this.money(gastoDia),
+          DashboardRenderer.money(gastoDia),
           ritmoLabel,
           ritmoTipo
         ));
@@ -495,7 +510,7 @@
 
   DashboardRenderer.renderChartEvolucao = function() {
     try {
-      var el = this.getEl('chart-evolucao');
+      var el = DashboardRenderer.getEl('chart-evolucao');
       if (!el) return;
 
       // Lazy render: só renderiza se o painel estiver visível
@@ -504,7 +519,7 @@
         return;
       }
 
-      var ctx = this._ctx;
+      var ctx = DashboardRenderer._ctx;
       var tx  = ctx.tx;
       if (!tx) {
         el.innerHTML = UI.EmptyState.html({ lucide: 'trending-up', titulo: 'Registre transações para ver a evolução dos seus gastos ao longo dos meses.', aba: 'novo' });
@@ -522,7 +537,7 @@
       var dados = [];
       for (var i = 5; i >= 0; i--) {
         var d      = new Date(ctx.ano, ctx.mes - 1 - i, 1);
-        var resumo = this._resumoMes(d.getMonth() + 1, d.getFullYear());
+        var resumo = DashboardRenderer._resumoMes(d.getMonth() + 1, d.getFullYear());
         var fora   = janela.limitado && janela.desde && d < janela.desde;
         dados.push({
           mes: NOMES_MESES[d.getMonth()],
@@ -550,7 +565,7 @@
 
   DashboardRenderer.renderChartCategorias = function() {
     try {
-      var el = this.getEl('chart-categorias');
+      var el = DashboardRenderer.getEl('chart-categorias');
       if (!el) return;
 
       // Lazy render: só renderiza se o painel estiver visível
@@ -559,7 +574,7 @@
         return;
       }
 
-      var ctx = this._ctx;
+      var ctx = DashboardRenderer._ctx;
       var tx  = ctx.tx;
       if (!tx || !tx.obterResumoPorCategoria) {
         el.innerHTML = UI.EmptyState.html({ lucide: 'pie-chart', titulo: 'Registre despesas para ver a distribuição por categoria.', aba: 'novo' });
@@ -594,10 +609,10 @@
 
   DashboardRenderer.renderOrcamento = function() {
     try {
-      var el = this.getEl('resumo-orcamentos');
+      var el = DashboardRenderer.getEl('resumo-orcamentos');
       if (!el) return;
 
-      var ctx = this._ctx;
+      var ctx = DashboardRenderer._ctx;
       var orc = ctx.orc;
       if (!orc) {
         _setChildren(el, [UI.EmptyState.render({ lucide: 'bar-chart', titulo: 'Defina limites mensais para acompanhar seus gastos por categoria.', aba: 'orcamento' })]);
@@ -611,7 +626,7 @@
         return;
       }
 
-      var lista = this.create('div', { class: 'orcamento-lista-resumo' });
+      var lista = DashboardRenderer.create('div', { class: 'orcamento-lista-resumo' });
       status.slice(0, 3).forEach(function(s) {
         lista.appendChild(UI.CardOrcamento.renderResumo(s));
       });
@@ -625,10 +640,10 @@
 
   DashboardRenderer.renderUltimasTransacoes = function() {
     try {
-      var el = this.getEl('resumo-list');
+      var el = DashboardRenderer.getEl('resumo-list');
       if (!el) return;
 
-      var tx = this._ctx.tx;
+      var tx = DashboardRenderer._ctx.tx;
       var transacoes = [];
 
       // Padronização de API: obterRecentes evita sort O(n log n) em históricos grandes
@@ -654,7 +669,7 @@
 
       /* DocumentFragment: uma única inserção no DOM em vez de N */
       var frag  = document.createDocumentFragment();
-      var lista = this.create('div', { class: 'lista-transacoes-resumo' });
+      var lista = DashboardRenderer.create('div', { class: 'lista-transacoes-resumo' });
       transacoes.slice(0, 3).forEach(function(t) {
         lista.appendChild(UI.CardTransacao.renderResumo(t));
       });
@@ -675,5 +690,8 @@
     RENDER_CORE.register('dashboard', DashboardRenderer);
   }
 
-  window.RENDER_DASHBOARD = DashboardRenderer;
+  return DashboardRenderer;
 })();
+
+export { RENDER_DASHBOARD };
+export default RENDER_DASHBOARD;

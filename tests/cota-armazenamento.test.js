@@ -27,9 +27,9 @@
  * módulo, então ficam ausentes de propósito: exercitar o caminho sem elas é o
  * cenário do primeiro carregamento do app.
  */
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
 
 const root = path.join(__dirname, '..');
 
@@ -47,12 +47,9 @@ function carregarDadosReal() {
   sandbox.globalThis = sandbox;
   const ctx = vm.createContext(sandbox);
 
-  for (const rel of ['js/core/config.js', 'js/core/dados.js']) {
-    const file = path.join(root, rel);
-    // filename ABSOLUTO: com caminho relativo o v8 não mapeia o código
-    // executado de volta ao arquivo e o módulo aparece com 0% na cobertura.
-    vm.runInContext(fs.readFileSync(file, 'utf8'), ctx, { filename: file });
-  }
+  // dados.js é ES Module: traz config.js e o cliente Express pelo grafo de
+  // imports; o que o sandbox tem (UTILS…) entra como dublê.
+  rodarNoContexto(ctx, path.join(root, 'js/core/dados.js'));
   return sandbox;
 }
 
@@ -175,74 +172,6 @@ describe('verificarCota', () => {
     D().verificarCota();
 
     expect(toasts).toHaveLength(1);
-  });
-});
-
-// ─── relógio do aparelho ─────────────────────────────────────────────────────
-describe('_conferirRelogio', () => {
-  /** Resposta fetch com o cabeçalho Date desviado N horas do agora local. */
-  function respostaComDesvio(horas) {
-    const dataServidor = new Date(Date.now() - horas * 3600000).toUTCString();
-    return { headers: { get: (h) => (h === 'Date' ? dataServidor : null) } };
-  }
-
-  beforeEach(() => { D()._avisouRelogio = false; D().desvioRelogioMs = null; });
-
-  test('não reclama de um relógio certo', () => {
-    D()._conferirRelogio(respostaComDesvio(0));
-    expect(toasts).toEqual([]);
-  });
-
-  test('tolera desvio pequeno — latência de rede não é erro de relógio', () => {
-    D()._conferirRelogio(respostaComDesvio(1));
-    expect(toasts).toEqual([]);
-  });
-
-  test('avisa com o relógio horas adiantado', () => {
-    // Toda data de lançamento nasce do relógio local: um aparelho com a data
-    // errada gera um extrato inteiro deslocado, e os números continuam batendo.
-    D()._conferirRelogio(respostaComDesvio(30));
-
-    expect(toasts).toHaveLength(1);
-    expect(toasts[0].msg).toMatch(/adiantado/);
-    expect(toasts[0].tipo).toBe('warning');
-  });
-
-  test('avisa com o relógio horas atrasado', () => {
-    D()._conferirRelogio(respostaComDesvio(-30));
-
-    expect(toasts).toHaveLength(1);
-    expect(toasts[0].msg).toMatch(/atrasado/);
-  });
-
-  test('a mensagem diz o efeito, não só o fato', () => {
-    // "Seu relógio está errado" não explica por que isso importa aqui.
-    D()._conferirRelogio(respostaComDesvio(30));
-    expect(toasts[0].msg).toMatch(/mês certo|lançamentos/i);
-  });
-
-  test('registra o desvio medido para diagnóstico', () => {
-    D()._conferirRelogio(respostaComDesvio(10));
-    expect(Math.round(D().desvioRelogioMs / 3600000)).toBe(10);
-  });
-
-  test('avisa uma vez por sessão', () => {
-    D()._conferirRelogio(respostaComDesvio(30));
-    D()._conferirRelogio(respostaComDesvio(30));
-    expect(toasts).toHaveLength(1);
-  });
-
-  test('resposta sem cabeçalho Date não gera aviso nem quebra', () => {
-    expect(() => D()._conferirRelogio({ headers: { get: () => null } })).not.toThrow();
-    expect(() => D()._conferirRelogio({})).not.toThrow();
-    expect(() => D()._conferirRelogio(null)).not.toThrow();
-    expect(toasts).toEqual([]);
-  });
-
-  test('cabeçalho Date ilegível é ignorado', () => {
-    // Proxy mal configurado não pode virar um alarme falso sobre o relógio.
-    D()._conferirRelogio({ headers: { get: () => 'não é uma data' } });
-    expect(toasts).toEqual([]);
   });
 });
 

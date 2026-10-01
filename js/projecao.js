@@ -20,8 +20,14 @@
  * se sabe que ainda vai sair.
  *
  * Puro, sem DOM. Dependências checadas com typeof.
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
-var PROJECAO = {
+
+import { UTILS } from './core/utils.js';
+import { CONTAS_PAGAR } from './contas-pagar.js';
+const PROJECAO = {
   /**
    * Projeção do saldo ao fim do mês.
    *
@@ -63,6 +69,5 @@ var PROJECAO = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = PROJECAO;
-}
+export { PROJECAO };
+export default PROJECAO;

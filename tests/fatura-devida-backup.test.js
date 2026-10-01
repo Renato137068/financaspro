@@ -9,14 +9,10 @@
  * resposta de novo). Este teste trava a simetria com faturasPagas.
  * @jest-environment node
  */
-const fs = require('fs');
-const path = require('path');
 const vm = require('vm');
+const { rodarPerfil } = require('./helpers/chunk-perfil.cjs');
 
 function carregar() {
-  const root = path.join(__dirname, '..');
-  const src = fs.readFileSync(path.join(root, 'js', 'modules', 'init-config.js'), 'utf8')
-    .replace(/\bconst INIT_CONFIG =/, 'var INIT_CONFIG =');
   var stored = {};
   const sandbox = {
     document: { getElementById: function() { return null; } },
@@ -29,9 +25,7 @@ function carregar() {
     module: { exports: {} },
   };
   sandbox.globalThis = sandbox;
-  vm.runInContext(src, vm.createContext(sandbox),
-    { filename: path.join(root, 'js', 'modules', 'init-config.js') });
-  return sandbox.INIT_CONFIG;
+  return rodarPerfil(vm.createContext(sandbox));
 }
 
 describe('backup restaura faturasDevidas (simetria com faturasPagas)', function() {

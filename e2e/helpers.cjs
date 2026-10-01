@@ -142,7 +142,22 @@ async function prepareOfflinePage(page, opts) {
   }
 }
 
+/**
+ * Chunk 'conta' (paywall, 2FA, Open Finance) pelo caminho do app, como ao
+ * abrir o Perfil: LAZY.load e o init() de cada módulo. É ES Module sob
+ * demanda, no build e no código-fonte.
+ */
+async function carregarChunkConta(page) {
+  await page.waitForFunction(function() {
+    return typeof INIT_NAVIGATION !== 'undefined' && typeof INIT_NAVIGATION.carregarChunkConta === 'function';
+  }, { timeout: 30000 });
+  await page.evaluate(function() {
+    return new Promise(function(resolve) { INIT_NAVIGATION.carregarChunkConta(resolve); });
+  });
+}
+
 module.exports = {
+  carregarChunkConta: carregarChunkConta,
   forcarModoLocal: forcarModoLocal,
   seedOfflineStorage: seedOfflineStorage,
   dismissOverlays: dismissOverlays,

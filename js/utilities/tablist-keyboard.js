@@ -1,24 +1,27 @@
 /**
  * tablist-keyboard.js — WAI-ARIA Tabs: setas, Home/End, roving tabindex
  * Usage: TablistKeyboard.init(tablistElement, { onSelect: fn })
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
 
-var TablistKeyboard = {
+const TablistKeyboard = {
   _bound: null,
 
   _isBound: function(tablist) {
-    if (!this._bound) this._bound = new WeakSet();
-    return this._bound.has(tablist);
+    if (!TablistKeyboard._bound) TablistKeyboard._bound = new WeakSet();
+    return TablistKeyboard._bound.has(tablist);
   },
 
   _markBound: function(tablist) {
-    if (!this._bound) this._bound = new WeakSet();
-    this._bound.add(tablist);
+    if (!TablistKeyboard._bound) TablistKeyboard._bound = new WeakSet();
+    TablistKeyboard._bound.add(tablist);
   },
 
   init: function(tablist, options) {
     if (!tablist || tablist.getAttribute('role') !== 'tablist') return null;
-    if (this._isBound(tablist)) return null;
+    if (TablistKeyboard._isBound(tablist)) return null;
 
     options = options || {};
     var tabSelector = options.tabSelector || '[role="tab"]';
@@ -97,7 +100,7 @@ var TablistKeyboard = {
     });
 
     syncFromDom();
-    this._markBound(tablist);
+    TablistKeyboard._markBound(tablist);
 
     return { sync: syncFromDom };
   },
@@ -106,13 +109,12 @@ var TablistKeyboard = {
     var lists = document.querySelectorAll(selector || '[role="tablist"]');
     var handles = [];
     for (var i = 0; i < lists.length; i++) {
-      var h = this.init(lists[i], options);
+      var h = TablistKeyboard.init(lists[i], options);
       if (h) handles.push(h);
     }
     return handles;
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = TablistKeyboard;
-}
+export { TablistKeyboard };
+export default TablistKeyboard;

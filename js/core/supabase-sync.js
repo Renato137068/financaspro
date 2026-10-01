@@ -1,13 +1,12 @@
 /**
  * supabase-sync.js — sincronização de dados via supabase-js (RLS).
  *
- * Substitui o pull/push da API Express quando o Supabase está ativo. Reaproveita
- * o mapeamento PT↔EN (FINANCE_CONTRACT) e o merge local (_mergeSnapshotLocal),
- * então só troca o "transporte": em vez de /api/v1/*, fala direto com o Supabase.
- *
- * Como em modo Supabase o _syncV2Ativo() é falso, as mutações do DADOS caem no
- * branch legado que chama _pushTransacaoApi/_pushContasApi/etc — que aqui são
- * sobrescritos para gravar no Supabase (protegido por RLS: userId = auth.uid()).
+ * O DADOS chama pontos de encaixe de transporte (sincronizarComApi,
+ * _pushTransacaoApi, _pushContasApi…, js/core/dados-nuvem.js) que no modo
+ * local não fazem nada. Com o Supabase ativo, este arquivo os sobrescreve para
+ * gravar direto nas tabelas (protegidas por RLS: userId = auth.uid()),
+ * reaproveitando o mapeamento PT↔EN (FINANCE_CONTRACT) e o merge local
+ * (_mergeSnapshotLocal).
  *
  * Carrega depois de js/core/supabase.js (SB, SUPA_AUTH) e js/core/dados.js.
  */
@@ -15,7 +14,7 @@
   'use strict';
 
   if (!window.SUPA_AUTH || !window.SUPA_AUTH.isActive || !window.SUPA_AUTH.isActive() || !window.SB) {
-    return; // Supabase inativo → mantém o comportamento local/Express.
+    return; // Supabase inativo → modo local, nada a sincronizar.
   }
   var SB = window.SB;
 
@@ -310,12 +309,6 @@
 
   // Sobrescreve o transporte do DADOS (só quando Supabase ativo).
   if (typeof DADOS !== 'undefined') {
-    // Em modo Supabase NÃO usamos a API Express. Forçar _apiAtiva()=false manda
-    // as mutações para o branch legado (que chama os _push*Api abaixo), usa o
-    // merge simples no _mergeSnapshotLocal e evita tentativas de sync à API
-    // morta (que geravam o toast "Falha ao sincronizar"). No dev, sem isso, o
-    // _apiBaseUrl() cai no fallback localhost:4000 e liga o sync v2 por engano.
-    DADOS._apiAtiva = function () { return false; };
     DADOS.sincronizarComApi = function () { return SUPA_SYNC.pull(); };
     DADOS._pushTransacaoApi = function (tx) { return SUPA_SYNC.pushTx(tx); };
     DADOS._deleteTransacaoApi = function (id) { return SUPA_SYNC.deleteTx(id); };

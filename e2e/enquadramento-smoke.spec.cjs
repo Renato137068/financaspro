@@ -5,7 +5,7 @@
  * Não substitui aparelho físico (notch real), mas cobre o contrato visual.
  */
 const { test, expect } = require('@playwright/test');
-const { prepareOfflinePage, dismissOverlays } = require('./helpers.cjs');
+const { prepareOfflinePage, dismissOverlays, carregarChunkConta } = require('./helpers.cjs');
 
 test.use({ baseURL: 'http://127.0.0.1:4322' });
 
@@ -193,9 +193,7 @@ test.describe('Enquadramento M1–M7', function() {
   test('M7 — Billing close respeita safe-area (padding do modal)', async function({ page }) {
     await boot(page, { width: 390, height: 844 });
 
-    await page.waitForFunction(function() {
-      return typeof INIT_BILLING !== 'undefined' && typeof INIT_BILLING.abrirPaywall === 'function';
-    }, { timeout: 20000 });
+    await carregarChunkConta(page);
 
     await page.evaluate(function() {
       INIT_BILLING.abrirPaywall('Smoke M7');

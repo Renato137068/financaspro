@@ -1,0 +1,56 @@
+<!-- Tela "config-suporte" (#aba-config-suporte). Vem no chunk lazy "config": scripts/generate-telas.cjs
+     gera js/telas/config.js a partir deste arquivo. Rode `npm run telas:gerar` depois de editar. -->
+<div class="perfil-header">
+  <div class="perfil-avatar-wrapper">
+    <div class="perfil-avatar" style="background: var(--color-primary-500);" aria-hidden="true"><i data-lucide="stethoscope"></i></div>
+  </div>
+  <div class="perfil-info">
+    <h2 class="perfil-nome">Suporte técnico</h2>
+    <div class="perfil-meta"><span>Ferramentas de diagnóstico para anexar a tickets</span></div>
+  </div>
+  <div class="perfil-actions">
+    <button class="perfil-action-btn" data-action="mudar-aba" data-aba="config-ajuda" aria-label="Ajuda e sobre">
+      <i data-lucide="arrow-left" aria-hidden="true"></i>
+    </button>
+  </div>
+</div>
+<div class="perfil-section">
+  <div class="perfil-cards-grid">
+    <button type="button" class="perfil-card" data-action="verificar-numeros" aria-label="Verificar se saldo e comprometido batem">
+      <div class="perfil-card-icon-wrapper"><i data-lucide="badge-check" aria-hidden="true"></i></div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Verificar números</span>
+        <span class="perfil-card-subtitle">Confere se disponível = saldo − comprometido</span>
+      </div>
+      <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+    </button>
+
+    <button type="button" class="perfil-card" data-action="exportar-diagnostico" aria-label="Exportar relatório de diagnóstico técnico">
+      <div class="perfil-card-icon-wrapper"><i data-lucide="stethoscope" aria-hidden="true"></i></div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Exportar diagnóstico</span>
+        <span class="perfil-card-subtitle">JSON técnico sem descrições (suporte)</span>
+      </div>
+      <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+    </button>
+
+    <button type="button" class="perfil-card" data-action="replay-sessao" aria-label="Ver timeline de eventos da sessão atual">
+      <div class="perfil-card-icon-wrapper"><i data-lucide="history" aria-hidden="true"></i></div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Replay da sessão</span>
+        <span class="perfil-card-subtitle">Timeline de sync, conflitos e diagnóstico</span>
+      </div>
+      <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+    </button>
+
+    <button type="button" class="perfil-card" data-action="exportar-replay-sessao" aria-label="Exportar replay da sessão como HTML para suporte">
+      <div class="perfil-card-icon-wrapper"><i data-lucide="file-text" aria-hidden="true"></i></div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Exportar replay HTML</span>
+        <span class="perfil-card-subtitle">Anexar timeline ao ticket de suporte</span>
+      </div>
+      <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+    </button>
+  </div>
+</div>
+

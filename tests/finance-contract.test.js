@@ -1,18 +1,10 @@
 /**
  * finance-contract.test.js — contrato PT↔EN único (Fase 2).
  */
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
+const { carregarScript } = require('./helpers/carregar-script.cjs');
 
-function loadFC() {
-  const file = path.join(__dirname, '..', 'js', 'core', 'finance-contract.js');
-  const ctx = vm.createContext({ Date, parseFloat, isNaN, Object, Array, String, Number, DADOS: null, module: { exports: {} } });
-  vm.runInContext(fs.readFileSync(file, 'utf8'), ctx, { filename: file });
-  return ctx.FINANCE_CONTRACT;
-}
-
-const FC = loadFC();
+// DADOS nulo: as conversões recebem as contas por parâmetro.
+const FC = carregarScript('js/core/finance-contract.js', { DADOS: null });
 const UUID_A = '3f2504e0-4f89-41d3-9a0c-0305e82c3301';
 const UUID_B = '9c858901-8a57-4791-81fe-4c455b099bc9';
 const contas = [

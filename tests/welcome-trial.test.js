@@ -11,7 +11,9 @@
  *      automaticamente". Para quem nunca deu cartão isso é alarme falso, e
  *      alarme falso em app financeiro custa exatamente o ativo da marca.
  */
-const billing = require('../js/billing.js');
+const { carregarScript } = require('./helpers/carregar-script.cjs');
+const { regrasDoBilling } = require('./helpers/billing-regras.cjs');
+const billing = regrasDoBilling(carregarScript('js/billing.js'));
 
 const DIA = 86400000;
 

@@ -1,6 +1,14 @@
 /**
  * patrimonio.js — Patrimônio líquido (ativos manuais − dívidas)
+ *
+ * ES Module (ADR 0005): chega sob demanda no chunk 'patrimonio'
+ * (js/esm/chunks/patrimonio.js, via LAZY.load), que o publica em window.
  */
+
+import { UTILS } from './core/utils.js';
+import { CONTAS } from './contas.js';
+import { DADOS } from './core/dados.js';
+
 const PATRIMONIO = {
   // A flag `netWorthHistory` ja existe no contrato de plano, mas a evolucao
   // historica do patrimonio ainda nao foi construida (P2). Quando for, o gate
@@ -26,26 +34,26 @@ const PATRIMONIO = {
   },
 
   _salvar: function(patch) {
-    var atual = this._dados();
+    var atual = PATRIMONIO._dados();
     DADOS.salvarConfig({
       patrimonio: Object.assign({}, atual, patch)
     });
   },
 
   listarAtivos: function() {
-    return this._dados().ativos;
+    return PATRIMONIO._dados().ativos;
   },
 
   listarDividas: function() {
-    return this._dados().dividas;
+    return PATRIMONIO._dados().dividas;
   },
 
   obterAtivo: function(id) {
-    return this.listarAtivos().filter(function(a) { return a.id === id; })[0] || null;
+    return PATRIMONIO.listarAtivos().filter(function(a) { return a.id === id; })[0] || null;
   },
 
   obterDivida: function(id) {
-    return this.listarDividas().filter(function(d) { return d.id === id; })[0] || null;
+    return PATRIMONIO.listarDividas().filter(function(d) { return d.id === id; })[0] || null;
   },
 
   criarAtivo: function(dados) {
@@ -54,7 +62,7 @@ const PATRIMONIO = {
     var tipo = dados.tipo || 'corrente';
     if (!nome) throw new Error('Informe o nome do ativo');
     if (isNaN(valor) || valor < 0) throw new Error('Valor inválido');
-    if (this.TIPOS_ATIVO.indexOf(tipo) === -1) tipo = 'outro';
+    if (PATRIMONIO.TIPOS_ATIVO.indexOf(tipo) === -1) tipo = 'outro';
 
     var item = {
       id: UTILS.gerarId(),
@@ -64,14 +72,14 @@ const PATRIMONIO = {
       contaId: dados.contaId || null,
       criadoEm: new Date().toISOString()
     };
-    var ativos = this.listarAtivos();
+    var ativos = PATRIMONIO.listarAtivos();
     ativos.push(item);
-    this._salvar({ ativos: ativos });
+    PATRIMONIO._salvar({ ativos: ativos });
     return item;
   },
 
   atualizarAtivo: function(id, patch) {
-    var ativos = this.listarAtivos();
+    var ativos = PATRIMONIO.listarAtivos();
     var idx = -1;
     for (var i = 0; i < ativos.length; i++) {
       if (ativos[i].id === id) { idx = i; break; }
@@ -83,12 +91,12 @@ const PATRIMONIO = {
       if (isNaN(v) || v < 0) throw new Error('Valor inválido');
       ativos[idx].valor = v;
     }
-    this._salvar({ ativos: ativos });
+    PATRIMONIO._salvar({ ativos: ativos });
     return ativos[idx];
   },
 
   excluirAtivo: function(id) {
-    this._salvar({ ativos: this.listarAtivos().filter(function(a) { return a.id !== id; }) });
+    PATRIMONIO._salvar({ ativos: PATRIMONIO.listarAtivos().filter(function(a) { return a.id !== id; }) });
   },
 
   criarDivida: function(dados) {
@@ -97,7 +105,7 @@ const PATRIMONIO = {
     var tipo = dados.tipo || 'emprestimo';
     if (!nome) throw new Error('Informe o nome da dívida');
     if (!valor || valor <= 0) throw new Error('Valor inválido');
-    if (this.TIPOS_DIVIDA.indexOf(tipo) === -1) tipo = 'outro';
+    if (PATRIMONIO.TIPOS_DIVIDA.indexOf(tipo) === -1) tipo = 'outro';
 
     var item = {
       id: UTILS.gerarId(),
@@ -106,14 +114,14 @@ const PATRIMONIO = {
       valor: valor,
       criadoEm: new Date().toISOString()
     };
-    var dividas = this.listarDividas();
+    var dividas = PATRIMONIO.listarDividas();
     dividas.push(item);
-    this._salvar({ dividas: dividas });
+    PATRIMONIO._salvar({ dividas: dividas });
     return item;
   },
 
   atualizarDivida: function(id, patch) {
-    var dividas = this.listarDividas();
+    var dividas = PATRIMONIO.listarDividas();
     var idx = -1;
     for (var i = 0; i < dividas.length; i++) {
       if (dividas[i].id === id) { idx = i; break; }
@@ -125,23 +133,23 @@ const PATRIMONIO = {
       if (!v || v <= 0) throw new Error('Valor inválido');
       dividas[idx].valor = v;
     }
-    this._salvar({ dividas: dividas });
+    PATRIMONIO._salvar({ dividas: dividas });
     return dividas[idx];
   },
 
   excluirDivida: function(id) {
-    this._salvar({ dividas: this.listarDividas().filter(function(d) { return d.id !== id; }) });
+    PATRIMONIO._salvar({ dividas: PATRIMONIO.listarDividas().filter(function(d) { return d.id !== id; }) });
   },
 
   totalAtivos: function() {
-    var valores = this.listarAtivos().map(function(a) { return a.valor || 0; });
+    var valores = PATRIMONIO.listarAtivos().map(function(a) { return a.valor || 0; });
     return typeof UTILS !== 'undefined' && UTILS.somarMoeda
       ? UTILS.somarMoeda(valores)
       : valores.reduce(function(s, v) { return s + v; }, 0);
   },
 
   totalDividas: function() {
-    var valores = this.listarDividas().map(function(d) { return d.valor || 0; });
+    var valores = PATRIMONIO.listarDividas().map(function(d) { return d.valor || 0; });
     return typeof UTILS !== 'undefined' && UTILS.somarMoeda
       ? UTILS.somarMoeda(valores)
       : valores.reduce(function(s, v) { return s + v; }, 0);
@@ -149,9 +157,9 @@ const PATRIMONIO = {
 
   patrimonioLiquido: function() {
     if (typeof UTILS !== 'undefined' && UTILS.somarMoeda) {
-      return UTILS.somarMoeda([this.totalAtivos(), -this.totalDividas()]);
+      return UTILS.somarMoeda([PATRIMONIO.totalAtivos(), -PATRIMONIO.totalDividas()]);
     }
-    return this.totalAtivos() - this.totalDividas();
+    return PATRIMONIO.totalAtivos() - PATRIMONIO.totalDividas();
   },
 
   tipoAtivoLabel: function(tipo) {
@@ -200,7 +208,7 @@ const PATRIMONIO = {
   sugerirDeContas: function() {
     if (typeof CONTAS === 'undefined') return [];
     var vinculados = {};
-    this.listarAtivos().forEach(function(a) {
+    PATRIMONIO.listarAtivos().forEach(function(a) {
       if (a.contaId) vinculados[a.contaId] = true;
     });
     var mapTipo = {
@@ -233,8 +241,8 @@ const PATRIMONIO = {
       overlaps: [],
       totalSobreposto: 0,
       saldoLedger: 0,
-      liquido: this.patrimonioLiquido(),
-      liquidoSemSobreposicao: this.patrimonioLiquido()
+      liquido: PATRIMONIO.patrimonioLiquido(),
+      liquidoSemSobreposicao: PATRIMONIO.patrimonioLiquido()
     };
     if (typeof CONTAS === 'undefined' || !CONTAS.saldos) return vazios;
 
@@ -261,7 +269,7 @@ const PATRIMONIO = {
     var tiposCaixa = { corrente: true, poupanca: true };
     var overlaps = [];
     var sobrepostoCent = 0;
-    this.listarAtivos().forEach(function(a) {
+    PATRIMONIO.listarAtivos().forEach(function(a) {
       if (!a) return;
       var ledger = null;
       var motivo = null;
@@ -291,7 +299,7 @@ const PATRIMONIO = {
     });
 
     var totalSobreposto = sobrepostoCent / 100;
-    var liquido = this.patrimonioLiquido();
+    var liquido = PATRIMONIO.patrimonioLiquido();
     return {
       overlaps: overlaps,
       totalSobreposto: totalSobreposto,
@@ -304,6 +312,5 @@ const PATRIMONIO = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = PATRIMONIO;
-}
+export { PATRIMONIO };
+export default PATRIMONIO;

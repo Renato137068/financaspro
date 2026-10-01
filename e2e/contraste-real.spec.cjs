@@ -22,7 +22,7 @@
  * elemento é pulado. São poucos — a essa altura o produto tem seis gradientes.
  */
 const { test, expect } = require('@playwright/test');
-const { prepareOfflinePage } = require('./helpers.cjs');
+const { prepareOfflinePage, carregarChunkConta } = require('./helpers.cjs');
 
 const ABAS = ['resumo', 'novo', 'extrato', 'orcamento', 'config'];
 
@@ -137,10 +137,7 @@ test.describe('contraste real — overlays críticos', function() {
     for (const tema of ['light', 'dark']) {
       test(`paywall — tema ${tema}`, async function({ page }) {
         await prepareOfflinePage(page);
-        await page.waitForFunction(function() {
-          return typeof INIT_BILLING !== 'undefined'
-            && typeof INIT_BILLING.abrirPaywall === 'function';
-        }, { timeout: 30000 });
+        await carregarChunkConta(page);
         await page.evaluate(function(t) {
           document.documentElement.setAttribute('data-theme', t);
           INIT_BILLING.abrirPaywall('Contraste paywall');

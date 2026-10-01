@@ -1,6 +1,12 @@
 /**
  * auto-categorizer.js - categorizacao automatica em bastidores
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
+
+import { CATEGORIES } from './categories.js';
+import { DADOS } from './core/dados.js';
 
 const AUTO_CATEGORIZER = {
   REGRAS: [
@@ -37,26 +43,26 @@ const AUTO_CATEGORIZER = {
   // pré-selecionava o tipo errado para uma entrada de renda.
   _tipoPorCat: {},
 
-  init: function() { this.analisarHistorico(); },
+  init: function() { AUTO_CATEGORIZER.analisarHistorico(); },
 
   analisarHistorico: function() {
     try {
       if (typeof DADOS === 'undefined') return;
       var transacoes = DADOS.getTransacoes();
       if (!Array.isArray(transacoes)) return;
-      this.HISTORICO = {};
-      this._tipoPorCat = {};
+      AUTO_CATEGORIZER.HISTORICO = {};
+      AUTO_CATEGORIZER._tipoPorCat = {};
       transacoes.forEach(function(t) {
         if (!t.descricao) return;
         // Fonte da verdade para o tipo: o próprio lançamento do usuário.
-        if (t.categoria && t.tipo) this._tipoPorCat[t.categoria] = t.tipo;
+        if (t.categoria && t.tipo) AUTO_CATEGORIZER._tipoPorCat[t.categoria] = t.tipo;
         var palavras = String(t.descricao).toLowerCase().trim().split(/\s+/);
         palavras.forEach(function(p) {
           if (p.length <= 3) return;
-          this.HISTORICO[p] = this.HISTORICO[p] || {};
-          this.HISTORICO[p][t.categoria] = (this.HISTORICO[p][t.categoria] || 0) + 1;
-        }.bind(this));
-      }.bind(this));
+          AUTO_CATEGORIZER.HISTORICO[p] = AUTO_CATEGORIZER.HISTORICO[p] || {};
+          AUTO_CATEGORIZER.HISTORICO[p][t.categoria] = (AUTO_CATEGORIZER.HISTORICO[p][t.categoria] || 0) + 1;
+        }.bind(AUTO_CATEGORIZER));
+      }.bind(AUTO_CATEGORIZER));
     } catch (e) {
       console.warn('[AUTO_CATEGORIZER] erro:', e);
     }
@@ -72,9 +78,9 @@ const AUTO_CATEGORIZER = {
       .normalize('NFD').replace(/[̀-ͯ]/g, '')
       .replace(/[*_/\\|]+/g, ' ');
 
-    for (var i = 0; i < this.REGRAS.length; i++) {
-      if (this.REGRAS[i].regex.test(desc)) {
-        return { categoria: this.REGRAS[i].cat, tipo: this.REGRAS[i].tipo, confianca: 'alta' };
+    for (var i = 0; i < AUTO_CATEGORIZER.REGRAS.length; i++) {
+      if (AUTO_CATEGORIZER.REGRAS[i].regex.test(desc)) {
+        return { categoria: AUTO_CATEGORIZER.REGRAS[i].cat, tipo: AUTO_CATEGORIZER.REGRAS[i].tipo, confianca: 'alta' };
       }
     }
 
@@ -82,10 +88,10 @@ const AUTO_CATEGORIZER = {
     var candidatos = {};
     palavras.forEach(function(p) {
       if (p.length <= 3) return;
-      var mapa = this.HISTORICO[p];
+      var mapa = AUTO_CATEGORIZER.HISTORICO[p];
       if (!mapa) return;
       for (var cat in mapa) candidatos[cat] = (candidatos[cat] || 0) + mapa[cat];
-    }.bind(this));
+    }.bind(AUTO_CATEGORIZER));
 
     var melhorCat = null;
     var melhorScore = 0;
@@ -96,7 +102,7 @@ const AUTO_CATEGORIZER = {
     if (melhorCat && melhorScore >= 2) {
       // Deriva o tipo da categoria casada — nunca assume 'despesa'. Ordem:
       // tipo observado no histórico → mapa de categorias → 'despesa'.
-      var tipoHist = this._tipoPorCat[melhorCat]
+      var tipoHist = AUTO_CATEGORIZER._tipoPorCat[melhorCat]
         || (typeof CATEGORIES !== 'undefined' && CATEGORIES !== AUTO_CATEGORIZER && typeof CATEGORIES.getTipo === 'function'
               ? CATEGORIES.getTipo(melhorCat)
               : 'despesa');
@@ -107,5 +113,7 @@ const AUTO_CATEGORIZER = {
   }
 };
 
-var CATEGORIAS = AUTO_CATEGORIZER;
-if (typeof module !== 'undefined' && module.exports) module.exports = AUTO_CATEGORIZER;
+const CATEGORIAS = AUTO_CATEGORIZER;
+
+export { AUTO_CATEGORIZER, CATEGORIAS };
+export default AUTO_CATEGORIZER;

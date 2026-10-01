@@ -6,21 +6,18 @@
  * O toFixed(0) de -0,3 dá "-0", então o badge exibia um sinal e uma seta que
  * não existem — o dashboard afirmando queda/alta num mês praticamente estável.
  */
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
 
 let UI;
 
 beforeAll(function() {
   var sandbox = { window: window, document: document, console: console };
-  sandbox.window.UI = {};
   sandbox.globalThis = sandbox;
   var ctx = vm.createContext(sandbox);
   var arquivo = path.join(__dirname, '..', 'js', 'components', 'ComparacaoMes.js');
-  var src = fs.readFileSync(arquivo, 'utf8');
-  vm.runInContext(src, ctx, { filename: arquivo });
-  UI = ctx.window.UI;
+  UI = { ComparacaoMes: rodarNoContexto(ctx, arquivo).ComparacaoMes };
 });
 
 describe('UI.ComparacaoMes.html', function() {

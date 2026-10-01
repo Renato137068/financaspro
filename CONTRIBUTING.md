@@ -15,7 +15,7 @@ npm run dev          # frontend em :3000
 npm run backend:dev  # API em :4000
 ```
 
-Node 18+ e npm 9+. O Postgres só é necessário para o backend completo; o
+Node 22+ e npm 9+. O Postgres só é necessário para o backend completo; o
 frontend funciona offline sem API — esse é um requisito de produto, não um
 detalhe de implementação.
 
@@ -46,6 +46,17 @@ faria o Jest tratar todo `.js` como ESM — quebrando os `require()` do frontend
 já que o `package.json` raiz declara `"type": "module"`. Por isso `npm test`
 executa as duas em sequência.
 
+Fora do Jest, duas suítes que o CI também roda:
+
+| Suíte | Comando | Precisa de |
+|---|---|---|
+| Edge Functions (a cobrança de produção) | `npm run test:edge` e `npm run check:edge-types` | Deno 2 |
+| Banco: RLS, cotas, MFA, painel de saúde | `npm run test:db:ci` | Postgres 16 com pgTAP |
+
+Edge Function nova que mexe com dinheiro ganha teste de comportamento em
+`supabase/functions/_testes/` (ver `supabase/functions/README.md`), não teste
+que lê o código como texto.
+
 ### Cobertura
 
 Os limiares em cada config são **pisos calibrados sobre a medição real**, não
@@ -75,6 +86,12 @@ que a *próxima* rota ou o *próximo* asset nasçam desprotegidos.
 ## Estilo de código
 
 ### Backend
+
+**Funcionalidade nova de backend vai para o Supabase** — Edge Function em
+`supabase/functions/` ou SQL em `supabase/migrations/` (com RLS e teste pgTAP).
+A API Express em `backend/` está congelada
+([ADR 0004](docs/adr/0004-supabase-fonte-de-verdade-express-congelado.md)):
+só recebe correção de segurança. As regras abaixo valem para essas correções.
 
 ESM, camadas explícitas:
 

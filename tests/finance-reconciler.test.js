@@ -3,7 +3,10 @@
  * @jest-environment jsdom
  */
 const path = require('path');
-const fs = require('fs');
+const vm = require('vm');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
+
+const ARQUIVO = path.join(__dirname, '..', 'js', 'utilities', 'finance-reconciler.js');
 
 describe('FINANCE_RECONCILER', function() {
   var FINANCE_RECONCILER;
@@ -21,13 +24,14 @@ describe('FINANCE_RECONCILER', function() {
         return { pending: 0, saving: 0, failed: 0, saved: 2, items: [] };
       }
     };
-    var code = fs.readFileSync(
-      path.join(__dirname, '..', 'js', 'utilities', 'finance-reconciler.js'),
-      'utf8'
-    );
-    // eslint-disable-next-line no-new-func
-    var fn = new Function('TRANSACOES', 'PERSIST_QUEUE', 'DADOS', 'window', 'module', 'exports', code + '\n; return FINANCE_RECONCILER;');
-    FINANCE_RECONCILER = fn(global.TRANSACOES, global.PERSIST_QUEUE, undefined, global, { exports: {} }, {});
+    // vm com o caminho real: com `new Function` a cobertura não contava.
+    var mod = { exports: {} };
+    var ctx = vm.createContext({
+      TRANSACOES: global.TRANSACOES, PERSIST_QUEUE: global.PERSIST_QUEUE, COMPROMISSOS: undefined, DADOS: undefined,
+      window: global, module: mod, exports: mod.exports,
+    });
+    rodarNoContexto(ctx, ARQUIVO);
+    FINANCE_RECONCILER = ctx.FINANCE_RECONCILER;
   });
 
   test('reconcile ok quando contagem e totais batem', function() {

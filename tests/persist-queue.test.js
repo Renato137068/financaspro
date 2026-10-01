@@ -3,13 +3,12 @@
  * @jest-environment jsdom
  */
 const path = require('path');
-const fs = require('fs');
+const vm = require('vm');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
+
+const ARQUIVO = path.join(__dirname, '..', 'js', 'core', 'persist-queue.js');
 
 function loadPersistQueue() {
-  var code = fs.readFileSync(path.join(__dirname, '..', 'js', 'core', 'persist-queue.js'), 'utf8');
-  var sandbox = { module: { exports: {} }, console: console };
-  // eslint-disable-next-line no-new-func
-  var fn = new Function('module', 'exports', 'console', 'sessionStorage', 'document', 'window', 'UTILS', 'DADOS', 'TRANSACOES', 'OBS', 'Promise', 'setTimeout', 'CustomEvent', code + '\n; return typeof PERSIST_QUEUE !== "undefined" ? PERSIST_QUEUE : module.exports;');
   var store = {};
   var sessionStorage = {
     getItem: function(k) { return store[k] || null; },
@@ -48,7 +47,16 @@ function loadPersistQueue() {
     gerarUuid: function() { return 'uuid-' + Math.random().toString(36).slice(2, 10); },
     gerarId: function() { return 'gid-' + Date.now(); }
   };
-  var PQ = fn(sandbox.module, sandbox.module.exports, console, sessionStorage, document, window, UTILS, DADOS, TRANSACOES, undefined, Promise, setTimeout, CustomEvent);
+  // vm com o caminho real do arquivo: a cobertura V8 do Jest só conta script
+  // com filename em js/ (com `new Function` o módulo aparecia com 0%).
+  var mod = { exports: {} };
+  var ctx = vm.createContext({
+    module: mod, exports: mod.exports, console: console, sessionStorage: sessionStorage,
+    document: document, window: window, UTILS: UTILS, DADOS: DADOS, TRANSACOES: TRANSACOES,
+    OBS: undefined, Promise: Promise, setTimeout: setTimeout, CustomEvent: CustomEvent,
+  });
+  rodarNoContexto(ctx, ARQUIVO);
+  var PQ = ctx.PERSIST_QUEUE || mod.exports;
   PQ._resetForTests();
   PQ.__txs = txs;
   PQ.__DADOS = DADOS;

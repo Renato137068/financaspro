@@ -2,9 +2,18 @@
  * previsao.js — Previsão financeira com IA
  * v11.0 — Fase 8: renderiza previsão separada da lógica
  * Depende de: ai-engine.js, dados.js, utils.js
+ *
+ * ES Module (ADR 0005): chega sob demanda no chunk 'previsao'
+ * (js/esm/chunks/previsao.js, via LAZY.load), que o publica em window.
  */
 
-var PREVISAO = {
+import { CONFIG } from './core/config.js';
+import { AI_ENGINE } from './ai-engine.js';
+import { BILLING } from './billing.js';
+import { APP_STORE } from './core/store.js';
+import { DADOS } from './core/dados.js';
+
+const PREVISAO = {
   _cache:    null,
   _cacheKey: '',
 
@@ -20,19 +29,19 @@ var PREVISAO = {
     var txs = typeof DADOS !== 'undefined' ? DADOS.getTransacoes() : [];
     var key = txs.length + '_' + (txs[txs.length - 1] ? txs[txs.length - 1].id : '');
 
-    if (this._cache && this._cacheKey === key) return this._cache;
+    if (PREVISAO._cache && PREVISAO._cacheKey === key) return PREVISAO._cache;
 
-    this._cache    = AI_ENGINE.prever(txs, 3);
-    this._cacheKey = key;
-    return this._cache;
+    PREVISAO._cache    = AI_ENGINE.prever(txs, 3);
+    PREVISAO._cacheKey = key;
+    return PREVISAO._cache;
   },
 
   /**
    * Invalida o cache (chamado quando transações mudam).
    */
   invalidarCache: function() {
-    this._cache    = null;
-    this._cacheKey = '';
+    PREVISAO._cache    = null;
+    PREVISAO._cacheKey = '';
   },
 
   // ─────────────────────────────────────────────────────────────────
@@ -89,7 +98,7 @@ var PREVISAO = {
       return;
     }
 
-    var prev = this.calcular();
+    var prev = PREVISAO.calcular();
 
     if (prev.tendencia === 'insuficiente' || prev.meses.length === 0) {
       el.innerHTML = '<div class="previsao-vazia"><i data-lucide="bar-chart" aria-hidden="true"></i> Registre ao menos 2 meses de transações para ver projeções.</div>';
@@ -99,8 +108,8 @@ var PREVISAO = {
       return;
     }
 
-    var self   = this;
-    var tend   = this._tendenciaIcon(prev.tendencia);
+    var self   = PREVISAO;
+    var tend   = PREVISAO._tendenciaIcon(prev.tendencia);
     var meses  = prev.meses;
 
     // Cards de projeção
@@ -187,7 +196,7 @@ var PREVISAO = {
     var el = document.getElementById('previsao-mini');
     if (!el) return;
 
-    var prev    = this.calcular();
+    var prev    = PREVISAO.calcular();
     var proximo = prev.meses && prev.meses[0];
 
     if (!proximo) {
@@ -196,8 +205,8 @@ var PREVISAO = {
     }
 
     var saldoPos  = proximo.saldoEstimado >= 0;
-    var self      = this;
-    var tend      = this._tendenciaIcon(prev.tendencia);
+    var self      = PREVISAO;
+    var tend      = PREVISAO._tendenciaIcon(prev.tendencia);
 
     el.innerHTML =
       '<div class="previsao-mini-inner" role="status" aria-label="Previsão próximo mês">' +
@@ -217,11 +226,11 @@ var PREVISAO = {
   // ─────────────────────────────────────────────────────────────────
 
   init: function() {
-    this.renderizarMini();
+    PREVISAO.renderizarMini();
 
     // Subscreve mudanças de transações para invalidar cache
     if (typeof APP_STORE !== 'undefined') {
-      var self = this;
+      var self = PREVISAO;
       APP_STORE.subscribe('dados.transacoesVer', function() {
         self.invalidarCache();
         self.renderizarMini();
@@ -230,6 +239,5 @@ var PREVISAO = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = PREVISAO;
-}
+export { PREVISAO };
+export default PREVISAO;

@@ -2,7 +2,8 @@
  * anexos.test.js — aponta para o módulo real (evita teste-cópia).
  * Cobertura detalhada em anexos-real.test.js.
  */
-const ANEXOS = require('../js/anexos.js');
+const { carregarScript } = require('./helpers/carregar-script.cjs');
+const ANEXOS = carregarScript('js/anexos.js');
 
 describe('Anexos — validação (módulo real)', function() {
   test('aceita JPEG dentro do limite', function() {

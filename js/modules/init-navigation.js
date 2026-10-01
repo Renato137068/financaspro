@@ -2,7 +2,24 @@
  * init-navigation.js - Sistema de navegação e abas
  * Extraído do init.js para modularização
  * Responsabilidades: navegação entre abas, action bindings
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
+
+import { UTILS } from '../core/utils.js';
+import { TablistKeyboard } from '../utilities/tablist-keyboard.js';
+import { LAZY } from '../core/lazy-load.js';
+import { CONTAS } from '../contas.js';
+import { HEALTH_SERVICE } from '../services/healthService.js';
+import { FINANCE_RECONCILER } from '../utilities/finance-reconciler.js';
+import { ALERTAS } from '../alertas.js';
+import { CONFIG_USER } from '../config-user.js';
+import { INIT_MODALS } from './init-modals.js';
+import { INIT_FORM } from './init-form.js';
+import { BILLING } from '../billing.js';
+import { authLimparAoSair } from '../authController.js';
+import { DADOS } from '../core/dados.js';
 
 const INIT_NAVIGATION = {
   _listeners: [],
@@ -12,14 +29,18 @@ const INIT_NAVIGATION = {
    * Inicializa sistema de navegação
    */
   init: function() {
-    if (this._initialized) {
+    if (INIT_NAVIGATION._initialized) {
       console.warn('[INIT_NAVIGATION] Já inicializado, ignorando...');
       return;
     }
-    this.setupNavigation();
-    this.setupActionBindings();
-    this.initTablists();
-    this._initialized = true;
+    INIT_NAVIGATION.setupNavigation();
+    INIT_NAVIGATION.setupActionBindings();
+    INIT_NAVIGATION.initTablists();
+    // O Orçamento chega com o chunk lazy (js/core/telas.js): o tablist dele só
+    // existe depois disso. initTablists ignora o que já está ligado.
+    var self = INIT_NAVIGATION;
+    document.addEventListener('fp:tela-carregada', function() { self.initTablists(); });
+    INIT_NAVIGATION._initialized = true;
   },
 
   /**
@@ -45,11 +66,11 @@ const INIT_NAVIGATION = {
    * Limpa listeners (útil para re-inicialização)
    */
   cleanup: function() {
-    this._listeners.forEach(function(fn) {
+    INIT_NAVIGATION._listeners.forEach(function(fn) {
       document.removeEventListener('click', fn);
     });
-    this._listeners = [];
-    this._initialized = false;
+    INIT_NAVIGATION._listeners = [];
+    INIT_NAVIGATION._initialized = false;
   },
 
   /**
@@ -101,7 +122,7 @@ const INIT_NAVIGATION = {
     document.addEventListener('click', handlerMudarAba);
     document.addEventListener('click', handlerAction);
 
-    this._listeners.push(handlerMudarAba, handlerAction);
+    INIT_NAVIGATION._listeners.push(handlerMudarAba, handlerAction);
   },
 
   /**
@@ -109,7 +130,7 @@ const INIT_NAVIGATION = {
    */
   handleAction: function(action, target) {
     // ES5 compatible (sem arrow functions)
-    var self = this;
+    var self = INIT_NAVIGATION;
 
     var safeCall = function(fnName, args) {
       if (typeof window[fnName] === 'function') {
@@ -154,11 +175,6 @@ const INIT_NAVIGATION = {
       'billing-portal': true,
       'billing-cancelar': true,
       'billing-reativar': true,
-      'of-fechar': true,
-      'of-conectar-sandbox': true,
-      'of-conectar-belvo': true,
-      'of-sync': true,
-      'of-desconectar': true,
       'ordenar': true,
       'ordenacao-campo': true,
       'toggle-ordenacao-dir': true,
@@ -181,12 +197,12 @@ const INIT_NAVIGATION = {
       },
       'orc-sub-aba': function() {
         var sub = target.dataset.orcSub || 'planejamento';
-        self._carregarSubOrcamento(sub, function() {
-          if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.mudarSubAba) {
-            INIT_ORCAMENTO.mudarSubAba(sub);
-          } else if (typeof mudarSubAbaOrcamento === 'function') {
-            mudarSubAbaOrcamento(sub);
-          }
+        self.carregarChunkOrcamento(function() {
+          self._carregarSubOrcamento(sub, function() {
+            if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.mudarSubAba) {
+              INIT_ORCAMENTO.mudarSubAba(sub);
+            }
+          });
         });
       },
       'abrir-entrada-rapida': function() { safeCall('abrirEntradaRapida'); },
@@ -252,22 +268,14 @@ const INIT_NAVIGATION = {
           }
         }
       },
-      'abrir-editar-perfil': function() { 
-        if (typeof INIT_CONFIG !== 'undefined' && typeof INIT_CONFIG.abrirEditarPerfil === 'function') {
-          INIT_CONFIG.abrirEditarPerfil();
-        }
-      },
+      'abrir-editar-perfil': function() { safeCall('abrirEditarPerfil'); },
       'abrir-equipe': function() {
         if (typeof INIT_BILLING !== 'undefined' && INIT_BILLING.abrirEquipe) {
           INIT_BILLING.abrirEquipe();
         }
       },
       'abrir-editar-renda': function() { safeCall('abrirEditarRenda'); },
-      'abrir-config-bancos': function() { 
-        if (typeof INIT_CONFIG !== 'undefined' && typeof INIT_CONFIG.abrirConfigBancos === 'function') {
-          INIT_CONFIG.abrirConfigBancos();
-        }
-      },
+      'abrir-config-bancos': function() { safeCall('abrirConfigBancos'); },
       'gerenciar-categorias': function() { 
         safeCall('abrirGerenciarCategorias', [target.dataset.tipo]); 
       },
@@ -322,12 +330,6 @@ const INIT_NAVIGATION = {
         if (typeof DADOS !== 'undefined' && DADOS._nuvemAtiva && !DADOS._nuvemAtiva()) return;
         if (typeof INIT_BILLING !== 'undefined' && INIT_BILLING.abrirPaywall) {
           INIT_BILLING.abrirPaywall();
-        }
-      },
-      'abrir-open-finance': function() {
-        if (typeof DADOS !== 'undefined' && DADOS._nuvemAtiva && !DADOS._nuvemAtiva()) return;
-        if (typeof INIT_OPEN_FINANCE !== 'undefined' && INIT_OPEN_FINANCE.abrir) {
-          INIT_OPEN_FINANCE.abrir();
         }
       },
       'limpar-dados': function() { 
@@ -385,29 +387,14 @@ const INIT_NAVIGATION = {
       + 'Não há como desfazer. Os dados salvos neste aparelho continuam aqui.',
       function() {
         confirmar('Confirma a exclusão definitiva da conta?', function() {
-          var promessa;
-          if (DADOS._supabaseAtivo && DADOS._supabaseAtivo()) {
-            var email = sessao.user.email;
-            var senha = window.prompt('Digite sua senha para confirmar a exclusão da conta:');
-            if (!senha) return;
-            promessa = (typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.reauthWithPassword && SUPA_AUTH.deleteAccount)
-              ? SUPA_AUTH.reauthWithPassword(email, senha).then(function() {
-                return SUPA_AUTH.deleteAccount();
-              })
-              : Promise.reject(new Error('Supabase indisponível'));
-          } else if (DADOS._apiAtiva && DADOS._apiAtiva()) {
-            var senha = window.prompt('Digite sua senha para confirmar a exclusão da conta:');
-            if (!senha) return;
-            promessa = DADOS._apiFetch('/api/v1/users/me', {
-              method: 'DELETE',
-              body: JSON.stringify({ password: senha }),
-            });
-          } else {
-            if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
-              UTILS.mostrarToast('Nuvem indisponível no momento.', 'error');
-            }
-            return;
-          }
+          var email = sessao.user.email;
+          var senha = window.prompt('Digite sua senha para confirmar a exclusão da conta:');
+          if (!senha) return;
+          var promessa = (typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.reauthWithPassword && SUPA_AUTH.deleteAccount)
+            ? SUPA_AUTH.reauthWithPassword(email, senha).then(function() {
+              return SUPA_AUTH.deleteAccount();
+            })
+            : Promise.reject(new Error('Supabase indisponível'));
 
           promessa
             .then(function() {
@@ -466,7 +453,7 @@ const INIT_NAVIGATION = {
    * na hora, sem nenhuma requisição.
    */
   carregarChunkConta: function(callback) {
-    this._ensureChunk(
+    INIT_NAVIGATION._ensureChunk(
       'conta',
       function() { return typeof INIT_BILLING !== 'undefined'; },
       function(justLoaded) {
@@ -478,9 +465,7 @@ const INIT_NAVIGATION = {
           [
             ['BILLING', typeof BILLING !== 'undefined' ? BILLING : null],
             ['INIT_BILLING', typeof INIT_BILLING !== 'undefined' ? INIT_BILLING : null],
-            ['INIT_2FA', typeof INIT_2FA !== 'undefined' ? INIT_2FA : null],
-            ['OPEN_FINANCE', typeof OPEN_FINANCE !== 'undefined' ? OPEN_FINANCE : null],
-            ['INIT_OPEN_FINANCE', typeof INIT_OPEN_FINANCE !== 'undefined' ? INIT_OPEN_FINANCE : null]
+            ['INIT_2FA', typeof INIT_2FA !== 'undefined' ? INIT_2FA : null]
           ].forEach(function(par) {
             var mod = par[1];
             if (!mod || typeof mod.init !== 'function') return;
@@ -493,7 +478,7 @@ const INIT_NAVIGATION = {
   },
 
   carregarChunkAnexos: function(callback) {
-    this._ensureChunk(
+    INIT_NAVIGATION._ensureChunk(
       'anexos',
       function() { return typeof INIT_ANEXOS !== 'undefined'; },
       function(justLoaded) {
@@ -505,18 +490,12 @@ const INIT_NAVIGATION = {
     );
   },
 
-  /** @deprecated OCR removido — alias para anexos. */
-  carregarChunkOcr: function(callback) {
-    this.carregarChunkAnexos(callback);
-  },
-
   _carregarSubOrcamento: function(sub, callback) {
-    var self = this;
     var finish = function() {
       if (typeof callback === 'function') callback();
     };
     if (sub === 'metas') {
-      this._ensureChunk('metas', function() { return typeof INIT_METAS !== 'undefined'; }, function(justLoaded) {
+      INIT_NAVIGATION._ensureChunk('metas', function() { return typeof INIT_METAS !== 'undefined'; }, function(justLoaded) {
         if (justLoaded) {
           if (typeof METAS !== 'undefined' && METAS.init) METAS.init();
           if (typeof INIT_METAS !== 'undefined' && INIT_METAS.init) INIT_METAS.init();
@@ -526,7 +505,7 @@ const INIT_NAVIGATION = {
       return;
     }
     if (sub === 'assinaturas') {
-      this._ensureChunk('assinaturas', function() { return typeof INIT_ASSINATURAS !== 'undefined'; }, function(justLoaded) {
+      INIT_NAVIGATION._ensureChunk('assinaturas', function() { return typeof INIT_ASSINATURAS !== 'undefined'; }, function(justLoaded) {
         if (justLoaded) {
           if (typeof ASSINATURAS !== 'undefined' && ASSINATURAS.init) ASSINATURAS.init();
           if (typeof INIT_ASSINATURAS !== 'undefined' && INIT_ASSINATURAS.init) INIT_ASSINATURAS.init();
@@ -536,7 +515,7 @@ const INIT_NAVIGATION = {
       return;
     }
     if (sub === 'patrimonio') {
-      this._ensureChunk('patrimonio', function() { return typeof INIT_PATRIMONIO !== 'undefined'; }, function(justLoaded) {
+      INIT_NAVIGATION._ensureChunk('patrimonio', function() { return typeof INIT_PATRIMONIO !== 'undefined'; }, function(justLoaded) {
         if (justLoaded) {
           if (typeof PATRIMONIO !== 'undefined' && PATRIMONIO.init) PATRIMONIO.init();
           if (typeof INIT_PATRIMONIO !== 'undefined' && INIT_PATRIMONIO.init) INIT_PATRIMONIO.init();
@@ -546,6 +525,62 @@ const INIT_NAVIGATION = {
       return;
     }
     finish();
+  },
+
+  /**
+   * Perfil (chunk 'config'). INIT_CONFIG.init liga os controles das telas do
+   * Perfil e aplica a visibilidade da nuvem — tudo que ele toca mora nessas
+   * telas. Roda uma vez, na primeira carga real do chunk.
+   */
+  carregarChunkConfig: function(callback) {
+    INIT_NAVIGATION._ensureChunk('config', function() { return typeof INIT_CONFIG !== 'undefined'; }, function(justLoaded) {
+      if (justLoaded && typeof INIT_CONFIG !== 'undefined' && INIT_CONFIG.init) {
+        UTILS.tentar('INIT_CONFIG.init', function() { INIT_CONFIG.init(); });
+      }
+      if (typeof callback === 'function') callback();
+    });
+  },
+
+  /**
+   * Orçamento (chunk 'orcamento'). INIT_ORCAMENTO não tem init: só desenha
+   * quando a aba abre. Os globais que ele define (salvarRendaOrcamento…) só
+   * são acionados de dentro da própria tela.
+   */
+  carregarChunkOrcamento: function(callback) {
+    INIT_NAVIGATION._ensureChunk('orcamento', function() { return typeof INIT_ORCAMENTO !== 'undefined'; }, function() {
+      if (typeof callback === 'function') callback();
+    });
+  },
+
+  /**
+   * Extrato (chunk 'extrato'). INIT_EXTRATO.init liga os listeners da aba e só
+   * pode rodar uma vez — na primeira carga real do chunk. Com o app sem
+   * bundle (dev, testes), o lifecycle já o inicializou no boot.
+   */
+  carregarChunkExtrato: function(callback) {
+    INIT_NAVIGATION._ensureChunk('extrato', function() { return typeof INIT_EXTRATO !== 'undefined'; }, function(justLoaded) {
+      if (justLoaded && typeof INIT_EXTRATO !== 'undefined' && INIT_EXTRATO.init) {
+        UTILS.tentar('INIT_EXTRATO.init', function() { INIT_EXTRATO.init(); });
+      }
+      if (typeof callback === 'function') callback();
+    });
+  },
+
+  /**
+   * Simulador (chunk 'simulador') + metas: o CTA "Criar meta no app" só aparece
+   * com METAS carregado, e METAS mora no chunk 'metas'. Sem pedir os dois, o
+   * botão sumia para quem não tinha aberto Metas na sessão.
+   */
+  carregarChunkSimulador: function() {
+    var self = INIT_NAVIGATION;
+    // Pelo mesmo caminho da aba Metas, que roda METAS.init na primeira carga.
+    INIT_NAVIGATION._carregarSubOrcamento('metas', function() {
+      self._ensureChunk('simulador', function() { return typeof INIT_SIMULADOR !== 'undefined'; }, function() {
+        if (typeof INIT_SIMULADOR === 'undefined') return;
+        UTILS.tentar('INIT_SIMULADOR.init', function() { INIT_SIMULADOR.init(); });
+        if (INIT_SIMULADOR.render) INIT_SIMULADOR.render();
+      });
+    });
   },
 
   _ensureChunk: function(chunk, isReady, onReady) {
@@ -569,7 +604,7 @@ const INIT_NAVIGATION = {
     if (arrow) arrow.classList.toggle('expanded', !aberto);
     if (btn)   btn.setAttribute('aria-expanded', String(!aberto));
     if (!aberto) {
-      this._ensureChunk('previsao', function() { return typeof PREVISAO !== 'undefined'; }, function(justLoaded) {
+      INIT_NAVIGATION._ensureChunk('previsao', function() { return typeof PREVISAO !== 'undefined'; }, function(justLoaded) {
         if (typeof PREVISAO === 'undefined') return;
         if (justLoaded && PREVISAO.init) {
           UTILS.tentar('PREVISAO.init', function() { PREVISAO.init(); });
@@ -589,7 +624,7 @@ const INIT_NAVIGATION = {
     if (arrow) arrow.classList.toggle('expanded', !aberto);
     if (btn)   btn.setAttribute('aria-expanded', String(!aberto));
     if (!aberto) {
-      this._ensureChunk('relatorios', function() { return typeof INIT_RELATORIOS !== 'undefined'; }, function() {
+      INIT_NAVIGATION._ensureChunk('relatorios', function() { return typeof INIT_RELATORIOS !== 'undefined'; }, function() {
         if (typeof INIT_RELATORIOS !== 'undefined' && INIT_RELATORIOS.render) {
           INIT_RELATORIOS.render();
         }
@@ -697,15 +732,15 @@ function mudarAba(nomeAba, opcoes) {
         });
       }
       if (nomeAba === 'extrato') {
-        if (typeof INIT_EXTRATO !== 'undefined' && INIT_EXTRATO.filtrarExtrato) {
-          INIT_EXTRATO.filtrarExtrato();
-        } else if (typeof filtrarExtrato === 'function') {
-          filtrarExtrato();
-        }
+        INIT_NAVIGATION.carregarChunkExtrato(function() {
+          if (typeof INIT_EXTRATO !== 'undefined' && INIT_EXTRATO.filtrarExtrato) {
+            INIT_EXTRATO.filtrarExtrato();
+          }
+        });
       }
       if (nomeAba === 'orcamento') {
         var orcSubPref = (opcoes && opcoes.orcSub) ? opcoes.orcSub : null;
-        INIT_NAVIGATION._carregarSubOrcamento(orcSubPref || 'planejamento', function() {
+        var abrirOrcamento = function() {
           if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.restaurarSubAba) {
             INIT_ORCAMENTO.restaurarSubAba(orcSubPref);
           } else if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.mudarSubAba) {
@@ -713,8 +748,6 @@ function mudarAba(nomeAba, opcoes) {
           }
           if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.renderDashboard) {
             INIT_ORCAMENTO.renderDashboard();
-          } else if (typeof renderOrcamentoDashboard === 'function') {
-            renderOrcamentoDashboard();
           }
           if (orcSubPref === 'metas' && typeof INIT_METAS !== 'undefined' && INIT_METAS.renderOrcamento) {
             INIT_METAS.renderOrcamento();
@@ -725,6 +758,10 @@ function mudarAba(nomeAba, opcoes) {
           if (orcSubPref === 'patrimonio' && typeof INIT_PATRIMONIO !== 'undefined' && INIT_PATRIMONIO.render) {
             INIT_PATRIMONIO.render();
           }
+        };
+        // Primeiro a tela (chunk 'orcamento'), depois a sub-aba pedida.
+        INIT_NAVIGATION.carregarChunkOrcamento(function() {
+          INIT_NAVIGATION._carregarSubOrcamento(orcSubPref || 'planejamento', abrirOrcamento);
         });
       }
       if (nomeAba === 'resumo' || nomeAba === 'extrato') {
@@ -741,9 +778,7 @@ function mudarAba(nomeAba, opcoes) {
           refreshBillingUi();
         }
       }
-      if (nomeAba === 'config-simulador' && typeof INIT_SIMULADOR !== 'undefined' && INIT_SIMULADOR.render) {
-        INIT_SIMULADOR.render();
-      }
+      if (nomeAba === 'config-simulador') INIT_NAVIGATION.carregarChunkSimulador();
       if (nomeAba === 'config' || nomeAba.indexOf('config-') === 0) {
         // Vale para o Perfil e suas sub-telas (config-*): os cartões e toggles
         // moram em containers diferentes, mas o refreshPerfil atualiza todos por
@@ -751,12 +786,13 @@ function mudarAba(nomeAba, opcoes) {
         // Paywall/Play/2FA/Open Finance: chunk 'conta' (~UI). BILLING (quotas)
         // já está no eager. O chunk precisa chegar ANTES do refreshPerfil:
         // refreshPlanoCard/refreshUI checam `typeof X !== 'undefined'`.
-        INIT_NAVIGATION.carregarChunkConta(function() {
-          if (typeof INIT_CONFIG !== 'undefined' && INIT_CONFIG.refreshPerfil) {
-            INIT_CONFIG.refreshPerfil();
-          } else if (typeof renderConfigTab === 'function') {
-            renderConfigTab();
-          }
+        // Primeiro a tela do Perfil (chunk 'config'), depois o 'conta'.
+        INIT_NAVIGATION.carregarChunkConfig(function() {
+          INIT_NAVIGATION.carregarChunkConta(function() {
+            if (typeof INIT_CONFIG !== 'undefined' && INIT_CONFIG.refreshPerfil) {
+              INIT_CONFIG.refreshPerfil();
+            }
+          });
         });
       }
     } catch (e) {
@@ -786,7 +822,5 @@ window.__fpHandleAndroidBack = function() {
   return false;
 };
 
-// Export para compatibilidade
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { INIT_NAVIGATION, mudarAba };
-}
+export { INIT_NAVIGATION, mudarAba };
+export default INIT_NAVIGATION;

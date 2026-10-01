@@ -23,8 +23,11 @@ const reportOnly = process.argv.includes('--report');
 
 const KB = 1024;
 
-// Limites com folga deliberada sobre o valor atual: o objetivo é barrar um
-// salto acidental, não travar o desenvolvimento em cada quilobyte.
+// Limites com pouca folga sobre o valor atual. Desde 27/09 o teto só DESCE:
+// tests/bundle-budget-teto.test.js trava os valores. Feature nova que não cabe
+// vai para um chunk sob demanda (CHUNKS_ESM em js/core/lazy-load.js) ou paga o
+// espaço tirando algo do eager — subir o teto a cada feature virou carimbo
+// (sete aumentos só em setembro, histórico abaixo).
 const BUDGETS = {
   // 1350→1360 KB (2026-09-12): acompanha o +7 KB do index.html da
   // reestruturação da aba Perfil, mantendo folga em vez de ficar no limite.
@@ -37,7 +40,26 @@ const BUDGETS = {
   // (contabiliza contra o limite/comprometido) — aumento intencional.
   // 1415→1418 KB (2026-09-21): alerta de fatura vencida no topo do dashboard
   // (lembrete básico que leva às faturas) — aumento intencional.
-  precacheTotal: { max: 1418 * KB, label: 'Precache total (1º acesso)' },
+  // 1418→1392 KB (2026-09-27): simulador e tour de boas-vindas viram chunks lazy.
+  // 1392→1300 KB (2026-09-27): Extrato, Orçamento e Perfil viram chunks lazy.
+  // 1300→1305 KB (2026-09-27): supabase-js 2.112 → 2.117 (+6 KB no vendor).
+  // Exceção registrada: o ganho do dia (1418 → 1305) paga a atualização da
+  // biblioteca de login e sync, que não se encolhe por aqui.
+  // 1305→1280 KB (2026-09-27): Orçamento e quatro sub-telas do Perfil saem do
+  // index.html e vêm com o chunk (telas/, js/core/telas.js).
+  // 1280→1240 KB (2026-09-27): Extrato e as demais telas do Perfil também
+  // saem do index.html (segunda leva de telas/).
+  // 1240→1236→1232 KB (2026-09-27/28): quarta e quinta fatias ESM (o Vite minifica melhor os módulos).
+  // 1232→1205 KB (2026-09-29): DADOS vira ES Module (−28 KB) e os primeiros
+  // chunks sob demanda ES Module (+1 KB do carregador).
+  // 1205→1180 KB (2026-09-30): CSS das telas sob demanda (onboarding,
+  // assinaturas, relatórios, patrimônio, simulador, Open Finance, paywall)
+  // chega com o chunk (TELAS.estilo, scripts/generate-telas.cjs).
+  // 1180→1110 KB (2026-10-01): a parte das folhas de Extrato, Orçamento e
+  // Perfil que só essas telas desenham chega com o chunk (layouts/*-tela.css).
+  // 1110→1082 KB (2026-10-02): sai o cliente da API Express e o sync v2
+  // (ADR 0007): 1106 → 1079 KB.
+  precacheTotal: { max: 1082 * KB, label: 'Precache total (1º acesso)' },
   // 580→590 KB (2026-09-13): correção do KPI "Folga poupança" no Orçamento
   // (cálculo da folga da fatia de poupança) + referência de ritmo no Resumo
   // adicionam alguns KB de código — aumento intencional.
@@ -51,12 +73,40 @@ const BUDGETS = {
   // (resumo-mensal.js + plano-metas.js + handlers) — aumento intencional.
   // 626→628 KB (2026-09-21): "ainda devo" nas faturas + alerta de fatura
   // vencida no dashboard — aumento intencional.
-  appBundle: { max: 628 * KB, label: 'js/app.bundle.js', file: 'js/app.bundle.js' },
-  vendorBundle: { max: 260 * KB, label: 'js/vendor.bundle.js', file: 'js/vendor.bundle.js' },
-  cssBundle: { max: 300 * KB, label: 'CSS bundle', glob: /^css\/index-.*\.css$/ },
+  // 628→604 KB (2026-09-27): simulador (19 KB) e onboarding (8 KB) saem do
+  // eager para js/lazy/. Daqui para baixo, só com mais chunks lazy.
+  // 604→514 KB (2026-09-27): telas de Extrato (34 KB), Orçamento (21 KB) e
+  // Perfil (37 KB) viram chunks lazy; ícones de categoria e ações de insight
+  // ficam no eager (categoria-visual.js, insight-acoes.js).
+  // 503→478 KB (2026-09-29): DADOS vira ES Module (o Vite minifica melhor) e
+  // os primeiros chunks sob demanda ES Module.
+  // 478→450 KB (2026-10-02): saem o cliente da API Express (dados-express.js)
+  // e o sync v2, que só existia para ela (sync-engine.js) — ADR 0007. 475 →
+  // 447 KB: a meta de 450 KB das auditorias de 30/09 e 1º/10.
+  // 507→503 KB (2026-09-28): quinta fatia ESM (restante do domínio eager).
+  // 512→507 KB (2026-09-27): quarta fatia ESM (utilitários e lançamentos).
+  // 514→512 KB (2026-09-27): ícones de categoria e os services de transação
+  // e orçamento viram ES Modules; o polyfill de modulepreload fica de fora.
+  // Desde a fundação de ES Modules (ADR 0005), o código eager do app vem em
+  // dois arquivos: app.bundle.js (scripts clássicos) e js/index-<hash>.js (a
+  // entrada ESM que o Vite gera). O teto vale para a soma: migrar um módulo de
+  // um para o outro não abre espaço.
+  appBundle: { max: 450 * KB, label: 'App eager (clássico + ESM)', glob: /^js\/(app\.bundle|index-[\w-]+)\.js$/ },
+  // 260→262 KB (2026-09-27): supabase-js 2.112 → 2.117. O vendor é só
+  // supabase-js + lucide; não há o que mover para lazy aqui.
+  vendorBundle: { max: 262 * KB, label: 'js/vendor.bundle.js', file: 'js/vendor.bundle.js' },
+  // 300→253 KB (2026-09-30): as folhas usadas só por telas de chunk saem do
+  // CSS do primeiro acesso (277 → 250 KB) e chegam com o chunk.
+  // 253→184 KB (2026-10-01): Extrato, Orçamento e Perfil também (250 → 181 KB).
+  cssBundle: { max: 184 * KB, label: 'CSS bundle', glob: /^css\/index-.*\.css$/ },
   // 100→112 KB (2026-09-12): reestruturação da aba Perfil em menu + sub-telas
   // (divulgação progressiva) adiciona ~7 KB de markup — aumento intencional.
-  indexHtml: { max: 112 * KB, label: 'index.html', file: 'index.html' },
+  // 112→85 KB (2026-09-27): telas usadas só por um chunk lazy (Orçamento,
+  // Categorias, Ajuda, Suporte, Editar perfil) moram em telas/ e chegam com o
+  // chunk; o index.html guarda só a casca de cada uma.
+  // 85→48 KB (2026-09-27): segunda leva — Extrato, Perfil (menu), Conta,
+  // Segurança, Conexões, Preferências, Dados, Bancos e a casca do Simulador.
+  indexHtml: { max: 48 * KB, label: 'index.html', file: 'index.html' },
 };
 
 function size(rel) {

@@ -1,8 +1,15 @@
 /**
  * aprendizado.js - Advanced learning with rich metadata
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
 
-var APRENDIZADO = {
+import { UTILS } from './core/utils.js';
+import { BILLING } from './billing.js';
+import { DADOS } from './core/dados.js';
+
+const APRENDIZADO = {
   /**
    * A automacao que o usuario sente todo dia -- e o motivo pelo qual ele
    * renova. As regras por regex de AUTO_CATEGORIZER seguem livres: elas sao o
@@ -20,18 +27,18 @@ var APRENDIZADO = {
   MAX_ENTRADAS: 5000, // hard cap
 
   init: function() {
-    this.HISTORICO = DADOS.obterAprendizado() || {};
-    this.prune();
+    APRENDIZADO.HISTORICO = DADOS.obterAprendizado() || {};
+    APRENDIZADO.prune();
   },
 
   prune: function() {
-    var keys = Object.keys(this.HISTORICO);
+    var keys = Object.keys(APRENDIZADO.HISTORICO);
     if (keys.length === 0) return 0;
 
     var hoje = new Date();
-    var cortoMs = this.PRUNE_DIAS * 24 * 60 * 60 * 1000;
+    var cortoMs = APRENDIZADO.PRUNE_DIAS * 24 * 60 * 60 * 1000;
     var removidos = 0;
-    var self = this;
+    var self = APRENDIZADO;
 
     keys.forEach(function(k) {
       var h = self.HISTORICO[k];
@@ -45,15 +52,15 @@ var APRENDIZADO = {
     });
 
     // Hard cap: mantém top N por contador
-    var atual = Object.keys(this.HISTORICO);
-    if (atual.length > this.MAX_ENTRADAS) {
+    var atual = Object.keys(APRENDIZADO.HISTORICO);
+    if (atual.length > APRENDIZADO.MAX_ENTRADAS) {
       var ordenado = atual.map(function(k){ return [k, self.HISTORICO[k].contador||0]; })
         .sort(function(a,b){ return b[1] - a[1]; });
-      var aRemover = ordenado.slice(this.MAX_ENTRADAS);
+      var aRemover = ordenado.slice(APRENDIZADO.MAX_ENTRADAS);
       aRemover.forEach(function(par){ delete self.HISTORICO[par[0]]; removidos++; });
     }
 
-    if (removidos > 0) DADOS.salvarAprendizado(this.HISTORICO);
+    if (removidos > 0) DADOS.salvarAprendizado(APRENDIZADO.HISTORICO);
     return removidos;
   },
 
@@ -105,7 +112,7 @@ var APRENDIZADO = {
     // Gate na leitura, de proposito: o historico continua sendo gravado no
     // plano gratuito, entao quem assina depois ja chega com o app treinado --
     // em vez de comecar do zero no dia em que pagou.
-    if (!this._podeAprender()) return null;
+    if (!APRENDIZADO._podeAprender()) return null;
     var tokens = desc.toLowerCase().split(/\s+/);
     var candidatos = [];
 
@@ -163,11 +170,10 @@ var APRENDIZADO = {
       }
     });
 
-    if (alterou) DADOS.salvarAprendizado(this.HISTORICO);
+    if (alterou) DADOS.salvarAprendizado(APRENDIZADO.HISTORICO);
     // Reforço da correta acontece via registrar() chamado no submit normal
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = APRENDIZADO;
-}
+export { APRENDIZADO };
+export default APRENDIZADO;

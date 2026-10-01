@@ -129,11 +129,38 @@ var tests = fs.readdirSync(testDir)
   .filter(function(f) { return f.endsWith('.test.sql'); })
   .sort();
 
+/**
+ * Asserções reprovadas no TAP que o psql imprime. O psql só sai com erro em
+ * erro de SQL: um `not ok` do pgTAP, ou um plano que não fechou, sai com 0. Até
+ * 02/10/2026 este script só olhava o código de saída, e um teste do banco
+ * reprovado passava no CI.
+ */
+function falhasTap(saida) {
+  return saida.split('\n').filter(function(l) {
+    return /^\s*not ok\b/.test(l) || /^\s*# Looks like you (failed|planned)/.test(l);
+  }).map(function(l) { return l.trim(); });
+}
+
 console.log('[pgtap] rodando', tests.length, 'arquivos…');
+var reprovados = [];
 for (var j = 0; j < tests.length; j++) {
   var t = path.join(testDir, tests[j]);
   console.log('[pgtap] →', tests[j]);
-  psql(t, { file: t });
+  var r = spawnSync('psql', ['-v', 'ON_ERROR_STOP=1', '-f', t, dbUrl], { encoding: 'utf8' });
+  process.stdout.write(r.stdout || '');
+  process.stderr.write(r.stderr || '');
+  if (r.status !== 0) throw new Error('psql falhou: ' + t);
+  var falhas = falhasTap(r.stdout || '');
+  if (falhas.length) reprovados.push({ arquivo: tests[j], falhas: falhas });
+}
+
+if (reprovados.length) {
+  console.error('\n[pgtap] testes reprovados:');
+  reprovados.forEach(function(x) {
+    console.error('  ' + x.arquivo);
+    x.falhas.forEach(function(f) { console.error('    ' + f); });
+  });
+  process.exit(1);
 }
 
 console.log('[pgtap] todos os testes passaram');

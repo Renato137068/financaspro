@@ -17,6 +17,7 @@
 const fs = require('fs');
 const path = require('path');
 const esbuild = require('esbuild');
+const { entradasEsm, grafoEsm } = require('./lib/esm-grafo.cjs');
 
 const root = path.join(__dirname, '..');
 const dist = path.join(root, 'dist');
@@ -29,41 +30,9 @@ const GENERATED = ['js/vendor.bundle.js', 'js/app.bundle.js'];
 // Prefixo de libs de terceiros que vão para o bundle de vendor (cache longo).
 const VENDOR_PREFIX = 'js/vendor/';
 
-// Features opcionais movidas para fora do bundle eager e carregadas sob demanda
-// via LAZY.load(). Só entram aqui módulos autocontidos, disparados por ação do
-// usuário e referenciados SEMPRE atrás de `typeof X !== 'undefined'`.
-const LAZY_CHUNKS = {
-  previsao: ['js/previsao.js'],
-  relatorios: ['js/relatorios.js', 'js/modules/init-relatorios.js'],
-
-  // Anexos de comprovante só ao abrir Novo (~anexos fora do 1º acesso).
-  // OCR foi removido do produto; o chunk mantém só anexos manuais.
-  anexos: ['js/anexos.js', 'js/modules/init-anexos.js'],
-
-  // Sub-abas de Orçamento — carregadas ao abrir Metas, Gastos fixos ou Patrimônio.
-  metas: ['js/metas.js', 'js/modules/init-metas.js'],
-  assinaturas: ['js/assinaturas.js', 'js/modules/init-assinaturas.js'],
-  patrimonio: ['js/patrimonio.js', 'js/modules/init-patrimonio.js'],
-
-  // Paywall UI, Play Billing bridge, 2FA e Open Finance — aba Config (e
-  // Resumo/Extrato em nuvem para banner). Vão juntos: mesmo gatilho.
-  //
-  // IMPORTANTE (RISK-01 / 2026-09): `js/billing.js` NÃO entra neste chunk.
-  // Quotas e canUse rodam em Metas/Contas/OCR/etc. sem abrir Config; se BILLING
-  // só existisse após lazy `conta`, os `typeof BILLING !== 'undefined' &&
-  // !guardQuota` falhavam abertos (Free ultrapassava limites no AAB).
-  // O núcleo BILLING fica no app.bundle.js (eager). Este chunk só traz UI e
-  // compra. tests/lazy-chunks.test.js trava: billing.js fora do lazy + gatilho.
-  conta: [
-    'js/play-billing.js',
-    'js/fp-native-billing-bridge.js',
-    'js/modules/init-billing.js',
-    'js/modules/init-2fa.js',
-    'js/open-finance.js',
-    'js/modules/init-open-finance.js',
-  ],
-};
-const lazySet = new Set(Object.values(LAZY_CHUNKS).reduce((a, b) => a.concat(b), []));
+// Os chunks sob demanda são ES Modules (ADR 0005): import() dinâmico em
+// js/core/lazy-load.js (CHUNKS_ESM), que o Vite divide em js/<chunk>-<hash>.js.
+// Aqui só sobram os scripts clássicos do boot.
 
 if (!fs.existsSync(indexPath)) {
   console.log('[bundle-app] dist/index.html ausente — pulando bundle');
@@ -76,6 +45,9 @@ function extractScriptPaths(html) {
   let m;
   while ((m = re.exec(html))) {
     if (m[1].startsWith('http')) continue;
+    // ES Modules são do Vite (ADR 0005): ele já juntou a entrada e os imports
+    // num arquivo próprio. Empacotá-lo aqui de novo o faria rodar duas vezes.
+    if (/\btype="module"/.test(m[0])) continue;
     paths.push(m[1].replace(/^\//, ''));
   }
   return paths;
@@ -116,19 +88,7 @@ if (!bundlable.length) {
 
 // Preserva a ordem original de declaração dentro de cada grupo.
 const vendorPaths = bundlable.filter((p) => p.startsWith(VENDOR_PREFIX));
-const appPaths = bundlable.filter((p) => !p.startsWith(VENDOR_PREFIX) && !lazySet.has(p));
-
-// Chunks lazy: cada um vira js/lazy/<nome>.bundle.js e NÃO é injetado como tag
-// eager — só carrega quando LAZY.load(<nome>) é chamado.
-const lazyDir = path.join(dist, 'js', 'lazy');
-for (const [name, chunkPaths] of Object.entries(LAZY_CHUNKS)) {
-  const present = chunkPaths.filter((p) => bundlable.indexOf(p) !== -1);
-  if (!present.length) continue;
-  fs.mkdirSync(lazyDir, { recursive: true });
-  const code = minifyConcat(present);
-  fs.writeFileSync(path.join(lazyDir, name + '.bundle.js'), code);
-  console.log('[bundle-app]', present.length, 'lazy →', 'js/lazy/' + name + '.bundle.js (', Math.round(code.length / 1024), 'KB )');
-}
+const appPaths = bundlable.filter((p) => !p.startsWith(VENDOR_PREFIX));
 
 const injects = [];
 
@@ -161,7 +121,7 @@ console.log('[bundle-app] bloqueantes mantidos:', KEEP_BLOCKING.join(', '));
 //
 // Os arquivos crus precisam existir em dist/ porque são a ENTRADA deste script:
 // `minifyConcat` lê `dist/js/*.js`. Terminado o empacotamento, cada um deles
-// virou cópia morta do que está em app.bundle.js / vendor.bundle.js / lazy.
+// virou cópia morta do que está em app.bundle.js / vendor.bundle.js.
 //
 // Ninguém os baixa — o HTML não os referencia mais. Mas `npm run android:sync`
 // empacota dist/ inteiro no APK, então o usuário baixa da loja e guarda no
@@ -190,10 +150,19 @@ for (const rel of bundlable) {
   purgados.push(fs.statSync(file).size);
   fs.unlinkSync(file);
 }
+// Fontes dos ES Modules: o Vite já as juntou em js/index-<hash>.js. As cópias
+// cruas que o copy-static trouxe de js/ são tão mortas quanto as de cima.
+const esm = grafoEsm(root, entradasEsm(fs.readFileSync(path.join(root, 'index.html'), 'utf8')));
+for (const rel of esm) {
+  const file = path.join(dist, rel);
+  if (!fs.existsSync(file)) continue;
+  purgados.push(fs.statSync(file).size);
+  fs.unlinkSync(file);
+}
 
-// Diretórios que ficaram vazios após o purge. `js/lazy` e `js/vendor` seguem
-// povoados — são pedidos por caminho montado em runtime, nunca entram em
-// `bundlable`, e apagá-los quebraria os chunks e o fallback de ícones.
+// Diretórios que ficaram vazios após o purge. `js/vendor` segue povoado — o
+// lucide completo é pedido por caminho montado em runtime, nunca entra em
+// `bundlable`, e apagá-lo quebraria o fallback de ícones.
 function limparVazios(dir) {
   if (!fs.existsSync(dir)) return;
   for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {

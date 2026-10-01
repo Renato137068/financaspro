@@ -20,17 +20,16 @@
  *
  * ── Por que uma varredura literal não bastaria ──────────────────────────────
  *
- * Dois grupos de arquivos são alcançados por caminho MONTADO em tempo de
- * execução e não aparecem em busca textual:
+ * Os chunks sob demanda (js/<chunk>-<hash>.js, do Vite) só são citados pelo
+ * bundle ES Module que os importa: são seguidos a partir dele (seguirImports).
+ * E um arquivo é alcançado por caminho MONTADO em tempo de execução, que não
+ * aparece em busca textual:
  *
- *   js/lazy/<chunk>.bundle.js   ← lazy-load.js faz 'js/lazy/' + chunk + '.bundle.js'
  *   js/vendor/lucide-full.min.js ← carregado só se algum ícone ficar de fora do subset
  *
- * Apagá-los "porque nada referencia" quebraria previsão, relatórios, billing,
- * 2FA, Open Finance e os ícones de fallback — em produção, silenciosamente,
- * porque todos estão atrás de guardas `typeof X !== 'undefined'`.
- *
- * Por isso a alcançabilidade aqui é declarada, não inferida.
+ * Apagá-lo "porque nada referencia" quebraria os ícones de fallback — em
+ * produção, silenciosamente. Por isso essa alcançabilidade é declarada, não
+ * inferida.
  *
  * Uso:
  *   node scripts/check-dist-orphans.cjs           # falha se sobrou órfão
@@ -47,8 +46,6 @@ const dist = path.join(root, 'dist');
  * textual — cada entrada aqui precisa apontar para o código que a monta.
  */
 const ALCANCAVEL_EM_RUNTIME = [
-  // js/core/lazy-load.js:27 → s.src = 'js/lazy/' + chunk + '.bundle.js'
-  /^js\/lazy\/[a-z0-9-]+\.bundle\.js$/,
   // js/lucide-init.js → fallback quando um ícone fica fora do subset
   /^js\/vendor\/lucide-full\.min\.js$/,
   // OCR removido: não declarar tesseract como alcançável.
@@ -62,6 +59,35 @@ function referenciasDe(conteudo) {
   while ((m = attrs.exec(conteudo))) refs.add(m[1].replace(/^\//, '').split('?')[0]);
   const precache = /"(\/[^"]+\.(?:js|css))"/g;
   while ((m = precache.exec(conteudo))) refs.add(m[1].replace(/^\//, ''));
+  return refs;
+}
+
+/**
+ * O que um módulo do Vite importa: `import("./x.js")` (chunk sob demanda) e
+ * `from"./x.js"` (o chunk importando a entrada). Caminhos relativos ao
+ * próprio módulo, devolvidos relativos a dist/.
+ */
+function importsDeModulo(conteudo, rel) {
+  const refs = new Set();
+  const re = /(?:\bimport\(\s*|\bfrom\s*)["'](\.{1,2}\/[^"']+\.js)["']/g;
+  let m;
+  while ((m = re.exec(conteudo))) refs.add(path.posix.join(path.posix.dirname(rel), m[1]));
+  return refs;
+}
+
+/** Fecha as referências por import de módulo, a partir dos JS já alcançados. */
+function seguirImports(refs, ler) {
+  const fila = [...refs].filter((r) => r.endsWith('.js'));
+  const vistos = new Set(fila);
+  while (fila.length) {
+    const rel = fila.shift();
+    const conteudo = ler(rel);
+    if (conteudo == null) continue;
+    for (const alvo of importsDeModulo(conteudo, rel)) {
+      refs.add(alvo);
+      if (!vistos.has(alvo)) { vistos.add(alvo); fila.push(alvo); }
+    }
+  }
   return refs;
 }
 
@@ -108,6 +134,13 @@ function main() {
     }
   }
 
+  // Chunks do Vite (import() de js/core/lazy-load.js): só o bundle ES Module
+  // os cita, com o hash no nome. Seguidos a partir do que o HTML já carrega.
+  seguirImports(refs, (rel) => {
+    const p = path.join(dist, rel);
+    return fs.existsSync(p) ? fs.readFileSync(p, 'utf8') : null;
+  });
+
   const { usados, orfaos } = classificar(listar(path.join(dist, 'js'), 'js')
     .concat(listar(path.join(dist, 'css'), 'css')), refs);
 
@@ -143,4 +176,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { classificar, referenciasDe, ALCANCAVEL_EM_RUNTIME };
+module.exports = { classificar, referenciasDe, importsDeModulo, seguirImports, ALCANCAVEL_EM_RUNTIME };

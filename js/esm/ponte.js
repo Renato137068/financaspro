@@ -1,0 +1,184 @@
+/**
+ * ponte.js — entrada dos ES Modules do app (ADR 0005).
+ *
+ * O app ainda é, na maior parte, uma coleção de scripts clássicos que se
+ * enxergam por globais. Os módulos já migrados usam import/export entre si, e
+ * esta ponte publica cada um em `window` para quem ainda não migrou.
+ *
+ * Nenhum módulo daqui pode ler globais de script clássico no carregamento:
+ * no build, esta entrada roda antes do app.bundle.js. Só dentro de funções.
+ */
+import { CONFIG } from '../core/config.js';
+import { UTILS } from '../core/utils.js';
+import { PASSWORD_POLICY } from '../core/password-policy.js';
+import { VALIDATIONS } from '../core/validations.js';
+import { FINANCE_CONTRACT } from '../core/finance-contract.js';
+import { SYNC_MERGE } from '../core/sync-merge.js';
+import { SESSION_LOG } from '../core/session-log.js';
+import { IDB_KV } from '../core/idb-kv.js';
+import { TELAS } from '../core/telas.js';
+import { TablistKeyboard } from '../utilities/tablist-keyboard.js';
+import { compartilharTextoUI } from '../utilities/share-texto.js';
+import { LAZY } from '../core/lazy-load.js';
+import { DOMUTILS } from '../core/domUtils.js';
+import { LOCAL_CRYPTO } from '../utilities/local-crypto.js';
+import { FUNIL } from '../utilities/funil.js';
+import { SCORE } from '../score.js';
+import { CATEGORIZADOR } from '../categorizador.js';
+import { PARSER } from '../parser.js';
+import { APRENDIZADO } from '../aprendizado.js';
+import { AUTO_CATEGORIZER, CATEGORIAS } from '../auto-categorizer.js';
+import { CATEGORIES } from '../categories.js';
+import { TRANSACOES } from '../transacoes.js';
+import { ORCAMENTO } from '../orcamento.js';
+import { CONTAS } from '../contas.js';
+import { CARTOES } from '../cartoes.js';
+import { RECORRENTES } from '../recorrentes.js';
+import { COMPROMISSOS } from '../compromissos.js';
+import { CONTAS_PAGAR } from '../contas-pagar.js';
+import { CALENDARIO } from '../calendario.js';
+import { PROJECAO } from '../projecao.js';
+import { RESUMO_MENSAL } from '../resumo-mensal.js';
+import { RESUMO_ANUAL } from '../resumo-anual.js';
+import { PLANO_METAS } from '../plano-metas.js';
+import { PIPELINE } from '../pipeline.js';
+import { AI_ENGINE } from '../ai-engine.js';
+import { HEALTH_SERVICE, verificarArmazenamento, verificarBackupAutomatico } from '../services/healthService.js';
+import { CATEGORIA_VISUAL } from '../core/categoria-visual.js';
+import { TRANSACTION_SERVICE } from '../services/transactionService.js';
+import { BUDGET_SERVICE } from '../services/budgetService.js';
+import { INSIGHT_ACOES } from '../modules/insight-acoes.js';
+import { FORM_SUGESTOES } from '../modules/form-sugestoes.js';
+import { EVENT_BUS, EVENT_HANDLERS, EVENT_INIT } from '../core/event-bus.js';
+import { EVENTS, EVENT_BUS_CATALOG } from '../core/events-catalog.js';
+import { DOM_SAFE, DOM_SAFE_PATCH } from '../core/dom-safe.js';
+import { PERSIST_QUEUE } from '../core/persist-queue.js';
+import { FINANCE_RECONCILER } from '../utilities/finance-reconciler.js';
+import { SETUP_GUIDE } from '../core/setup-guide.js';
+import { SHORTCUTS } from '../shortcuts.js';
+import { SKELETON } from '../skeleton.js';
+import { MICRO } from '../micro-interactions.js';
+import { UI } from '../components/ui.js';
+import { SYNC_INDICATOR } from '../utilities/sync-indicator.js';
+import { ALERTAS } from '../alertas.js';
+import { INSIGHTS } from '../insights.js';
+import { CONFIG_USER } from '../config-user.js';
+import { RENDER_CORE, RENDERER_BASE } from '../render-core.js';
+import { RENDER_DASHBOARD } from '../render-dashboard.js';
+import { RENDER } from '../render.js';
+import { INIT_NAVIGATION, mudarAba } from '../modules/init-navigation.js';
+import { INIT_MODALS } from '../modules/init-modals.js';
+import {
+  PIN_SECURITY, hashPin, setupPinInputs, togglePinSeguranca, confirmarDesativarPin,
+  verificarPinAoAbrir, tentarDesbloquear
+} from '../pin.js';
+import { INIT_FORM } from '../modules/init-form.js';
+import { BILLING } from '../billing.js';
+import {
+  setupAuthUI, authLimparAoSair, atualizarBarraSessao, setupLogoutButton, sairDaConta,
+  authResendCooldown, _abrirAuthOverlay
+} from '../authController.js';
+import { AUTH_BIOMETRIC } from '../auth-biometric.js';
+import { DAILY_REMINDER } from '../utilities/daily-reminder.js';
+import { APP_BOOTSTRAP } from '../app-bootstrap.js';
+import { INIT_CONTAS_PAGAR } from '../modules/init-contas-pagar.js';
+import { APP_STORE, APP_STATE } from '../core/store.js';
+import { ACTIONS } from '../services/actions.js';
+import { LIFECYCLE, LIFECYCLE_BOOT } from '../core/lifecycle.js';
+import { DADOS } from '../core/dados.js';
+
+window.CONFIG = CONFIG;
+window.UTILS = UTILS;
+window.PASSWORD_POLICY = PASSWORD_POLICY;
+window.VALIDATIONS = VALIDATIONS;
+window.FINANCE_CONTRACT = FINANCE_CONTRACT;
+window.SYNC_MERGE = SYNC_MERGE;
+window.SESSION_LOG = SESSION_LOG;
+window.IDB_KV = IDB_KV;
+window.TELAS = TELAS;
+window.TablistKeyboard = TablistKeyboard;
+window.compartilharTextoUI = compartilharTextoUI;
+window.LAZY = LAZY;
+window.DOMUTILS = DOMUTILS;
+window.LOCAL_CRYPTO = LOCAL_CRYPTO;
+window.FUNIL = FUNIL;
+window.SCORE = SCORE;
+window.CATEGORIZADOR = CATEGORIZADOR;
+window.PARSER = PARSER;
+window.APRENDIZADO = APRENDIZADO;
+window.AUTO_CATEGORIZER = AUTO_CATEGORIZER;
+window.CATEGORIAS = CATEGORIAS;
+window.CATEGORIES = CATEGORIES;
+window.TRANSACOES = TRANSACOES;
+window.ORCAMENTO = ORCAMENTO;
+window.CONTAS = CONTAS;
+window.CARTOES = CARTOES;
+window.RECORRENTES = RECORRENTES;
+window.COMPROMISSOS = COMPROMISSOS;
+window.CONTAS_PAGAR = CONTAS_PAGAR;
+window.CALENDARIO = CALENDARIO;
+window.PROJECAO = PROJECAO;
+window.RESUMO_MENSAL = RESUMO_MENSAL;
+window.RESUMO_ANUAL = RESUMO_ANUAL;
+window.PLANO_METAS = PLANO_METAS;
+window.PIPELINE = PIPELINE;
+window.AI_ENGINE = AI_ENGINE;
+window.HEALTH_SERVICE = HEALTH_SERVICE;
+window.verificarArmazenamento = verificarArmazenamento;
+window.verificarBackupAutomatico = verificarBackupAutomatico;
+window.CATEGORIA_VISUAL = CATEGORIA_VISUAL;
+window.TRANSACTION_SERVICE = TRANSACTION_SERVICE;
+window.BUDGET_SERVICE = BUDGET_SERVICE;
+window.INSIGHT_ACOES = INSIGHT_ACOES;
+window.FORM_SUGESTOES = FORM_SUGESTOES;
+window.EVENT_BUS = EVENT_BUS;
+window.EVENT_HANDLERS = EVENT_HANDLERS;
+window.EVENT_INIT = EVENT_INIT;
+window.EVENTS = EVENTS;
+window.EVENT_BUS_CATALOG = EVENT_BUS_CATALOG;
+window.DOM_SAFE = DOM_SAFE;
+window.DOM_SAFE_PATCH = DOM_SAFE_PATCH;
+window.PERSIST_QUEUE = PERSIST_QUEUE;
+window.FINANCE_RECONCILER = FINANCE_RECONCILER;
+window.SETUP_GUIDE = SETUP_GUIDE;
+window.SHORTCUTS = SHORTCUTS;
+window.SKELETON = SKELETON;
+window.MICRO = MICRO;
+window.UI = UI;
+window.SYNC_INDICATOR = SYNC_INDICATOR;
+window.ALERTAS = ALERTAS;
+window.INSIGHTS = INSIGHTS;
+window.CONFIG_USER = CONFIG_USER;
+window.RENDER_CORE = RENDER_CORE;
+window.RENDERER_BASE = RENDERER_BASE;
+window.RENDER_DASHBOARD = RENDER_DASHBOARD;
+window.RENDER = RENDER;
+window.INIT_NAVIGATION = INIT_NAVIGATION;
+window.mudarAba = mudarAba;
+window.INIT_MODALS = INIT_MODALS;
+window.PIN_SECURITY = PIN_SECURITY;
+window.hashPin = hashPin;
+window.setupPinInputs = setupPinInputs;
+window.togglePinSeguranca = togglePinSeguranca;
+window.confirmarDesativarPin = confirmarDesativarPin;
+window.verificarPinAoAbrir = verificarPinAoAbrir;
+window.tentarDesbloquear = tentarDesbloquear;
+window.INIT_FORM = INIT_FORM;
+window.BILLING = BILLING;
+window.setupAuthUI = setupAuthUI;
+window.authLimparAoSair = authLimparAoSair;
+window.atualizarBarraSessao = atualizarBarraSessao;
+window.setupLogoutButton = setupLogoutButton;
+window.sairDaConta = sairDaConta;
+window.authResendCooldown = authResendCooldown;
+window._abrirAuthOverlay = _abrirAuthOverlay;
+window.AUTH_BIOMETRIC = AUTH_BIOMETRIC;
+window.DAILY_REMINDER = DAILY_REMINDER;
+window.APP_BOOTSTRAP = APP_BOOTSTRAP;
+window.INIT_CONTAS_PAGAR = INIT_CONTAS_PAGAR;
+window.APP_STORE = APP_STORE;
+window.APP_STATE = APP_STATE;
+window.ACTIONS = ACTIONS;
+window.LIFECYCLE = LIFECYCLE;
+window.LIFECYCLE_BOOT = LIFECYCLE_BOOT;
+window.DADOS = DADOS;

@@ -1,6 +1,16 @@
 /**
  * assinaturas.js — Rastreador de assinaturas mensais
+ *
+ * ES Module (ADR 0005): chega sob demanda no chunk 'assinaturas'
+ * (js/esm/chunks/assinaturas.js, via LAZY.load), que o publica em window.
  */
+
+import { CONFIG } from './core/config.js';
+import { UTILS } from './core/utils.js';
+import { TRANSACOES } from './transacoes.js';
+import { BILLING } from './billing.js';
+import { DADOS } from './core/dados.js';
+
 const ASSINATURAS = {
   init: function() {
     var config = DADOS.getConfig();
@@ -15,7 +25,7 @@ const ASSINATURAS = {
 
   obter: function(id) {
     var found = null;
-    this.listar().forEach(function(a) { if (a.id === id) found = a; });
+    ASSINATURAS.listar().forEach(function(a) { if (a.id === id) found = a; });
     return found;
   },
 
@@ -44,7 +54,7 @@ const ASSINATURAS = {
       errAss.code = 'quota';
       throw errAss;
     }
-    var v = this._validar(dados);
+    var v = ASSINATURAS._validar(dados);
 
     var item = {
       id: UTILS.gerarId(),
@@ -55,9 +65,9 @@ const ASSINATURAS = {
       icone: dados.icone || 'tv',
       criadoEm: new Date().toISOString()
     };
-    var lista = this.listar();
+    var lista = ASSINATURAS.listar();
     lista.push(item);
-    this._salvar(lista);
+    ASSINATURAS._salvar(lista);
     return item;
   },
 
@@ -69,32 +79,32 @@ const ASSINATURAS = {
    * usuário teria de excluir e recadastrar a cada reajuste.
    */
   editar: function(id, dados) {
-    var lista = this.listar();
+    var lista = ASSINATURAS.listar();
     var idx = -1;
     for (var i = 0; i < lista.length; i++) {
       if (lista[i].id === id) { idx = i; break; }
     }
     if (idx === -1) throw new Error('Assinatura não encontrada');
 
-    var v = this._validar(dados);
+    var v = ASSINATURAS._validar(dados);
     lista[idx] = Object.assign({}, lista[idx], { nome: v.nome, valor: v.valor, diaCobranca: v.dia });
-    this._salvar(lista);
+    ASSINATURAS._salvar(lista);
     return lista[idx];
   },
 
   excluir: function(id) {
-    this._salvar(this.listar().filter(function(a) { return a.id !== id; }));
+    ASSINATURAS._salvar(ASSINATURAS.listar().filter(function(a) { return a.id !== id; }));
   },
 
   toggleAtiva: function(id) {
-    var lista = this.listar();
+    var lista = ASSINATURAS.listar();
     for (var i = 0; i < lista.length; i++) {
       if (lista[i].id === id) {
         lista[i] = Object.assign({}, lista[i], { ativa: !lista[i].ativa });
         break;
       }
     }
-    this._salvar(lista);
+    ASSINATURAS._salvar(lista);
   },
 
   proximaCobranca: function(item) {
@@ -118,21 +128,21 @@ const ASSINATURAS = {
    * helper, então uma correção vale para os dois.
    */
   diasAteCobranca: function(item) {
-    return UTILS.diasAte(this.proximaCobranca(item));
+    return UTILS.diasAte(ASSINATURAS.proximaCobranca(item));
   },
 
   totalMensal: function() {
     // Soma em centavos inteiros e só então volta a reais, como Resumo,
     // Orçamento e Extrato. Somar floats direto acumula erro de arredondamento
     // e faz o total divergir por um centavo do que o usuário confere na mão.
-    var totalCent = this.listar(true).reduce(function(s, a) {
+    var totalCent = ASSINATURAS.listar(true).reduce(function(s, a) {
       return s + UTILS.paraCentavos(a.valor);
     }, 0);
     return totalCent / 100;
   },
 
   totalAnual: function() {
-    return this.totalMensal() * 12;
+    return ASSINATURAS.totalMensal() * 12;
   },
 
   /** Sugere assinaturas a partir de despesas recorrentes no extrato */
@@ -150,7 +160,7 @@ const ASSINATURAS = {
       map[key].count++;
       map[key].valor = t.valor;
     });
-    var existentes = this.listar().map(function(a) { return a.nome.toLowerCase(); });
+    var existentes = ASSINATURAS.listar().map(function(a) { return a.nome.toLowerCase(); });
     var sugestoes = [];
     Object.keys(map).forEach(function(k) {
       // >= 2: uma cobrança isolada não é assinatura. A guarda antiga (>= 1) era
@@ -165,6 +175,5 @@ const ASSINATURAS = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = ASSINATURAS;
-}
+export { ASSINATURAS };
+export default ASSINATURAS;

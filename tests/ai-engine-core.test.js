@@ -2,9 +2,9 @@
  * ai-engine-core.test.js — trava o núcleo matemático do motor financeiro.
  * Funções puras que alimentam TODOS os insights que o usuário vê.
  */
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
 
 function loadAiEngine() {
   const ctx = vm.createContext({ Date, Math, Number, String, Array, Object, JSON });
@@ -12,8 +12,7 @@ function loadAiEngine() {
   // mapeia o código executado de volta ao arquivo-fonte. Com um nome relativo o
   // teste passa, mas a cobertura do módulo aparece como 0% no relatório.
   const file = path.join(__dirname, '..', 'js', 'ai-engine.js');
-  const code = fs.readFileSync(file, 'utf8');
-  vm.runInContext(code, ctx, { filename: file });
+  rodarNoContexto(ctx, file);
   return ctx.AI_ENGINE;
 }
 const AI = loadAiEngine();

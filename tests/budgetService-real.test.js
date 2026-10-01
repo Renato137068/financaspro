@@ -3,23 +3,14 @@
  *
  * O budget.test.js existente roda uma CÓPIA inline da lógica (0% de cobertura
  * do módulo real, e ainda soma valor em float). Este carrega o módulo de
- * produção num contexto vm — com o transactionService real como dependência —
+ * produção — com o transactionService real, que ele importa, como dependência —
  * para travar as regras de orçamento (dinheiro) contra regressão.
  */
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
+const { carregarScript } = require('./helpers/carregar-script.cjs');
 
-function loadBudgetService() {
-  const ctx = vm.createContext({ Date, Math, Number, String, Array, Object, JSON, parseFloat });
-  // Dependência real: calculateSpent(mes,ano) usa TRANSACTION_SERVICE.
-  const tsFile = path.join(__dirname, '..', 'js', 'services', 'transactionService.js');
-  vm.runInContext(fs.readFileSync(tsFile, 'utf8'), ctx, { filename: tsFile });
-  const bsFile = path.join(__dirname, '..', 'js', 'services', 'budgetService.js');
-  vm.runInContext(fs.readFileSync(bsFile, 'utf8'), ctx, { filename: bsFile });
-  return ctx.BUDGET_SERVICE;
-}
-const BS = loadBudgetService();
+// ES Module: o import de TRANSACTION_SERVICE (usado por calculateSpent com
+// mês/ano) carrega o transactionService real no mesmo sandbox.
+const BS = carregarScript('js/services/budgetService.js');
 
 describe('BUDGET_SERVICE.setBudget / removeBudget', () => {
   test('define limite com carimbo de data e não muta o objeto original', () => {

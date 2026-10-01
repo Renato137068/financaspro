@@ -29,7 +29,7 @@ describe('Edge email templates (fonte)', function() {
 
   test('convite gera link ?invite= compatível com o client', function() {
     expect(emailTs).toMatch(/\?invite=\$\{encodeURIComponent\(token\)\}/);
-    const billing = fs.readFileSync(path.join(ROOT, 'js/billing.js'), 'utf8');
+    const billing = require('./helpers/esm-como-script.cjs').fonteComPartes(path.join(ROOT, 'js/billing.js'));
     expect(billing).toMatch(/\?invite=/);
   });
 

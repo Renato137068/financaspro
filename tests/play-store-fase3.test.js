@@ -4,6 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+const { indexComTelas } = require('./helpers/index-com-telas.cjs');
 
 const root = path.join(__dirname, '..');
 
@@ -65,14 +66,17 @@ describe('Play Store Fase 3 — export e criptografia honestos', () => {
     const cfg = fs.readFileSync(path.join(root, 'js/modules/init-config.js'), 'utf8');
     expect(cfg).toContain('_refreshExportHint');
     expect(cfg).toContain('isCloudUser');
-    expect(fs.readFileSync(path.join(root, 'index.html'), 'utf8'))
+    expect(indexComTelas())
       .toContain('id="perfil-export-hint"');
   });
 
-  test('crypto hint menciona localStorage e anexos', () => {
-    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-    expect(html).toMatch(/localStorage/i);
-    expect(html).toMatch(/anexos/i);
-    expect(html).toMatch(/fp-transacoes|Lançamentos grandes no IndexedDB/i);
+  test('crypto hint diz o que é cifrado: lançamentos, configurações e anexos', () => {
+    // Desde 27/09 o blob de lançamentos no IndexedDB também é cifrado
+    // (tests/idb-cifragem.test.js); a dica não pode mais dizer que fica em texto.
+    const html = indexComTelas();
+    const card = html.slice(html.indexOf('id="perfil-crypto-card"'), html.indexOf('id="chk-crypto"'));
+    expect(card).toMatch(/lançamentos, configurações e anexos/i);
+    expect(card).toMatch(/não cobre XSS/i);
+    expect(card).not.toMatch(/ficam em texto/i);
   });
 });

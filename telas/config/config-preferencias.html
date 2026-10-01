@@ -1,0 +1,67 @@
+<!-- Tela "config-preferencias" (#aba-config-preferencias). Vem no chunk lazy "config": scripts/generate-telas.cjs
+     gera js/telas/config.js a partir deste arquivo. Rode `npm run telas:gerar` depois de editar. -->
+<div class="perfil-header">
+  <div class="perfil-avatar-wrapper">
+    <div class="perfil-avatar" style="background: var(--color-primary-500);" aria-hidden="true"><i data-lucide="settings"></i></div>
+  </div>
+  <div class="perfil-info">
+    <h2 class="perfil-nome">Preferências e notificações</h2>
+    <div class="perfil-meta"><span>Tema, alertas e lembretes</span></div>
+  </div>
+  <div class="perfil-actions">
+    <button class="perfil-action-btn" data-action="mudar-aba" data-aba="config" aria-label="Perfil e configurações">
+      <i data-lucide="arrow-left" aria-hidden="true"></i>
+    </button>
+  </div>
+</div>
+<div class="perfil-section">
+  <h2 class="perfil-section-title">Aparência</h2>
+  <div class="perfil-cards-grid">
+    <div class="perfil-card perfil-card-toggle">
+      <div class="perfil-card-icon-wrapper">
+        <i data-lucide="moon" aria-hidden="true"></i>
+      </div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Modo escuro</span>
+        <span class="perfil-card-subtitle">Tema escuro para visualização</span>
+      </div>
+      <label class="perfil-switch">
+        <input type="checkbox" id="chk-darkmode" aria-label="Ativar modo escuro">
+        <span class="perfil-switch-slider"></span>
+      </label>
+    </div>
+  </div>
+</div>
+<div class="perfil-section">
+  <h2 class="perfil-section-title">Notificações</h2>
+  <div class="perfil-cards-grid">
+    <div class="perfil-card perfil-card-toggle">
+      <div class="perfil-card-icon-wrapper">
+        <i data-lucide="bell" aria-hidden="true"></i>
+      </div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Alertas de orçamento</span>
+        <span class="perfil-card-subtitle">Avisar ao atingir 80%</span>
+      </div>
+      <label class="perfil-switch">
+        <input type="checkbox" id="chk-alerta-orc" aria-label="Ativar alertas de orçamento">
+        <span class="perfil-switch-slider"></span>
+      </label>
+    </div>
+
+    <div class="perfil-card perfil-card-toggle">
+      <div class="perfil-card-icon-wrapper">
+        <i data-lucide="calendar" aria-hidden="true"></i>
+      </div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Lembrete diário</span>
+        <span class="perfil-card-subtitle" id="perfil-lembrete-status">Notificação do navegador ou app</span>
+      </div>
+      <label class="perfil-switch">
+        <input type="checkbox" id="chk-lembrete" aria-label="Ativar lembrete diário">
+        <span class="perfil-switch-slider"></span>
+      </label>
+    </div>
+  </div>
+</div>
+

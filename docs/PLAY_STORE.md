@@ -4,7 +4,7 @@ Este guia descreve como gerar o **AAB** (Android App Bundle) do FinançasPro a p
 
 ## Pré-requisitos
 
-1. [Node.js 18+](https://nodejs.org/)
+1. [Node.js 22+](https://nodejs.org/) (o `engines` do package.json)
 2. [Android Studio](https://developer.android.com/studio) com SDK 34+
 3. Conta [Google Play Console](https://play.google.com/console) (taxa única de desenvolvedor)
 4. JDK 17 (incluído no Android Studio)

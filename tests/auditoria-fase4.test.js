@@ -3,10 +3,13 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { indexComTelas } = require('./helpers/index-com-telas.cjs');
 
 const root = path.join(__dirname, '..');
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-const extratoSrc = fs.readFileSync(path.join(root, 'js', 'modules', 'init-extrato.js'), 'utf8');
+// index.html com as telas lazy (telas/) de volta nas cascas.
+const html = indexComTelas();
+// init-extrato.js e as partes em js/modules/extrato/.
+const extratoSrc = require('./helpers/esm-como-script.cjs').fonteComPartes(path.join(root, 'js', 'modules', 'init-extrato.js'));
 const dadosSrc = fs.readFileSync(path.join(root, 'js', 'core', 'dados.js'), 'utf8');
 const healthSrc = fs.readFileSync(path.join(root, 'js', 'services', 'healthService.js'), 'utf8');
 const navSrc = fs.readFileSync(path.join(root, 'js', 'modules', 'init-navigation.js'), 'utf8');

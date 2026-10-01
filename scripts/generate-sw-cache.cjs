@@ -3,6 +3,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { entradasEsm, grafoEsm } = require('./lib/esm-grafo.cjs');
 
 const root = path.join(__dirname, '..');
 const version = require(path.join(root, 'package.json')).version.replace(/\./g, '');
@@ -202,7 +203,10 @@ function buildUrls(targetDir) {
 
   const css = walkDir(path.join(root, 'css'), '');
   const scripts = extractScripts(indexPath);
-  const unique = [...new Set([...base, ...css, ...scripts])];
+  // Sem build, o navegador busca cada import do ES Module (ADR 0005) por conta
+  // própria; o index.html só nomeia a entrada.
+  const esm = grafoEsm(root, entradasEsm(fs.readFileSync(indexPath, 'utf8'))).map(r => '/' + r);
+  const unique = [...new Set([...base, ...css, ...scripts, ...esm])];
   return apenasExistentes(unique.sort(), targetDir);
 }
 
@@ -259,9 +263,9 @@ self.addEventListener('message', (event) => {
 // ficariam em texto puro no Cache Storage (fora do LOCAL_CRYPTO) e, como a URL
 // é idêntica entre usuários, poderiam ser servidas a outra sessão no mesmo
 // aparelho quando offline. Tudo fora desta allowlist é network-only.
-const CACHEABLE_CROSS_ORIGIN = new Set([
-  'cdn.jsdelivr.net',
-]);
+// Vazia desde que o OCR (tesseract via jsdelivr) saiu do produto: hoje todo
+// asset é servido da própria origem.
+const CACHEABLE_CROSS_ORIGIN = new Set([]);
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;

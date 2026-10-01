@@ -1,6 +1,19 @@
 /**
  * init-billing.js — UI de planos, paywall e assinatura Stripe
+ *
+ * ES Module (ADR 0005): chega sob demanda no chunk 'conta'
+ * (js/esm/chunks/conta.js, via LAZY.load), que o publica em window.
  */
+
+import { UTILS } from '../core/utils.js';
+import { FUNIL } from '../utilities/funil.js';
+import { mudarAba } from './init-navigation.js';
+import { INIT_MODALS } from './init-modals.js';
+import { BILLING } from '../billing.js';
+import { _abrirAuthOverlay } from '../authController.js';
+import { DADOS } from '../core/dados.js';
+import { PLAY_BILLING } from '../play-billing.js';
+
 const INIT_BILLING = {
   _overlay: null,
   _focusTrap: null,
@@ -15,12 +28,25 @@ const INIT_BILLING = {
 
   init: function() {
     if (typeof BILLING !== 'undefined') BILLING.init();
-    this.refreshPlanoCard();
-    this._handleBillingReturn();
-    this._handleInviteReturn();
-    this._consumePendingInvite();
-    this._reconciliarPlay();
-    this._bindResumeReconcile();
+    INIT_BILLING.refreshPlanoCard();
+    INIT_BILLING._ouvirTelas();
+    INIT_BILLING._handleBillingReturn();
+    INIT_BILLING._handleInviteReturn();
+    INIT_BILLING._consumePendingInvite();
+    INIT_BILLING._reconciliarPlay();
+    INIT_BILLING._bindResumeReconcile();
+  },
+
+  /**
+   * Telas do Perfil e o Extrato chegam com os próprios chunks (js/core/telas.js),
+   * às vezes depois deste. refreshPlanoCard atualiza tudo o que o billing
+   * escreve nelas (plano, equipe, banner, botões de exportação, subtítulo).
+   */
+  _ouvirTelas: function() {
+    if (INIT_BILLING._ouvindoTelas) return;
+    INIT_BILLING._ouvindoTelas = true;
+    var self = INIT_BILLING;
+    document.addEventListener('fp:tela-carregada', function() { self.refreshPlanoCard(); });
   },
 
   /**
@@ -28,9 +54,9 @@ const INIT_BILLING = {
    * sem flag de cancelamento — cobre cancelar na loja e voltar ao app.
    */
   _bindResumeReconcile: function() {
-    if (this._resumeReconcileBound) return;
-    this._resumeReconcileBound = true;
-    var self = this;
+    if (INIT_BILLING._resumeReconcileBound) return;
+    INIT_BILLING._resumeReconcileBound = true;
+    var self = INIT_BILLING;
     var onResume = function() {
       try {
         if (typeof document !== 'undefined' && document.visibilityState
@@ -88,7 +114,7 @@ const INIT_BILLING = {
     var agora = Date.now();
     try {
       if (opts.force) {
-        if (this._reconciliouNestaSessao) {
+        if (INIT_BILLING._reconciliouNestaSessao) {
           // Boot já rodou; se o usuário cancelou na Play e voltou na mesma
           // sessão, o Pro ainda parece "cheio". Reconsulta uma vez.
           var subCache = BILLING._cache && BILLING._cache.subscription;
@@ -97,14 +123,14 @@ const INIT_BILLING = {
           if (!precisaRe) return;
         }
       } else {
-        var ultimo = Number(localStorage.getItem(this._RECONCILIA_KEY) || 0);
-        if (ultimo && (agora - ultimo) < this._RECONCILIA_INTERVALO) return;
+        var ultimo = Number(localStorage.getItem(INIT_BILLING._RECONCILIA_KEY) || 0);
+        if (ultimo && (agora - ultimo) < INIT_BILLING._RECONCILIA_INTERVALO) return;
       }
-      this._reconciliouNestaSessao = true;
-      localStorage.setItem(this._RECONCILIA_KEY, String(agora));
+      INIT_BILLING._reconciliouNestaSessao = true;
+      localStorage.setItem(INIT_BILLING._RECONCILIA_KEY, String(agora));
     } catch (e) { /* storage indisponivel: segue sem throttle */ }
 
-    var self = this;
+    var self = INIT_BILLING;
     PLAY_BILLING.restore().catch(function() {
       // 402 assinatura-nao-ativa: o servidor ja revogou, entao o cache local
       // esta velho. Offline / sem plugin / sem compra caem aqui tambem e o
@@ -230,9 +256,9 @@ const INIT_BILLING = {
           : 'Até ' + lim.maxUsers + ' pessoas no Pro (modo casal)';
       }
     }
-    this.refreshUsageBanner();
-    this.refreshExportButtons();
-    this.refreshExtratoSubtitle();
+    INIT_BILLING.refreshUsageBanner();
+    INIT_BILLING.refreshExportButtons();
+    INIT_BILLING.refreshExtratoSubtitle();
   },
 
   refreshUsageBanner: function() {
@@ -360,7 +386,7 @@ const INIT_BILLING = {
   },
 
   abrirPaywall: function(contextMsg) {
-    var self = this;
+    var self = INIT_BILLING;
 
     if (typeof FUNIL !== 'undefined') {
       FUNIL.evento(FUNIL.E.PAYWALL_VISTO, {
@@ -370,12 +396,12 @@ const INIT_BILLING = {
     }
 
     // Atualiza cancelAtPeriodEnd da Play antes de decidir "Plano atual" vs "Reativar".
-    this._reconciliarPlay({ force: true });
+    INIT_BILLING._reconciliarPlay({ force: true });
 
     // Sempre abre o modal (soft paywall local / upsell). Sem nuvem ou sem
     // login, _renderPlans esconde "Assinar" e o footer pede conta — evita CTA
     // morto quando OCR/previsão esgotam usos grátis offline.
-    this._fecharPaywall();
+    INIT_BILLING._fecharPaywall();
 
     var ov = document.createElement('div');
     ov.className = 'modal-overlay billing-overlay';
@@ -399,7 +425,7 @@ const INIT_BILLING = {
       '</div>';
 
     document.body.appendChild(ov);
-    this._overlay = ov;
+    INIT_BILLING._overlay = ov;
 
     ov.addEventListener('click', function(e) {
       if (e.target === ov) self._fecharPaywall();
@@ -426,22 +452,22 @@ const INIT_BILLING = {
     });
 
     if (typeof FocusTrap !== 'undefined') {
-      this._focusTrap = new FocusTrap(ov);
-      this._focusTrap.activate();
+      INIT_BILLING._focusTrap = new FocusTrap(ov);
+      INIT_BILLING._focusTrap.activate();
     }
 
     if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(ov);
 
-    this._renderPlans(ov);
-    this._renderFooter(ov);
+    INIT_BILLING._renderPlans(ov);
+    INIT_BILLING._renderFooter(ov);
   },
 
   _setInterval: function(interval, ov) {
-    this._interval = interval || 'monthly';
+    INIT_BILLING._interval = interval || 'monthly';
     ov.querySelectorAll('.billing-interval-btn').forEach(function(btn) {
       btn.classList.toggle('ativo', btn.dataset.interval === interval);
     });
-    this._renderPlans(ov);
+    INIT_BILLING._renderPlans(ov);
   },
 
   /**
@@ -469,7 +495,7 @@ const INIT_BILLING = {
   _atualizarSeloAnual: function(ov, plans) {
     var selo = ov.querySelector('#billing-save-badge');
     if (!selo) return;
-    var self = this;
+    var self = INIT_BILLING;
     var maior = 0;
     (plans || []).forEach(function(plan) {
       var d = self._descontoAnual(plan);
@@ -481,7 +507,7 @@ const INIT_BILLING = {
   },
 
   _renderPlans: function(ov) {
-    var self = this;
+    var self = INIT_BILLING;
     var container = ov.querySelector('#billing-plans');
     if (!container) return;
 
@@ -623,10 +649,9 @@ const INIT_BILLING = {
     var sub = BILLING._cache.subscription;
     var hasStripe = sub && sub.stripeCustomerId;
     var usePlay = typeof PLAY_BILLING !== 'undefined' && PLAY_BILLING.isAvailable();
-    var expressBilling = typeof DADOS !== 'undefined' && DADOS._apiAtiva && DADOS._apiAtiva();
     var supaBilling = typeof DADOS !== 'undefined' && DADOS._supabaseAtivo && DADOS._supabaseAtivo()
       && typeof SUPA_BILLING !== 'undefined' && SUPA_BILLING.isActive && SUPA_BILLING.isActive();
-    var webStripe = expressBilling || (supaBilling && !usePlay);
+    var webStripe = supaBilling && !usePlay;
     var trialDays = (typeof BILLING !== 'undefined' && BILLING.TRIAL_DAYS) ? BILLING.TRIAL_DAYS : 7;
     var html = usePlay
       ? '<p class="billing-note">Pagamento via Google Play. Trial de ' + trialDays + ' dias no Pro.</p>'
@@ -654,9 +679,9 @@ const INIT_BILLING = {
   },
 
   _reativar: function(ov) {
-    var self = this;
+    var self = INIT_BILLING;
     if (typeof BILLING === 'undefined' || !BILLING.isCloudUser()) {
-      this._abrirLogin();
+      INIT_BILLING._abrirLogin();
       return;
     }
 
@@ -715,9 +740,9 @@ const INIT_BILLING = {
   },
 
   _assinar: function(tier, ov) {
-    var self = this;
+    var self = INIT_BILLING;
     if (typeof BILLING === 'undefined' || !BILLING.isCloudUser()) {
-      this._abrirLogin();
+      INIT_BILLING._abrirLogin();
       return;
     }
     if (!tier || tier === 'FREE') return;
@@ -725,7 +750,7 @@ const INIT_BILLING = {
     if (typeof FUNIL !== 'undefined') {
       FUNIL.evento(FUNIL.E.CHECKOUT_INICIADO, {
         tierAlvo: tier,
-        intervalo: this._interval,
+        intervalo: INIT_BILLING._interval,
         dia: FUNIL.diasDeUso(),
       });
     }
@@ -753,14 +778,14 @@ const INIT_BILLING = {
     };
 
     if (typeof PLAY_BILLING !== 'undefined' && PLAY_BILLING.isAvailable()) {
-      var productId = PLAY_BILLING.productIdForTier(tier, this._interval);
+      var productId = PLAY_BILLING.productIdForTier(tier, INIT_BILLING._interval);
       if (!productId) {
         onError(new Error('Plano indisponível no Google Play'));
         return;
       }
       var purchaseOpts = null;
       var intervalAtual = (BILLING.getBillingInterval && BILLING.getBillingInterval()) || null;
-      if (BILLING.getTier() === tier && intervalAtual && intervalAtual !== this._interval) {
+      if (BILLING.getTier() === tier && intervalAtual && intervalAtual !== INIT_BILLING._interval) {
         var oldProductId = PLAY_BILLING.productIdForTier(tier, intervalAtual);
         if (oldProductId) purchaseOpts = { oldProductId: oldProductId };
       }
@@ -768,14 +793,14 @@ const INIT_BILLING = {
       return;
     }
 
-    BILLING.checkoutOrSubscribe(tier, this._interval).then(function(result) {
+    BILLING.checkoutOrSubscribe(tier, INIT_BILLING._interval).then(function(result) {
       if (result && result.redirected) return;
       onSuccess();
     }).catch(onError);
   },
 
   _restaurarPlay: function(ov) {
-    var self = this;
+    var self = INIT_BILLING;
     if (typeof PLAY_BILLING === 'undefined' || !PLAY_BILLING.isAvailable()) return;
     PLAY_BILLING.restore().then(function(purchases) {
       var n = Array.isArray(purchases) ? purchases.length : 0;
@@ -803,7 +828,7 @@ const INIT_BILLING = {
   },
 
   _cancelar: function(ov) {
-    var self = this;
+    var self = INIT_BILLING;
     if (typeof INIT_MODALS !== 'undefined' && INIT_MODALS.confirm) {
       INIT_MODALS.confirm('Cancelar assinatura ao final do período atual?', function() {
         self._doCancel(ov);
@@ -811,12 +836,12 @@ const INIT_BILLING = {
       return;
     }
     if (window.confirm('Cancelar assinatura ao final do período atual?')) {
-      this._doCancel(ov);
+      INIT_BILLING._doCancel(ov);
     }
   },
 
   _doCancel: function(ov) {
-    var self = this;
+    var self = INIT_BILLING;
     if (typeof PLAY_BILLING !== 'undefined' && PLAY_BILLING.isAvailable()) {
       BILLING.cancelSubscription().then(function() {
         UTILS.mostrarToast('Abra o Google Play para gerenciar ou cancelar a assinatura.', 'info');
@@ -834,29 +859,31 @@ const INIT_BILLING = {
   },
 
   _abrirLogin: function() {
-    this._fecharPaywall();
-    if (typeof abrirAuthOverlay === 'function') {
-      abrirAuthOverlay();
-    } else if (typeof setupAuthUI === 'function') {
-      var overlay = document.getElementById('auth-overlay');
-      if (overlay) overlay.style.display = 'flex';
+    INIT_BILLING._fecharPaywall();
+    // _abrirAuthOverlay (authController) também marca o body e prende o foco
+    // no login; o antigo `abrirAuthOverlay` não existia e só o display mudava.
+    var overlay = document.getElementById('auth-overlay');
+    if (typeof _abrirAuthOverlay === 'function') {
+      _abrirAuthOverlay(overlay);
+    } else if (overlay) {
+      overlay.style.display = 'flex';
     }
   },
 
   _fecharPaywall: function() {
-    if (this._focusTrap) {
-      this._focusTrap.deactivate();
-      this._focusTrap = null;
+    if (INIT_BILLING._focusTrap) {
+      INIT_BILLING._focusTrap.deactivate();
+      INIT_BILLING._focusTrap = null;
     }
-    if (this._overlay && this._overlay.parentNode) {
-      this._overlay.parentNode.removeChild(this._overlay);
+    if (INIT_BILLING._overlay && INIT_BILLING._overlay.parentNode) {
+      INIT_BILLING._overlay.parentNode.removeChild(INIT_BILLING._overlay);
     }
-    this._overlay = null;
+    INIT_BILLING._overlay = null;
   },
 
   /** Modal de equipe: membros, convites e upgrade se FREE. */
   abrirEquipe: function() {
-    var self = this;
+    var self = INIT_BILLING;
     if (typeof DADOS !== 'undefined' && typeof DADOS._nuvemAtiva === 'function'
         && !DADOS._nuvemAtiva()) {
       return;
@@ -865,15 +892,15 @@ const INIT_BILLING = {
       if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
         UTILS.mostrarToast('Faça login na nuvem para gerenciar a equipe.', 'info');
       }
-      this._abrirLogin();
+      INIT_BILLING._abrirLogin();
       return;
     }
     if (!BILLING.canUse('teamFeatures')) {
-      this.abrirPaywall('Convide alguém da família ou do time a partir do plano Pro.');
+      INIT_BILLING.abrirPaywall('Convide alguém da família ou do time a partir do plano Pro.');
       return;
     }
 
-    this._fecharEquipe();
+    INIT_BILLING._fecharEquipe();
     var ov = document.createElement('div');
     ov.className = 'modal-overlay billing-overlay';
     ov.setAttribute('role', 'dialog');
@@ -900,7 +927,7 @@ const INIT_BILLING = {
       '</div>';
 
     document.body.appendChild(ov);
-    this._equipeOverlay = ov;
+    INIT_BILLING._equipeOverlay = ov;
 
     ov.addEventListener('click', function(e) {
       if (e.target === ov) self._fecharEquipe();
@@ -943,22 +970,22 @@ const INIT_BILLING = {
     }
 
     if (typeof FocusTrap !== 'undefined') {
-      this._equipeTrap = new FocusTrap(ov);
-      this._equipeTrap.activate();
+      INIT_BILLING._equipeTrap = new FocusTrap(ov);
+      INIT_BILLING._equipeTrap.activate();
     }
     if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(ov);
-    this._renderEquipe(ov);
+    INIT_BILLING._renderEquipe(ov);
   },
 
   _fecharEquipe: function() {
-    if (this._equipeTrap) {
-      this._equipeTrap.deactivate();
-      this._equipeTrap = null;
+    if (INIT_BILLING._equipeTrap) {
+      INIT_BILLING._equipeTrap.deactivate();
+      INIT_BILLING._equipeTrap = null;
     }
-    if (this._equipeOverlay && this._equipeOverlay.parentNode) {
-      this._equipeOverlay.parentNode.removeChild(this._equipeOverlay);
+    if (INIT_BILLING._equipeOverlay && INIT_BILLING._equipeOverlay.parentNode) {
+      INIT_BILLING._equipeOverlay.parentNode.removeChild(INIT_BILLING._equipeOverlay);
     }
-    this._equipeOverlay = null;
+    INIT_BILLING._equipeOverlay = null;
   },
 
   _renderEquipe: function(ov) {
@@ -1024,7 +1051,7 @@ const INIT_BILLING = {
   },
 
   _revogarConvite: function(ov, invitationId) {
-    var self = this;
+    var self = INIT_BILLING;
     if (!invitationId) return;
     BILLING.revokeInvite(invitationId).then(function() {
       UTILS.mostrarToast('Convite revogado', 'success');
@@ -1035,7 +1062,7 @@ const INIT_BILLING = {
   },
 
   _removerMembro: function(ov, userId) {
-    var self = this;
+    var self = INIT_BILLING;
     if (!userId) return;
     var go = function() {
       BILLING.removeTeamMember(userId).then(function() {
@@ -1053,7 +1080,7 @@ const INIT_BILLING = {
   },
 
   _convidarEquipe: function(ov) {
-    var self = this;
+    var self = INIT_BILLING;
     var input = ov.querySelector('#equipe-invite-email');
     var email = input ? input.value : '';
     var btn = ov.querySelector('[data-action="equipe-convidar"]');
@@ -1079,6 +1106,5 @@ const INIT_BILLING = {
   },
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = INIT_BILLING;
-}
+export { INIT_BILLING };
+export default INIT_BILLING;

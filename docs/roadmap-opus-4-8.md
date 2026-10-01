@@ -4,7 +4,7 @@
 
 Levar o FinancasPro v11 de um produto funcional, com boa cobertura de domínio e backend promissor, para uma versão confiável em produção, com UI/UX consistente, runtime determinístico, sincronização previsível e gates de release verdes.
 
-Relatório de origem: `docs/auditoria-completa-2026.html`.
+Relatório de origem: `docs/auditorias/auditoria-completa-2026.html`.
 
 ## Regras de execução
 
@@ -162,5 +162,5 @@ O trabalho só está pronto quando:
 ## Prompt de delegação
 
 ```text
-Leia docs/auditoria-completa-2026.html e este roadmap antes de alterar o projeto. Comece pela Fase 0: corrija o ReferenceError do bundle de produção causado pela ordem entre DOM_SAFE_PATCH e INIT_FORM. Preserve o worktree existente, não faça reescrita ampla e adicione testes de regressão. Depois avance sequencialmente pelas fases, com foco explícito em UI/UX, UTF-8, primeiro valor, estados de erro/offline, sync e release Android. Após cada fase, rode os gates correspondentes e reporte comandos, resultados, arquivos alterados, métricas antes/depois e riscos remanescentes. Não declare pronto enquanto E2E, a11y e integração com Postgres/Redis estiverem vermelhos ou sendo pulados sem justificativa.
+Leia docs/auditorias/auditoria-completa-2026.html e este roadmap antes de alterar o projeto. Comece pela Fase 0: corrija o ReferenceError do bundle de produção causado pela ordem entre DOM_SAFE_PATCH e INIT_FORM. Preserve o worktree existente, não faça reescrita ampla e adicione testes de regressão. Depois avance sequencialmente pelas fases, com foco explícito em UI/UX, UTF-8, primeiro valor, estados de erro/offline, sync e release Android. Após cada fase, rode os gates correspondentes e reporte comandos, resultados, arquivos alterados, métricas antes/depois e riscos remanescentes. Não declare pronto enquanto E2E, a11y e integração com Postgres/Redis estiverem vermelhos ou sendo pulados sem justificativa.
 ```

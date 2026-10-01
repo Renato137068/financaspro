@@ -18,8 +18,14 @@
  * consentimento explícito, tudo fica no buffer local e nada deixa o aparelho.
  *
  * Depende de: observability.js (OBS). Degrada para no-op sem ele.
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
-var FUNIL = (function() {
+
+import { BILLING } from '../billing.js';
+
+const FUNIL = (function() {
   'use strict';
 
   var MARCOS_KEY = 'fp-funil-marcos';
@@ -113,6 +119,5 @@ var FUNIL = (function() {
   };
 })();
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = FUNIL;
-}
+export { FUNIL };
+export default FUNIL;

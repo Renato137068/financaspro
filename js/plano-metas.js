@@ -6,8 +6,13 @@
  * aporte mensal para chegar no prazo. Só leitura, reaproveita METAS.
  *
  * Puro, sem DOM. Dependências checadas com typeof.
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
-var PLANO_METAS = {
+
+import { UTILS } from './core/utils.js';
+const PLANO_METAS = {
 
   _fmt: function(v) {
     return (typeof UTILS !== 'undefined' && UTILS.formatarMoeda)
@@ -38,7 +43,7 @@ var PLANO_METAS = {
    * lista já montada para não recalcular a projeção de cada meta duas vezes.
    */
   totalMensal: function(hoje, linhasArg) {
-    var linhas = linhasArg || this.linhas(hoje);
+    var linhas = linhasArg || PLANO_METAS.linhas(hoje);
     return linhas.reduce(function(acc, l) {
       return acc + (l.aporteMensalNecessario > 0 ? l.aporteMensalNecessario : 0);
     }, 0);
@@ -49,9 +54,9 @@ var PLANO_METAS = {
    * plano a enviar. Sem exclamação nem jargão (voz da marca).
    */
   texto: function(hoje) {
-    var linhas = this.linhas(hoje);
+    var linhas = PLANO_METAS.linhas(hoje);
     if (!linhas.length) return null;
-    var self = this;
+    var self = PLANO_METAS;
 
     var out = [];
     out.push('Meu plano de metas');
@@ -62,7 +67,7 @@ var PLANO_METAS = {
       if (l.mensagem) out.push('   ' + l.mensagem);
     });
 
-    var total = this.totalMensal(hoje, linhas);
+    var total = PLANO_METAS.totalMensal(hoje, linhas);
     if (total > 0) {
       out.push('');
       out.push('Para manter o plano: ' + self._fmt(total) + ' por mês');
@@ -73,6 +78,5 @@ var PLANO_METAS = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = PLANO_METAS;
-}
+export { PLANO_METAS };
+export default PLANO_METAS;

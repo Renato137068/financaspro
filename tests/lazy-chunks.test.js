@@ -11,31 +11,22 @@
  * meses, só que por HTML faltando em vez de bundle. O mecanismo do dano é o
  * mesmo, então a trava precisa ser a mesma: exigir que exista quem carregue.
  *
- * Este arquivo lê a lista de chunks direto do bundler — não uma cópia — e
- * exige, para cada um, uma chamada de carregamento no código do app.
+ * Este arquivo lê a lista de chunks direto do carregador (CHUNKS_ESM em
+ * js/core/lazy-load.js) — não uma cópia — e exige, para cada um, uma chamada
+ * de carregamento no código do app.
  */
 const fs = require('fs');
 const path = require('path');
+const { entradasEsm, grafoEsm, chunksEsm: arquivosDosChunks } = require('../scripts/lib/esm-grafo.cjs');
 
 const root = path.join(__dirname, '..');
-
-function lerChunks() {
-  const src = fs.readFileSync(path.join(root, 'scripts/bundle-app.cjs'), 'utf8');
-  const bloco = src.slice(
-    src.indexOf('const LAZY_CHUNKS'),
-    src.indexOf('const lazySet'),
-  );
-  const nomes = [...bloco.matchAll(/^\s{2}(\w+):\s*\[/gm)].map((m) => m[1]);
-  const arquivos = [...bloco.matchAll(/'(js\/[^']+)'/g)].map((m) => m[1]);
-  return { nomes, arquivos, bloco };
-}
 
 function arquivosJs(dir, acc) {
   acc = acc || [];
   for (const f of fs.readdirSync(dir)) {
     const p = path.join(dir, f);
     if (fs.statSync(p).isDirectory()) {
-      if (f === 'vendor' || f === 'lazy') continue;
+      if (f === 'vendor') continue;
       arquivosJs(p, acc);
     } else if (f.endsWith('.js')) {
       acc.push(p);
@@ -44,48 +35,54 @@ function arquivosJs(dir, acc) {
   return acc;
 }
 
-const { nomes, arquivos } = lerChunks();
+/** Os chunks sob demanda: CHUNKS_ESM em js/core/lazy-load.js. */
+function lerChunksEsm() {
+  const src = fs.readFileSync(path.join(root, 'js/core/lazy-load.js'), 'utf8');
+  const bloco = src.slice(src.indexOf('const CHUNKS_ESM'), src.indexOf('const LAZY ='));
+  return [...bloco.matchAll(/^\s{2}(\w+):\s*function\(\)\s*\{\s*return import\('([^']+)'\);/gm)]
+    .map((m) => ({ nome: m[1], entrada: path.join(root, 'js/core', m[2]) }));
+}
+
+const chunksEsm = lerChunksEsm();
+const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+// Todo arquivo que algum chunk traz (e que o boot não carrega).
+const arquivos = [...arquivosDosChunks(root, entradasEsm(html)).values()].flat();
 const todoJs = arquivosJs(path.join(root, 'js'))
   .map((f) => fs.readFileSync(f, 'utf8'))
   .join('\n');
 
 describe('chunks lazy', () => {
   test('há chunks declarados (o teste não pode virar no-op)', () => {
-    expect(nomes.length).toBeGreaterThan(0);
-    expect(arquivos.length).toBeGreaterThan(0);
+    expect(chunksEsm.length).toBeGreaterThan(0);
+    expect(arquivos.length).toBeGreaterThan(chunksEsm.length);
   });
 
-  test.each(nomes)("o chunk '%s' tem quem o carregue", (nome) => {
+  test.each(chunksEsm.map((c) => c.nome))("o chunk '%s' tem quem o carregue", (nome) => {
     // Aceita _ensureChunk('nome', ...) ou LAZY.load('nome').
-    const padrao = new RegExp(
-      "(_ensureChunk|LAZY\\.load)\\(\\s*'" + nome + "'",
-    );
+    const padrao = new RegExp("(_ensureChunk|LAZY\\.load)\\(\\s*'" + nome + "'");
     expect(padrao.test(todoJs)).toBe(true);
   });
 
-  test('todo arquivo listado como lazy existe', () => {
-    const faltando = arquivos.filter((rel) => !fs.existsSync(path.join(root, rel)));
-    expect(faltando).toEqual([]);
+  test('entrada de cada chunk existe e tem o nome do chunk', () => {
+    chunksEsm.forEach(({ nome, entrada }) => {
+      expect(fs.existsSync(entrada)).toBe(true);
+      expect(path.basename(entrada, '.js')).toBe(nome);
+    });
   });
 
-  test('nenhum arquivo lazy é carregado por <script> no index.html', () => {
+  test('nenhum arquivo de chunk é carregado por <script> no index.html', () => {
     // Se o index.html carrega o arquivo direto, o chunk é peso morto: o módulo
-    // já veio eager e o bundle não encolheu nada.
-    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-    const eager = arquivos.filter((rel) => html.includes('src="' + rel + '"'));
-
-    // Em DEV o index.html carrega tudo de propósito — é o build que separa.
-    // O que não pode é o arquivo sumir da lista de scripts, senão o dev roda
-    // com uma feature a menos que a produção.
-    expect(eager.sort()).toEqual(arquivos.slice().sort());
+    // já veio no boot e o bundle não encolheu nada.
+    expect(arquivos.filter((rel) => html.includes('src="' + rel + '"'))).toEqual([]);
   });
 
   test('billing.js NÃO é lazy — quotas no boot (RISK-01)', () => {
     // Se BILLING voltar ao chunk conta, Free no AAB ultrapassa limites até
     // abrir Config: guardas `typeof BILLING !== 'undefined' && !guardQuota`.
     expect(arquivos).not.toContain('js/billing.js');
-    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-    expect(html).toMatch(/src="js\/billing\.js"/);
+    // billing.js é ES Module (ADR 0005): eager por estar no grafo estático da
+    // ponte, que roda no boot antes do app.bundle.js (import() não conta).
+    expect(grafoEsm(root, entradasEsm(html), { soEstatico: true })).toContain('js/billing.js');
   });
 
   test('lifecycle agenda reconcile Play no boot (RISK-04)', () => {
@@ -112,7 +109,7 @@ describe('chunks lazy', () => {
     // Verifica os módulos citados e a CHAMADA de init, sem exigir uma forma
     // sintática específica: o carregador passou de cinco linhas soltas para um
     // laço, e um teste preso à sintaxe quebraria numa refatoração inofensiva.
-    ['INIT_BILLING', 'INIT_2FA', 'INIT_OPEN_FINANCE'].forEach((mod) => {
+    ['INIT_BILLING', 'INIT_2FA'].forEach((mod) => {
       expect(carregador).toContain(mod);
     });
     expect(carregador).toMatch(/\.init\s*\(\)/);

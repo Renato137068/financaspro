@@ -86,6 +86,11 @@ Se der erro de JDK/SDK, confirme que o **Android Studio** está instalado e que 
    - Ícone 512: `icons/icon-512.png` · Feature graphic e screenshots: `docs/play-store/`.
 5. Revisar e **lançar para teste fechado**. Mandar o link de opt-in para os testers.
 
+> **Antes de promover** (teste interno → fechado → produção): smoke em dois
+> aparelhos com o mesmo AAB, pelo roteiro
+> [`docs/release/smoke-aparelho.md`](release/smoke-aparelho.md), registrado
+> numa issue com o modelo **Release**. Um item falho bloqueia a promoção.
+
 ---
 
 ## Lembretes de segurança

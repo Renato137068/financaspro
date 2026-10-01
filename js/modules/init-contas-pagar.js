@@ -1,19 +1,30 @@
 /**
  * init-contas-pagar.js — UI de contas a pagar + calendário
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
+
+import { CONFIG } from '../core/config.js';
+import { UTILS } from '../core/utils.js';
+import { CONTAS_PAGAR } from '../contas-pagar.js';
+import { RENDER_DASHBOARD } from '../render-dashboard.js';
+import { RENDER } from '../render.js';
+import { INIT_MODALS } from './init-modals.js';
+
 const INIT_CONTAS_PAGAR = {
   _bound: false,
   _mesView: null,
   _anoView: null,
 
   init: function() {
-    if (this._bound) return;
-    this._bound = true;
+    if (INIT_CONTAS_PAGAR._bound) return;
+    INIT_CONTAS_PAGAR._bound = true;
     var now = new Date();
-    this._mesView = now.getMonth() + 1;
-    this._anoView = now.getFullYear();
+    INIT_CONTAS_PAGAR._mesView = now.getMonth() + 1;
+    INIT_CONTAS_PAGAR._anoView = now.getFullYear();
 
-    var self = this;
+    var self = INIT_CONTAS_PAGAR;
     document.addEventListener('click', function(e) {
       var btn = e.target.closest('[data-action]');
       if (!btn) return;
@@ -28,10 +39,10 @@ const INIT_CONTAS_PAGAR = {
   },
 
   _mudarMes: function(delta) {
-    this._mesView += delta;
-    if (this._mesView < 1) { this._mesView = 12; this._anoView--; }
-    if (this._mesView > 12) { this._mesView = 1; this._anoView++; }
-    this.render();
+    INIT_CONTAS_PAGAR._mesView += delta;
+    if (INIT_CONTAS_PAGAR._mesView < 1) { INIT_CONTAS_PAGAR._mesView = 12; INIT_CONTAS_PAGAR._anoView--; }
+    if (INIT_CONTAS_PAGAR._mesView > 12) { INIT_CONTAS_PAGAR._mesView = 1; INIT_CONTAS_PAGAR._anoView++; }
+    INIT_CONTAS_PAGAR.render();
   },
 
   _icon: function(name) {
@@ -78,7 +89,7 @@ const INIT_CONTAS_PAGAR = {
     var statusLabel = sit === 'vencida' ? 'Vencida' : sit === 'hoje' ? 'Vence hoje' : sit === 'proxima' ? 'Em ' + dias + ' dias' : UTILS.formatarData(conta.vencimento);
     return '<article class="cp-item cp-item--' + sit + '">' +
       '<div class="cp-item-main">' +
-        '<span class="cp-item-icon">' + this._icon(conta.recorrente ? 'repeat' : 'file-text') + '</span>' +
+        '<span class="cp-item-icon">' + INIT_CONTAS_PAGAR._icon(conta.recorrente ? 'repeat' : 'file-text') + '</span>' +
         '<div class="cp-item-info">' +
           '<h4 class="cp-item-title">' + UTILS.escapeHtml(conta.descricao) + '</h4>' +
           '<span class="cp-item-meta">' + UTILS.escapeHtml(statusLabel) +
@@ -104,7 +115,7 @@ const INIT_CONTAS_PAGAR = {
       return a.vencimento.localeCompare(b.vencimento);
     });
 
-    var mesNome = new Date(this._anoView, this._mesView - 1, 1)
+    var mesNome = new Date(INIT_CONTAS_PAGAR._anoView, INIT_CONTAS_PAGAR._mesView - 1, 1)
       .toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
     mesNome = mesNome.charAt(0).toUpperCase() + mesNome.slice(1);
 
@@ -117,11 +128,11 @@ const INIT_CONTAS_PAGAR = {
         '<div class="cp-kpi"><span class="cp-kpi-label">Total do mês</span><span class="cp-kpi-val">' + UTILS.formatarMoeda(resumo.totalMes) + '</span></div>' +
       '</div>' +
       '<div class="cp-cal-header">' +
-        '<button type="button" class="cp-cal-nav" data-action="conta-mes-prev" aria-label="Mês anterior">' + this._icon('chevron-left') + '</button>' +
+        '<button type="button" class="cp-cal-nav" data-action="conta-mes-prev" aria-label="Mês anterior">' + INIT_CONTAS_PAGAR._icon('chevron-left') + '</button>' +
         '<span class="cp-cal-title">' + UTILS.escapeHtml(mesNome) + '</span>' +
-        '<button type="button" class="cp-cal-nav" data-action="conta-mes-next" aria-label="Próximo mês">' + this._icon('chevron-right') + '</button>' +
+        '<button type="button" class="cp-cal-nav" data-action="conta-mes-next" aria-label="Próximo mês">' + INIT_CONTAS_PAGAR._icon('chevron-right') + '</button>' +
       '</div>' +
-      this._renderCalendario(this._mesView, this._anoView);
+      INIT_CONTAS_PAGAR._renderCalendario(INIT_CONTAS_PAGAR._mesView, INIT_CONTAS_PAGAR._anoView);
 
     if (pendentes.length === 0) {
       html += '<div class="cp-empty"><p>Nenhuma conta pendente.</p><button type="button" class="btn-primario" data-action="conta-nova">Adicionar conta</button></div>';
@@ -199,8 +210,8 @@ const INIT_CONTAS_PAGAR = {
   },
 
   abrirFormNova: function() {
-    var self = this;
-    INIT_MODALS.fpAlert(this._formHtml(), {
+    var self = INIT_CONTAS_PAGAR;
+    INIT_MODALS.fpAlert(INIT_CONTAS_PAGAR._formHtml(), {
       trustedHtml: true,
       title: 'Nova conta a pagar',
       okLabel: 'Salvar',
@@ -214,24 +225,24 @@ const INIT_CONTAS_PAGAR = {
         }
       }
     });
-    this._bindCampoMoeda();
+    INIT_CONTAS_PAGAR._bindCampoMoeda();
   },
 
   abrirFormEdicao: function(id) {
     var conta = CONTAS_PAGAR.obter(id);
     if (!conta) return;
-    var self = this;
+    var self = INIT_CONTAS_PAGAR;
     var preset = {
       descricao: conta.descricao, valor: conta.valor, vencimento: conta.vencimento,
       categoria: conta.categoria, recorrente: conta.recorrente
     };
-    INIT_MODALS.fpAlert(this._formHtml(preset), {
+    INIT_MODALS.fpAlert(INIT_CONTAS_PAGAR._formHtml(preset), {
       trustedHtml: true,
       title: 'Editar conta',
       okLabel: 'Salvar',
       onOk: function(ov) { self._salvarEdicao(ov, id); return false; }
     });
-    this._bindCampoMoeda();
+    INIT_CONTAS_PAGAR._bindCampoMoeda();
   },
 
   _salvarEdicao: function(overlay, id) {
@@ -245,8 +256,8 @@ const INIT_CONTAS_PAGAR = {
       });
       overlay.remove();
       UTILS.mostrarToast('Conta atualizada', 'success');
-      this.render();
-      this.renderResumo();
+      INIT_CONTAS_PAGAR.render();
+      INIT_CONTAS_PAGAR.renderResumo();
       if (typeof RENDER !== 'undefined' && RENDER.init) RENDER.init();
     } catch (e) {
       UTILS.mostrarToast(e.message || 'Erro ao salvar', 'error');
@@ -264,8 +275,8 @@ const INIT_CONTAS_PAGAR = {
       });
       overlay.remove();
       UTILS.mostrarToast('Conta salva', 'success');
-      this.render();
-      this.renderResumo();
+      INIT_CONTAS_PAGAR.render();
+      INIT_CONTAS_PAGAR.renderResumo();
       if (typeof RENDER !== 'undefined' && RENDER.init) RENDER.init();
     } catch (e) {
       UTILS.mostrarToast(e.message || 'Erro ao salvar', 'error');
@@ -275,7 +286,7 @@ const INIT_CONTAS_PAGAR = {
   confirmarPagamento: function(id) {
     var conta = CONTAS_PAGAR.obter(id);
     if (!conta) return;
-    var self = this;
+    var self = INIT_CONTAS_PAGAR;
     var msg = 'Marcar "' + conta.descricao + '" como paga e registrar despesa de ' + UTILS.formatarMoeda(conta.valor) + '?';
     var onOk = function() {
       try {
@@ -296,7 +307,7 @@ const INIT_CONTAS_PAGAR = {
   confirmarExcluir: function(id) {
     var conta = CONTAS_PAGAR.obter(id);
     if (!conta) return;
-    var self = this;
+    var self = INIT_CONTAS_PAGAR;
     var msg = 'Excluir "' + conta.descricao + '"?';
     var fn = function() {
       CONTAS_PAGAR.excluir(id);
@@ -309,9 +320,6 @@ const INIT_CONTAS_PAGAR = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = INIT_CONTAS_PAGAR;
-}
 
 /* P2.5: ordem 20 — após metas */
 (function() {
@@ -323,3 +331,6 @@ if (typeof module !== 'undefined' && module.exports) {
     INIT_CONTAS_PAGAR.renderResumo();
   }, 20);
 })();
+
+export { INIT_CONTAS_PAGAR };
+export default INIT_CONTAS_PAGAR;

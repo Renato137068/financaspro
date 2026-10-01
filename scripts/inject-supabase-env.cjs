@@ -9,7 +9,9 @@
 const fs = require('fs');
 const path = require('path');
 
-const cfgPath = path.join(__dirname, '..', 'js', 'core', 'config.js');
+// FP_CONFIG_PATH: outro alvo (os testes usam uma cópia, nunca o config.js real,
+// que outros workers do jest estão lendo ao mesmo tempo).
+const cfgPath = process.env.FP_CONFIG_PATH || path.join(__dirname, '..', 'js', 'core', 'config.js');
 let src = fs.readFileSync(cfgPath, 'utf8');
 
 if (!/var _FP_ENV_URL\s*=/.test(src) || !/var _FP_ENV_ANON\s*=/.test(src)) {
@@ -42,5 +44,9 @@ if (!clear) {
 
 src = src.replace(/var _FP_ENV_URL\s*=\s*'[^']*'/, "var _FP_ENV_URL = '" + escapeJsString(url) + "'");
 src = src.replace(/var _FP_ENV_ANON\s*=\s*'[^']*'/, "var _FP_ENV_ANON = '" + escapeJsString(anon) + "'");
-fs.writeFileSync(cfgPath, src, 'utf8');
+// Temporário + rename: quem lê o arquivo no meio da escrita vê o antigo ou o
+// novo inteiro, nunca um pedaço.
+const tmpPath = cfgPath + '.' + process.pid + '.tmp';
+fs.writeFileSync(tmpPath, src, 'utf8');
+fs.renameSync(tmpPath, cfgPath);
 console.log('[inject-supabase-env]', clear ? 'limpo' : 'URL=' + url);

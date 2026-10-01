@@ -6,20 +6,29 @@
  * silenciosamente, porque quase tudo no app está atrás de guardas
  * `typeof X !== 'undefined'` que engolem a ausência.
  *
- * O caso perigoso não é o óbvio. É o arquivo cujo caminho é MONTADO em runtime:
- *
- *     s.src = 'js/lazy/' + chunk + '.bundle.js';
- *
- * Nenhuma busca textual encontra `js/lazy/conta.bundle.js` no código. Um purge
+ * O caso perigoso não é o óbvio. É o arquivo que nenhum HTML cita: os chunks
+ * sob demanda do Vite (js/<chunk>-<hash>.js), que só o bundle ES Module
+ * importa, e o lucide completo, cujo caminho é montado em runtime. Um purge
  * ingênuo apagaria billing, 2FA e Open Finance inteiros.
  */
 const path = require('path');
 const fs = require('fs');
 const {
-  classificar, referenciasDe, ALCANCAVEL_EM_RUNTIME,
+  classificar, referenciasDe, seguirImports, ALCANCAVEL_EM_RUNTIME,
 } = require('../scripts/check-dist-orphans.cjs');
 
 describe('extração de referências', () => {
+  test('segue os import() do bundle ES Module até os chunks do Vite', () => {
+    // O nome do chunk leva o hash do build: só o bundle que o importa o cita.
+    const arquivos = {
+      'js/index-abc.js': 'const c={previsao:()=>import("./previsao-x1.js")};',
+      'js/previsao-x1.js': 'import{A as a}from"./index-abc.js";import("./sub-y2.js");',
+      'js/sub-y2.js': 'export{}',
+    };
+    const refs = seguirImports(new Set(['js/index-abc.js']), (rel) => arquivos[rel]);
+    expect([...refs].sort()).toEqual(['js/index-abc.js', 'js/previsao-x1.js', 'js/sub-y2.js']);
+  });
+
   test('lê src e href do HTML, com e sem barra inicial', () => {
     const refs = referenciasDe(
       '<link href="/css/index-abc.css"><script src="js/app.bundle.js"></script>',
@@ -55,13 +64,11 @@ describe('classificação', () => {
     expect(r.orfaos).toEqual(['js/parser.js']);
   });
 
-  test('chunk lazy sobrevive mesmo sem ninguém citá-lo — o caminho é montado', () => {
-    const r = classificar(
-      ['js/lazy/conta.bundle.js', 'js/lazy/previsao.bundle.js', 'js/lazy/relatorios.bundle.js'],
-      new Set(),
-    );
-    expect(r.orfaos).toEqual([]);
-    expect(r.usados).toHaveLength(3);
+  test('bundle clássico de chunk (js/lazy/) que sobrar é órfão: ninguém mais o pede', () => {
+    // Os chunks viraram ES Modules; um js/lazy/*.bundle.js no dist seria
+    // cópia morta de build antigo, indo para o APK.
+    const r = classificar(['js/lazy/conta.bundle.js'], new Set());
+    expect(r.orfaos).toEqual(['js/lazy/conta.bundle.js']);
   });
 
   test('o fallback completo do lucide sobrevive: só carrega se faltar ícone', () => {
@@ -91,30 +98,19 @@ describe('classificação', () => {
 describe('os padrões declarados batem com o código que monta o caminho', () => {
   const root = path.join(__dirname, '..');
 
-  test('lazy-load.js realmente monta js/lazy/<chunk>.bundle.js', () => {
+  test('lazy-load.js não monta caminho: todo chunk é import() literal, que o purge segue', () => {
     const src = fs.readFileSync(path.join(root, 'js/core/lazy-load.js'), 'utf8');
-    expect(src).toContain("'js/lazy/'");
-    expect(src).toContain(".bundle.js'");
-    // Se alguém trocar o esquema de nomes, o padrão abaixo para de casar e este
-    // teste falha antes de o purge apagar os chunks em produção.
-    expect(ALCANCAVEL_EM_RUNTIME.some((re) => re.test('js/lazy/conta.bundle.js'))).toBe(true);
+    const codigo = src.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '');
+    expect(codigo).not.toMatch(/createElement\(\s*['"]script['"]/);
+    const bloco = codigo.slice(codigo.indexOf('const CHUNKS_ESM'), codigo.indexOf('const LAZY ='));
+    const linhas = bloco.split('\n').filter((l) => /^\s{2}\w+:/.test(l));
+    expect(linhas.length).toBeGreaterThan(0);
+    linhas.forEach((l) => expect(l).toMatch(/^\s{2}(\w+): function\(\) \{ return import\('\.\.\/esm\/chunks\/\1\.js'\); \},$/));
   });
 
   test('lucide-init.js realmente pede js/vendor/lucide-full.min.js', () => {
     const src = fs.readFileSync(path.join(root, 'js/lucide-init.js'), 'utf8');
     expect(src).toContain('js/vendor/lucide-full.min.js');
     expect(ALCANCAVEL_EM_RUNTIME.some((re) => re.test('js/vendor/lucide-full.min.js'))).toBe(true);
-  });
-
-  test('todo chunk declarado em bundle-app tem padrão que o cobre', () => {
-    const src = fs.readFileSync(path.join(root, 'scripts/bundle-app.cjs'), 'utf8');
-    const bloco = src.match(/const LAZY_CHUNKS = \{([\s\S]*?)\n\};/);
-    expect(bloco).toBeTruthy();
-    const nomes = [...bloco[1].matchAll(/^\s{2}([a-z][a-zA-Z0-9]*):/gm)].map((m) => m[1]);
-    expect(nomes.length).toBeGreaterThan(0);
-    nomes.forEach((nome) => {
-      const caminho = 'js/lazy/' + nome + '.bundle.js';
-      expect(ALCANCAVEL_EM_RUNTIME.some((re) => re.test(caminho))).toBe(true);
-    });
   });
 });

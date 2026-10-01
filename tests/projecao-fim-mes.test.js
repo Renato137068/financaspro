@@ -22,14 +22,14 @@
  * quando o fechamento real era próximo de zero. Um número errado nessa direção
  * não é conservador — é alarme falso, e alarme falso ensina a ignorar o app.
  */
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
 
 function loadAiEngine() {
   const ctx = vm.createContext({ Date, Math, Number, String, Array, Object, JSON });
   const file = path.join(__dirname, '..', 'js', 'ai-engine.js');
-  vm.runInContext(fs.readFileSync(file, 'utf8'), ctx, { filename: file });
+  rodarNoContexto(ctx, file);
   return ctx.AI_ENGINE;
 }
 const AI = loadAiEngine();

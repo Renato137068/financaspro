@@ -23,8 +23,8 @@ const testFiles = fs.readdirSync(__dirname)
   .filter(f => f.endsWith('.test.js'))
   .map(f => ({ nome: f, src: fs.readFileSync(path.join(__dirname, f), 'utf8') }));
 
-/** Nomes dos módulos globais do app, extraídos do .eslintrc (fonte única). */
-const MODULOS_GLOBAIS = Object.keys(require('../.eslintrc.cjs').globals || {})
+/** Nomes dos módulos globais do app (lista gerada de js/, fonte única). */
+const MODULOS_GLOBAIS = Object.keys(require('../config/frontend-globals.json').globals || {})
   .filter(n => /^[A-Z][A-Z_0-9]+$/.test(n));
 
 // Testes que legitimamente não carregam módulo de aplicação: verificam
@@ -57,8 +57,13 @@ describe('integridade da suíte — testes-cópia', () => {
       if (ISENTOS.has(nome)) continue;
 
       const carregaModuloReal = src.includes('load-sources')
-        || /readFileSync\([^)]*['"]js['"]/.test(src)
-        || /require\(['"]\.\.\/js\//.test(src);
+        || src.includes('helpers/app-jsdom')
+        || /readFileSync\([^)]*['"]js['"\/]/.test(src)
+        || /require\(['"]\.\.\/js\//.test(src)
+        // caminho do arquivo real numa constante, executado com vm ou pelo
+        // conversor de ES Module (tests/helpers/esm-como-script.cjs)
+        || (/path\.join\([^)]*['"]js['"][^)]*\.js['"]\)/.test(src)
+          && /vm\.runIn|rodarNoContexto\(|executarModulo\(/.test(src));
 
       for (const mod of MODULOS_GLOBAIS) {
         const redefine = new RegExp(`^\\s*(const|var|let)\\s+${mod}\\s*=\\s*\\{`, 'm');

@@ -153,7 +153,9 @@ describe('leitura de dados corrompidos não pode parecer "sem dados"', () => {
 
   test('hydrate IDB de transações também registra falha de parse', () => {
     expect(dados).toMatch(
-      /IDB_KV\.get\(CONFIG\.STORAGE_TRANSACOES\)[\s\S]{0,400}_registrarFalhaLeitura\(CONFIG\.STORAGE_TRANSACOES/,
+      // A leitura passa por _idbLerTransacoes (decifra o blob quando a cifragem
+      // está ligada); o comportamento é coberto em idb-cifragem.test.js.
+      /_idbLerTransacoes\(\)[\s\S]{0,400}_registrarFalhaLeitura\(CONFIG\.STORAGE_TRANSACOES/,
     );
   });
 

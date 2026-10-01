@@ -2,9 +2,9 @@
  * resumo-mensal.test.js — texto compartilhável do mês (RESUMO_MENSAL).
  * Carrega o módulo puro num contexto vm com RELATORIOS/UTILS mockados.
  */
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
 
 const root = path.join(__dirname, '..');
 
@@ -15,8 +15,7 @@ function carregar(resumoMes) {
     UTILS: { formatarMoeda: function(v) { return 'R$ ' + Number(v).toFixed(2); } },
   };
   vm.createContext(ctx);
-  vm.runInContext(fs.readFileSync(path.join(root, 'js/resumo-mensal.js'), 'utf8'), ctx,
-    { filename: path.join(root, 'js/resumo-mensal.js') });
+  rodarNoContexto(ctx, path.join(root, 'js/resumo-mensal.js'));
   return ctx.RESUMO_MENSAL;
 }
 

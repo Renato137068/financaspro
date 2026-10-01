@@ -3,7 +3,7 @@
  * auditoria-usuarios-virtuais.cjs
  *
  * Simulação determinística de usuários virtuais contra a camada financeira real.
- * Não altera o app — emite relatório em docs/audit-runs/.
+ * Não altera o app — emite relatório em docs/auditorias/execucoes/.
  *
  * Uso:
  *   node scripts/auditoria-usuarios-virtuais.cjs
@@ -18,7 +18,7 @@ const { ROOT, loadCoreGlobals } = require('./lib/load-core.cjs');
 const ARGS = parseArgs(process.argv.slice(2));
 const BASE_SEED = Number(ARGS.seed) || 20260826;
 const NUM_USERS = Math.max(50, Math.min(500, Number(ARGS.users) || 250));
-const OUT_DIR = path.join(ROOT, 'docs', 'audit-runs');
+const OUT_DIR = path.join(ROOT, 'docs', 'auditorias', 'execucoes');
 const OUT_JSON = path.join(OUT_DIR, `virtual-users-${BASE_SEED}.json`);
 const OUT_MD = path.join(OUT_DIR, `virtual-users-${BASE_SEED}.md`);
 

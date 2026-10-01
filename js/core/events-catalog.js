@@ -7,7 +7,12 @@
  *   - transactions:created
  *   - transactions:updated:success
  *   - budget:limit:exceeded
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
+
+import { EVENT_BUS } from './event-bus.js';
 
 const EVENTS = {
   // ============================================================
@@ -91,7 +96,7 @@ const EVENTS = {
    * Verifica se um evento está no catálogo
    */
   isValid: function(eventName) {
-    var allEvents = this._getAllEvents();
+    var allEvents = EVENTS._getAllEvents();
     return allEvents.includes(eventName);
   },
 
@@ -99,7 +104,7 @@ const EVENTS = {
    * Lista todos os eventos registrados
    */
   listAll: function() {
-    return this._getAllEvents();
+    return EVENTS._getAllEvents();
   },
 
   /**
@@ -113,13 +118,13 @@ const EVENTS = {
   _getAllEvents: function() {
     var events = [];
     var domains = [
-      this.TRANSACTIONS,
-      this.BUDGET,
-      this.AUTH,
-      this.UI,
-      this.RENDER,
-      this.SYNC,
-      this.FORM
+      EVENTS.TRANSACTIONS,
+      EVENTS.BUDGET,
+      EVENTS.AUTH,
+      EVENTS.UI,
+      EVENTS.RENDER,
+      EVENTS.SYNC,
+      EVENTS.FORM
     ];
     
     domains.forEach(function(domain) {
@@ -145,7 +150,7 @@ const EVENT_BUS_CATALOG = {
    * Emite evento com validação de catálogo
    */
   emit: function(eventName, data) {
-    if (this._debug && !EVENTS.isValid(eventName)) {
+    if (EVENT_BUS_CATALOG._debug && !EVENTS.isValid(eventName)) {
       console.warn('[EVENT_BUS] Evento não catalogado:', eventName);
     }
 
@@ -157,7 +162,7 @@ const EVENT_BUS_CATALOG = {
     var event = new CustomEvent(eventName, { detail: data });
     document.dispatchEvent(event);
 
-    if (this._debug) {
+    if (EVENT_BUS_CATALOG._debug) {
       console.warn('[EVENT]', eventName, data);
     }
   },
@@ -186,7 +191,7 @@ const EVENT_BUS_CATALOG = {
    * Assina uma vez
    */
   once: function(eventName, callback) {
-    var unsubscribe = this.on(eventName, function(data, e) {
+    var unsubscribe = EVENT_BUS_CATALOG.on(eventName, function(data, e) {
       callback(data, e);
       unsubscribe();
     });
@@ -194,15 +199,8 @@ const EVENT_BUS_CATALOG = {
   },
 
   setDebug: function(enabled) {
-    this._debug = enabled;
+    EVENT_BUS_CATALOG._debug = enabled;
   }
 };
 
-// Compatibilidade: expor globalmente
-window.EVENTS = EVENTS;
-window.EVENT_BUS_CATALOG = EVENT_BUS_CATALOG;
-
-// Export
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { EVENTS: EVENTS, EVENT_BUS_CATALOG: EVENT_BUS_CATALOG };
-}
+export { EVENTS, EVENT_BUS_CATALOG };

@@ -33,17 +33,17 @@ jobs:
           --health-retries 5
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
+        node-version: [22.x, 24.x]
 
     steps:
       - name: Checkout codigo
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # lint:changed compara com a base do PR — precisa do historico.
           fetch-depth: 0
 
       - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
@@ -56,6 +56,12 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      - name: Lista de globais do frontend em dia (no-undef)
+        run: npm run check:globals
+
+      - name: Telas geradas em dia (telas/ -> js/telas/)
+        run: npm run check:telas
 
       - name: Lint estrito no codigo alterado
         # Congela a divida existente e exige zero avisos no que o PR toca.
@@ -87,31 +93,31 @@ jobs:
         run: npm run test:ci
         env:
           INTEGRATION_TEST_DATABASE_URL: postgresql://financaspro:testpass@localhost:5432/financaspro_test
-          SKIP_INTEGRATION: ${{ matrix.node-version == '18.x' && '1' || '' }}
+          SKIP_INTEGRATION: ${{ matrix.node-version == '24.x' && '1' || '' }}
 
       - name: Instalar cliente PostgreSQL + pgTAP (RLS/quota/MFA)
-        if: matrix.node-version == '20.x'
+        if: matrix.node-version == '22.x'
         # postgres:16-alpine (service) não traz a extensão pgtap; instalamos o
         # pacote no runner só pelo pgtap--<versão>.sql, que test-supabase-pgtap.cjs
         # carrega no banco via psql -f (não precisa de CREATE EXTENSION no servidor).
         run: sudo apt-get update && sudo apt-get install -y postgresql-client postgresql-16-pgtap
 
       - name: Testes pgTAP Supabase (RLS, quota, MFA)
-        if: matrix.node-version == '20.x'
+        if: matrix.node-version == '22.x'
         run: npm run test:db:ci
         env:
           INTEGRATION_TEST_DATABASE_URL: postgresql://financaspro:testpass@localhost:5432/financaspro_test
 
       - name: Instalar Chromium (Playwright)
-        if: matrix.node-version == '20.x'
+        if: matrix.node-version == '22.x'
         run: npx playwright install chromium
 
       - name: Smoke boot dist (pageerror)
-        if: matrix.node-version == '20.x'
+        if: matrix.node-version == '22.x'
         run: npm run test:e2e:smoke
 
       - name: Testes E2E
-        if: matrix.node-version == '20.x'
+        if: matrix.node-version == '22.x'
         run: npm run test:e2e
         env:
           E2E_API: '1'
@@ -124,26 +130,46 @@ jobs:
           E2E_TOTP_SECRET: ${{ secrets.E2E_SUPABASE_TOTP_SECRET }}
 
       - name: Gerar relatorio de cobertura
-        if: matrix.node-version == '20.x'
+        if: matrix.node-version == '22.x'
         run: npm run test:coverage
 
       - name: Upload relatorio de cobertura
-        if: matrix.node-version == '20.x'
-        uses: actions/upload-artifact@v4
+        if: matrix.node-version == '22.x'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: coverage-report
           path: coverage/
           retention-days: 30
 
+  # Edge Functions (a cobrança que roda em produção, ADR 0004) executadas de
+  # verdade no Deno, com banco, Stripe e Google falsos (npm run test:edge).
+  edge:
+    name: Edge Functions (Deno)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout codigo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: 2.x
+
+      - name: Testes das Edge Functions
+        run: node scripts/test-edge.cjs
+
+      - name: Checagem de tipos das Edge Functions
+        run: node scripts/test-edge.cjs --tipos
+
   quality-gate:
     name: Quality Gate
     runs-on: ubuntu-latest
-    needs: test
+    needs: [test, edge]
     if: always()
     steps:
       - name: Verificar resultado dos testes
         run: |
-          if [ "${{ needs.test.result }}" != "success" ]; then
+          if [ "${{ needs.test.result }}" != "success" ] || [ "${{ needs.edge.result }}" != "success" ]; then
             echo "Testes falharam - pipeline bloqueado"
             exit 1
           fi

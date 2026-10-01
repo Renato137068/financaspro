@@ -7,9 +7,9 @@
 /**
  * @jest-environment jsdom
  */
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
 
 beforeAll(function() {
   var sandbox = {
@@ -20,14 +20,13 @@ beforeAll(function() {
       escapeHtml: function(s) { return String(s); },
       mostrarToast: function() {}
     },
+    CONFIG: undefined,
     FocusTrap: undefined
   };
   sandbox.globalThis = sandbox;
   var ctx = vm.createContext(sandbox);
-  var code = fs.readFileSync(path.join(__dirname, '..', 'js', 'modules', 'init-modals.js'), 'utf8');
-  code = code.replace(/\bconst INIT_MODALS =/, 'var INIT_MODALS =');
-  vm.runInContext(code, ctx, { filename: path.join(__dirname, '..', 'js', 'modules', 'init-modals.js') });
-  global.INIT_MODALS = sandbox.INIT_MODALS;
+  // ES Module: UTILS e CONFIG do sandbox substituem os imports.
+  global.INIT_MODALS = rodarNoContexto(ctx, path.join(__dirname, '..', 'js', 'modules', 'init-modals.js')).INIT_MODALS;
 });
 
 afterEach(function() {

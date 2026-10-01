@@ -11,6 +11,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { fonteComPartes } = require('./lib/fonte-com-partes.cjs');
 
 const root = path.join(__dirname, '..');
 const fails = [];
@@ -21,7 +22,8 @@ function read(rel) {
     fails.push('ausente: ' + rel);
     return '';
   }
-  return fs.readFileSync(p, 'utf8');
+  // Fachada + partes: js/billing.js importa js/billing/*.js.
+  return fonteComPartes(p);
 }
 
 function mustContain(rel, re, label) {
@@ -72,15 +74,18 @@ mustContain('js/billing.js', /maxUsers:\s*2/, 'PRO maxUsers=2');
 mustContain('js/modules/init-billing.js', /SHOW_BUSINESS_PLAN:\s*false/, 'Business fora do paywall');
 {
   const plans = read('js/billing.js');
-  const staticBlock = plans.slice(plans.indexOf('STATIC_PLANS:'), plans.indexOf('init: function'));
-  if (/tier:\s*'BUSINESS'/.test(staticBlock)) {
+  const inicio = plans.indexOf('STATIC_PLANS:');
+  const staticBlock = inicio < 0 ? '' : plans.slice(inicio, plans.indexOf('\n  ],', inicio));
+  if (!staticBlock) fails.push('STATIC_PLANS não encontrado em js/billing.js nem nas partes');
+  else if (/tier:\s*'BUSINESS'/.test(staticBlock)) {
     fails.push('STATIC_PLANS ainda inclui Business na vitrine');
   }
 }
 mustContain('js/modules/init-billing.js', /abrirEquipe/, 'UI equipe');
 mustContain('js/modules/init-billing.js', /getLifecycleAlert/, 'banner lifecycle');
 
-mustContain('index.html', /data-action="abrir-equipe"/, 'card Equipe no perfil');
+// A tela Conta do Perfil chega com o chunk 'config' (ADR 0006).
+mustContain('telas/config/config-conta.html', /data-action="abrir-equipe"/, 'card Equipe no perfil');
 
 mustContain(
   'supabase/functions/_shared/billing-constants.ts',
@@ -100,7 +105,9 @@ mustContain('supabase/functions/_shared/email.ts', /api\.resend\.com/, 'Resend n
 ].forEach(mustExist);
 
 mustContain('js/billing.js', /_useSupabaseBilling/, 'preferência Supabase billing');
-mustContain('js/billing.js', /express-subscribe-disabled/, 'sem subscribe Express no path Supabase');
+// A API Express saiu (ADR 0007): nenhum caminho de cobrança pode voltar a ela.
+mustNotContain('js/billing.js', /\/api\/v1\/|_apiFetch|_apiAtiva/, 'cobrança sem API Express');
+mustNotContain('js/play-billing.js', /\/api\/v1\/|_apiFetch|_apiAtiva/, 'Play sem API Express');
 mustContain('js/billing.js', /org-invite-unavailable/, 'invite sem bypass Edge');
 mustContain('js/modules/init-billing.js', /O Pro cuida do seu mês por você/, 'paywall vende capacidade');
 mustNotContain('js/modules/init-billing.js', /tira os limites/i, 'paywall nao vende remocao de limite');
@@ -147,7 +154,11 @@ if (/!DADOS\._nuvemAtiva\(\)\).*return;/s.test(read('js/modules/init-billing.js'
 
 mustExist('js/fp-native-billing-bridge.js');
 mustContain('js/fp-native-billing-bridge.js', /__fpNativeBilling/, 'bridge Play nativo');
-mustContain('index.html', /fp-native-billing-bridge\.js/, 'bridge no index');
+// A ponte vem com o chunk 'conta' (ES Module), que a instala antes de publicar
+// PLAY_BILLING; o lifecycle carrega esse chunk no boot do app nativo (RISK-04).
+mustContain('js/esm/chunks/conta.js', /^import \{ instalarPonteBillingNativa \} from '\.\.\/\.\.\/fp-native-billing-bridge\.js';$/m, 'bridge importada pelo chunk conta');
+mustContain('js/esm/chunks/conta.js', /^instalarPonteBillingNativa\(\);$/m, 'bridge instalada pelo chunk conta');
+mustContain('js/core/lifecycle.js', /carregarChunkConta/, 'chunk conta no boot nativo');
 mustContain(
   'android/app/src/main/java/com/financaspro/app/MainActivity.java',
   /PlayBillingPlugin/,

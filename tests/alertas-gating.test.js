@@ -1,9 +1,9 @@
 /**
  * alertas-gating.test.js — FREE nuvem filtra avançados e mostra upsell.
  */
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
 
 function loadAlertas(opts) {
   opts = opts || {};
@@ -25,6 +25,8 @@ function loadAlertas(opts) {
       detectarAnomalias: function() { return []; },
       detectarPadroesRecorrentes: function() { return []; },
     },
+    CARTOES: undefined,
+    mudarAba: undefined,
     DADOS: { getTransacoes: function() { return [{ id: 1 }]; }, getConfig: function() { return {}; } },
     UTILS: {
       escapeHtml: function(s) { return String(s); },
@@ -37,11 +39,8 @@ function loadAlertas(opts) {
     module: { exports: {} },
   };
   vm.createContext(ctx);
-  vm.runInContext(
-    fs.readFileSync(path.join(__dirname, '..', 'js', 'alertas.js'), 'utf8'),
-    ctx,
-    { filename: path.join(__dirname, '..', 'js', 'alertas.js') },
-  );
+  // ES Module: UTILS, CARTOES, AI_ENGINE e mudarAba do ctx substituem os imports.
+  rodarNoContexto(ctx, path.join(__dirname, '..', 'js', 'alertas.js'));
   return ctx.ALERTAS;
 }
 

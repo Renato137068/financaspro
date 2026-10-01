@@ -2,9 +2,15 @@
  * auth-biometric.js — login biométrico no app nativo (Capacitor/Android).
  * Guarda o refresh token do Supabase no Keystore, protegido por biometria.
  * No navegador/PWA é inerte (sem custo de serviço).
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
-(function() {
-  'use strict';
+
+import { UTILS } from './core/utils.js';
+import { INIT_MODALS } from './modules/init-modals.js';
+
+const AUTH_BIOMETRIC = (function() {
 
   var SERVER = 'financaspro-auth';
   var PREF_KEY = 'fp-biometric-enabled';
@@ -225,5 +231,17 @@
     },
   };
 
-  window.AUTH_BIOMETRIC = AUTH_BIOMETRIC;
+
+  // O card de biometria mora na tela Segurança, que chega com o chunk 'config'
+  // (js/core/telas.js). setupPerfilToggle é idempotente (data-bound).
+  document.addEventListener('fp:tela-carregada', function(e) {
+    if (e.detail.nome !== 'config-seguranca') return;
+    AUTH_BIOMETRIC.setupPerfilToggle();
+    AUTH_BIOMETRIC.refreshBiometricUI();
+  });
+
+  return AUTH_BIOMETRIC;
 })();
+
+export { AUTH_BIOMETRIC };
+export default AUTH_BIOMETRIC;

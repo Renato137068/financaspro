@@ -3,7 +3,14 @@
  * @module UTILS
  * Tier 1. Depende de: config.js
  * @requires js/utilities/aria-live.js
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js. Importa CONFIG e TRANSACTION_SERVICE; este importa UTILS
+ * de volta (ciclo válido: os dois só se usam dentro de funções).
  */
+
+import { CONFIG } from './config.js';
+import { TRANSACTION_SERVICE } from '../services/transactionService.js';
 
 /**
  * @typedef {Object} ValidationResult
@@ -19,7 +26,7 @@
  * @property {number} [tamanho]
  */
 
-var UTILS = {
+const UTILS = {
   /**
    * Formata número como moeda local.
    * @param {number} valor
@@ -159,13 +166,13 @@ var UTILS = {
    */
   agendarExclusao: function(chave, efetivarFn, opts) {
     opts = opts || {};
-    var self = this;
+    var self = UTILS;
     var duracao = typeof opts.duracaoMs === 'number' ? opts.duracaoMs : 5000;
 
-    if (this._exclusoesPendentes[chave]) {
-      clearTimeout(this._exclusoesPendentes[chave].timer);
-      if (this._exclusoesPendentes[chave].toast && this._exclusoesPendentes[chave].toast.fechar) {
-        this._exclusoesPendentes[chave].toast.fechar();
+    if (UTILS._exclusoesPendentes[chave]) {
+      clearTimeout(UTILS._exclusoesPendentes[chave].timer);
+      if (UTILS._exclusoesPendentes[chave].toast && UTILS._exclusoesPendentes[chave].toast.fechar) {
+        UTILS._exclusoesPendentes[chave].toast.fechar();
       }
     }
 
@@ -177,7 +184,7 @@ var UTILS = {
       }
     }, duracao);
 
-    var toast = this.mostrarToastAcao(
+    var toast = UTILS.mostrarToastAcao(
       opts.mensagem || 'Excluído',
       opts.rotuloAcao || 'Desfazer',
       function() {
@@ -188,7 +195,7 @@ var UTILS = {
       { duracaoMs: duracao, tipo: opts.tipo || 'info' }
     );
 
-    this._exclusoesPendentes[chave] = { timer: timer, toast: toast };
+    UTILS._exclusoesPendentes[chave] = { timer: timer, toast: toast };
   },
 
   /**
@@ -302,7 +309,7 @@ var UTILS = {
     // Aceita prefixo R$ (já removido em parseMoeda); aqui só rejeita texto livre.
     var limpo = str.replace(/[R$\s]/gi, '');
     if (!/^-?[\d.,]+$/.test(limpo)) return NaN;
-    return this.parseMoeda(str);
+    return UTILS.parseMoeda(str);
   },
 
   /**
@@ -369,7 +376,7 @@ var UTILS = {
    * Formata um número já parseado para exibição no campo (pt-BR, 2 casas).
    */
   formatarCampoMoeda: function(valor) {
-    var n = typeof valor === 'number' ? valor : this.parseMoeda(valor);
+    var n = typeof valor === 'number' ? valor : UTILS.parseMoeda(valor);
     if (!isFinite(n)) n = 0;
     return n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   },
@@ -455,13 +462,13 @@ var UTILS = {
 
   formatarDataRelativa: function(data) {
     var parts = String(data).split('T')[0].split('-');
-    if (parts.length !== 3) return this.formatarData(data);
+    if (parts.length !== 3) return UTILS.formatarData(data);
     var hoje = new Date();
     var d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
     var ontem = new Date(hoje); ontem.setDate(hoje.getDate() - 1);
     if (d.toDateString() === hoje.toDateString()) return 'Hoje';
     if (d.toDateString() === ontem.toDateString()) return 'Ontem';
-    return this.formatarData(data);
+    return UTILS.formatarData(data);
   },
 
   _idCounter: 0,
@@ -472,7 +479,7 @@ var UTILS = {
   gerarId: function() {
     var timestamp = Date.now();
     var randomPart = Math.random().toString(36).substr(2, 9);
-    var counter = (this._idCounter = (this._idCounter || 0) + 1);
+    var counter = (UTILS._idCounter = (UTILS._idCounter || 0) + 1);
     return timestamp + '-' + randomPart + '-' + counter;
   },
 
@@ -494,21 +501,21 @@ var UTILS = {
   // Cache de elementos DOM
   _domCache: {},
   obterElemento: function(id) {
-    if (!this._domCache[id]) {
-      this._domCache[id] = document.getElementById(id);
+    if (!UTILS._domCache[id]) {
+      UTILS._domCache[id] = document.getElementById(id);
     }
-    return this._domCache[id];
+    return UTILS._domCache[id];
   },
 
   limparCacheDom: function() {
-    this._domCache = {};
+    UTILS._domCache = {};
   },
 
   // Debounce para eventos frequentes
   debounce: function(func, delay) {
     var timeout;
     return function() {
-      var context = this, args = arguments;
+      var context = UTILS, args = arguments;
       clearTimeout(timeout);
       timeout = setTimeout(function() { func.apply(context, args); }, delay);
     };
@@ -918,6 +925,5 @@ var UTILS = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = UTILS;
-}
+export { UTILS };
+export default UTILS;

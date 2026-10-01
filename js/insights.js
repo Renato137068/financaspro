@@ -2,7 +2,19 @@
  * insights.js — Insights financeiros inteligentes
  * v11.0 — Fase 8: integrado com AI_ENGINE para análises mais ricas
  * Depende de: ai-engine.js, dados.js, utils.js
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
+
+import { CONFIG } from './core/config.js';
+import { UTILS } from './core/utils.js';
+import { TRANSACOES } from './transacoes.js';
+import { ORCAMENTO } from './orcamento.js';
+import { AI_ENGINE } from './ai-engine.js';
+import { SETUP_GUIDE } from './core/setup-guide.js';
+import { BILLING } from './billing.js';
+import { DADOS } from './core/dados.js';
 
 // Soma de dinheiro em centavos inteiros (UTILS.paraCentavos com fallback):
 // somar t.valor em reais com += float derivava o "gasto de hoje" exibido e a
@@ -13,7 +25,7 @@ function _insightsCent(v) {
   return isFinite(n) ? Math.round(n * 100) : 0;
 }
 
-var INSIGHTS = {
+const INSIGHTS = {
 
   _esc: function(s) {
     if (s == null) return '';
@@ -55,7 +67,7 @@ var INSIGHTS = {
     if (typeof SETUP_GUIDE === 'undefined' || !SETUP_GUIDE.buildCardHtml) return '';
     var txs = (typeof DADOS !== 'undefined' && DADOS.getTransacoes) ? DADOS.getTransacoes() : [];
     try {
-      var estado = this._estadoSetup(txs);
+      var estado = INSIGHTS._estadoSetup(txs);
 
       // Registra a evolução do funil. É idempotente: só emite evento na
       // transição de pendente para concluído, então chamar a cada render do
@@ -88,8 +100,8 @@ var INSIGHTS = {
    */
   analisar: function() {
     var insights = [];
-    var esc = this._esc.bind(this);
-    var dtext = this._dtext.bind(this);
+    var esc = INSIGHTS._esc;
+    var dtext = INSIGHTS._dtext;
     var txs      = typeof TRANSACOES !== 'undefined' ? TRANSACOES.obter() : (typeof DADOS !== 'undefined' ? DADOS.getTransacoes() : []);
     var agora    = new Date();
     var mesAtual = agora.getMonth() + 1;
@@ -392,10 +404,10 @@ var INSIGHTS = {
     if (proAi && typeof AI_ENGINE.sugestaoCorte === 'function') {
       var corte = AI_ENGINE.sugestaoCorte(txs, 0.20);
       if (corte && corte.corteNecessario > 0 && corte.categoriaAlvo) {
-        var catLabel = esc((typeof CONFIG !== 'undefined' && CONFIG.getCatLabel) ? CONFIG.getCatLabel(corte.categoriaAlvo) : corte.categoriaAlvo);
+        var catCorteLabel = esc((typeof CONFIG !== 'undefined' && CONFIG.getCatLabel) ? CONFIG.getCatLabel(corte.categoriaAlvo) : corte.categoriaAlvo);
         insights.push({
           tipo:      'meta',
-          msg:       '<i data-lucide="target" aria-hidden="true"></i> Reduza R$ ' + corte.corteNecessario.toFixed(2).replace('.', ',') + ' em ' + catLabel + ' para atingir 20% de poupança (você está em ' + corte.taxaAtual + '%).',
+          msg:       '<i data-lucide="target" aria-hidden="true"></i> Reduza R$ ' + corte.corteNecessario.toFixed(2).replace('.', ',') + ' em ' + catCorteLabel + ' para atingir 20% de poupança (você está em ' + corte.taxaAtual + '%).',
           gravidade: 'media'
         });
       }
@@ -446,13 +458,13 @@ var INSIGHTS = {
    * insights.js renderiza em #insights-container quando disponível.
    */
   mostrar: function() {
-    var insights  = this.analisar();
+    var insights  = INSIGHTS.analisar();
     var container = document.getElementById('insights-container') ||
                     document.getElementById('orc-insights');
 
     if (!container) return;
 
-    var setupHtml = this._setupCardHtml();
+    var setupHtml = INSIGHTS._setupCardHtml();
     if (insights.length === 0 && !setupHtml) {
       container.innerHTML = '<div class="insight insight-ok"><i data-lucide="check-circle" aria-hidden="true"></i> Sem alertas. Finanças em dia!</div>';
       return;
@@ -496,7 +508,7 @@ var INSIGHTS = {
 
     if (topCats.length === 0) { el.innerHTML = ''; return; }
 
-    var escHtml = this._esc.bind(this);
+    var escHtml = INSIGHTS._esc;
 
     var html = topCats.map(function(c) {
         var label = escHtml((typeof CONFIG !== 'undefined' && CONFIG.getCatLabel) ? CONFIG.getCatLabel(c.categoria) : c.categoria);
@@ -518,6 +530,5 @@ var INSIGHTS = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = INSIGHTS;
-}
+export { INSIGHTS };
+export default INSIGHTS;

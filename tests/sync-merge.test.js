@@ -1,17 +1,18 @@
 /**
- * sync-merge.test.js — fusão de delta + outbox no cliente (#2, §7).
+ * sync-merge.test.js — fusão do que vem da nuvem com o aparelho (#2, §7).
  * Prova que os bugs de perda de dados D1/D2/D3 ficam resolvidos.
  */
+const { carregarScript } = require('./helpers/carregar-script.cjs');
 // require direto, e não vm.runInContext.
 //
 // O módulo é puro (zero DOM, zero global) e termina com `module.exports`, então
-// não precisa de sandbox. E carregá-lo pelo mesmo caminho que sync-engine.test
-// e sync-dados.test usam garante UMA única cópia instrumentada: quando cada
+// não precisa de sandbox. E carregá-lo pelo mesmo caminho que sync-dados.test
+// usa garante UMA única cópia instrumentada: quando cada
 // suíte executava o arquivo no seu próprio vm, o provider v8 registrava várias
 // cópias do mesmo caminho absoluto e mesclava as contagens — o relatório
 // mostrava 66% de linhas e 54% de funções num módulo que os testes cobrem
 // inteiro, e o piso de 95% falhava por ruído de medição.
-const SM = require('../js/core/sync-merge.js');
+const SM = carregarScript('js/core/sync-merge.js');
 const T1 = '2026-07-09T10:00:00Z';
 const T2 = '2026-07-09T11:00:00Z';
 
@@ -125,47 +126,6 @@ describe('SYNC_MERGE.aplicarResolucoes', () => {
   });
 });
 
-describe('SYNC_MERGE.outboxEnqueue', () => {
-  test('deduplica upserts do mesmo registro (mantém o último)', () => {
-    let fila = [];
-    fila = SM.outboxEnqueue(fila, { opId: '1', entity: 'tx', id: 'a', op: 'upsert', payload: { v: 1 } });
-    fila = SM.outboxEnqueue(fila, { opId: '2', entity: 'tx', id: 'a', op: 'upsert', payload: { v: 2 } });
-    expect(fila).toHaveLength(1);
-    expect(fila[0].payload.v).toBe(2);
-  });
-
-  test('delete suprime upsert anterior do mesmo id', () => {
-    let fila = SM.outboxEnqueue([], { opId: '1', entity: 'tx', id: 'a', op: 'upsert' });
-    fila = SM.outboxEnqueue(fila, { opId: '2', entity: 'tx', id: 'a', op: 'delete' });
-    expect(fila).toHaveLength(1);
-    expect(fila[0].op).toBe('delete');
-  });
-
-  test('mantém mutações de ids diferentes', () => {
-    let fila = SM.outboxEnqueue([], { opId: '1', entity: 'tx', id: 'a', op: 'upsert' });
-    fila = SM.outboxEnqueue(fila, { opId: '2', entity: 'tx', id: 'b', op: 'upsert' });
-    expect(fila).toHaveLength(2);
-  });
-});
-
-describe('SYNC_MERGE.outboxAckRemove', () => {
-  test('remove confirmados por opId, mantém não confirmados', () => {
-    const fila = [
-      { opId: '1', id: 'a' },
-      { opId: '2', id: 'b' },
-      { opId: '3', id: 'c' },
-    ];
-    const results = [{ opId: '1', action: 'apply' }, { opId: '2', action: 'server-wins' }];
-    const r = SM.outboxAckRemove(fila, results);
-    expect(r.map((m) => m.opId)).toEqual(['3']);
-  });
-
-  test('fila vazia / results vazios', () => {
-    expect(SM.outboxAckRemove([], [])).toEqual([]);
-    expect(SM.outboxAckRemove([{ opId: '1' }], []).length).toBe(1);
-  });
-});
-
 /**
  * As entradas defensivas do módulo não são luxo: `mergeDelta` recebe o corpo
  * de uma resposta HTTP e o cache do localStorage, duas fontes que já chegaram
@@ -252,30 +212,37 @@ describe('SYNC_MERGE.mergeDelta — entradas malformadas', () => {
   });
 });
 
-describe('SYNC_MERGE.outboxEnqueue / outboxAckRemove — bordas', () => {
-  test('mutação nula ou sem id devolve cópia da fila, sem alterá-la', () => {
-    const fila = [{ opId: '1', entity: 'tx', id: 'a' }];
-    expect(SM.outboxEnqueue(fila, null)).toEqual(fila);
-    expect(SM.outboxEnqueue(fila, { entity: 'tx' })).toEqual(fila);
-    // cópia, não a mesma referência — a fila original não pode ser mutada
-    expect(SM.outboxEnqueue(fila, null)).not.toBe(fila);
+describe('SYNC_MERGE.orcamentosToArray / arrayToOrcamentos', () => {
+  test('ida e volta preserva limite, id, período e datas', () => {
+    const orc = {
+      alimentacao: { id: 'o1', limite: 500, periodo: 'mensal', definidoEm: T1, updatedAt: T2 },
+      lazer: { id: 'o2', limite: 200, definidoEm: T1 },
+    };
+    const lista = SM.orcamentosToArray(orc);
+    expect(lista).toEqual([
+      { id: 'o1', categoria: 'alimentacao', limite: 500, periodo: 'mensal', definidoEm: T1, updatedAt: T2, ativo: true },
+      { id: 'o2', categoria: 'lazer', limite: 200, periodo: 'mensal', definidoEm: T1, updatedAt: T1, ativo: true },
+    ]);
+    expect(SM.arrayToOrcamentos(lista)).toEqual({
+      alimentacao: { id: 'o1', limite: 500, periodo: 'mensal', definidoEm: T1, updatedAt: T2 },
+      lazer: { id: 'o2', limite: 200, periodo: 'mensal', definidoEm: T1, updatedAt: T1 },
+    });
   });
 
-  test('fila ausente vira fila nova', () => {
-    expect(SM.outboxEnqueue(null, { opId: '1', entity: 'tx', id: 'a' })).toHaveLength(1);
-    expect(SM.outboxEnqueue(undefined, null)).toEqual([]);
+  test('entrada vazia ou inválida vira lista vazia; entradas nulas são puladas', () => {
+    expect(SM.orcamentosToArray(null)).toEqual([]);
+    expect(SM.orcamentosToArray('x')).toEqual([]);
+    expect(SM.orcamentosToArray({ a: null })).toEqual([]);
   });
 
-  test('mesmo id em entidades diferentes NÃO se cancelam', () => {
-    let fila = SM.outboxEnqueue([], { opId: '1', entity: 'tx', id: 'a' });
-    fila = SM.outboxEnqueue(fila, { opId: '2', entity: 'conta', id: 'a' });
-    expect(fila).toHaveLength(2);
-  });
-
-  test('ack com entradas nulas ou sem opId não remove nada', () => {
-    const fila = [{ opId: '1' }, { opId: '2' }];
-    expect(SM.outboxAckRemove(fila, [null, {}, { action: 'apply' }])).toHaveLength(2);
-    expect(SM.outboxAckRemove(fila, null)).toHaveLength(2);
-    expect(SM.outboxAckRemove(null, [{ opId: '1' }])).toEqual([]);
+  test('na volta, apagados, inativos e sem categoria saem', () => {
+    expect(SM.arrayToOrcamentos([
+      null,
+      { id: 'x', limite: 1 },
+      { id: 'a', categoria: 'a', limite: 1, deletedAt: T1 },
+      { id: 'b', categoria: 'b', limite: 1, ativo: false },
+      { id: 'c', categoria: 'c', limite: 3, updatedAt: T2 },
+    ])).toEqual({ c: { id: 'c', limite: 3, periodo: 'mensal', definidoEm: T2, updatedAt: T2 } });
+    expect(SM.arrayToOrcamentos(undefined)).toEqual({});
   });
 });

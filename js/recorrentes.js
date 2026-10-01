@@ -23,8 +23,16 @@
  *      feita contra as transações existentes, não contra um contador — assim
  *      um lançamento apagado de propósito pelo usuário não é recriado na
  *      próxima abertura, o que seria desfazer uma decisão dele.
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
-var RECORRENTES = {
+
+import { CONFIG } from './core/config.js';
+import { UTILS } from './core/utils.js';
+import { TRANSACOES } from './transacoes.js';
+import { DADOS } from './core/dados.js';
+const RECORRENTES = {
 
   /** Teto de meses recuperados numa execução. */
   MAX_RETROATIVO: 12,
@@ -34,18 +42,16 @@ var RECORRENTES = {
   },
 
   /**
-   * O cliente só materializa em modo local.
+   * Quem materializa as recorrências devidas é o próprio app, em qualquer
+   * modo: no local não há servidor, e no Supabase não há worker de
+   * recorrência (o do backend Express saiu com ele, ADR 0007).
    *
-   * `DADOS._modoLocal` existe como ponto de injeção para teste; em produção a
-   * decisão vem de `_apiAtiva()` — havendo API configurada, há sessão na nuvem
-   * e o worker assume.
+   * `DADOS._modoLocal` existe como ponto de injeção para teste.
    */
   _ehModoLocal: function() {
     if (typeof DADOS === 'undefined') return false;
     if (typeof DADOS._modoLocal === 'boolean') return DADOS._modoLocal;
-    // Supabase ainda não tem worker de recorrência — o cliente materializa.
-    if (typeof DADOS._supabaseAtivo === 'function' && DADOS._supabaseAtivo()) return true;
-    return typeof DADOS._apiAtiva === 'function' ? !DADOS._apiAtiva() : true;
+    return true;
   },
 
   _addDias: function(dataIso, dias) {
@@ -116,7 +122,7 @@ var RECORRENTES = {
 
     var hojeIso = UTILS.dataLocalIso(hoje);
     var fim = rec.dataFim ? String(rec.dataFim).slice(0, 10) : null;
-    var self = this;
+    var self = RECORRENTES;
     var devidas = [];
     var i;
     var data;
@@ -145,7 +151,7 @@ var RECORRENTES = {
       var totalPeriodos = (isNaN(d0.getTime()) || isNaN(d1.getTime()))
         ? -1
         : Math.floor((d1 - d0) / msDia / intervalo);
-      var inicioIdx = Math.max(0, totalPeriodos - (this.MAX_RETROATIVO - 1));
+      var inicioIdx = Math.max(0, totalPeriodos - (RECORRENTES.MAX_RETROATIVO - 1));
       for (i = inicioIdx; i <= totalPeriodos; i++) {
         data = self._addDias(inicio, i * intervalo);
         if (!data) break;
@@ -155,8 +161,8 @@ var RECORRENTES = {
       }
     }
 
-    if (devidas.length > this.MAX_RETROATIVO) {
-      devidas = devidas.slice(devidas.length - this.MAX_RETROATIVO);
+    if (devidas.length > RECORRENTES.MAX_RETROATIVO) {
+      devidas = devidas.slice(devidas.length - RECORRENTES.MAX_RETROATIVO);
     }
     return devidas;
   },
@@ -168,15 +174,15 @@ var RECORRENTES = {
    * @returns {Array} transações criadas (vazio quando não há nada a fazer)
    */
   processar: function(hoje) {
-    if (!this._ehModoLocal()) return [];
+    if (!RECORRENTES._ehModoLocal()) return [];
     if (typeof DADOS === 'undefined' || typeof TRANSACOES === 'undefined') return [];
 
-    var ref = this._agora(hoje);
+    var ref = RECORRENTES._agora(hoje);
     var recs = DADOS.getRecorrentes ? DADOS.getRecorrentes() : [];
     if (!recs.length) return [];
 
     var criadas = [];
-    var self = this;
+    var self = RECORRENTES;
 
     recs.forEach(function(rec) {
       if (!rec || !rec.id) return;
@@ -248,7 +254,7 @@ var RECORRENTES = {
    * nenhuma explicação, parecem erro do app.
    */
   processarNaAbertura: function() {
-    var criadas = this.processar();
+    var criadas = RECORRENTES.processar();
     if (!criadas.length) return criadas;
 
     if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
@@ -264,6 +270,5 @@ var RECORRENTES = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = RECORRENTES;
-}
+export { RECORRENTES };
+export default RECORRENTES;

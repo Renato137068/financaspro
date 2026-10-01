@@ -7,7 +7,12 @@
  * - Inputs dinâmicos  
  * - Listas de transações
  * - Qualquer lugar com dados do usuário
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
+
+import { INIT_FORM } from '../modules/init-form.js';
 
 const DOM_SAFE = {
   // ============================================================
@@ -54,7 +59,7 @@ const DOM_SAFE = {
     
     // Filhos
     if (options.children) {
-      this.appendChildren(el, options.children);
+      DOM_SAFE.appendChildren(el, options.children);
     }
     
     return el;
@@ -66,7 +71,6 @@ const DOM_SAFE = {
    * @param {Array} children - Elementos ou strings
    */
   appendChildren: function(parent, children) {
-    var self = this;
     children.forEach(function(child) {
       if (typeof child === 'string') {
         parent.appendChild(document.createTextNode(child));
@@ -91,13 +95,13 @@ const DOM_SAFE = {
    */
   createList: function(items, renderItem, options) {
     options = options || {};
-    var container = this.create(options.containerTag || 'div', {
+    var container = DOM_SAFE.create(options.containerTag || 'div', {
       attrs: { className: options.containerClass || 'safe-list' }
     });
     
     if (!items || items.length === 0) {
       if (options.emptyMessage) {
-        container.appendChild(this.create('div', {
+        container.appendChild(DOM_SAFE.create('div', {
           attrs: { className: 'empty-state' },
           text: options.emptyMessage
         }));
@@ -105,7 +109,7 @@ const DOM_SAFE = {
       return container;
     }
     
-    var self = this;
+    var self = DOM_SAFE;
     items.forEach(function(item, index) {
       var el = renderItem.call(self, item, index);
       if (el instanceof Element) {
@@ -203,10 +207,10 @@ const DOM_SAFE = {
    * @returns {Element}
    */
   createFormGroup: function(options) {
-    var group = this.create('div', { attrs: { className: 'form-group' } });
+    var group = DOM_SAFE.create('div', { attrs: { className: 'form-group' } });
     
     if (options.label) {
-      var label = this.create('label', {
+      var label = DOM_SAFE.create('label', {
         attrs: { htmlFor: options.id },
         text: options.label
       });
@@ -215,14 +219,14 @@ const DOM_SAFE = {
     
     var input;
     if (options.type === 'select') {
-      input = this.createSelect(options);
+      input = DOM_SAFE.createSelect(options);
     } else if (options.type === 'textarea') {
       input = document.createElement('textarea');
       input.rows = options.rows || 3;
       if (options.placeholder) input.placeholder = options.placeholder;
       if (options.value) input.value = options.value;
     } else {
-      input = this.createInput(options);
+      input = DOM_SAFE.createInput(options);
     }
     
     if (options.id) input.id = options.id;
@@ -246,14 +250,14 @@ const DOM_SAFE = {
     var iconeName = isReceita ? 'trending-up' : 'trending-down';
     var prefixo = isReceita ? '+' : '-';
     
-    var card = this.create('div', {
+    var card = DOM_SAFE.create('div', {
       attrs: {
         className: 'transacao-card ' + classe,
         'data-id': transacao.id
       }
     });
     
-    var iconEl = this.create('span', {
+    var iconEl = DOM_SAFE.create('span', {
       attrs: { className: 'transacao-icone', 'aria-hidden': 'true' }
     });
     if (typeof lucideIconHtml === 'function') {
@@ -264,15 +268,15 @@ const DOM_SAFE = {
     card.appendChild(iconEl);
     
     // Info
-    var info = this.create('div', { attrs: { className: 'transacao-info' } });
+    var info = DOM_SAFE.create('div', { attrs: { className: 'transacao-info' } });
     
-    var desc = this.create('div', {
+    var desc = DOM_SAFE.create('div', {
       attrs: { className: 'transacao-descricao' },
       text: transacao.descricao || transacao.categoria
     });
     info.appendChild(desc);
     
-    var meta = this.create('div', {
+    var meta = DOM_SAFE.create('div', {
       attrs: { className: 'transacao-meta' },
       text: transacao.categoria + ' · ' + transacao.data
     });
@@ -281,7 +285,7 @@ const DOM_SAFE = {
     card.appendChild(info);
     
     // Valor
-    var valor = this.create('div', {
+    var valor = DOM_SAFE.create('div', {
       attrs: { className: 'transacao-valor ' + classe },
       text: prefixo + ' R$ ' + (transacao.valor || 0).toFixed(2).replace('.', ',')
     });
@@ -296,7 +300,7 @@ const DOM_SAFE = {
    * @returns {Element}
    */
   createCategoriaChip: function(options) {
-    var chip = this.create('button', {
+    var chip = DOM_SAFE.create('button', {
       attrs: {
         type: 'button',
         className: 'categoria-chip ' + (options.ativo ? 'ativo' : ''),
@@ -327,13 +331,13 @@ const DOM_SAFE = {
    * @returns {Element}
    */
   createProgressBar: function(options) {
-    var container = this.create('div', {
+    var container = DOM_SAFE.create('div', {
       attrs: { className: 'progress-bar-container' }
     });
     
     // Label
     if (options.label) {
-      var label = this.create('div', {
+      var label = DOM_SAFE.create('div', {
         attrs: { className: 'progress-bar-label' },
         text: options.label
       });
@@ -341,11 +345,11 @@ const DOM_SAFE = {
     }
     
     // Barra
-    var barra = this.create('div', {
+    var barra = DOM_SAFE.create('div', {
       attrs: { className: 'progress-bar' }
     });
     
-    var fill = this.create('div', {
+    var fill = DOM_SAFE.create('div', {
       attrs: {
         className: 'progress-bar-fill progress-bar-' + (options.status || 'normal'),
         style: 'width: ' + Math.min(options.percentual || 0, 100) + '%'
@@ -356,7 +360,7 @@ const DOM_SAFE = {
     
     // Valores
     if (options.valores) {
-      var valores = this.create('div', {
+      var valores = DOM_SAFE.create('div', {
         attrs: { className: 'progress-bar-valores' },
         text: options.valores
       });
@@ -379,8 +383,8 @@ const DOM_SAFE_PATCH = {
    * Aplica patches seguros em elementos críticos
    */
   apply: function() {
-    this.patchAutocomplete();
-    this.patchTransacaoList();
+    DOM_SAFE_PATCH.patchAutocomplete();
+    DOM_SAFE_PATCH.patchTransacaoList();
     console.warn('[DOM_SAFE_PATCH] Patches aplicados');
   },
   
@@ -469,7 +473,4 @@ if (typeof document !== 'undefined') {
   }
 }
 
-// Export
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { DOM_SAFE: DOM_SAFE, DOM_SAFE_PATCH: DOM_SAFE_PATCH };
-}
+export { DOM_SAFE, DOM_SAFE_PATCH };

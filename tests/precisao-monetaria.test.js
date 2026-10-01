@@ -15,12 +15,12 @@
  *   2. o percentual exibido e o status NUNCA se contradizem — a tela só
  *      mostra 100% quando o limite foi de fato atingido.
  */
-const path = require('path');
+const { carregarScript } = require('./helpers/carregar-script.cjs');
 const { loadCoreModules, resetFixtures } = require('./load-sources');
 
 loadCoreModules();
 
-const BUDGET_SERVICE = require(path.join(__dirname, '..', 'js', 'services', 'budgetService.js'));
+const BUDGET_SERVICE = carregarScript('js/services/budgetService.js');
 
 const U = () => global.UTILS;
 const O = () => global.ORCAMENTO;

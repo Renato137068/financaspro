@@ -18,6 +18,19 @@
   - **Informações pessoais:** nome, e-mail (conta Supabase Auth).
   - **Informações financeiras:** lançamentos, orçamentos, metas, contas que o
     usuário registra; sincronizados com a nuvem quando há login.
+  - **Informações e desempenho do app → Registros de falhas / Diagnóstico:**
+    relatórios de erro (mensagem técnica mascarada, versão, tela, user-agent)
+    enviados à Edge Function `obs-ingest` — ligados por padrão, o usuário
+    desliga em Perfil. Finalidade: **análise / estabilidade**. Não vinculados à
+    conta (sem user id). Retenção 30 dias. Marque como **coletado**, não
+    compartilhado.
+  - **Informações e desempenho do app → Outros dados de desempenho do app:**
+    contagem de uso anônima (etapa 4 do roadmap) — 1 aviso por dia por
+    aparelho, só com a versão do app, pela mesma `obs-ingest` e sob o mesmo
+    opt-out dos relatórios de erro. O servidor guarda só um contador por dia e
+    versão (`fp_app_sessao_dia`), sem IP, user-agent ou id; retenção 30 dias.
+    Finalidade: **análise** (erros por sessão de cada versão). Não vinculado à
+    conta. Marque como **coletado**, não compartilhado.
   - **Identificadores do app / compras:** tokens de compra Google Play
     (verificação de assinatura Pro) enviados aos nossos backends (Supabase Edge
     / API) para validar entitlement — **não** enviamos o número do cartão.

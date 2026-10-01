@@ -1,8 +1,14 @@
-// FinançasPro — Indicador: KPI card (ícone + valor + label)
-// v11.0 — Depende de: ProgressBar.js (opcional, só quando barra fornecida)
-(function() {
-  var UI = window.UI || {};
+/**
+ * FinançasPro — Indicador: KPI card (ícone + valor + label)
+ * v11.0 — Depende de: ProgressBar.js (opcional, só quando barra fornecida)
+ *
+ * ES Module (ADR 0005): entra no app por js/components/ui.js, que monta o
+ * namespace UI publicado por js/esm/ponte.js.
+ */
 
+import { ProgressBar } from './ProgressBar.js';
+
+const Indicador = (function() {
   function _renderIcon(iconSpan, icone) {
     iconSpan.setAttribute('aria-hidden', 'true');
     if (!icone) {
@@ -20,7 +26,7 @@
     iconSpan.textContent = icone;
   }
 
-  UI.Indicador = {
+  return {
     // render(icone, valor, label, tipo, barra?) → HTMLElement
     // icone: nome Lucide ('wallet'), HTML com <i data-lucide>, ou emoji legado
     // tipo: 'positivo'|'negativo'|'alerta'|'neutro' — barra: { pct, cor }
@@ -48,8 +54,8 @@
 
       el.appendChild(content);
 
-      if (barra && UI.ProgressBar && typeof UI.ProgressBar.render === 'function') {
-        el.appendChild(UI.ProgressBar.render(barra.pct, barra.cor));
+      if (barra && ProgressBar && typeof ProgressBar.render === 'function') {
+        el.appendChild(ProgressBar.render(barra.pct, barra.cor));
       }
 
       if (typeof renderLucideIcons === 'function') {
@@ -59,6 +65,6 @@
       return el;
     }
   };
-
-  window.UI = UI;
 })();
+
+export { Indicador };

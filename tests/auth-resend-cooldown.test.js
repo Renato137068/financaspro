@@ -7,7 +7,8 @@
  * trava o botão por 60s com contagem regressiva mesmo se o reenvio falhar.
  * @jest-environment jsdom
  */
-const AUTH = require('../js/authController.js');
+const { carregarScript } = require('./helpers/carregar-script.cjs');
+const AUTH = carregarScript('js/authController.js');
 
 describe('authResendCooldown', function() {
   beforeEach(function() { jest.useFakeTimers(); jest.setSystemTime(new Date('2026-09-14T12:00:00Z')); });

@@ -16,12 +16,11 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { rodarPerfil } = require('./helpers/chunk-perfil.cjs');
 
 const root = path.join(__dirname, '..');
 
 function initConfig() {
-  const src = fs.readFileSync(path.join(root, 'js', 'modules', 'init-config.js'), 'utf8')
-    .replace(/\bconst INIT_CONFIG =/, 'var INIT_CONFIG =');
   const sandbox = {
     document: { getElementById: function() { return null; } },
     console: { error: function() {}, warn: function() {}, log: function() {} },
@@ -29,9 +28,7 @@ function initConfig() {
     Date: Date, String: String, Object: Object, Array: Array, module: { exports: {} },
   };
   sandbox.globalThis = sandbox;
-  vm.runInContext(src, vm.createContext(sandbox),
-    { filename: path.join(root, 'js', 'modules', 'init-config.js') });
-  return sandbox.INIT_CONFIG;
+  return rodarPerfil(vm.createContext(sandbox));
 }
 
 /** Toda chave gravada como salvarConfig({ chave: ... }) em js/. */

@@ -5,15 +5,25 @@
  * compostos) e "financiamento" (Tabela Price). Toda a conta vive em
  * simulador.js (puro e testado); aqui é só ler o formulário, chamar e desenhar
  * o resultado. Nada é salvo — é uma ferramenta de decisão, não um cadastro.
+ *
+ * ES Module (ADR 0005): chega sob demanda no chunk 'simulador'
+ * (js/esm/chunks/simulador.js, via LAZY.load), que o publica em window.
  */
+
+import { UTILS } from '../core/utils.js';
+import { TablistKeyboard } from '../utilities/tablist-keyboard.js';
+import { mudarAba } from './init-navigation.js';
+import { BILLING } from '../billing.js';
+import { SIMULADOR } from '../simulador.js';
+
 const INIT_SIMULADOR = {
   _bound: false,
   _modo: 'parcelado',
 
   init: function() {
-    if (this._bound) return;
-    this._bound = true;
-    var self = this;
+    if (INIT_SIMULADOR._bound) return;
+    INIT_SIMULADOR._bound = true;
+    var self = INIT_SIMULADOR;
 
     document.addEventListener('click', function(e) {
       var btn = e.target.closest('[data-action]');
@@ -106,7 +116,7 @@ const INIT_SIMULADOR = {
     var tabs = '<div class="sim-tabs" role="tablist" aria-label="Tipo de simulação">';
     for (var i = 0; i < modos.length; i++) {
       var m = modos[i];
-      var ativo = m.id === this._modo;
+      var ativo = m.id === INIT_SIMULADOR._modo;
       tabs += '<button type="button" class="sim-tab' + (ativo ? ' sim-tab--ativo' : '') + '"' +
         ' role="tab" id="sim-tab-' + m.id + '"' +
         ' aria-selected="' + (ativo ? 'true' : 'false') + '"' +
@@ -123,29 +133,29 @@ const INIT_SIMULADOR = {
 
     // Setas ←/→, Home/End e roving tabindex via utilitário compartilhado.
     if (typeof TablistKeyboard !== 'undefined') {
-      var self = this;
+      var self = INIT_SIMULADOR;
       TablistKeyboard.init(panel.querySelector('.sim-tabs'), {
         onSelect: function(tab) { self._selecionar(tab.getAttribute('data-modo'), false); }
       });
     }
 
-    this._renderCorpo();
+    INIT_SIMULADOR._renderCorpo();
     if (typeof window !== 'undefined' && window.renderLucideIcons) window.renderLucideIcons();
   },
 
   /** Troca o modo ativo sem recriar a tablist (preserva foco e teclado). */
   _selecionar: function(modo, focar) {
-    this._modo = modo || 'parcelado';
+    INIT_SIMULADOR._modo = modo || 'parcelado';
     var panel = document.getElementById('simulador-panel');
     if (!panel) return;
     var tabs = panel.querySelectorAll('.sim-tab');
     for (var i = 0; i < tabs.length; i++) {
-      var on = tabs[i].getAttribute('data-modo') === this._modo;
+      var on = tabs[i].getAttribute('data-modo') === INIT_SIMULADOR._modo;
       tabs[i].classList.toggle('sim-tab--ativo', on);
       tabs[i].setAttribute('aria-selected', on ? 'true' : 'false');
       tabs[i].setAttribute('tabindex', on ? '0' : '-1');
     }
-    this._renderCorpo();
+    INIT_SIMULADOR._renderCorpo();
     if (focar) {
       var ativa = panel.querySelector('.sim-tab--ativo');
       if (ativa) ativa.focus();
@@ -157,11 +167,11 @@ const INIT_SIMULADOR = {
     var corpoEl = document.getElementById('sim-corpo');
     if (!corpoEl) return;
     var corpo;
-    if (this._modo === 'poupar') corpo = this._formPoupar();
-    else if (this._modo === 'meta') corpo = this._formMeta();
-    else if (this._modo === 'financiamento') corpo = this._formFinanciamento();
-    else corpo = this._formParcelado();
-    corpoEl.setAttribute('aria-labelledby', 'sim-tab-' + this._modo);
+    if (INIT_SIMULADOR._modo === 'poupar') corpo = INIT_SIMULADOR._formPoupar();
+    else if (INIT_SIMULADOR._modo === 'meta') corpo = INIT_SIMULADOR._formMeta();
+    else if (INIT_SIMULADOR._modo === 'financiamento') corpo = INIT_SIMULADOR._formFinanciamento();
+    else corpo = INIT_SIMULADOR._formParcelado();
+    corpoEl.setAttribute('aria-labelledby', 'sim-tab-' + INIT_SIMULADOR._modo);
     corpoEl.innerHTML = '<div class="sim-form">' + corpo + '</div>' +
       '<div class="sim-resultado" id="sim-resultado" aria-live="polite"></div>';
     if (typeof window !== 'undefined' && window.renderLucideIcons) window.renderLucideIcons();
@@ -177,37 +187,37 @@ const INIT_SIMULADOR = {
 
   _formParcelado: function() {
     return '<p class="sim-intro">Compare pagar agora com parcelar. Se você informar quanto seu dinheiro rende, o app decide pelo valor de hoje — parcelar sem juros e deixar rendendo pode valer mais que pagar à vista.</p>' +
-      this._campo('sim-p-vista', 'Preço à vista', 'inputmode="decimal" placeholder="R$ 0,00"') +
-      this._campo('sim-p-num', 'Nº de parcelas', 'inputmode="numeric" placeholder="12"') +
-      this._campo('sim-p-parcela', 'Valor de cada parcela', 'inputmode="decimal" placeholder="R$ 0,00"') +
-      this._campo('sim-p-rende', 'Rendimento do seu dinheiro (% ao mês)', 'inputmode="decimal" placeholder="0,80"', 'Opcional. Ex.: poupança ~0,5% · CDI ~0,9%.') +
+      INIT_SIMULADOR._campo('sim-p-vista', 'Preço à vista', 'inputmode="decimal" placeholder="R$ 0,00"') +
+      INIT_SIMULADOR._campo('sim-p-num', 'Nº de parcelas', 'inputmode="numeric" placeholder="12"') +
+      INIT_SIMULADOR._campo('sim-p-parcela', 'Valor de cada parcela', 'inputmode="decimal" placeholder="R$ 0,00"') +
+      INIT_SIMULADOR._campo('sim-p-rende', 'Rendimento do seu dinheiro (% ao mês)', 'inputmode="decimal" placeholder="0,80"', 'Opcional. Ex.: poupança ~0,5% · CDI ~0,9%.') +
       '<button type="button" class="btn-primario sim-btn" data-action="sim-calc-parcelado">Comparar</button>';
   },
 
   _formPoupar: function() {
     return '<p class="sim-intro">Veja quanto um valor guardado, com aportes mensais, vira ao longo do tempo com juros compostos.</p>' +
-      this._campo('sim-j-inicial', 'Valor inicial', 'inputmode="decimal" placeholder="R$ 0,00"') +
-      this._campo('sim-j-aporte', 'Aporte mensal', 'inputmode="decimal" placeholder="R$ 0,00"') +
-      this._campo('sim-j-taxa', 'Rendimento (% ao mês)', 'inputmode="decimal" placeholder="0,80"') +
-      this._campo('sim-j-meses', 'Prazo (meses)', 'inputmode="numeric" placeholder="12"') +
+      INIT_SIMULADOR._campo('sim-j-inicial', 'Valor inicial', 'inputmode="decimal" placeholder="R$ 0,00"') +
+      INIT_SIMULADOR._campo('sim-j-aporte', 'Aporte mensal', 'inputmode="decimal" placeholder="R$ 0,00"') +
+      INIT_SIMULADOR._campo('sim-j-taxa', 'Rendimento (% ao mês)', 'inputmode="decimal" placeholder="0,80"') +
+      INIT_SIMULADOR._campo('sim-j-meses', 'Prazo (meses)', 'inputmode="numeric" placeholder="12"') +
       '<button type="button" class="btn-primario sim-btn" data-action="sim-calc-juros">Calcular</button>';
   },
 
   _formMeta: function() {
     return '<p class="sim-intro">Diga quanto quer juntar e em quanto tempo — o app calcula o valor que você precisa guardar por mês para chegar lá.</p>' +
-      this._campo('sim-m-objetivo', 'Quero juntar', 'inputmode="decimal" placeholder="R$ 0,00"') +
-      this._campo('sim-m-meses', 'Em quantos meses', 'inputmode="numeric" placeholder="24"') +
-      this._campo('sim-m-inicial', 'Já tenho guardado', 'inputmode="decimal" placeholder="R$ 0,00"', 'Opcional.') +
-      this._campo('sim-m-taxa', 'Rendimento (% ao mês)', 'inputmode="decimal" placeholder="0,80"', 'Opcional. Ex.: poupança ~0,5% · CDI ~0,9%.') +
+      INIT_SIMULADOR._campo('sim-m-objetivo', 'Quero juntar', 'inputmode="decimal" placeholder="R$ 0,00"') +
+      INIT_SIMULADOR._campo('sim-m-meses', 'Em quantos meses', 'inputmode="numeric" placeholder="24"') +
+      INIT_SIMULADOR._campo('sim-m-inicial', 'Já tenho guardado', 'inputmode="decimal" placeholder="R$ 0,00"', 'Opcional.') +
+      INIT_SIMULADOR._campo('sim-m-taxa', 'Rendimento (% ao mês)', 'inputmode="decimal" placeholder="0,80"', 'Opcional. Ex.: poupança ~0,5% · CDI ~0,9%.') +
       '<button type="button" class="btn-primario sim-btn" data-action="sim-calc-meta">Calcular</button>';
   },
 
   _formFinanciamento: function() {
     return '<p class="sim-intro">Descubra o custo real de um financiamento pela Tabela Price (parcela fixa): quanto fica a parcela e quanto do total é só juros.</p>' +
-      this._campo('sim-f-valor', 'Valor do bem', 'inputmode="decimal" placeholder="R$ 0,00"') +
-      this._campo('sim-f-entrada', 'Entrada', 'inputmode="decimal" placeholder="R$ 0,00"') +
-      this._campo('sim-f-taxa', 'Juros (% ao mês)', 'inputmode="decimal" placeholder="1,50"') +
-      this._campo('sim-f-num', 'Nº de parcelas', 'inputmode="numeric" placeholder="48"') +
+      INIT_SIMULADOR._campo('sim-f-valor', 'Valor do bem', 'inputmode="decimal" placeholder="R$ 0,00"') +
+      INIT_SIMULADOR._campo('sim-f-entrada', 'Entrada', 'inputmode="decimal" placeholder="R$ 0,00"') +
+      INIT_SIMULADOR._campo('sim-f-taxa', 'Juros (% ao mês)', 'inputmode="decimal" placeholder="1,50"') +
+      INIT_SIMULADOR._campo('sim-f-num', 'Nº de parcelas', 'inputmode="numeric" placeholder="48"') +
       '<button type="button" class="btn-primario sim-btn" data-action="sim-calc-financiamento">Calcular</button>';
   },
 
@@ -232,12 +242,12 @@ const INIT_SIMULADOR = {
   // ─── cálculos ───────────────────────────────────────────────────────────
   _calcParcelado: function() {
     var r = SIMULADOR.compararParcelado({
-      precoVista: this._moeda('sim-p-vista'),
-      numParcelas: this._int('sim-p-num'),
-      valorParcela: this._moeda('sim-p-parcela'),
-      taxaInvestimento: this._pct('sim-p-rende'),
+      precoVista: INIT_SIMULADOR._moeda('sim-p-vista'),
+      numParcelas: INIT_SIMULADOR._int('sim-p-num'),
+      valorParcela: INIT_SIMULADOR._moeda('sim-p-parcela'),
+      taxaInvestimento: INIT_SIMULADOR._pct('sim-p-rende'),
     });
-    if (!r.valido) { this._erro(r.motivo); return; }
+    if (!r.valido) { INIT_SIMULADOR._erro(r.motivo); return; }
 
     var vereditos = {
       vista: { classe: 'sim-veredito--vista', icone: 'wallet', texto: 'Compensa pagar à vista' },
@@ -250,9 +260,9 @@ const INIT_SIMULADOR = {
     if (r.vantagem === 'indiferente') {
       detalhe = 'À vista e parcelado custam o mesmo em dinheiro de hoje.';
     } else if (r.vantagem === 'vista') {
-      detalhe = 'Pagar à vista economiza <strong>' + this._fmt(r.economia) + '</strong> em dinheiro de hoje.';
+      detalhe = 'Pagar à vista economiza <strong>' + INIT_SIMULADOR._fmt(r.economia) + '</strong> em dinheiro de hoje.';
     } else {
-      detalhe = 'Parcelar (e deixar o dinheiro rendendo) economiza <strong>' + this._fmt(r.economia) + '</strong> em dinheiro de hoje.';
+      detalhe = 'Parcelar (e deixar o dinheiro rendendo) economiza <strong>' + INIT_SIMULADOR._fmt(r.economia) + '</strong> em dinheiro de hoje.';
     }
 
     var html = '<div class="sim-veredito ' + v.classe + '">' +
@@ -260,38 +270,38 @@ const INIT_SIMULADOR = {
       '<div><strong>' + v.texto + '</strong><span>' + detalhe + '</span></div></div>';
 
     html += '<div class="sim-res-bloco">';
-    html += this._linha('Total à vista', this._fmt(r.precoVista));
-    html += this._linha('Total parcelado', this._fmt(r.totalParcelado) + ' (' + r.numParcelas + 'x ' + this._fmt(r.valorParcela) + ')');
+    html += INIT_SIMULADOR._linha('Total à vista', INIT_SIMULADOR._fmt(r.precoVista));
+    html += INIT_SIMULADOR._linha('Total parcelado', INIT_SIMULADOR._fmt(r.totalParcelado) + ' (' + r.numParcelas + 'x ' + INIT_SIMULADOR._fmt(r.valorParcela) + ')');
     if (r.semJuros) {
-      html += this._linha('Juros do parcelamento', 'sem juros', true);
+      html += INIT_SIMULADOR._linha('Juros do parcelamento', 'sem juros', true);
     } else {
-      html += this._linha('Acréscimo do parcelamento', this._fmt(r.acrescimo) + ' (' + r.acrescimoPct.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + '%)');
-      html += this._linha('Juros embutidos', this._pctTexto(r.taxaMensal) + ' ao mês · ' + this._pctTexto(r.taxaAnual) + ' ao ano', true);
+      html += INIT_SIMULADOR._linha('Acréscimo do parcelamento', INIT_SIMULADOR._fmt(r.acrescimo) + ' (' + r.acrescimoPct.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + '%)');
+      html += INIT_SIMULADOR._linha('Juros embutidos', INIT_SIMULADOR._pctTexto(r.taxaMensal) + ' ao mês · ' + INIT_SIMULADOR._pctTexto(r.taxaAnual) + ' ao ano', true);
     }
     html += '</div>';
-    this._mostrar(html);
+    INIT_SIMULADOR._mostrar(html);
   },
 
   _calcJuros: function() {
     var r = SIMULADOR.jurosCompostos({
-      principal: this._moeda('sim-j-inicial'),
-      aporteMensal: this._moeda('sim-j-aporte'),
-      taxaMensal: this._pct('sim-j-taxa'),
-      meses: this._int('sim-j-meses'),
+      principal: INIT_SIMULADOR._moeda('sim-j-inicial'),
+      aporteMensal: INIT_SIMULADOR._moeda('sim-j-aporte'),
+      taxaMensal: INIT_SIMULADOR._pct('sim-j-taxa'),
+      meses: INIT_SIMULADOR._int('sim-j-meses'),
     });
-    if (!r.valido) { this._erro(r.motivo); return; }
+    if (!r.valido) { INIT_SIMULADOR._erro(r.motivo); return; }
 
     var html = '<div class="sim-veredito sim-veredito--parcelado">' +
       '<i data-lucide="trending-up" aria-hidden="true"></i>' +
-      '<div><strong>' + this._fmt(r.montante) + '</strong>' +
+      '<div><strong>' + INIT_SIMULADOR._fmt(r.montante) + '</strong>' +
       '<span>é quanto você terá em ' + r.meses + (r.meses > 1 ? ' meses' : ' mês') + '.</span></div></div>';
 
     html += '<div class="sim-res-bloco">';
-    html += this._linha('Total investido', this._fmt(r.totalAportado));
-    html += this._linha('Juros ganhos', this._fmt(r.jurosGanhos), true);
-    html += this._linha('Rendimento no período', this._pctTexto(r.taxaAnual) + ' ao ano');
+    html += INIT_SIMULADOR._linha('Total investido', INIT_SIMULADOR._fmt(r.totalAportado));
+    html += INIT_SIMULADOR._linha('Juros ganhos', INIT_SIMULADOR._fmt(r.jurosGanhos), true);
+    html += INIT_SIMULADOR._linha('Rendimento no período', INIT_SIMULADOR._pctTexto(r.taxaAnual) + ' ao ano');
     html += '</div>';
-    this._mostrar(html);
+    INIT_SIMULADOR._mostrar(html);
   },
 
   /**
@@ -313,7 +323,7 @@ const INIT_SIMULADOR = {
 
   /** Nota "cabe no seu mês?" comparando o aporte com a folga média. */
   _notaFolga: function(aporte) {
-    var folga = this._folgaMensal();
+    var folga = INIT_SIMULADOR._folgaMensal();
     if (folga == null) return '';
     if (folga <= 0) {
       return '<div class="sim-nota sim-nota--aviso">' +
@@ -324,22 +334,22 @@ const INIT_SIMULADOR = {
     if (aporte <= folga) {
       return '<div class="sim-nota sim-nota--ok">' +
         '<i data-lucide="check-circle" aria-hidden="true"></i> ' +
-        'Cabe no seu mês: sobram em média ' + this._fmt(folga) + ' por mês.</div>';
+        'Cabe no seu mês: sobram em média ' + INIT_SIMULADOR._fmt(folga) + ' por mês.</div>';
     }
     return '<div class="sim-nota sim-nota--aviso">' +
       '<i data-lucide="alert-circle" aria-hidden="true"></i> ' +
-      'Puxado: sobra em média ' + this._fmt(folga) + ' por mês, menos que o aporte. ' +
+      'Puxado: sobra em média ' + INIT_SIMULADOR._fmt(folga) + ' por mês, menos que o aporte. ' +
       'Considere um prazo maior ou uma meta menor.</div>';
   },
 
   _calcMeta: function() {
     var r = SIMULADOR.aporteParaMeta({
-      objetivo: this._moeda('sim-m-objetivo'),
-      meses: this._int('sim-m-meses'),
-      inicial: this._moeda('sim-m-inicial'),
-      taxaMensal: this._pct('sim-m-taxa'),
+      objetivo: INIT_SIMULADOR._moeda('sim-m-objetivo'),
+      meses: INIT_SIMULADOR._int('sim-m-meses'),
+      inicial: INIT_SIMULADOR._moeda('sim-m-inicial'),
+      taxaMensal: INIT_SIMULADOR._pct('sim-m-taxa'),
     });
-    if (!r.valido) { this._erro(r.motivo); return; }
+    if (!r.valido) { INIT_SIMULADOR._erro(r.motivo); return; }
 
     var html;
     if (r.jaAlcanca) {
@@ -350,22 +360,22 @@ const INIT_SIMULADOR = {
     } else {
       html = '<div class="sim-veredito sim-veredito--vista">' +
         '<i data-lucide="target" aria-hidden="true"></i>' +
-        '<div><strong>' + this._fmt(r.aporteMensal) + ' por mês</strong>' +
-        '<span>para juntar ' + this._fmt(r.objetivo) + ' em ' + r.meses + (r.meses > 1 ? ' meses' : ' mês') + '.</span></div></div>';
+        '<div><strong>' + INIT_SIMULADOR._fmt(r.aporteMensal) + ' por mês</strong>' +
+        '<span>para juntar ' + INIT_SIMULADOR._fmt(r.objetivo) + ' em ' + r.meses + (r.meses > 1 ? ' meses' : ' mês') + '.</span></div></div>';
     }
 
     html += '<div class="sim-res-bloco">';
-    html += this._linha('Meta', this._fmt(r.objetivo));
-    if (r.inicial > 0) html += this._linha('Já tenho guardado', this._fmt(r.inicial));
-    html += this._linha('Guardar por mês', this._fmt(r.aporteMensal), true);
-    html += this._linha('Total que você vai guardar', this._fmt(r.totalAportado));
-    if (r.jurosGanhos > 0) html += this._linha('Juros ajudam com', this._fmt(r.jurosGanhos), true);
+    html += INIT_SIMULADOR._linha('Meta', INIT_SIMULADOR._fmt(r.objetivo));
+    if (r.inicial > 0) html += INIT_SIMULADOR._linha('Já tenho guardado', INIT_SIMULADOR._fmt(r.inicial));
+    html += INIT_SIMULADOR._linha('Guardar por mês', INIT_SIMULADOR._fmt(r.aporteMensal), true);
+    html += INIT_SIMULADOR._linha('Total que você vai guardar', INIT_SIMULADOR._fmt(r.totalAportado));
+    if (r.jurosGanhos > 0) html += INIT_SIMULADOR._linha('Juros ajudam com', INIT_SIMULADOR._fmt(r.jurosGanhos), true);
     html += '</div>';
 
     // Aterrissa o número na realidade do usuário: o aporte cabe na folga que ele
     // costuma ter no mês? Sem isso o "guarde R$ X/mês" é genérico; com isso vira
     // conselho pessoal. Só aparece quando há histórico suficiente para uma média.
-    if (!r.jaAlcanca) html += this._notaFolga(r.aporteMensal);
+    if (!r.jaAlcanca) html += INIT_SIMULADOR._notaFolga(r.aporteMensal);
 
     // Transforma o cálculo em ação: cria a meta no app com o objetivo, o prazo
     // e o quanto já se tem. Só oferece quando o módulo de metas existe.
@@ -377,7 +387,7 @@ const INIT_SIMULADOR = {
         '<i data-lucide="target" aria-hidden="true"></i> Criar meta no app</button>' +
         '</div>';
     }
-    this._mostrar(html);
+    INIT_SIMULADOR._mostrar(html);
   },
 
   /** hoje + meses como YYYY-MM-DD (local), sem depender de UTILS. */
@@ -393,12 +403,12 @@ const INIT_SIMULADOR = {
   _criarMeta: function() {
     if (typeof METAS === 'undefined' || !METAS.criar) return;
     var r = SIMULADOR.aporteParaMeta({
-      objetivo: this._moeda('sim-m-objetivo'),
-      meses: this._int('sim-m-meses'),
-      inicial: this._moeda('sim-m-inicial'),
-      taxaMensal: this._pct('sim-m-taxa'),
+      objetivo: INIT_SIMULADOR._moeda('sim-m-objetivo'),
+      meses: INIT_SIMULADOR._int('sim-m-meses'),
+      inicial: INIT_SIMULADOR._moeda('sim-m-inicial'),
+      taxaMensal: INIT_SIMULADOR._pct('sim-m-taxa'),
     });
-    if (!r.valido) { this._erro(r.motivo); return; }
+    if (!r.valido) { INIT_SIMULADOR._erro(r.motivo); return; }
 
     var nomeEl = document.getElementById('sim-m-nome');
     var titulo = (nomeEl && nomeEl.value ? nomeEl.value : '').trim() || 'Minha meta';
@@ -408,7 +418,7 @@ const INIT_SIMULADOR = {
     // computa a data à mão em vez de criar uma meta sem prazo em silêncio.
     var prazo = (typeof UTILS !== 'undefined' && UTILS.addMesesClamp && UTILS.dataLocalIso)
       ? UTILS.addMesesClamp(UTILS.dataLocalIso(), r.meses)
-      : this._prazoFallback(r.meses);
+      : INIT_SIMULADOR._prazoFallback(r.meses);
 
     try {
       METAS.criar({
@@ -441,28 +451,27 @@ const INIT_SIMULADOR = {
 
   _calcFinanciamento: function() {
     var r = SIMULADOR.financiamento({
-      valor: this._moeda('sim-f-valor'),
-      entrada: this._moeda('sim-f-entrada'),
-      taxaMensal: this._pct('sim-f-taxa'),
-      numParcelas: this._int('sim-f-num'),
+      valor: INIT_SIMULADOR._moeda('sim-f-valor'),
+      entrada: INIT_SIMULADOR._moeda('sim-f-entrada'),
+      taxaMensal: INIT_SIMULADOR._pct('sim-f-taxa'),
+      numParcelas: INIT_SIMULADOR._int('sim-f-num'),
     });
-    if (!r.valido) { this._erro(r.motivo); return; }
+    if (!r.valido) { INIT_SIMULADOR._erro(r.motivo); return; }
 
     var html = '<div class="sim-veredito sim-veredito--vista">' +
       '<i data-lucide="landmark" aria-hidden="true"></i>' +
-      '<div><strong>' + r.numParcelas + 'x de ' + this._fmt(r.valorParcela) + '</strong>' +
-      '<span>Total pago: ' + this._fmt(r.totalPago) + '.</span></div></div>';
+      '<div><strong>' + r.numParcelas + 'x de ' + INIT_SIMULADOR._fmt(r.valorParcela) + '</strong>' +
+      '<span>Total pago: ' + INIT_SIMULADOR._fmt(r.totalPago) + '.</span></div></div>';
 
     html += '<div class="sim-res-bloco">';
-    html += this._linha('Valor financiado', this._fmt(r.valorFinanciado));
-    html += this._linha('Total pago', this._fmt(r.totalPago));
-    html += this._linha('Total de juros', this._fmt(r.totalJuros) + ' (' + r.jurosPct.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + '% sobre o financiado)', true);
-    html += this._linha('Taxa', this._pctTexto(r.taxaMensal) + ' ao mês · ' + this._pctTexto(r.taxaAnual) + ' ao ano');
+    html += INIT_SIMULADOR._linha('Valor financiado', INIT_SIMULADOR._fmt(r.valorFinanciado));
+    html += INIT_SIMULADOR._linha('Total pago', INIT_SIMULADOR._fmt(r.totalPago));
+    html += INIT_SIMULADOR._linha('Total de juros', INIT_SIMULADOR._fmt(r.totalJuros) + ' (' + r.jurosPct.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + '% sobre o financiado)', true);
+    html += INIT_SIMULADOR._linha('Taxa', INIT_SIMULADOR._pctTexto(r.taxaMensal) + ' ao mês · ' + INIT_SIMULADOR._pctTexto(r.taxaAnual) + ' ao ano');
     html += '</div>';
-    this._mostrar(html);
+    INIT_SIMULADOR._mostrar(html);
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = INIT_SIMULADOR;
-}
+export { INIT_SIMULADOR };
+export default INIT_SIMULADOR;

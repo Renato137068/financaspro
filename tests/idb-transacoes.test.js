@@ -3,23 +3,27 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { indexComTelas } = require('./helpers/index-com-telas.cjs');
 
 const root = path.join(__dirname, '..');
 const dadosSrc = fs.readFileSync(path.join(root, 'js', 'core', 'dados.js'), 'utf8');
 const idbSrc = fs.readFileSync(path.join(root, 'js', 'core', 'idb-kv.js'), 'utf8');
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+// index.html com as telas lazy (telas/) de volta nas cascas.
+const html = indexComTelas();
+// ES Modules (ADR 0005) entram pela ponte, não por tag no index.html.
+const ponte = fs.readFileSync(path.join(root, 'js', 'esm', 'ponte.js'), 'utf8');
 const reconcilerSrc = fs.readFileSync(path.join(root, 'js', 'utilities', 'finance-reconciler.js'), 'utf8');
 
 describe('IndexedDB para transações', function() {
   test('módulo idb-kv existe e expõe init/get/set', function() {
-    expect(idbSrc).toMatch(/var IDB_KV/);
+    expect(idbSrc).toMatch(/const IDB_KV/);
     expect(idbSrc).toMatch(/init:\s*function/);
     expect(idbSrc).toMatch(/get:\s*function/);
     expect(idbSrc).toMatch(/set:\s*function/);
   });
 
   test('dados.js integra backend idb com cache e ping multi-aba', function() {
-    expect(html).toMatch(/idb-kv\.js/);
+    expect(ponte).toMatch(/from '\.\.\/core\/idb-kv\.js'/);
     expect(dadosSrc).toMatch(/_prepararStorageTransacoes/);
     expect(dadosSrc).toMatch(/_ativarBackendIdbTransacoes/);
     expect(dadosSrc).toMatch(/TX_SYNC_PING_KEY/);
@@ -28,7 +32,7 @@ describe('IndexedDB para transações', function() {
   });
 
   test('init retorna Promise para lifecycle aguardar hidratação', function() {
-    expect(dadosSrc).toMatch(/init:\s*function\(\)[\s\S]*return this\._initPromise/);
+    expect(dadosSrc).toMatch(/init:\s*function\(\)[\s\S]*return DADOS\._initPromise/);
   });
 
   test('merge multi-aba usa SYNC_MERGE quando outra aba grava', function() {

@@ -1,0 +1,65 @@
+<!-- Tela "config-ajuda" (#aba-config-ajuda). Vem no chunk lazy "config": scripts/generate-telas.cjs
+     gera js/telas/config.js a partir deste arquivo. Rode `npm run telas:gerar` depois de editar. -->
+<div class="perfil-header">
+  <div class="perfil-avatar-wrapper">
+    <div class="perfil-avatar" style="background: var(--color-primary-500);" aria-hidden="true"><i data-lucide="help-circle"></i></div>
+  </div>
+  <div class="perfil-info">
+    <h2 class="perfil-nome">Ajuda e sobre</h2>
+    <div class="perfil-meta"><span>Privacidade, novidades, feedback e suporte</span></div>
+  </div>
+  <div class="perfil-actions">
+    <button class="perfil-action-btn" data-action="mudar-aba" data-aba="config" aria-label="Perfil e configurações">
+      <i data-lucide="arrow-left" aria-hidden="true"></i>
+    </button>
+  </div>
+</div>
+<div class="perfil-section">
+  <div class="perfil-cards-grid">
+    <a class="perfil-card" href="privacidade.html" aria-label="Política de privacidade">
+      <div class="perfil-card-icon-wrapper"><i data-lucide="shield" aria-hidden="true"></i></div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Política de privacidade</span>
+        <span class="perfil-card-subtitle">Como tratamos seus dados</span>
+      </div>
+      <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+    </a>
+
+    <button type="button" class="perfil-card" data-action="abrir-changelog" aria-label="Ver novidades e changelog">
+      <div class="perfil-card-icon-wrapper"><i data-lucide="file-text" aria-hidden="true"></i></div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Novidades</span>
+        <span class="perfil-card-subtitle" id="perfil-changelog-version">v11.3.13 — PWA e Android</span>
+      </div>
+      <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+    </button>
+
+    <button type="button" class="perfil-card" data-action="abrir-feedback" aria-label="Enviar feedback">
+      <div class="perfil-card-icon-wrapper"><i data-lucide="message-circle" aria-hidden="true"></i></div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Enviar feedback</span>
+        <span class="perfil-card-subtitle">Sugestões, bugs, elogios</span>
+      </div>
+      <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+    </button>
+
+    <button type="button" class="perfil-card" id="btn-refazer-onboarding" aria-label="Refazer tour de boas-vindas">
+      <div class="perfil-card-icon-wrapper"><i data-lucide="compass" aria-hidden="true"></i></div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Tour de boas-vindas</span>
+        <span class="perfil-card-subtitle">Rever dicas iniciais do app</span>
+      </div>
+      <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+    </button>
+
+    <button type="button" class="perfil-card" data-action="mudar-aba" data-aba="config-suporte" aria-label="Suporte técnico e diagnóstico">
+      <div class="perfil-card-icon-wrapper"><i data-lucide="stethoscope" aria-hidden="true"></i></div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Suporte técnico</span>
+        <span class="perfil-card-subtitle">Diagnóstico e ferramentas para tickets</span>
+      </div>
+      <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+    </button>
+  </div>
+</div>
+
