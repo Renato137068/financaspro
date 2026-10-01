@@ -121,6 +121,39 @@ describe('CSS que chega com o chunk', () => {
     expect(disputados).toEqual([]);
   });
 
+  // A folha só chega com o chunk. Uma regra cujas classes o boot também
+  // desenha deixaria o resumo ou o formulário sem estilo até alguém abrir a
+  // tela. Cada seletor precisa de uma classe que nenhum código do boot cita
+  // (index.html, scripts clássicos e o grafo estático de js/esm/ponte.js).
+  test('nenhuma regra delas casa com o que o boot desenha', () => {
+    const { converter } = require('./helpers/esm-como-script.cjs');
+    const grafo = new Set();
+    (function visitar(arq) {
+      if (grafo.has(arq)) return;
+      grafo.add(arq);
+      for (const dep of converter(LEIA(path.relative(ROOT, arq)), arq).importa) visitar(dep.arquivo);
+    })(path.join(ROOT, 'js', 'esm', 'ponte.js'));
+    const classicos = [...index.matchAll(/<script[^>]+src="([^"?]+\.js)/g)].map((m) => path.join(ROOT, m[1]))
+      .filter((f) => fs.existsSync(f));
+    expect(grafo.size).toBeGreaterThan(50);
+    const boot = [index, ...[...grafo, ...classicos].map((f) => fs.readFileSync(f, 'utf8'))].join('\n');
+    const citada = (c) => new RegExp('(^|[^\\w-])' + c.replace(/-/g, '\\-') + '($|[^\\w-])').test(boot);
+    // O boot cita, mas não desenha: só o nome de um data-action e um seletor
+    // do efeito ripple.
+    const SO_CITADAS = new Set(['billing-interval', 'onb-btn-next']);
+    const noBoot = [];
+    for (const f of folhas) {
+      postcss.parse(LEIA(f)).walkRules((r) => {
+        if (r.parent.type === 'atrule' && /keyframes$/.test(r.parent.name)) return;
+        for (const sel of r.selectors) {
+          const cs = [...sel.matchAll(/\.([\w-]+)/g)].map((m) => m[1]);
+          if (!cs.some((c) => SO_CITADAS.has(c) || !citada(c))) noBoot.push(f + ': ' + sel);
+        }
+      });
+    }
+    expect(noBoot).toEqual([]);
+  });
+
   test('a compactação não perde nem muda regra', () => {
     const plano = (css) => {
       const out = [];

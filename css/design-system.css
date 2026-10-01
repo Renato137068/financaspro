@@ -60,9 +60,7 @@ label i[data-lucide] {
 
 /* Contraste para ícones em fundos coloridos */
 .card.receita i[data-lucide],
-.card.despesa i[data-lucide],
-.kpi-card.receita i[data-lucide],
-.kpi-card.despesa i[data-lucide] {
+.card.despesa i[data-lucide] {
   color: white;
 }
 

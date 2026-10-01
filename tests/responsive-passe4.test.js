@@ -11,7 +11,9 @@ const responsive = fs.readFileSync(path.join(root, 'css', 'utilities', 'responsi
 const toasts = fs.readFileSync(path.join(root, 'css', 'components', 'toasts.css'), 'utf8');
 const navigation = fs.readFileSync(path.join(root, 'css', 'components', 'navigation.css'), 'utf8');
 const forms = fs.readFileSync(path.join(root, 'css', 'components', 'forms.css'), 'utf8');
-const extrato = fs.readFileSync(path.join(root, 'css', 'layouts', 'extrato.css'), 'utf8');
+// extrato-tela.css: a parte que só a tela do Extrato desenha (chega com o chunk).
+const extrato = ['extrato.css', 'extrato-tela.css']
+  .map((f) => fs.readFileSync(path.join(root, 'css', 'layouts', f), 'utf8')).join('\n');
 const mobileApp = fs.readFileSync(path.join(root, 'css', 'utilities', 'mobile-app.css'), 'utf8');
 const uxPolish = fs.readFileSync(path.join(root, 'css', 'utilities', 'ux-polish.css'), 'utf8');
 

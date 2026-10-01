@@ -11,12 +11,7 @@
 }
 
 /* Pressed state canônico em cards/linhas clicáveis */
-.perfil-card:not(.perfil-card-toggle):active,
-.ext-tx:active,
-.orcamento-item--link:active,
-.orc-kpi-card:active,
-.orc-regra-card:active,
-.kpi-card:active {
+.orcamento-item--link:active {
   transform: scale(var(--press-scale));
 }
 
@@ -42,46 +37,22 @@ textarea:focus-visible {
 
 .nav-btn,
 .sidebar-btn,
-.periodo-nav,
-.btn-editar,
-.btn-deletar,
-.btn-busca-avancada,
 .data-chip,
 .filtro-chip,
 .orc-tab,
-.ordenacao-btn,
-.ordenacao-campo-btn,
-.ordenacao-dir-btn,
 .cat-btn {
   min-width: var(--tap-target-min);
   min-height: var(--tap-target-min);
 }
 
-.extrato-busca-input {
-  padding-right: var(--space-4);
-}
-.ext-tx {
-  min-height: 72px;
-}
-
-.extrato-item-actions,
 .ext-tx-actions {
   opacity: 1;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .extrato-item-actions,
   .ext-tx-actions {
     opacity: 0.42;
   }
-  .ext-tx:hover .ext-tx-actions,
-  .ext-tx:focus-within .ext-tx-actions {
-    opacity: 1;
-  }
-}
-.btn-editar,
-.btn-deletar {
-  flex: 0 0 auto;
 }
 
 @media (max-width: 480px) {
@@ -101,15 +72,6 @@ textarea:focus-visible {
 
   .cat-btn {
     padding: 12px 8px;
-  }
-  .ext-tx {
-    align-items: flex-start;
-  }
-
-  .extrato-item-valor,
-  .ext-tx-valor {
-    min-width: 76px;
-    font-size: var(--font-size-sm);
   }
 }
 
@@ -151,13 +113,7 @@ textarea:focus-visible {
 .alerta-btn,
 .filtro-chip,
 .orc-tab,
-.ordenacao-btn,
-.ordenacao-campo-btn,
-.ordenacao-dir-btn,
-.btn-busca-avancada,
-.periodo-nav,
 .perfil-action-btn,
-.btn-remover-banco,
 .btn-sm,
 .btn-small,
 .anexo-remover {
@@ -181,14 +137,12 @@ textarea:focus-visible {
      com um único ícone fica alto e estreito, e continua difícil de acertar. */
   button:not(:has(> :not(i))),
   .btn-icone,
-  .perfil-action-btn,
-  .periodo-nav {
+  .perfil-action-btn {
     min-width: var(--tap-target-min);
   }
 
   /* Itens de lista clicáveis: o alvo é a linha inteira, não só o texto. */
   .transacao-item,
-  .extrato-item,
   .orcamento-item,
   .orcamento-item--link {
     min-height: var(--tap-target-min);

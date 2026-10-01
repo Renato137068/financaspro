@@ -32,8 +32,11 @@ const destino = path.join(root, 'js', 'telas');
 // Folhas que chegam com o chunk em vez de irem no CSS do primeiro acesso.
 const CSS_DOS_CHUNKS = {
   assinaturas: ['css/features/assinaturas.css'],
+  config: ['css/layouts/config-tela.css'],
   conta: ['css/features/billing-planos.css', 'css/features/open-finance.css'],
+  extrato: ['css/layouts/extrato-tela.css'],
   onboarding: ['css/features/onboarding.css'],
+  orcamento: ['css/layouts/orcamento-tela.css'],
   patrimonio: ['css/features/patrimonio.css'],
   relatorios: ['css/features/relatorios.css'],
   simulador: ['css/features/simulador.css'],

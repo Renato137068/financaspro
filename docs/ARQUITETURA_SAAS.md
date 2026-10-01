@@ -143,8 +143,10 @@ mesmos dados sincronizam com o Supabase.
   `js/telas/<chunk>.js`, e `TELAS.estilo` a aplica num `<style>` antes do
   markup. Entra depois do CSS do boot, então cada seletor precisa de uma
   classe da própria tela que o boot não estiliza (`tests/telas.test.js`).
-  Extrato, Orçamento e Perfil (`css/layouts/`) ainda vão no CSS do boot: o
-  resumo e o formulário usam parte das classes deles.
+  Extrato, Orçamento e Perfil foram divididos: `css/layouts/<tela>.css` guarda
+  o que o boot desenha (resumo, formulário, cascas) e `<tela>-tela.css` o que
+  só a tela do chunk desenha. Um teste garante que nenhuma regra de folha sob
+  demanda casa com classes citadas pelo código do boot.
 - **Orçamento do bundle** (`npm run check:bundle`): o teto só desce,
   travado por `tests/bundle-budget-teto.test.js`. O código eager do app é a
   soma de `app.bundle.js` e da entrada ESM.

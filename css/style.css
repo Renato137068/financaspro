@@ -60,8 +60,9 @@
 
 /* ── Chegam com o chunk, não no primeiro acesso ───────────────
    onboarding, assinaturas, relatorios, patrimonio, simulador,
-   open-finance e billing-planos: usadas só pelas telas de um chunk
-   sob demanda. scripts/generate-telas.cjs (CSS_DOS_CHUNKS) as embute
+   open-finance, billing-planos e layouts/{extrato,orcamento,config}-tela:
+   usadas só pelas telas de um chunk sob demanda. Os layouts acima guardam
+   só o que o boot desenha (resumo, formulário, cascas). scripts/generate-telas.cjs (CSS_DOS_CHUNKS) as embute
    em js/telas/<chunk>.js e TELAS.estilo as aplica ao carregar. */
 
 /* ── Acabamento visual (overrides finais) ────────────────── */
@@ -109,11 +110,7 @@ main {
 .cfg-card,
 .cfg-perfil-card,
 .resumo-item,
-.indicador-card,
-.ext-grupo-list,
-.orc-regra-item,
-.orc-header,
-.orc-renda-setup {
+.indicador-card {
   border: 1px solid var(--border-soft);
   box-shadow: var(--shadow-soft);
   border-radius: var(--radius-xl);
@@ -185,8 +182,6 @@ main {
 
 /* ── Hover em transações do extrato ────────────────────────── */
 
-.ext-tx:hover { background: rgba(18, 105, 78, 0.04); }
-
 /* ── Dark mode — body e cards ───────────────────────────────── */
 
 [data-theme="dark"] body {
@@ -197,11 +192,7 @@ main {
 [data-theme="dark"] .cfg-card,
 [data-theme="dark"] .cfg-perfil-card,
 [data-theme="dark"] .resumo-item,
-[data-theme="dark"] .indicador-card,
-[data-theme="dark"] .ext-grupo-list,
-[data-theme="dark"] .orc-regra-item,
-[data-theme="dark"] .orc-header,
-[data-theme="dark"] .orc-renda-setup {
+[data-theme="dark"] .indicador-card {
   border-color: rgba(255, 255, 255, 0.08);
   box-shadow: var(--elevacao-1);
 }

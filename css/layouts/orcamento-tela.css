@@ -1,0 +1,1766 @@
+/**
+ * orcamento-tela.css — a parte de orcamento.css que só as telas do chunk
+ * 'orcamento' desenham. Chega com o chunk (TELAS.estilo, scripts/generate-telas.cjs);
+ * o que o boot desenha (resumo, formulário, cascas) ficou em orcamento.css.
+ * Regras de outras folhas que só casam com estas telas vieram junto, na mesma
+ * posição relativa da cascata: as de antes no começo, as de depois no fim.
+ */
+/*  Vinha de components/modals.css  */
+
+.modal-box:has(.orc-edit-renda-modal),
+.modal-box:has(.orc-edit-regra-modal) {
+  max-width: 420px;
+  padding: var(--space-8);
+}
+
+/*  Vinha de components/page-superficie.css  */
+
+.orc-kpi-card:hover .orc-kpi-card-icon {
+  background: var(--color-primary-50);
+  color: var(--color-primary-text);
+}
+
+.orc-header-actions .orc-action-btn i[data-lucide],
+.orc-header-actions .orc-action-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.orc-toggle-btn .toggle-icon,
+.orc-toggle-btn .toggle-icon.expanded {
+  width: 20px;
+  height: 20px;
+}
+
+.orc-toggle-btn .toggle-icon.expanded {
+  transform: rotate(180deg);
+}
+
+/* ── Seção legado (compatibilidade) ───────────────────────── */
+
+.orcamento-section  { margin-bottom: var(--space-6); }
+
+.orcamento-valor {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.orcamento-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--space-2);
+  font-size: var(--font-size-xs);
+}
+
+.orcamento-barra {
+  width: 100%;
+  height: 8px;
+  background: var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.orcamento-preenchimento {
+  height: 100%;
+  border-radius: var(--radius-sm);
+  transition: width var(--transition-normal);
+}
+
+.orcamento-preenchimento         { background: var(--color-primary-500); }
+
+.orcamento-item.aviso  .orcamento-preenchimento { background: var(--color-warning); }
+
+.orcamento-item.perigo .orcamento-preenchimento { background: var(--color-danger); }
+
+.orcamento-titulo {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+}
+
+/* ── Setup de renda ───────────────────────────────────────── */
+
+.orc-renda-setup {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  margin: var(--space-2) 0;
+  box-shadow: var(--shadow-md);
+}
+
+.orc-renda-setup-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.orc-renda-copy {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.orc-renda-title {
+  margin: 0 0 var(--space-1);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  line-height: var(--line-height-tight);
+}
+
+.orc-renda-desc {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+}
+
+.orc-renda-field {
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.orc-renda-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-page);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.orc-renda-group:focus-within {
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 3px var(--color-overlay-sm);
+}
+
+.orc-renda-prefix {
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-base);
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.orc-renda-input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-sans);
+}
+
+.orc-renda-input:focus {
+  outline: none;
+}
+
+.orc-renda-submit {
+  width: 100%;
+  margin-top: var(--space-4);
+  min-height: 52px;
+}
+
+.orc-renda-setup h3 {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--space-2);
+  color: var(--color-text-primary);
+}
+
+.orc-renda-setup p {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--space-6);
+  line-height: var(--line-height-normal);
+}
+
+/* ── Header Estratégico ─────────────────────────────── */
+
+.orc-header {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-6);
+  margin: var(--space-5) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* KPI Principal */
+
+.orc-kpi-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-5);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--color-border-light);
+  position: relative;
+}
+
+/* A elevação e a borda vêm da regra de superfície compartilhada em style.css,
+   que este cabeçalho não recebia enquanto se chamava .orc-header-premium. Com
+   o sufixo removido ele entrou na regra — e passou a seguir a convenção do
+   sistema: cartão é nível 1 com borda de 1px, não nível 2 sem borda. É a única
+   mudança visual desta renomeação, e é intencional. */
+
+.orc-kpi-main-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.orc-kpi-label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.orc-kpi-hint {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  line-height: 1.35;
+}
+
+.orc-kpi-value {
+  font-size: var(--font-size-4xl);
+  font-weight: 800;
+  color: var(--color-text-primary);
+  line-height: 1.1;
+  letter-spacing: -0.5px;
+}
+
+.orc-kpi-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.orc-kpi-percent {
+  font-weight: 700;
+  color: var(--color-success-text);
+}
+
+.orc-kpi-separator {
+  opacity: 0.4;
+}
+
+.orc-kpi-trend {
+  font-weight: 500;
+}
+
+.orc-kpi-trend-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-xl);
+  font-size: var(--font-size-3xl);
+  color: var(--color-primary-text);
+}
+
+/* KPIs Secundários */
+
+.orc-kpi-secondary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+}
+
+.orc-kpi-card {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-superficie);
+  transition: all var(--transition-fast);
+  cursor: default;
+}
+
+.orc-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
+  border-color: var(--color-primary-200);
+}
+
+.orc-kpi-card-icon {
+  font-size: var(--font-size-2xl);
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-page);
+  border-radius: var(--radius-lg);
+  flex-shrink: 0;
+  color: var(--color-primary-text);
+}
+
+.orc-kpi-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.orc-kpi-card-label {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.orc-kpi-card-value {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Header Actions */
+
+.orc-header-actions {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: flex-end;
+}
+
+.orc-action-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-bg-page);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: var(--font-family-sans);
+}
+
+.orc-action-btn:hover {
+  background: var(--color-primary-500);
+  border-color: var(--color-primary-500);
+  color: var(--color-text-inverse);
+  transform: translateY(-1px);
+  box-shadow: var(--elevacao-1);
+}
+
+.orc-action-btn:active {
+  transform: translateY(0);
+}
+
+.orc-action-btn svg {
+  flex-shrink: 0;
+}
+
+/* O bloco ".orc-header (legado)" que ficava aqui foi removido em 23/08/2026.
+   Ele era uma segunda definicao da mesma classe, com sombra e margem
+   diferentes, e nunca chegava a valer porque o componente vivo usava
+   .orc-header-premium. Ao tirar o sufixo "premium" dos nomes de classe as
+   duas definicoes colidiram e a legada, por vir depois, passou a vencer —
+   um regressao que so a comparacao de estilos computados antes/depois
+   pegou. Seus filhos (.orc-header-info, -label, -valor, -btn) tambem sairam:
+   nenhum deles aparecia em markup. */
+
+.orc-regra {
+  display: grid;
+  /* minmax(0,1fr) permite que as colunas encolham abaixo do min-content,
+     evitando o overflow horizontal dos valores/badges no desktop. */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-5);
+  margin: var(--space-5) 0;
+}
+
+@media (max-width: 720px) {
+  .orc-regra {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+}
+
+.orc-regra-card {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-5);
+  box-shadow: var(--elevacao-2);
+  border: 1px solid var(--color-border);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.orc-regra-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--elevacao-2);
+}
+
+/* Card Header */
+
+.orc-regra-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.orc-regra-card-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  flex: 1;
+}
+
+.orc-regra-card-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-xl);
+  flex-shrink: 0;
+  color: var(--color-primary-text);
+}
+
+.orc-regra-card-icon {
+  font-size: var(--font-size-2xl);
+  filter: none;
+}
+
+.orc-regra-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.orc-regra-card-nome {
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: -0.3px;
+}
+
+.orc-regra-card-pct {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+/* Status Badges */
+
+.orc-regra-card-status {
+  flex-shrink: 0;
+}
+
+/* Card Body */
+
+.orc-regra-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.orc-regra-card-valor-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  flex-wrap: wrap;   /* valor + limite quebram em vez de estourar o card */
+  min-width: 0;
+}
+
+.orc-regra-card-gasto {
+  font-size: var(--font-size-3xl);
+  font-weight: 800;
+  color: var(--color-text-primary);
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.orc-regra-card-limite {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.orc-regra-card-limite span {
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+/* Card Meta */
+
+.orc-regra-card-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.orc-regra-card-percent {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.orc-regra-card-label {
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+/* Card Footer */
+
+.orc-regra-card-footer {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.orc-regra-card-cats {
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+/* Deixa explícita a base do número quando ela difere das outras fatias
+   (poupança usa receitas − despesas; Necessidades/Desejos usam a renda). */
+
+.orc-regra-card-base {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--font-size-2xs);
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+.orc-regra-item {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-sm);
+}
+
+.orc-regra-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.orc-regra-titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.orc-regra-emoji { font-size: var(--font-size-xl); }
+
+.orc-regra-nome {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.orc-regra-pct {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+  background: var(--color-bg-page);
+  padding: 3px var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.orc-regra-valores {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-3);
+}
+
+.orc-regra-gasto {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+}
+
+.orc-insight {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+  box-shadow: var(--elevacao-1);
+  border: 1px solid var(--color-border);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.orc-insight:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--elevacao-2);
+}
+
+.orc-insight-icon {
+  font-size: var(--font-size-2xl);
+  flex-shrink: 0;
+  margin-top: 2px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-xl);
+  color: var(--color-primary-text);
+}
+
+.orc-insight-text {
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+  color: var(--color-text-primary);
+}
+
+.orc-insight-text strong { font-weight: 700; }
+
+.orc-insight.positivo { border-left: 4px solid var(--color-success); }
+
+.orc-insight.alerta   { border-left: 4px solid var(--color-warning); }
+
+.orc-insight.negativo { border-left: 4px solid var(--color-danger); }
+
+.orc-insight.dica     { border-left: 4px solid var(--color-info-on-light); }
+
+/* ── Categorias Section ───────────────────────────────── */
+
+.orc-categorias-section {
+  margin: var(--space-5) 0;
+}
+
+.orc-secao-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-xl);
+  margin-bottom: var(--space-4);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--elevacao-1);
+}
+
+.orc-secao-titulo {
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.orc-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-bg-page);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: var(--font-family-sans);
+}
+
+.orc-toggle-btn:hover {
+  background: var(--color-primary-500);
+  border-color: var(--color-primary-500);
+  color: var(--color-text-inverse);
+  transform: translateY(-1px);
+}
+
+.orc-toggle-btn .toggle-icon {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.orc-toggle-btn[aria-expanded="true"] .toggle-icon {
+  transform: rotate(180deg);
+}
+
+.orc-categorias {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  animation: slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Category Groups */
+
+.orc-categoria-group {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  box-shadow: var(--elevacao-1);
+}
+
+.orc-group-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-bg-page);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.orc-group-icon {
+  font-size: var(--font-size-xl);
+  flex-shrink: 0;
+  color: var(--color-primary-text);
+}
+
+.orc-group-title {
+  flex: 1;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: -0.2px;
+}
+
+.orc-group-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 var(--space-2);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+}
+
+.orc-group-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--color-border);
+}
+
+.orc-cat-item-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  flex: 1;
+}
+
+.orc-cat-item-icon {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-xl);
+  font-size: var(--font-size-xl);
+  flex-shrink: 0;
+  color: var(--color-primary-text);
+}
+
+.orc-cat-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.orc-cat-item-nome {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: -0.2px;
+}
+
+.orc-cat-item-badge {
+  font-size: var(--font-size-2xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding: 2px 8px;
+  border-radius: var(--radius-md);
+  display: inline-block;
+  width: fit-content;
+}
+
+.orc-cat-item-badge.necessidades {
+  background: rgba(60, 134, 168, 0.12);
+  color: var(--color-info-text);
+}
+
+.orc-cat-item-badge.desejos {
+  background: rgba(236, 72, 153, 0.12);
+  color: var(--color-primary-text);
+}
+
+.orc-cat-item-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.orc-cat-item-valor {
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: -0.3px;
+}
+
+.orc-cat-item-meta {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+/* Empty State */
+
+.orc-categorias-empty {
+  text-align: center;
+  padding: var(--space-12) var(--space-6);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-2xl);
+  border: 2px dashed var(--color-border);
+}
+
+.orc-empty-icon {
+  font-size: var(--font-size-display-2);
+  margin-bottom: var(--space-4);
+  opacity: 0.6;
+  filter: grayscale(0.3);
+}
+
+.orc-empty-title {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-2);
+  letter-spacing: -0.3px;
+}
+
+.orc-empty-desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.orc-categorias-empty .btn-primario {
+  margin-top: var(--space-4);
+  min-height: 44px;
+}
+
+.orc-insight {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-xs);
+}
+
+.orc-insight-icon {
+  font-size: var(--font-size-xl);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.orc-insight-text {
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+}
+
+.orc-insight-text strong { font-weight: var(--font-weight-semibold); }
+
+.orc-insight.positivo { border-left: 3px solid var(--color-success); }
+
+.orc-insight.alerta   { border-left: 3px solid var(--color-warning); }
+
+.orc-insight.negativo { border-left: 3px solid var(--color-danger); }
+
+.orc-insight.dica     { border-left: 3px solid var(--color-info-on-light); }
+
+.orc-cat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  box-shadow: var(--shadow-xs);
+  margin-bottom: var(--space-2);
+  transition: background var(--transition-fast);
+}
+
+.orc-cat-header:hover { background: var(--color-bg-page); }
+
+.orc-cat-header h4 {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.orc-cat-header .chevron {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  transition: transform var(--transition-normal);
+}
+
+.orc-cat-header.aberto .chevron { transform: rotate(180deg); }
+
+.orc-cat-lista {
+  display: none;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+}
+
+.orc-cat-lista.visivel { display: flex; }
+
+.orc-cat-item {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-2);
+}
+
+.orc-cat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.orc-cat-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  flex: 1;
+}
+
+.orc-cat-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.orc-cat-icon {
+  font-size: var(--font-size-lg);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-primary);
+  flex-shrink: 0;
+  color: var(--color-primary-text);
+}
+
+.orc-cat-nome {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.orc-cat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-semibold);
+  padding: 1px var(--space-2);
+  border: 0;
+  border-radius: var(--radius-full);
+  margin-top: 2px;
+  letter-spacing: var(--letter-spacing-normal);
+  cursor: pointer;
+  font-family: inherit;
+  transition: filter var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+/* Afordância de "clique para alterar": um chevron discreto após o rótulo. */
+
+.orc-cat-badge::after {
+  content: '⌄';
+  font-size: 0.9em;
+  line-height: 1;
+  opacity: 0.65;
+  margin-top: -2px;
+}
+
+.orc-cat-badge:hover { filter: brightness(0.96); }
+
+.orc-cat-badge:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 1px;
+}
+
+.orc-cat-badge.necessidades { background: var(--color-info-bg); color: var(--color-info-text); }
+
+.orc-cat-badge.desejos      { background: var(--color-primary-50); color: var(--color-primary-text); }
+
+.orc-cat-badge.poupanca     { background: var(--color-success-bg); color: var(--color-success-text); }
+
+.orc-cat-pct {
+  font-size: var(--font-size-2xs);
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+}
+
+.orc-cat-valor {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.orc-cat-bar {
+  height: 6px;
+  background: var(--color-bg-page);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.orc-cat-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-sm);
+  transition: width var(--transition-slow);
+}
+
+/* ── Histórico 3 meses ────────────────────────────────────── */
+
+.orc-historico {
+  margin: var(--space-4) 0;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-md);
+}
+
+.orc-historico h4 {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-4);
+}
+
+.orc-hist-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  height: 120px;
+  gap: var(--space-4);
+  padding: 0 var(--space-2);
+}
+
+.orc-hist-mes {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+}
+
+.orc-hist-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-1);
+  height: 90px;
+  width: 100%;
+  justify-content: center;
+}
+
+.orc-hist-bar {
+  width: 20px;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  min-height: 4px;
+  transition: height var(--transition-slow);
+}
+
+.orc-hist-bar.receita { background: var(--color-success); }
+
+.orc-hist-bar.despesa { background: var(--color-danger); }
+
+.orc-hist-label  { font-size: var(--font-size-2xs); color: var(--color-text-secondary); font-weight: var(--font-weight-medium); text-transform: capitalize; }
+
+.orc-hist-valor  { font-size: var(--font-size-2xs); color: var(--color-text-secondary); font-weight: var(--font-weight-semibold); }
+
+.orc-hist-saldo  { font-size: var(--font-size-2xs); font-weight: var(--font-weight-bold); margin-top: 2px; }
+
+.orc-hist-saldo.positivo { color: var(--color-success-text); }
+
+.orc-hist-saldo.negativo { color: var(--color-danger-text); }
+
+.orc-hist-legenda {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+}
+
+.orc-leg-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.orc-leg-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.orc-leg-dot.receita { background: var(--color-success); }
+
+.orc-leg-dot.despesa { background: var(--color-danger); }
+
+/* ── Empty state orçamento ────────────────────────────────── */
+
+.orc-empty {
+  text-align: center;
+  padding: var(--space-10) var(--space-5);
+  color: var(--color-text-secondary);
+}
+
+.orc-empty p {
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+}
+
+@media (max-width: 768px) {
+  /* Header */
+  .orc-header {
+    padding: var(--space-3);
+    border-radius: var(--radius-xl);
+    margin: var(--space-3) 0;
+    gap: var(--space-3);
+  }
+
+  .orc-kpi-main {
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-4);
+  }
+
+  /* Conteúdo ocupa a largura e o indicador de tendência fica no fluxo, à
+     direita — antes era position:absolute e cobria o título
+     "SALDO DISPONÍVEL DO ORÇAMENTO". */
+  .orc-kpi-main-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .orc-kpi-trend-indicator {
+    position: static;
+    flex-shrink: 0;
+  }
+
+  .orc-kpi-value {
+    font-size: var(--font-size-3xl);
+  }
+
+  .orc-kpi-secondary {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-3);
+  }
+
+  .orc-kpi-card {
+    padding: var(--space-3);
+    gap: var(--space-2);
+  }
+
+  .orc-kpi-card-icon {
+    width: 36px;
+    height: 36px;
+    font-size: var(--font-size-lg);
+  }
+
+  .orc-kpi-card-value {
+    font-size: var(--font-size-base);
+  }
+
+  .orc-header-actions {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .orc-action-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Cards */
+  .orc-regra {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  .orc-regra-card {
+    padding: var(--space-4);
+    border-radius: var(--radius-xl);
+  }
+
+  .orc-regra-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+
+  .orc-regra-card-status {
+    align-self: flex-start;
+  }
+
+  .orc-regra-card-gasto {
+    font-size: var(--font-size-2xl);
+  }
+
+  /* Category Groups */
+  .orc-categorias-section {
+    margin: var(--space-4) 0;
+  }
+
+  .orc-secao-header {
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-xl);
+  }
+
+  .orc-secao-titulo {
+    font-size: var(--font-size-sm);
+  }
+
+  .orc-group-header {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .orc-group-title {
+    font-size: var(--font-size-sm);
+  }
+
+  .orc-cat-item-right {
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .orc-cat-item-valor {
+    font-size: var(--font-size-sm);
+  }
+
+  /* Empty State */
+  .orc-categorias-empty {
+    padding: var(--space-8) var(--space-4);
+    border-radius: var(--radius-xl);
+  }
+
+  .orc-empty-icon {
+    font-size: var(--font-size-display);
+  }
+
+  .orc-empty-title {
+    font-size: var(--font-size-base);
+  }
+
+  .orc-empty-desc {
+    font-size: var(--font-size-xs);
+  }
+
+  /* Insights */
+  .orc-insight {
+    padding: var(--space-3);
+    border-radius: var(--radius-xl);
+  }
+
+  .orc-insight-icon {
+    width: 36px;
+    height: 36px;
+    font-size: var(--font-size-xl);
+  }
+
+  .orc-insight-text {
+    font-size: var(--font-size-xs);
+  }
+}
+
+@media (max-width: 480px) {
+  /* Extra small screens */
+  .orc-kpi-secondary {
+    grid-template-columns: 1fr;
+  }
+
+  .orc-kpi-value {
+    font-size: var(--font-size-3xl);
+  }
+
+  .orc-regra-card-gasto {
+    font-size: var(--font-size-xl);
+  }
+
+  .orc-secao-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+
+  .orc-toggle-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Fade in animation for cards */
+
+.orc-regra-card,
+.orc-categoria-group,
+.orc-insight {
+  animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  animation-fill-mode: both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orc-regra-card,
+  .orc-categoria-group,
+  .orc-insight {
+    animation: none;
+  }
+
+  .orc-kpi-card,
+  .orc-regra-card,
+  .orc-action-btn,
+  .orc-toggle-btn{
+    transition: none;
+  }
+
+  .orc-kpi-trend-indicator {
+    animation: none;
+  }
+}
+
+/* ── Modal Editar Renda ─────────────────────────────────────── */
+
+.orc-edit-renda-modal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  text-align: center;
+}
+
+.orc-edit-renda-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.orc-edit-renda-icon {
+  font-size: var(--font-size-display);
+  line-height: 1;
+  animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.orc-edit-renda-title {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.orc-edit-renda-subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.orc-edit-renda-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.orc-renda-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-bg-card);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-fast);
+}
+
+.orc-renda-input-wrapper:focus-within {
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.orc-renda-prefix {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.orc-renda-input-field {
+  flex: 1;
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  background: transparent;
+  border: none;
+  outline: none;
+  width: 100%;
+}
+
+.orc-renda-input-field::placeholder {
+  color: var(--color-text-muted);
+}
+
+/* ── Modal Editar Regra 50/30/20 ───────────────────────────────── */
+
+.orc-edit-regra-modal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  text-align: center;
+}
+
+.orc-edit-regra-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.orc-edit-regra-icon {
+  font-size: var(--font-size-display);
+  line-height: 1;
+  animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.orc-edit-regra-title {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.orc-edit-regra-subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.orc-edit-regra-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.orc-regra-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.orc-regra-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.orc-regra-label-icon {
+  font-size: var(--font-size-xl);
+}
+
+.orc-regra-label-text {
+  flex: 1;
+}
+
+.orc-regra-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-bg-card);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.orc-regra-input-wrapper:focus-within {
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.orc-regra-input-field {
+  flex: 1;
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  background: transparent;
+  border: none;
+  outline: none;
+  width: 100%;
+  text-align: center;
+}
+
+.orc-regra-suffix {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.orc-regra-total {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  margin-top: var(--space-2);
+}
+
+.orc-regra-total-label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.orc-regra-total-value {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-success-text);
+  transition: color var(--transition-fast);
+}
+
+.orc-regra-card:nth-child(1) { animation-delay: 0ms; }
+
+.orc-regra-card:nth-child(2) { animation-delay: 100ms; }
+
+.orc-regra-card:nth-child(3) { animation-delay: 200ms; }
+
+/* Smooth scale on press */
+
+.orc-kpi-card:active,
+.orc-regra-card:active{
+  transform: scale(0.98);
+}
+
+/* Focus visible for accessibility */
+
+.orc-action-btn:focus-visible,
+.orc-toggle-btn:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+}
+
+/* Smooth transitions for all interactive elements */
+
+.orc-kpi-card,
+.orc-regra-card,
+.orc-action-btn,
+.orc-toggle-btn{
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Subtle pulse for critical items */
+
+.orc-categoria-group#orc-group-critical {
+  animation: subtlePulse 3s ease-in-out infinite;
+}
+
+/* Loading skeleton animation */
+
+.orc-skeleton {
+  background: var(--color-bg-page);
+  background-size: 200% 100%;
+  animation: skeletonLoading 1.5s ease-in-out infinite;
+}
+
+/* ── Sub-abas Orçamento (Planejamento | Metas | Assinaturas | Patrimônio) ── */
+
+.orc-subnav {
+  position: sticky;
+  top: var(--app-header-offset, 58px);
+  z-index: var(--z-sticky);
+  margin: 0 0 var(--space-4);
+  padding: var(--space-2) 0;
+  background: var(--color-bg-page);
+}
+
+@media (min-width: 1024px) {
+  .orc-subnav {
+    top: 0;
+  }
+}
+
+.orc-tablist {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: 0;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 4px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-xl);
+}
+
+.orc-tablist::-webkit-scrollbar {
+  display: none;
+}
+
+.orc-sub-panel:not(.ativo) {
+  display: none;
+}
+
+.orc-sub-panel.ativo {
+  display: block;
+}
+
+[data-theme="dark"] .orc-subnav {
+  background: var(--color-bg-page);
+}
+
+[data-theme="dark"] .orc-tablist {
+  background: var(--color-bg-dark-card, var(--color-bg-card));
+  border-color: var(--color-border);
+}
+
+.orc-panel-subtitle {
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+}
+
+/*  Vinha de themes/dark-mode.css  */
+
+[data-theme="dark"] .orc-renda-setup,
+[data-theme="dark"] .orc-header,
+[data-theme="dark"] .orc-regra-item,
+[data-theme="dark"] .orc-insight,
+[data-theme="dark"] .orc-cat-header,
+[data-theme="dark"] .orc-cat-item,
+[data-theme="dark"] .orc-historico {
+  background: var(--color-bg-dark-card);
+  box-shadow: var(--elevacao-1);
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+[data-theme="dark"] .orc-renda-group {
+  background: var(--color-bg-dark-page);
+  border-color: var(--color-border);
+}
+
+[data-theme="dark"] .orc-renda-input {
+  color: var(--color-text-primary);
+}
+
+[data-theme="dark"] .orc-cat-bar   { background: rgba(255, 255, 255, 0.08); }
+
+[data-theme="dark"] .orc-cat-icon  { background: rgba(255, 255, 255, 0.06); }
+
+[data-theme="dark"] .orc-regra-pct { background: rgba(255, 255, 255, 0.08); }
+
+/*  Vinha de utilities/performance.css  */
+
+.orc-regra-item{
+  contain: layout style;
+}
+
+/*  Vinha de utilities/ux-polish.css  */
+
+.orc-kpi-card:active,
+.orc-regra-card:active {
+  transform: scale(var(--press-scale));
+}
+
+/*  Vinha de style.css  */
+
+.orc-regra-item,
+.orc-header,
+.orc-renda-setup {
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-soft);
+  border-radius: var(--radius-xl);
+}
+
+[data-theme="dark"] .orc-regra-item,
+[data-theme="dark"] .orc-header,
+[data-theme="dark"] .orc-renda-setup {
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: var(--elevacao-1);
+}

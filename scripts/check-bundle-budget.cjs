@@ -55,7 +55,9 @@ const BUDGETS = {
   // 1205→1180 KB (2026-09-30): CSS das telas sob demanda (onboarding,
   // assinaturas, relatórios, patrimônio, simulador, Open Finance, paywall)
   // chega com o chunk (TELAS.estilo, scripts/generate-telas.cjs).
-  precacheTotal: { max: 1180 * KB, label: 'Precache total (1º acesso)' },
+  // 1180→1110 KB (2026-10-01): a parte das folhas de Extrato, Orçamento e
+  // Perfil que só essas telas desenham chega com o chunk (layouts/*-tela.css).
+  precacheTotal: { max: 1110 * KB, label: 'Precache total (1º acesso)' },
   // 580→590 KB (2026-09-13): correção do KPI "Folga poupança" no Orçamento
   // (cálculo da folga da fatia de poupança) + referência de ritmo no Resumo
   // adicionam alguns KB de código — aumento intencional.
@@ -90,7 +92,8 @@ const BUDGETS = {
   vendorBundle: { max: 262 * KB, label: 'js/vendor.bundle.js', file: 'js/vendor.bundle.js' },
   // 300→253 KB (2026-09-30): as folhas usadas só por telas de chunk saem do
   // CSS do primeiro acesso (277 → 250 KB) e chegam com o chunk.
-  cssBundle: { max: 253 * KB, label: 'CSS bundle', glob: /^css\/index-.*\.css$/ },
+  // 253→184 KB (2026-10-01): Extrato, Orçamento e Perfil também (250 → 181 KB).
+  cssBundle: { max: 184 * KB, label: 'CSS bundle', glob: /^css\/index-.*\.css$/ },
   // 100→112 KB (2026-09-12): reestruturação da aba Perfil em menu + sub-telas
   // (divulgação progressiva) adiciona ~7 KB de markup — aumento intencional.
   // 112→85 KB (2026-09-27): telas usadas só por um chunk lazy (Orçamento,

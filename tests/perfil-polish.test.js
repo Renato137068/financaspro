@@ -13,7 +13,9 @@ const configUser = fs.readFileSync(path.join(root, 'js', 'config-user.js'), 'utf
 const initConfig = fontePerfil();
 // index.html com as telas lazy (telas/) de volta nas cascas.
 const html = indexComTelas();
-const css = fs.readFileSync(path.join(root, 'css', 'layouts', 'config.css'), 'utf8');
+// config-tela.css: a parte que só as telas do Perfil desenham (chega com o chunk).
+const css = ['config.css', 'config-tela.css']
+  .map((f) => fs.readFileSync(path.join(root, 'css', 'layouts', f), 'utf8')).join('\n');
 
 describe('P2.1 — atrito de limparDados', function() {
   test('limparDados exige dupla confirmação', function() {

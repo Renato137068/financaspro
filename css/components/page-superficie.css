@@ -88,9 +88,7 @@
   height: 24px;
 }
 
-.perfil-card:hover .perfil-card-icon-wrapper,
-.kpi-card:hover .kpi-icon,
-.orc-kpi-card:hover .orc-kpi-card-icon {
+.perfil-card:hover .perfil-card-icon-wrapper {
   background: var(--color-primary-50);
   color: var(--color-primary-text);
 }
@@ -102,18 +100,10 @@
 }
 
 .perfil-action-btn i[data-lucide],
-.perfil-action-btn svg,
-.security-indicator i[data-lucide],
-.security-indicator svg {
+.perfil-action-btn svg {
   width: 18px;
   height: 18px;
   flex-shrink: 0;
-}
-
-.perfil-logout-btn i[data-lucide],
-.perfil-logout-btn svg {
-  width: 20px;
-  height: 20px;
 }
 
 .conta-item-icon {
@@ -183,40 +173,12 @@ button.perfil-card {
 
 /* ── Busca com ícone Lucide ────────────────────────────────── */
 
-.busca-icon {
-  width: 20px;
-  height: 20px;
-  color: var(--color-text-muted);
-  flex-shrink: 0;
-}
-
 /* ── Ações orçamento no padrão perfil ──────────────────────── */
-
-.orc-header-actions .orc-action-btn i[data-lucide],
-.orc-header-actions .orc-action-btn svg {
-  width: 18px;
-  height: 18px;
-}
 
 .secao-link i[data-lucide] {
   width: 14px;
   height: 14px;
   vertical-align: -2px;
-}
-
-.orc-toggle-btn .toggle-icon,
-.orc-toggle-btn .toggle-icon.expanded {
-  width: 20px;
-  height: 20px;
-}
-
-.orc-toggle-btn .toggle-icon.expanded {
-  transform: rotate(180deg);
-}
-
-.perfil-danger-btn i[data-lucide] {
-  width: 20px;
-  height: 20px;
 }
 
 [data-theme="dark"] :is(.perfil-card-icon-wrapper, .kpi-icon, .orc-kpi-card-icon, .orc-renda-icon) {
