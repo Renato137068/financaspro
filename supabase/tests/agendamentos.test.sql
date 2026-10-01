@@ -41,18 +41,20 @@ insert into public."StripeWebhookEvent" (id, type, "processedAt") values
   ('evt-velho', 't', now() - interval '91 days'),
   ('evt-novo',  't', now() - interval '89 days');
 
+-- Contagens e leituras filtram pelos ids deste teste: no CI o banco é
+-- compartilhado com outros passos, que deixam linhas recentes (dentro do prazo).
 select is(
   public.fp_purge_retention(),
   '{"Session": 1, "VerificationToken": 1, "Invitation": 1, "JobLog": 1, "AuditLog": 1, "SyncOp": 1, "StripeWebhookEvent": 1}'::jsonb,
   'expurgo apaga uma linha velha de cada tabela e diz quantas'
 );
 
-select is((select count(*)::int from public."Session"), 1, 'Session: fica a de 29 dias');
-select is((select count(*)::int from public."VerificationToken"), 1, 'VerificationToken: fica o de 6 dias');
-select is((select id from public."Invitation"), 'inv-novo', 'Invitation: fica o convite em aberto');
-select is((select count(*)::int from public."JobLog"), 1, 'JobLog: fica o de 89 dias');
-select is((select id from public."AuditLog"), 'al-novo', 'AuditLog: fica o de 364 dias');
-select is((select count(*)::int from public."SyncOp" where id like 'so-%'), 1, 'SyncOp: fica o de 89 dias');
+select is((select id from public."Session" where id like 's-%'), 's-nova', 'Session: fica a de 29 dias');
+select is((select id from public."VerificationToken" where id like 'vt-%'), 'vt-novo', 'VerificationToken: fica o de 6 dias');
+select is((select id from public."Invitation" where id like 'inv-%'), 'inv-novo', 'Invitation: fica o convite em aberto');
+select is((select id from public."JobLog" where id like 'jl-%'), 'jl-novo', 'JobLog: fica o de 89 dias');
+select is((select id from public."AuditLog" where id like 'al-%'), 'al-novo', 'AuditLog: fica o de 364 dias');
+select is((select id from public."SyncOp" where id like 'so-%'), 'so-novo', 'SyncOp: fica o de 89 dias');
 select is((select id from public."StripeWebhookEvent" where id like 'evt-%'), 'evt-novo', 'StripeWebhookEvent: fica o de 89 dias');
 
 select is(
