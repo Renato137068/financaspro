@@ -1,5 +1,6 @@
 // Banco em memória com a mesma API encadeada do supabase-js que as Edge
-// Functions usam: from().select/insert/update/delete, eq/is/like/lt/gt,
+// Functions usam: from().select/insert/update/delete, eq/neq/is/like/lt/gt,
+// not(col, "is" | "like", v),
 // maybeSingle/single, select() depois de insert/update, contagem
 // ({ count: "exact", head: true }) e auth.getUser. Guarda cada escrita em
 // `escritas`, para os testes provarem que um caminho NÃO escreveu nada.
@@ -107,6 +108,19 @@ class Consulta implements PromiseLike<{ data: any; error: any }> {
   }
   eq(col: string, v: unknown) {
     this.filtros.push((l) => l[col] === v);
+    return this;
+  }
+  neq(col: string, v: unknown) {
+    this.filtros.push((l) => l[col] !== v);
+    return this;
+  }
+  /** Só os operadores que as funções usam com not(): "is" e "like". */
+  not(col: string, op: "is" | "like", v: unknown) {
+    if (op === "is") this.filtros.push((l) => (l[col] ?? null) !== v);
+    else if (op === "like") {
+      const re = comoLike(String(v));
+      this.filtros.push((l) => !(typeof l[col] === "string" && re.test(l[col])));
+    } else throw new Error("not(): operador sem suporte no banco falso: " + op);
     return this;
   }
   is(col: string, v: null) {

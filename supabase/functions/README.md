@@ -18,6 +18,9 @@ functions/
   org-invite/index.ts       # POST autenticado — convite + e-mail Resend, exige ADMIN/OWNER
   stripe-webhook/index.ts   # webhook público do Stripe (assinatura via Web Crypto)
   obs-ingest/index.ts       # público — relatórios de erro → fp_client_error; aviso de uso → fp_app_sessao_dia
+  billing-reconcile/index.ts # pg_cron (diário) — confere Play e Stripe com a loja; segredo no header
+  _shared/reconcile.ts      # reconcilePlay / reconcileStripe (usados pelo billing-reconcile)
+  _shared/segredo.ts        # comparação de segredo em tempo constante (play-rtdn, billing-reconcile)
   _shared/obs-sanitize.js   # allowlist de contexto + máscara de e-mail/valores (testado no Jest)
 ```
 
@@ -36,6 +39,7 @@ functions/
 | `BILLING_ALLOWED_ORIGINS` | (opcional) origens extras, separadas por vírgula |
 | `RESEND_API_KEY` | (opcional) envia e-mails de billing/convite; sem chave = só log |
 | `EMAIL_FROM` | (opcional) remetente Resend, ex. `FinançasPro <noreply@dominio>` |
+| `BILLING_RECONCILE_SECRET` | segredo do header `x-fp-cron-secret` da `billing-reconcile`; o mesmo valor vai no Vault como `fp_billing_reconcile_secret` (ver `docs/release/ligar-operacao.md`) |
 
 `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` são injetados automaticamente.
 

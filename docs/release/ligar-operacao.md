@@ -45,7 +45,37 @@ elas a `obs-ingest`.
 **Conferir:**
 - *Supabase → Advisors → Security*: sem aviso de "RLS disabled in public".
 - *SQL Editor*: `select * from saude.versao_resumo;` responde (vazio no começo).
-- *Edge Functions*: `obs-ingest` aparece com "Verify JWT" desligado.
+- *Edge Functions*: `obs-ingest` e `billing-reconcile` aparecem com "Verify JWT" desligado.
+
+### Tarefas agendadas (retenção e reconciliação)
+
+A migração `20261002120000_agendamentos` liga o `pg_cron` e agenda duas
+tarefas diárias, que antes eram workers do backend Express (ADR 0007):
+
+- `fp-retencao` (03:17 UTC): apaga o que passou do prazo
+  (`docs/retencao-de-dados.md`). Não precisa de configuração.
+- `fp-billing-reconcile` (04:41 UTC): chama a Edge Function
+  `billing-reconcile`, que confere com o Google e o Stripe as assinaturas
+  cujo aviso (RTDN ou webhook) pode ter se perdido. Precisa de um segredo,
+  em dois lugares:
+
+1. Gere um valor aleatório (`openssl rand -hex 32`).
+2. *Edge Functions → Secrets*: `BILLING_RECONCILE_SECRET` = esse valor.
+3. *SQL Editor*, com o mesmo valor e a URL do projeto:
+
+   ```sql
+   select vault.create_secret('https://<ref>.supabase.co', 'fp_project_url');
+   select vault.create_secret('<o valor do passo 1>', 'fp_billing_reconcile_secret');
+   ```
+
+**Conferir:**
+- `select jobname, schedule from cron.job;` lista `fp-retencao` e `fp-billing-reconcile`.
+- `select public.fp_disparar_billing_reconcile();` devolve `disparado:<id>`
+  (não `sem-segredos`), e alguns segundos depois
+  `select status_code, content from net._http_response order by id desc limit 1;`
+  mostra `200` com `"ok":true`.
+- `select public.fp_purge_retention();` devolve a contagem por tabela, sem
+  nenhum valor `erro: …`.
 
 ## 3. Painel de saúde
 

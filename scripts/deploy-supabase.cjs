@@ -33,6 +33,7 @@ const SEM_JWT = {
   'stripe-webhook': 'server-to-server, assinatura do Stripe',
   'play-rtdn': 'server-to-server, segredo do Pub/Sub da Play',
   'obs-ingest': 'relatório de erro pode chegar antes do login (sendBeacon)',
+  'billing-reconcile': 'chamada pelo pg_cron, segredo no header x-fp-cron-secret',
 };
 
 const AMBIENTE = ['SUPABASE_ACCESS_TOKEN', 'SUPABASE_PROJECT_REF', 'SUPABASE_DB_PASSWORD'];
