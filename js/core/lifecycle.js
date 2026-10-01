@@ -245,7 +245,13 @@ const LIFECYCLE = {
 
     if (module.critical) {
       console.error('[LIFECYCLE] ✗ CRÍTICO:', module.name, '-', error);
-      throw new Error('Falha crítica em ' + module.name + ': ' + error);
+      // `critical` é o que init() olha para interromper o boot. Sem a marca,
+      // a falha de um módulo crítico era engolida como não crítica: o boot
+      // seguia sem os dependentes e o app abria quebrado, sem o aviso de
+      // APP_BOOTSTRAP ("O app não conseguiu abrir").
+      var falha = new Error('Falha crítica em ' + module.name + ': ' + error);
+      falha.critical = true;
+      throw falha;
     } else {
       console.warn('[LIFECYCLE] ✗', module.name, '-', error, '(não crítico)');
     }

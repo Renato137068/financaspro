@@ -84,6 +84,9 @@ module.exports = {
     // expirada, fetch que lança) ganharam sync-engine-erros.test.js, que achou
     // o flush preso em "busy" para sempre. Ramos 46% → 88%.
     'js/core/sync-engine.js': { lines: 98, functions: 100, branches: 86 },
+    // 1º/out: o orquestrador de boot ganhou lifecycle-real.test.js, que achou
+    // a falha de módulo crítico sendo engolida (o boot nunca parava). 56% → 94%.
+    'js/core/lifecycle.js': { lines: 97, functions: 100, branches: 88 },
 
     // 30/09: telas que chegam sob demanda (chunks) e só tinham teste das regras.
     // Agora sobem pelo app inteiro (tests/app-<tela>.test.js). Antes → agora,
