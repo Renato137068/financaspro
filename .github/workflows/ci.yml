@@ -158,6 +158,9 @@ jobs:
       - name: Testes das Edge Functions
         run: node scripts/test-edge.cjs
 
+      - name: Checagem de tipos das Edge Functions
+        run: node scripts/test-edge.cjs --tipos
+
   quality-gate:
     name: Quality Gate
     runs-on: ubuntu-latest

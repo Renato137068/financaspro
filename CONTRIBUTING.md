@@ -50,7 +50,7 @@ Fora do Jest, duas suítes que o CI também roda:
 
 | Suíte | Comando | Precisa de |
 |---|---|---|
-| Edge Functions (a cobrança de produção) | `npm run test:edge` | Deno 2 |
+| Edge Functions (a cobrança de produção) | `npm run test:edge` e `npm run check:edge-types` | Deno 2 |
 | Banco: RLS, cotas, MFA, painel de saúde | `npm run test:db:ci` | Postgres 16 com pgTAP |
 
 Edge Function nova que mexe com dinheiro ganha teste de comportamento em

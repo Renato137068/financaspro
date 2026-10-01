@@ -68,6 +68,10 @@ pelo esm.sh, API `2024-06-20`). Nessa API a fatura aponta a assinatura em
 versão configurada no endpoint. Conferência no modo de teste do Stripe:
 `docs/release/ligar-operacao.md`, passo 9.
 
+O `supabase-js` também vem do npm com versão exata
+(`npm:@supabase/supabase-js@2.117.2`, a mesma do app). Nenhuma dependência
+das funções passa pelo esm.sh.
+
 ## Muda no runbook do Play Console
 
 A URL de push do Pub/Sub (em `docs/play-store-billing-runbook.md`, Fase 3) passa
@@ -100,7 +104,8 @@ Authorization: Bearer <supabase access token>
 
 ## Testes
 
-`npm run test:edge` (precisa do Deno 2; o CI roda no job "Edge Functions (Deno)"
+`npm run test:edge` e `npm run check:edge-types` (precisam do Deno 2; o CI
+roda os dois no job "Edge Functions (Deno)"
 e o workflow de release roda antes de publicar). Os testes ficam em `_testes/`
 e executam os módulos de verdade — `play-billing.ts`, `stripe-billing.ts`,
 `db.ts`, `google-play.ts` e os handlers de `stripe-webhook` e `play-rtdn` —

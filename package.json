@@ -32,6 +32,7 @@
     "test:db": "supabase test db",
     "test:db:ci": "node scripts/test-supabase-pgtap.cjs",
     "test:edge": "node scripts/test-edge.cjs",
+    "check:edge-types": "node scripts/test-edge.cjs --tipos",
     "dev": "vite",
     "dev:legacy": "http-server . -p 3000 -g",
     "build": "node scripts/inject-supabase-env.cjs && node scripts/setup-fonts.cjs && vite build --config vite.config.cjs && node scripts/copy-static.cjs && node scripts/harden-csp.cjs && node scripts/check-dist-orphans.cjs",

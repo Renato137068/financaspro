@@ -1,4 +1,4 @@
-// Substitui https://esm.sh/@supabase/supabase-js@2 nos testes (deno.json).
+// Substitui npm:@supabase/supabase-js@2.117.2 nos testes (deno.json).
 // adminClient() devolve o banco em memória que o teste instalou.
 import type { BancoFalso } from "./banco.ts";
 

@@ -8,7 +8,7 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { comando, DIR } = require('../scripts/test-edge.cjs');
+const { comando, comandoTipos, funcoes, DIR } = require('../scripts/test-edge.cjs');
 
 const ROOT = path.join(__dirname, '..');
 const ler = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
@@ -57,6 +57,34 @@ describe('testes das Edge Functions (Deno)', () => {
     expect(imports['stripe-real']).toBe(spec);
     expect(fonteTestes).toContain('from "stripe-real"');
     expect(ler('supabase/functions/_shared/stripe.ts')).toMatch(/apiVersion: STRIPE_API_VERSION/);
+  });
+
+  // Achado B1 da reauditoria de 1º/out: os testes rodam com --no-check (os
+  // dublês não têm os tipos de produção). A checagem de tipos de verdade é um
+  // passo à parte, contra as dependências reais, no CI e no release.
+  test('deno check de toda função publicada, sem o import map dos dublês, no CI e no release', () => {
+    const publicadas = fs.readdirSync(path.join(ROOT, 'supabase/functions'), { withFileTypes: true })
+      .filter((e) => e.isDirectory() && !e.name.startsWith('_')).map((e) => e.name).sort();
+    expect(funcoes()).toEqual(publicadas.map((n) => 'supabase/functions/' + n + '/index.ts'));
+    const [, args] = comandoTipos('deno');
+    expect(args.slice(0, 3)).toEqual(['check', '--config', path.join(DIR, 'tipos.json')]);
+    expect(args.join(' ')).not.toMatch(/--no-check|deno\.json/);
+    expect(JSON.parse(ler(path.join(DIR, 'tipos.json'))).imports).toBeUndefined();
+    expect(ler('.github/workflows/ci.yml')).toMatch(/\n {2}edge:\n[\s\S]*?node scripts\/test-edge\.cjs --tipos/);
+    const release = ler('.github/workflows/release.yml');
+    expect(release.slice(release.indexOf('\n  verificar:'), release.indexOf('\n  supabase:'))).toContain('npm run check:edge-types');
+  });
+
+  test('dependências das Edge Functions pelo npm com versão exata; nada do esm.sh', () => {
+    const imports = new Set();
+    fs.readdirSync(path.join(ROOT, 'supabase/functions'), { recursive: true })
+      .filter((f) => /\.ts$/.test(f) && !String(f).startsWith('_testes'))
+      .forEach((f) => {
+        const src = ler(path.join('supabase/functions', String(f)));
+        for (const m of src.matchAll(/from\s+"((?:https?:|npm:|jsr:)[^"]+)"/g)) imports.add(m[1]);
+      });
+    expect(imports.size).toBeGreaterThan(0);
+    imports.forEach((i) => expect(i).toMatch(/^npm:(@[\w-]+\/)?[\w.-]+@\d+\.\d+\.\d+$/));
   });
 
   test('_testes não é publicado como função (sem index.ts, pasta com _)', () => {

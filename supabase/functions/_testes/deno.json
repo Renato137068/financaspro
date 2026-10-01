@@ -1,6 +1,6 @@
 {
   "imports": {
-    "https://esm.sh/@supabase/supabase-js@2": "./dubles/supabase-js.ts",
+    "npm:@supabase/supabase-js@2.117.2": "./dubles/supabase-js.ts",
     "npm:stripe@22.6.2": "./dubles/stripe.ts",
     "stripe-real": "npm:stripe@22.6.2"
   },
