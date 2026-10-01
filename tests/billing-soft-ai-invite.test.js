@@ -9,7 +9,7 @@ const billingHelpers = regrasDoBilling(carregarScript('js/billing.js'));
 
 describe('OCR removido do produto', function() {
   test('sem maquinaria de cota OCR no runtime', function() {
-    const billing = fs.readFileSync(path.join(__dirname, '..', 'js/billing.js'), 'utf8');
+    const billing = require('./helpers/esm-como-script.cjs').fonteComPartes(path.join(__dirname, '..', 'js/billing.js'));
     expect(billing).not.toMatch(/ocrRemaining|consumeOcrUse|_OCR_USES_KEY|fp-ocr-uses/);
     expect(billingHelpers.ocrQuota).toBeUndefined();
   });
@@ -17,7 +17,7 @@ describe('OCR removido do produto', function() {
 
 describe('Invite Edge — sem bypass silencioso', function() {
   test('client não faz fallback para inviteMember em 404/503', function() {
-    const billing = fs.readFileSync(path.join(__dirname, '..', 'js/billing.js'), 'utf8');
+    const billing = require('./helpers/esm-como-script.cjs').fonteComPartes(path.join(__dirname, '..', 'js/billing.js'));
     expect(billing).toMatch(/org-invite-unavailable/);
     expect(billing).toMatch(/Serviço de convites indisponível/);
     // Não deve chamar inviteMember no catch do org-invite

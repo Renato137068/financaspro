@@ -127,7 +127,7 @@ describe('OCR desativado no produto', () => {
   });
 
   test('billing portal/cancel no path Supabase usam Edge Functions', () => {
-    const billing = fs.readFileSync(path.join(root, 'js/billing.js'), 'utf8');
+    const billing = require('./helpers/esm-como-script.cjs').fonteComPartes(path.join(root, 'js/billing.js'));
     expect(billing).toContain('_supabaseAtivo');
     expect(billing).toMatch(/stripe-portal/);
     expect(billing).toMatch(/stripe-cancel/);
@@ -136,7 +136,7 @@ describe('OCR desativado no produto', () => {
   });
 
   test('dois trials distintos, cada um no seu canal', () => {
-    const billing = fs.readFileSync(path.join(root, 'js/billing.js'), 'utf8');
+    const billing = require('./helpers/esm-como-script.cjs').fonteComPartes(path.join(root, 'js/billing.js'));
     const initBilling = fs.readFileSync(path.join(root, 'js/modules/init-billing.js'), 'utf8');
     // 7 dias é o trial do SKU da loja; 14 é o Pro de boas-vindas, concedido
     // pelo backend sem cartão. São coisas diferentes e podem coexistir.
@@ -148,7 +148,7 @@ describe('OCR desativado no produto', () => {
 
   test('UI de equipe e aceite de convite no path Supabase', () => {
     const initBilling = fs.readFileSync(path.join(root, 'js/modules/init-billing.js'), 'utf8');
-    const billing = fs.readFileSync(path.join(root, 'js/billing.js'), 'utf8');
+    const billing = require('./helpers/esm-como-script.cjs').fonteComPartes(path.join(root, 'js/billing.js'));
     const supa = fs.readFileSync(path.join(root, 'js/core/supabase-billing.js'), 'utf8');
     const index = indexComTelas();
     expect(initBilling).toMatch(/abrirEquipe/);
@@ -168,7 +168,7 @@ describe('OCR desativado no produto', () => {
   });
 
   test('lifecycle banner e revogar convite estão wired', () => {
-    const billing = fs.readFileSync(path.join(root, 'js/billing.js'), 'utf8');
+    const billing = require('./helpers/esm-como-script.cjs').fonteComPartes(path.join(root, 'js/billing.js'));
     const init = fs.readFileSync(path.join(root, 'js/modules/init-billing.js'), 'utf8');
     const nav = fs.readFileSync(path.join(root, 'js/modules/init-navigation.js'), 'utf8');
     expect(billing).toMatch(/getLifecycleAlert/);

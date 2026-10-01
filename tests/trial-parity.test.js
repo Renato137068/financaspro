@@ -18,7 +18,7 @@ describe('trialDays — paridade canônica', function() {
   });
 
   test('billing.js TRIAL_DAYS', function() {
-    const src = fs.readFileSync(path.join(ROOT, 'js/billing.js'), 'utf8');
+    const src = require('./helpers/esm-como-script.cjs').fonteComPartes(path.join(ROOT, 'js/billing.js'));
     expect(src).toMatch(new RegExp('TRIAL_DAYS:\\s*' + DAYS));
   });
 

@@ -3,11 +3,10 @@
  */
 const { carregarScript } = require('./helpers/carregar-script.cjs');
 const { regrasDoBilling } = require('./helpers/billing-regras.cjs');
-const fs = require('fs');
 const path = require('path');
 const billingHelpers = regrasDoBilling(carregarScript('js/billing.js'));
 
-const billingSrc = fs.readFileSync(path.join(__dirname, '..', 'js/billing.js'), 'utf8');
+const billingSrc = require('./helpers/esm-como-script.cjs').fonteComPartes(path.join(__dirname, '..', 'js/billing.js'));
 
 describe('Dual path Supabase × Express', function() {
   test('expõe _useSupabaseBilling', function() {

@@ -35,7 +35,7 @@ describe('Play cancel-at-period-end', () => {
   });
 
   test('cliente anuncia dias restantes após cancelar', () => {
-    const billing = fs.readFileSync(path.join(root, 'js/billing.js'), 'utf8');
+    const billing = require('./helpers/esm-como-script.cjs').fonteComPartes(path.join(root, 'js/billing.js'));
     expect(billing).toMatch(/Mais ' \+ dias \+ ' dia/);
     expect(billing).toMatch(/Último dia de Pro/);
     expect(billing).toMatch(/\(cancelado\)/);
