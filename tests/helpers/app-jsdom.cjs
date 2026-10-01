@@ -14,12 +14,27 @@
  *   const app = await subirApp({ config: {...}, transacoes: [...] });
  *   app.window.mudarAba('novo');
  *   app.fechar();
+ *
+ * O relógio da janela começa em AGORA_PADRAO, não na hora real: o app mostra o
+ * mês corrente, e um teste com lançamentos de uma data fixa quebrava na virada
+ * do mês (aconteceu em 1º/out). Quem precisa do relógio real pede
+ * `agora: 'real'`. E cada teste ganha 15 s em vez dos 5 s do Jest: subir o app
+ * leva até ~1,5 s e, com a máquina ocupada (cobertura, E2E ao lado), um teste
+ * que sobe o app duas vezes passava dos 5 s.
  */
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const { JSDOM, VirtualConsole } = require('jsdom');
 const { executarModulo } = require('./esm-como-script.cjs');
+
+/** Data/hora em que o app "acorda" nos testes, salvo `opts.agora`. */
+const AGORA_PADRAO = '2026-09-20T12:00:00.000-03:00';
+const TEMPO_LIMITE_MS = 15000;
+
+// `jest` é injetado em cada módulo carregado pelo Jest; vale para o arquivo de
+// teste que importou o harness.
+if (typeof jest !== 'undefined' && jest.setTimeout) jest.setTimeout(TEMPO_LIMITE_MS);
 
 const ROOT = path.join(__dirname, '..', '..');
 
@@ -177,7 +192,8 @@ function completarJanela(w) {
  * @param {object|boolean} [opts.nuvem] build de nuvem com Supabase falso;
  *                                      { contas: {email: senha}, sessao, mfa: {codigo} }
  * @param {string} [opts.agora]       data/hora ISO em que o app "acorda" (o relógio da
- *                                      janela anda a partir dela); para telas que dependem de hoje
+ *                                      janela anda a partir dela). Padrão: AGORA_PADRAO;
+ *                                      'real' deixa o relógio da máquina
  * @param {Function} [opts.antesDoBoot] (janela, global) depois dos scripts e antes
  *                                      do DOMContentLoaded (para instalar espiões)
  * @returns {Promise<{window, document, erros: string[], fechar: Function}>}
@@ -223,12 +239,13 @@ async function subirApp(opts) {
   Object.entries(opts.storage || {}).forEach(function([k, v]) { w.localStorage.setItem(k, v); });
 
   const ctx = dom.getInternalVMContext();
-  if (opts.agora) {
+  const agora = opts.agora === 'real' ? null : (opts.agora || AGORA_PADRAO);
+  if (agora) {
     // Date da própria janela (mesmo realm dos scripts, para instanceof valer),
     // deslocado para `agora` e andando normalmente dali em diante.
     vm.runInContext('(function(fixo){var R=Date;var d=fixo-R.now();' +
       'class D extends R{constructor(...a){if(a.length)super(...a);else super(R.now()+d);}static now(){return R.now()+d;}}' +
-      'globalThis.Date=D;})(' + new Date(opts.agora).getTime() + ')', ctx);
+      'globalThis.Date=D;})(' + new Date(agora).getTime() + ')', ctx);
   }
   const modulos = new Map();
   const esm = modulosDoIndex(html);
@@ -293,4 +310,4 @@ async function subirApp(opts) {
   };
 }
 
-module.exports = { subirApp, scriptsDoIndex, modulosDoIndex };
+module.exports = { subirApp, scriptsDoIndex, modulosDoIndex, AGORA_PADRAO, TEMPO_LIMITE_MS };

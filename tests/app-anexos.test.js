@@ -10,7 +10,7 @@
  * remover pelo visualizador.
  */
 const { IDBFactory, IDBKeyRange } = require('fake-indexeddb');
-const { subirApp } = require('./helpers/app-jsdom.cjs');
+const { subirApp, AGORA_PADRAO } = require('./helpers/app-jsdom.cjs');
 const { gestos, tique } = require('./helpers/ui-app.cjs');
 
 let app;
@@ -96,7 +96,7 @@ test('salvar o lançamento grava os anexos no IndexedDB e o extrato mostra o cli
 });
 
 test('extrato aberto antes do chunk de anexos: o clique no clipe carrega o chunk e abre o visualizador', async () => {
-  const hoje = new Date().toISOString().slice(0, 10);
+  const hoje = AGORA_PADRAO.slice(0, 10); // o dia em que o app "acorda" no harness
   app = await subirApp({
     transacoes: [{ id: 'tx1', tipo: 'despesa', valor: 30, data: hoje, categoria: 'outro', descricao: 'Táxi', anexoCount: 1 }],
     antesDoBoot: (w) => { w.indexedDB = new IDBFactory(); w.IDBKeyRange = IDBKeyRange; },
