@@ -20,22 +20,12 @@ Object.assign(BILLING, {
       });
     };
     if (BILLING._cache.plans) return Promise.resolve(onlyVitrine(BILLING._cache.plans));
-    if (typeof DADOS !== 'undefined' && DADOS._supabaseAtivo && DADOS._supabaseAtivo()
-        && typeof SUPA_BILLING !== 'undefined' && SUPA_BILLING.isActive()) {
-      return SUPA_BILLING.listPlans().then(function(plans) {
-        self._cache.plans = plans.length ? plans : self.STATIC_PLANS.slice();
-        return onlyVitrine(self._cache.plans);
-      }).catch(function() {
-        return onlyVitrine(self.STATIC_PLANS.slice());
-      });
-    }
-    if (typeof DADOS === 'undefined' || !DADOS._apiAtiva || !DADOS._apiAtiva()) {
+    if (!BILLING._useSupabaseBilling()) {
       return Promise.resolve(onlyVitrine(BILLING.STATIC_PLANS.slice()));
     }
-    return DADOS._apiFetch('/api/v1/billing/plans').then(function(resp) {
-      var plans = (resp && resp.data) ? resp.data : self.STATIC_PLANS;
-      self._cache.plans = plans;
-      return onlyVitrine(plans);
+    return SUPA_BILLING.listPlans().then(function(plans) {
+      self._cache.plans = plans.length ? plans : self.STATIC_PLANS.slice();
+      return onlyVitrine(self._cache.plans);
     }).catch(function() {
       return onlyVitrine(self.STATIC_PLANS.slice());
     });
@@ -44,70 +34,17 @@ Object.assign(BILLING, {
   ensureOrg: function() {
     var self = BILLING;
     if (BILLING._cache.orgId) return Promise.resolve(BILLING._cache.orgId);
-    if (typeof DADOS !== 'undefined' && DADOS._supabaseAtivo && DADOS._supabaseAtivo()
-        && typeof SUPA_BILLING !== 'undefined' && SUPA_BILLING.isActive()) {
-      return SUPA_BILLING.ensureOrg().then(function(orgId) {
-        self._cache.orgId = orgId;
-        return orgId;
-      });
-    }
-    if (typeof DADOS === 'undefined' || !DADOS._apiAtiva || !DADOS._apiAtiva()) {
-      return Promise.reject(new Error('API indisponível'));
-    }
-    return DADOS._apiFetch('/api/v1/orgs').then(function(resp) {
-      var orgs = (resp && resp.data) ? resp.data : [];
-      if (orgs.length > 0) {
-        var owner = null;
-        for (var i = 0; i < orgs.length; i++) {
-          if (orgs[i].myRole === 'OWNER') { owner = orgs[i]; break; }
-        }
-        self._cache.orgId = (owner || orgs[0]).id;
-        return self._cache.orgId;
-      }
-      var nome = 'Minha Finanças';
-      if (DADOS.getConfig) {
-        var cfg = DADOS.getConfig();
-        if (cfg && cfg.nome && cfg.nome !== 'Usuário' && cfg.nome !== 'Usuario') {
-          nome = cfg.nome;
-        }
-      }
-      return DADOS._apiFetch('/api/v1/orgs', {
-        method: 'POST',
-        body: JSON.stringify({ name: nome }),
-      }).then(function(org) {
-        self._cache.orgId = org.id;
-        return org.id;
-      });
+    if (!BILLING._useSupabaseBilling()) return Promise.reject(BILLING._semNuvem());
+    return SUPA_BILLING.ensureOrg().then(function(orgId) {
+      self._cache.orgId = orgId;
+      return orgId;
     });
   },
 
   fetchSubscription: function() {
     var self = BILLING;
-    if (typeof DADOS !== 'undefined' && DADOS._supabaseAtivo && DADOS._supabaseAtivo()
-        && typeof SUPA_BILLING !== 'undefined' && SUPA_BILLING.isActive()) {
-      return BILLING.ensureOrg().then(function(orgId) {
-        return SUPA_BILLING.fetchSubscription(orgId);
-      }).then(function(sub) {
-        self._cache.subscription = sub;
-        if (sub && sub.plan && sub.plan.tier && self._activeStatus(sub.status, sub)) {
-          self._cache.tier = sub.plan.tier;
-        } else {
-          self._cache.tier = 'FREE';
-        }
-        self._persistEntitlement(sub);
-        return sub;
-      }).catch(function(err) {
-        if (err && err.status === 404) {
-          self._cache.subscription = null;
-          self._cache.tier = 'FREE';
-          self._persistEntitlement(null);
-          return null;
-        }
-        throw err;
-      });
-    }
     return BILLING.ensureOrg().then(function(orgId) {
-      return DADOS._apiFetch('/api/v1/billing/' + encodeURIComponent(orgId) + '/subscription');
+      return SUPA_BILLING.fetchSubscription(orgId);
     }).then(function(sub) {
       self._cache.subscription = sub;
       if (sub && sub.plan && sub.plan.tier && self._activeStatus(sub.status, sub)) {
@@ -225,73 +162,28 @@ Object.assign(BILLING, {
     });
   },
 
-  subscribe: function(planTier, interval) {
-    var self = BILLING;
-    if (BILLING._useSupabaseBilling()) {
-      var err = new Error('Assinatura via Express desativada no path Supabase. Use o checkout.');
-      err.code = 'express-subscribe-disabled';
-      return Promise.reject(err);
-    }
-    interval = interval || 'monthly';
-    return BILLING.ensureOrg().then(function(orgId) {
-      return DADOS._apiFetch('/api/v1/billing/' + encodeURIComponent(orgId) + '/subscribe', {
-        method: 'POST',
-        body: JSON.stringify({ planTier: planTier, interval: interval }),
-      });
-    }).then(function(sub) {
-      self._cache.subscription = sub;
-      if (sub && sub.plan && sub.plan.tier) {
-        self._cache.tier = sub.plan.tier;
-      }
-      return self.sync();
-    });
-  },
-
   createCheckout: function(planTier, interval) {
     var base = window.location.href.split('#')[0].split('?')[0];
-    if (BILLING._useSupabaseBilling()) {
-      return BILLING.ensureOrg().then(function(orgId) {
-        return SUPA_BILLING.invoke('stripe-checkout', {
-          orgId: orgId,
-          planTier: planTier,
-          interval: interval || 'monthly',
-          successUrl: base + '?billing=success',
-          cancelUrl: base + '?billing=cancel',
-        });
-      });
-    }
     return BILLING.ensureOrg().then(function(orgId) {
-      return DADOS._apiFetch('/api/v1/billing/' + encodeURIComponent(orgId) + '/checkout', {
-        method: 'POST',
-        body: JSON.stringify({
-          planTier: planTier,
-          interval: interval || 'monthly',
-          successUrl: base,
-          cancelUrl: base,
-        }),
+      return SUPA_BILLING.invoke('stripe-checkout', {
+        orgId: orgId,
+        planTier: planTier,
+        interval: interval || 'monthly',
+        successUrl: base + '?billing=success',
+        cancelUrl: base + '?billing=cancel',
       });
     });
   },
 
   checkoutOrSubscribe: function(planTier, interval) {
-    var self = BILLING;
     return BILLING.createCheckout(planTier, interval).then(function(session) {
       if (session && session.url) {
         window.location.href = session.url;
         return { redirected: true };
       }
-      if (self._useSupabaseBilling()) {
-        var miss = new Error('Checkout indisponível. Tente novamente em instantes.');
-        miss.code = 'checkout-unavailable';
-        throw miss;
-      }
-      return self.subscribe(planTier, interval);
-    }).catch(function(err) {
-      if (self._useSupabaseBilling()) throw err;
-      if (err && (err.status === 503 || err.status === 500)) {
-        return self.subscribe(planTier, interval);
-      }
-      throw err;
+      var miss = new Error('Checkout indisponível. Tente novamente em instantes.');
+      miss.code = 'checkout-unavailable';
+      throw miss;
     });
   },
 
@@ -303,22 +195,11 @@ Object.assign(BILLING, {
       BILLING._openPlaySubscriptions();
       return Promise.resolve(self._cache.subscription);
     }
-    if (BILLING._useSupabaseBilling()) {
-      return BILLING.ensureOrg().then(function(orgId) {
-        return SUPA_BILLING.invoke('stripe-cancel', { orgId: orgId });
-      }).then(function(sub) {
-        self._cache.subscription = sub;
-        return self.sync().then(function() { return sub; });
-      });
-    }
     return BILLING.ensureOrg().then(function(orgId) {
-      return DADOS._apiFetch('/api/v1/billing/' + encodeURIComponent(orgId) + '/cancel', {
-        method: 'POST',
-        body: '{}',
-      });
+      return SUPA_BILLING.invoke('stripe-cancel', { orgId: orgId });
     }).then(function(sub) {
       self._cache.subscription = sub;
-      return sub;
+      return self.sync().then(function() { return sub; });
     });
   },
 
@@ -329,22 +210,11 @@ Object.assign(BILLING, {
       BILLING._openPlaySubscriptions();
       return Promise.resolve(self._cache.subscription);
     }
-    if (BILLING._useSupabaseBilling()) {
-      return BILLING.ensureOrg().then(function(orgId) {
-        return SUPA_BILLING.invoke('stripe-resume', { orgId: orgId });
-      }).then(function(sub) {
-        self._cache.subscription = sub;
-        return self.sync().then(function() { return sub; });
-      });
-    }
     return BILLING.ensureOrg().then(function(orgId) {
-      return DADOS._apiFetch('/api/v1/billing/' + encodeURIComponent(orgId) + '/resume', {
-        method: 'POST',
-        body: '{}',
-      });
+      return SUPA_BILLING.invoke('stripe-resume', { orgId: orgId });
     }).then(function(sub) {
       self._cache.subscription = sub;
-      return sub;
+      return self.sync().then(function() { return sub; });
     });
   },
 
@@ -354,24 +224,10 @@ Object.assign(BILLING, {
       return Promise.resolve(BILLING._cache.subscription);
     }
     var returnUrl = window.location.href.split('#')[0];
-    if (BILLING._useSupabaseBilling()) {
-      return BILLING.ensureOrg().then(function(orgId) {
-        return SUPA_BILLING.invoke('stripe-portal', {
-          orgId: orgId,
-          returnUrl: returnUrl,
-        });
-      }).then(function(session) {
-        if (session && session.url) {
-          window.location.href = session.url;
-        } else {
-          throw new Error('Portal de pagamento indisponível');
-        }
-      });
-    }
     return BILLING.ensureOrg().then(function(orgId) {
-      return DADOS._apiFetch('/api/v1/billing/' + encodeURIComponent(orgId) + '/portal', {
-        method: 'POST',
-        body: JSON.stringify({ returnUrl: returnUrl }),
+      return SUPA_BILLING.invoke('stripe-portal', {
+        orgId: orgId,
+        returnUrl: returnUrl,
       });
     }).then(function(session) {
       if (session && session.url) {

@@ -153,7 +153,13 @@ function criarSupabaseFalso(opts) {
       },
     },
     from: () => consulta(),
-    rpc: (nome) => (mfaCfg ? rpcRecuperacao(nome) : ok(null)),
+    rpc: (nome) => {
+      if (nome === 'fp_delete_own_account') {
+        chamadas.push({ metodo: 'rpc', nome: nome });
+        return ok(null);
+      }
+      return mfaCfg ? rpcRecuperacao(nome) : ok(null);
+    },
     channel: () => ({ on() { return this; }, subscribe() { return this; }, unsubscribe() {} }),
     removeChannel: () => {},
   };

@@ -32,7 +32,7 @@ describe('identificadores persistidos são imutáveis', function() {
 
   test('as chaves de dados do app seguem com o prefixo fp-', function() {
     const config = ler('js/core/config.js');
-    for (const chave of ['fp-transacoes', 'fp-config', 'fp-contas', 'fp-outbox']) {
+    for (const chave of ['fp-transacoes', 'fp-config', 'fp-contas']) {
       expect(config).toContain(`'${chave}'`);
     }
   });

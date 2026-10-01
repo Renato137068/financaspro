@@ -33,13 +33,9 @@ describe('security guardrails', () => {
   test('auth sets HttpOnly cookies instead of exposing tokens to JS', () => {
     const authRoutes = fs.readFileSync(path.join(root, 'backend/routes/auth.js'), 'utf8');
     const authCookies = fs.readFileSync(path.join(root, 'backend/lib/authCookies.js'), 'utf8');
-    // O cliente da API Express saiu de dados.js para dados-express.js.
-    const dados = fs.readFileSync(path.join(root, 'js/core/dados-express.js'), 'utf8');
 
     expect(authRoutes).toContain('setAuthCookies');
     expect(authCookies).toContain('HttpOnly');
-    expect(dados).toContain('credentials: \'include\'');
-    expect(dados).toContain('_limparTokensLegados');
   });
 
   test('stripe webhook is registered before JSON body parser', () => {

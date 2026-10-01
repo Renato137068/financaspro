@@ -1,6 +1,8 @@
 /**
  * csp-connect-src.cjs — Origens permitidas em connect-src (CSP)
- * Usa APP_URL / PUBLIC_API_URL / SUPABASE_URL do ambiente no build.
+ * O app só fala com a própria origem e com o Supabase (ADR 0007: a API
+ * Express e o Open Finance saíram). Usa APP_URL / SUPABASE_URL do ambiente no
+ * build, além da URL do Supabase gravada em js/core/config.js.
  */
 const fs = require('fs');
 const path = require('path');
@@ -27,30 +29,14 @@ function supabaseOriginsFromConfig() {
   return origins;
 }
 
-function isProdCsp(opts) {
-  opts = opts || {};
-  if (opts.prod === true) return true;
-  if (String(process.env.FP_CSP_PROD || '') === '1') return true;
-  return String(process.env.NODE_ENV || '').toLowerCase() === 'production';
-}
-
-function buildCspConnectSrc(opts) {
-  var isProd = isProdCsp(opts);
-
+function buildCspConnectSrc() {
   var origins = ["'self'"];
-  if (!isProd) {
-    origins.push('http://localhost:4000');
-    origins.push('http://127.0.0.1:4000');
-  }
-  origins.push('https://api.belvo.com');
-  origins.push('https://sandbox.belvo.com');
-  origins.push('https://widget.belvo.io');
 
   supabaseOriginsFromConfig().forEach(function(origin) {
     if (origins.indexOf(origin) === -1) origins.push(origin);
   });
 
-  ['APP_URL', 'PUBLIC_API_URL', 'VITE_API_URL', 'SUPABASE_URL'].forEach(function(key) {
+  ['APP_URL', 'SUPABASE_URL'].forEach(function(key) {
     var raw = (process.env[key] || '').trim();
     if (!raw) return;
     try {
@@ -66,12 +52,12 @@ function buildCspConnectSrc(opts) {
   return origins.join(' ');
 }
 
-function patchCspMeta(html, opts) {
-  var connect = buildCspConnectSrc(opts);
+function patchCspMeta(html) {
+  var connect = buildCspConnectSrc();
   return html.replace(
     /connect-src[^;]+;/,
     'connect-src ' + connect + ';'
   );
 }
 
-module.exports = { buildCspConnectSrc, patchCspMeta, isProdCsp };
+module.exports = { buildCspConnectSrc, patchCspMeta };

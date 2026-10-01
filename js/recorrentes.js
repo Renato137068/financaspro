@@ -42,18 +42,16 @@ const RECORRENTES = {
   },
 
   /**
-   * O cliente só materializa em modo local.
+   * Quem materializa as recorrências devidas é o próprio app, em qualquer
+   * modo: no local não há servidor, e no Supabase não há worker de
+   * recorrência (o do backend Express saiu com ele, ADR 0007).
    *
-   * `DADOS._modoLocal` existe como ponto de injeção para teste; em produção a
-   * decisão vem de `_apiAtiva()` — havendo API configurada, há sessão na nuvem
-   * e o worker assume.
+   * `DADOS._modoLocal` existe como ponto de injeção para teste.
    */
   _ehModoLocal: function() {
     if (typeof DADOS === 'undefined') return false;
     if (typeof DADOS._modoLocal === 'boolean') return DADOS._modoLocal;
-    // Supabase ainda não tem worker de recorrência — o cliente materializa.
-    if (typeof DADOS._supabaseAtivo === 'function' && DADOS._supabaseAtivo()) return true;
-    return typeof DADOS._apiAtiva === 'function' ? !DADOS._apiAtiva() : true;
+    return true;
   },
 
   _addDias: function(dataIso, dias) {

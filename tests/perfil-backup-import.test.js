@@ -106,24 +106,14 @@ describe('P1.2 — whitelist na importação de config', function() {
     expect(merged.pinHash).toBe('hash-local');
   });
 
-  test('outbox e cursor malformados são ignorados', function() {
+  test('backup antigo com outbox e cursor do sync v2 importa sem erro e sem restaurá-los', function() {
+    // A fila de envio do sync v2 era da API Express, que saiu (ADR 0007).
     var sb = carregarInitConfig();
-    sb.INIT_CONFIG.importarDados({
-      config: { nome: 'Ok' },
-      outbox: { not: 'array' },
-      sync_cursor: { evil: true }
-    });
+    var op = { opId: 'a', entity: 'transaction', id: 'tx1', op: 'upsert' };
+    sb.INIT_CONFIG.importarDados({ config: { nome: 'Ok' }, outbox: [op], sync_cursor: 'cur-1' });
     expect(sb._getOutbox()).toBeNull();
     expect(sb._getCursor()).toBeNull();
     expect(sb._getStored().nome).toBe('Ok');
-  });
-
-  test('outbox válido é restaurado', function() {
-    var sb = carregarInitConfig();
-    var op = { opId: 'a', entity: 'transaction', id: 'tx1', op: 'upsert' };
-    sb.INIT_CONFIG.importarDados({ outbox: [op, { broken: true }], sync_cursor: 'cur-1' });
-    expect(sb._getOutbox()).toEqual([op]);
-    expect(sb._getCursor()).toBe('cur-1');
   });
 });
 

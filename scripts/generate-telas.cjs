@@ -33,7 +33,7 @@ const destino = path.join(root, 'js', 'telas');
 const CSS_DOS_CHUNKS = {
   assinaturas: ['css/features/assinaturas.css'],
   config: ['css/layouts/config-tela.css'],
-  conta: ['css/features/billing-planos.css', 'css/features/open-finance.css'],
+  conta: ['css/features/billing-planos.css'],
   extrato: ['css/layouts/extrato-tela.css'],
   onboarding: ['css/features/onboarding.css'],
   orcamento: ['css/layouts/orcamento-tela.css'],

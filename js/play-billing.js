@@ -54,31 +54,18 @@ const PLAY_BILLING = {
       return resp;
     };
 
-    if (typeof DADOS !== 'undefined' && DADOS._supabaseAtivo && DADOS._supabaseAtivo()
-        && typeof SUPA_BILLING !== 'undefined' && SUPA_BILLING.isActive()) {
-      return BILLING.ensureOrg().then(function(resolvedOrgId) {
-        return SUPA_BILLING.invoke('play-verify', {
-          orgId: resolvedOrgId,
-          productId: productId,
-          purchaseToken: purchaseToken,
-          packageName: 'com.financaspro.mobile',
-        });
-      }).then(verify);
-    }
-
-    if (typeof DADOS === 'undefined' || !DADOS._apiFetch) {
+    if (typeof DADOS === 'undefined' || !DADOS._supabaseAtivo || !DADOS._supabaseAtivo()
+        || typeof SUPA_BILLING === 'undefined' || !SUPA_BILLING.isActive()) {
       return Promise.reject(new Error('conta-cloud-indisponivel'));
     }
-    return DADOS._apiFetch('/api/v1/billing/play/' + encodeURIComponent(orgId) + '/verify', {
-      method: 'POST',
-      body: JSON.stringify({
+    return BILLING.ensureOrg().then(function(resolvedOrgId) {
+      return SUPA_BILLING.invoke('play-verify', {
+        orgId: resolvedOrgId,
         productId: productId,
         purchaseToken: purchaseToken,
         packageName: 'com.financaspro.mobile',
-      }),
-    }).then(function(resp) {
-      return verify(resp && resp.data ? resp.data : resp);
-    });
+      });
+    }).then(verify);
   },
 
   /**

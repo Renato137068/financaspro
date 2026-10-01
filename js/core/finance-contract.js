@@ -1,6 +1,6 @@
 /**
  * finance-contract.js — contrato PT (localStorage) ↔ EN (API).
- * Única fonte de conversão no cliente; dados.js e sync-engine delegam aqui.
+ * Única fonte de conversão no cliente; dados-nuvem.js e supabase-sync.js delegam aqui.
  *
  * ES Module (ADR 0005): os scripts clássicos o recebem como global por
  * js/esm/ponte.js.

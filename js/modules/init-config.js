@@ -58,12 +58,12 @@ const INIT_CONFIG = {
   },
 
   /**
-   * Esconde as superficies que dependem de backend quando nao ha backend.
+   * Esconde as superficies que dependem de nuvem quando nao ha nuvem.
    *
-   * O build Android do piloto roda em modo local: `_apiBaseUrl()` devolve string
-   * vazia e nada sobe para servidor nenhum. Mesmo assim a aba Perfil continuava
-   * oferecendo assinatura, Open Finance e verificacao em duas etapas -- recursos
-   * que so existem com nuvem.
+   * O build Android do piloto roda em modo local: sem Supabase, nada sobe para
+   * servidor nenhum. Mesmo assim a aba Perfil continuava oferecendo
+   * assinatura e verificacao em duas etapas -- recursos que so existem com
+   * nuvem.
    *
    * Isso nao era so ruido de interface. A folha de respostas do Data safety da
    * Play Store declara, para o piloto, que o app NAO coleta nem compartilha
@@ -75,22 +75,19 @@ const INIT_CONFIG = {
    * entre eles.
    *
    * A condicao deriva de `DADOS._nuvemAtiva()` em vez de um flag proprio: assim
-   * nao ha um segundo interruptor para esquecer de virar. Configure
-   * `CONFIG.API_BASE_URL` ou Supabase e a nuvem reaparece sozinha.
+   * nao ha um segundo interruptor para esquecer de virar. Configure o
+   * Supabase e a nuvem reaparece sozinha.
    */
   aplicarVisibilidadeNuvem: function() {
     var temNuvem = typeof DADOS !== 'undefined'
       && typeof DADOS._nuvemAtiva === 'function'
       && DADOS._nuvemAtiva();
-    var openFinanceOn = typeof CONFIG !== 'undefined' && CONFIG.FEATURE_OPEN_FINANCE;
 
     var alvos = document.querySelectorAll('[data-requer-nuvem]');
     for (var i = 0; i < alvos.length; i++) {
       var el = alvos[i];
-      var isOpenFinance = el.getAttribute('data-action') === 'abrir-open-finance';
-      var visivel = temNuvem && (!isOpenFinance || openFinanceOn);
-      el.hidden = !visivel;
-      el.style.display = visivel ? '' : 'none';
+      el.hidden = !temNuvem;
+      el.style.display = temNuvem ? '' : 'none';
     }
     return temNuvem;
   },
@@ -132,9 +129,6 @@ const INIT_CONFIG = {
     }
     if (typeof INIT_2FA !== 'undefined' && INIT_2FA.refreshUI) {
       INIT_2FA.refreshUI();
-    }
-    if (typeof INIT_OPEN_FINANCE !== 'undefined' && INIT_OPEN_FINANCE.refreshCard) {
-      INIT_OPEN_FINANCE.refreshCard();
     }
     if (typeof AUTH_BIOMETRIC !== 'undefined' && AUTH_BIOMETRIC.refreshBiometricUI) {
       AUTH_BIOMETRIC.refreshBiometricUI();

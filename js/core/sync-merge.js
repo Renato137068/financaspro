@@ -1,11 +1,13 @@
 /**
- * sync-merge.js — fusão de delta e outbox no CLIENTE (design #2, §7).
- * Puro, zero DOM/deps. Contraparte do sync-conflict.service.js do servidor.
+ * sync-merge.js — fusão do que vem da nuvem com o que está no aparelho.
+ * Puro, zero DOM/deps. Usado pelo pull do Supabase (DADOS._mergeSnapshotLocal).
  *
  * Corrige os bugs de perda de dados diagnosticados:
- *   D1 — não sobrescreve registros com mutação pendente na outbox.
+ *   D1 — não sobrescreve registros com mutação pendente (pendingIds).
  *   D2 — tombstone (deletedAt) remove do cache, sem ressurreição.
  *   D3 — merge por registro via updatedAt (LWW), nunca full-replace destrutivo.
+ *
+ * A fila de envio (outbox) do sync v2 saiu com a API Express (ADR 0007).
  *
  * ES Module (ADR 0005): os scripts clássicos o recebem como global por
  * js/esm/ponte.js.
@@ -141,30 +143,42 @@ const SYNC_MERGE = {
   },
 
   /**
-   * Enfileira uma mutação na outbox, deduplicando por entity+id.
-   * upsert substitui upsert anterior do mesmo id; delete suprime upserts anteriores.
-   * @returns {Array} nova fila
+   * Orçamentos do config (objeto por categoria) → lista de registros com id,
+   * para passar pelo mergeDelta.
    */
-  outboxEnqueue: function(fila, mut) {
-    if (!mut || mut.id == null) return (fila || []).slice();
-    var out = (fila || []).filter(function(m) {
-      return !(m.entity === mut.entity && m.id === mut.id);
+  orcamentosToArray: function(orc) {
+    var out = [];
+    if (!orc || typeof orc !== 'object') return out;
+    Object.keys(orc).forEach(function(cat) {
+      var entry = orc[cat];
+      if (!entry) return;
+      out.push({
+        id: entry.id,
+        categoria: cat,
+        limite: entry.limite,
+        periodo: entry.periodo || 'mensal',
+        definidoEm: entry.definidoEm,
+        updatedAt: entry.updatedAt || entry.definidoEm,
+        ativo: entry.ativo !== false,
+      });
     });
-    out.push(mut);
     return out;
   },
 
-  /**
-   * Remove da outbox as mutações confirmadas pelo servidor (por opId),
-   * mantendo as que não foram processadas (falha de rede).
-   * @param {Array} fila
-   * @param {Array} results [{ opId, action|status }]
-   * @returns {Array} fila restante
-   */
-  outboxAckRemove: function(fila, results) {
-    var acked = {};
-    (results || []).forEach(function(r) { if (r && r.opId != null) acked[r.opId] = true; });
-    return (fila || []).filter(function(m) { return !acked[m.opId]; });
+  /** Volta da lista para o objeto por categoria; apagados e inativos saem. */
+  arrayToOrcamentos: function(list) {
+    var orc = {};
+    (list || []).forEach(function(b) {
+      if (!b || !b.categoria || b.deletedAt || b.ativo === false) return;
+      orc[b.categoria] = {
+        limite: b.limite,
+        definidoEm: b.definidoEm || b.updatedAt,
+        id: b.id,
+        periodo: b.periodo || 'mensal',
+        updatedAt: b.updatedAt || b.definidoEm,
+      };
+    });
+    return orc;
   }
 };
 

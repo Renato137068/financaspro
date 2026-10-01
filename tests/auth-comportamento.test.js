@@ -260,36 +260,27 @@ describe('PIN — backoff depois das tentativas', () => {
 
 /* ───────────────────────── CSP ───────────────────────── */
 
-const { limparCsp, openFinanceLigado } = require('../scripts/harden-csp.cjs');
+const { limparCsp } = require('../scripts/harden-csp.cjs');
 
-describe('CSP — a lista de origens segue a feature flag', () => {
+describe('CSP — só o app e o Supabase', () => {
   const csp = fs.readFileSync(path.join(root, 'index.html'), 'utf8')
     .match(/<meta http-equiv="Content-Security-Policy"[^>]*>/)[0];
 
-  test('com Open Finance desligado, a Belvo sai do script-src', () => {
-    const out = limparCsp(csp, { openFinance: false });
-    expect(out).not.toContain('belvo');
-    expect(out).not.toContain('frame-src');
-  });
-
-  test('com Open Finance ligado, a Belvo permanece', () => {
-    const out = limparCsp(csp, { openFinance: true });
-    expect(out).toContain('cdn.belvo.com');
+  test('nenhum terceiro executa script, nem carrega frame (Belvo saiu com o Open Finance)', () => {
+    expect(csp).toMatch(/script-src 'self';/);
+    expect(csp).not.toContain('belvo');
+    expect(csp).not.toContain('frame-src');
   });
 
   test('origens de dev nunca sobrevivem ao build', () => {
+    const comDev = csp.replace("connect-src 'self'", "connect-src 'self' http://localhost:4000 http://127.0.0.1:4000");
     ['localhost', '127.0.0.1'].forEach((o) => {
-      expect(limparCsp(csp, { openFinance: true })).not.toContain(o);
-      expect(limparCsp(csp, { openFinance: false })).not.toContain(o);
+      expect(limparCsp(comDev)).not.toContain(o);
     });
   });
 
-  test('a flag é lida do fonte, não chutada', () => {
-    expect(typeof openFinanceLigado(path.join(root, 'js/core/config.js'))).toBe('boolean');
-  });
-
   test('o Supabase continua liberado — senão o app não fala com a nuvem', () => {
-    expect(limparCsp(csp, { openFinance: false })).toContain('supabase.co');
+    expect(limparCsp(csp)).toContain('supabase.co');
   });
 });
 
@@ -366,7 +357,7 @@ describe('CSP — OCR removido do produto', () => {
 
   test('connect-src de produção não libera o CDN do Tesseract (jsdelivr)', () => {
     const { buildCspConnectSrc } = require('../scripts/csp-connect-src.cjs');
-    expect(buildCspConnectSrc({ prod: true })).not.toMatch(/jsdelivr/);
+    expect(buildCspConnectSrc()).not.toMatch(/jsdelivr/);
   });
 
   test('index não carrega script OCR', () => {

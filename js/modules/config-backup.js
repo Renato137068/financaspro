@@ -1,8 +1,7 @@
 /**
  * config-backup.js — backup do Perfil: exportar e importar os dados.
  *
- * Validação do arquivo importado (schema, outbox, cursor de sync, overrides
- * sensíveis), a mescla da config importada, a exportação com o período dos
+ * Validação do arquivo importado (schema, overrides sensíveis), a mescla da config importada, a exportação com o período dos
  * dados e os orçamentos, e o cálculo de meses entre datas.
  *
  * Saiu de init-config.js (1.746 linhas). Os métodos continuam sendo de
@@ -22,7 +21,6 @@ import { ORCAMENTO } from '../orcamento.js';
 import { CONTAS } from '../contas.js';
 import { RENDER } from '../render.js';
 import { INIT_MODALS } from './init-modals.js';
-import { SYNC_ENGINE } from '../core/sync-engine.js';
 import { DADOS } from '../core/dados.js';
 
 const CONFIG_BACKUP = {
@@ -115,29 +113,6 @@ const CONFIG_BACKUP = {
       merged[key] = current[key];
     });
     return merged;
-  },
-
-  /** Outbox: só restaura array de operações com shape esperado. */
-  _validarOutbox: function(outbox) {
-    if (!Array.isArray(outbox)) return null;
-    var ok = [];
-    for (var i = 0; i < outbox.length; i++) {
-      var op = outbox[i];
-      if (!op || typeof op !== 'object') continue;
-      if (typeof op.opId !== 'string' || !op.opId) continue;
-      if (typeof op.entity !== 'string' || !op.entity) continue;
-      if (op.id == null || op.id === '') continue;
-      if (op.op !== 'upsert' && op.op !== 'delete') continue;
-      ok.push(op);
-    }
-    return ok;
-  },
-
-  /** Cursor de sync: string ou number não vazio. */
-  _validarSyncCursor: function(cursor) {
-    if (cursor == null || cursor === '') return null;
-    if (typeof cursor === 'string' || typeof cursor === 'number') return cursor;
-    return null;
   },
 
   _importTemOverridesSensiveis: function(data) {
@@ -279,17 +254,8 @@ const CONFIG_BACKUP = {
         });
       }
 
-      // Restaurar outbox e cursor só se o formato for válido (P1.2)
-      if (typeof SYNC_ENGINE !== 'undefined') {
-        var outboxOk = INIT_CONFIG._validarOutbox(data.outbox);
-        if (outboxOk) {
-          SYNC_ENGINE.saveOutbox(outboxOk);
-        }
-        var cursorOk = INIT_CONFIG._validarSyncCursor(data.sync_cursor);
-        if (cursorOk != null) {
-          SYNC_ENGINE.setCursor(cursorOk);
-        }
-      }
+      // Backups antigos trazem `outbox` e `sync_cursor` do sync v2 da API
+      // Express, que saiu (ADR 0007): são ignorados.
 
       var anexosImportados = 0;
       var importAnexos = Promise.resolve(0);
@@ -340,10 +306,6 @@ const CONFIG_BACKUP = {
           config: self._configParaExportacao(),
           orcamentos: self.getOrcamentosData(),
           anexos: anexos || [],
-          outbox: (typeof SYNC_ENGINE !== 'undefined' && SYNC_ENGINE.loadOutbox)
-            ? SYNC_ENGINE.loadOutbox() : [],
-          sync_cursor: (typeof SYNC_ENGINE !== 'undefined' && SYNC_ENGINE.getCursor)
-            ? SYNC_ENGINE.getCursor() : null,
           metadados: {
             totalTransacoes: TRANSACOES.obter({}).length,
             totalContas: DADOS.getContas().length,

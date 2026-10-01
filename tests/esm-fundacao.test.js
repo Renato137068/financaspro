@@ -109,7 +109,7 @@ describe('fundação ES Modules', () => {
   // callback, ex.: { idFactory: UTILS.gerarId }) recebe `this` undefined. No
   // script clássico o `this` virava window e o erro passava despercebido. Os
   // módulos usam o próprio nome; só os mixins (copiados para outro objeto por
-  // Object.assign, como DADOS_EXPRESS em DADOS e CONFIG_BACKUP em INIT_CONFIG)
+  // Object.assign, como DADOS_NUVEM em DADOS e CONFIG_BACKUP em INIT_CONFIG)
   // dependem de `this` de propósito.
   test('módulo migrado não usa this, exceto mixins', () => {
     const js = arquivosJs('js').map((rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8')).join('\n');
@@ -125,7 +125,7 @@ describe('fundação ES Modules', () => {
         .replace(/'(?:\\.|[^'\\\n])*'|"(?:\\.|[^"\\\n])*"/g, "''");
       if (/\bthis\b/.test(semComentarios)) comThis.push(rel);
     }
-    expect([...mixins].sort()).toEqual(['CONFIG_BACKUP', 'CONFIG_BANCOS', 'DADOS_EXPRESS', 'FORM_SUGESTOES']);
+    expect([...mixins].sort()).toEqual(['CONFIG_BACKUP', 'CONFIG_BANCOS', 'DADOS_NUVEM', 'FORM_SUGESTOES']);
     expect(comThis).toEqual([]);
   });
 

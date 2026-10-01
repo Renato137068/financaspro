@@ -92,7 +92,6 @@ function loadSupaSync(mocks) {
     getConfig: function() { return { tema: 'dark' }; },
     getContas: function() { return mocks.localContas || []; },
     getTransacoesRaw: function() { return mocks.localTx || []; },
-    _apiAtiva: function() { return true; },
   };
 
   var sandbox = {
@@ -243,8 +242,10 @@ describe('supabase-sync — pull mockado', function() {
 describe('supabase-sync — wiring DADOS', function() {
   test('sobrescreve transporte quando Supabase ativo', function() {
     var ctx = loadSupaSync({});
-    expect(typeof ctx.DADOS._pushTransacaoApi).toBe('function');
-    expect(ctx.DADOS._apiAtiva()).toBe(false);
-    expect(typeof ctx.DADOS.sincronizarComApi).toBe('function');
+    ['sincronizarComApi', '_pushTransacaoApi', '_deleteTransacaoApi', '_pushContasApi',
+      '_pushOrcamentoApi', '_pushConfigApi'].forEach(function(nome) {
+      expect(typeof ctx.DADOS[nome]).toBe('function');
+    });
+    expect(ctx.DADOS._apiAtiva).toBeUndefined();
   });
 });

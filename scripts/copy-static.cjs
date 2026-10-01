@@ -97,7 +97,7 @@ function patchIndexHtml(filePath) {
     /<link rel="icon" href="[^"]*"[^>]*>/,
     '<link rel="icon" href="icons/logo.svg" type="image/svg+xml">'
   );
-  html = patchCspMeta(html, { prod: true });
+  html = patchCspMeta(html);
   fs.writeFileSync(filePath, html);
 }
 

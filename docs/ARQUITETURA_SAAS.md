@@ -98,8 +98,8 @@ mesmos dados sincronizam com o Supabase.
   de uma IIFE (nome de topo repetido entre módulos reprova o teste).
 - **Mixins para quebrar arquivos grandes.** Um pedaço coeso de um objeto
   clássico sai para um ES Module e volta por `Object.assign` no fim do
-  arquivo original, sem mudar quem chama: `dados-express.js` (cliente da API
-  Express, congelado) em `DADOS`, `form-sugestoes.js` (autocategorização e
+  arquivo original, sem mudar quem chama: `dados-nuvem.js` (pontos de
+  encaixe da nuvem e mesclagem do pull) em `DADOS`, `form-sugestoes.js` (autocategorização e
   autocomplete) em `INIT_FORM`, e no chunk do Perfil `config-backup.js` e
   `config-bancos.js` em `INIT_CONFIG`. O mixin importa o objeto e se copia
   para ele ao carregar (o import tem um sentido só). Nos testes, `tests/helpers/esm-como-script.cjs` os roda via
@@ -158,8 +158,9 @@ mesmos dados sincronizam com o Supabase.
 
 ## Dados no aparelho
 
-- `DADOS` (`js/core/dados.js`) é a única porta de leitura e escrita. O
-  cliente da API Express legada fica à parte, em `js/core/dados-express.js`.
+- `DADOS` (`js/core/dados.js`) é a única porta de leitura e escrita. O que
+  ele sabe da nuvem fica à parte, em `js/core/dados-nuvem.js`, e o Supabase
+  sobrescreve os pontos de encaixe (`js/core/supabase-sync.js`).
   Lançamentos ficam no localStorage e migram para o IndexedDB acima de ~2.500
   itens ou 3 MB.
 - **Cifragem opcional** (`js/utilities/local-crypto.js`): AES-GCM com chave

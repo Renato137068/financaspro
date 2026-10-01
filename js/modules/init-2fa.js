@@ -1,7 +1,6 @@
 /**
- * init-2fa.js — UI de verificação em duas etapas (TOTP)
- * Express: /api/v1/auth/totp/*
- * Supabase: auth.mfa.* (TOTP)
+ * init-2fa.js — UI de verificação em duas etapas (TOTP), pelo Supabase Auth
+ * (auth.mfa.*). Sem Supabase (build local) não há conta e o card some.
  *
  * ES Module (ADR 0005): chega sob demanda no chunk 'conta'
  * (js/esm/chunks/conta.js, via LAZY.load), que o publica em window.
@@ -36,14 +35,10 @@ const INIT_2FA = {
   },
 
   isAvailable: function() {
-    if (INIT_2FA._isSupabaseMode()) {
-      return typeof SUPA_AUTH !== 'undefined'
-        && SUPA_AUTH.getSessionSync
-        && !!(SUPA_AUTH.getSessionSync() && SUPA_AUTH.getSessionSync().user);
-    }
-    return typeof DADOS !== 'undefined'
-      && DADOS._apiAtiva && DADOS._apiAtiva()
-      && DADOS.getSessao && DADOS.getSessao().user;
+    return INIT_2FA._isSupabaseMode()
+      && typeof SUPA_AUTH !== 'undefined'
+      && !!SUPA_AUTH.getSessionSync
+      && !!(SUPA_AUTH.getSessionSync() && SUPA_AUTH.getSessionSync().user);
   },
 
   refreshUI: function() {
@@ -88,11 +83,7 @@ const INIT_2FA = {
     chk.disabled = false;
 
     var self = INIT_2FA;
-    var statusPromise = INIT_2FA._isSupabaseMode()
-      ? SUPA_AUTH.mfaStatus()
-      : DADOS.totpStatusApi();
-
-    statusPromise.then(function(st) {
+    SUPA_AUTH.mfaStatus().then(function(st) {
       self._enabled = !!(st && st.enabled);
       self._factorId = st && st.factorId ? st.factorId : null;
       chk.checked = self._enabled;
@@ -131,16 +122,7 @@ const INIT_2FA = {
     var self = INIT_2FA;
     if (!INIT_2FA.isAvailable()) return;
 
-    var start = INIT_2FA._isSupabaseMode()
-      ? SUPA_AUTH.mfaEnrollStart()
-      : DADOS._apiFetch('/api/v1/auth/totp/setup', { method: 'POST', body: '{}' })
-        .then(function(resp) {
-          var data = resp && resp.data ? resp.data : null;
-          if (!data) throw new Error('Falha ao iniciar 2FA');
-          return data;
-        });
-
-    start.then(function(data) {
+    SUPA_AUTH.mfaEnrollStart().then(function(data) {
       self._enrollFactorId = data.factorId || null;
       self._modalSetup(data);
     }).catch(function(err) {
@@ -168,10 +150,7 @@ const INIT_2FA = {
         btn.textContent = 'Ativar';
         btn.onclick = function() {
           var code = (document.getElementById('totp-enable-code') || {}).value || '';
-          var confirm = self._isSupabaseMode()
-            ? SUPA_AUTH.mfaEnrollConfirm(self._enrollFactorId, code.trim())
-            : DADOS.totpApi('enable', { code: code.trim() });
-          confirm.then(function() {
+          SUPA_AUTH.mfaEnrollConfirm(self._enrollFactorId, code.trim()).then(function() {
             document.querySelector('.modal-overlay').remove();
             UTILS.mostrarToast('Verificação em duas etapas ativada', 'success');
             self._enabled = true;
@@ -296,13 +275,7 @@ const INIT_2FA = {
 
     var html =
       '<div class="totp-setup">' +
-        '<p>Para desativar o 2FA, confirme ' +
-          (self._isSupabaseMode() ? 'o código atual do autenticador:' : 'sua senha e o código atual:') +
-        '</p>' +
-        (self._isSupabaseMode() ? '' :
-          '<label class="auth-field" for="totp-disable-pass"><span>Senha</span>' +
-            '<input type="password" id="totp-disable-pass" autocomplete="current-password">' +
-          '</label>') +
+        '<p>Para desativar o 2FA, confirme o código atual do autenticador:</p>' +
         '<label class="auth-field" for="totp-disable-code"><span>Código 2FA</span>' +
           '<input type="text" id="totp-disable-code" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000">' +
         '</label>' +
@@ -315,14 +288,7 @@ const INIT_2FA = {
       btn.className = 'modal-btn btn-confirmar-danger';
       btn.onclick = function() {
         var code = (document.getElementById('totp-disable-code') || {}).value || '';
-        var promessa;
-        if (self._isSupabaseMode()) {
-          promessa = SUPA_AUTH.mfaUnenroll(self._factorId, code.trim());
-        } else {
-          var pass = (document.getElementById('totp-disable-pass') || {}).value || '';
-          promessa = DADOS.totpApi('disable', { password: pass, code: code.trim() });
-        }
-        promessa.then(function() {
+        SUPA_AUTH.mfaUnenroll(self._factorId, code.trim()).then(function() {
           document.querySelector('.modal-overlay').remove();
           UTILS.mostrarToast('2FA desativado', 'info');
           self._enabled = false;

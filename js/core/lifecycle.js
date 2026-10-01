@@ -421,7 +421,6 @@ const LIFECYCLE_BOOT = {
       if (typeof BILLING !== 'undefined') BILLING.init();
       if (typeof INIT_BILLING !== 'undefined') INIT_BILLING.init();
       if (typeof INIT_2FA !== 'undefined') INIT_2FA.init();
-      if (typeof INIT_OPEN_FINANCE !== 'undefined') INIT_OPEN_FINANCE.init();
     }, { depends: ['event-bus', 'render-core'], critical: false });
 
     // Finalização
@@ -481,9 +480,8 @@ const LIFECYCLE_BOOT = {
       }, 400);
 
       // Recorrentes devidas: o próprio cliente materializa, no modo local e na
-      // nuvem Supabase (que não tem worker de recorrência — ver
-      // RECORRENTES._ehModoLocal e docs/adr/0004). Só a API Express legada,
-      // quando ativa, deixa o processo com o worker BullMQ.
+      // nuvem Supabase, que não tem worker de recorrência (ver
+      // RECORRENTES._ehModoLocal e docs/adr/0007).
       if (typeof RECORRENTES !== 'undefined' && RECORRENTES.processarNaAbertura) {
         try { RECORRENTES.processarNaAbertura(); } catch (e) {
           if (typeof OBS !== 'undefined' && OBS.captureError) {

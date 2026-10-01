@@ -57,7 +57,9 @@ const BUDGETS = {
   // chega com o chunk (TELAS.estilo, scripts/generate-telas.cjs).
   // 1180→1110 KB (2026-10-01): a parte das folhas de Extrato, Orçamento e
   // Perfil que só essas telas desenham chega com o chunk (layouts/*-tela.css).
-  precacheTotal: { max: 1110 * KB, label: 'Precache total (1º acesso)' },
+  // 1110→1082 KB (2026-10-02): sai o cliente da API Express e o sync v2
+  // (ADR 0007): 1106 → 1079 KB.
+  precacheTotal: { max: 1082 * KB, label: 'Precache total (1º acesso)' },
   // 580→590 KB (2026-09-13): correção do KPI "Folga poupança" no Orçamento
   // (cálculo da folga da fatia de poupança) + referência de ritmo no Resumo
   // adicionam alguns KB de código — aumento intencional.
@@ -78,6 +80,9 @@ const BUDGETS = {
   // ficam no eager (categoria-visual.js, insight-acoes.js).
   // 503→478 KB (2026-09-29): DADOS vira ES Module (o Vite minifica melhor) e
   // os primeiros chunks sob demanda ES Module.
+  // 478→450 KB (2026-10-02): saem o cliente da API Express (dados-express.js)
+  // e o sync v2, que só existia para ela (sync-engine.js) — ADR 0007. 475 →
+  // 447 KB: a meta de 450 KB das auditorias de 30/09 e 1º/10.
   // 507→503 KB (2026-09-28): quinta fatia ESM (restante do domínio eager).
   // 512→507 KB (2026-09-27): quarta fatia ESM (utilitários e lançamentos).
   // 514→512 KB (2026-09-27): ícones de categoria e os services de transação
@@ -86,7 +91,7 @@ const BUDGETS = {
   // dois arquivos: app.bundle.js (scripts clássicos) e js/index-<hash>.js (a
   // entrada ESM que o Vite gera). O teto vale para a soma: migrar um módulo de
   // um para o outro não abre espaço.
-  appBundle: { max: 478 * KB, label: 'App eager (clássico + ESM)', glob: /^js\/(app\.bundle|index-[\w-]+)\.js$/ },
+  appBundle: { max: 450 * KB, label: 'App eager (clássico + ESM)', glob: /^js\/(app\.bundle|index-[\w-]+)\.js$/ },
   // 260→262 KB (2026-09-27): supabase-js 2.112 → 2.117. O vendor é só
   // supabase-js + lucide; não há o que mover para lazy aqui.
   vendorBundle: { max: 262 * KB, label: 'js/vendor.bundle.js', file: 'js/vendor.bundle.js' },

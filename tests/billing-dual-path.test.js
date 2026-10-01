@@ -1,34 +1,35 @@
 /**
- * billing-dual-path.test.js — Supabase preferido; sem fallback Express silencioso.
+ * billing-dual-path.test.js — a cobrança na nuvem é só pelo Supabase.
+ *
+ * Até a saída da API Express (ADR 0007) havia dois caminhos, e este teste
+ * garantia que o do Express não entrasse em silêncio no lugar do Supabase.
+ * Agora só há um: sem Supabase (modo local), cada operação de nuvem falha com
+ * um erro dizendo isso, e nenhuma chamada a /api/v1 sobrou no código.
  */
 const { carregarScript } = require('./helpers/carregar-script.cjs');
-const { regrasDoBilling } = require('./helpers/billing-regras.cjs');
 const path = require('path');
-const billingHelpers = regrasDoBilling(carregarScript('js/billing.js'));
 
+const BILLING = carregarScript('js/billing.js');
 const billingSrc = require('./helpers/esm-como-script.cjs').fonteComPartes(path.join(__dirname, '..', 'js/billing.js'));
 
-describe('Dual path Supabase × Express', function() {
-  test('expõe _useSupabaseBilling', function() {
-    expect(typeof billingHelpers._useSupabaseBilling).toBe('function');
-    expect(billingSrc).toMatch(/_useSupabaseBilling:\s*function/);
+describe('Cobrança só pelo Supabase', function() {
+  test('nenhuma chamada à API Express sobrou', function() {
+    expect(billingSrc).not.toMatch(/\/api\/v1\//);
+    expect(billingSrc).not.toMatch(/_apiFetch|_apiAtiva/);
+    expect(billingSrc).not.toMatch(/subscribe:\s*function/);
   });
 
-  test('portal/cancel preferem Supabase sem gate !_apiAtiva', function() {
+  test('portal, cancelamento e reativação pelas Edge Functions', function() {
     expect(billingSrc).toMatch(/invoke\('stripe-cancel'/);
+    expect(billingSrc).toMatch(/invoke\('stripe-resume'/);
     expect(billingSrc).toMatch(/invoke\('stripe-portal'/);
-    expect(billingSrc).toMatch(/_useSupabaseBilling\(\)/);
-    expect(billingSrc).not.toMatch(/!\(DADOS\._apiAtiva && DADOS\._apiAtiva\(\)\)/);
   });
 
-  test('checkoutOrSubscribe não cai em subscribe no path Supabase', function() {
-    expect(billingSrc).toMatch(/express-subscribe-disabled/);
-    expect(billingSrc).toMatch(/checkout-unavailable/);
+  test('checkout sem URL é erro explícito, sem plano B', function() {
     const block = billingSrc.slice(
       billingSrc.indexOf('checkoutOrSubscribe:'),
       billingSrc.indexOf('cancelSubscription:'),
     );
-    expect(block).toMatch(/_useSupabaseBilling\(\)/);
     expect(block).toMatch(/checkout-unavailable/);
   });
 
@@ -51,5 +52,37 @@ describe('Dual path Supabase × Express', function() {
     expect(resume).toMatch(/isPlayManaged\(/);
     expect(resume).not.toMatch(/PLAY_BILLING\.isAvailable/);
     expect(portal).toMatch(/isPlayManaged\(/);
+  });
+});
+
+describe('Sem Supabase (modo local)', function() {
+  const dadosAntes = global.DADOS;
+
+  beforeEach(function() {
+    global.DADOS = { _supabaseAtivo: function() { return false; }, getConfig: function() { return {}; } };
+    BILLING._cache.orgId = null;
+    BILLING._cache.plans = null;
+  });
+  afterAll(function() { global.DADOS = dadosAntes; });
+
+  test('não é usuário de nuvem e não usa a cobrança do Supabase', function() {
+    expect(BILLING.isCloudUser()).toBe(false);
+    expect(BILLING._useSupabaseBilling()).toBe(false);
+  });
+
+  test('a vitrine mostra os planos estáticos, sem Business', async function() {
+    const planos = await BILLING.listPlans();
+    expect(planos.map(function(p) { return p.tier; })).toEqual(['FREE', 'PRO']);
+  });
+
+  test.each([
+    ['ensureOrg', function() { return BILLING.ensureOrg(); }],
+    ['fetchSubscription', function() { return BILLING.fetchSubscription(); }],
+    ['createCheckout', function() { return BILLING.createCheckout('PRO', 'monthly'); }],
+    ['acceptInvite', function() { return BILLING.acceptInvite('tok'); }],
+    ['revokeInvite', function() { return BILLING.revokeInvite('inv1'); }],
+    ['removeTeamMember', function() { return BILLING.removeTeamMember('u1'); }],
+  ])('%s falha dizendo que a nuvem não está disponível', async function(_nome, chamar) {
+    await expect(chamar()).rejects.toMatchObject({ code: 'nuvem-indisponivel' });
   });
 });

@@ -2,19 +2,19 @@
  * @file dados.js — Data persistence layer
  * @module DADOS
  *
- * O cliente da API Express legada (sessão, login, TOTP, Open Finance, sync
- * /api/v1) mora em js/core/dados-express.js e é copiado para cá no fim do
- * arquivo: quem chama continua usando DADOS.loginApi, DADOS._apiFetch etc.
+ * O que o DADOS sabe da nuvem (pontos de encaixe que o Supabase sobrescreve,
+ * sessão e a mesclagem do pull) mora em js/core/dados-nuvem.js e é copiado
+ * para cá no fim do arquivo. A API Express saiu (ADR 0007).
  *
  * ES Module (ADR 0005): os scripts clássicos o recebem como global por
  * js/esm/ponte.js. Quase todo o domínio importa o DADOS, e o DADOS importa de
  * volta quem ele avisa (TRANSACOES, RENDER…): ciclos de import, válidos porque
  * nenhum dos lados usa o outro ao carregar, só dentro de funções. A exceção
- * é o DADOS_EXPRESS, lido ao carregar: só este arquivo (e a ponte, depois) o
- * importa, então ele sempre termina antes do Object.assign lá embaixo.
+ * é o DADOS_NUVEM, lido ao carregar: só este arquivo o importa, então ele
+ * sempre termina antes do Object.assign lá embaixo.
  */
 
-import { DADOS_EXPRESS } from './dados-express.js';
+import { DADOS_NUVEM } from './dados-nuvem.js';
 import { CONFIG } from './config.js';
 import { UTILS } from './utils.js';
 import { LOCAL_CRYPTO } from '../utilities/local-crypto.js';
@@ -24,7 +24,6 @@ import { SESSION_LOG } from './session-log.js';
 import { PERSIST_QUEUE } from './persist-queue.js';
 import { APP_STORE } from './store.js';
 import { ACTIONS } from '../services/actions.js';
-import { SYNC_ENGINE } from './sync-engine.js';
 import { TRANSACOES } from '../transacoes.js';
 import { ORCAMENTO } from '../orcamento.js';
 import { CONTAS } from '../contas.js';
@@ -381,17 +380,16 @@ const DADOS = {
     return typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.isActive && SUPA_AUTH.isActive();
   },
 
-  /** Nuvem = Supabase OU API Express configurada (billing, login, sync). */
+  /** Nuvem (login, sync, cobrança) = Supabase. A API Express saiu (ADR 0007). */
   _nuvemAtiva: function() {
-    if (DADOS._supabaseAtivo()) return true;
-    return DADOS._apiAtiva();
+    return DADOS._supabaseAtivo();
   },
 
   init: function() {
     if (DADOS._initialized) return Promise.resolve();
     if (DADOS._initPromise) return DADOS._initPromise;
     DADOS._initPromise = DADOS._prepararStorageTransacoes().then(function() {
-      DADOS._limparTokensLegados();
+      DADOS._limparSessaoExpressLegada();
       if (DADOS._transacoesBackend !== 'idb' && !DADOS._storageGetRaw(CONFIG.STORAGE_TRANSACOES)) {
         DADOS._storageSetRaw(CONFIG.STORAGE_TRANSACOES, JSON.stringify([]));
       }
@@ -831,29 +829,6 @@ const DADOS = {
   },
 
   /**
-   * Limita o cache local a N meses — histórico completo permanece no servidor.
-   * Preserva itens pendentes na outbox de sync.
-   */
-  aplicarJanelaLocal: function() {
-    var meses = (typeof CONFIG !== 'undefined' && CONFIG.LOCAL_TX_WINDOW_MONTHS) || 24;
-    var cutoff = new Date();
-    cutoff.setMonth(cutoff.getMonth() - meses);
-    var cutoffStr = cutoff.toISOString().slice(0, 10);
-    var raw = DADOS.getTransacoesRaw();
-    var pending = (typeof SYNC_ENGINE !== 'undefined' && SYNC_ENGINE.pendingIds)
-      ? SYNC_ENGINE.pendingIds()
-      : [];
-    var trimmed = raw.filter(function(t) {
-      if (pending.indexOf(t.id) !== -1) return true;
-      var d = t.data || (t.updatedAt && String(t.updatedAt).slice(0, 10)) || '';
-      return d >= cutoffStr;
-    });
-    if (trimmed.length < raw.length) {
-      DADOS._storageSetTransacoes(trimmed);
-    }
-  },
-
-  /**
    * Insere ou atualiza transação. Throw se quota cheia.
    * @param {Transacao} transacao
    * @returns {Transacao}
@@ -861,7 +836,6 @@ const DADOS = {
    */
   salvarTransacao: function(transacao) {
     var transacoes = DADOS.getTransacoesRaw();
-    var syncV2 = DADOS._syncV2Ativo();
 
     // Idempotência local: mesmo clientKey → mesma transação (anti-duplicata).
     if (transacao.clientKey) {
@@ -876,7 +850,7 @@ const DADOS = {
       }
     }
 
-    transacao.id = transacao.id || (syncV2 && UTILS.gerarUuid ? UTILS.gerarUuid() : UTILS.gerarId());
+    transacao.id = transacao.id || UTILS.gerarId();
     transacao.dataCriacao = transacao.dataCriacao || new Date().toISOString();
     transacao.updatedAt = new Date().toISOString();
     transacao.deletedAt = null;
@@ -893,20 +867,13 @@ const DADOS = {
     if (typeof APP_STORE !== 'undefined' && actionType) {
       APP_STORE.dispatch(actionType, transacao);
     }
-    if (syncV2 && typeof SYNC_ENGINE !== 'undefined') {
+    DADOS._pushTransacaoApi(transacao, index >= 0 ? 'PATCH' : 'POST').catch(function(err) {
       if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
-        APP_STORE.dispatch(ACTIONS.SYNC_SALVANDO);
+        APP_STORE.dispatch(ACTIONS.SYNC_FALHAR, {
+          erro: (err && err.message) || 'push-tx',
+        });
       }
-      SYNC_ENGINE.enqueueTransaction('upsert', transacao);
-    } else {
-      DADOS._pushTransacaoApi(transacao, index >= 0 ? 'PATCH' : 'POST').catch(function(err) {
-        if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
-          APP_STORE.dispatch(ACTIONS.SYNC_FALHAR, {
-            erro: (err && err.message) || 'push-tx',
-          });
-        }
-      });
-    }
+    });
     return transacao;
   },
 
@@ -914,23 +881,15 @@ const DADOS = {
     var transacoes = DADOS.getTransacoesRaw();
     var index = transacoes.findIndex(function(t) { return t.id === id && !t.deletedAt; });
     if (index >= 0) {
-      var now = new Date().toISOString();
-      if (DADOS._syncV2Ativo() && typeof SYNC_ENGINE !== 'undefined') {
-        transacoes[index].deletedAt = now;
-        transacoes[index].updatedAt = now;
-        DADOS._storageSetTransacoes(transacoes);
-        SYNC_ENGINE.enqueueTransaction('delete', transacoes[index]);
-      } else {
-        transacoes.splice(index, 1);
-        DADOS._storageSetTransacoes(transacoes);
-        DADOS._deleteTransacaoApi(id).catch(function(err) {
-          if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
-            APP_STORE.dispatch(ACTIONS.SYNC_FALHAR, {
-              erro: (err && err.message) || 'delete-tx',
-            });
-          }
-        });
-      }
+      transacoes.splice(index, 1);
+      DADOS._storageSetTransacoes(transacoes);
+      DADOS._deleteTransacaoApi(id).catch(function(err) {
+        if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
+          APP_STORE.dispatch(ACTIONS.SYNC_FALHAR, {
+            erro: (err && err.message) || 'delete-tx',
+          });
+        }
+      });
       if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
         APP_STORE.dispatch(ACTIONS.TRANSACAO_DELETAR, id);
       }
@@ -998,20 +957,15 @@ const DADOS = {
     }
   },
 
+  /** Recorrências vivem no config: sobem para a nuvem junto com ele. */
   salvarRecorrente: function(recData) {
-    var syncV2 = DADOS._syncV2Ativo();
     var config = DADOS.getConfig();
     if (!Array.isArray(config.recorrentes)) config.recorrentes = [];
-    recData.id = recData.id || (syncV2 && UTILS.gerarUuid ? UTILS.gerarUuid() : UTILS.gerarId());
+    recData.id = recData.id || UTILS.gerarId();
     recData.dataCriacao = recData.dataCriacao || new Date().toISOString();
     recData.updatedAt = new Date().toISOString();
     config.recorrentes.push(recData);
-    DADOS.salvarConfig(config, { skipPush: syncV2 });
-    if (syncV2 && typeof SYNC_ENGINE !== 'undefined') {
-      SYNC_ENGINE.enqueueRecurring('upsert', recData);
-    } else {
-      DADOS._pushRecorrenteApi(recData);
-    }
+    DADOS.salvarConfig(config);
     return recData;
   },
 
@@ -1100,10 +1054,14 @@ const DADOS = {
     }
   },
 
+  /**
+   * Grava a conta no aparelho. Para a nuvem, conta nova sobe na reconciliação
+   * do próximo pull do Supabase (SUPA_SYNC._reconcileUp), como antes da saída
+   * da API Express; salvarContas manda a última da lista na hora.
+   */
   upsertConta: function(conta) {
-    var syncV2 = DADOS._syncV2Ativo();
     if (!conta.id) {
-      conta.id = (syncV2 && UTILS.gerarUuid) ? UTILS.gerarUuid() : UTILS.gerarId();
+      conta.id = UTILS.gerarId();
     }
     conta.updatedAt = new Date().toISOString();
     conta.ativo = conta.ativo !== false;
@@ -1118,90 +1076,47 @@ const DADOS = {
     if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
       APP_STORE.dispatch(ACTIONS.CONTAS_SALVAR, lista);
     }
-    if (syncV2 && typeof SYNC_ENGINE !== 'undefined') {
-      SYNC_ENGINE.enqueueAccount('upsert', conta);
-    } else if (DADOS._apiAtiva()) {
-      DADOS._pushContasApi(conta);
-    }
     return conta;
   },
 
   deletarConta: function(id) {
-    var syncV2 = DADOS._syncV2Ativo();
     var lista = DADOS.getContasRaw();
     var alvo = null;
     for (var i = 0; i < lista.length; i++) {
       if (lista[i].id === id) { alvo = lista[i]; break; }
     }
     if (!alvo) return false;
-    var tomb = Object.assign({}, alvo, {
-      ativo: false,
-      updatedAt: new Date().toISOString(),
-    });
     var restante = lista.filter(function(c) { return c.id !== id; });
     DADOS._storageSetRaw(CONFIG.STORAGE_CONTAS, JSON.stringify(restante));
     if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
       APP_STORE.dispatch(ACTIONS.CONTAS_SALVAR, restante);
     }
-    if (syncV2 && typeof SYNC_ENGINE !== 'undefined') {
-      SYNC_ENGINE.enqueueAccount('delete', tomb);
-    } else if (DADOS._apiAtiva()) {
-      DADOS._apiFetch('/api/v1/accounts/' + encodeURIComponent(id), { method: 'DELETE' }).catch(function() {});
-    }
     return true;
   },
 
+  /** Orçamentos vivem no config: sobem para a nuvem junto com ele. */
   upsertOrcamento: function(categoria, limite, periodo) {
-    var syncV2 = DADOS._syncV2Ativo();
     periodo = periodo || 'mensal';
     var config = DADOS.getConfig();
     if (!config.orcamentos) config.orcamentos = {};
     var entry = config.orcamentos[categoria] || {};
     if (!entry.id) {
-      entry.id = (syncV2 && UTILS.gerarUuid) ? UTILS.gerarUuid() : UTILS.gerarId();
+      entry.id = UTILS.gerarId();
     }
     entry.limite = Number(limite);
     entry.definidoEm = entry.definidoEm || new Date().toISOString();
     entry.updatedAt = new Date().toISOString();
     entry.periodo = periodo;
     config.orcamentos[categoria] = entry;
-    DADOS.salvarConfig(config, { skipPush: syncV2 });
-
-    var record = {
-      id: entry.id,
-      categoria: categoria,
-      limite: entry.limite,
-      periodo: periodo,
-      definidoEm: entry.definidoEm,
-      updatedAt: entry.updatedAt,
-    };
-    if (syncV2 && typeof SYNC_ENGINE !== 'undefined') {
-      SYNC_ENGINE.enqueueBudget('upsert', record);
-    } else if (DADOS._apiAtiva()) {
-      DADOS._pushOrcamentoApi(categoria, limite);
-    }
+    DADOS.salvarConfig(config);
     return entry;
   },
 
   deletarOrcamento: function(categoria) {
-    var syncV2 = DADOS._syncV2Ativo();
     var config = DADOS.getConfig();
     if (!config.orcamentos || !config.orcamentos[categoria]) return false;
-    var entry = config.orcamentos[categoria];
-    var tomb = {
-      id: entry.id || ((syncV2 && UTILS.gerarUuid) ? UTILS.gerarUuid() : UTILS.gerarId()),
-      categoria: categoria,
-      limite: entry.limite,
-      periodo: entry.periodo || 'mensal',
-      definidoEm: entry.definidoEm,
-      updatedAt: new Date().toISOString(),
-      ativo: false,
-    };
     delete config.orcamentos[categoria];
-    DADOS.salvarConfig(config, { skipPush: syncV2 });
-    if (syncV2 && typeof SYNC_ENGINE !== 'undefined') {
-      SYNC_ENGINE.enqueueBudget('delete', tomb);
-    }
+    DADOS.salvarConfig(config);
     return true;
   },
 
@@ -1211,14 +1126,14 @@ const DADOS = {
     if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
       APP_STORE.dispatch(ACTIONS.CONTAS_SALVAR, lista);
     }
-    if (lista.length > 0 && !DADOS._syncV2Ativo()) {
+    if (lista.length > 0) {
       DADOS._pushContasApi(lista[lista.length - 1]);
     }
     return lista;
   }
 };
 
-Object.assign(DADOS, DADOS_EXPRESS);
+Object.assign(DADOS, DADOS_NUVEM);
 
 export { DADOS };
 export default DADOS;

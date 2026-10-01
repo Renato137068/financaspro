@@ -649,10 +649,9 @@ const INIT_BILLING = {
     var sub = BILLING._cache.subscription;
     var hasStripe = sub && sub.stripeCustomerId;
     var usePlay = typeof PLAY_BILLING !== 'undefined' && PLAY_BILLING.isAvailable();
-    var expressBilling = typeof DADOS !== 'undefined' && DADOS._apiAtiva && DADOS._apiAtiva();
     var supaBilling = typeof DADOS !== 'undefined' && DADOS._supabaseAtivo && DADOS._supabaseAtivo()
       && typeof SUPA_BILLING !== 'undefined' && SUPA_BILLING.isActive && SUPA_BILLING.isActive();
-    var webStripe = expressBilling || (supaBilling && !usePlay);
+    var webStripe = supaBilling && !usePlay;
     var trialDays = (typeof BILLING !== 'undefined' && BILLING.TRIAL_DAYS) ? BILLING.TRIAL_DAYS : 7;
     var html = usePlay
       ? '<p class="billing-note">Pagamento via Google Play. Trial de ' + trialDays + ' dias no Pro.</p>'

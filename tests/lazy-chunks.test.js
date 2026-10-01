@@ -109,7 +109,7 @@ describe('chunks lazy', () => {
     // Verifica os módulos citados e a CHAMADA de init, sem exigir uma forma
     // sintática específica: o carregador passou de cinco linhas soltas para um
     // laço, e um teste preso à sintaxe quebraria numa refatoração inofensiva.
-    ['INIT_BILLING', 'INIT_2FA', 'INIT_OPEN_FINANCE'].forEach((mod) => {
+    ['INIT_BILLING', 'INIT_2FA'].forEach((mod) => {
       expect(carregador).toContain(mod);
     });
     expect(carregador).toMatch(/\.init\s*\(\)/);

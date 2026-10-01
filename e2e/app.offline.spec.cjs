@@ -54,7 +54,7 @@ test('navega entre extrato e orçamento', async function({ page }) {
  * Este arquivo roda em /?offline=1, que e exatamente a configuracao do build
  * Android do piloto. A folha de respostas do Data safety da Play Store declara
  * que nesse modo o app nao coleta nem compartilha dados; oferecer assinatura,
- * Open Finance, 2FA ou login contradiz a declaracao, e a revisao do Google
+ * 2FA ou login contradiz a declaracao, e a revisao do Google
  * compara as duas coisas. Alem disso, exibir preco com botao "Assinar" levando
  * a um checkout externo e o padrao que a politica de pagamentos proibe fora dos
  * mercados onde o link externo foi liberado -- o Brasil nao esta entre eles.
@@ -65,7 +65,6 @@ test('navega entre extrato e orçamento', async function({ page }) {
 test.describe('sem backend, a nuvem nao aparece', function() {
   const SUPERFICIES = [
     ['plano e assinatura', '[data-action="abrir-plano"]'],
-    ['Open Finance', '[data-action="abrir-open-finance"]'],
     ['verificacao em duas etapas', '#perfil-2fa-card'],
     ['sair da conta', '#btn-logout'],
     ['excluir minha conta', '[data-action="excluir-conta"]'],
@@ -79,7 +78,7 @@ test.describe('sem backend, a nuvem nao aparece', function() {
   for (const [nome, seletor] of SUPERFICIES) {
     test('esconde: ' + nome, async function({ page }) {
       // O elemento continua no HTML — some por data-requer-nuvem, aplicado a
-      // partir de DADOS._apiAtiva(). Configure API_BASE_URL e ele volta.
+      // partir de DADOS._nuvemAtiva(). Com o Supabase configurado, ele volta.
       await expect(page.locator(seletor)).toBeHidden();
     });
   }

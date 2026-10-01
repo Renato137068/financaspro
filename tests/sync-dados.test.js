@@ -1,5 +1,8 @@
 /**
  * sync-dados.test.js — dados locais não desaparecem com snapshot remoto (Fase 1).
+ *
+ * O snapshot é o que o pull do Supabase traz (SUPA_SYNC.pull →
+ * DADOS._mergeSnapshotLocal, em js/core/dados-nuvem.js).
  */
 const { carregarScript } = require('./helpers/carregar-script.cjs');
 const path = require('path');
@@ -23,9 +26,8 @@ function loadDados() {
       STORAGE_TRANSACOES: 'fp-transacoes',
       STORAGE_CONFIG: 'fp-config',
       STORAGE_CONTAS: 'fp-contas',
-      STORAGE_OUTBOX: 'fp-outbox',
       DEFAULT_CONFIG: {
-        syncV2Enabled: true, metas: [], contasPagar: [], assinaturas: [],
+        metas: [], contasPagar: [], assinaturas: [],
         patrimonio: { ativos: [], dividas: [] }, openFinance: { connections: [] },
       },
     },
@@ -35,24 +37,26 @@ function loadDados() {
       verificarStorageDisponivel: () => ({ disponivel: true }),
     },
     APP_STORE: { dispatch: (a) => dispatchLog.push(a), hydrateFromDados: () => {} },
-    ACTIONS: { TRANSACAO_CRIAR: 't/c', TRANSACAO_EDITAR: 't/e', TRANSACAO_DELETAR: 't/d', SYNC_PENDENTE: 's/p', CONFIG_SALVAR: 'c/s' },
+    ACTIONS: { TRANSACAO_CRIAR: 't/c', TRANSACAO_EDITAR: 't/e', TRANSACAO_DELETAR: 't/d', SYNC_PENDENTE: 's/p', CONFIG_SALVAR: 'c/s', CONTAS_SALVAR: 'k/s' },
     module: { exports: {} },
   });
 
   ctx.SYNC_MERGE = carregarScript('js/core/sync-merge.js');
+  ctx.FINANCE_CONTRACT = carregarScript('js/core/finance-contract.js');
 
   // ES Modules: o que o ctx tem (APP_STORE, ACTIONS, UTILS…) entra como
-  // dublê dos imports; FINANCE_CONTRACT, ORCAMENTO e os vizinhos do DADOS que
-  // este teste nunca teve (cifragem, IndexedDB, fila, modais) ficam ausentes.
-  ['FINANCE_CONTRACT', 'ORCAMENTO', 'LOCAL_CRYPTO', 'IDB_KV', 'PERSIST_QUEUE', 'SESSION_LOG', 'INIT_MODALS']
+  // dublê dos imports; ORCAMENTO e os vizinhos do DADOS que este teste nunca
+  // teve (cifragem, IndexedDB, fila, modais, billing) ficam ausentes.
+  ['ORCAMENTO', 'LOCAL_CRYPTO', 'IDB_KV', 'PERSIST_QUEUE', 'SESSION_LOG', 'INIT_MODALS', 'BILLING']
     .forEach((nome) => { ctx[nome] = undefined; });
-  rodarNoContexto(ctx, path.join(__dirname, '..', 'js', 'core', 'sync-engine.js'));
-  // O sync-engine importa o DADOS (que traz o cliente Express): já carregou.
   rodarNoContexto(ctx, path.join(__dirname, '..', 'js', 'core', 'dados.js'));
   const D = ctx.DADOS;
-  D._apiBaseUrl = () => 'http://localhost:4000';
-  ctx.SYNC_ENGINE._storage = mockLs;
-  return { D, storage: mockLs, SYNC_ENGINE: ctx.SYNC_ENGINE };
+  // Transporte de nuvem gravado: o que o supabase-sync receberia.
+  const enviados = [];
+  ['_pushTransacaoApi', '_deleteTransacaoApi', '_pushContasApi', '_pushConfigApi'].forEach((nome) => {
+    D[nome] = (arg) => { enviados.push({ nome, arg }); return Promise.resolve(arg); };
+  });
+  return { D, storage: mockLs, enviados };
 }
 
 describe('DADOS — merge seguro (Fase 1)', () => {
@@ -74,17 +78,17 @@ describe('DADOS — merge seguro (Fase 1)', () => {
     expect(txs.some((t) => t.descricao === 'Remoto')).toBe(true);
   });
 
-  test('getTransacoes oculta tombstones locais', () => {
-    const { D } = loadDados();
-    D.salvarTransacao({ id: '3f2504e0-4f89-41d3-9a0c-0305e82c3301', tipo: 'despesa', valor: 1, descricao: 'x', categoria: 'outro', data: '2026-07-09' });
-    D.deletarTransacao('3f2504e0-4f89-41d3-9a0c-0305e82c3301');
+  test('excluir lançamento tira do aparelho e manda a exclusão para a nuvem', () => {
+    const { D, enviados } = loadDados();
+    D.salvarTransacao({ id: 'tx-1', tipo: 'despesa', valor: 1, descricao: 'x', categoria: 'outro', data: '2026-07-09' });
+    expect(D.deletarTransacao('tx-1')).toBe(true);
     expect(D.getTransacoes()).toHaveLength(0);
-    expect(D.getTransacoesRaw().some((t) => t.deletedAt)).toBe(true);
+    expect(enviados.map((e) => e.nome)).toEqual(['_pushTransacaoApi', '_deleteTransacaoApi']);
+    expect(enviados[1].arg).toBe('tx-1');
   });
 
   test('snapshot remoto não substitui contas locais inteiras', () => {
     const { D } = loadDados();
-    D._apiBaseUrl = () => '';
     D.upsertConta({
       id: '3f2504e0-4f89-41d3-9a0c-0305e82c3302',
       nome: 'Poupança local',
@@ -112,13 +116,32 @@ describe('DADOS — merge seguro (Fase 1)', () => {
     expect(contas.some((c) => c.nome === 'Conta remota')).toBe(true);
   });
 
-  test('upsertOrcamento enfileira no outbox sync v2', () => {
-    const { D, storage } = loadDados();
+  test('orçamento vive no config e sobe com ele', () => {
+    const { D, enviados } = loadDados();
     D.upsertOrcamento('alimentacao', 500);
     const cfg = D.getConfig();
     expect(cfg.orcamentos.alimentacao.limite).toBe(500);
     expect(cfg.orcamentos.alimentacao.id).toBeTruthy();
-    const outbox = JSON.parse(storage.getItem('fp-outbox') || '[]');
-    expect(outbox.some((m) => m.entity === 'budget' && m.op === 'upsert')).toBe(true);
+    const config = enviados.filter((e) => e.nome === '_pushConfigApi').pop();
+    expect(config.arg.orcamentos.alimentacao.limite).toBe(500);
+  });
+
+  test('snapshot com orçamentos mescla por id, sem apagar os locais que a nuvem não tem', () => {
+    const { D } = loadDados();
+    D.upsertOrcamento('lazer', 200);
+    D._mergeSnapshotLocal({
+      budgets: [{ id: 'b-nuvem', category: 'alimentacao', limit: 800, period: 'monthly', updatedAt: '2026-07-09T12:00:00.000Z' }],
+    });
+    const orc = D.getConfig().orcamentos;
+    expect(orc.alimentacao.limite).toBe(800);
+    expect(orc.lazer.limite).toBe(200);
+  });
+
+  test('snapshot vazio ou ausente não mexe em nada', () => {
+    const { D } = loadDados();
+    D.salvarTransacao({ id: 'tx-1', tipo: 'despesa', valor: 1, descricao: 'x', categoria: 'outro', data: '2026-07-09' });
+    D._mergeSnapshotLocal(null);
+    D._mergeSnapshotLocal('x');
+    expect(D.getTransacoes()).toHaveLength(1);
   });
 });

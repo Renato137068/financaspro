@@ -26,21 +26,27 @@ Object.assign(BILLING, {
   },
 
   isCloudUser: function() {
-    if (typeof DADOS === 'undefined') return false;
-    if (DADOS._supabaseAtivo && DADOS._supabaseAtivo()) {
-      return !!(typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.getSessionSync
-        && SUPA_AUTH.getSessionSync() && SUPA_AUTH.getSessionSync().user);
-    }
-    return DADOS._apiAtiva && DADOS._apiAtiva()
-      && DADOS.getSessao && DADOS.getSessao().user;
+    if (typeof DADOS === 'undefined' || !DADOS._supabaseAtivo || !DADOS._supabaseAtivo()) return false;
+    return !!(typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.getSessionSync
+      && SUPA_AUTH.getSessionSync() && SUPA_AUTH.getSessionSync().user);
   },
 
-  /** Path canônico no APK/web cloud: Edge Functions via SUPA_BILLING. */
+  /**
+   * A cobrança na nuvem é só pelo Supabase (Edge Functions via SUPA_BILLING).
+   * O caminho pela API Express saiu com ela (ADR 0007).
+   */
   _useSupabaseBilling: function() {
     return typeof DADOS !== 'undefined'
       && DADOS._supabaseAtivo && DADOS._supabaseAtivo()
       && typeof SUPA_BILLING !== 'undefined'
       && SUPA_BILLING.isActive && SUPA_BILLING.isActive();
+  },
+
+  /** Erro das operações de nuvem quando o Supabase não está ativo (modo local). */
+  _semNuvem: function() {
+    var err = new Error('Nuvem indisponível: entre na sua conta para usar a assinatura.');
+    err.code = 'nuvem-indisponivel';
+    return err;
   },
 
   _ENTITLEMENT_KEY: 'fp-entitlement-v1',

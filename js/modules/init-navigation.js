@@ -175,11 +175,6 @@ const INIT_NAVIGATION = {
       'billing-portal': true,
       'billing-cancelar': true,
       'billing-reativar': true,
-      'of-fechar': true,
-      'of-conectar-sandbox': true,
-      'of-conectar-belvo': true,
-      'of-sync': true,
-      'of-desconectar': true,
       'ordenar': true,
       'ordenacao-campo': true,
       'toggle-ordenacao-dir': true,
@@ -337,12 +332,6 @@ const INIT_NAVIGATION = {
           INIT_BILLING.abrirPaywall();
         }
       },
-      'abrir-open-finance': function() {
-        if (typeof DADOS !== 'undefined' && DADOS._nuvemAtiva && !DADOS._nuvemAtiva()) return;
-        if (typeof INIT_OPEN_FINANCE !== 'undefined' && INIT_OPEN_FINANCE.abrir) {
-          INIT_OPEN_FINANCE.abrir();
-        }
-      },
       'limpar-dados': function() { 
         if (typeof CONFIG_USER !== 'undefined' && CONFIG_USER.limparDados) {
           CONFIG_USER.limparDados();
@@ -398,29 +387,14 @@ const INIT_NAVIGATION = {
       + 'Não há como desfazer. Os dados salvos neste aparelho continuam aqui.',
       function() {
         confirmar('Confirma a exclusão definitiva da conta?', function() {
-          var promessa;
-          if (DADOS._supabaseAtivo && DADOS._supabaseAtivo()) {
-            var email = sessao.user.email;
-            var senha = window.prompt('Digite sua senha para confirmar a exclusão da conta:');
-            if (!senha) return;
-            promessa = (typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.reauthWithPassword && SUPA_AUTH.deleteAccount)
-              ? SUPA_AUTH.reauthWithPassword(email, senha).then(function() {
-                return SUPA_AUTH.deleteAccount();
-              })
-              : Promise.reject(new Error('Supabase indisponível'));
-          } else if (DADOS._apiAtiva && DADOS._apiAtiva()) {
-            var senhaApi = window.prompt('Digite sua senha para confirmar a exclusão da conta:');
-            if (!senhaApi) return;
-            promessa = DADOS._apiFetch('/api/v1/users/me', {
-              method: 'DELETE',
-              body: JSON.stringify({ password: senhaApi }),
-            });
-          } else {
-            if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
-              UTILS.mostrarToast('Nuvem indisponível no momento.', 'error');
-            }
-            return;
-          }
+          var email = sessao.user.email;
+          var senha = window.prompt('Digite sua senha para confirmar a exclusão da conta:');
+          if (!senha) return;
+          var promessa = (typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.reauthWithPassword && SUPA_AUTH.deleteAccount)
+            ? SUPA_AUTH.reauthWithPassword(email, senha).then(function() {
+              return SUPA_AUTH.deleteAccount();
+            })
+            : Promise.reject(new Error('Supabase indisponível'));
 
           promessa
             .then(function() {
@@ -491,9 +465,7 @@ const INIT_NAVIGATION = {
           [
             ['BILLING', typeof BILLING !== 'undefined' ? BILLING : null],
             ['INIT_BILLING', typeof INIT_BILLING !== 'undefined' ? INIT_BILLING : null],
-            ['INIT_2FA', typeof INIT_2FA !== 'undefined' ? INIT_2FA : null],
-            ['OPEN_FINANCE', typeof OPEN_FINANCE !== 'undefined' ? OPEN_FINANCE : null],
-            ['INIT_OPEN_FINANCE', typeof INIT_OPEN_FINANCE !== 'undefined' ? INIT_OPEN_FINANCE : null]
+            ['INIT_2FA', typeof INIT_2FA !== 'undefined' ? INIT_2FA : null]
           ].forEach(function(par) {
             var mod = par[1];
             if (!mod || typeof mod.init !== 'function') return;

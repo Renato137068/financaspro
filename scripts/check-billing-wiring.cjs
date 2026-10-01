@@ -105,7 +105,9 @@ mustContain('supabase/functions/_shared/email.ts', /api\.resend\.com/, 'Resend n
 ].forEach(mustExist);
 
 mustContain('js/billing.js', /_useSupabaseBilling/, 'preferência Supabase billing');
-mustContain('js/billing.js', /express-subscribe-disabled/, 'sem subscribe Express no path Supabase');
+// A API Express saiu (ADR 0007): nenhum caminho de cobrança pode voltar a ela.
+mustNotContain('js/billing.js', /\/api\/v1\/|_apiFetch|_apiAtiva/, 'cobrança sem API Express');
+mustNotContain('js/play-billing.js', /\/api\/v1\/|_apiFetch|_apiAtiva/, 'Play sem API Express');
 mustContain('js/billing.js', /org-invite-unavailable/, 'invite sem bypass Edge');
 mustContain('js/modules/init-billing.js', /O Pro cuida do seu mês por você/, 'paywall vende capacidade');
 mustNotContain('js/modules/init-billing.js', /tira os limites/i, 'paywall nao vende remocao de limite');

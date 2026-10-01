@@ -45,20 +45,10 @@ const CONFIG = {
   VERSION: '11.3.18',
   BUILD_MODE: _fpLocal ? 'local' : 'cloud',
 
-  /** Open Finance em produção (Belvo). Enquanto false, o card some do Perfil. */
-  FEATURE_OPEN_FINANCE: false,
-
   STORAGE_TRANSACOES: 'fp-transacoes',
   STORAGE_CONFIG: 'fp-config',
   STORAGE_CONTAS: 'fp-contas',
-  STORAGE_OUTBOX: 'fp-outbox',
-  STORAGE_SYNC_CURSOR: 'fp-sync-cursor',
   STORAGE_APRENDIZADO: 'aprendizado_historico',
-  API_BASE_URL: '',
-  API_FALLBACK_URL: 'http://localhost:4000',
-  API_TOKEN_STORAGE: 'fp-api-token',
-  API_REFRESH_TOKEN_STORAGE: 'fp-refresh-token',
-  API_USER_STORAGE: 'fp-api-user',
 
   // Supabase: vazios = local-first (sem login forçado). Cloud = Play Store.
   SUPABASE_URL: _fpLocal ? '' : _FP_CLOUD_URL,
@@ -212,14 +202,7 @@ const CONFIG = {
     assinaturas: [],
     patrimonio: { ativos: [], dividas: [] },
     openFinance: { connections: [], lastSync: null },
-    syncV2Enabled: true,
   },
-
-  /** Lote de transações por página no pull incremental (espelha backend). */
-  SYNC_DELTA_BATCH_SIZE: 500,
-
-  /** Meses de histórico mantidos no localStorage (resto permanece no servidor). */
-  LOCAL_TX_WINDOW_MONTHS: 24,
 
   MOEDA_FORMATACAO: {
     BRL: { locale: 'pt-BR', currency: 'BRL' },

@@ -116,9 +116,8 @@ describe('OCR desativado no produto', () => {
     expect(life).not.toMatch(/OCR\.init/);
   });
 
-  test('dados._apiAtiva é false em Capacitor nativo', () => {
-    const dados = fs.readFileSync(path.join(root, 'js/core/dados-express.js'), 'utf8');
-    expect(dados).toMatch(/isNativePlatform[\s\S]{0,120}return false/);
+  test('o cliente da API Express saiu do app (ADR 0007)', () => {
+    expect(fs.existsSync(path.join(root, 'js/core/dados-express.js'))).toBe(false);
   });
 
   test('authController não sugere localhost:4000', () => {

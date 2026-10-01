@@ -10,8 +10,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="FinançasPro">
   <meta name="format-detection" content="telephone=no">
-  <!-- CSP: Belvo widget (Open Finance). OCR/Tesseract removidos do produto. -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.belvo.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; connect-src 'self' http://localhost:4000 http://127.0.0.1:4000 https://api.belvo.com https://sandbox.belvo.com https://widget.belvo.io https://nubvlksibmpryltkfpei.supabase.co wss://nubvlksibmpryltkfpei.supabase.co; frame-src https://widget.belvo.io; object-src 'none'; base-uri 'self'; form-action 'self';">
+  <!-- CSP: só o próprio app e o Supabase. Open Finance (Belvo) e a API Express saíram (ADR 0007). -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; connect-src 'self' https://nubvlksibmpryltkfpei.supabase.co wss://nubvlksibmpryltkfpei.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self';">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
   <link rel="icon" href="icons/logo.svg" type="image/svg+xml">

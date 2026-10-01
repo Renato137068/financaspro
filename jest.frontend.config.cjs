@@ -80,10 +80,6 @@ module.exports = {
     // funções ao módulo; as linhas seguem em 100%.
     'js/core/setup-guide.js': { lines: 99, functions: 83, branches: 75 },
     'js/core/sync-merge.js': { lines: 99, functions: 100, branches: 83 },
-    // 30/09: os caminhos de erro (rede, resposta parcial, rejeição, sessão
-    // expirada, fetch que lança) ganharam sync-engine-erros.test.js, que achou
-    // o flush preso em "busy" para sempre. Ramos 46% → 88%.
-    'js/core/sync-engine.js': { lines: 98, functions: 100, branches: 86 },
     // 1º/out: o orquestrador de boot ganhou lifecycle-real.test.js, que achou
     // a falha de módulo crítico sendo engolida (o boot nunca parava). 56% → 94%.
     'js/core/lifecycle.js': { lines: 97, functions: 100, branches: 88 },

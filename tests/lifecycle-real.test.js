@@ -19,7 +19,7 @@ const GLOBAIS = [
   'DOMUTILS', 'DADOS', 'APP_STORE', 'TRANSACOES', 'ORCAMENTO', 'CATEGORIES', 'AUTO_CATEGORIZER', 'EVENT_INIT',
   'INIT_NAVIGATION', 'INIT_FORM', 'INIT_EXTRATO', 'INIT_CONFIG', 'INSIGHT_ACOES', 'INIT_MODALS', 'METAS', 'INIT_METAS',
   'CONTAS_PAGAR', 'INIT_CONTAS_PAGAR', 'ASSINATURAS', 'INIT_ASSINATURAS', 'PATRIMONIO', 'INIT_PATRIMONIO', 'ANEXOS',
-  'INIT_ANEXOS', 'INIT_SIMULADOR', 'BILLING', 'INIT_BILLING', 'INIT_2FA', 'INIT_OPEN_FINANCE', 'RENDER', 'CONFIG_USER',
+  'INIT_ANEXOS', 'INIT_SIMULADOR', 'BILLING', 'INIT_BILLING', 'INIT_2FA', 'RENDER', 'CONFIG_USER',
   'verificarPinAoAbrir', 'RENDER_CORE', 'SHORTCUTS', 'verificarBackupAutomatico', 'SUPA_AUTH', 'setupAuthUI',
   'setupLogoutButton', 'atualizarBarraSessao', 'ONBOARDING', 'RECORRENTES', 'OBS', 'DAILY_REMINDER', 'ALERTAS',
   'PREVISAO', 'INSIGHTS', 'UTILS',
@@ -219,7 +219,7 @@ describe('LIFECYCLE_BOOT.registerDefaults', () => {
     g.DADOS.getConfig.mockReturnValue({ _migracaoPinV2: true });
     ['APP_STORE', 'TRANSACOES', 'ORCAMENTO', 'CATEGORIES', 'AUTO_CATEGORIZER', 'INIT_FORM', 'INIT_EXTRATO', 'INIT_CONFIG',
       'INSIGHT_ACOES', 'INIT_MODALS', 'METAS', 'INIT_METAS', 'INIT_CONTAS_PAGAR', 'ASSINATURAS', 'INIT_ASSINATURAS',
-      'PATRIMONIO', 'INIT_PATRIMONIO', 'ANEXOS', 'INIT_ANEXOS', 'INIT_SIMULADOR', 'INIT_2FA', 'INIT_OPEN_FINANCE',
+      'PATRIMONIO', 'INIT_PATRIMONIO', 'ANEXOS', 'INIT_ANEXOS', 'INIT_SIMULADOR', 'INIT_2FA',
       'RENDER', 'SHORTCUTS', 'ALERTAS', 'PREVISAO'].forEach((n) => spy(n, ['init']));
     spy('EVENT_INIT', ['setup']);
     spy('INIT_NAVIGATION', ['init', 'carregarChunkConta']);
@@ -257,7 +257,7 @@ describe('LIFECYCLE_BOOT.registerDefaults', () => {
     expect(fim.v.failed).toEqual([]);
 
     ['DOMUTILS', 'DADOS', 'APP_STORE', 'TRANSACOES', 'ORCAMENTO', 'CATEGORIES', 'INIT_NAVIGATION', 'INIT_FORM',
-      'INIT_BILLING', 'INIT_OPEN_FINANCE', 'RENDER', 'SHORTCUTS', 'ALERTAS', 'PREVISAO'].forEach((n) => {
+      'INIT_BILLING', 'RENDER', 'SHORTCUTS', 'ALERTAS', 'PREVISAO'].forEach((n) => {
       expect({ n, vezes: g[n].init.mock.calls.length }).toEqual({ n, vezes: 1 });
     });
     expect(g.EVENT_INIT.setup).toHaveBeenCalledTimes(1);

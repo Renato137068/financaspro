@@ -1104,42 +1104,11 @@ function setupAuthUI() {
     return false;
   }
 
-  var sessao = DADOS.getSessao();
-  if (sessao && sessao.user) {
-    if (DADOS._apiAtiva()) {
-      DADOS.validarSessaoApi().then(function(ok) {
-        if (ok && _authEstaDesbloqueado()) {
-          _fecharAuthOverlay(overlay);
-        } else if (ok) {
-          _abrirAuthOverlay(overlay);
-          _mostrarDesbloqueioSessao();
-        } else {
-          _abrirAuthOverlay(overlay);
-          showTab('login');
-        }
-        atualizarBarraSessao();
-      });
-      return false;
-    }
-    _fecharAuthOverlay(overlay);
-    showTab('login');
-    atualizarBarraSessao();
-    return true;
-  }
-
-  if (!DADOS._apiAtiva()) {
-    _fecharAuthOverlay(overlay);
-    showTab('login');
-    atualizarBarraSessao();
-    return true;
-  }
-
-  _abrirAuthOverlay(overlay);
+  // Sem Supabase (build local) não há conta: o app abre direto.
+  _fecharAuthOverlay(overlay);
   showTab('login');
   atualizarBarraSessao();
-  setupLogoutButton();
-  _atualizarBotaoSairAuth();
-  return false;
+  return true;
 }
 
 /** Ao voltar do background, pede senha/biometria de novo (estilo app bancário). */
