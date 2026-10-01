@@ -127,6 +127,10 @@ troca de pessoa e passa mais confiança.
 
 ## 8. URLs públicas
 
+Se a versão web ainda não está publicada (ou estava no servidor Express),
+siga antes `docs/release/hospedagem-web.md`: Cloudflare Pages, domínio
+`app.financaspro.com` e as URLs do Supabase Auth apontando para ele.
+
 De uma máquina com internet: `npm run check:pre-beta`. Ele confere o
 alcance do projeto Supabase, os segredos de billing, o `assetlinks.json` e a
 política de privacidade publicados. Daqui (rede do agente) esses itens

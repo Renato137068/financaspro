@@ -82,6 +82,9 @@ if (fs.existsSync(path.join(root, 'celular.html'))) {
 if (fs.existsSync(path.join(root, '.well-known'))) {
   copyRecursive(path.join(root, '.well-known'), path.join(dist, '.well-known'));
 }
+// Cabeçalhos de segurança e cache da hospedagem estática (Cloudflare Pages ou
+// Netlify leem dist/_headers). Ver docs/release/hospedagem-web.md.
+copyFileSafe(path.join(root, 'config', 'hospedagem', '_headers'), path.join(dist, '_headers'));
 
 copyScreenshots();
 
