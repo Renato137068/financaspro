@@ -2,7 +2,6 @@
  * extrato-audit.test.js — regressões da auditoria da aba Extrato
  * @jest-environment jsdom
  */
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const { rodarIsolado } = require('./helpers/esm-como-script.cjs');
