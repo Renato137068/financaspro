@@ -9,12 +9,15 @@
  */
 const { subirApp } = require('./helpers/app-jsdom.cjs');
 const { gestos, tique } = require('./helpers/ui-app.cjs');
+// Os lançamentos de exemplo são de setembro de 2026 e o dashboard mostra o mês
+// corrente: sem relógio fixo, a suíte quebrava na virada do mês (1º/10).
+const AGORA = '2026-09-20T12:00:00.000-03:00';
 
 let app;
 afterEach(() => { if (app) app.fechar(); app = null; });
 
 async function abrirGastosFixos(opts) {
-  app = await subirApp(opts || {});
+  app = await subirApp({ agora: AGORA, ...(opts || {}) });
   const g = gestos(app);
   g.w.mudarAba('orcamento');
   await app.esperar(() => g.d.querySelector('[data-orc-sub="assinaturas"]'));
@@ -37,7 +40,7 @@ async function novaAssinatura(g, { nome, valor, dia }) {
 }
 
 test('sem assinaturas: estado vazio com o botão de adicionar, e o chunk só chega ao abrir a sub-aba', async () => {
-  app = await subirApp();
+  app = await subirApp({ agora: AGORA });
   expect(app.window.INIT_ASSINATURAS).toBeUndefined();
   app.fechar();
   const g = await abrirGastosFixos();

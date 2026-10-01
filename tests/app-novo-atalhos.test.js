@@ -7,6 +7,9 @@
  * trechos de init-form.js sem teste que exercitasse o comportamento.
  */
 const { subirApp } = require('./helpers/app-jsdom.cjs');
+// Os lançamentos de exemplo são de setembro de 2026 e o dashboard mostra o mês
+// corrente: sem relógio fixo, a suíte quebrava na virada do mês (1º/10).
+const AGORA = '2026-09-20T12:00:00.000-03:00';
 
 let app;
 afterEach(() => { if (app) app.fechar(); app = null; });
@@ -30,7 +33,7 @@ const lancamentos = () => app.window.DADOS.getTransacoes();
 
 describe('entrada rápida', () => {
   test('uma frase preenche valor, descrição e categoria do formulário', async () => {
-    app = await subirApp();
+    app = await subirApp({ agora: AGORA });
     app.window.mudarAba('novo');
     const frase = $('entrada-rapida-input');
 
@@ -47,7 +50,7 @@ describe('entrada rápida', () => {
   });
 
   test('o botão faz o mesmo que o Enter; Esc limpa e esconde o aviso', async () => {
-    app = await subirApp();
+    app = await subirApp({ agora: AGORA });
     app.window.mudarAba('novo');
     const frase = $('entrada-rapida-input');
 
@@ -63,7 +66,7 @@ describe('entrada rápida', () => {
   });
 
   test('frase curta demais: explica o formato em vez de preencher', async () => {
-    app = await subirApp();
+    app = await subirApp({ agora: AGORA });
     app.window.mudarAba('novo');
     const frase = $('entrada-rapida-input');
 
@@ -79,7 +82,7 @@ describe('entrada rápida', () => {
 describe('lançamento rápido', () => {
   test('o chip de um lançamento frequente preenche o formulário inteiro', async () => {
     const uber = (id, data) => ({ id, tipo: 'despesa', valor: 25, categoria: 'transporte', data, descricao: 'Uber' });
-    app = await subirApp({ transacoes: [uber('u1', '2026-09-01'), uber('u2', '2026-09-08'), uber('u3', '2026-09-15')] });
+    app = await subirApp({ agora: AGORA, transacoes: [uber('u1', '2026-09-01'), uber('u2', '2026-09-08'), uber('u3', '2026-09-15')] });
     app.window.mudarAba('novo');
 
     expect(await app.esperar(() => app.document.querySelector('#quick-entries .quick-chip'))).toBe(true);
@@ -98,7 +101,7 @@ describe('trocar a categoria sugerida', () => {
   // trocava de volta a categoria escolhida à mão: a tela dizia "Categoria
   // final: Lazer" e o lançamento era gravado como Alimentação.
   test('a escolha manual vale no lançamento e ensina a próxima sugestão', async () => {
-    app = await subirApp();
+    app = await subirApp({ agora: AGORA });
     app.window.mudarAba('novo');
     const correcoes = [];
     const aprendizado = app.global('APRENDIZADO');

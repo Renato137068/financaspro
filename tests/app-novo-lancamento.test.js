@@ -8,6 +8,9 @@
  * de erro. Nada de dublê para o formulário, o DADOS ou o render.
  */
 const { subirApp } = require('./helpers/app-jsdom.cjs');
+// Os lançamentos de exemplo são de setembro de 2026 e o dashboard mostra o mês
+// corrente: sem relógio fixo, a suíte quebrava na virada do mês (1º/10).
+const AGORA = '2026-09-20T12:00:00.000-03:00';
 
 const SALARIO = { id: 's1', tipo: 'receita', valor: 5000, categoria: 'salario', data: '2026-09-01', descricao: 'Salário' };
 
@@ -38,7 +41,7 @@ function lancamentos() {
 
 describe('Novo lançamento', () => {
   test('despesa com descrição conhecida é salva com a categoria deduzida e baixa o saldo', async () => {
-    app = await subirApp({ transacoes: [SALARIO] });
+    app = await subirApp({ agora: AGORA, transacoes: [SALARIO] });
     expect(saldoDoMes()).toMatch(/R\$ 5\.000,00/);
 
     app.window.mudarAba('novo');
@@ -56,7 +59,7 @@ describe('Novo lançamento', () => {
   });
 
   test('receita: o botão Receita muda o tipo gravado', async () => {
-    app = await subirApp();
+    app = await subirApp({ agora: AGORA });
     app.window.mudarAba('novo');
     app.document.querySelector('#form-transacao .tipo-btn[data-tipo="receita"]').click();
     digitar(app.document.getElementById('novo-valor'), '1.200,00');
@@ -68,7 +71,7 @@ describe('Novo lançamento', () => {
   });
 
   test('sem valor: nada é gravado e o usuário vê o motivo', async () => {
-    app = await subirApp({ transacoes: [SALARIO] });
+    app = await subirApp({ agora: AGORA, transacoes: [SALARIO] });
     app.window.mudarAba('novo');
     digitar(app.document.getElementById('novo-descricao'), 'Mercado');
     enviar();
@@ -79,7 +82,7 @@ describe('Novo lançamento', () => {
   });
 
   test('dois envios seguidos não duplicam o lançamento', async () => {
-    app = await subirApp();
+    app = await subirApp({ agora: AGORA });
     app.window.mudarAba('novo');
     digitar(app.document.getElementById('novo-valor'), '15,00');
     digitar(app.document.getElementById('novo-descricao'), 'Uber');
@@ -93,7 +96,7 @@ describe('Novo lançamento', () => {
   });
 
   test('centavos não se perdem na soma do dashboard', async () => {
-    app = await subirApp({ transacoes: [SALARIO] });
+    app = await subirApp({ agora: AGORA, transacoes: [SALARIO] });
     for (const v of ['0,10', '0,20']) {
       app.window.mudarAba('novo');
       digitar(app.document.getElementById('novo-valor'), v);
