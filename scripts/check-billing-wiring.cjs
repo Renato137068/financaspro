@@ -11,6 +11,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { fonteComPartes } = require('./lib/fonte-com-partes.cjs');
 
 const root = path.join(__dirname, '..');
 const fails = [];
@@ -21,7 +22,8 @@ function read(rel) {
     fails.push('ausente: ' + rel);
     return '';
   }
-  return fs.readFileSync(p, 'utf8');
+  // Fachada + partes: js/billing.js importa js/billing/*.js.
+  return fonteComPartes(p);
 }
 
 function mustContain(rel, re, label) {
@@ -72,8 +74,10 @@ mustContain('js/billing.js', /maxUsers:\s*2/, 'PRO maxUsers=2');
 mustContain('js/modules/init-billing.js', /SHOW_BUSINESS_PLAN:\s*false/, 'Business fora do paywall');
 {
   const plans = read('js/billing.js');
-  const staticBlock = plans.slice(plans.indexOf('STATIC_PLANS:'), plans.indexOf('init: function'));
-  if (/tier:\s*'BUSINESS'/.test(staticBlock)) {
+  const inicio = plans.indexOf('STATIC_PLANS:');
+  const staticBlock = inicio < 0 ? '' : plans.slice(inicio, plans.indexOf('\n  ],', inicio));
+  if (!staticBlock) fails.push('STATIC_PLANS não encontrado em js/billing.js nem nas partes');
+  else if (/tier:\s*'BUSINESS'/.test(staticBlock)) {
     fails.push('STATIC_PLANS ainda inclui Business na vitrine');
   }
 }

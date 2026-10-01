@@ -25,6 +25,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
+const { fonteComPartes } = require('./lib/fonte-com-partes.cjs');
 
 const RAIZ = path.join(__dirname, '..');
 const APP_URL = (process.env.FP_APP_URL || 'https://app.financaspro.com').replace(/\/$/, '');
@@ -580,7 +581,7 @@ async function main() {
 
 function conferirCancelPorFonte() {
   secao('1b. Billing — cancel/resume por fonte');
-  const billing = fs.readFileSync(path.join(RAIZ, 'js/billing.js'), 'utf8');
+  const billing = fonteComPartes(path.join(RAIZ, 'js/billing.js'));
   if (!/isPlayManaged:\s*function/.test(billing)) {
     falha('faltou BILLING.isPlayManaged', 'rotear cancel/resume/portal pela chave play:');
     return;
