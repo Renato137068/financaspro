@@ -7,6 +7,17 @@ module.exports = defineConfig({
   // 0005) IS a Vite entry: it and its imports become js/index-<hash>.js.
   // Heavy features load on demand: ES Module chunks via import() in
   // js/core/lazy-load.js (Vite splits them into js/<chunk>-<hash>.js).
+  //
+  // Vite 8 (Rolldown) foi tentado em 1º/out/2026 e adiado: ele tira o código
+  // que o boot divide com os chunks sob demanda para um chunk comum à parte
+  // (js/config-<hash>.js, ~168 KB) que a entrada importa estaticamente. Esse
+  // arquivo fica fora do precache do sw.js (generate-sw-cache.cjs só conhece
+  // index-*.js) e do orçamento, e o boot ficava 10–12 KB maior (484–486 KB
+  // contra o teto de 478) com terser ou com o minificador padrão.
+  // preserveEntrySignatures: false e experimentalInlineCommonChunks não
+  // juntaram o chunk de volta. Para migrar: precache e orçamento seguindo os
+  // imports estáticos da entrada, <link rel="modulepreload"> para eles e
+  // cssMinify: 'esbuild' (o Lightning CSS deixou o CSS 6 KB maior).
   root: '.',
   base: '/',
 
