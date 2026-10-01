@@ -23,7 +23,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const { ehModulo, converter, executarModulo, nomesDoGrafo } = require('./esm-como-script.cjs');
+const { ehModulo, converter, executarModulo, nomesDoGrafo, pastaDasPartes } = require('./esm-como-script.cjs');
 
 const ROOT = path.join(__dirname, '..', '..');
 
@@ -93,22 +93,33 @@ function viaGlobal(...nomes) {
 /**
  * viaGlobal para todos os imports diretos do módulo: o teste troca global.X
  * a cada caso, como fazia com o script clássico. Import de função (declarada
- * com `function` no módulo de origem) vira função que repassa a chamada.
+ * com `function` no módulo de origem) vira função que repassa a chamada. As
+ * partes do módulo que moram numa subpasta dele entram de verdade.
  *   carregarScript('js/modules/init-extrato.js', viaGlobalDosImports('js/modules/init-extrato.js'))
  */
 function viaGlobalDosImports(rel) {
   const arquivo = path.join(ROOT, rel);
+  // Partes do módulo na pasta com o nome dele (js/modules/extrato/ do init-extrato.js)
+  // carregam de verdade; o dublê vale para o que elas importam de fora.
+  const familia = pastaDasPartes(arquivo);
+  const ehParte = (f) => f.startsWith(familia);
   const extras = {};
-  for (const dep of converter(fs.readFileSync(arquivo, 'utf8'), arquivo).importa) {
-    const origem = fs.readFileSync(dep.arquivo, 'utf8');
-    for (const { importado, local } of dep.nomes) {
-      if (new RegExp('^function\\s+' + importado + '\\b', 'm').test(origem)) {
-        extras[local] = function() { return globalThis[local].apply(this, arguments); };
-      } else {
-        Object.assign(extras, viaGlobal(local));
+  const vistos = new Set();
+  (function visitar(arq) {
+    if (vistos.has(arq)) return;
+    vistos.add(arq);
+    for (const dep of converter(fs.readFileSync(arq, 'utf8'), arq).importa) {
+      if (ehParte(dep.arquivo)) { visitar(dep.arquivo); continue; }
+      const origem = fs.readFileSync(dep.arquivo, 'utf8');
+      for (const { importado, local } of dep.nomes) {
+        if (new RegExp('^function\\s+' + importado + '\\b', 'm').test(origem)) {
+          extras[local] = function() { return globalThis[local].apply(this, arguments); };
+        } else {
+          Object.assign(extras, viaGlobal(local));
+        }
       }
     }
-  }
+  })(arquivo);
   return extras;
 }
 

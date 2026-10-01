@@ -48,8 +48,7 @@ function carregarModulo() {
   sandbox.globalThis = sandbox;
   var ctx = vm.createContext(sandbox);
   // ES Module: o sandbox é o dublê dos imports; o que falta fica ausente.
-  rodarIsolado(ctx, path.join(root, 'js', 'modules', 'init-extrato.js'));
-  var mod = sandbox.INIT_EXTRATO || ctx.INIT_EXTRATO;
+  var mod = rodarIsolado(ctx, path.join(root, 'js', 'modules', 'init-extrato.js')).INIT_EXTRATO;
   mod.editarTransacao = function(id) { editCalls.push(id); };
   mod._carregarMais = function() {};
   mod.getCatIcon = function() { return ''; };

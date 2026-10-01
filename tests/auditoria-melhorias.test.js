@@ -10,7 +10,8 @@ const { indexComTelas } = require('./helpers/index-com-telas.cjs');
 const root = path.join(__dirname, '..');
 const html = indexComTelas();
 const dadosSrc = fs.readFileSync(path.join(root, 'js', 'core', 'dados.js'), 'utf8');
-const extratoSrc = fs.readFileSync(path.join(root, 'js', 'modules', 'init-extrato.js'), 'utf8');
+// init-extrato.js e as partes em js/modules/extrato/.
+const extratoSrc = require('./helpers/esm-como-script.cjs').fonteComPartes(path.join(root, 'js', 'modules', 'init-extrato.js'));
 const navSrc = fs.readFileSync(path.join(root, 'js', 'modules', 'init-navigation.js'), 'utf8');
 const dashSrc = fs.readFileSync(path.join(root, 'js', 'render-dashboard.js'), 'utf8');
 

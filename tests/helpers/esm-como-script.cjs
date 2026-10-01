@@ -311,14 +311,54 @@ function rodarNoContexto(ctx, arquivo) {
  * faltavam ao script clássico. Nenhum módulo real além dele roda. Para testes
  * que montam um contexto mínimo à mão (antes `vm.runInContext` do arquivo).
  */
+/**
+ * Pasta das partes de um módulo dividido: js/modules/init-extrato.js →
+ * js/modules/extrato/. Só ela entra de verdade nos carregadores isolados.
+ */
+function pastaDasPartes(arquivo) {
+  return path.join(path.dirname(arquivo), path.basename(arquivo, '.js').replace(/^init-/, '')) + path.sep;
+}
+
 function rodarIsolado(ctx, arquivo) {
+  // Partes do módulo na pasta com o nome dele (js/modules/extrato/ do init-extrato.js)
+  // rodam de verdade; o isolamento vale para o que elas importam de fora.
+  const familia = pastaDasPartes(arquivo);
+  const ehParte = (f) => f.startsWith(familia);
   const mocks = {};
-  for (const dep of converter(fs.readFileSync(arquivo, 'utf8'), arquivo).importa) {
-    for (const { importado, local } of dep.nomes) {
-      mocks[importado] = Object.prototype.hasOwnProperty.call(ctx, local) ? ctx[local] : undefined;
+  const vistos = new Set();
+  (function visitar(arq) {
+    if (vistos.has(arq)) return;
+    vistos.add(arq);
+    for (const dep of converter(fs.readFileSync(arq, 'utf8'), arq).importa) {
+      if (ehParte(dep.arquivo)) { visitar(dep.arquivo); continue; }
+      for (const { importado, local } of dep.nomes) {
+        mocks[importado] = Object.prototype.hasOwnProperty.call(ctx, local) ? ctx[local] : undefined;
+      }
     }
-  }
+  })(arquivo);
   return executarModulo(ctx, arquivo, undefined, mocks);
 }
 
-module.exports = { ehModulo, converter, executarModulo, nomesDoGrafo, rodarNoContexto, rodarIsolado };
+/**
+ * Texto do módulo mais o das partes que moram numa subpasta dele (as que ele
+ * importa, na ordem do import), para os testes que conferem o fonte.
+ */
+function fonteComPartes(arquivo) {
+  const familia = pastaDasPartes(arquivo);
+  const ehParte = (f) => f.startsWith(familia);
+  const vistos = new Set();
+  const textos = [];
+  (function visitar(arq) {
+    if (vistos.has(arq)) return;
+    vistos.add(arq);
+    const codigo = fs.readFileSync(arq, 'utf8');
+    textos.push(codigo);
+    for (const m of codigo.matchAll(/^import\s+(?:[^'"]*?from\s+)?['"](\.[^'"]+)['"]/gm)) {
+      const dep = path.resolve(path.dirname(arq), m[1]);
+      if (ehParte(dep)) visitar(dep);
+    }
+  })(arquivo);
+  return textos.join('\n');
+}
+
+module.exports = { ehModulo, converter, executarModulo, nomesDoGrafo, rodarNoContexto, rodarIsolado, fonteComPartes, pastaDasPartes };

@@ -9,7 +9,8 @@ const { rodarIsolado } = require('./helpers/esm-como-script.cjs');
 const { indexComTelas } = require('./helpers/index-com-telas.cjs');
 
 const root = path.join(__dirname, '..');
-const extratoSrc = fs.readFileSync(path.join(root, 'js', 'modules', 'init-extrato.js'), 'utf8');
+// init-extrato.js e as partes em js/modules/extrato/.
+const extratoSrc = require('./helpers/esm-como-script.cjs').fonteComPartes(path.join(root, 'js', 'modules', 'init-extrato.js'));
 const html = indexComTelas();
 
 function carregarExtrato(extra) {
@@ -55,8 +56,7 @@ function carregarExtrato(extra) {
   }, extra || {});
   sandbox.globalThis = sandbox;
   // ES Module: o sandbox é o dublê dos imports; o que falta fica ausente.
-  rodarIsolado(vm.createContext(sandbox), path.join(root, 'js', 'modules', 'init-extrato.js'));
-  var mod = sandbox.INIT_EXTRATO;
+  var mod = rodarIsolado(vm.createContext(sandbox), path.join(root, 'js', 'modules', 'init-extrato.js')).INIT_EXTRATO;
   mod.getCatIcon = function() { return ''; };
   mod.getCatCor = function() { return '#000'; };
   return mod;
