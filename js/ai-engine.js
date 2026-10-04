@@ -143,7 +143,11 @@ const AI_ENGINE = {
     // peso na média ponderada. O modelo projeta a partir de meses COMPLETOS; o
     // mês atual tem a sua própria conta, em projetarFimMes.
     var mesAtual = hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0');
-    var chaves = Object.keys(agregado).sort().filter(function(k) { return k !== mesAtual; });
+    // E só os meses que JÁ passaram: o formulário grava cada parcela de uma
+    // compra parcelada com a data do seu mês, então há meses futuros só com
+    // parcelas. Com eles na janela, a previsão de quem parcela saía com
+    // receita zero e saldo negativo nos próximos meses.
+    var chaves = Object.keys(agregado).sort().filter(function(k) { return k < mesAtual; });
 
     if (chaves.length < 2) {
       return { meses: [], tendencia: 'insuficiente', taxaPoupancaMedia: 0, historico: [] };

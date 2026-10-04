@@ -188,6 +188,20 @@ describe('AI_ENGINE.prever — ignora o mês em curso', () => {
     expect(comParcial.tendencia).toBe(semParcial.tendencia);
   });
 
+  test('meses futuros só com parcelas não entram no histórico', () => {
+    // O formulário grava cada parcela já com a data do seu mês. Esses meses
+    // futuros não têm receita; na janela, derrubavam a previsão para receita
+    // zero e saldo negativo.
+    const parcelas = ['2026-06', '2026-07', '2026-08', '2026-09', '2026-10', '2026-11'].map(function(k, i) {
+      return { tipo: 'despesa', valor: 300, data: k + '-04', categoria: 'compras', descricao: 'Geladeira (' + (i + 2) + '/7)' };
+    });
+    const r = AI.prever(completos.concat(parcial, parcelas), 3, hoje);
+    const keys = r.historico.map(function(h) { return h.mesKey; });
+    expect(keys).toEqual(['2026-01', '2026-02', '2026-03', '2026-04']);
+    expect(r.meses.length).toBe(3);
+    r.meses.forEach(function(m) { expect(m.receitaEstimada).toBeGreaterThan(4000); });
+  });
+
   test('só 1 mês completo (+ mês corrente parcial) => insuficiente', () => {
     const r = AI.prever(mes('2026-04', 5000, 3000).concat(parcial), 3, hoje);
     expect(r.tendencia).toBe('insuficiente');
