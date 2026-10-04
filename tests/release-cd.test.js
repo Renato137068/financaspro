@@ -188,3 +188,26 @@ describe('roteiro para ligar a operação (docs/release/ligar-operacao.md)', () 
     expect(ler('docs/release/entrega-continua.md')).toContain('(ligar-operacao.md)');
   });
 });
+
+describe('Novidades da versão na loja', () => {
+  const pasta = path.join(ROOT, 'distribution/whatsnew');
+
+  test('o release envia a pasta para a Play', () => {
+    expect(workflow).toMatch(/whatsNewDirectory:\s*distribution\/whatsnew/);
+  });
+
+  test('há texto em português, dentro do limite de 500 caracteres da loja', () => {
+    const texto = fs.readFileSync(path.join(pasta, 'whatsnew-pt-BR'), 'utf8').trim();
+    expect(texto.length).toBeGreaterThan(40);
+    expect(texto.length).toBeLessThanOrEqual(500);
+  });
+
+  test('só arquivos whatsnew-<idioma>, que é o que a ação lê', () => {
+    fs.readdirSync(pasta).forEach((f) => expect(f).toMatch(/^whatsnew-[a-z]{2}(-[A-Z]{2})?$/));
+  });
+
+  test('fala com quem usa, não em termo de commit', () => {
+    const texto = fs.readFileSync(path.join(pasta, 'whatsnew-pt-BR'), 'utf8');
+    expect(texto).not.toMatch(/\b(fix|feat|chore|refactor)\(|\bcommit\b|\bbug\b/i);
+  });
+});
