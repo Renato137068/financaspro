@@ -38,6 +38,9 @@ e o retorno do Stripe usam.
 - `https://app.financaspro.com/.well-known/assetlinks.json` responde JSON
   (sem redirecionar para `index.html`);
 - `https://app.financaspro.com/privacidade.html#exclusao-de-conta` abre;
+- `https://app.financaspro.com/sobre.html` abre a página do app (é o site
+  informado na ficha da Play) e `https://app.financaspro.com/sitemap.xml`
+  lista as páginas; envie o sitemap no Google Search Console;
 - `curl -sI https://app.financaspro.com/ | grep -i -E 'strict-transport|x-frame|frame-ancestors'`
   mostra os três cabeçalhos.
 

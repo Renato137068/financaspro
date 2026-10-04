@@ -82,11 +82,27 @@ if (fs.existsSync(path.join(root, 'celular.html'))) {
 if (fs.existsSync(path.join(root, '.well-known'))) {
   copyRecursive(path.join(root, '.well-known'), path.join(dist, '.well-known'));
 }
+// Página do app e artigos (site/): estáticos, sem JavaScript, fora do app.
+// As páginas vão para a raiz (/sobre.html, /artigos/…, /robots.txt,
+// /sitemap.xml); o CSS e as imagens delas, para /site/.
+copiarSite();
+
 // Cabeçalhos de segurança e cache da hospedagem estática (Cloudflare Pages ou
 // Netlify leem dist/_headers). Ver docs/release/hospedagem-web.md.
 copyFileSafe(path.join(root, 'config', 'hospedagem', '_headers'), path.join(dist, '_headers'));
 
 copyScreenshots();
+
+function copiarSite() {
+  var site = path.join(root, 'site');
+  if (!fs.existsSync(site)) return;
+  ['sobre.html', 'robots.txt', 'sitemap.xml'].forEach(function(nome) {
+    if (fs.existsSync(path.join(site, nome))) copyFileSafe(path.join(site, nome), path.join(dist, nome));
+  });
+  copyRecursive(path.join(site, 'artigos'), path.join(dist, 'artigos'));
+  copyFileSafe(path.join(site, 'estilo.css'), path.join(dist, 'site', 'estilo.css'));
+  copyRecursive(path.join(site, 'img'), path.join(dist, 'site', 'img'));
+}
 
 function patchIndexHtml(filePath) {
   if (!fs.existsSync(filePath)) return;

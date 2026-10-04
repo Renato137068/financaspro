@@ -14,7 +14,7 @@ Página principal da loja*.
 - **Categoria**: Finanças
 - **Tags**: finanças pessoais, controle de gastos, orçamento, metas
 - **E-mail de contato**: (o e-mail do desenvolvedor — o mesmo da política de privacidade)
-- **Site**: `https://app.financaspro.com` (depois da hospedagem, `docs/release/hospedagem-web.md`)
+- **Site**: `https://app.financaspro.com/sobre.html` (página do app, em `site/`; no ar depois da hospedagem, `docs/release/hospedagem-web.md`)
 - **Política de privacidade (URL)**: `https://app.financaspro.com/privacidade.html`
 
 ## Assinatura da marca

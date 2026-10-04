@@ -44,3 +44,8 @@
 /.well-known/assetlinks.json
   Content-Type: application/json
   Cache-Control: public, max-age=3600
+
+# Página do app e artigos (site/ no repositório): CSS e imagens sem hash no
+# nome, então um dia de cache, não um ano.
+/site/*
+  Cache-Control: public, max-age=86400
