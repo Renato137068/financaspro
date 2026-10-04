@@ -4,6 +4,7 @@
  * Gera em docs/play-store/vitrine/:
  *   01..08-*.png        capturas de celular 1080×1920, uma frase de benefício
  *                       no topo e o app de verdade num aparelho abaixo;
+ *   tablet/01..08-*.png as mesmas oito em tablet de 7" (1200×1920);
  *   destaque-1024x500.png  gráfico de destaque (feature graphic).
  *
  * O roteiro das oito telas é o da auditoria de ASO de 04/out
@@ -32,8 +33,15 @@ const saida = path.join(root, 'docs', 'play-store', 'vitrine');
 const PORTA = 4398;
 const BASE = 'http://127.0.0.1:' + PORTA + '/?offline=1';
 
-/** Tela do aparelho em px de CSS; sai em 3× (1080 de largura). */
-const TELA = { largura: 360, altura: 640, escala: 3 };
+/**
+ * Formatos gerados. `tela` é a viewport do app em px de CSS e a escala;
+ * `saida`, a imagem final. O tablet de 7" em retrato é o que o Play pede para
+ * o app aparecer bem em tablets e Chromebooks (achado A10 da auditoria).
+ */
+const FORMATOS = [
+  { id: 'celular', pasta: '', tela: { largura: 360, altura: 640, escala: 3 }, saida: { largura: 1080, altura: 1920 } },
+  { id: 'tablet', pasta: 'tablet', tela: { largura: 600, altura: 960, escala: 2 }, saida: { largura: 1200, altura: 1920 } },
+];
 
 const CORES = {
   fundo1: '#0B3D2E',
@@ -217,7 +225,7 @@ function hojeDaVitrine() {
   return d;
 }
 
-async function capturarTelas(browser, hoje) {
+async function capturarTelas(browser, hoje, TELA) {
   var brutas = {};
   var so = process.env.VITRINE_SO ? process.env.VITRINE_SO.split(',') : null;
   for (var i = 0; i < CAPTURAS.length; i++) {
@@ -277,18 +285,22 @@ function esc(s) {
 
 function dataUri(buf) { return 'data:image/png;base64,' + buf.toString('base64'); }
 
-/** Página 1080×1920 da captura com legenda. */
-function htmlCaptura(c, tela) {
+/** Página da captura com legenda, no tamanho do formato (celular ou tablet). */
+function htmlCaptura(c, tela, fmt) {
+  // O aparelho ocupa a altura que sobra abaixo da legenda; a largura segue a
+  // proporção da tela do formato.
+  var altImg = 1387;
+  var largImg = Math.round(altImg * fmt.tela.largura / fmt.tela.altura);
   return '<!doctype html><html><head><meta charset="utf-8"><style>'
-    + 'html,body{margin:0;width:1080px;height:1920px;overflow:hidden}'
+    + 'html,body{margin:0;width:' + fmt.saida.largura + 'px;height:' + fmt.saida.altura + 'px;overflow:hidden}'
     + 'body{background:linear-gradient(165deg,' + CORES.fundo2 + ' 0%,' + CORES.fundo1 + ' 62%);'
     + 'font-family:"Inter","Segoe UI",Roboto,Arial,sans-serif;color:' + CORES.texto + ';position:relative}'
     + '.topo{position:absolute;left:90px;right:90px;top:120px;text-align:center}'
     + 'h1{margin:0;font-size:78px;line-height:1.08;font-weight:800;letter-spacing:-1.5px;text-wrap:balance}'
     + 'p{margin:26px 0 0;font-size:38px;line-height:1.25;color:' + CORES.textoSuave + ';font-weight:500}'
-    + '.aparelho{position:absolute;left:50%;top:470px;transform:translateX(-50%);width:780px;'
+    + '.aparelho{position:absolute;left:50%;top:470px;transform:translateX(-50%);width:' + largImg + 'px;'
     + 'padding:22px;border-radius:84px;background:#0a1f18;box-shadow:0 40px 90px rgba(0,0,0,.45),inset 0 0 0 3px #1e3d33}'
-    + '.aparelho img{display:block;width:780px;height:1387px;border-radius:62px}'
+    + '.aparelho img{display:block;width:' + largImg + 'px;height:' + altImg + 'px;border-radius:62px}'
     + '</style></head><body>'
     + '<div class="topo"><h1>' + esc(c.legenda) + '</h1><p>' + esc(c.apoio) + '</p></div>'
     + '<div class="aparelho"><img src="' + dataUri(tela) + '"></div>'
@@ -339,18 +351,28 @@ async function main() {
     args: ['--lang=pt-BR'],
   });
   try {
-    var brutas = await capturarTelas(browser, hojeDaVitrine());
-    for (var i = 0; i < CAPTURAS.length; i++) {
-      var c = CAPTURAS[i];
-      if (!brutas[c.arquivo]) continue;
-      var destino = path.join(saida, c.arquivo + '.png');
-      await renderizar(browser, htmlCaptura(c, brutas[c.arquivo]), 1080, 1920, destino);
-      console.log('✓ docs/play-store/vitrine/' + c.arquivo + '.png');
+    var formatos = process.env.VITRINE_FORMATO
+      ? FORMATOS.filter(function(f) { return f.id === process.env.VITRINE_FORMATO; })
+      : FORMATOS;
+    var brutasCelular = null;
+    for (var f = 0; f < formatos.length; f++) {
+      var fmt = formatos[f];
+      var pasta = path.join(saida, fmt.pasta);
+      fs.mkdirSync(pasta, { recursive: true });
+      var brutas = await capturarTelas(browser, hojeDaVitrine(), fmt.tela);
+      if (fmt.id === 'celular') brutasCelular = brutas;
+      for (var i = 0; i < CAPTURAS.length; i++) {
+        var c = CAPTURAS[i];
+        if (!brutas[c.arquivo]) continue;
+        await renderizar(browser, htmlCaptura(c, brutas[c.arquivo], fmt), fmt.saida.largura, fmt.saida.altura,
+          path.join(pasta, c.arquivo + '.png'));
+        console.log('✓ docs/play-store/vitrine/' + (fmt.pasta ? fmt.pasta + '/' : '') + c.arquivo + '.png');
+      }
     }
-    if (!brutas['01-resumo']) return;
+    if (!brutasCelular || !brutasCelular['01-resumo']) return;
     var iconePath = path.join(root, 'icons', 'icon-512.png');
     var icone = fs.existsSync(iconePath) ? dataUri(fs.readFileSync(iconePath)) : null;
-    await renderizar(browser, htmlDestaque(brutas['01-resumo'], icone), 1024, 500, path.join(saida, 'destaque-1024x500.png'));
+    await renderizar(browser, htmlDestaque(brutasCelular['01-resumo'], icone), 1024, 500, path.join(saida, 'destaque-1024x500.png'));
     console.log('✓ docs/play-store/vitrine/destaque-1024x500.png');
   } finally {
     await browser.close();
@@ -362,4 +384,4 @@ if (require.main === module) {
   main().catch(function(err) { console.error(err); process.exit(1); });
 }
 
-module.exports = { CAPTURAS };
+module.exports = { CAPTURAS, FORMATOS };
