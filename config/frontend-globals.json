@@ -41,6 +41,7 @@
     "authLimparAoSair": "writable",
     "authResendCooldown": "writable",
     "AUTO_CATEGORIZER": "writable",
+    "AVALIACAO_LOJA": "writable",
     "BILLING": "writable",
     "BUDGET_SERVICE": "writable",
     "CALENDARIO": "writable",

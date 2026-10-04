@@ -8,6 +8,7 @@
 import { UTILS } from './core/utils.js';
 import { BILLING } from './billing.js';
 import { DADOS } from './core/dados.js';
+import { AVALIACAO_LOJA } from './avaliacao-loja.js';
 
 const METAS = {
   ICONES: {
@@ -95,7 +96,12 @@ const METAS = {
     // porque valorAtual < valorAlvo por uma fração de centavo.
     var somaCent = UTILS.paraCentavos(meta.valorAtual) + UTILS.paraCentavos(v);
     var alvoCent = UTILS.paraCentavos(meta.valorAlvo);
-    return METAS.atualizar(id, { valorAtual: Math.min(alvoCent, somaCent) / 100 });
+    var atualizada = METAS.atualizar(id, { valorAtual: Math.min(alvoCent, somaCent) / 100 });
+    // Meta batida agora: momento bom para pedir avaliação na Play.
+    if (!meta.concluida && atualizada && atualizada.concluida) {
+      AVALIACAO_LOJA.aposMetaConcluida();
+    }
+    return atualizada;
   },
 
   calcularProgresso: function(meta, hoje) {

@@ -155,7 +155,7 @@ function loadCoreModules() {
     'TRANSACOES', 'METAS', 'APP_STORE', 'APP_STATE', 'DADOS', 'ACTIONS',
     'RELATORIOS', 'PATRIMONIO', 'CONTAS', 'CONTAS_PAGAR', 'ASSINATURAS', 'ANEXOS',
     'TRANSACTION_SERVICE', 'COMPROMISSOS', 'CARTOES', 'RECORRENTES', 'AI_ENGINE', 'INIT_CONFIG',
-    'FINANCE_CONTRACT', 'INSIGHTS',
+    'FINANCE_CONTRACT', 'INSIGHTS', 'AVALIACAO_LOJA',
   ].forEach(function(k) {
     if (typeof sandbox[k] !== 'undefined') global[k] = sandbox[k];
   });

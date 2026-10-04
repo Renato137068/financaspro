@@ -15,6 +15,7 @@
 import { CONFIG } from '../core/config.js';
 import { UTILS } from '../core/utils.js';
 import { FINANCE_CONTRACT } from '../core/finance-contract.js';
+import { AVALIACAO_LOJA } from '../avaliacao-loja.js';
 import { DOMUTILS } from '../core/domUtils.js';
 import { FUNIL } from '../utilities/funil.js';
 import { SCORE } from '../score.js';
@@ -1102,6 +1103,8 @@ const INIT_FORM = {
       }
       INIT_FORM.mostrarSucesso(sucessoMsg);
       INIT_FORM._finalizarTransacao();
+      // Momento bom para pedir avaliação na Play (regras em avaliacao-loja.js).
+      AVALIACAO_LOJA.aposLancamento();
     }).catch(function(err) {
       UTILS.mostrarToast((err && err.message) || 'Falha ao salvar lançamento', 'error');
       if (typeof ariaLive !== 'undefined' && ariaLive.announce) {
