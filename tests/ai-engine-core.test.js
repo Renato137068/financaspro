@@ -208,3 +208,35 @@ describe('AI_ENGINE.prever — ignora o mês em curso', () => {
     expect(r.meses).toEqual([]);
   });
 });
+
+describe('AI_ENGINE — meses futuros só com parcelas ficam de fora', () => {
+  const hoje = new Date(2026, 4, 20); // 20/05/2026
+  function mes(k, rec, desp) {
+    return [
+      { tipo: 'receita', valor: rec, data: k + '-05', categoria: 'salario' },
+      { tipo: 'despesa', valor: desp, data: k + '-10', categoria: 'moradia' },
+    ];
+  }
+  const historico = [].concat(mes('2026-03', 5000, 3000), mes('2026-04', 5000, 3000), mes('2026-05', 5000, 3000));
+  const parcelas = ['2026-06', '2026-07', '2026-08'].map(function(k) {
+    return { tipo: 'despesa', valor: 300, data: k + '-04', categoria: 'compras' };
+  });
+
+  test('mesesAte corta no mês de hoje', () => {
+    const ag = AI.agregarPorMes(historico.concat(parcelas));
+    expect(AI.mesesAte(ag, hoje)).toEqual(['2026-03', '2026-04', '2026-05']);
+  });
+
+  test('saúde financeira não vê "gastando mais do que ganha" por causa das parcelas', () => {
+    const com = AI.calcularSaude(historico.concat(parcelas), {}, hoje);
+    const sem = AI.calcularSaude(historico, {}, hoje);
+    expect(com).toEqual(sem);
+    expect(com.detalhes[0].desc).toBe('40%');
+  });
+
+  test('sugestão de corte usa os meses que já aconteceram', () => {
+    const r = AI.sugestaoCorte(historico.concat(parcelas), 0.2, hoje);
+    expect(r.viavel).toBe(true);
+    expect(r.taxaAtual).toBe(40);
+  });
+});

@@ -117,7 +117,7 @@ const INSIGHTS = {
 
     // ── 1. Variação de despesas (AI_ENGINE.agregarPorMes) ──────────
     var agregado = AI_ENGINE.agregarPorMes(txs);
-    var chaves   = Object.keys(agregado).sort();
+    var chaves   = AI_ENGINE.mesesAte(agregado); // sem meses futuros só com parcelas
 
     if (chaves.length >= 2) {
       var keyAtual    = chaves[chaves.length - 1];

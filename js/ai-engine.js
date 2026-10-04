@@ -18,6 +18,24 @@ const AI_ENGINE = {
   // ─────────────────────────────────────────────────────────────────
 
   /**
+   * Meses do agregado até o mês de `hoje` (inclusive), em ordem.
+   *
+   * O formulário grava cada parcela de uma compra parcelada com a data do seu
+   * mês, então o agregado tem meses FUTUROS só com parcelas, sem receita.
+   * Quem pega "os últimos N meses" do agregado inteiro pega esses meses, e a
+   * conta sai como se a pessoa gastasse sem ganhar nada.
+   * @param {Object} agregado saída de agregarPorMes
+   * @param {Date} [hoje]
+   * @returns {string[]} chaves 'YYYY-MM'
+   */
+  mesesAte: function(agregado, hoje) {
+    // Duck typing: Date de outro realm (testes em vm) falha no instanceof.
+    hoje = (hoje && typeof hoje.getFullYear === 'function') ? hoje : new Date();
+    var mesAtual = hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0');
+    return Object.keys(agregado || {}).sort().filter(function(k) { return k <= mesAtual; });
+  },
+
+  /**
    * Agrega transações por mês.
    * @param {Array} transacoes
    * @returns {Object} { 'YYYY-MM': { receitas, despesas, saldo, count } }
@@ -347,10 +365,10 @@ const AI_ENGINE = {
    * @param {Object} config — DADOS.getConfig()
    * @returns {{ score, nivel, detalhes }}
    */
-  calcularSaude: function(transacoes, config) {
+  calcularSaude: function(transacoes, config, hoje) {
     config = config || {};
     var agregado = AI_ENGINE.agregarPorMes(transacoes);
-    var chaves   = Object.keys(agregado).sort().slice(-3); // últimos 3 meses
+    var chaves   = AI_ENGINE.mesesAte(agregado, hoje).slice(-3); // últimos 3 meses, sem os futuros
 
     if (chaves.length === 0) return { score: 0, nivel: 'sem-dados', detalhes: [] };
 
@@ -885,10 +903,10 @@ const AI_ENGINE = {
    * @param {number} metaPoupanca — ex: 0.20 para 20%
    * @returns {{ viavel, corteNecessario, categoriaAlvo, valorAlvo, taxaAtual } | null}
    */
-  sugestaoCorte: function(transacoes, metaPoupanca) {
+  sugestaoCorte: function(transacoes, metaPoupanca, hoje) {
     metaPoupanca = metaPoupanca || 0.20;
     var agregado = AI_ENGINE.agregarPorMes(transacoes);
-    var chaves   = Object.keys(agregado).sort().slice(-3);
+    var chaves   = AI_ENGINE.mesesAte(agregado, hoje).slice(-3);
     if (chaves.length === 0) return null;
 
     var recMedia  = chaves.reduce(function(a, k) { return a + agregado[k].receitas; }, 0) / chaves.length;
