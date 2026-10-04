@@ -5,7 +5,8 @@
  *   01..08-*.png        capturas de celular 1080×1920, uma frase de benefício
  *                       no topo e o app de verdade num aparelho abaixo;
  *   tablet/01..08-*.png as mesmas oito em tablet de 7" (1200×1920);
- *   destaque-1024x500.png  gráfico de destaque (feature graphic).
+ *   destaque-1024x500.png  gráfico de destaque (feature graphic);
+ *   promocional/*.png   imagens 1920×1080 do conteúdo promocional da Play.
  *
  * O roteiro das oito telas é o da auditoria de ASO de 04/out
  * (docs/auditorias/auditoria-play-store-aso-2026-10-04.html). As telas são o
@@ -307,27 +308,47 @@ function htmlCaptura(c, tela, fmt) {
     + '</body></html>';
 }
 
-/** Gráfico de destaque 1024×500: frase à esquerda, o Resumo à direita. */
-function htmlDestaque(tela, icone) {
+/**
+ * Peças horizontais: frase à esquerda, uma tela do app à direita.
+ * O gráfico de destaque (1024×500) e as imagens de conteúdo promocional da
+ * Play (1920×1080, 16:9) usam o mesmo desenho, em escala.
+ */
+function htmlPeca(tela, icone, peca) {
+  var k = peca.largura / 1024;
+  var px = function(n) { return Math.round(n * k) + 'px'; };
+  var altAparelho = peca.altura - 2 * Math.round(46 * k);
+  var largTela = Math.round((altAparelho - 20 * k) * 9 / 16);
   return '<!doctype html><html><head><meta charset="utf-8"><style>'
-    + 'html,body{margin:0;width:1024px;height:500px;overflow:hidden}'
+    + 'html,body{margin:0;width:' + peca.largura + 'px;height:' + peca.altura + 'px;overflow:hidden}'
     + 'body{background:linear-gradient(120deg,' + CORES.fundo1 + ' 0%,' + CORES.fundo2 + ' 100%);'
     + 'font-family:"Inter","Segoe UI",Roboto,Arial,sans-serif;color:#fff;position:relative}'
-    + '.txt{position:absolute;left:64px;top:0;bottom:0;width:520px;display:flex;flex-direction:column;justify-content:center}'
-    + '.marca{display:flex;align-items:center;gap:16px;font-size:30px;font-weight:700;margin-bottom:28px}'
-    + '.marca img{width:56px;height:56px;border-radius:14px}'
-    + 'h1{margin:0;font-size:56px;line-height:1.05;font-weight:800;letter-spacing:-1px}'
-    + 'p{margin:20px 0 0;font-size:24px;color:' + CORES.textoSuave + ';line-height:1.3}'
-    + '.aparelho{position:absolute;right:70px;top:46px;width:300px;padding:10px;border-radius:40px;'
+    + '.txt{position:absolute;left:' + px(64) + ';top:0;bottom:0;width:' + px(540) + ';display:flex;flex-direction:column;justify-content:center}'
+    + '.marca{display:flex;align-items:center;gap:' + px(16) + ';font-size:' + px(30) + ';font-weight:700;margin-bottom:' + px(28) + '}'
+    + '.marca img{width:' + px(56) + ';height:' + px(56) + ';border-radius:' + px(14) + '}'
+    + 'h1{margin:0;font-size:' + px(56) + ';line-height:1.05;font-weight:800;letter-spacing:-1px;text-wrap:balance}'
+    + 'p{margin:' + px(20) + ' 0 0;font-size:' + px(24) + ';color:' + CORES.textoSuave + ';line-height:1.3}'
+    + '.aparelho{position:absolute;right:' + px(70) + ';top:' + px(46) + ';padding:' + px(10) + ';border-radius:' + px(40) + ';'
     + 'background:#0a1f18;box-shadow:0 24px 60px rgba(0,0,0,.45),inset 0 0 0 2px #1e3d33}'
-    + '.aparelho img{display:block;width:300px;height:533px;border-radius:30px}'
+    + '.aparelho img{display:block;width:' + largTela + 'px;height:' + Math.round(largTela * 16 / 9) + 'px;border-radius:' + px(30) + '}'
     + '</style></head><body>'
     + '<div class="txt"><div class="marca">' + (icone ? '<img src="' + icone + '">' : '') + 'FinançasPro</div>'
-    + '<h1>Saiba quanto sobra no fim do mês</h1>'
-    + '<p>Controle de gastos, orçamento e metas, direto no celular.</p></div>'
+    + '<h1>' + esc(peca.titulo) + '</h1>'
+    + '<p>' + esc(peca.apoio) + '</p></div>'
     + '<div class="aparelho"><img src="' + dataUri(tela) + '"></div>'
     + '</body></html>';
 }
+
+/**
+ * Conteúdo promocional da Play nas datas em que mais gente procura controle
+ * financeiro (etapa 3 da auditoria de ASO). Textos e quando publicar:
+ * docs/play-store/conteudo-promocional.md.
+ */
+const PROMOCIONAIS = [
+  { arquivo: 'promo-13-salario', tela: '06-metas', titulo: 'Seu 13º com destino certo', apoio: 'Separe uma parte para as suas metas antes de gastar.' },
+  { arquivo: 'promo-ano-novo', tela: '03-orcamento', titulo: 'Ano novo, orçamento novo', apoio: 'Comece o ano com a regra 50/30/20 pronta.' },
+  { arquivo: 'promo-imposto-de-renda', tela: '05-extrato', titulo: 'O ano inteiro anotado', apoio: 'Encontre qualquer gasto e exporte em CSV.' },
+  { arquivo: 'promo-black-friday', tela: '04-cartao', titulo: 'Antes de comprar, veja a fatura', apoio: 'Saiba quanto do cartão já está comprometido.' },
+];
 
 async function renderizar(browser, html, largura, altura, destino) {
   var ctx = await browser.newContext({ viewport: { width: largura, height: altura }, deviceScaleFactor: 1 });
@@ -372,8 +393,22 @@ async function main() {
     if (!brutasCelular || !brutasCelular['01-resumo']) return;
     var iconePath = path.join(root, 'icons', 'icon-512.png');
     var icone = fs.existsSync(iconePath) ? dataUri(fs.readFileSync(iconePath)) : null;
-    await renderizar(browser, htmlDestaque(brutasCelular['01-resumo'], icone), 1024, 500, path.join(saida, 'destaque-1024x500.png'));
+    await renderizar(browser, htmlPeca(brutasCelular['01-resumo'], icone, {
+      largura: 1024, altura: 500,
+      titulo: 'Saiba quanto sobra no fim do mês',
+      apoio: 'Controle de gastos, orçamento e metas, direto no celular.',
+    }), 1024, 500, path.join(saida, 'destaque-1024x500.png'));
     console.log('✓ docs/play-store/vitrine/destaque-1024x500.png');
+    var pastaPromo = path.join(saida, 'promocional');
+    fs.mkdirSync(pastaPromo, { recursive: true });
+    for (var p = 0; p < PROMOCIONAIS.length; p++) {
+      var promo = PROMOCIONAIS[p];
+      if (!brutasCelular[promo.tela]) continue;
+      await renderizar(browser, htmlPeca(brutasCelular[promo.tela], icone, {
+        largura: 1920, altura: 1080, titulo: promo.titulo, apoio: promo.apoio,
+      }), 1920, 1080, path.join(pastaPromo, promo.arquivo + '-1920x1080.png'));
+      console.log('✓ docs/play-store/vitrine/promocional/' + promo.arquivo + '-1920x1080.png');
+    }
   } finally {
     await browser.close();
     servidor.kill();
@@ -384,4 +419,4 @@ if (require.main === module) {
   main().catch(function(err) { console.error(err); process.exit(1); });
 }
 
-module.exports = { CAPTURAS, FORMATOS };
+module.exports = { CAPTURAS, FORMATOS, PROMOCIONAIS };
