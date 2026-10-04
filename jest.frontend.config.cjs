@@ -6,8 +6,7 @@
  * o modo ESM nativo faria o Jest tratar todo .js como módulo (o package.json
  * raiz é "type": "module") e quebraria os require(). Os arquivos de js/ já
  * migrados para ES Modules (ADR 0005) passam pelo conversor de mesmo tamanho
- * de tests/helpers/esm-como-script.cjs. O backend, que é ESM de verdade, roda
- * em jest.backend.config.cjs com a flag ligada.
+ * de tests/helpers/esm-como-script.cjs.
  */
 module.exports = {
   displayName: 'frontend',

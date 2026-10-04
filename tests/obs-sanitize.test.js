@@ -2,9 +2,12 @@
  * obs-sanitize.test.js — o relatório de erro que chega à Edge Function
  * obs-ingest sai dela sem dado pessoal nem financeiro.
  */
-import {
+const { carregarScript } = require('./helpers/carregar-script.cjs');
+
+// JavaScript puro, sem API do Deno: roda aqui do mesmo jeito que na função.
+const {
   sanitizarRelatorio, mascararTexto, CHAVES_CONTEXTO, LIMITE_CORPO, versaoDaSessao,
-} from '../../supabase/functions/_shared/obs-sanitize.js';
+} = carregarScript('supabase/functions/_shared/obs-sanitize.js');
 
 function relatorio(data, extra = {}) {
   return { kind: 'error', ts: '2026-09-27T12:00:00Z', url: '/', app: '11.3.18', data, ...extra };

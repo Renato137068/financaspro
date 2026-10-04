@@ -154,7 +154,8 @@ modo live:
    na versão da biblioteca).
 2. Grave `STRIPE_SECRET_KEY` (`sk_test_...`) e `STRIPE_WEBHOOK_SECRET` do
    endpoint de teste nos segredos das Edge Functions, e os `price_...` de
-   teste em `Plan.stripePriceIdMonthly`/`stripePriceIdYearly`.
+   teste em `Plan.stripePriceIdMonthly`/`stripePriceIdYearly` (os planos vêm
+   de `supabase/seed/planos.sql`; o comando de gravar os IDs está no topo dele).
 3. No app web, logado como dono da org, assine o Pro com o cartão
    `4242 4242 4242 4242`.
 4. No Stripe, cancele pelo portal (botão "Gerenciar" do app) e depois

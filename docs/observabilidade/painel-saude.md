@@ -78,6 +78,6 @@ Rodar localmente: `SAUDE_DATABASE_URL=postgresql://... node scripts/saude-relato
 
 - `supabase/tests/saude_telemetria.test.sql` (pgTAP): quem pode escrever e ler,
   soma atômica, versão inválida recusada, contas do painel e do funil.
-- `tests/backend/obs-sanitize.test.js`: o aviso de uso só deixa passar a versão.
+- `tests/obs-sanitize.test.js`: o aviso de uso só deixa passar a versão.
 - `tests/observability-envio.test.js`: 1×/dia, opt-out, modo local.
 - `tests/saude-relatorio.test.js`: a regra do alerta e o workflow.

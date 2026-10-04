@@ -14,9 +14,10 @@ porquê de cada escolha estão em [`docs/adr/`](adr/).
  └─ com conta: Supabase
       ├─ Auth (e-mail/senha, TOTP)
       ├─ PostgREST direto nas tabelas, protegido por RLS
-      └─ Edge Functions: billing Stripe/Play, convites, trial, relatórios de erro
+      ├─ Edge Functions: billing Stripe/Play, convites, trial, relatórios de erro
+      └─ pg_cron: retenção de dados e reconciliação diária das assinaturas
  Schema das tabelas: Prisma (prisma/migrations)  ·  RLS e funções: supabase/migrations
- API Express (backend/): legado congelado — ADR 0004
+ Web: hospedagem estática do dist/ (sem servidor próprio — ADR 0007)
 ```
 
 O app funciona sem conta (modo local, dados só no aparelho). Com conta, os
@@ -44,7 +45,7 @@ mesmos dados sincronizam com o Supabase.
   `RECORRENTES`, `COMPROMISSOS`, `CONTAS_PAGAR`, `CALENDARIO`, `PROJECAO`),
   resumos e análise (`RESUMO_MENSAL`, `RESUMO_ANUAL`, `PLANO_METAS`,
   `AI_ENGINE`), os services (transação, orçamento, `HEALTH_SERVICE`),
-  `INSIGHT_ACOES`, `DADOS_EXPRESS`, `FORM_SUGESTOES` e a UI sem estado
+  `INSIGHT_ACOES`, `DADOS_NUVEM`, `FORM_SUGESTOES` e a UI sem estado
   (`SETUP_GUIDE`, `SHORTCUTS`, `SKELETON`, `MICRO`, `SYNC_INDICATOR`) e os
   componentes de `js/components/` (cada um exporta o seu objeto e
   `js/components/ui.js` monta o `UI`), além de `ALERTAS`, `INSIGHTS` e
@@ -83,7 +84,7 @@ mesmos dados sincronizam com o Supabase.
   pode depender do outro lado de um ciclo: quem for avaliado primeiro o veria
   sem inicializar. O `DADOS` fecha ciclos com quase todo o domínio (ele
   importa quem avisa ao gravar: `TRANSACOES`, `RENDER`, `APP_STORE`…); o
-  único import que ele lê na carga é o `DADOS_EXPRESS`, que só ele importa. Entre eles a dependência é `import`, e nenhum usa `this`
+  único import que ele lê na carga é o `DADOS_NUVEM`, que só ele importa. Entre eles a dependência é `import`, e nenhum usa `this`
   fora dos mixins: módulo roda em modo estrito, e método passado como
   callback perde o `this` (`tests/esm-fundacao.test.js` trava as duas
   regras; o conversor dos testes também roda em modo estrito). A ordem de
@@ -183,7 +184,8 @@ mesmos dados sincronizam com o Supabase.
   grátis são aplicadas no banco por triggers (`supabase/migrations/*quota*`).
 - **Edge Functions** (`supabase/functions/`, Deno): `play-verify`, `play-rtdn`,
   `stripe-checkout`, `stripe-portal`, `stripe-cancel`, `stripe-resume`,
-  `stripe-webhook`, `org-invite`, `welcome-trial`, `obs-ingest`. Deploy e
+  `stripe-webhook`, `org-invite`, `welcome-trial`, `obs-ingest` e
+  `billing-reconcile` (diária, pelo `pg_cron`). Deploy e
   secrets em `supabase/functions/README.md`.
 - **Schema:** o Prisma cria as tabelas; `supabase/migrations/` liga a RLS e
   define funções e triggers. Tabela nova sem RLS reprova o pgTAP
@@ -192,12 +194,14 @@ mesmos dados sincronizam com o Supabase.
   e-mail) para `obs-ingest`, que grava em `fp_client_error` com retenção de 30
   dias. O usuário desliga no Perfil.
 
-## API Express (legado)
+## Sem servidor próprio
 
-`backend/` — Express, Prisma, JWT próprio, BullMQ. **Congelada** pelo
-[ADR 0004](adr/0004-supabase-fonte-de-verdade-express-congelado.md): sem
-funcionalidade nova, só correção de segurança. Veja
-[`backend/README.md`](../backend/README.md) para o que ainda só existe lá.
+A API Express saiu ([ADR 0007](adr/0007-remocao-do-express.md)). O que só
+existia nela ganhou destino: retenção de dados em SQL agendado
+(`fp_purge_retention`), reconciliação de assinaturas na Edge Function
+`billing-reconcile`, a web em hospedagem estática com os cabeçalhos em
+`config/hospedagem/_headers` (`docs/release/hospedagem-web.md`) e os planos em
+`supabase/seed/planos.sql`. O Open Finance saiu do escopo.
 
 ## Android
 
@@ -211,7 +215,7 @@ segura (FLAG_SECURE) no login/PIN e Google Play Billing por plugin nativo.
 |---|---|---|
 | Unidade (frontend) | `tests/*.test.js` (Jest + jsdom) | regras de negócio, com os módulos reais carregados por `tests/helpers/carregar-script.cjs` |
 | App inteiro | `tests/app-*.test.js` + `tests/helpers/app-jsdom.cjs` | telas reais (Novo lançamento, login, paywall) com todos os scripts do `index.html` |
-| Unidade (backend) | `tests/backend/` (Jest ESM) | API Express e o sanitizador de `obs-ingest` |
+| Edge Functions | `supabase/functions/_testes/` (Deno) | cobrança Stripe/Play, webhooks, convites e reconciliação, com Request de verdade |
 | Banco | `supabase/tests/*.test.sql` (pgTAP) | RLS, cotas, MFA, relatórios de erro |
 | Ponta a ponta | `e2e/*.spec.cjs` (Playwright) | build de produção num navegador, incluindo axe e chunks lazy |
 

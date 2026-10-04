@@ -1,18 +1,20 @@
-// supabase/functions/_shared/obs-sanitize.js
-//
-// Sanitiza um relatório de erro vindo do OBS do app antes de gravar em
-// public.fp_client_error. JavaScript puro (sem API do Deno) para ser importado
-// pela Edge Function `obs-ingest` e testado no Jest
-// (tests/backend/obs-sanitize.test.js).
-//
-// O relatório serve para achar o bug, nunca para saber da vida financeira de
-// alguém. Por isso, além dos cortes de tamanho:
-//   • só entram chaves de contexto de uma allowlist — o que o app anexar a
-//     mais (ids, valores) é descartado aqui;
-//   • e-mails viram [email] em todo texto;
-//   • na mensagem e no contexto, valores em reais e números com 5+ dígitos
-//     viram [valor]/[n] (a pilha mantém os números: linha:coluna do bundle
-//     minificado é o que permite achar o erro).
+/**
+ * supabase/functions/_shared/obs-sanitize.js
+ *
+ * Sanitiza um relatório de erro vindo do OBS do app antes de gravar em
+ * public.fp_client_error. JavaScript puro (sem API do Deno) para ser importado
+ * pela Edge Function `obs-ingest` e testado no Jest
+ * (tests/obs-sanitize.test.js).
+ *
+ * O relatório serve para achar o bug, nunca para saber da vida financeira de
+ * alguém. Por isso, além dos cortes de tamanho:
+ *   • só entram chaves de contexto de uma allowlist — o que o app anexar a
+ *     mais (ids, valores) é descartado aqui;
+ *   • e-mails viram [email] em todo texto;
+ *   • na mensagem e no contexto, valores em reais e números com 5+ dígitos
+ *     viram [valor]/[n] (a pilha mantém os números: linha:coluna do bundle
+ *     minificado é o que permite achar o erro).
+ */
 
 /** Corpo máximo aceito, em caracteres. */
 export const LIMITE_CORPO = 8 * 1024;
@@ -61,7 +63,7 @@ export function versaoDaSessao(entrada) {
  * @param {unknown} entrada  corpo JSON enviado pelo OBS ({ kind, ts, url, app, data })
  * @param {string|null} userAgent
  * @returns {object|null} linha para fp_client_error, ou null se o corpo não é
- *   um relatório de erro válido (eventos de analytics também são recusados).
+ *  um relatório de erro válido (eventos de analytics também são recusados).
  */
 export function sanitizarRelatorio(entrada, userAgent) {
   if (!entrada || typeof entrada !== 'object' || entrada.kind !== 'error') return null;

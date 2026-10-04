@@ -22,16 +22,6 @@ describe('trialDays — paridade canônica', function() {
     expect(src).toMatch(new RegExp('TRIAL_DAYS:\\s*' + DAYS));
   });
 
-  test('Express Stripe usa trial_period_days canônico', function() {
-    const src = fs.readFileSync(
-      path.join(ROOT, 'backend/domain/services/billing.service.js'),
-      'utf8',
-    );
-    expect(src).toMatch(/trial_period_days:\s*TRIAL_DAYS/);
-    expect(src).not.toMatch(/trial_period_days:\s*14/);
-    expect(src).toMatch(/plan-limits\.json/);
-  });
-
   test('Edge stripe-checkout usa trial_period_days canônico', function() {
     const src = fs.readFileSync(
       path.join(ROOT, 'supabase/functions/_shared/stripe-billing.ts'),

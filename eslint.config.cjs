@@ -5,7 +5,7 @@
  * mesmas; o que muda é a forma:
  *   - os globais do frontend vêm de config/frontend-globals.json, gerado a
  *     partir das declarações de topo de js/ (npm run globals:update);
- *   - backend e scripts não enxergam os globais do frontend.
+ *   - scripts não enxergam os globais do frontend.
  */
 const globals = require('globals');
 const fs = require('fs');
@@ -75,7 +75,7 @@ module.exports = [
     languageOptions: { sourceType: 'commonjs' },
   },
   {
-    files: ['scripts/**/*.cjs', 'scripts/**/*.mjs', 'backend/prisma/seed*.js'],
+    files: ['scripts/**/*.cjs', 'scripts/**/*.mjs'],
     rules: { 'no-console': 'off' },
   },
   {
@@ -122,10 +122,5 @@ module.exports = [
       sourceType: 'commonjs',
       globals: { ...globals.jest, ...globaisFrontend },
     },
-  },
-  {
-    // Testes do backend são ESM.
-    files: ['tests/backend/**/*.js'],
-    languageOptions: { sourceType: 'module' },
   },
 ];

@@ -21,8 +21,8 @@ Antes da primeira tag, o que só o dono das contas pode fazer (ambiente
 Depois disso vem o [smoke em aparelho](smoke-aparelho.md) com o AAB da faixa
 interna; só então a versão é promovida (à mão, no Play Console).
 
-O CD de antes (`deploy.yml`) continua: constrói a imagem Docker da API a cada
-push na `main`.
+O CD de antes (`deploy.yml`, imagem Docker da API) saiu com a API Express
+(ADR 0007). A web é hospedagem estática do `dist/` (`hospedagem-web.md`).
 
 ## Cortar uma release
 

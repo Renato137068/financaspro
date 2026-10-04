@@ -1,6 +1,6 @@
 # FinançasPro
 
-App de finanças pessoais com PWA e app Android. Funciona sem conta (dados só no aparelho) e, com conta, sincroniza pelo Supabase (Auth, Postgres com RLS e Edge Functions de billing). Frontend em JavaScript vanilla; schema do banco em Prisma. A API Express em `backend/` é legado congelado ([ADR 0004](docs/adr/0004-supabase-fonte-de-verdade-express-congelado.md)).
+App de finanças pessoais com PWA e app Android. Funciona sem conta (dados só no aparelho) e, com conta, sincroniza pelo Supabase (Auth, Postgres com RLS e Edge Functions de billing). Frontend em JavaScript vanilla; schema do banco em Prisma. Não há servidor próprio: regra de servidor é SQL ou Edge Function no Supabase, e a web é hospedagem estática ([ADR 0007](docs/adr/0007-remocao-do-express.md)).
 
 ## Funcionalidades
 
@@ -15,48 +15,29 @@ App de finanças pessoais com PWA e app Android. Funciona sem conta (dados só n
 
 - Node.js 22+
 - npm 9+
-- Postgres (backend completo)
-- Redis opcional (filas/workers)
+- Postgres 16 (só para rodar as migrações e os testes pgTAP localmente)
 - Android Studio (apenas para build Play Store)
 
 ## Setup local
 
 ```bash
 npm ci
-cp .env.example .env
-npm run db:generate
-npm run db:migrate
+npm run dev          # frontend (Vite, porta 3000), contra o Supabase de js/core/config.js
 ```
 
-Configure pelo menos:
+Banco local (opcional, para migrações e pgTAP):
 
 ```bash
-DATABASE_URL="postgresql://usuario:senha@localhost:5432/financaspro"
-JWT_ACCESS_SECRET="troque-este-segredo"
-JWT_REFRESH_SECRET="troque-este-segredo-tambem"
-CORS_ORIGIN="http://localhost:3000"
-APP_URL="http://localhost:4000"
-```
-
-Seeds opcionais:
-
-```bash
-npm run db:seed
-npm run billing:seed
+DATABASE_URL="postgresql://usuario:senha@localhost:5432/financaspro" npm run db:migrate
+INTEGRATION_TEST_DATABASE_URL="postgresql://…" npm run test:db:ci
+psql "postgresql://…" -f supabase/seed/planos.sql   # planos Gratuito/Pro/Business
 ```
 
 ## Rodando
 
 ```bash
 npm run dev          # frontend (Vite, porta 3000)
-npm run backend:dev  # API (porta 4000)
-npm run worker:dev   # workers (opcional)
-```
-
-Com Docker:
-
-```bash
-npm run docker:up
+npm run start:dist   # o build de produção (dist/), como a hospedagem serve
 ```
 
 No Windows, os atalhos de duplo clique (servidor local, modo celular, índice das auditorias) ficam em `scripts/windows/`.
@@ -80,9 +61,8 @@ O CI roda lint, testes e build em Node 22 e 24.
 | `js/core/` | Config, persistência, store, validações |
 | `js/modules/` | Inicialização por área da interface |
 | `js/services/` | Actions e serviços reutilizáveis |
-| `supabase/` | RLS, funções SQL, Edge Functions e testes pgTAP |
+| `supabase/` | RLS, funções SQL, tarefas agendadas, Edge Functions e testes pgTAP |
 | `prisma/` | Schema e migrações (dono das tabelas) |
-| `backend/` | API Express — legado congelado, ver `backend/README.md` |
 | `tests/` | Unidade, app inteiro em jsdom (`tests/app-*`) e segurança estática |
 | `e2e/` | Playwright contra o build de produção |
 | `android/` | Projeto Capacitor (gerado após `cap add android`) |

@@ -1,5 +1,5 @@
 /**
- * password-policy.js — regras de senha alinhadas ao backend (registerSchema).
+ * password-policy.js — regras de senha do cadastro.
  * Tier 0. Sem dependências.
  *
  * ES Module (ADR 0005): os scripts clássicos o recebem como global por
@@ -8,7 +8,7 @@
 const PASSWORD_POLICY = {
   MIN: 8,
   MAX: 128,
-  /** Mesmo regex de backend/middleware/validate.js */
+  /** Pelo menos um número ou caractere especial. */
   REQUIRES: /[0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/,
   HINT: 'Mínimo 8 caracteres, com pelo menos um número ou caractere especial',
 

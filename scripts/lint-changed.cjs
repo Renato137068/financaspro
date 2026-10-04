@@ -53,13 +53,13 @@ function changedFiles(base) {
     .filter(Boolean);
 }
 
-const LINTABLE = /^(js|backend|scripts|tests)\/.*\.(js|cjs|mjs)$/;
+const LINTABLE = /^(js|scripts|tests)\/.*\.(js|cjs|mjs)$/;
 const IGNORED = /\/vendor\/|\.min\.js$/;
 
 let targets;
 
 if (lintAll) {
-  targets = ['js/', 'backend/'];
+  targets = ['js/'];
   console.log('[lint-changed] modo --all: repositório inteiro');
 } else {
   const base = resolveBase();

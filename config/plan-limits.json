@@ -1,5 +1,5 @@
 {
-  "$comment": "Fonte versionada dos limites numericos e flags de plano. null = ilimitado. Manter em sync com js/billing.js, backend/middleware/plan.js e supabase/migrations/*_quota_*.sql. Validado por tests/plan-limits-parity.test.js e npm run check:billing.",
+  "$comment": "Fonte versionada dos limites numericos e flags de plano. null = ilimitado. Manter em sync com js/billing.js e supabase/migrations/*_quota_*.sql (supabase/seed/planos.sql para maxUsers). Validado por tests/plan-limits-parity.test.js e npm run check:billing.",
   "trialDays": 7,
   "welcomeTrialDays": 14,
   "ocrFreePerMonth": 5,

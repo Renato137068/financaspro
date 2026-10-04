@@ -64,7 +64,8 @@ mustContain('js/core/supabase-sync.js', /claimWelcomeTrial/, 'boas-vindas no SIG
 // Trial vencido tem de deixar de valer: um entitlement nosso nao tem webhook
 // de loja para virar o status, entao a data e a unica fonte da verdade.
 mustContain('js/billing.js', /trialEndsAt/, 'expiracao de trial no cliente');
-mustContain('backend/middleware/plan.js', /entitlementAtivo/, 'expiracao de trial no Express');
+mustContain('supabase/migrations/20260906120000_fp_plan_tier_precedencia.sql', /trialEndsAt/,
+  'expiracao de trial no banco');
 // O gate tem de valer com e sem login: era isso que criava um segundo
 // plano gratuito, mais generoso, para quem nunca criava conta.
 mustNotContain('js/billing.js', /shouldEnforceLimits:[\s\S]{0,200}isCloudUser/,
@@ -174,8 +175,7 @@ if (/Não pede cadastro nem e-mail para começar/i.test(read('docs/play-store-fi
   fails.push('ficha Play ainda promete “sem cadastro”');
 }
 
-mustContain('docs/openapi.json', /\/orgs\/\{orgId\}\/invitations\/\{invitationId\}/, 'OpenAPI DELETE convite');
-mustContain('backend/routes/orgs.js', /revokeInvitation|invitations\/:invitationId/, 'rota Express revoke');
+mustContain('js/billing/equipe.js', /SUPA_BILLING\.revokeInvitation/, 'revogar convite pelo Supabase');
 
 if (fails.length) {
   console.error('[check-billing-wiring] FALHOU (' + fails.length + '):');
@@ -183,4 +183,4 @@ if (fails.length) {
   process.exit(1);
 }
 
-console.log('[check-billing-wiring] OK — trial=' + trial + 'd · portal/cancel/org-invite · equipe · ficha · openapi');
+console.log('[check-billing-wiring] OK — trial=' + trial + 'd · portal/cancel/org-invite · equipe · ficha');

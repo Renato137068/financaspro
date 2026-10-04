@@ -34,8 +34,6 @@ const MINIMAS = {
   'actions/setup-node': 5,
   'actions/setup-java': 5,
   'actions/upload-artifact': 6,
-  'docker/setup-buildx-action': 4,
-  'docker/build-push-action': 7,
 };
 
 describe('ações dos workflows', () => {

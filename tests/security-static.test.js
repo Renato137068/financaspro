@@ -1,20 +1,16 @@
+/**
+ * security-static.test.js — proteções que dá para conferir lendo os arquivos.
+ *
+ * As da API Express (cookies HttpOnly, webhook antes do parser, Redis e SMTP
+ * obrigatórios em produção…) saíram com ela (ADR 0007). As regras de servidor
+ * que sobraram são do Supabase e têm teste próprio: pgTAP em supabase/tests/
+ * e Deno em supabase/functions/_testes/.
+ */
 const fs = require('fs');
 const path = require('path');
 
 describe('security guardrails', () => {
   const root = path.join(__dirname, '..');
-
-  test('refresh tokens are hashed before session lookup/storage', () => {
-    const jwtLib = fs.readFileSync(path.join(root, 'backend/lib/jwt.js'), 'utf8');
-    const sessionRepo = fs.readFileSync(
-      path.join(root, 'backend/domain/repositories/session.repository.js'),
-      'utf8',
-    );
-
-    expect(jwtLib).toContain('createHash');
-    expect(jwtLib).toContain("digest('hex')");
-    expect(sessionRepo).toContain('hashToken(refreshToken)');
-  });
 
   test('service worker does not cache API responses', () => {
     const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
@@ -28,80 +24,6 @@ describe('security guardrails', () => {
 
     expect(gitignore).toMatch(/^\.env$/m);
     expect(gitignore).toContain('*.env.local');
-  });
-
-  test('auth sets HttpOnly cookies instead of exposing tokens to JS', () => {
-    const authRoutes = fs.readFileSync(path.join(root, 'backend/routes/auth.js'), 'utf8');
-    const authCookies = fs.readFileSync(path.join(root, 'backend/lib/authCookies.js'), 'utf8');
-
-    expect(authRoutes).toContain('setAuthCookies');
-    expect(authCookies).toContain('HttpOnly');
-  });
-
-  test('stripe webhook is registered before JSON body parser', () => {
-    const appJs = fs.readFileSync(path.join(root, 'backend/app.js'), 'utf8');
-    const webhookIdx = appJs.indexOf('/api/v1/billing/webhook');
-    const jsonIdx = appJs.indexOf('app.use(express.json');
-
-    expect(webhookIdx).toBeGreaterThan(-1);
-    expect(jsonIdx).toBeGreaterThan(webhookIdx);
-  });
-
-  test('billing exposes Stripe Checkout route', () => {
-    const billingRoutes = fs.readFileSync(path.join(root, 'backend/routes/billing.js'), 'utf8');
-    const billingService = fs.readFileSync(
-      path.join(root, 'backend/domain/services/billing.service.js'),
-      'utf8',
-    );
-
-    expect(billingRoutes).toContain('/:orgId/checkout');
-    expect(billingService).toContain('createCheckoutSession');
-    expect(billingService).toContain('checkout.session.completed');
-  });
-
-  test('auth exposes TOTP 2FA routes', () => {
-    const authRoutes = fs.readFileSync(path.join(root, 'backend/routes/auth.js'), 'utf8');
-    const schema = fs.readFileSync(path.join(root, 'prisma/schema.prisma'), 'utf8');
-
-    expect(authRoutes).toContain('/totp/verify');
-    expect(authRoutes).toContain('/totp/setup');
-    expect(authRoutes).toContain('/totp/enable');
-    expect(schema).toContain('totpEnabled');
-  });
-
-  test('open finance API routes and dedupe field exist', () => {
-    const routes = fs.readFileSync(path.join(root, 'backend/routes/open-finance.js'), 'utf8');
-    const service = fs.readFileSync(
-      path.join(root, 'backend/domain/services/open-finance.service.js'),
-      'utf8',
-    );
-    const schema = fs.readFileSync(path.join(root, 'prisma/schema.prisma'), 'utf8');
-
-    expect(routes).toContain('/connections');
-    expect(routes).toContain('/connections/:id/sync');
-    expect(routes).toContain('/providers');
-    expect(routes).toContain('/belvo/widget-token');
-    expect(routes).toContain('/belvo/complete');
-    expect(service).toContain('await Promise.resolve(provider.fetchTransactions');
-    expect(schema).toContain('OpenFinanceConnection');
-    expect(schema).toContain('openFinanceId');
-  });
-
-  test('metrics protegidos e billing fail-closed', () => {
-    const health = fs.readFileSync(path.join(root, 'backend/routes/health.js'), 'utf8');
-    const billing = fs.readFileSync(path.join(root, 'backend/domain/services/billing.service.js'), 'utf8');
-    const transactions = fs.readFileSync(path.join(root, 'backend/routes/transactions.js'), 'utf8');
-
-    expect(health).toContain('requireMetricsAuth');
-    expect(billing).toContain('Configure Stripe em produção');
-    expect(transactions).toContain('checkTransactionLimit');
-  });
-
-  test('config sanitize remove PIN fields', () => {
-    const sanitize = fs.readFileSync(path.join(root, 'backend/lib/config-sanitize.js'), 'utf8');
-    const userService = fs.readFileSync(path.join(root, 'backend/domain/services/user.service.js'), 'utf8');
-    expect(sanitize).toContain('pinHash');
-    expect(userService).toContain('sanitizeUserConfig');
   });
 
   // Estes só existem depois de `npm run build`. Num clone recém-feito não há
@@ -150,36 +72,6 @@ describe('security guardrails', () => {
     expect(crypto).toContain('wrapStorageValue');
   });
 
-  test('produção exige Redis e rejeita defaults inseguros no boot', () => {
-    const guard = fs.readFileSync(path.join(root, 'backend/lib/production-guard.js'), 'utf8');
-    const server = fs.readFileSync(path.join(root, 'backend/server.js'), 'utf8');
-    const config = fs.readFileSync(path.join(root, 'backend/config.js'), 'utf8');
-
-    expect(guard).toContain('assertProductionReady');
-    expect(guard).toContain('dev-access-secret');
-    expect(server).toContain('assertProductionReady');
-    expect(config).toContain('requireRedis');
-  });
-
-  test('mutações de transação registram auditoria financeira', () => {
-    const txService = fs.readFileSync(path.join(root, 'backend/domain/services/transaction.service.js'), 'utf8');
-    const txRoutes = fs.readFileSync(path.join(root, 'backend/routes/transactions.js'), 'utf8');
-    const audit = fs.readFileSync(path.join(root, 'backend/lib/finance-audit.js'), 'utf8');
-
-    expect(txService).toContain('logFinancialMutation');
-    expect(txRoutes).toContain('clientMetaFromRequest');
-    expect(audit).toContain('snapshotTransaction');
-  });
-
-  test('produção exige SMTP_FROM e PRIVACY_CONTACT_EMAIL (fail-closed)', () => {
-    const config = fs.readFileSync(path.join(root, 'backend/config.js'), 'utf8');
-    expect(config).toContain("required('SMTP_FROM')");
-    expect(config).toContain("required('PRIVACY_CONTACT_EMAIL')");
-    // Sem Gmail pessoal como default de produção.
-    expect(config).not.toMatch(/SMTP_FROM\|\|[^\n]*gmail\.com/);
-    expect(config).not.toMatch(/PRIVACY_CONTACT_EMAIL\|\|[^\n]*gmail\.com/);
-  });
-
   test('política de privacidade não promete domínio não registrado', () => {
     const privacidade = fs.readFileSync(path.join(root, 'privacidade.html'), 'utf8');
     expect(privacidade).not.toContain('[coloque aqui');
@@ -188,21 +80,6 @@ describe('security guardrails', () => {
     for (const email of new Set(emails)) {
       expect(email).not.toMatch(/@financaspro\.com/);
     }
-  });
-
-  test('snapshot delega transações ao sync pull (sem take 1000)', () => {
-    const state = fs.readFileSync(path.join(root, 'backend/domain/services/state.service.js'), 'utf8');
-    expect(state).toContain("strategy: 'sync-pull'");
-    expect(state).not.toMatch(/take:\s*1000/);
-  });
-
-  test('sync e listagem suportam paginação por cursor', () => {
-    const repo = fs.readFileSync(path.join(root, 'backend/domain/repositories/transaction.repository.js'), 'utf8');
-    const syncRoutes = fs.readFileSync(path.join(root, 'backend/routes/sync.js'), 'utf8');
-    const txRoutes = fs.readFileSync(path.join(root, 'backend/routes/transactions.js'), 'utf8');
-    expect(repo).toContain('findManyCursor');
-    expect(syncRoutes).toContain('cursor');
-    expect(txRoutes).toContain('cursor');
   });
 
   test('bundle budget script mede precache e app.bundle', () => {

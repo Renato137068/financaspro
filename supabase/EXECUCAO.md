@@ -23,9 +23,12 @@ Legenda: 🧑 = você (precisa da conta) · 🤖 = eu faço (código, quando o p
    DATABASE_URL="<conexão DIRETA :5432>" npm run db:migrate:prod
    ```
 
-3. 🤖 **Semear os planos** (com os preços recalibrados) e dados base:
+3. 🤖 **Semear os planos** (Gratuito, Pro e Business, com os preços
+   recalibrados). Pode rodar de novo quando quiser: atualiza preço e limites e
+   não apaga os IDs de preço do Stripe já gravados. Sem `psql`, cole o arquivo
+   no *SQL Editor* do painel do Supabase.
    ```bash
-   DATABASE_URL="<conexão DIRETA :5432>" npm run billing:seed
+   psql "<conexão DIRETA :5432>" -f supabase/seed/planos.sql
    ```
 
 4. 🤖 **Aplicar a RLS**:
@@ -101,7 +104,7 @@ Legenda: 🧑 = você (precisa da conta) · 🤖 = eu faço (código, quando o p
 
 ## Fase 5 — Desligar a infra antiga
 
-16. 🤖 Remover do repo: backend Express, workers BullMQ, Dockerfile do Railway.
+16. ✅ Removidos do repo o backend Express, os workers BullMQ e o Dockerfile (ADR 0007).
 17. 🧑 Cancelar Neon, Upstash e Railway.
 18. 🤖 (Opcional) Emails reais: trocar o stub `notify()` das functions por Resend.
 

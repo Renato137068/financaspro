@@ -44,7 +44,6 @@ function runJest(config, label, options) {
 fs.mkdirSync(outDir, { recursive: true });
 
 const frontend = runJest('jest.frontend.config.cjs', 'jest-frontend');
-const backend = runJest('jest.backend.config.cjs', 'jest-backend', { experimentalVmModules: true });
 
 const lines = [
   'FinançasPro — resumo de testes',
@@ -59,27 +58,11 @@ const lines = [
     + frontend.numFailedTests + ' fail, '
     + frontend.numPendingTests + ' pending, '
     + frontend.numTotalTests + ' total',
-  '',
-  'Backend:',
-  '  suites: ' + (backend.numPassedTestSuites || 0) + ' pass, '
-    + (backend.numFailedTestSuites || 0) + ' fail, '
-    + (backend.numPendingTestSuites || 0) + ' pending, '
-    + (backend.numTotalTestSuites || 0) + ' total',
-  '  tests:  ' + backend.numPassedTests + ' pass, '
-    + backend.numFailedTests + ' fail, '
-    + backend.numPendingTests + ' pending, '
-    + backend.numTotalTests + ' total',
-  '',
-  'Total combinado:',
-  '  tests: ' + (frontend.numTotalTests + backend.numTotalTests),
-  '  pass:  ' + (frontend.numPassedTests + backend.numPassedTests),
-  '  fail:  ' + (frontend.numFailedTests + backend.numFailedTests),
-  '  skip:  ' + (frontend.numPendingTests + backend.numPendingTests),
 ];
 
 fs.writeFileSync(summaryPath, lines.join('\n') + '\n');
 console.log(lines.join('\n'));
 console.log('\n[test-report] gravado em', summaryPath);
 
-const failed = frontend.exitCode !== 0 || backend.exitCode !== 0;
+const failed = frontend.exitCode !== 0;
 process.exit(failed ? 1 : 0);

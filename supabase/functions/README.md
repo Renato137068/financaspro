@@ -1,7 +1,8 @@
 # Edge Functions — Billing (Google Play + Stripe)
 
-Port do billing do backend Express para Supabase Edge Functions (Deno).
-A lógica é a mesma já testada no Express — muda o empacotamento.
+O servidor do app: cobrança (Google Play e Stripe), convites, trial e
+relatórios de erro em Supabase Edge Functions (Deno). Nasceram como port da
+API Express, que saiu do repositório (ADR 0007).
 
 ```
 functions/
@@ -126,7 +127,7 @@ _testes/dubles/rede.ts        # fetch falso: OAuth e Play API do Google, tokenin
 Nenhum teste sai para a rede (uma URL sem rota falha o teste); a única
 descarga é a do pacote `npm:stripe` pelo próprio Deno, antes de os testes rodarem. O JWT da conta
 de serviço é assinado de verdade, com uma chave RSA gerada no teste. Os casos
-vieram de `tests/backend/*billing*.test.js` (o Express congelado), mais os que
+vieram das suítes de billing do Express (no histórico do git), mais os que
 só existem aqui: sandbox só com opt-in, pacote vindo da env, chave legada
 truncada, compra anulada, OIDC do Pub/Sub, liberação do claim quando o
 processamento falha.

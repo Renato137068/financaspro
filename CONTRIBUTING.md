@@ -8,43 +8,30 @@ cada pull request.
 
 ```bash
 npm ci
-cp .env.example .env
-npm run db:generate
-npm run db:migrate
 npm run dev          # frontend em :3000
-npm run backend:dev  # API em :4000
 ```
 
-Node 22+ e npm 9+. O Postgres só é necessário para o backend completo; o
-frontend funciona offline sem API — esse é um requisito de produto, não um
-detalhe de implementação.
+Node 22+ e npm 9+. Não há servidor próprio para subir: login, dados e cobrança
+falam com o Supabase ([ADR 0007](docs/adr/0007-remocao-do-express.md)). O
+Postgres local só é necessário para as migrações e os testes pgTAP.
 
 ## Antes de abrir um PR
 
 ```bash
 npm run lint:changed   # zero avisos no que você tocou
-npm test               # suítes de frontend e backend
+npm test               # suíte Jest
 npm run build          # precisa passar
 npm run check:bundle   # orçamento de peso
 ```
 
-O CI roda tudo isso mais `npm audit`, os testes de integração HTTP, o
-verificador de sinks de XSS e a suíte E2E do Playwright.
+O CI roda tudo isso mais `npm audit`, o verificador de sinks de XSS, os testes
+das Edge Functions, o pgTAP e a suíte E2E do Playwright.
 
 ## Testes
 
-O projeto tem **duas suítes Jest separadas**, com configurações próprias:
-
-| Suíte | Config | Ambiente | Módulos |
-|---|---|---|---|
-| Frontend | `jest.frontend.config.cjs` | jsdom | CommonJS (`require`) |
-| Backend | `jest.backend.config.cjs` | node | ESM nativo |
-
-Elas não podem rodar no mesmo processo: o backend precisa de
-`--experimental-vm-modules` para usar `jest.unstable_mockModule`, e essa flag
-faria o Jest tratar todo `.js` como ESM — quebrando os `require()` do frontend,
-já que o `package.json` raiz declara `"type": "module"`. Por isso `npm test`
-executa as duas em sequência.
+A suíte Jest (`jest.frontend.config.cjs`, jsdom, testes em CommonJS) carrega os
+arquivos de `js/` e o JavaScript puro das Edge Functions pelo
+`tests/helpers/carregar-script.cjs`.
 
 Fora do Jest, duas suítes que o CI também roda:
 
@@ -68,8 +55,7 @@ metas aspiracionais. Duas regras:
    forma irreversível.
 
 Atenção a um detalhe do Jest: arquivos com limiar próprio saem do grupo
-`global`. O número global descreve apenas o *restante* — hoje, a camada de UI
-do frontend e as rotas do backend.
+`global`. O número global descreve apenas o *restante* — hoje, a camada de UI.
 
 ### O que testar
 
@@ -77,42 +63,29 @@ Priorize, nesta ordem:
 
 1. Regras que movem dinheiro ou expõem dados de outro usuário.
 2. Caminhos de erro — é onde os bugs sobrevivem.
-3. Contratos entre camadas (o que o repositório monta antes de chamar o Prisma).
+3. Contratos entre camadas (o que o app manda ao Supabase e o que ele devolve).
 
-Testes estáticos como `tests/backend/routes-guard.test.js` e
+Testes estáticos como `tests/retencao-politica.test.js` e
 `tests/sw-precache.test.js` valem tanto quanto os de comportamento: eles impedem
-que a *próxima* rota ou o *próximo* asset nasçam desprotegidos.
+que a *próxima* tabela ou o *próximo* asset nasçam desprotegidos.
 
 ## Estilo de código
 
-### Backend
+### Servidor
 
-**Funcionalidade nova de backend vai para o Supabase** — Edge Function em
-`supabase/functions/` ou SQL em `supabase/migrations/` (com RLS e teste pgTAP).
-A API Express em `backend/` está congelada
-([ADR 0004](docs/adr/0004-supabase-fonte-de-verdade-express-congelado.md)):
-só recebe correção de segurança. As regras abaixo valem para essas correções.
+**Regra de servidor é SQL ou Edge Function no Supabase** — SQL em
+`supabase/migrations/` (com RLS e teste pgTAP em `supabase/tests/`) ou Edge
+Function em `supabase/functions/` (com teste em `supabase/functions/_testes/`).
+Servidor Node próprio para regra de negócio é proibido
+([ADR 0007](docs/adr/0007-remocao-do-express.md)); o que não couber nos dois
+vira um ADR novo.
 
-ESM, camadas explícitas:
-
-```
-routes/       → HTTP: validação de entrada, status codes
-domain/services/    → regra de negócio
-domain/repositories/ → acesso ao Prisma
-lib/          → utilitários sem estado
-middleware/   → transversais (auth, rate limit, csrf, validação)
-```
-
-Uma rota nunca fala com o Prisma direto. Um repositório nunca lança `AppError`
-de regra de negócio.
-
-**Todo handler async usa `asyncHandler`.** Sem ele, um `throw` vira
-`unhandledRejection` e o `server.js` responde a isso encerrando o processo —
-um erro de credenciais derrubaria a API.
-
-**Toda rota com path param usa `validateParams`.** Um `:id` que não é UUID
-chega ao Prisma e vira 500; validado na borda, vira 400. Há um teste que falha
-se você esquecer.
+- Função SQL chamável pelo app: `security definer` só quando precisa, com
+  `search_path` fixo, e `revoke execute` de `anon` quando não é pública.
+- Tarefa agendada (`pg_cron`) que chama Edge Function leva segredo no Vault e a
+  função confere o cabeçalho em tempo constante (`supabase/functions/_shared/segredo.ts`).
+- O schema continua no Prisma (`prisma/schema.prisma`): tabela nova entra lá,
+  com migração, e ganha prazo de retenção (`tests/retencao-politica.test.js`).
 
 ### Frontend
 
@@ -143,15 +116,15 @@ presente.
 
 Regras que não se negociam:
 
-- Senhas: PBKDF2-SHA256 com o número de iterações do `CONFIG`, salt novo por
-  usuário, comparação em tempo constante.
-- Refresh tokens são gravados como SHA-256 — o valor em claro nunca persiste.
-- Reuso de refresh token revoga **toda** a família de sessões.
-- Respostas de erro de login são indistinguíveis entre "e-mail não existe" e
-  "senha errada", inclusive no tempo de resposta.
-- Config de usuário sincronizada passa por `sanitizeUserConfig` — material do
-  PIN nunca sai do dispositivo.
-- Nada de segredo em código. `.env` é ignorado pelo git e há teste que verifica.
+- Login, senha e 2FA são do Supabase Auth: o app não guarda nem compara senha.
+- Toda tabela exposta tem RLS, e o pgTAP prova que um usuário não lê nem altera
+  o dado de outro.
+- Segredo compartilhado (webhook, RTDN, agendamento) é comparado em tempo
+  constante.
+- Material do PIN nunca sai do dispositivo: o sync remove `pinHash` e afins
+  antes de mandar a configuração (`js/core/supabase-sync.js`).
+- Nada de segredo em código. `.env` é ignorado pelo git e há teste que verifica;
+  segredos de produção ficam nas Edge Functions (Secrets) e no Vault.
 
 ## Commits
 
@@ -161,7 +134,7 @@ Padrão convencional, em português:
 feat(billing): checkout anual com desconto
 fix(auth): jti único no refresh token
 perf(sw): precache só do app shell
-test(backend): suíte unitária de auth.service
+test(edge): reconciliação da Play pergunta ao Google antes de revogar
 docs(adr): decisão sobre migração para ES Modules
 ```
 
