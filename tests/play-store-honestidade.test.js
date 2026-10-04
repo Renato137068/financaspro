@@ -100,6 +100,25 @@ describe('Honestidade Play Store / privacidade', () => {
     if (/últimos 3 meses/i.test(ficha)) {
       expect(limites.FREE.historyMonths).toBe(3);
     }
+    // O gratuito tem uma meta só: "metas" no plural ali seria promessa falsa.
+    if (/metas ilimitadas no Pro/i.test(ficha)) {
+      expect(limites.FREE.maxGoals).toBe(1);
+      expect(limites.PRO.maxGoals).toBeNull();
+    }
+  });
+
+  test('a ficha não diz que dá para usar sem conta', () => {
+    // O app da loja (build cloud) abre no login; sem rede, só entra quem já
+    // tem sessão neste aparelho (js/authController.js). Uma versão do texto
+    // respondia "Preciso criar conta para usar? Não." — falso na loja.
+    const ficha = fs.readFileSync(path.join(root, 'docs/play-store-ficha.md'), 'utf8');
+    // Só o que vai para a loja: os blocos de código das descrições.
+    const secao = ficha.slice(ficha.indexOf('## Descrição curta'), ficha.indexOf('## Observações'));
+    const loja = (secao.match(/```[\s\S]*?```/g) || []).join('\n');
+    expect(loja).toMatch(/FinançasPro/);
+    expect(loja).not.toMatch(/sem conta|sem cadastro|sem login/i);
+    expect(loja).not.toMatch(/criar conta para usar\?\s*\n\s*Não/i);
+    expect(loja).not.toMatch(/se quiser criar uma conta|decide se quer criar/i);
   });
 
   test('paywall sem login é honesto sobre o que o modo local é', () => {
