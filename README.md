@@ -61,6 +61,7 @@ O CI roda lint, testes e build em Node 22 e 24.
 | `js/core/` | Config, persistência, store, validações |
 | `js/modules/` | Inicialização por área da interface |
 | `js/services/` | Actions e serviços reutilizáveis |
+| `site/` | Página do app (`/sobre.html`) e artigos, estáticos e sem JavaScript |
 | `supabase/` | RLS, funções SQL, tarefas agendadas, Edge Functions e testes pgTAP |
 | `prisma/` | Schema e migrações (dono das tabelas) |
 | `tests/` | Unidade, app inteiro em jsdom (`tests/app-*`) e segurança estática |

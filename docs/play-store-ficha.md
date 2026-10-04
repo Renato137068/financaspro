@@ -14,7 +14,7 @@ Página principal da loja*.
 - **Categoria**: Finanças
 - **Tags**: finanças pessoais, controle de gastos, orçamento, metas
 - **E-mail de contato**: (o e-mail do desenvolvedor — o mesmo da política de privacidade)
-- **Site**: `https://app.financaspro.com` (depois da hospedagem, `docs/release/hospedagem-web.md`)
+- **Site**: `https://app.financaspro.com/sobre.html` (página do app, em `site/`; no ar depois da hospedagem, `docs/release/hospedagem-web.md`)
 - **Política de privacidade (URL)**: `https://app.financaspro.com/privacidade.html`
 
 ## Assinatura da marca
@@ -123,7 +123,9 @@ no app, e preço escrito na descrição fica errado no primeiro reajuste.
   (1080×1920, com legenda). Geradas por `npm run vitrine:gerar` a partir do app
   real com dados de exemplo. As antigas (`screenshot-*.png`) e a
   `screenshot-placeholder-1080x1920.png` (tela em branco) não vão para a loja.
-- Capturas de tablet: `docs/play-store/screenshot-*-tablet-*.png`.
+- Capturas de tablet de 7" (1200×1920, com legenda), na mesma ordem:
+  `docs/play-store/vitrine/tablet/01-*.png` a `08-*.png`. As antigas
+  `screenshot-*-tablet-*.png` saem da loja; as de 10" continuam como estão.
 - Idioma padrão: Português (Brasil).
 - Pro com **trial de 7 dias** no Play Console, nos SKUs `financaspro.pro.monthly` e `.yearly` (ver `play-store-billing-runbook.md`).
 - Preços dos SKUs: **R$ 16,99/mês** e **R$ 129,99/ano** (tiers do Play). Preço

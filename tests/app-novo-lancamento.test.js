@@ -58,6 +58,24 @@ describe('Novo lançamento', () => {
     expect(app.erros).toEqual([]);
   });
 
+  test('a prévia de orçamento mostra o nome da categoria, não o slug', async () => {
+    // Antes saía "Alimentacao" (o slug capitalizado), que o CSS da prévia
+    // deixa em caixa alta: "ALIMENTACAO".
+    app = await subirApp({
+      agora: AGORA,
+      transacoes: [SALARIO],
+      config: { orcamentos: { alimentacao: { limite: 500, definidoEm: '2026-09-01T00:00:00.000Z' } } },
+    });
+    app.window.mudarAba('novo');
+    digitar(app.document.getElementById('novo-valor'), '42,50');
+    app.document.getElementById('novo-categoria').value = 'alimentacao';
+    app.window.INIT_FORM.atualizarOrcamentoPreview();
+    const cat = app.document.querySelector('#orcamento-preview .orc-preview-cat');
+    expect(cat).not.toBeNull();
+    expect(cat.textContent).toBe('Alimentação');
+    expect(app.erros).toEqual([]);
+  });
+
   test('receita: o botão Receita muda o tipo gravado', async () => {
     app = await subirApp({ agora: AGORA });
     app.window.mudarAba('novo');

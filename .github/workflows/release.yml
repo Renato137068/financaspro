@@ -190,6 +190,8 @@ jobs:
           releaseFiles: financaspro-${{ needs.verificar.outputs.tag }}.aab
           track: internal
           status: completed
+          # "Novidades" da versão na loja (whatsnew-<idioma>, até 500 caracteres).
+          whatsNewDirectory: distribution/whatsnew
 
       - name: Apagar a keystore
         if: always()

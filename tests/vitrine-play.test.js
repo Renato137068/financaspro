@@ -10,7 +10,7 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { CAPTURAS } = require('../scripts/gerar-vitrine-play.cjs');
+const { CAPTURAS, FORMATOS, PROMOCIONAIS } = require('../scripts/gerar-vitrine-play.cjs');
 const { dadosDaVitrine } = require('../scripts/lib/vitrine-dados.cjs');
 
 const root = path.join(__dirname, '..');
@@ -48,6 +48,11 @@ describe('Vitrine da Play', function() {
       expect(tamanhoPng(path.join(dir, c.arquivo + '.png'))).toEqual({ w: 1080, h: 1920 });
     });
     expect(tamanhoPng(path.join(dir, 'destaque-1024x500.png'))).toEqual({ w: 1024, h: 500 });
+    // Tablet de 7" em retrato (achado A10: sem ele o app aparece menos em
+    // tablets e Chromebooks).
+    CAPTURAS.forEach(function(c) {
+      expect(tamanhoPng(path.join(dir, 'tablet', c.arquivo + '.png'))).toEqual({ w: 1200, h: 1920 });
+    });
   });
 
   test('dados de exemplo no formato que o app grava', function() {
@@ -62,5 +67,27 @@ describe('Vitrine da Play', function() {
     const doMes = tx.filter(function(t) { return t.data.slice(0, 7) === '2026-10'; });
     expect(doMes.some(function(t) { return t.tipo === 'receita'; })).toBe(true);
     expect(doMes.some(function(t) { return t.tipo === 'despesa'; })).toBe(true);
+  });
+  test('celular e tablet, nos tamanhos que a loja aceita', function() {
+    expect(FORMATOS.map(function(f) { return f.id; })).toEqual(['celular', 'tablet']);
+    FORMATOS.forEach(function(f) {
+      expect(f.tela.largura * f.tela.escala).toBe(f.saida.largura);
+      expect(f.saida.altura).toBe(1920);
+    });
+  });
+  test('imagens do conteúdo promocional em 16:9 e textos sem termo proibido', function() {
+    function tamanhoPng(arquivo) {
+      const b = fs.readFileSync(arquivo);
+      return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) };
+    }
+    const guia = fs.readFileSync(path.join(root, 'docs/play-store/conteudo-promocional.md'), 'utf8');
+    expect(PROMOCIONAIS.length).toBeGreaterThanOrEqual(3);
+    PROMOCIONAIS.forEach(function(p) {
+      const arq = p.arquivo + '-1920x1080.png';
+      expect(tamanhoPng(path.join(root, 'docs/play-store/vitrine/promocional', arq))).toEqual({ w: 1920, h: 1080 });
+      expect(CAPTURAS.map(function(c) { return c.arquivo; })).toContain(p.tela);
+      expect(p.titulo + ' ' + p.apoio).not.toMatch(PROIBIDO);
+      expect(guia).toContain(arq);
+    });
   });
 });

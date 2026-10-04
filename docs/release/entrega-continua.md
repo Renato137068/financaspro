@@ -26,6 +26,13 @@ O CD de antes (`deploy.yml`, imagem Docker da API) saiu com a API Express
 
 ## Cortar uma release
 
+Antes, reescreva `distribution/whatsnew/whatsnew-pt-BR`: é o texto de
+"Novidades" que a loja mostra para quem já tem o app (até 500 caracteres, o
+release envia junto com o AAB). Escreva o que melhorou para a pessoa, não o
+nome do commit: "Alertas de orçamento voltaram a avisar", e não
+"fix(ai-engine)". O teste `tests/release-cd.test.js` barra arquivo vazio ou
+longo demais.
+
 ```bash
 npm run versao:subir -- patch      # ou minor, major, X.Y.Z
 git commit -am "chore(release): vX.Y.Z"
