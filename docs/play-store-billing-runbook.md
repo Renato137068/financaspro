@@ -14,7 +14,7 @@ porque envolve login, aceite de termos e configuração de cobrança.
 | Item | Valor |
 |---|---|
 | Package name | `com.financaspro.mobile` |
-| Backend (API) | `https://financaspro-web-production.up.railway.app` *(confirme a sua URL real no Railway → Settings → Networking)* |
+| Servidor (Edge Functions) | `https://nubvlksibmpryltkfpei.supabase.co/functions/v1/` (`play-verify`, `play-rtdn`) |
 
 **Produtos de assinatura (IDs exatos — o código depende deles):**
 
@@ -25,7 +25,7 @@ porque envolve login, aceite de termos e configuração de cobrança.
 
 - **Só estes 2.** Não crie produtos Business — o app não oferece esse plano.
 - **Trial de 7 dias** nos dois produtos Pro.
-- Se digitar um ID diferente de um caractere que seja, o backend não reconhece o
+- Se digitar um ID diferente de um caractere que seja, o servidor não reconhece o
   produto. Copie e cole.
 
 ---
@@ -35,10 +35,10 @@ porque envolve login, aceite de termos e configuração de cobrança.
 - [ ] Conta no **Google Play Console** ativa (taxa única de US$25 já paga).
 - [ ] App **FinançasPro** criado, com o AAB já subido em **Teste interno**
       (você já tem isto).
-- [ ] Backend no ar no Railway (veja `docs/deploy-railway-neon-upstash.md`).
-      Cheque: abra `https://SUA-API/health` → deve responder OK.
+- [ ] Edge Functions publicadas no Supabase (veja `docs/deploy-billing-edge.md`).
+      Cheque: *Supabase → Edge Functions* lista `play-verify` e `play-rtdn`.
 
-📸 **Me mostre:** a URL do `/health` respondendo, pra confirmarmos o backend antes.
+📸 **Me mostre:** a lista de Edge Functions, pra confirmarmos o servidor antes.
 
 ---
 
@@ -83,7 +83,7 @@ trial nos dois.
 
 ## Fase 2 — Conta de serviço + acesso à Google Play Developer API
 
-Isso é o que deixa o **backend confirmar** com o Google se uma compra é real.
+Isso é o que deixa o **servidor confirmar** com o Google se uma compra é real.
 
 ### 2a. Vincular um projeto do Google Cloud
 
@@ -270,36 +270,22 @@ from "Subscription" where "stripeSubId" like 'play:%'
 order by "updatedAt" desc limit 1;
 ```
 
-## Fase 4 — Variáveis de ambiente no Railway
+## Fase 4 — Segredos nas Edge Functions
 
-> 🕰️ **Legado.** O billing roda hoje em **Supabase Edge Functions** (projeto
-> `nubvlksibmpryltkfpei`) e os secrets são definidos pelo **Dashboard do
-> Supabase**, não pelo Railway — veja a Fase 3d e `docs/deploy-billing-edge.md`.
-> A Fase 4 fica aqui só enquanto o backend Express não for aposentado de vez.
-> Os **valores** continuam válidos; muda o lugar onde se coloca.
+Em *Supabase → Project Settings → Edge Functions → Secrets* (lista completa em
+`supabase/functions/README.md`):
 
-
-Nos **dois** serviços (web **e** worker), em **Variables**, adicione:
-
-| Variável | Valor |
+| Secret | Valor |
 |---|---|
 | `PLAY_PACKAGE_NAME` | `com.financaspro.mobile` |
-| `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | **cole o conteúdo inteiro** do `.json` da Fase 2b (uma linha só, entre aspas se o Railway pedir) |
-| `PLAY_RTDN_SECRET` | um segredo forte — gere com o comando abaixo |
+| `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | **cole o conteúdo inteiro** do `.json` da Fase 2b |
+| `PLAY_RTDN_SERVICE_ACCOUNT` | e-mail da conta de serviço do push do Pub/Sub (Fase 3a, autenticação OIDC) |
 
-Gerar o segredo (rode local e copie a saída):
+- 🔒 **Nunca** commite o JSON no Git.
+- A API Express e o Railway saíram (ADR 0007); não há mais variável para pôr
+  em outro lugar.
 
-```bash
-node -e "console.log(require('crypto').randomBytes(24).toString('base64url'))"
-```
-
-- Use **o mesmo valor** aqui e na URL do push do Pub/Sub (Fase 3a).
-- 🔒 **Nunca** commite o segredo nem o JSON no Git.
-
-Depois de salvar, o Railway redeploya sozinho.
-
-📸 **Me mostre:** as 3 variáveis criadas (pode borrar os valores) e o deploy
-concluído.
+📸 **Me mostre:** os secrets criados (pode borrar os valores).
 
 ---
 
@@ -312,14 +298,14 @@ concluído.
 3. No celular, instale a versão da trilha interna, abra o FinançasPro e faça a
    compra do **Pro**:
    - Deve aparecer o **trial de 7 dias**.
-   - Após confirmar, o app chama o backend, que **verifica no Google** e libera
+   - Após confirmar, o app chama a Edge Function `play-verify`, que **verifica no Google** e libera
      o **PRO**.
 4. **Teste o cancelamento:** Play Store → Assinaturas → cancelar. Em minutos o
    RTDN chega no webhook e o acesso passa a expirar no fim do período.
 
-📸 **Me mostre:** a tela de compra com o trial, e depois os logs do Railway
-(`/api/v1/play-billing/rtdn` e `/api/v1/billing/play/.../verify`). Eu confirmo se
-o entitlement gravou certo.
+📸 **Me mostre:** a tela de compra com o trial, e depois os logs das Edge
+Functions `play-verify` e `play-rtdn` (*Supabase → Edge Functions → Logs*). Eu
+confirmo se o entitlement gravou certo.
 
 ---
 
@@ -489,7 +475,7 @@ apenas se o `purchaseToken` pertencer àquela org (`findByPlayPurchaseToken`).
 > para rodar functions localmente, não para publicar.
 
 ```bash
-# Patch de backend — vale para todos os usuários na hora
+# Correção nas Edge Functions — vale para todos os usuários na hora
 npx supabase functions deploy play-verify --project-ref nubvlksibmpryltkfpei
 supabase functions deploy play-rtdn  --no-verify-jwt --project-ref nubvlksibmpryltkfpei
 ```
@@ -512,18 +498,9 @@ supabase functions deploy play-rtdn  --no-verify-jwt --project-ref nubvlksibmpry
 
 ## Referências
 
-- Setup de infra (Railway/Neon/Upstash): `docs/deploy-railway-neon-upstash.md`
 - Build do AAB: `docs/build-aab-runbook.md`
-- Código (Express, legado): `backend/routes/play-billing.js`,
-  `backend/domain/services/play-billing.service.js`, `backend/lib/google-play-api.js`,
-  webhook em `backend/app.js`.
-- Código (Supabase Edge Functions, **atual**): `supabase/functions/play-verify/index.ts`,
+- Código (Supabase Edge Functions): `supabase/functions/play-verify/index.ts`,
   `supabase/functions/play-rtdn/index.ts`, `supabase/functions/_shared/google-play.ts`,
   `supabase/functions/_shared/play-billing.ts`, `supabase/functions/_shared/db.ts`.
 - Deploy das functions: `docs/deploy-billing-edge.md`
 - Diagnóstico da conta de serviço: `scripts/play-sa-check.mjs`
-
-> ℹ️ As Fases 4 e 5 acima ainda descrevem o Railway. O billing roda hoje em
-> **Supabase Edge Functions** (projeto `nubvlksibmpryltkfpei`), com os secrets
-> `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` e `PLAY_PACKAGE_NAME` definidos pelo
-> **Dashboard** do Supabase.

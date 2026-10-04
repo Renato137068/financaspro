@@ -1,9 +1,9 @@
 /**
  * insights-real.test.js — setup card + análise com AI_ENGINE real.
  */
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
 
 function loadInsights() {
   const root = path.join(__dirname, '..');
@@ -35,13 +35,14 @@ function loadInsights() {
       },
     },
     SETUP_GUIDE: undefined,
+    CONFIG: undefined,
     ORCAMENTO: undefined,
   };
   vm.createContext(ctx);
   const ai = path.join(root, 'js', 'ai-engine.js');
   const ins = path.join(root, 'js', 'insights.js');
-  vm.runInContext(fs.readFileSync(ai, 'utf8'), ctx, { filename: ai });
-  vm.runInContext(fs.readFileSync(ins, 'utf8'), ctx, { filename: ins });
+  rodarNoContexto(ctx, ai);
+  rodarNoContexto(ctx, ins);
   return ctx.INSIGHTS;
 }
 

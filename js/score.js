@@ -1,8 +1,11 @@
 /**
  * score.js - Unified confidence scoring
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
 
-var SCORE = {
+const SCORE = {
   _cache: new Map(),
   _CACHE_MAX: 500,
 
@@ -21,10 +24,10 @@ var SCORE = {
       (fuzzy && fuzzy.categoria) || '', (fuzzy && fuzzy.tipo) || '',
       (aprendizado && aprendizado.categoria) || '', (aprendizado && aprendizado.tipo) || ''
     ].join('|');
-    if (this._cache.has(key)) {
-      var hit = this._cache.get(key);
-      this._cache.delete(key);
-      this._cache.set(key, hit);
+    if (SCORE._cache.has(key)) {
+      var hit = SCORE._cache.get(key);
+      SCORE._cache.delete(key);
+      SCORE._cache.set(key, hit);
       return hit;
     }
 
@@ -38,19 +41,18 @@ var SCORE = {
       fonte     : (fuzzy && fuzzy.confianca === 'alta') ? 'fuzzy' : 'aprendizado'
     };
 
-    this._cache.set(key, resultado);
-    if (this._cache.size > this._CACHE_MAX) {
-      var oldest = this._cache.keys().next().value;
-      this._cache.delete(oldest);
+    SCORE._cache.set(key, resultado);
+    if (SCORE._cache.size > SCORE._CACHE_MAX) {
+      var oldest = SCORE._cache.keys().next().value;
+      SCORE._cache.delete(oldest);
     }
     return resultado;
   },
 
   limparCache: function() {
-    if (this._cache.size > this._CACHE_MAX) this._cache.clear();
+    if (SCORE._cache.size > SCORE._CACHE_MAX) SCORE._cache.clear();
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = SCORE;
-}
+export { SCORE };
+export default SCORE;

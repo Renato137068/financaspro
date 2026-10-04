@@ -28,6 +28,9 @@ const shared = fs.readFileSync(
 const endpoint = fs.readFileSync(
   path.join(root, 'supabase/functions/play-rtdn/index.ts'), 'utf8',
 );
+const segredo = fs.readFileSync(
+  path.join(root, 'supabase/functions/_shared/segredo.ts'), 'utf8',
+);
 
 /** Só o que roda — os comentários citam o comportamento antigo de propósito. */
 const codigo = shared
@@ -92,7 +95,9 @@ describe('Endpoint — autenticação falha fechada', () => {
   });
 
   test('compara o segredo por digest, não por ===', () => {
-    const cmp = corpoDe(endpoint, 'async function segredoConfere');
+    // A comparação mora em _shared/segredo.ts (também usada pela billing-reconcile).
+    expect(endpoint).toMatch(/import \{ segredoConfere \} from "\.\.\/_shared\/segredo\.ts"/);
+    const cmp = corpoDe(segredo, 'async function segredoConfere');
     expect(cmp).toContain('crypto.subtle.digest');
     expect(cmp).toMatch(/diff \|= x\[i\] \^ y\[i\]/);
   });

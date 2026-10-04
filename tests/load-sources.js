@@ -6,14 +6,39 @@ const path = require('path');
 const vm = require('vm');
 
 const root = path.join(__dirname, '..');
+// Caminho absoluto: este arquivo também roda via vm (scripts/lib/load-core.cjs),
+// com o `require` de outro diretório.
+const { ehModulo, executarModulo } = require(path.join(root, 'tests', 'helpers', 'esm-como-script.cjs'));
+const { rodarPerfil } = require(path.join(root, 'tests', 'helpers', 'chunk-perfil.cjs'));
+
+// Um cache de ES Modules por contexto: cada arquivo roda uma vez, como no navegador.
+let _modulos = new Map();
+
+// Imports que o harness deixa ausentes (dublê `undefined`), como sempre foi:
+// sem BILLING, os módulos não aplicam as travas de plano. Quem testa o gating
+// monta o próprio BILLING (tests/billing*.test.js).
+const AUSENTES = { BILLING: undefined };
+
+// O DADOS dos módulos é a fixture em memória declarada no contexto (abaixo),
+// não o js/core/dados.js real, que grava no localStorage.
+function dubles(context) {
+  const d = Object.assign({}, AUSENTES);
+  if (Object.prototype.hasOwnProperty.call(context, 'DADOS')) d.DADOS = context.DADOS;
+  return d;
+}
 
 function loadScript(context, relativePath) {
   const file = path.join(root, relativePath);
   if (!fs.existsSync(file)) return;
   let code = fs.readFileSync(file, 'utf8');
+  // ES Module (ADR 0005): o conversor já deixa os exports como `var` no contexto.
+  if (ehModulo(code)) { executarModulo(context, file, _modulos, dubles(context)); return; }
+  // `var   ` tem o mesmo tamanho de `const `: a cobertura V8 soma as execuções
+  // de um arquivo por posição de caractere, e encurtar o texto desalinhava
+  // estas execuções das que rodam o arquivo intacto (tests/helpers/app-jsdom).
   code = code.replace(
     /\bconst (CONFIG|UTILS|VALIDATIONS|SCORE|PARSER|PIPELINE|ORCAMENTO|TRANSACOES|APP_STORE|METAS|RELATORIOS|PATRIMONIO|CONTAS_PAGAR|ASSINATURAS|CONTAS|ANEXOS|INIT_CONFIG) =/g,
-    'var $1 =',
+    'var   $1 =',
   );
   vm.runInContext(code, context, { filename: file });
 }
@@ -52,6 +77,7 @@ function loadCoreModules() {
   sandbox.globalThis = sandbox;
   const context = vm.createContext(sandbox);
   _ctx = context;
+  _modulos = new Map();
 
   // Fixtures das dependências dos módulos, declarados como `var` no contexto
   // (viram propriedades do sandbox, resolvíveis por nome nu em qualquer versão).
@@ -82,10 +108,8 @@ function loadCoreModules() {
   );
 
   loadScript(context, 'js/core/config.js');
-  // Tier 0, antes de validations.js: sem ele, VALIDATIONS.validarSenha cai no
-  // fallback interno e a suíte passa a testar uma regra MAIS FROUXA que a do
-  // navegador — o formulário aceitaria senha que o backend recusa, e nenhum
-  // teste veria.
+  // validations.js importa PASSWORD_POLICY (ES Module); carregá-lo aqui antes
+  // só deixa o global disponível para os testes que o leem direto.
   loadScript(context, 'js/core/password-policy.js');
   loadScript(context, 'js/core/utils.js');
   loadScript(context, 'js/core/finance-contract.js');
@@ -115,7 +139,11 @@ function loadCoreModules() {
   // Leitura pura de insights: depende de AI_ENGINE/RELATORIOS/ORCAMENTO/TRANSACOES
   // (todos já carregados acima). analisar() não toca no DOM.
   loadScript(context, 'js/insights.js');
-  loadScript(context, 'js/modules/init-config.js');
+  // O Perfil (INIT_CONFIG e os mixins de backup e bancos), isolado: os imports
+  // de UI dele (preferências, modais, PIN) ficam ausentes, e o domínio vem do
+  // que já está neste contexto. Carregá-los de verdade puxaria a UI inteira,
+  // que toca o DOM ao carregar (e os scripts de perf rodam sem DOM).
+  rodarPerfil(context);
   // anexos.js só é carregado pela parte pura (validarArquivo); as funções de
   // IndexedDB não são exercitadas aqui — exigiriam polyfill.
   loadScript(context, 'js/anexos.js');
@@ -127,7 +155,7 @@ function loadCoreModules() {
     'TRANSACOES', 'METAS', 'APP_STORE', 'APP_STATE', 'DADOS', 'ACTIONS',
     'RELATORIOS', 'PATRIMONIO', 'CONTAS', 'CONTAS_PAGAR', 'ASSINATURAS', 'ANEXOS',
     'TRANSACTION_SERVICE', 'COMPROMISSOS', 'CARTOES', 'RECORRENTES', 'AI_ENGINE', 'INIT_CONFIG',
-    'FINANCE_CONTRACT', 'INSIGHTS',
+    'FINANCE_CONTRACT', 'INSIGHTS', 'AVALIACAO_LOJA',
   ].forEach(function(k) {
     if (typeof sandbox[k] !== 'undefined') global[k] = sandbox[k];
   });
@@ -173,10 +201,11 @@ function resetFixtures() {
  * aqui dentro.
  */
 let _ctx = null;
-function execNoSandbox(expressao) {
+function execNoSandbox(expressao, arquivo) {
   if (!_ctx) throw new Error('loadCoreModules() precisa rodar antes');
+  // `arquivo` (caminho real em js/) faz a cobertura V8 contar o código.
   return vm.runInContext(expressao, _ctx, {
-    filename: path.join(__dirname, 'load-sources.sandbox.js'),
+    filename: arquivo || path.join(__dirname, 'load-sources.sandbox.js'),
   });
 }
 
@@ -191,9 +220,16 @@ function semGlobalNoSandbox(nome, fn) {
   }
 }
 
+/** Contexto vm de loadCoreModules(), para carregar mais arquivos nele. */
+function getContext() {
+  if (!_ctx) throw new Error('loadCoreModules() precisa rodar antes');
+  return _ctx;
+}
+
 module.exports = {
   loadCoreModules,
   loadScript,
+  getContext,
   resetFixtures,
   execNoSandbox,
   semGlobalNoSandbox,

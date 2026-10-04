@@ -85,6 +85,19 @@ describe('METAS.registrarAporte', function() {
   test('aporte inválido lança', function() {
     expect(function() { global.METAS.registrarAporte(id, 0); }).toThrow(/inválido/);
   });
+  test('só o aporte que conclui a meta pede avaliação na loja', function() {
+    var spy = jest.spyOn(global.AVALIACAO_LOJA, 'aposMetaConcluida').mockReturnValue(Promise.resolve(false));
+    try {
+      global.METAS.registrarAporte(id, 200);       // 300 de 1000: ainda não
+      expect(spy).not.toHaveBeenCalled();
+      global.METAS.registrarAporte(id, 700);       // 1000: concluiu agora
+      expect(spy).toHaveBeenCalledTimes(1);
+      global.METAS.registrarAporte(id, 10);        // já estava concluída
+      expect(spy).toHaveBeenCalledTimes(1);
+    } finally {
+      spy.mockRestore();
+    }
+  });
   test('meta inexistente lança', function() {
     expect(function() { global.METAS.registrarAporte('zzz', 10); }).toThrow(/encontrada/);
   });

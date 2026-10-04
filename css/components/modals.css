@@ -34,12 +34,6 @@
   animation: scaleIn var(--transition-bounce) forwards;
 }
 
-.modal-box:has(.orc-edit-renda-modal),
-.modal-box:has(.orc-edit-regra-modal) {
-  max-width: 420px;
-  padding: var(--space-8);
-}
-
 .modal-box p {
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-medium);

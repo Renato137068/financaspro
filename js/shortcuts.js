@@ -1,10 +1,18 @@
-/* Keyboard shortcuts — desktop power users.
-   Não dispara em inputs/textareas. Modifier-free para velocidade tipo Slack/Linear. */
-var SHORTCUTS = {
+/**
+ * Keyboard shortcuts — desktop power users.
+ * Não dispara em inputs/textareas. Modifier-free para velocidade tipo Slack/Linear.
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
+ */
+
+import { mudarAba } from './modules/init-navigation.js';
+
+const SHORTCUTS = {
   ABAS: { '1': 'resumo', '2': 'novo', '3': 'extrato', '4': 'orcamento', '5': 'config' },
 
   init: function() {
-    var self = this;
+    var self = SHORTCUTS;
     document.addEventListener('keydown', function(ev) { self._handle(ev); });
   },
 
@@ -28,7 +36,7 @@ var SHORTCUTS = {
       var ov = document.querySelector('.modal-overlay');
       if (ov) {
         ev.preventDefault();
-        if (typeof fecharModal === 'function') fecharModal(); else ov.remove();
+        ov.remove();
       }
       return;
     }
@@ -36,14 +44,14 @@ var SHORTCUTS = {
     // ? mostra ajuda
     if (key === '?' || (ev.shiftKey && key === '/')) {
       ev.preventDefault();
-      this.mostrarAjuda();
+      SHORTCUTS.mostrarAjuda();
       return;
     }
 
     // 1-5 muda aba
-    if (this.ABAS[key] && typeof mudarAba === 'function') {
+    if (SHORTCUTS.ABAS[key] && typeof mudarAba === 'function') {
       ev.preventDefault();
-      mudarAba(this.ABAS[key]);
+      mudarAba(SHORTCUTS.ABAS[key]);
       return;
     }
 
@@ -60,12 +68,23 @@ var SHORTCUTS = {
 
     // / foca busca extrato
     if (key === '/') {
-      var busca = document.getElementById('extrato-busca');
-      if (busca) {
-        ev.preventDefault();
-        if (typeof mudarAba === 'function') mudarAba('extrato');
-        setTimeout(function() { busca.focus(); }, 100);
+      if (typeof mudarAba !== 'function') return;
+      ev.preventDefault();
+      var focarBusca = function() {
+        var busca = document.getElementById('extrato-busca');
+        if (busca) setTimeout(function() { busca.focus(); }, 100);
+      };
+      // O Extrato chega com o chunk (js/core/telas.js): na primeira vez o campo
+      // só existe depois que a tela carrega.
+      if (!document.getElementById('extrato-busca')) {
+        document.addEventListener('fp:tela-carregada', function aoCarregar(e) {
+          if (e.detail.nome !== 'extrato') return;
+          document.removeEventListener('fp:tela-carregada', aoCarregar);
+          focarBusca();
+        });
       }
+      mudarAba('extrato');
+      focarBusca();
     }
   },
 
@@ -92,6 +111,5 @@ var SHORTCUTS = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = SHORTCUTS;
-}
+export { SHORTCUTS };
+export default SHORTCUTS;

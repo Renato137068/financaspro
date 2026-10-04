@@ -13,7 +13,9 @@ if (mode !== 'local' && mode !== 'cloud') {
   process.exit(1);
 }
 
-const cfgPath = path.join(__dirname, '..', 'js', 'core', 'config.js');
+// FP_CONFIG_PATH: outro alvo (os testes usam uma cópia, nunca o config.js real,
+// que outros workers do jest estão lendo ao mesmo tempo).
+const cfgPath = process.env.FP_CONFIG_PATH || path.join(__dirname, '..', 'js', 'core', 'config.js');
 let src = fs.readFileSync(cfgPath, 'utf8');
 
 if (!/FP_BUILD_MODE\s*=\s*'(local|cloud)'/.test(src)) {
@@ -22,5 +24,9 @@ if (!/FP_BUILD_MODE\s*=\s*'(local|cloud)'/.test(src)) {
 }
 
 src = src.replace(/FP_BUILD_MODE\s*=\s*'(local|cloud)'/, "FP_BUILD_MODE = '" + mode + "'");
-fs.writeFileSync(cfgPath, src, 'utf8');
+// Temporário + rename: quem lê o arquivo no meio da escrita vê o antigo ou o
+// novo inteiro, nunca um pedaço.
+const tmpPath = cfgPath + '.' + process.pid + '.tmp';
+fs.writeFileSync(tmpPath, src, 'utf8');
+fs.renameSync(tmpPath, cfgPath);
 console.log('[set-build-mode] FP_BUILD_MODE =', mode);

@@ -7,7 +7,13 @@
  * - Cache de elementos DOM
  * - Re-render seletivo (não re-renderiza tudo)
  * - Preparação para virtual DOM futuro
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
+
+import { UTILS } from './core/utils.js';
+import { APP_STORE } from './core/store.js';
 
 const RENDER_CORE = {
   // Cache de elementos DOM para evitar querySelector repetido
@@ -31,7 +37,7 @@ const RENDER_CORE = {
       return false;
     }
     
-    this._renderers.set(name, {
+    RENDER_CORE._renderers.set(name, {
       render: renderer.render.bind(renderer),
       shouldRender: renderer.shouldRender ? renderer.shouldRender.bind(renderer) : function() { return true; },
       lastRender: 0,
@@ -45,7 +51,7 @@ const RENDER_CORE = {
    * Obtém renderer registrado
    */
   getRenderer: function(name) {
-    return this._renderers.get(name);
+    return RENDER_CORE._renderers.get(name);
   },
   
   // ============================================================
@@ -59,8 +65,8 @@ const RENDER_CORE = {
    * @returns {Element|null}
    */
   getElement: function(id, refresh) {
-    if (!refresh && this._cache.has(id)) {
-      var cached = this._cache.get(id);
+    if (!refresh && RENDER_CORE._cache.has(id)) {
+      var cached = RENDER_CORE._cache.get(id);
       if (cached && document.contains(cached)) {
         return cached;
       }
@@ -68,7 +74,7 @@ const RENDER_CORE = {
 
     var el = document.getElementById(id);
     if (el) {
-      this._cache.set(id, el);
+      RENDER_CORE._cache.set(id, el);
     }
     return el;
   },
@@ -78,9 +84,9 @@ const RENDER_CORE = {
    */
   invalidateCache: function(id) {
     if (id) {
-      this._cache.delete(id);
+      RENDER_CORE._cache.delete(id);
     } else {
-      this._cache.clear();
+      RENDER_CORE._cache.clear();
     }
   },
   
@@ -92,7 +98,7 @@ const RENDER_CORE = {
    * Renderiza uma seção específica imediatamente
    */
   render: function(name, context) {
-    var renderer = this._renderers.get(name);
+    var renderer = RENDER_CORE._renderers.get(name);
     if (!renderer) {
       console.warn('[RENDER_CORE] Renderer não encontrado:', name);
       return false;
@@ -133,12 +139,12 @@ const RENDER_CORE = {
    * Chamadas repetidas para o mesmo name dentro do mesmo frame são colapsadas.
    */
   scheduleRender: function(name, context) {
-    this._pendingRenders.set(name, context); // Map.set sobrescreve — deduplicação automática
+    RENDER_CORE._pendingRenders.set(name, context); // Map.set sobrescreve — deduplicação automática
 
-    if (this._rafId) return;
+    if (RENDER_CORE._rafId) return;
 
-    var self = this;
-    this._rafId = requestAnimationFrame(function() {
+    var self = RENDER_CORE;
+    RENDER_CORE._rafId = requestAnimationFrame(function() {
       self._flushPending();
     });
   },
@@ -147,14 +153,14 @@ const RENDER_CORE = {
    * Executa renders pendentes em batch
    */
   _flushPending: function() {
-    this._rafId = null;
+    RENDER_CORE._rafId = null;
 
-    var self = this;
-    this._pendingRenders.forEach(function(context, name) {
+    var self = RENDER_CORE;
+    RENDER_CORE._pendingRenders.forEach(function(context, name) {
       self.render(name, context);
     });
 
-    this._pendingRenders.clear();
+    RENDER_CORE._pendingRenders.clear();
   },
   
   /**
@@ -162,7 +168,7 @@ const RENDER_CORE = {
    */
   renderMany: function(names, context) {
     var results = {};
-    var self = this;
+    var self = RENDER_CORE;
     names.forEach(function(name) {
       results[name] = self.render(name, context);
     });
@@ -174,8 +180,8 @@ const RENDER_CORE = {
    */
   renderAll: function(context) {
     var results = {};
-    var self = this;
-    this._renderers.forEach(function(renderer, name) {
+    var self = RENDER_CORE;
+    RENDER_CORE._renderers.forEach(function(renderer, name) {
       results[name] = self.render(name, context);
     });
     return results;
@@ -261,7 +267,7 @@ const RENDER_CORE = {
    */
   connectToStore: function() {
     if (typeof APP_STORE === 'undefined') return;
-    var self = this;
+    var self = RENDER_CORE;
 
     // Dados (transações, config, contas, orçamentos) → re-render do dashboard
     APP_STORE.subscribe('dados', function() {
@@ -280,7 +286,7 @@ const RENDER_CORE = {
 
   getStats: function() {
     var stats = {};
-    this._renderers.forEach(function(renderer, name) {
+    RENDER_CORE._renderers.forEach(function(renderer, name) {
       stats[name] = {
         renderCount: renderer.renderCount,
         lastRender: renderer.lastRender,
@@ -297,12 +303,12 @@ const RENDER_CORE = {
 
 const RENDERER_BASE = {
   // Método obrigatório: render()
-  render: function(context) {
+  render: function(_context) {
     throw new Error('Renderer deve implementar render()');
   },
-  
+
   // Método opcional: shouldRender(context)
-  shouldRender: function(context) {
+  shouldRender: function(_context) {
     return true;
   },
   
@@ -335,7 +341,4 @@ const RENDERER_BASE = {
   }
 };
 
-// Export
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { RENDER_CORE: RENDER_CORE, RENDERER_BASE: RENDERER_BASE };
-}
+export { RENDER_CORE, RENDERER_BASE };

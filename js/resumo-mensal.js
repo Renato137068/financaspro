@@ -6,8 +6,13 @@
  * via Web Share ou área de transferência. É só leitura: não altera nada.
  *
  * Puro, sem DOM. Dependências checadas com typeof.
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
-var RESUMO_MENSAL = {
+
+import { UTILS } from './core/utils.js';
+const RESUMO_MENSAL = {
 
   _fmt: function(v) {
     return (typeof UTILS !== 'undefined' && UTILS.formatarMoeda)
@@ -39,7 +44,7 @@ var RESUMO_MENSAL = {
     return {
       mes: mes,
       ano: ano,
-      nomeMes: this._nomeMes(mes, ano),
+      nomeMes: RESUMO_MENSAL._nomeMes(mes, ano),
       receitas: r.receitas,
       despesas: r.despesas,
       saldo: r.saldo,
@@ -56,26 +61,26 @@ var RESUMO_MENSAL = {
    * honesto quando o mês fechou no vermelho.
    */
   texto: function(mes, ano) {
-    var d = this.dados(mes, ano);
+    var d = RESUMO_MENSAL.dados(mes, ano);
     if (!d) return null;
 
     var linhas = [];
     linhas.push('Meu mês em números — ' + d.nomeMes);
     linhas.push('');
-    linhas.push('Receitas: ' + this._fmt(d.receitas));
-    linhas.push('Despesas: ' + this._fmt(d.despesas));
+    linhas.push('Receitas: ' + RESUMO_MENSAL._fmt(d.receitas));
+    linhas.push('Despesas: ' + RESUMO_MENSAL._fmt(d.despesas));
 
     if (d.saldo >= 0) {
-      linhas.push('Saldo: ' + this._fmt(d.saldo));
+      linhas.push('Saldo: ' + RESUMO_MENSAL._fmt(d.saldo));
       if (d.taxaPoupanca != null) {
         linhas.push('Você poupou ' + d.taxaPoupanca + '% do que ganhou');
       }
     } else {
-      linhas.push('Saldo: -' + this._fmt(Math.abs(d.saldo)) + ' (fechou no vermelho)');
+      linhas.push('Saldo: -' + RESUMO_MENSAL._fmt(Math.abs(d.saldo)) + ' (fechou no vermelho)');
     }
 
     if (d.topCategoria) {
-      linhas.push('Maior gasto: ' + d.topCategoria.label + ' — ' + this._fmt(d.topCategoria.valor) +
+      linhas.push('Maior gasto: ' + d.topCategoria.label + ' — ' + RESUMO_MENSAL._fmt(d.topCategoria.valor) +
         (d.topCategoria.percentual ? ' (' + d.topCategoria.percentual + '%)' : ''));
     }
 
@@ -85,6 +90,5 @@ var RESUMO_MENSAL = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = RESUMO_MENSAL;
-}
+export { RESUMO_MENSAL };
+export default RESUMO_MENSAL;

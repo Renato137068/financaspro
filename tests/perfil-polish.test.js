@@ -4,12 +4,18 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { fontePerfil } = require('./helpers/chunk-perfil.cjs');
+const { indexComTelas } = require('./helpers/index-com-telas.cjs');
 
 const root = path.join(__dirname, '..');
 const configUser = fs.readFileSync(path.join(root, 'js', 'config-user.js'), 'utf8');
-const initConfig = fs.readFileSync(path.join(root, 'js', 'modules', 'init-config.js'), 'utf8');
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-const css = fs.readFileSync(path.join(root, 'css', 'layouts', 'config.css'), 'utf8');
+// O Perfil inteiro: init-config.js e seus mixins (backup; bancos e categorias).
+const initConfig = fontePerfil();
+// index.html com as telas lazy (telas/) de volta nas cascas.
+const html = indexComTelas();
+// config-tela.css: a parte que só as telas do Perfil desenham (chega com o chunk).
+const css = ['config.css', 'config-tela.css']
+  .map((f) => fs.readFileSync(path.join(root, 'css', 'layouts', f), 'utf8')).join('\n');
 
 describe('P2.1 — atrito de limparDados', function() {
   test('limparDados exige dupla confirmação', function() {

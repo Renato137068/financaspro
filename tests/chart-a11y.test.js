@@ -2,9 +2,9 @@
  * chart-a11y.test.js — alternativa textual para gráficos SVG do dashboard
  * @jest-environment jsdom
  */
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { executarModulo } = require('./helpers/esm-como-script.cjs');
 
 var ctx;
 
@@ -32,17 +32,18 @@ beforeAll(function() {
     },
     CONFIG: { getCatLabel: function(c) { return String(c); } }
   };
-  sandbox.window.UI = {};
   sandbox.globalThis = sandbox;
   ctx = vm.createContext(sandbox);
 
-  ['js/components/_base.js', 'js/components/LegendaChart.js',
-    'js/components/BarChart6M.js', 'js/components/DonutChart.js'].forEach(function(rel) {
-    var file = path.join(__dirname, '..', rel);
-    vm.runInContext(fs.readFileSync(file, 'utf8'), ctx, { filename: file });
-  });
-
-  global.UI = sandbox.window.UI;
+  // ES Modules: UTILS e CONFIG do sandbox substituem os imports de _base.js.
+  var dubles = { UTILS: sandbox.UTILS, CONFIG: sandbox.CONFIG };
+  var carregar = function(rel) {
+    return executarModulo(ctx, path.join(__dirname, '..', rel), undefined, dubles);
+  };
+  global.UI = {
+    BarChart6M: carregar('js/components/BarChart6M.js').BarChart6M,
+    DonutChart: carregar('js/components/DonutChart.js').DonutChart,
+  };
 });
 
 describe('BarChart6M — alternativa acessível', function() {

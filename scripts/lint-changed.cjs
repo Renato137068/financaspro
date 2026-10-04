@@ -2,12 +2,7 @@
 /**
  * lint-changed.cjs — ESLint com tolerância zero, mas só no código que mudou.
  *
- * Por que existe: o frontend ainda é um app multi-script com estado em globais,
- * o que gera centenas de avisos `no-undef` legítimos para o padrão atual.
- * Elevar a regra a erro hoje quebraria o build; deixá-la em warning para sempre
- * significa que a dívida nunca para de crescer.
- *
- * Este script resolve o impasse: congela a dívida existente e exige limpeza
+ * Por que existe: congela a dívida de lint existente e exige limpeza
  * apenas do que o PR toca. Arquivo novo ou alterado precisa sair com zero
  * avisos; o resto do repositório fica como está até a migração para ES Modules.
  *
@@ -58,13 +53,13 @@ function changedFiles(base) {
     .filter(Boolean);
 }
 
-const LINTABLE = /^(js|backend|scripts|tests)\/.*\.(js|cjs|mjs)$/;
+const LINTABLE = /^(js|scripts|tests)\/.*\.(js|cjs|mjs)$/;
 const IGNORED = /\/vendor\/|\.min\.js$/;
 
 let targets;
 
 if (lintAll) {
-  targets = ['js/', 'backend/'];
+  targets = ['js/'];
   console.log('[lint-changed] modo --all: repositório inteiro');
 } else {
   const base = resolveBase();
@@ -93,7 +88,7 @@ const result = spawnSync(eslintBin, [...targets, '--max-warnings', '0'], {
 if (result.status !== 0) {
   console.error('\n[lint-changed] ✗ código alterado precisa sair com ZERO avisos.');
   console.error('  Dívida antiga é tolerada; código novo, não.');
-  console.error('  Se o aviso for no-undef por global do app, declare-o em .eslintrc.cjs.');
+  console.error('  no-undef por global novo do app: rode node scripts/generate-frontend-globals.cjs.');
   process.exit(1);
 }
 

@@ -8,7 +8,14 @@
  *
  * Credenciais cloud: defaults abaixo (anon key pública). Override no build via
  * SUPABASE_URL + SUPABASE_ANON_KEY ? scripts/inject-supabase-env.cjs.
+ *
+ * ES Module (ADR 0005): os scripts clássicos recebem CONFIG como global por
+ * js/esm/ponte.js, que roda antes deles. As linhas `var FP_BUILD_MODE`,
+ * `var _FP_ENV_*` e `_FP_CLOUD_*` ficam como estão: set-build-mode,
+ * inject-supabase-env, csp-connect-src e pre-beta-check as leem como texto.
  */
+
+import { DADOS } from './dados.js';
 
 var FP_BUILD_MODE = 'cloud';
 
@@ -38,20 +45,10 @@ const CONFIG = {
   VERSION: '11.3.18',
   BUILD_MODE: _fpLocal ? 'local' : 'cloud',
 
-  /** Open Finance em produção (Belvo). Enquanto false, o card some do Perfil. */
-  FEATURE_OPEN_FINANCE: false,
-
   STORAGE_TRANSACOES: 'fp-transacoes',
   STORAGE_CONFIG: 'fp-config',
   STORAGE_CONTAS: 'fp-contas',
-  STORAGE_OUTBOX: 'fp-outbox',
-  STORAGE_SYNC_CURSOR: 'fp-sync-cursor',
   STORAGE_APRENDIZADO: 'aprendizado_historico',
-  API_BASE_URL: '',
-  API_FALLBACK_URL: 'http://localhost:4000',
-  API_TOKEN_STORAGE: 'fp-api-token',
-  API_REFRESH_TOKEN_STORAGE: 'fp-refresh-token',
-  API_USER_STORAGE: 'fp-api-user',
 
   // Supabase: vazios = local-first (sem login forçado). Cloud = Play Store.
   SUPABASE_URL: _fpLocal ? '' : _FP_CLOUD_URL,
@@ -79,16 +76,16 @@ const CONFIG = {
     familia: 'Família', doacoes: 'Doações', beleza: 'Beleza e Cuidados'
   },
 
-  get CATEGORIAS_RECEITA() { return this.CATEGORIAS_RECEITA_SLUGS; },
-  get CATEGORIAS_DESPESA() { return this.CATEGORIAS_DESPESA_SLUGS; },
+  get CATEGORIAS_RECEITA() { return CONFIG.CATEGORIAS_RECEITA_SLUGS; },
+  get CATEGORIAS_DESPESA() { return CONFIG.CATEGORIAS_DESPESA_SLUGS; },
 
   get CATS_DESPESA_FORM() {
-    return this.CATEGORIAS_DESPESA_SLUGS.map(function(v) {
+    return CONFIG.CATEGORIAS_DESPESA_SLUGS.map(function(v) {
       return { v: v, l: CONFIG.CATEGORIAS_LABELS[v] };
     });
   },
   get CATS_RECEITA_FORM() {
-    return this.CATEGORIAS_RECEITA_SLUGS.map(function(v) {
+    return CONFIG.CATEGORIAS_RECEITA_SLUGS.map(function(v) {
       return { v: v, l: CONFIG.CATEGORIAS_LABELS[v] };
     });
   },
@@ -104,12 +101,12 @@ const CONFIG = {
   },
 
   /** @deprecated Use _LUCIDE_ICONS ? mantido para compatibilidade legada */
-  get _EMOJIS() { return this._LUCIDE_ICONS; },
+  get _EMOJIS() { return CONFIG._LUCIDE_ICONS; },
 
   get CATEGORIAS_MAP() {
     var map = {};
-    var self = this;
-    Object.keys(this.CATEGORIAS_LABELS).forEach(function(slug) {
+    var self = CONFIG;
+    Object.keys(CONFIG.CATEGORIAS_LABELS).forEach(function(slug) {
       map[slug] = self.CATEGORIAS_LABELS[slug];
     });
     return Object.freeze(map);
@@ -131,14 +128,14 @@ const CONFIG = {
 
   normalizeCategoriaFinal: function(slug, tipo) {
     var s = String(slug || '').trim().toLowerCase();
-    if (!s) return tipo === this.TIPO_RECEITA ? 'outros' : 'outro';
-    var mapped = this.CATEGORIAS_INTERNAS_MAP[s] || s;
-    var lista = tipo === this.TIPO_RECEITA ? this.CATEGORIAS_RECEITA_SLUGS : this.CATEGORIAS_DESPESA_SLUGS;
+    if (!s) return tipo === CONFIG.TIPO_RECEITA ? 'outros' : 'outro';
+    var mapped = CONFIG.CATEGORIAS_INTERNAS_MAP[s] || s;
+    var lista = tipo === CONFIG.TIPO_RECEITA ? CONFIG.CATEGORIAS_RECEITA_SLUGS : CONFIG.CATEGORIAS_DESPESA_SLUGS;
     if (lista.indexOf(mapped) !== -1) return mapped;
     // Categorias criadas pelo usuário: não colapsar em "outro(s)".
-    var custom = this.resolveCustomCategoria(slug, tipo);
+    var custom = CONFIG.resolveCustomCategoria(slug, tipo);
     if (custom) return custom;
-    return tipo === this.TIPO_RECEITA ? 'outros' : 'outro';
+    return tipo === CONFIG.TIPO_RECEITA ? 'outros' : 'outro';
   },
 
   /** Slug estável a partir do nome exibido (custom). */
@@ -165,26 +162,26 @@ const CONFIG = {
     } catch (e) { lista = null; }
     if (!lista || !lista.length) return null;
     var alvo = String(nomeOuSlug || '').trim().toLowerCase();
-    var slugAlvo = this.slugifyCategoria(nomeOuSlug);
+    var slugAlvo = CONFIG.slugifyCategoria(nomeOuSlug);
     for (var i = 0; i < lista.length; i++) {
       var nome = lista[i];
       if (!nome) continue;
-      if (String(nome).trim().toLowerCase() === alvo) return this.slugifyCategoria(nome) || null;
-      if (this.slugifyCategoria(nome) === slugAlvo && slugAlvo) return slugAlvo;
+      if (String(nome).trim().toLowerCase() === alvo) return CONFIG.slugifyCategoria(nome) || null;
+      if (CONFIG.slugifyCategoria(nome) === slugAlvo && slugAlvo) return slugAlvo;
     }
     return null;
   },
 
   /** Nome amigável: whitelist, depois custom, senão a própria chave crua. */
   getCatLabel: function(slug) {
-    if (this.CATEGORIAS_LABELS[slug]) return this.CATEGORIAS_LABELS[slug];
-    var tipos = [this.TIPO_DESPESA, this.TIPO_RECEITA];
+    if (CONFIG.CATEGORIAS_LABELS[slug]) return CONFIG.CATEGORIAS_LABELS[slug];
+    var tipos = [CONFIG.TIPO_DESPESA, CONFIG.TIPO_RECEITA];
     for (var t = 0; t < tipos.length; t++) {
       try {
         if (typeof DADOS === 'undefined' || !DADOS.getConfig) break;
         var lista = ((DADOS.getConfig().categoriasCustom) || {})[tipos[t]] || [];
         for (var i = 0; i < lista.length; i++) {
-          if (this.slugifyCategoria(lista[i]) === slug) return lista[i];
+          if (CONFIG.slugifyCategoria(lista[i]) === slug) return lista[i];
         }
       } catch (e) { /* */ }
     }
@@ -205,14 +202,7 @@ const CONFIG = {
     assinaturas: [],
     patrimonio: { ativos: [], dividas: [] },
     openFinance: { connections: [], lastSync: null },
-    syncV2Enabled: true,
   },
-
-  /** Lote de transações por página no pull incremental (espelha backend). */
-  SYNC_DELTA_BATCH_SIZE: 500,
-
-  /** Meses de histórico mantidos no localStorage (resto permanece no servidor). */
-  LOCAL_TX_WINDOW_MONTHS: 24,
 
   MOEDA_FORMATACAO: {
     BRL: { locale: 'pt-BR', currency: 'BRL' },
@@ -233,6 +223,5 @@ const CONFIG = {
   NOMES_MESES: ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = CONFIG;
-}
+export { CONFIG };
+export default CONFIG;

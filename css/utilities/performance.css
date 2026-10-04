@@ -31,10 +31,6 @@
 
 /* ── Contain para seções de orçamento ───────────────────────*/
 
-.orc-regra-item{
-  contain: layout style;
-}
-
 /* ── GPU acceleration: apenas elementos que realmente animam ─ */
 
 .success-overlay,

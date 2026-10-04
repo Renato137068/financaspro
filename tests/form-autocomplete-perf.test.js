@@ -5,7 +5,11 @@
 const fs = require('fs');
 const path = require('path');
 
-const src = fs.readFileSync(path.join(__dirname, '..', 'js', 'modules', 'init-form.js'), 'utf8');
+// O formulário inteiro: init-form.js e as sugestões em form-sugestoes.js, que
+// ele mistura em INIT_FORM.
+const src = ['init-form.js', 'form-sugestoes.js']
+  .map((f) => fs.readFileSync(path.join(__dirname, '..', 'js', 'modules', f), 'utf8'))
+  .join('\n');
 
 describe('P2.2 — debounce e cache de sugestões', function() {
   test('autocomplete faz debounce no input', function() {

@@ -2,7 +2,11 @@
  * share-texto.test.js — helper compartilhado de compartilhamento.
  * @jest-environment node
  */
-const compartilharTextoUI = require('../js/utilities/share-texto.js');
+const { carregarScript } = require('./helpers/carregar-script.cjs');
+// O módulo importa UTILS; o mock delega ao dublê que cada teste monta em global.UTILS.
+const compartilharTextoUI = carregarScript('js/utilities/share-texto.js', {
+  UTILS: { mostrarToast: function() { return global.UTILS.mostrarToast.apply(null, arguments); } },
+});
 
 let toasts;
 beforeEach(function() {

@@ -181,6 +181,10 @@ async function navegarExtratoMeses(page) {
   // Abre extrato e caminha 12 competências via API do módulo (mesOffset).
   return page.evaluate(async function() {
     if (typeof mudarAba === 'function') mudarAba('extrato');
+    // No build de produção o Extrato vem no chunk 'extrato', carregado ao abrir.
+    for (var t = 0; t < 100 && typeof INIT_EXTRATO === 'undefined'; t++) {
+      await new Promise(function(r) { setTimeout(r, 50); });
+    }
     if (typeof INIT_EXTRATO === 'undefined') return { ok: false, reason: 'sem INIT_EXTRATO' };
 
     var meses = [];

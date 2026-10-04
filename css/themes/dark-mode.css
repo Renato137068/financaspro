@@ -186,12 +186,9 @@
   border-color: var(--color-primary-500);
   color: var(--color-success-light);
 }
-
-[data-theme="dark"] .filtro-cat-chip.ativo .cat-count { background: var(--color-primary-500); }
 /* O contador de categoria usava a COR DE TEXTO como fundo: no tema escuro
    isso pinta um selo claro, e o texto dentro dele — que também alterna e
    vira claro — some. Fundo é fundo: sai da rampa de superfície. */
-[data-theme="dark"] .cat-count { background: var(--color-bg-dark-elevated); }
 
 /* ═══════════════════════════════════════════════════════════
    FORMULÁRIOS
@@ -257,28 +254,7 @@
 
 [data-theme="dark"] .resumo-item { background: var(--color-bg-dark-card); }
 
-[data-theme="dark"] .ext-grupo-list {
-  background: var(--color-bg-dark-card);
-  border-color: rgba(255, 255, 255, 0.09);
-  box-shadow: var(--elevacao-2);
-}
-
 /* P0.2: superfícies opacas no escuro — mesmo padrão Resumo/Lançamentos */
-[data-theme="dark"] .ext-tx,
-[data-theme="dark"] .kpi-card,
-[data-theme="dark"] .saldo-card {
-  background: var(--color-bg-dark-card);
-}
-
-[data-theme="dark"] .ext-tx             { border-bottom-color: var(--color-border); }
-[data-theme="dark"] .ext-tx:hover       { background: rgba(18, 105, 78, 0.12); }
-[data-theme="dark"] .ext-tx:active      { background: rgba(18, 105, 78, 0.2); }
-[data-theme="dark"] .ext-tx.aberto      { background: rgba(18, 105, 78, 0.15); }
-[data-theme="dark"] .ext-tx-expanded    { background: var(--color-bg-dark-inset); }
-[data-theme="dark"] .ext-tx-actions-bar { border-top-color: var(--color-border); }
-
-[data-theme="dark"] .ext-btn-edit  { background: rgba(18, 105, 78, 0.15); color: var(--color-success-light); }
-[data-theme="dark"] .ext-btn-delete { background: rgba(201, 87, 58, 0.12); }
 
 [data-theme="dark"] .btn-pdf-mini {
   background: var(--color-bg-dark-card);
@@ -368,30 +344,6 @@
 /* ═══════════════════════════════════════════════════════════
    ORÇAMENTO
    ═══════════════════════════════════════════════════════════ */
-
-[data-theme="dark"] .orc-renda-setup,
-[data-theme="dark"] .orc-header,
-[data-theme="dark"] .orc-regra-item,
-[data-theme="dark"] .orc-insight,
-[data-theme="dark"] .orc-cat-header,
-[data-theme="dark"] .orc-cat-item,
-[data-theme="dark"] .orc-historico {
-  background: var(--color-bg-dark-card);
-  box-shadow: var(--elevacao-1);
-  border-color: rgba(255, 255, 255, 0.09);
-}
-
-[data-theme="dark"] .orc-renda-group {
-  background: var(--color-bg-dark-page);
-  border-color: var(--color-border);
-}
-
-[data-theme="dark"] .orc-renda-input {
-  color: var(--color-text-primary);
-}
-[data-theme="dark"] .orc-cat-bar   { background: rgba(255, 255, 255, 0.08); }
-[data-theme="dark"] .orc-cat-icon  { background: rgba(255, 255, 255, 0.06); }
-[data-theme="dark"] .orc-regra-pct { background: rgba(255, 255, 255, 0.08); }
 
 [data-theme="dark"] .orc-header-btn {
   border-color: var(--color-border);
@@ -591,10 +543,6 @@
 
 [data-theme="dark"] .form-progress-container {
   background: rgba(255, 255, 255, 0.08);
-}
-
-[data-theme="dark"] .onb-progress-track {
-  background: rgba(255, 255, 255, 0.1);
 }
 
 [data-theme="dark"] .valor-hero--focused {

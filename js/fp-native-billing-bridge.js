@@ -1,8 +1,11 @@
 /**
  * fp-native-billing-bridge.js — expõe window.__fpNativeBilling via plugin Capacitor.
  * Carregado só no app Android; no web é no-op.
+ *
+ * ES Module (ADR 0005): chega sob demanda no chunk 'conta'
+ * (js/esm/chunks/conta.js, via LAZY.load), que chama a instalação.
  */
-(function() {
+function instalarPonteBillingNativa() {
   if (typeof window === 'undefined' || !window.Capacitor) return;
   if (typeof window.Capacitor.isNativePlatform === 'function'
       && !window.Capacitor.isNativePlatform()) return;
@@ -34,4 +37,6 @@
       });
     },
   };
-})();
+}
+
+export { instalarPonteBillingNativa };

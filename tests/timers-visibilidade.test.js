@@ -254,7 +254,6 @@ describe('nenhum timer periódico novo escapa da pausa', () => {
   const PERMITIDOS = {
     'js/core/utils.js': 'implementa o próprio intervaloVisivel',
     'js/core/store.js': 'autosave grava ao esconder a aba em vez de só pausar',
-    'js/modules/init-open-finance.js': 'poll curto de popup; termina sozinho ao fechar',
     'js/authController.js': 'cooldown de reenviar e-mail: conta ~60s em tempo real e termina sozinho; pausar com a aba oculta atrasaria a liberação do botão',
   };
 

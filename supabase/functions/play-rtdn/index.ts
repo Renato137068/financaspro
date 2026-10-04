@@ -22,23 +22,7 @@
 //
 import { adminClient, claimEvent, releaseEvent } from "../_shared/db.ts";
 import { handleRtdn } from "../_shared/play-billing.ts";
-
-/**
- * Comparação sem vazar tamanho nem posição da primeira diferença: compara os
- * digests, que têm sempre 32 bytes.
- */
-async function segredoConfere(recebido: string, esperado: string): Promise<boolean> {
-  const enc = new TextEncoder();
-  const [a, b] = await Promise.all([
-    crypto.subtle.digest("SHA-256", enc.encode(recebido)),
-    crypto.subtle.digest("SHA-256", enc.encode(esperado)),
-  ]);
-  const x = new Uint8Array(a);
-  const y = new Uint8Array(b);
-  let diff = 0;
-  for (let i = 0; i < x.length; i++) diff |= x[i] ^ y[i];
-  return diff === 0;
-}
+import { segredoConfere } from "../_shared/segredo.ts";
 
 /**
  * Valida o token OIDC que o Pub/Sub anexa. Usa o tokeninfo do próprio Google

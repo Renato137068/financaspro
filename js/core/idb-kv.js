@@ -1,21 +1,24 @@
 /**
  * idb-kv.js — armazenamento chave-valor em IndexedDB (substituto do localStorage
  * para blobs grandes, ex.: fp-transacoes).
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
-var IDB_KV = {
+const IDB_KV = {
   DB_NAME: 'financaspro-kv',
   DB_VERSION: 1,
   STORE: 'kv',
   _db: null,
 
   isReady: function() {
-    return !!this._db;
+    return !!IDB_KV._db;
   },
 
   init: function() {
-    var self = this;
+    var self = IDB_KV;
     if (typeof indexedDB === 'undefined') return Promise.resolve(false);
-    if (this._db) return Promise.resolve(true);
+    if (IDB_KV._db) return Promise.resolve(true);
     return new Promise(function(resolve) {
       var req = indexedDB.open(self.DB_NAME, self.DB_VERSION);
       req.onupgradeneeded = function(e) {
@@ -36,8 +39,8 @@ var IDB_KV = {
   },
 
   get: function(key) {
-    var self = this;
-    return this.init().then(function(ok) {
+    var self = IDB_KV;
+    return IDB_KV.init().then(function(ok) {
       if (!ok || !self._db) return null;
       return new Promise(function(resolve) {
         var tx = self._db.transaction(self.STORE, 'readonly');
@@ -49,8 +52,8 @@ var IDB_KV = {
   },
 
   set: function(key, value) {
-    var self = this;
-    return this.init().then(function(ok) {
+    var self = IDB_KV;
+    return IDB_KV.init().then(function(ok) {
       if (!ok || !self._db) return false;
       return new Promise(function(resolve) {
         var tx = self._db.transaction(self.STORE, 'readwrite');
@@ -62,8 +65,8 @@ var IDB_KV = {
   },
 
   remove: function(key) {
-    var self = this;
-    return this.init().then(function(ok) {
+    var self = IDB_KV;
+    return IDB_KV.init().then(function(ok) {
       if (!ok || !self._db) return false;
       return new Promise(function(resolve) {
         var tx = self._db.transaction(self.STORE, 'readwrite');
@@ -74,3 +77,6 @@ var IDB_KV = {
     });
   }
 };
+
+export { IDB_KV };
+export default IDB_KV;

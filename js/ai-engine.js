@@ -3,13 +3,37 @@
  * v11.0 — Pure computation: zero DOM, zero side effects
  * Fase 8: Arquitetura desacoplada de renderização
  * Depende de: Nada (módulo puro — pode ser testado isoladamente)
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
 
-var AI_ENGINE = {
+import { CONFIG } from './core/config.js';
+import { UTILS } from './core/utils.js';
+
+const AI_ENGINE = {
 
   // ─────────────────────────────────────────────────────────────────
   // AGREGAÇÃO
   // ─────────────────────────────────────────────────────────────────
+
+  /**
+   * Meses do agregado até o mês de `hoje` (inclusive), em ordem.
+   *
+   * O formulário grava cada parcela de uma compra parcelada com a data do seu
+   * mês, então o agregado tem meses FUTUROS só com parcelas, sem receita.
+   * Quem pega "os últimos N meses" do agregado inteiro pega esses meses, e a
+   * conta sai como se a pessoa gastasse sem ganhar nada.
+   * @param {Object} agregado saída de agregarPorMes
+   * @param {Date} [hoje]
+   * @returns {string[]} chaves 'YYYY-MM'
+   */
+  mesesAte: function(agregado, hoje) {
+    // Duck typing: Date de outro realm (testes em vm) falha no instanceof.
+    hoje = (hoje && typeof hoje.getFullYear === 'function') ? hoje : new Date();
+    var mesAtual = hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0');
+    return Object.keys(agregado || {}).sort().filter(function(k) { return k <= mesAtual; });
+  },
 
   /**
    * Agrega transações por mês.
@@ -131,13 +155,17 @@ var AI_ENGINE = {
   prever: function(transacoes, mesesFuturos, hoje) {
     mesesFuturos = mesesFuturos || 3;
     hoje = hoje || new Date();
-    var agregado = this.agregarPorMes(transacoes);
+    var agregado = AI_ENGINE.agregarPorMes(transacoes);
     // O mês corrente ainda está EM CURSO: tratá-lo como um mês fechado enviesa
     // média e tendência para baixo — e é justamente ele que carrega o maior
     // peso na média ponderada. O modelo projeta a partir de meses COMPLETOS; o
     // mês atual tem a sua própria conta, em projetarFimMes.
     var mesAtual = hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0');
-    var chaves = Object.keys(agregado).sort().filter(function(k) { return k !== mesAtual; });
+    // E só os meses que JÁ passaram: o formulário grava cada parcela de uma
+    // compra parcelada com a data do seu mês, então há meses futuros só com
+    // parcelas. Com eles na janela, a previsão de quem parcela saía com
+    // receita zero e saldo negativo nos próximos meses.
+    var chaves = Object.keys(agregado).sort().filter(function(k) { return k < mesAtual; });
 
     if (chaves.length < 2) {
       return { meses: [], tendencia: 'insuficiente', taxaPoupancaMedia: 0, historico: [] };
@@ -148,8 +176,8 @@ var AI_ENGINE = {
     var recSerie  = janela.map(function(k) { return agregado[k].receitas; });
     var despSerie = janela.map(function(k) { return agregado[k].despesas; });
 
-    var regRec  = this.regressaoLinear(recSerie);
-    var regDesp = this.regressaoLinear(despSerie);
+    var regRec  = AI_ENGINE.regressaoLinear(recSerie);
+    var regDesp = AI_ENGINE.regressaoLinear(despSerie);
 
     // Pesos exponenciais (mais recente = maior peso)
     var pesos   = janela.map(function(_, i) { return Math.pow(1.3, i); });
@@ -271,7 +299,7 @@ var AI_ENGINE = {
     });
 
     var anomalias = [];
-    var self = this;
+    var self = AI_ENGINE;
 
     Object.keys(porCategoria).forEach(function(cat) {
       var txs = porCategoria[cat];
@@ -337,10 +365,10 @@ var AI_ENGINE = {
    * @param {Object} config — DADOS.getConfig()
    * @returns {{ score, nivel, detalhes }}
    */
-  calcularSaude: function(transacoes, config) {
+  calcularSaude: function(transacoes, config, hoje) {
     config = config || {};
-    var agregado = this.agregarPorMes(transacoes);
-    var chaves   = Object.keys(agregado).sort().slice(-3); // últimos 3 meses
+    var agregado = AI_ENGINE.agregarPorMes(transacoes);
+    var chaves   = AI_ENGINE.mesesAte(agregado, hoje).slice(-3); // últimos 3 meses, sem os futuros
 
     if (chaves.length === 0) return { score: 0, nivel: 'sem-dados', detalhes: [] };
 
@@ -393,12 +421,35 @@ var AI_ENGINE = {
    * @param {Object} config — DADOS.getConfig()
    * @returns {Array} [{ id, tipo, titulo, msg, gravidade, acao, parametros }]
    */
+  /**
+   * Limite de um orçamento como o app grava ({ limite, definidoEm }, de
+   * BUDGET_SERVICE.setBudget) ou no formato antigo (o número puro).
+   *
+   * Lia só o número: com o formato atual, Number({...}) dava NaN, o limite
+   * virava 0 e "Orçamento quase no limite" / "excedido" nunca disparavam para
+   * quem definiu o orçamento pelo app. O teste passava porque usava o formato
+   * antigo.
+   */
+  _limiteOrcamento: function(entrada) {
+    var bruto = (entrada && typeof entrada === 'object') ? entrada.limite : entrada;
+    var n = Number(bruto);
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  },
+
+  /** Nome da categoria como a pessoa lê ("Alimentação"), não o slug ("Alimentacao"). */
+  _nomeCategoria: function(cat) {
+    var nomes = (typeof CONFIG !== 'undefined' && CONFIG.CATEGORIAS_LABELS) || {};
+    if (nomes[cat]) return nomes[cat];
+    var s = String(cat || '').replace(/_/g, ' ');
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  },
+
   gerarAlertas: function(transacoes, config, hoje) {
     config = config || {};
     var alertas  = [];
     hoje = hoje || new Date();
     var mesKey   = hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0');
-    var agregado = this.agregarPorMes(transacoes);
+    var agregado = AI_ENGINE.agregarPorMes(transacoes);
     var chaves   = Object.keys(agregado).sort();
 
     // 1. Saldo negativo no mês atual
@@ -414,18 +465,19 @@ var AI_ENGINE = {
     }
 
     // 2. Orçamentos próximos do limite (≥ 80%)
-    var catsMes = this.agregarPorCategoria(transacoes, mesKey);
+    var catsMes = AI_ENGINE.agregarPorCategoria(transacoes, mesKey);
     var orc     = config.orcamentos || {};
     Object.keys(orc).forEach(function(cat) {
-      var limite   = Number(orc[cat]) || 0;
+      var limite   = AI_ENGINE._limiteOrcamento(orc[cat]);
       var gasto    = (catsMes[cat] && catsMes[cat].despesas) || 0;
       var pct      = limite > 0 ? gasto / limite : 0;
+      var nomeCat  = AI_ENGINE._nomeCategoria(cat);
       if (pct >= 1.0) {
         alertas.push({
           id: 'orc-excedido-' + cat,
           tipo: 'orcamento',
           titulo: 'Orçamento excedido',
-          msg: cat.charAt(0).toUpperCase() + cat.slice(1) + ': R$ ' + gasto.toFixed(2).replace('.', ',') + ' / R$ ' + limite.toFixed(2).replace('.', ','),
+          msg: nomeCat + ': ' + UTILS.formatarMoeda(gasto) + ' / ' + UTILS.formatarMoeda(limite),
           gravidade: 'alta',
           acao: 'verExtrato',
           parametros: { categoria: cat }
@@ -435,7 +487,7 @@ var AI_ENGINE = {
           id: 'orc-alerta-' + cat,
           tipo: 'orcamento',
           titulo: 'Orçamento quase no limite',
-          msg: cat.charAt(0).toUpperCase() + cat.slice(1) + ': ' + Math.round(pct * 100) + '% usado.',
+          msg: nomeCat + ': ' + Math.round(pct * 100) + '% usado.',
           gravidade: 'media',
           acao: 'verExtrato',
           parametros: { categoria: cat }
@@ -522,7 +574,7 @@ var AI_ENGINE = {
     // e disparando "saldo negativo" falso. projetarFimMes separa realizado de
     // futuro e soma em centavos, o mesmo erro já corrigido lá.
     if (diaMes >= 5 && diasRestantes >= 5) {
-      var proj = this.projetarFimMes(transacoes, hoje);
+      var proj = AI_ENGINE.projetarFimMes(transacoes, hoje);
       if (!proj.dadosInsuficientes && proj.projecaoReceitas > 0 && proj.saldoProjetado < 0) {
         alertas.push({
           id:       'projecao-negativa',
@@ -550,7 +602,7 @@ var AI_ENGINE = {
    */
   topCategorias: function(transacoes, mesKey, top) {
     top = top || 5;
-    var cats = this.agregarPorCategoria(transacoes, mesKey);
+    var cats = AI_ENGINE.agregarPorCategoria(transacoes, mesKey);
     var lista = [];
     var totalDesp = 0;
 
@@ -679,7 +731,7 @@ var AI_ENGINE = {
    * @returns {{ quantidade, totalAnual, itens, texto }|null}
    */
   mensagemAssinaturasEsquecidas: function(transacoes, opts) {
-    var lista = this.detectarAssinaturasEsquecidas(transacoes, opts);
+    var lista = AI_ENGINE.detectarAssinaturasEsquecidas(transacoes, opts);
     if (!lista.length) return null;
     var totalAnual = Math.round(lista.reduce(function(a, s) { return a + s.custoAnual; }, 0) * 100) / 100;
     return {
@@ -787,7 +839,7 @@ var AI_ENGINE = {
    * @returns {{ tom:'positivo'|'neutro'|'alerta', saldoProjetado:number, texto:string }|null}
    */
   mensagemFimMes: function(transacoes, hoje) {
-    var p = this.projetarFimMes(transacoes, hoje);
+    var p = AI_ENGINE.projetarFimMes(transacoes, hoje);
     if (!p || p.dadosInsuficientes) return null;
     var s = p.saldoProjetado;
     var abs = Math.abs(s).toFixed(2).replace('.', ',');
@@ -819,8 +871,8 @@ var AI_ENGINE = {
       ? (ano - 1) + '-12'
       : ano + '-' + String(mes - 1).padStart(2, '0');
 
-    var catsAtual = this.agregarPorCategoria(transacoes, mesKey);
-    var catsAnt   = this.agregarPorCategoria(transacoes, mesAnt);
+    var catsAtual = AI_ENGINE.agregarPorCategoria(transacoes, mesKey);
+    var catsAnt   = AI_ENGINE.agregarPorCategoria(transacoes, mesAnt);
 
     var todas = {};
     Object.keys(catsAtual).forEach(function(c) { todas[c] = true; });
@@ -851,10 +903,10 @@ var AI_ENGINE = {
    * @param {number} metaPoupanca — ex: 0.20 para 20%
    * @returns {{ viavel, corteNecessario, categoriaAlvo, valorAlvo, taxaAtual } | null}
    */
-  sugestaoCorte: function(transacoes, metaPoupanca) {
+  sugestaoCorte: function(transacoes, metaPoupanca, hoje) {
     metaPoupanca = metaPoupanca || 0.20;
-    var agregado = this.agregarPorMes(transacoes);
-    var chaves   = Object.keys(agregado).sort().slice(-3);
+    var agregado = AI_ENGINE.agregarPorMes(transacoes);
+    var chaves   = AI_ENGINE.mesesAte(agregado, hoje).slice(-3);
     if (chaves.length === 0) return null;
 
     var recMedia  = chaves.reduce(function(a, k) { return a + agregado[k].receitas; }, 0) / chaves.length;
@@ -870,7 +922,7 @@ var AI_ENGINE = {
     var corte    = Math.max(0, Math.round((despMedia - despMeta) * 100) / 100);
 
     var mesRef = chaves[chaves.length - 1];
-    var cats   = this.agregarPorCategoria(transacoes, mesRef);
+    var cats   = AI_ENGINE.agregarPorCategoria(transacoes, mesRef);
 
     var naoEssenciais = ['lazer', 'alimentacao', 'outro'];
     var categoriaAlvo = null, valorAlvo = 0;
@@ -900,6 +952,5 @@ var AI_ENGINE = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = AI_ENGINE;
-}
+export { AI_ENGINE };
+export default AI_ENGINE;

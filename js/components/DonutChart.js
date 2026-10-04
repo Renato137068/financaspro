@@ -1,11 +1,18 @@
-// FinançasPro — DonutChart: donut chart de despesas por categoria (SVG + legenda)
-// v11.0 — Depende de: _base.js, LegendaChart.js
-// cats: [{ nome, valor, cor }] — já ordenadas desc
-(function() {
-  var UI = window.UI || {};
+/**
+ * FinançasPro — DonutChart: donut chart de despesas por categoria (SVG + legenda)
+ * v11.0 — Depende de: _base.js, LegendaChart.js
+ * cats: [{ nome, valor, cor }] — já ordenadas desc
+ *
+ * ES Module (ADR 0005): entra no app por js/components/ui.js, que monta o
+ * namespace UI publicado por js/esm/ponte.js.
+ */
 
+import { UI_UTILS } from './_base.js';
+import { LegendaChart } from './LegendaChart.js';
+
+const DonutChart = (function() {
   function _buildResumoTabela(cats, totalDesp) {
-    var u = UI._utils;
+    var u = UI_UTILS;
     var rows = cats.map(function(c) {
       var pct = totalDesp > 0 ? Math.round((c.valor / totalDesp) * 100) : 0;
       return '<tr><td>' + u.esc(u.label(c.nome)) + '</td><td>' + u.esc(u.moeda(c.valor)) +
@@ -17,10 +24,10 @@
       '<tbody>' + rows + '</tbody></table>';
   }
 
-  UI.DonutChart = {
+  return {
     // render(cats, totalDesp) → HTMLElement div.donut-container
     render: function(cats, totalDesp) {
-      var u = UI._utils;
+      var u = UI_UTILS;
 
       var size = 160, cx = 80, cy = 80, r = 60, innerR = 38;
       var svgStr = '<svg viewBox="0 0 ' + size + ' ' + size + '" class="donut-svg" aria-hidden="true" focusable="false">';
@@ -63,11 +70,11 @@
       var container = document.createElement('div');
       container.className = 'donut-container';
       container.innerHTML = svgStr + _buildResumoTabela(cats, totalDesp);
-      container.appendChild(UI.LegendaChart.render(cats, totalDesp));
+      container.appendChild(LegendaChart.render(cats, totalDesp));
 
       return container;
     }
   };
-
-  window.UI = UI;
 })();
+
+export { DonutChart };

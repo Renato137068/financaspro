@@ -2,12 +2,9 @@
  * perfil-backup-import.test.js — P1.1 / P1.2 backup e importação da aba Perfil
  * @jest-environment jsdom
  */
-const fs = require('fs');
-const path = require('path');
 const vm = require('vm');
+const { rodarPerfil } = require('./helpers/chunk-perfil.cjs');
 
-const root = path.join(__dirname, '..');
-const src = fs.readFileSync(path.join(root, 'js', 'modules', 'init-config.js'), 'utf8');
 
 function carregarInitConfig(extra) {
   var storedConfig = {
@@ -71,10 +68,7 @@ function carregarInitConfig(extra) {
   sandbox._getCursor = function() { return cursorSaved; };
   sandbox._setStored = function(c) { storedConfig = Object.assign(storedConfig, c); };
 
-  var code = src.replace(/\bconst INIT_CONFIG =/, 'var INIT_CONFIG =');
-  vm.runInContext(code, vm.createContext(sandbox), {
-    filename: path.join(root, 'js', 'modules', 'init-config.js')
-  });
+  rodarPerfil(vm.createContext(sandbox));
   return sandbox;
 }
 
@@ -112,24 +106,14 @@ describe('P1.2 — whitelist na importação de config', function() {
     expect(merged.pinHash).toBe('hash-local');
   });
 
-  test('outbox e cursor malformados são ignorados', function() {
+  test('backup antigo com outbox e cursor do sync v2 importa sem erro e sem restaurá-los', function() {
+    // A fila de envio do sync v2 era da API Express, que saiu (ADR 0007).
     var sb = carregarInitConfig();
-    sb.INIT_CONFIG.importarDados({
-      config: { nome: 'Ok' },
-      outbox: { not: 'array' },
-      sync_cursor: { evil: true }
-    });
+    var op = { opId: 'a', entity: 'transaction', id: 'tx1', op: 'upsert' };
+    sb.INIT_CONFIG.importarDados({ config: { nome: 'Ok' }, outbox: [op], sync_cursor: 'cur-1' });
     expect(sb._getOutbox()).toBeNull();
     expect(sb._getCursor()).toBeNull();
     expect(sb._getStored().nome).toBe('Ok');
-  });
-
-  test('outbox válido é restaurado', function() {
-    var sb = carregarInitConfig();
-    var op = { opId: 'a', entity: 'transaction', id: 'tx1', op: 'upsert' };
-    sb.INIT_CONFIG.importarDados({ outbox: [op, { broken: true }], sync_cursor: 'cur-1' });
-    expect(sb._getOutbox()).toEqual([op]);
-    expect(sb._getCursor()).toBe('cur-1');
   });
 });
 

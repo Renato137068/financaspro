@@ -6,12 +6,11 @@
  *   (Necessidades/Desejos) e somam na poupança do mês.
  * @jest-environment jsdom
  */
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { rodarIsolado } = require('./helpers/esm-como-script.cjs');
 
 const root = path.join(__dirname, '..');
-const src = fs.readFileSync(path.join(root, 'js', 'modules', 'init-orcamento.js'), 'utf8');
 
 function carregar(extra) {
   var config = { renda: 5000, regra503020: { nec: 50, des: 30, pou: 20 } };
@@ -67,10 +66,8 @@ function carregar(extra) {
   sandbox._setConfig = function(c) { Object.assign(config, c); };
   sandbox._getConfig = function() { return config; };
   sandbox.globalThis = sandbox;
-  var code = src.replace(/\bconst INIT_ORCAMENTO =/, 'var INIT_ORCAMENTO =');
-  vm.runInContext(code, vm.createContext(sandbox), {
-    filename: path.join(root, 'js', 'modules', 'init-orcamento.js')
-  });
+  // ES Module: o sandbox é o dublê dos imports; o que falta fica ausente.
+  rodarIsolado(vm.createContext(sandbox), path.join(root, 'js', 'modules', 'init-orcamento.js'));
   return sandbox;
 }
 

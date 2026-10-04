@@ -8,6 +8,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { indexComTelas } = require('./helpers/index-com-telas.cjs');
 
 const root = path.join(__dirname, '..');
 const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8');
@@ -63,7 +64,7 @@ describe('Códigos de recuperação — app', () => {
   const supa = read('js/core/supabase.js');
   const dois = read('js/modules/init-2fa.js');
   const auth = read('js/authController.js');
-  const html = read('index.html');
+  const html = indexComTelas();
 
   test('o cliente expõe gerar, contar e consumir', () => {
     expect(supa).toContain('mfaRecoveryGenerate');
@@ -105,7 +106,7 @@ describe('Códigos de recuperação — app', () => {
 describe('Sessões em outros aparelhos', () => {
   const supa = read('js/core/supabase.js');
   const cfg = read('js/modules/init-config.js');
-  const html = read('index.html');
+  const html = indexComTelas();
 
   test('existe signOutOthers com escopo others', () => {
     const trecho = supa.slice(supa.indexOf('signOutOthers:'), supa.indexOf('logout:'));

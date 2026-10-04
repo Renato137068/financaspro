@@ -328,20 +328,6 @@
   transform: scale(var(--press-scale, 0.98));
 }
 
-.cat-count {
-  background: var(--color-bg-page);
-  border-radius: var(--radius-md);
-  padding: 1px var(--space-1);
-  font-size: var(--font-size-2xs);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-muted);
-}
-
-.filtro-cat-chip.ativo .cat-count {
-  background: var(--color-primary-500);
-  color: var(--color-text-inverse);
-}
-
 /* ── Filtros legado (deprecated — use .filtro-chip) ─────────── */
 /* Mantido sem uso no HTML; remoção planejada após confirmação de zero refs. */
 

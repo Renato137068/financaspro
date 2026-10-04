@@ -107,7 +107,7 @@ describe('tokens de cor usados pela função certa', function() {
     // O produto tinha 103 gradientes. A regra é: um só de marca (a superfície
     // do saldo) mais os brilhos de esqueleto, onde o gradiente É a animação.
     const comGradiente = ocorrencias(/(linear|radial)-gradient\(/)
-      .filter((linha) => !/skeleton\.css|extrato\.css/.test(linha));
+      .filter((linha) => !/skeleton\.css|extrato(-tela)?\.css/.test(linha));
     expect(comGradiente.length).toBeLessThanOrEqual(1);
   });
 });

@@ -4,8 +4,15 @@
  *
  * Fluxo: BillingClient no app nativo → purchaseToken → POST /billing/play/:orgId/verify
  * O entitlement fica centralizado no backend; Stripe continua válido para web.
+ *
+ * ES Module (ADR 0005): chega sob demanda no chunk 'conta'
+ * (js/esm/chunks/conta.js, via LAZY.load), que o publica em window.
  */
-var PLAY_BILLING = {
+
+import { BILLING } from './billing.js';
+import { DADOS } from './core/dados.js';
+
+const PLAY_BILLING = {
   PRODUCT_IDS: {
     PRO_MONTHLY: 'financaspro.pro.monthly',
     PRO_YEARLY: 'financaspro.pro.yearly',
@@ -14,7 +21,7 @@ var PLAY_BILLING = {
   },
 
   productIdForTier: function(tier, interval) {
-    var ids = this.PRODUCT_IDS;
+    var ids = PLAY_BILLING.PRODUCT_IDS;
     if (tier === 'PRO') return interval === 'yearly' ? ids.PRO_YEARLY : ids.PRO_MONTHLY;
     if (tier === 'BUSINESS') return interval === 'yearly' ? ids.BUSINESS_YEARLY : ids.BUSINESS_MONTHLY;
     return null;
@@ -35,7 +42,7 @@ var PLAY_BILLING = {
   },
 
   verifyOnServer: function(productId, purchaseToken) {
-    var orgId = this._orgId();
+    var orgId = PLAY_BILLING._orgId();
     if (!orgId) {
       return Promise.reject(new Error('conta-cloud-indisponivel'));
     }
@@ -47,31 +54,18 @@ var PLAY_BILLING = {
       return resp;
     };
 
-    if (typeof DADOS !== 'undefined' && DADOS._supabaseAtivo && DADOS._supabaseAtivo()
-        && typeof SUPA_BILLING !== 'undefined' && SUPA_BILLING.isActive()) {
-      return BILLING.ensureOrg().then(function(resolvedOrgId) {
-        return SUPA_BILLING.invoke('play-verify', {
-          orgId: resolvedOrgId,
-          productId: productId,
-          purchaseToken: purchaseToken,
-          packageName: 'com.financaspro.mobile',
-        });
-      }).then(verify);
-    }
-
-    if (typeof DADOS === 'undefined' || !DADOS._apiFetch) {
+    if (typeof DADOS === 'undefined' || !DADOS._supabaseAtivo || !DADOS._supabaseAtivo()
+        || typeof SUPA_BILLING === 'undefined' || !SUPA_BILLING.isActive()) {
       return Promise.reject(new Error('conta-cloud-indisponivel'));
     }
-    return DADOS._apiFetch('/api/v1/billing/play/' + encodeURIComponent(orgId) + '/verify', {
-      method: 'POST',
-      body: JSON.stringify({
+    return BILLING.ensureOrg().then(function(resolvedOrgId) {
+      return SUPA_BILLING.invoke('play-verify', {
+        orgId: resolvedOrgId,
         productId: productId,
         purchaseToken: purchaseToken,
         packageName: 'com.financaspro.mobile',
-      }),
-    }).then(function(resp) {
-      return verify(resp && resp.data ? resp.data : resp);
-    });
+      });
+    }).then(verify);
   },
 
   /**
@@ -82,12 +76,12 @@ var PLAY_BILLING = {
    *   Sem token, o nativo consulta compras ativas e usa o replacement do Play.
    */
   purchase: function(productId, opts) {
-    if (!this.isAvailable()) {
+    if (!PLAY_BILLING.isAvailable()) {
       return Promise.reject(new Error('play-billing-indisponivel'));
     }
     if (typeof window.__fpNativeBilling === 'object'
         && typeof window.__fpNativeBilling.purchase === 'function') {
-      var self = this;
+      var self = PLAY_BILLING;
       opts = opts || {};
       return window.__fpNativeBilling.purchase(productId, opts).then(function(result) {
         return self.verifyOnServer(productId, result.purchaseToken);
@@ -97,12 +91,12 @@ var PLAY_BILLING = {
   },
 
   restore: function() {
-    if (!this.isAvailable()) {
+    if (!PLAY_BILLING.isAvailable()) {
       return Promise.reject(new Error('play-billing-indisponivel'));
     }
     if (typeof window.__fpNativeBilling === 'object'
         && typeof window.__fpNativeBilling.restore === 'function') {
-      var self = this;
+      var self = PLAY_BILLING;
       return window.__fpNativeBilling.restore().then(function(purchases) {
         var list = purchases || [];
         var chain = Promise.resolve();
@@ -122,7 +116,7 @@ var PLAY_BILLING = {
    * @returns {Promise<Array<{productId:string,formattedPrice:string}>>}
    */
   getProductDetails: function(productIds) {
-    if (!this.isAvailable()) {
+    if (!PLAY_BILLING.isAvailable()) {
       return Promise.reject(new Error('play-billing-indisponivel'));
     }
     if (typeof window.__fpNativeBilling === 'object'
@@ -130,7 +124,7 @@ var PLAY_BILLING = {
       var ids = productIds;
       if (!ids || !ids.length) {
         // Só Pro — Business não é vendido no app.
-        ids = [this.PRODUCT_IDS.PRO_MONTHLY, this.PRODUCT_IDS.PRO_YEARLY];
+        ids = [PLAY_BILLING.PRODUCT_IDS.PRO_MONTHLY, PLAY_BILLING.PRODUCT_IDS.PRO_YEARLY];
       }
       return window.__fpNativeBilling.getProductDetails(ids);
     }
@@ -138,6 +132,5 @@ var PLAY_BILLING = {
   },
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = PLAY_BILLING;
-}
+export { PLAY_BILLING };
+export default PLAY_BILLING;

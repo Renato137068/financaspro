@@ -5,6 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { carregarDashboard } = require('./helpers/dashboard-renderer.cjs');
 
 const dashSrc = fs.readFileSync(path.join(__dirname, '..', 'js', 'render-dashboard.js'), 'utf8');
 
@@ -41,11 +42,9 @@ describe('P2.5 — desacoplamento INIT_* via onRender', function() {
     sandbox.window.UI = sandbox.UI;
     sandbox.globalThis = sandbox;
     var ctx = vm.createContext(sandbox);
-    var file = path.join(__dirname, '..', 'js', 'render-dashboard.js');
-    vm.runInContext(dashSrc, ctx, { filename: file });
 
     var ordem = [];
-    var RD = sandbox.window.RENDER_DASHBOARD;
+    var RD = carregarDashboard(ctx);
     RD.onRender(function() { ordem.push('relatorios'); }, 50);
     RD.onRender(function() { ordem.push('metas'); }, 10);
     RD.onRender(function() { ordem.push('patrimonio'); }, 40);

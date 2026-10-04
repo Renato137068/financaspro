@@ -71,6 +71,35 @@ describe('AI_ENGINE.gerarAlertas — demais ramos', () => {
     expect(achar(alertas, 'orc-alerta-lazer')).toBeDefined();
   });
 
+  test('orçamento no formato que o app grava ({ limite }) também alerta', () => {
+    // BUDGET_SERVICE.setBudget grava { limite, definidoEm }. O motor lia
+    // Number(entrada), que dava NaN: o alerta nunca disparava para quem
+    // definiu o orçamento pelo app.
+    const txs = [
+      { tipo: 'receita', valor: 9000, data: '2026-01-02', categoria: 'salario' },
+      { tipo: 'despesa', valor: 1300, data: '2026-01-05', categoria: 'alimentacao' },
+      { tipo: 'despesa', valor: 85, data: '2026-01-06', categoria: 'servicos_financeiros' },
+    ];
+    const orcamentos = {
+      alimentacao: { limite: 1100, definidoEm: '2026-01-01T00:00:00.000Z' },
+      servicos_financeiros: { limite: 100, definidoEm: '2026-01-01T00:00:00.000Z' },
+    };
+    const alertas = AI.gerarAlertas(txs, { orcamentos }, JAN10);
+    const excedido = achar(alertas, 'orc-excedido-alimentacao');
+    const quase = achar(alertas, 'orc-alerta-servicos_financeiros');
+    expect(excedido).toBeDefined();
+    expect(quase).toBeDefined();
+    // Nome que a pessoa lê, e valores no formato da moeda.
+    expect(excedido.msg).toMatch(/^Alimentação: R\$\s?1\.300,00 \/ R\$\s?1\.100,00$/);
+    expect(quase.msg).toBe('Serviços Financeiros: 85% usado.');
+  });
+
+  test('orçamento sem limite válido não alerta', () => {
+    const txs = [{ tipo: 'despesa', valor: 500, data: '2026-01-05', categoria: 'lazer' }];
+    const alertas = AI.gerarAlertas(txs, { orcamentos: { lazer: { limite: 0 }, mercado: null } }, JAN10);
+    expect(alertas.filter(function(a) { return a.tipo === 'orcamento'; })).toEqual([]);
+  });
+
   test('vencimento recorrente próximo (dentro de 5 dias) vira alerta', () => {
     const txs = [{ tipo: 'receita', valor: 5000, data: '2026-01-02', categoria: 'salario' }];
     const config = { recorrentes: [{ id: 'aluguel', descricao: 'Aluguel', valor: 1500, dia: 13 }] };

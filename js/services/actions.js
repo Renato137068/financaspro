@@ -10,9 +10,14 @@
  *     var txs = DADOS.getTransacoes(); // relê da fonte da verdade
  *     render(txs);
  *   });
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
 
-var ACTIONS = Object.freeze({
+import { APP_STORE } from '../core/store.js';
+
+const ACTIONS = Object.freeze({
   // Transações
   TRANSACAO_CRIAR:   'transacao/criar',
   TRANSACAO_EDITAR:  'transacao/editar',
@@ -58,21 +63,21 @@ function _registrarActionHandlers() {
 
   // --- Transações ---
 
-  APP_STORE.registerActionHandler(ACTIONS.TRANSACAO_CRIAR, function(transacao) {
+  APP_STORE.registerActionHandler(ACTIONS.TRANSACAO_CRIAR, function(_transacao) {
     APP_STORE.cache.invalidar('transacoes');
     APP_STORE.cache.invalidar('orcamentos');
     var ver = (APP_STORE.get('dados.transacoesVer') || 0) + 1;
     APP_STORE.set('dados.transacoesVer', ver);
   });
 
-  APP_STORE.registerActionHandler(ACTIONS.TRANSACAO_EDITAR, function(transacao) {
+  APP_STORE.registerActionHandler(ACTIONS.TRANSACAO_EDITAR, function(_transacao) {
     APP_STORE.cache.invalidar('transacoes');
     APP_STORE.cache.invalidar('orcamentos');
     var ver = (APP_STORE.get('dados.transacoesVer') || 0) + 1;
     APP_STORE.set('dados.transacoesVer', ver);
   });
 
-  APP_STORE.registerActionHandler(ACTIONS.TRANSACAO_DELETAR, function(id) {
+  APP_STORE.registerActionHandler(ACTIONS.TRANSACAO_DELETAR, function(_id) {
     APP_STORE.cache.invalidar('transacoes');
     APP_STORE.cache.invalidar('orcamentos');
     var ver = (APP_STORE.get('dados.transacoesVer') || 0) + 1;
@@ -81,7 +86,7 @@ function _registrarActionHandlers() {
 
   // --- Config ---
 
-  APP_STORE.registerActionHandler(ACTIONS.CONFIG_SALVAR, function(config) {
+  APP_STORE.registerActionHandler(ACTIONS.CONFIG_SALVAR, function(_config) {
     APP_STORE.cache.invalidar('config');
     var ver = (APP_STORE.get('dados.configVer') || 0) + 1;
     APP_STORE.set('dados.configVer', ver);
@@ -89,7 +94,7 @@ function _registrarActionHandlers() {
 
   // --- Contas ---
 
-  APP_STORE.registerActionHandler(ACTIONS.CONTAS_SALVAR, function(contas) {
+  APP_STORE.registerActionHandler(ACTIONS.CONTAS_SALVAR, function(_contas) {
     APP_STORE.cache.invalidar('transacoes'); // saldos calculados podem mudar
     var ver = (APP_STORE.get('dados.contasVer') || 0) + 1;
     APP_STORE.set('dados.contasVer', ver);
@@ -97,13 +102,13 @@ function _registrarActionHandlers() {
 
   // --- Orçamentos ---
 
-  APP_STORE.registerActionHandler(ACTIONS.ORCAMENTO_DEFINIR, function(payload) {
+  APP_STORE.registerActionHandler(ACTIONS.ORCAMENTO_DEFINIR, function(_payload) {
     APP_STORE.cache.invalidar('orcamentos');
     var ver = (APP_STORE.get('dados.orcamentosVer') || 0) + 1;
     APP_STORE.set('dados.orcamentosVer', ver);
   });
 
-  APP_STORE.registerActionHandler(ACTIONS.ORCAMENTO_REMOVER, function(categoria) {
+  APP_STORE.registerActionHandler(ACTIONS.ORCAMENTO_REMOVER, function(_categoria) {
     APP_STORE.cache.invalidar('orcamentos');
     var ver = (APP_STORE.get('dados.orcamentosVer') || 0) + 1;
     APP_STORE.set('dados.orcamentosVer', ver);
@@ -191,14 +196,7 @@ function _registrarActionHandlers() {
   console.warn('[ACTIONS] ' + Object.keys(ACTIONS).length + ' ações registradas');
 }
 
-// Auto-registrar: se store já existe, registra imediatamente;
-// caso contrário aguarda DOMContentLoaded (quando todos os scripts já carregaram).
-if (typeof APP_STORE !== 'undefined') {
-  _registrarActionHandlers();
-} else {
-  document.addEventListener('DOMContentLoaded', _registrarActionHandlers);
-}
+// APP_STORE vem por import e já está avaliado: registra os handlers agora.
+_registrarActionHandlers();
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { ACTIONS: ACTIONS };
-}
+export { ACTIONS };

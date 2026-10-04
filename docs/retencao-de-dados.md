@@ -3,9 +3,12 @@
 Este documento descreve por quanto tempo o FinançasPro guarda cada tipo de
 dado, por quê, e o que acontece quando alguém pede para sair.
 
-A política vive em código, não aqui: **`backend/lib/retention.js`** é a fonte
-única. Este texto explica o raciocínio; o arquivo aplica as regras e
-`tests/backend/retention.test.js` garante que schema e política não se separem.
+A política vive em código, não aqui: **`public.fp_purge_retention()`**, na
+migração `supabase/migrations/20261002120000_agendamentos.sql`, é a fonte
+única. Este texto explica o raciocínio; a função aplica as regras,
+`supabase/tests/agendamentos.test.sql` testa o comportamento dela e
+`tests/retencao-politica.test.js` garante que schema, política e esta tabela
+não se separem.
 
 ## Por que existe
 
@@ -27,11 +30,19 @@ para retenção.
 | `VerificationToken` | `expiresAt` | 7 dias | Token vencido é lixo criptográfico. A janela existe só para investigar tentativa de uso indevido. |
 | `Invitation` | `expiresAt` | 30 dias | Guarda o e-mail de alguém que talvez nunca tenha virado usuário — a pessoa com menos motivo para ter dado seu retido aqui. |
 | `JobLog` | `createdAt` | 90 dias | Diagnóstico operacional. Depois de um trimestre ninguém investiga um job isolado. |
+| `fp_client_error` (Supabase) | `created_at` | 30 dias | Relatório de erro do app. Serve para corrigir a falha da versão atual; purgado pela própria Edge Function `obs-ingest`. |
+| `fp_app_sessao_dia` (Supabase) | `dia` | 30 dias | Contador anônimo de aberturas por dia e versão (denominador do painel de saúde). Não identifica ninguém; o prazo é o mesmo dos erros com que ele é comparado. Purgado pela `obs-ingest`. |
 | `AuditLog` | `createdAt` | 365 dias | Prazo mais longo porque é a prova de quem fez o quê — inclusive a prova de que uma exclusão foi atendida. |
+| `SyncOp` | `processedAt` | 90 dias | Registro de idempotência do sync v2 da API Express (que saiu, ADR 0007). Só servia para deduplicar reenvios; não é dado financeiro. |
+| `StripeWebhookEvent` | `processedAt` | 90 dias | Ledger de idempotência dos webhooks do Stripe e do RTDN da Play. Depois de processado, só impede reprocessar o mesmo evento, e as lojas não reenviam depois de alguns dias. |
 
-Os prazos são ajustáveis por variável de ambiente (`RETENTION_*_DAYS`, ver
-`.env.example`). Encurtar um prazo apaga histórico no expurgo seguinte e **não
-há desfazer** — a alteração deve passar por revisão.
+`Session`, `VerificationToken`, `JobLog` e `SyncOp` eram escritas só pelo
+backend Express, que saiu do projeto (ADR 0007): nada novo entra nelas, e o
+expurgo leva o que sobrou dentro do prazo de cada uma.
+
+Mudar um prazo é uma migração nova com `create or replace function`.
+Encurtar apaga histórico no expurgo seguinte e **não há desfazer** — a
+alteração deve passar por revisão.
 
 ### O que não tem prazo, e por quê
 
@@ -43,67 +54,51 @@ pelo usuário, ou cascade na exclusão da conta.
 Registros fiscais (`Subscription`, `Invoice`, `UsageRecord`) seguem prazo
 contábil, não esta política.
 
-A lista completa de isenções está em `RETENTION_EXEMPT`, com justificativa por
-tabela. Um modelo novo que não esteja nem na política nem nas isenções faz a
+A lista completa de isenções está em `tests/retencao-politica.test.js`, com
+justificativa por tabela. Um modelo novo que não esteja nem na política nem nas isenções faz a
 suíte falhar — é uma decisão que precisa ser tomada, não esquecida.
 
 ## Como o expurgo roda
 
-Worker BullMQ (`backend/workers/retention.worker.js`), cron diário às 3h — fora
-do pico e depois do processamento de recorrentes da meia-noite.
+`pg_cron` do Supabase, job `fp-retencao`, todo dia às 03:17 UTC, chamando
+`select public.fp_purge_retention()`. Antes era um worker BullMQ do Express.
 
 Três propriedades que importam:
 
 - **Idempotente.** O critério é a data, não uma marcação de "já processado".
   Rodar duas vezes no mesmo dia não causa dano.
-- **Tolerante a falha parcial.** Um deadlock numa tabela não impede o expurgo
-  das outras; a falha é contada e registrada como `warn`.
-- **Barulhento quando o schema muda.** Se um modelo da política sumir do client
-  Prisma (rename não propagado), o expurgo reporta erro em vez de apagar zero
-  linhas em silêncio para sempre.
+- **Tolerante a falha parcial.** Erro numa tabela não impede o expurgo das
+  outras; ela aparece no resultado como `"erro: …"` e no log do Postgres como
+  `warning`.
+- **Barulhento quando o schema muda.** Se uma tabela da política for
+  renomeada sem atualizar a função, o expurgo reporta erro em vez de apagar
+  zero linhas em silêncio para sempre — e o teste da política falha antes,
+  no CI, porque o modelo some do schema.
 
-Para rodar à mão numa investigação: `runRetention()` é exportada e não depende
-do agendador.
+Para rodar à mão numa investigação: `select public.fp_purge_retention();` no
+SQL Editor. O histórico das execuções fica em `cron.job_run_details`.
 
 ## Exclusão de conta
 
-`UserService.deleteAccount` implementa o art. 18, VI. Todas as relações filhas
-têm `onDelete: Cascade` e somem junto com o usuário.
+`public.fp_delete_own_account()` implementa o art. 18, VI. O app chama pelo
+Perfil (`client.rpc('fp_delete_own_account')`); a função apaga o conteúdo da
+pessoa, as organizações de que ela é dona (com o conteúdo delas), o vínculo
+com as outras e, por último, o login em `auth.users`.
 
 **A exceção é o `AuditLog`**, cuja relação com `User` é opcional. Ao apagar o
-usuário, o Prisma faz `SetNull` e a linha permanece. Isso é proposital: o
+usuário, o FK faz `SET NULL` e a linha permanece. Isso é proposital: o
 registro precisa sobreviver para provar que a exclusão aconteceu.
 
-O que não pode sobreviver é o conteúdo pessoal dessa linha. Antes da correção,
-`ipAddress` e `userAgent` ficavam intactos com `userId` nulo — endereço IP é
-dado pessoal (art. 5º, I), e o resultado era dado pessoal órfão: sem titular
-para reclamá-lo e sem rotina para apagá-lo. O comentário no código dizia
-"anonimizados", o que era falso conforto: trocar o `userId` por nulo mantendo o
-IP não anonimiza nada.
-
-Hoje `ipAddress`, `userAgent` e `metadata` são limpos **antes** do delete, na
-mesma transação. Se o delete falhar, não sobra log meio anonimizado; se a
-limpeza falhar, a conta não é apagada e o pedido pode ser repetido.
-
-### Dono de organização
-
-Excluir a conta é bloqueado (409) enquanto a pessoa for dona de alguma
-organização — a relação `Organization.owner` é obrigatória e o banco recusaria.
-
-Antes, isso era um beco: a única alternativa era `deleteOrg`, que leva junto os
-dados de todos os outros membros. Para exercer o direito de exclusão, a pessoa
-precisava destruir o trabalho de terceiros ou manter a conta aberta para
-sempre.
-
-`OrgService.transferOwnership` (`POST /orgs/:orgId/members/:userId/transfer-ownership`)
-resolve isso. O destinatário precisa já ser membro — promover alguém de fora
-daria acesso a dados que essa pessoa nunca teve permissão de ver. O dono
-anterior vira `ADMIN` em vez de perder o acesso: quem transfere costuma
-continuar trabalhando ali.
+O que não pode sobreviver é o conteúdo pessoal dessa linha. Endereço IP é dado
+pessoal (art. 5º, I): trocar o `userId` por nulo mantendo o IP não anonimiza
+nada. Por isso `ipAddress`, `userAgent` e `metadata` são limpos na mesma
+transação, antes do delete (migração `20261002121000_delete_own_account_auditlog`;
+o backend Express fazia o mesmo, e a primeira versão da função do Supabase não
+fazia). Se o delete falhar, não sobra log meio anonimizado. Testado em
+`supabase/tests/delete_own_account.test.sql`.
 
 ## Portabilidade
 
-`UserService.exportUserData` atende o art. 18, V. O backup do frontend
-(`INIT_CONFIG.exportarDados`) carrega transações, contas, orçamentos, anexos e
+O backup do app (`INIT_CONFIG.exportarDados`) atende o art. 18, V: carrega transações, contas, orçamentos, anexos e
 configuração — verificado por `tests/backup-simetria.test.js`, que compara o
 que o app persiste contra o que o backup leva.

@@ -1,6 +1,14 @@
 /**
  * anexos.js — Armazenamento de comprovantes em IndexedDB
+ *
+ * ES Module (ADR 0005): chega sob demanda no chunk 'anexos'
+ * (js/esm/chunks/anexos.js, via LAZY.load), que o publica em window.
  */
+
+import { UTILS } from './core/utils.js';
+import { LOCAL_CRYPTO } from './utilities/local-crypto.js';
+import { TRANSACOES } from './transacoes.js';
+
 const ANEXOS = {
   DB_NAME: 'financaspro-anexos',
   DB_VERSION: 1,
@@ -12,9 +20,9 @@ const ANEXOS = {
   _db: null,
 
   init: function() {
-    var self = this;
+    var self = ANEXOS;
     if (typeof indexedDB === 'undefined') return Promise.resolve(false);
-    if (this._db) return Promise.resolve(true);
+    if (ANEXOS._db) return Promise.resolve(true);
     return new Promise(function(resolve) {
       var req = indexedDB.open(self.DB_NAME, self.DB_VERSION);
       req.onupgradeneeded = function(e) {
@@ -36,24 +44,24 @@ const ANEXOS = {
   },
 
   _dbReady: function() {
-    var self = this;
-    if (this._db) return Promise.resolve(this._db);
-    return this.init().then(function() { return self._db; });
+    var self = ANEXOS;
+    if (ANEXOS._db) return Promise.resolve(ANEXOS._db);
+    return ANEXOS.init().then(function() { return self._db; });
   },
 
   validarArquivo: function(file) {
     if (!file) return { valido: false, erro: 'Arquivo inválido' };
-    if (this.MIME_PERMITIDOS.indexOf(file.type) === -1) {
+    if (ANEXOS.MIME_PERMITIDOS.indexOf(file.type) === -1) {
       return { valido: false, erro: 'Use imagem (JPG, PNG, WebP) ou PDF' };
     }
-    if (file.size > this.MAX_BYTES) {
+    if (file.size > ANEXOS.MAX_BYTES) {
       return { valido: false, erro: 'Arquivo muito grande (máx. 2 MB)' };
     }
     return { valido: true };
   },
 
   listarMeta: function(transacaoId) {
-    return this._dbReady().then(function(db) {
+    return ANEXOS._dbReady().then(function(db) {
       if (!db) return [];
       return new Promise(function(resolve) {
         var tx = db.transaction(ANEXOS.STORE, 'readonly');
@@ -116,8 +124,8 @@ const ANEXOS = {
    * Regrava anexos ao ligar/desligar LOCAL_CRYPTO (espelha aplicarCriptografia do DADOS).
    */
   migrarCriptografia: function(enable) {
-    var self = this;
-    return this._dbReady().then(function(db) {
+    var self = ANEXOS;
+    return ANEXOS._dbReady().then(function(db) {
       if (!db) return;
       return new Promise(function(resolve, reject) {
         var tx = db.transaction(ANEXOS.STORE, 'readonly');
@@ -165,11 +173,11 @@ const ANEXOS = {
   },
 
   salvar: function(transacaoId, file) {
-    var validacao = this.validarArquivo(file);
+    var validacao = ANEXOS.validarArquivo(file);
     if (!validacao.valido) return Promise.reject(new Error(validacao.erro));
 
-    var self = this;
-    return this.listarMeta(transacaoId).then(function(existentes) {
+    var self = ANEXOS;
+    return ANEXOS.listarMeta(transacaoId).then(function(existentes) {
       if (existentes.length >= self.MAX_POR_TX) {
         throw new Error('Máximo de ' + self.MAX_POR_TX + ' anexos por transação');
       }
@@ -215,7 +223,7 @@ const ANEXOS = {
   },
 
   obter: function(id) {
-    return this._dbReady().then(function(db) {
+    return ANEXOS._dbReady().then(function(db) {
       if (!db) return null;
       return new Promise(function(resolve) {
         var tx = db.transaction(ANEXOS.STORE, 'readonly');
@@ -229,8 +237,8 @@ const ANEXOS = {
   },
 
   excluir: function(id) {
-    var self = this;
-    return this.obter(id).then(function(reg) {
+    var self = ANEXOS;
+    return ANEXOS.obter(id).then(function(reg) {
       if (!reg) return;
       return self._dbReady().then(function(db) {
         if (!db) return;
@@ -246,8 +254,8 @@ const ANEXOS = {
   },
 
   excluirPorTransacao: function(transacaoId) {
-    var self = this;
-    return this.listarMeta(transacaoId).then(function(lista) {
+    var self = ANEXOS;
+    return ANEXOS.listarMeta(transacaoId).then(function(lista) {
       if (!lista.length) return;
       return self._dbReady().then(function(db) {
         if (!db) return;
@@ -262,7 +270,7 @@ const ANEXOS = {
   },
 
   _atualizarContagem: function(transacaoId) {
-    return this.listarMeta(transacaoId).then(function(lista) {
+    return ANEXOS.listarMeta(transacaoId).then(function(lista) {
       if (typeof TRANSACOES === 'undefined') return lista.length;
       var tx = TRANSACOES.obterPorId(transacaoId);
       if (tx) {
@@ -292,7 +300,7 @@ const ANEXOS = {
   },
 
   exportarTodos: function() {
-    return this._dbReady().then(function(db) {
+    return ANEXOS._dbReady().then(function(db) {
       if (!db) return [];
       return new Promise(function(resolve) {
         var tx = db.transaction(ANEXOS.STORE, 'readonly');
@@ -326,7 +334,7 @@ const ANEXOS = {
    * @returns {Array} só os itens com forma válida e dentro do contrato
    */
   _filtrarImportaveis: function(lista) {
-    var self = this;
+    var self = ANEXOS;
     return (lista || []).filter(function(item) {
       if (!item || !item.transacaoId || !item.dadosBase64) return false;
       if (self.MIME_PERMITIDOS.indexOf(item.mimeType) === -1) return false;
@@ -336,9 +344,9 @@ const ANEXOS = {
   },
 
   importarTodos: function(lista) {
-    var self = this;
-    lista = this._filtrarImportaveis(lista);
-    return this._dbReady().then(function(db) {
+    var self = ANEXOS;
+    lista = ANEXOS._filtrarImportaveis(lista);
+    return ANEXOS._dbReady().then(function(db) {
       if (!db) throw new Error('Armazenamento de anexos indisponível');
       return new Promise(function(resolve, reject) {
         var tx = db.transaction(ANEXOS.STORE, 'readwrite');
@@ -374,6 +382,5 @@ const ANEXOS = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = ANEXOS;
-}
+export { ANEXOS };
+export default ANEXOS;

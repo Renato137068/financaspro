@@ -1,8 +1,14 @@
 /**
  * parser.js - Natural language parsing for quick input
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
 
-var PARSER = {
+import { UTILS } from './core/utils.js';
+import { DADOS } from './core/dados.js';
+
+const PARSER = {
   /**
    * Converte um token numérico brasileiro em número.
    *
@@ -147,6 +153,5 @@ var PARSER = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = PARSER;
-}
+export { PARSER };
+export default PARSER;

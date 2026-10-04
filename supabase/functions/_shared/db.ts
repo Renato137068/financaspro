@@ -4,7 +4,7 @@
 // Port de backend/domain/repositories/billing.repository.js (parte Play).
 // Reusa a coluna "stripeSubId" como chave `play:<token>` — mesma convenção do
 // backend Express, para o modelo de dados não mudar.
-import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.117.2";
 
 export function adminClient(): SupabaseClient {
   const url = Deno.env.get("SUPABASE_URL")!;
@@ -143,7 +143,9 @@ export async function findByStripeSubId(sb: SupabaseClient, stripeSubId: string)
 }
 
 export async function findPlanById(sb: SupabaseClient, planId: string) {
-  const { data } = await sb.from("Plan").select("id, name, tier").eq("id", planId).maybeSingle();
+  // maxUsers é o teto de assentos que o org-invite confere. Sem ele na lista,
+  // o PostgREST não devolve a coluna e o convite caía no padrão de 1 assento.
+  const { data } = await sb.from("Plan").select("id, name, tier, maxUsers").eq("id", planId).maybeSingle();
   return data;
 }
 

@@ -2,9 +2,9 @@
  * ai-engine-core.test.js — trava o núcleo matemático do motor financeiro.
  * Funções puras que alimentam TODOS os insights que o usuário vê.
  */
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
 
 function loadAiEngine() {
   const ctx = vm.createContext({ Date, Math, Number, String, Array, Object, JSON });
@@ -12,8 +12,7 @@ function loadAiEngine() {
   // mapeia o código executado de volta ao arquivo-fonte. Com um nome relativo o
   // teste passa, mas a cobertura do módulo aparece como 0% no relatório.
   const file = path.join(__dirname, '..', 'js', 'ai-engine.js');
-  const code = fs.readFileSync(file, 'utf8');
-  vm.runInContext(code, ctx, { filename: file });
+  rodarNoContexto(ctx, file);
   return ctx.AI_ENGINE;
 }
 const AI = loadAiEngine();
@@ -189,9 +188,55 @@ describe('AI_ENGINE.prever — ignora o mês em curso', () => {
     expect(comParcial.tendencia).toBe(semParcial.tendencia);
   });
 
+  test('meses futuros só com parcelas não entram no histórico', () => {
+    // O formulário grava cada parcela já com a data do seu mês. Esses meses
+    // futuros não têm receita; na janela, derrubavam a previsão para receita
+    // zero e saldo negativo.
+    const parcelas = ['2026-06', '2026-07', '2026-08', '2026-09', '2026-10', '2026-11'].map(function(k, i) {
+      return { tipo: 'despesa', valor: 300, data: k + '-04', categoria: 'compras', descricao: 'Geladeira (' + (i + 2) + '/7)' };
+    });
+    const r = AI.prever(completos.concat(parcial, parcelas), 3, hoje);
+    const keys = r.historico.map(function(h) { return h.mesKey; });
+    expect(keys).toEqual(['2026-01', '2026-02', '2026-03', '2026-04']);
+    expect(r.meses.length).toBe(3);
+    r.meses.forEach(function(m) { expect(m.receitaEstimada).toBeGreaterThan(4000); });
+  });
+
   test('só 1 mês completo (+ mês corrente parcial) => insuficiente', () => {
     const r = AI.prever(mes('2026-04', 5000, 3000).concat(parcial), 3, hoje);
     expect(r.tendencia).toBe('insuficiente');
     expect(r.meses).toEqual([]);
+  });
+});
+
+describe('AI_ENGINE — meses futuros só com parcelas ficam de fora', () => {
+  const hoje = new Date(2026, 4, 20); // 20/05/2026
+  function mes(k, rec, desp) {
+    return [
+      { tipo: 'receita', valor: rec, data: k + '-05', categoria: 'salario' },
+      { tipo: 'despesa', valor: desp, data: k + '-10', categoria: 'moradia' },
+    ];
+  }
+  const historico = [].concat(mes('2026-03', 5000, 3000), mes('2026-04', 5000, 3000), mes('2026-05', 5000, 3000));
+  const parcelas = ['2026-06', '2026-07', '2026-08'].map(function(k) {
+    return { tipo: 'despesa', valor: 300, data: k + '-04', categoria: 'compras' };
+  });
+
+  test('mesesAte corta no mês de hoje', () => {
+    const ag = AI.agregarPorMes(historico.concat(parcelas));
+    expect(AI.mesesAte(ag, hoje)).toEqual(['2026-03', '2026-04', '2026-05']);
+  });
+
+  test('saúde financeira não vê "gastando mais do que ganha" por causa das parcelas', () => {
+    const com = AI.calcularSaude(historico.concat(parcelas), {}, hoje);
+    const sem = AI.calcularSaude(historico, {}, hoje);
+    expect(com).toEqual(sem);
+    expect(com.detalhes[0].desc).toBe('40%');
+  });
+
+  test('sugestão de corte usa os meses que já aconteceram', () => {
+    const r = AI.sugestaoCorte(historico.concat(parcelas), 0.2, hoje);
+    expect(r.viavel).toBe(true);
+    expect(r.taxaAtual).toBe(40);
   });
 });

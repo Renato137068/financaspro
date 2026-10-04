@@ -1,0 +1,148 @@
+<!-- Tela "config" (#aba-config). Vem no chunk lazy "config": scripts/generate-telas.cjs
+     gera js/telas/config.js a partir deste arquivo. Rode `npm run telas:gerar` depois de editar. -->
+<!-- HEADER DO USUÁRIO -->
+<div class="perfil-header">
+  <div class="perfil-avatar-wrapper">
+    <div class="perfil-avatar" id="perfil-avatar">U</div>
+    <div class="perfil-avatar-badge perfil-avatar-badge--gratis" id="perfil-plan-badge">Grátis</div>
+  </div>
+  <div class="perfil-info">
+    <h2 class="perfil-nome" id="perfil-nome-display">Usuário</h2>
+    <div class="perfil-meta">
+      <span class="perfil-email" id="user-session-label">Sessão local</span>
+      <span class="perfil-separator">•</span>
+      <span class="perfil-last-access" id="perfil-last-access">Sessão neste aparelho</span>
+    </div>
+  </div>
+  <div class="perfil-actions">
+    <button class="perfil-action-btn" data-action="abrir-editar-perfil" aria-label="Editar perfil">
+      <i data-lucide="pencil" aria-hidden="true"></i>
+    </button>
+  </div>
+</div>
+
+<!-- INDICADORES DE SEGURANÇA -->
+<div class="perfil-security-indicators">
+  <div class="security-indicator" id="security-account-status">
+    <i data-lucide="shield-check" aria-hidden="true"></i>
+    <span>Conta protegida</span>
+  </div>
+  <div class="security-indicator" id="security-pin-status">
+    <i data-lucide="lock" aria-hidden="true"></i>
+    <span id="perfil-pin-status">PIN desativado</span>
+  </div>
+</div>
+
+<!-- MENU DE GRUPOS — cada linha abre uma sub-tela (#aba-config-*). -->
+<div class="perfil-section">
+  <h2 class="perfil-section-title">Configurações</h2>
+  <div class="perfil-cards-grid">
+    <button type="button" class="perfil-card" data-action="mudar-aba" data-aba="config-conta" aria-label="Conta e plano">
+      <div class="perfil-card-icon-wrapper"><i data-lucide="user" aria-hidden="true"></i></div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Conta e plano</span>
+        <span class="perfil-card-subtitle">Dados pessoais, assinatura e equipe</span>
+      </div>
+      <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+    </button>
+
+    <button type="button" class="perfil-card" data-action="mudar-aba" data-aba="config-seguranca" aria-label="Segurança">
+      <div class="perfil-card-icon-wrapper"><i data-lucide="shield-check" aria-hidden="true"></i></div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Segurança</span>
+        <span class="perfil-card-subtitle">PIN, biometria, duas etapas e cifragem</span>
+      </div>
+      <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+    </button>
+
+    <button type="button" class="perfil-card" data-action="mudar-aba" data-aba="config-conexoes" aria-label="Bancos e conexões">
+      <div class="perfil-card-icon-wrapper"><i data-lucide="landmark" aria-hidden="true"></i></div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Bancos e conexões</span>
+        <span class="perfil-card-subtitle" id="perfil-menu-bancos-sub">Contas, cartões e Open Finance</span>
+      </div>
+      <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+    </button>
+
+    <button type="button" class="perfil-card" data-action="mudar-aba" data-aba="config-categorias" aria-label="Categorias">
+      <div class="perfil-card-icon-wrapper"><i data-lucide="folder" aria-hidden="true"></i></div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Categorias</span>
+        <span class="perfil-card-subtitle">Personalizar despesas e receitas</span>
+      </div>
+      <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+    </button>
+
+    <button type="button" class="perfil-card" data-action="mudar-aba" data-aba="config-simulador" aria-label="Simulador financeiro">
+      <div class="perfil-card-icon-wrapper"><i data-lucide="calculator" aria-hidden="true"></i></div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Simulador financeiro</span>
+        <span class="perfil-card-subtitle">À vista ou parcelado, poupança e financiamento</span>
+      </div>
+      <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+    </button>
+
+    <button type="button" class="perfil-card" data-action="mudar-aba" data-aba="config-preferencias" aria-label="Preferências e notificações">
+      <div class="perfil-card-icon-wrapper"><i data-lucide="settings" aria-hidden="true"></i></div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Preferências e notificações</span>
+        <span class="perfil-card-subtitle">Tema, alertas e lembretes</span>
+      </div>
+      <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+    </button>
+
+    <button type="button" class="perfil-card" data-action="mudar-aba" data-aba="config-dados" aria-label="Backup e dados">
+      <div class="perfil-card-icon-wrapper"><i data-lucide="download" aria-hidden="true"></i></div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Backup e dados</span>
+        <span class="perfil-card-subtitle">Exportar e importar seus dados</span>
+      </div>
+      <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+    </button>
+
+    <button type="button" class="perfil-card" data-action="mudar-aba" data-aba="config-ajuda" aria-label="Ajuda e sobre">
+      <div class="perfil-card-icon-wrapper"><i data-lucide="help-circle" aria-hidden="true"></i></div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Ajuda e sobre</span>
+        <span class="perfil-card-subtitle">Privacidade, novidades, feedback e suporte</span>
+      </div>
+      <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+    </button>
+  </div>
+</div>
+
+<!-- LOGOUT -->
+<div class="perfil-section" data-requer-nuvem>
+  <button type="button" id="btn-logout" class="perfil-logout-btn">
+    <i data-lucide="log-out" aria-hidden="true"></i>
+    Sair da conta
+  </button>
+</div>
+
+<!-- ZONA DE PERIGO -->
+<div class="perfil-section perfil-section-danger">
+  <h2 class="perfil-section-title perfil-section-title-danger"><i data-lucide="alert-triangle" aria-hidden="true"></i> Zona de perigo</h2>
+  <div class="perfil-danger-actions">
+  <button type="button" class="perfil-danger-btn" data-action="limpar-dados">
+    <i data-lucide="trash-2" aria-hidden="true"></i>
+    Apagar todos os dados
+  </button>
+  <!-- Exclusao da conta na nuvem. O Google Play exige um caminho DENTRO do
+       app para quem permite criar conta; a API ja tinha DELETE /users/me,
+       mas nada no frontend chamava. Some junto com o resto da nuvem quando
+       nao ha backend, porque ai nao existe conta para excluir. -->
+  <button type="button" class="perfil-danger-btn" data-action="excluir-conta" data-requer-nuvem>
+    <i data-lucide="user-x" aria-hidden="true"></i>
+    Excluir minha conta
+  </button>
+  </div>
+</div>
+
+<!-- SISTEMA -->
+<div class="perfil-system-info">
+  <p id="perfil-app-footer">FinançasPro v11.3.13 · Dados salvos localmente</p>
+  <p>Feito com <i data-lucide="heart" aria-hidden="true"></i> para suas finanças</p>
+</div>
+
+<div style="height: 24px;"></div>
+

@@ -19,6 +19,15 @@ function _extrato(fn) {
   if (typeof INIT_EXTRATO !== 'undefined' && typeof INIT_EXTRATO[fn] === 'function') {
     return INIT_EXTRATO[fn].apply(INIT_EXTRATO, args);
   }
+  // Em produção o Extrato vem no chunk 'extrato'. Exportar, editar pelo alerta
+  // ou "ver no extrato" podem vir de outra tela antes de ele carregar.
+  if (typeof INIT_NAVIGATION !== 'undefined' && INIT_NAVIGATION.carregarChunkExtrato) {
+    INIT_NAVIGATION.carregarChunkExtrato(function() {
+      if (typeof INIT_EXTRATO !== 'undefined' && typeof INIT_EXTRATO[fn] === 'function') {
+        INIT_EXTRATO[fn].apply(INIT_EXTRATO, args);
+      }
+    });
+  }
 }
 
 function _form(fn) {
@@ -33,6 +42,15 @@ function _config(fn) {
   if (typeof INIT_CONFIG !== 'undefined' && typeof INIT_CONFIG[fn] === 'function') {
     return INIT_CONFIG[fn].apply(INIT_CONFIG, args);
   }
+  // Em produção o Perfil vem no chunk 'config'. Editar perfil, bancos ou
+  // categorias pode vir de outra tela (guia de primeiros passos, dashboard).
+  if (typeof INIT_NAVIGATION !== 'undefined' && INIT_NAVIGATION.carregarChunkConfig) {
+    INIT_NAVIGATION.carregarChunkConfig(function() {
+      if (typeof INIT_CONFIG !== 'undefined' && typeof INIT_CONFIG[fn] === 'function') {
+        INIT_CONFIG[fn].apply(INIT_CONFIG, args);
+      }
+    });
+  }
 }
 
 function _modals(fn) {
@@ -44,8 +62,8 @@ function _modals(fn) {
 
 /* ── Extrato → INIT_EXTRATO ── */
 
-function getCatIcon(cat) { return _extrato('getCatIcon', cat) || ''; }
-function getCatCor(cat) { return _extrato('getCatCor', cat) || '#98a39d'; }
+function getCatIcon(cat) { return CATEGORIA_VISUAL.icone(cat); }
+function getCatCor(cat) { return CATEGORIA_VISUAL.cor(cat); }
 function getExtratoMesAno() { return _extrato('getExtratoMesAno'); }
 function navegarPeriodo(dir) { _extrato('navegarPeriodo', dir); }
 function atualizarPeriodoLabel() { _extrato('atualizarPeriodoLabel'); }
@@ -92,7 +110,11 @@ function atualizarDashboard() {
 
 /* ── Config / Perfil → INIT_CONFIG ── */
 
-function renderConfigTab() { _config('refreshPerfil'); }
+// Só atualiza o Perfil se ele já estiver carregado: PIN e config chamam isto
+// no boot, e um "atualizar" não deve baixar o chunk 'config'.
+function renderConfigTab() {
+  if (typeof INIT_CONFIG !== 'undefined' && INIT_CONFIG.refreshPerfil) INIT_CONFIG.refreshPerfil();
+}
 function renderConfigStats() { /* removido — #cfg-stat-* não existem na UI */ }
 function abrirEditarPerfil() { _config('abrirEditarPerfil'); }
 function abrirEditarRenda() { _config('abrirEditarRenda'); }
@@ -101,7 +123,7 @@ function abrirGerenciarCategorias(tipo) { _config('abrirGerenciarCategorias', ti
 function toggleAlertaOrcamento() { _config('toggleAlertaOrcamento'); }
 function toggleLembreteDiario() { _config('toggleLembreteDiario'); }
 function exportarDados() { _config('exportarDados'); }
-function executarInsight(acao, parametros) { _config('executarInsight', acao, parametros); }
+function executarInsight(acao, parametros) { INSIGHT_ACOES.executar(acao, parametros); }
 
 /* ── Modais → INIT_MODALS ── */
 

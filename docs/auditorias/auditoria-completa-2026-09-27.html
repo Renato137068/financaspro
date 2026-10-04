@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Balanço FinançasPro 11.3.18</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#f5f8f6; --surface:#ffffff; --surface-2:#edf6f2; --line:#d5e2dc;
+  --ink:#10231c; --ink-2:#3c5249; --ink-3:#607a6f;
+  --brand:#12694e; --brand-deep:#0b3d2e; --brand-soft:#d3e9df; --accent:#2fa37b;
+  --ok:#1f7a4f; --ok-bg:#e1f3e9; --warn:#9a5b00; --warn-bg:#fdf0da; --bad:#b3261e; --bad-bg:#fbe4e2; --info:#2d5d8a; --info-bg:#e3edf7;
+  --bar-track:#e3ece8;
+  --f-display:'Plus Jakarta Sans','Inter',-apple-system,'Segoe UI',sans-serif;
+  --f-body:'Inter',-apple-system,'Segoe UI',Roboto,sans-serif;
+  --f-mono:'JetBrains Mono','SFMono-Regular',Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#08140f; --surface:#0f1f18; --surface-2:#132a20; --line:#21392e;
+    --ink:#e6f1ec; --ink-2:#b4c9bf; --ink-3:#86a295;
+    --brand:#5cc49a; --brand-deep:#a9d4c1; --brand-soft:#173a2c; --accent:#74b99c;
+    --ok:#6fd49f; --ok-bg:#133526; --warn:#f0b35a; --warn-bg:#3a2a10; --bad:#ff8a80; --bad-bg:#3d1714; --info:#8dbbe8; --info-bg:#132b40;
+    --bar-track:#1b3228;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#08140f; --surface:#0f1f18; --surface-2:#132a20; --line:#21392e;
+  --ink:#e6f1ec; --ink-2:#b4c9bf; --ink-3:#86a295;
+  --brand:#5cc49a; --brand-deep:#a9d4c1; --brand-soft:#173a2c; --accent:#74b99c;
+  --ok:#6fd49f; --ok-bg:#133526; --warn:#f0b35a; --warn-bg:#3a2a10; --bad:#ff8a80; --bad-bg:#3d1714; --info:#8dbbe8; --info-bg:#132b40;
+  --bar-track:#1b3228;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;margin:0}
+.wrap{max-width:1040px;margin:0 auto;padding-inline:20px;padding-block:32px 64px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;color:var(--ink)}
+h1{font-size:clamp(28px,5vw,40px);font-weight:800;letter-spacing:-.02em;line-height:1.15}
+h2{font-size:22px;font-weight:700;letter-spacing:-.01em}
+h3{font-size:16px;font-weight:700}
+p{margin:0}
+code,.mono{font-family:var(--f-mono);font-size:.86em}
+code{background:var(--surface-2);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--brand)}
+.muted{color:var(--ink-3)}
+section{display:grid;gap:18px;margin-top:48px}
+.sec-head{display:grid;gap:6px}
+.sec-head p{color:var(--ink-2);max-width:68ch}
+a{color:var(--brand)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Header */
+header.top{display:grid;gap:14px}
+.meta{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--ink-3)}
+.meta span strong{color:var(--ink-2);font-weight:600}
+.lede{font-size:17px;color:var(--ink-2);max-width:66ch}
+
+/* Hero score */
+.hero{display:grid;grid-template-columns:minmax(0,260px) minmax(0,1fr);gap:28px;align-items:center;margin-top:28px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px}
+.gauge{position:relative;width:100%;max-width:240px;aspect-ratio:1;margin:0 auto}
+.gauge svg{width:100%;height:100%;display:block}
+.gauge .num{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.gauge .num b{font-family:var(--f-display);font-size:64px;font-weight:800;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
+.gauge .num small{font-size:13px;color:var(--ink-3)}
+.verdicts{display:grid;gap:12px}
+.verdict{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:baseline}
+.verdict p{grid-column:2;color:var(--ink-2);font-size:14px}
+.pill{display:inline-block;font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.warn{background:var(--warn-bg);color:var(--warn)}
+.pill.bad{background:var(--bad-bg);color:var(--bad)}
+.pill.info{background:var(--info-bg);color:var(--info)}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:4px}
+.kpi{border-top:2px solid var(--line);padding-top:8px}
+.kpi b{display:block;font-family:var(--f-display);font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
+.kpi span{font-size:12.5px;color:var(--ink-3)}
+
+/* Ledger */
+.ledger-box{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+table.ledger{width:100%;border-collapse:collapse;min-width:640px;font-variant-numeric:tabular-nums}
+.ledger th{font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);font-weight:600;text-align:left;padding:12px 14px;border-bottom:1px solid var(--line)}
+.ledger td{padding:11px 14px;border-bottom:1px dashed var(--line);vertical-align:middle}
+.ledger tr:last-child td{border-bottom:0}
+.ledger .r{text-align:right}
+.ledger .dim b{display:block;font-weight:600}
+.ledger .dim span{font-size:12.5px;color:var(--ink-3)}
+.ledger .score{font-family:var(--f-mono);font-weight:500;font-size:15px}
+.bar{height:8px;border-radius:4px;background:var(--bar-track);overflow:hidden;min-width:90px}
+.bar i{display:block;height:100%;border-radius:4px}
+.b-ok{background:var(--ok)} .b-warn{background:var(--warn)} .b-bad{background:var(--bad)}
+.ledger tfoot td{border-top:2px solid var(--ink);font-weight:700;padding-top:14px;padding-bottom:14px}
+.ledger tfoot .score{font-size:18px}
+.scale{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:12.5px;color:var(--ink-3)}
+.scale span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px;background:var(--c)}
+
+/* Strengths */
+.strengths{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px 24px;list-style:none;padding:0;margin:0}
+.strengths li{display:grid;grid-template-columns:18px 1fr;gap:10px;font-size:14px;color:var(--ink-2)}
+.strengths li::before{content:"✓";color:var(--ok);font-weight:700}
+.strengths b{color:var(--ink);font-weight:600}
+
+/* Findings */
+.filters{display:flex;flex-wrap:wrap;gap:8px}
+.filters button{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);padding:6px 14px;border-radius:999px;cursor:pointer}
+.filters button[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:var(--surface)}
+.findings{display:grid;gap:12px}
+.finding{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--sev);border-radius:10px;padding:16px 18px;display:grid;gap:8px}
+.finding[data-sev="alta"]{--sev:var(--bad)}
+.finding[data-sev="media"]{--sev:var(--warn)}
+.finding[data-sev="baixa"]{--sev:var(--info)}
+.f-head{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+.f-id{font-family:var(--f-mono);font-size:12.5px;color:var(--ink-3)}
+.finding p{color:var(--ink-2);font-size:14px;max-width:80ch}
+.finding .ev{font-size:13px;color:var(--ink-3)}
+.finding .fix{font-size:14px;color:var(--ink)}
+.finding .fix::before{content:"Correção → ";font-weight:600;color:var(--brand)}
+
+/* Previous P0 */
+.prev{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.prev div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:6px;align-content:start}
+.prev p{font-size:13.5px;color:var(--ink-2)}
+
+/* Roadmap */
+.road{display:grid;gap:0;position:relative}
+.phase{display:grid;grid-template-columns:120px minmax(0,1fr);gap:20px;padding-bottom:28px;position:relative}
+.phase:not(:last-child)::after{content:"";position:absolute;left:59px;top:64px;bottom:0;width:2px;background:var(--line)}
+.p-mark{display:grid;justify-items:center;gap:4px;align-content:start}
+.p-mark .dot{width:56px;height:56px;border-radius:50%;display:grid;place-content:center;background:var(--brand-soft);color:var(--brand-deep);font-family:var(--f-display);font-weight:800;font-size:19px;border:2px solid var(--brand)}
+.p-mark small{font-size:12px;color:var(--ink-3);text-align:center;line-height:1.3}
+.p-body{display:grid;gap:12px}
+.p-title{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:baseline}
+.p-title .proj{font-size:13px;color:var(--ink-3)}
+.p-title .proj b{font-family:var(--f-mono);color:var(--brand);font-weight:500}
+.tasks{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.tasks li{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 14px;align-items:start}
+.tasks li b{font-weight:600}
+.tasks li p{grid-column:1;font-size:13.5px;color:var(--ink-2)}
+.tasks li .tags{grid-column:2;grid-row:1 / span 2;display:flex;flex-direction:column;gap:4px;align-items:flex-end}
+.tag{font-size:11px;font-family:var(--f-mono);color:var(--ink-3);border:1px solid var(--line);border-radius:5px;padding:1px 6px;white-space:nowrap}
+.refs{font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3)}
+
+/* Projection chart */
+.proj-chart{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;overflow-x:auto}
+.proj-chart svg{display:block;width:100%;min-width:520px;height:auto}
+.proj-chart text{font-family:var(--f-body);fill:var(--ink-3);font-size:12px}
+.proj-chart .lbl{fill:var(--ink);font-family:var(--f-mono);font-size:13px;font-weight:500}
+
+/* Evidence */
+.ev-box{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+table.ev{width:100%;border-collapse:collapse;min-width:560px;font-size:14px}
+.ev th,.ev td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line)}
+.ev th{font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+.ev tr:last-child td{border-bottom:0}
+.ev td:first-child{font-family:var(--f-mono);font-size:13px}
+.method{font-size:13.5px;color:var(--ink-2);max-width:80ch;display:grid;gap:8px}
+footer{margin-top:56px;padding-top:16px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink-3)}
+
+@media (max-width:760px){
+  .hero{grid-template-columns:1fr}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .phase{grid-template-columns:64px minmax(0,1fr);gap:14px}
+  .phase:not(:last-child)::after{left:31px;top:52px}
+  .p-mark .dot{width:44px;height:44px;font-size:16px}
+  .tasks li{grid-template-columns:1fr}
+  .tasks li .tags{grid-column:1;grid-row:auto;flex-direction:row;flex-wrap:wrap;align-items:center}
+}
+@media (prefers-reduced-motion:no-preference){
+  .bar i{animation:grow .8s ease-out both}
+  @keyframes grow{from{transform:scaleX(.2);transform-origin:left}to{transform:scaleX(1);transform-origin:left}}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <span class="eyebrow">Auditoria completa · FinançasPro</span>
+    <h1>Balanço de engenharia e produto</h1>
+    <p class="lede">Revisão de todo o repositório: app web/PWA, Android, backend Express, Supabase (RLS e Edge Functions), testes, CI e dependências. Cada frente recebe nota de 0 a 100 e um peso. A nota geral é a soma ponderada, montada como um extrato.</p>
+    <div class="meta">
+      <span><strong>Data</strong> 27 set 2026</span>
+      <span><strong>Versão</strong> 11.3.18 · versionCode 49</span>
+      <span><strong>Commit</strong> <span class="mono">fdc9383</span></span>
+      <span><strong>Código</strong> ~113 mil linhas · 898 arquivos</span>
+    </div>
+  </header>
+
+  <div class="hero" role="group" aria-label="Nota geral">
+    <div class="gauge">
+      <svg viewBox="0 0 200 200" aria-hidden="true">
+        <circle cx="100" cy="100" r="84" fill="none" stroke="var(--bar-track)" stroke-width="14"/>
+        <circle cx="100" cy="100" r="84" fill="none" stroke="var(--brand)" stroke-width="14" stroke-linecap="round"
+          stroke-dasharray="417 527.8" transform="rotate(-90 100 100)"/>
+      </svg>
+      <div class="num"><b>79</b><small>de 100 · média ponderada</small></div>
+    </div>
+    <div class="verdicts">
+      <div class="verdict"><span class="pill ok">Apto</span><h3>Beta fechado e testes internos</h3><p>Integridade financeira, segurança de dados e billing estão maduros. As correções de setembro fecharam quase todos os bloqueios de loja apontados em 10/set.</p></div>
+      <div class="verdict"><span class="pill warn">Ainda não</span><h3>Produção aberta em escala</h3><p>Três lacunas pesam: nenhum erro de produção chega até você, o runtime Node está fora de suporte, e a arquitetura de scripts globais encarece cada nova feature.</p></div>
+      <div class="kpis">
+        <div class="kpi"><b>2.937</b><span>testes verdes (12 pulados)</span></div>
+        <div class="kpi"><b>0</b><span>avisos de lint</span></div>
+        <div class="kpi"><b>3</b><span>achados de prioridade alta</span></div>
+        <div class="kpi"><b>2</b><span>vulnerabilidades moderadas</span></div>
+      </div>
+    </div>
+  </div>
+
+  <section id="notas" aria-labelledby="h-notas">
+    <div class="sec-head">
+      <span class="eyebrow">Notas por frente</span>
+      <h2 id="h-notas">Extrato da nota geral</h2>
+      <p>O peso reflete o risco para quem guarda a vida financeira no app. Contribuição = nota × peso. Esta régua é mais ampla que a de 10/set (que deu 88): agora entram arquitetura, observabilidade e dependências, que antes não eram pontuadas. Nas frentes comparáveis, as notas ficaram estáveis ou subiram.</p>
+    </div>
+    <div class="ledger-box">
+      <table class="ledger">
+        <thead><tr><th>Frente</th><th class="r">Peso</th><th>Nota</th><th class="r"></th><th class="r">Contribuição</th></tr></thead>
+        <tbody id="ledger-body"></tbody>
+        <tfoot><tr><td>Nota geral</td><td class="r">100%</td><td></td><td class="r score">79</td><td class="r score">78,92</td></tr></tfoot>
+      </table>
+    </div>
+    <div class="scale"><span style="--c:var(--ok)">85 ou mais: sólido</span><span style="--c:var(--warn)">70 a 84: bom, com lacunas</span><span style="--c:var(--bad)">abaixo de 70: precisa de atenção</span></div>
+  </section>
+
+  <section aria-labelledby="h-fortes">
+    <div class="sec-head">
+      <span class="eyebrow">O que já está bem feito</span>
+      <h2 id="h-fortes">Pontos fortes verificados</h2>
+    </div>
+    <ul class="strengths">
+      <li><span><b>Dinheiro em centavos.</b> <code>somarMoeda</code> no app e <code>Decimal(15,2)</code> no Postgres; varreduras de float e fuso limpas.</span></li>
+      <li><span><b>Senhas e PIN fortes.</b> PBKDF2-SHA256 (600k no servidor, 310k no PIN) com salt, rehash transparente e <code>timingSafeEqual</code>.</span></li>
+      <li><span><b>Defesa em camadas na API.</b> Helmet, CSRF por Origin/Referer, CORS por allowlist, rate limit em Redis e guarda de boot que recusa segredos fracos.</span></li>
+      <li><span><b>RLS testado.</b> pgTAP cobre RLS, cotas e MFA; as 22 funções <code>SECURITY DEFINER</code> fixam <code>search_path</code>.</span></li>
+      <li><span><b>CSP de produção enxuta.</b> Sem <code>unsafe-inline</code> em script; origens de dev e Belvo removidas no build.</span></li>
+      <li><span><b>Webhooks corretos.</b> Stripe com assinatura e idempotência; RTDN do Play fail-closed com OIDC.</span></li>
+      <li><span><b>Android endurecido.</b> <code>allowBackup=false</code>, sem cleartext, R8 ligado, depuração desligada, targetSdk 36.</span></li>
+      <li><span><b>CI rico.</b> Build, lint (com estrito no diff), npm audit, orçamento de bundle, contraste WCAG, tokens CSS, XSS, pgTAP, E2E com axe e gates de performance.</span></li>
+      <li><span><b>Nenhum segredo no repositório.</b> Varredura de chaves Stripe, service_role, keystores e chaves privadas sem ocorrências.</span></li>
+    </ul>
+  </section>
+
+  <section id="achados" aria-labelledby="h-achados">
+    <div class="sec-head">
+      <span class="eyebrow">Achados</span>
+      <h2 id="h-achados">O que precisa mudar</h2>
+      <p>Cada achado aponta o arquivo onde foi verificado. Nenhum foi corrigido nesta auditoria; todos entram no roadmap abaixo.</p>
+    </div>
+    <div class="filters" role="group" aria-label="Filtrar por prioridade">
+      <button type="button" id="flt-todos" data-f="todos" aria-pressed="true">Todos (12)</button>
+      <button type="button" id="flt-alta" data-f="alta" aria-pressed="false">Alta (3)</button>
+      <button type="button" id="flt-media" data-f="media" aria-pressed="false">Média (5)</button>
+      <button type="button" id="flt-baixa" data-f="baixa" aria-pressed="false">Baixa (4)</button>
+    </div>
+    <div class="findings" id="findings">
+
+      <article class="finding" data-sev="alta">
+        <div class="f-head"><span class="pill bad">Alta</span><span class="f-id">A1 · Observabilidade</span></div>
+        <h3>Nenhum erro de produção chega até você</h3>
+        <p>O app tem captura de erros (<code>OBS</code>) e funil de monetização (<code>FUNIL</code>), mas o envio depende de <code>obsEndpoint</code>, que não é definido em lugar nenhum, e não há opção na interface para o usuário consentir. Na prática, tudo fica num buffer local de 50 entradas. Um crash no Android de um cliente pagante hoje é invisível, e as decisões de preço seguem sem dados.</p>
+        <p class="ev">Evidência: <code>js/utilities/observability.js</code>, <code>js/utilities/funil.js</code>; busca por <code>obsEndpoint</code> sem nenhuma atribuição.</p>
+        <p class="fix">Criar uma Edge Function <code>obs-ingest</code> (sem valores nem PII, como o código já garante), pedir consentimento no onboarding e ligar <code>obsErrorsEnabled</code> por padrão para erros.</p>
+      </article>
+
+      <article class="finding" data-sev="alta">
+        <div class="f-head"><span class="pill bad">Alta</span><span class="f-id">A2 · Runtime</span></div>
+        <h3>Node.js fora de suporte no CI e no Docker</h3>
+        <p>O CI testa em Node 18 e 20 e a imagem de produção usa <code>node:20-alpine</code>. O Node 18 saiu de suporte em abril de 2025 e o Node 20 em abril de 2026. A API roda sem patches de segurança do runtime.</p>
+        <p class="ev">Evidência: <code>.github/workflows/ci.yml</code> (matriz <code>18.x, 20.x</code>), <code>Dockerfile</code>, <code>package.json</code> <code>engines.node &gt;=18</code>. Os testes passaram localmente em Node 22.</p>
+        <p class="fix">Matriz 22.x e 24.x, <code>FROM node:22-alpine</code>, <code>engines.node &gt;=22</code>.</p>
+      </article>
+
+      <article class="finding" data-sev="alta">
+        <div class="f-head"><span class="pill bad">Alta</span><span class="f-id">A3 · Arquitetura</span></div>
+        <h3>63 módulos globais e o lint não pega nomes errados</h3>
+        <p>O frontend é uma coleção de objetos globais (<code>var DADOS = {…}</code>) que dependem da ordem das tags <code>&lt;script&gt;</code>. Para isso funcionar, <code>no-undef</code>, <code>no-unused-vars</code> e <code>no-redeclare</code> estão desligados em <code>js/**</code>, então um erro de digitação num nome global só aparece em tempo de execução. Há arquivos que concentram demais: <code>init-form.js</code> (2.073 linhas), <code>init-config.js</code> (1.822), <code>dados.js</code> (1.753) e <code>index.html</code> com 113 KB de marcação.</p>
+        <p class="ev">Evidência: <code>.eslintrc.cjs</code> linhas 62–66; 63 declarações <code>var NOME =</code> em <code>js/</code>.</p>
+        <p class="fix">Religar <code>no-undef</code> com a lista de globais gerada por script (ganho imediato) e migrar para ES Modules por fatias, começando por <code>js/core</code>.</p>
+      </article>
+
+      <article class="finding" data-sev="media">
+        <div class="f-head"><span class="pill warn">Média</span><span class="f-id">M1 · Privacidade</span></div>
+        <h3>Lançamentos no IndexedDB ficam sem cifra com “cifrar dados” ligado</h3>
+        <p>Quando a lista de lançamentos cresce e migra para o IndexedDB, ela é gravada como JSON puro, mesmo com a cifragem local ativa. A opção cobre localStorage e anexos, mas não o maior volume de dados. Já estava aberto em 10/set. O mesmo método grava no localStorage com <code>localStorage.setItem</code> direto, fora do <code>_storageSetRaw</code> que cifra; hoje esse ramo só recebe dado em texto, mas é um desvio do padrão que convida regressão.</p>
+        <p class="ev">Evidência: <code>js/core/dados.js</code> linhas 1000–1011 (<code>_persistirTransacoesLista</code>) e 1105–1119 (<code>_ativarBackendIdbTransacoes</code>).</p>
+        <p class="fix">Passar o blob por <code>LOCAL_CRYPTO.wrapStorageValue</code> antes de <code>IDB_KV.set</code> e trocar o <code>setItem</code> direto por <code>_storageSetRaw</code>, com teste cobrindo os dois backends.</p>
+      </article>
+
+      <article class="finding" data-sev="media">
+        <div class="f-head"><span class="pill warn">Média</span><span class="f-id">M2 · Performance</span></div>
+        <h3>Orçamento de bundle virou carimbo</h3>
+        <p>O <code>app.bundle.js</code> está em 628 de 628 KB e o precache em 1.413 de 1.418 KB. Só em setembro o limite foi elevado 7 vezes, uma por feature. Todo o app (simulador, relatórios, metas, billing) vai num único arquivo no primeiro acesso.</p>
+        <p class="ev">Evidência: <code>npm run check:bundle</code>; histórico nos comentários de <code>scripts/check-bundle-budget.cjs</code> linhas 29–43.</p>
+        <p class="fix">Congelar o teto, carregar sob demanda as telas secundárias (há <code>js/core/lazy-load.js</code>) e mirar 450 KB no bundle principal.</p>
+      </article>
+
+      <article class="finding" data-sev="media">
+        <div class="f-head"><span class="pill warn">Média</span><span class="f-id">M3 · Arquitetura</span></div>
+        <h3>Dois backends mantidos em paralelo</h3>
+        <p>O Express/Prisma (<code>backend/</code>, 8,6 mil linhas, 514 testes) e as Edge Functions do Supabase implementam Stripe e Google Play cada um à sua maneira, e o mesmo Postgres recebe migrações de duas trilhas. Toda regra de cobrança precisa ser escrita, testada e revisada duas vezes, e as duas versões podem divergir.</p>
+        <p class="ev">Evidência: <code>backend/domain/services/billing.service.js</code> × <code>supabase/functions/_shared/stripe-billing.ts</code>; <code>play-billing.service.js</code> × <code>_shared/play-billing.ts</code>; <code>prisma/migrations</code> + <code>supabase/migrations</code>.</p>
+        <p class="fix">Decidir qual é a fonte de verdade de produção (o app Android usa Supabase), congelar o outro caminho e remover a lógica de billing duplicada.</p>
+      </article>
+
+      <article class="finding" data-sev="media">
+        <div class="f-head"><span class="pill warn">Média</span><span class="f-id">M4 · Testes</span></div>
+        <h3>A camada de interface quase não é testada, e parte da cobertura é invisível</h3>
+        <p>Os módulos de regra têm cobertura alta, mas as telas não: <code>init-form.js</code> 19%, <code>init-navigation.js</code> 16%, <code>init-billing.js</code> 18%, <code>authController.js</code> 6%. O piso global é 2% de linhas. <code>persist-queue.js</code> aparece com 0% apesar de ter suíte própria, porque é carregado por <code>eval</code> e escapa do Istanbul. E 127 das 220 suítes do frontend leem o código-fonte como texto e checam trechos de string, o que quebra em refatorações sem pegar bugs de comportamento.</p>
+        <p class="ev">Evidência: <code>npm run test:coverage</code>; <code>jest.frontend.config.cjs</code> linha 41.</p>
+        <p class="fix">Carregar os módulos com instrumentação (via <code>vm</code> + <code>babel-plugin-istanbul</code> ou após a migração ESM), subir o piso da UI a cada sprint e trocar testes de string por testes de DOM nas telas críticas (Novo lançamento, login, paywall).</p>
+      </article>
+
+      <article class="finding" data-sev="media">
+        <div class="f-head"><span class="pill warn">Média</span><span class="f-id">M5 · Dependências</span></div>
+        <h3>Dependências centrais várias versões atrás</h3>
+        <p>Stripe SDK 16 (atual 22), Prisma 5 (atual 7), ESLint 8 (fora de suporte), otplib 12 (descontinuado), zod 3 e Express 4. O <code>npm audit</code> aponta 2 vulnerabilidades moderadas em <code>qs</code>, via Express. O CI só bloqueia a partir de “high”, então elas passam.</p>
+        <p class="ev">Evidência: <code>npm outdated</code>, <code>npm audit</code>.</p>
+        <p class="fix">Aplicar <code>npm audit fix</code> e os minors agora; agendar os majors um por PR, começando por Stripe e ESLint 9.</p>
+      </article>
+
+      <article class="finding" data-sev="baixa">
+        <div class="f-head"><span class="pill info">Baixa</span><span class="f-id">B1 · Segurança</span></div>
+        <h3>Duas comparações de segredo sem tempo constante</h3>
+        <p>O webhook RTDN do Express compara <code>x-rtdn-secret</code> com <code>!==</code>, assim como o token de <code>/metrics</code>. A Edge Function equivalente já usa comparação segura.</p>
+        <p class="ev">Evidência: <code>backend/app.js</code> linha 133; <code>backend/middleware/metricsAuth.js</code> linha 19.</p>
+        <p class="fix">Trocar por <code>crypto.timingSafeEqual</code> com checagem de tamanho.</p>
+      </article>
+
+      <article class="finding" data-sev="baixa">
+        <div class="f-head"><span class="pill info">Baixa</span><span class="f-id">B2 · Segurança</span></div>
+        <h3>CSP ainda libera o CDN do OCR removido</h3>
+        <p>O OCR saiu do produto em 7/set, mas o build de produção continua permitindo <code>connect-src https://cdn.jsdelivr.net</code> “para o tesseract”. Restam também cotas de OCR em <code>js/billing.js</code> e o stub <code>js/ocr.js</code>.</p>
+        <p class="ev">Evidência: <code>scripts/csp-connect-src.cjs</code> linhas 45–46; CSP em <code>dist/index.html</code>.</p>
+        <p class="fix">Remover a origem da CSP, as chaves <code>ocrPerMonth</code>/<code>_OCR_USES_KEY</code> e o stub com suas referências.</p>
+      </article>
+
+      <article class="finding" data-sev="baixa">
+        <div class="f-head"><span class="pill info">Baixa</span><span class="f-id">B3 · Repositório</span></div>
+        <h3>Documentação dispersa e desatualizada</h3>
+        <p>Há 74 relatórios de auditoria soltos em <code>docs/</code>, mais um na raiz, e seis atalhos <code>.bat</code>/<code>.cmd</code> na raiz. O <code>docs/ARQUITETURA_SAAS.md</code> descreve arquivos que não existem mais (<code>js/state.js</code>, <code>js/automacao.js</code>).</p>
+        <p class="fix">Mover auditorias para <code>docs/auditorias/</code> com um índice, levar os atalhos para <code>scripts/windows/</code> e reescrever o doc de arquitetura.</p>
+      </article>
+
+      <article class="finding" data-sev="baixa">
+        <div class="f-head"><span class="pill info">Baixa</span><span class="f-id">B4 · Privacidade</span></div>
+        <h3>Contato de privacidade é um Gmail pessoal</h3>
+        <p>A política usa um endereço pessoal como canal do encarregado. É aceito pela LGPD, mas um alias do domínio (ex.: privacidade@financaspro.com) transmite mais confiança e sobrevive a trocas de pessoa. A URL pública da política não pôde ser testada daqui (rede bloqueada).</p>
+        <p class="ev">Evidência: <code>privacidade.html</code> linhas 56, 87 e 108.</p>
+        <p class="fix">Criar o alias, atualizar a política e confirmar no navegador que <code>https://app.financaspro.com/privacidade.html</code> responde 200.</p>
+      </article>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-prev">
+    <div class="sec-head">
+      <span class="eyebrow">Acompanhamento</span>
+      <h2 id="h-prev">Bloqueios apontados em 10/set</h2>
+    </div>
+    <div class="prev">
+      <div><span class="pill ok">Resolvido</span><h3>OCR na ficha da Play</h3><p>A ficha não promete mais OCR; o vendor do tesseract saiu do repositório.</p></div>
+      <div><span class="pill ok">Resolvido</span><h3>URL de privacidade com placeholder</h3><p><code>SEU-DOMINIO</code> só aparece no teste que proíbe seu uso.</p></div>
+      <div><span class="pill ok">Resolvido</span><h3>RTDN do Express fail-open</h3><p>Sem segredo configurado, a rota responde 503.</p></div>
+      <div><span class="pill warn">Aberto</span><h3>Cifragem do IndexedDB</h3><p>Continua pendente. Virou o achado M1.</p></div>
+      <div><span class="pill info">Confirmar</span><h3>Smoke físico em aparelho</h3><p>Notch, teclado e modo avião exigem aparelho; fora do alcance desta auditoria.</p></div>
+    </div>
+  </section>
+
+  <section id="roadmap" aria-labelledby="h-road">
+    <div class="sec-head">
+      <span class="eyebrow">Roadmap de melhorias</span>
+      <h2 id="h-road">De 79 para 90+ em quatro etapas</h2>
+      <p>As etapas estão em ordem de execução: cada uma destrava a seguinte. A nota projetada supõe que todos os itens da etapa foram entregues.</p>
+    </div>
+
+    <div class="proj-chart" aria-label="Projeção da nota geral por etapa">
+      <svg viewBox="0 0 560 190" role="img" aria-labelledby="proj-t">
+        <title id="proj-t">Nota geral: hoje 79, após etapa 1 82, após etapa 2 85, após etapa 3 88, após etapa 4 91</title>
+        <!-- escala: y = 170 - (nota-70)*6 ; 70→170, 80→110, 90→50, 95→20 -->
+        <g stroke="var(--line)" stroke-width="1">
+          <line x1="40" y1="170" x2="540" y2="170"/>
+          <line x1="40" y1="110" x2="540" y2="110" stroke-dasharray="3 4"/>
+          <line x1="40" y1="50" x2="540" y2="50" stroke-dasharray="3 4"/>
+        </g>
+        <text x="32" y="174" text-anchor="end">70</text>
+        <text x="32" y="114" text-anchor="end">80</text>
+        <text x="32" y="54" text-anchor="end">90</text>
+        <path d="M80 116 L180 98 L280 80 L380 62 L480 44 L480 170 L80 170 Z" fill="var(--brand-soft)" opacity=".7"/>
+        <polyline points="80,116 180,98 280,80 380,62 480,44" fill="none" stroke="var(--brand)" stroke-width="2.5"/>
+        <g fill="var(--surface)" stroke="var(--brand)" stroke-width="2.5">
+          <circle cx="80" cy="116" r="5"/><circle cx="180" cy="98" r="5"/><circle cx="280" cy="80" r="5"/><circle cx="380" cy="62" r="5"/>
+        </g>
+        <circle cx="480" cy="44" r="6" fill="var(--brand)"/>
+        <text class="lbl" x="80" y="104" text-anchor="middle">79</text>
+        <text class="lbl" x="180" y="86" text-anchor="middle">82</text>
+        <text class="lbl" x="280" y="68" text-anchor="middle">85</text>
+        <text class="lbl" x="380" y="50" text-anchor="middle">88</text>
+        <text class="lbl" x="480" y="32" text-anchor="middle">91</text>
+        <text x="80" y="188" text-anchor="middle">Hoje</text>
+        <text x="180" y="188" text-anchor="middle">Etapa 1</text>
+        <text x="280" y="188" text-anchor="middle">Etapa 2</text>
+        <text x="380" y="188" text-anchor="middle">Etapa 3</text>
+        <text x="480" y="188" text-anchor="middle">Etapa 4</text>
+      </svg>
+    </div>
+
+    <div class="road">
+      <div class="phase">
+        <div class="p-mark"><span class="dot">1</span><small>esta semana</small></div>
+        <div class="p-body">
+          <div class="p-title"><h3>Fechar o que é rápido e arriscado</h3><span class="proj">nota projetada <b>82</b></span></div>
+          <ul class="tasks">
+            <li><b>Telemetria de erros em produção</b><p>Edge Function de ingestão, consentimento no onboarding, erros ligados por padrão. Sem valores nem descrições.</p><span class="tags"><span class="tag">A1</span><span class="tag">~2 dias</span></span></li>
+            <li><b>Subir para Node 22 LTS</b><p>Matriz do CI, Dockerfile e <code>engines</code>. Rodar a suíte completa na nova versão.</p><span class="tags"><span class="tag">A2</span><span class="tag">~2 h</span></span></li>
+            <li><b>Cifrar o blob do IndexedDB</b><p>Mesmo wrapper do localStorage, com migração do dado existente e teste nos dois backends.</p><span class="tags"><span class="tag">M1</span><span class="tag">~1 dia</span></span></li>
+            <li><b>Comparação de segredo em tempo constante</b><p>RTDN do Express e token de métricas.</p><span class="tags"><span class="tag">B1</span><span class="tag">~30 min</span></span></li>
+            <li><b>Tirar o OCR de vez</b><p>Origem do jsdelivr na CSP, cotas em <code>billing.js</code>, stub e referências.</p><span class="tags"><span class="tag">B2</span><span class="tag">~2 h</span></span></li>
+            <li><b>npm audit fix e minors</b><p>Resolve o <code>qs</code>; atualiza Capacitor 8.5, supabase-js 2.117 e Playwright 1.63.</p><span class="tags"><span class="tag">M5</span><span class="tag">~1 h</span></span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="p-mark"><span class="dot">2</span><small>2 a 4 semanas</small></div>
+        <div class="p-body">
+          <div class="p-title"><h3>Proteger a base antes de crescer</h3><span class="proj">nota projetada <b>85</b></span></div>
+          <ul class="tasks">
+            <li><b>Religar <code>no-undef</code> no frontend</b><p>Gerar a lista de globais a partir dos <code>var NOME =</code> e falhar o lint em nome desconhecido.</p><span class="tags"><span class="tag">A3</span><span class="tag">~1 dia</span></span></li>
+            <li><b>Code-splitting e teto congelado</b><p>Simulador, relatórios, metas e billing sob demanda. Meta: bundle principal ≤ 450 KB; o teto só desce.</p><span class="tags"><span class="tag">M2</span><span class="tag">~1 semana</span></span></li>
+            <li><b>Cobertura real da interface</b><p>Instrumentar módulos carregados por <code>eval</code>; testes de DOM para Novo lançamento, login e paywall; piso global de 2% para 25%.</p><span class="tags"><span class="tag">M4</span><span class="tag">~1 semana</span></span></li>
+            <li><b>Uma fonte de verdade no backend</b><p>Registrar a decisão (Supabase ou Express), congelar o outro caminho e parar de duplicar billing.</p><span class="tags"><span class="tag">M3</span><span class="tag">~3 dias</span></span></li>
+            <li><b>Stripe SDK e ESLint 9</b><p>Um PR por major, com os testes de billing como rede.</p><span class="tags"><span class="tag">M5</span><span class="tag">~2 dias</span></span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="p-mark"><span class="dot">3</span><small>1 a 3 meses</small></div>
+        <div class="p-body">
+          <div class="p-title"><h3>Modernizar a arquitetura</h3><span class="proj">nota projetada <b>88</b></span></div>
+          <ul class="tasks">
+            <li><b>Migrar para ES Modules por fatias</b><p><code>js/core</code> → <code>js/services</code> → <code>js/modules</code>. Cada fatia com imports explícitos e testes sem <code>eval</code>.</p><span class="tags"><span class="tag">A3</span><span class="tag">contínuo</span></span></li>
+            <li><b>Quebrar os arquivos gigantes</b><p><code>init-form</code>, <code>init-config</code> e <code>dados.js</code> em módulos de até ~500 linhas (persistência, sync, sessão).</p><span class="tags"><span class="tag">A3</span><span class="tag">~2 semanas</span></span></li>
+            <li><b>Telas fora do <code>index.html</code></b><p>Templates carregados com a própria tela; o HTML inicial cai de 113 KB para o essencial.</p><span class="tags"><span class="tag">M2</span><span class="tag">~1 semana</span></span></li>
+            <li><b>Prisma, zod e otplib atuais</b><p>Somente se o Express continuar na etapa 2.</p><span class="tags"><span class="tag">M5</span><span class="tag">~3 dias</span></span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="p-mark"><span class="dot">4</span><small>contínuo</small></div>
+        <div class="p-body">
+          <div class="p-title"><h3>Operar como produto em escala</h3><span class="proj">nota projetada <b>91</b></span></div>
+          <ul class="tasks">
+            <li><b>Entrega contínua de verdade</b><p>Hoje o CD só constrói a imagem Docker. Automatizar deploy de Edge Functions, migrações e AAB assinado por tag.</p><span class="tags"><span class="tag">CI/CD</span><span class="tag">~1 semana</span></span></li>
+            <li><b>Painel de saúde a partir da telemetria</b><p>Taxa de crash por versão, funil de ativação e conversão; alerta quando uma versão piora.</p><span class="tags"><span class="tag">A1</span><span class="tag">~3 dias</span></span></li>
+            <li><b>Smoke em aparelho a cada release</b><p>Roteiro curto em 1 ou 2 aparelhos: notch, teclado no Novo, paywall, modo avião.</p><span class="tags"><span class="tag">UX</span><span class="tag">por release</span></span></li>
+            <li><b>Organizar docs e raiz</b><p><code>docs/auditorias/</code> com índice, arquitetura reescrita, atalhos em <code>scripts/windows/</code>, alias de privacidade.</p><span class="tags"><span class="tag">B3 · B4</span><span class="tag">~1 dia</span></span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-ev">
+    <div class="sec-head">
+      <span class="eyebrow">Evidência</span>
+      <h2 id="h-ev">Verificações executadas nesta auditoria</h2>
+      <p>Rodadas em 27/set sobre o commit <span class="mono">fdc9383</span>, Node 22, a partir de um <code>npm ci</code> limpo.</p>
+    </div>
+    <div class="ev-box">
+      <table class="ev">
+        <thead><tr><th>Comando</th><th>Resultado</th><th>Detalhe</th></tr></thead>
+        <tbody>
+          <tr><td>test:frontend:unit --coverage</td><td><span class="pill ok">Passou</span></td><td>220 suítes · 2.423 testes · 12 pulados</td></tr>
+          <tr><td>test:backend:unit --coverage</td><td><span class="pill ok">Passou</span></td><td>30 suítes · 514 testes · 74,7% de linhas</td></tr>
+          <tr><td>lint</td><td><span class="pill ok">Passou</span></td><td>0 erros · 0 avisos</td></tr>
+          <tr><td>build</td><td><span class="pill ok">Passou</span></td><td>12 arquivos servidos · 0 órfãos · CSP enxugada</td></tr>
+          <tr><td>check:bundle</td><td><span class="pill warn">No limite</span></td><td>app.bundle 628/628 KB · precache 1.413/1.418 KB</td></tr>
+          <tr><td>npm audit</td><td><span class="pill warn">2 moderadas</span></td><td><code>qs</code> via express 4.22.2</td></tr>
+          <tr><td>check:contrast</td><td><span class="pill ok">Passou</span></td><td>31 pares dentro do WCAG AA</td></tr>
+          <tr><td>check:css · security:xss</td><td><span class="pill ok">Passou</span></td><td>dívida de tokens 0 · 115 arquivos sem sink inseguro</td></tr>
+          <tr><td>check:billing · check:version</td><td><span class="pill ok">Passou</span></td><td>trial 7d, portal e cancelamento ligados · versões alinhadas</td></tr>
+          <tr><td>varredura de segredos</td><td><span class="pill ok">Limpa</span></td><td>sem chaves Stripe, service_role, keystores ou chaves privadas</td></tr>
+          <tr><td>E2E / pgTAP</td><td><span class="pill info">Não rodado</span></td><td>exigem Postgres e Chromium do CI; o CI os executa no Node 20</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="method">
+      <p><strong>Método.</strong> Leitura dirigida do código nas áreas de maior risco (persistência e cifragem local, autenticação, CSRF/CORS, webhooks, RLS, CSP, manifesto Android), execução de todos os gates locais do repositório e comparação com a auditoria geral de 10/set.</p>
+      <p><strong>Limites.</strong> Nada foi testado em aparelho físico nem contra o Supabase de produção. A URL pública de privacidade não pôde ser acessada daqui. As notas medem engenharia e prontidão, não aprovação na Play Store.</p>
+    </div>
+  </section>
+
+  <footer>FinançasPro · Auditoria completa · 27 set 2026 · commit fdc9383</footer>
+</div>
+
+<script>
+(function(){
+  var rows = [
+    ['Segurança','API, Supabase, CSP, Android',15,84,'Defesa em camadas sólida; restam 2 comparações não constantes e CSP com origem sobrando.'],
+    ['Integridade financeira','centavos, fatura, transferências',12,88,'Centavos em todo lugar; lógica de cartão ainda gera correções frequentes.'],
+    ['Sincronização e offline','IDB, fila, merge, conflitos',10,80,'sync-merge a 99%; sync-engine com 46% de ramos cobertos.'],
+    ['Qualidade dos testes','unidade, pgTAP, E2E, axe',10,82,'Volume alto; UI pouco coberta e testes de string.'],
+    ['Arquitetura e manutenção','módulos, acoplamento, tamanho',10,62,'Globais por ordem de script, arquivos gigantes, dois backends.'],
+    ['Privacidade e LGPD','dados locais, consentimento',8,80,'Telemetria sem PII; IndexedDB sem cifra.'],
+    ['CI/CD e runtime','pipeline, Docker, deploy',6,82,'Pipeline completo; Node fora de suporte, CD só constrói.'],
+    ['Performance','bundle, carga, listas',6,76,'Gates de extrato e 10k lançamentos; bundle único no limite.'],
+    ['UX e produto','fluxos, microcopy, recursos',6,85,'Recursos ricos e consistentes; risco de excesso de features.'],
+    ['Acessibilidade','contraste, foco, leitores',5,86,'Axe no E2E, 31 pares AA, foco visível, movimento reduzido.'],
+    ['Observabilidade','erros, métricas, funil',5,55,'Backend com pino e métricas; app sem envio de erros.'],
+    ['Dependências','versões, vulnerabilidades',3,70,'Majors atrasados, ESLint e otplib descontinuados.'],
+    ['Monetização e billing','Stripe, Play, cotas',3,86,'Idempotência e fail-closed; restos de cota de OCR.'],
+    ['Repositório e docs','organização, atualização',1,65,'74 relatórios soltos, doc de arquitetura defasado.']
+  ];
+  var tb = document.getElementById('ledger-body');
+  var fmt = function(n){ return n.toFixed(2).replace('.', ','); };
+  rows.forEach(function(r){
+    var cls = r[3] >= 85 ? 'b-ok' : (r[3] >= 70 ? 'b-warn' : 'b-bad');
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td class="dim"><b></b><span></span></td>' +
+      '<td class="r mono">' + r[2] + '%</td>' +
+      '<td><div class="bar" role="img" aria-label="nota ' + r[3] + ' de 100"><i class="' + cls + '" style="width:' + r[3] + '%"></i></div></td>' +
+      '<td class="r score">' + r[3] + '</td>' +
+      '<td class="r score">' + fmt(r[2] * r[3] / 100) + '</td>';
+    tr.querySelector('b').textContent = r[0];
+    tr.querySelector('span').textContent = r[4];
+    tr.title = r[1];
+    tb.appendChild(tr);
+  });
+
+  var btns = document.querySelectorAll('.filters button');
+  var items = document.querySelectorAll('#findings .finding');
+  btns.forEach(function(b){
+    b.addEventListener('click', function(){
+      var f = b.getAttribute('data-f');
+      btns.forEach(function(x){ x.setAttribute('aria-pressed', String(x === b)); });
+      items.forEach(function(it){ it.hidden = !(f === 'todos' || it.getAttribute('data-sev') === f); });
+    });
+  });
+})();
+</script>
+</body>
+</html>

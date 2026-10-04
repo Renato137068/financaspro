@@ -1,8 +1,8 @@
 // supabase/functions/_shared/stripe-billing.ts
 //
 // Port de backend/domain/services/billing.service.js (checkout + webhook).
-import type Stripe from "https://esm.sh/stripe@16?target=deno";
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import type Stripe from "npm:stripe@22.6.2";
+import type { SupabaseClient } from "npm:@supabase/supabase-js@2.117.2";
 import { assertAllowedRedirectUrl } from "./stripe.ts";
 import { notify } from "./email.ts";
 import { TRIAL_DAYS } from "./billing-constants.ts";
@@ -132,8 +132,8 @@ export async function cancelSubscription(
     });
   }
 
-  const updated = await updateSubscription(sb, opts.orgId, { cancelAtPeriodEnd: true });
-  return updated || { ...existing, cancelAtPeriodEnd: true };
+  await updateSubscription(sb, opts.orgId, { cancelAtPeriodEnd: true });
+  return { ...existing, cancelAtPeriodEnd: true };
 }
 
 /** Desfaz cancel_at_period_end — volta a renovar. */
@@ -156,11 +156,43 @@ export async function resumeSubscription(
     });
   }
 
-  const updated = await updateSubscription(sb, opts.orgId, { cancelAtPeriodEnd: false });
-  return updated || { ...existing, cancelAtPeriodEnd: false };
+  await updateSubscription(sb, opts.orgId, { cancelAtPeriodEnd: false });
+  return { ...existing, cancelAtPeriodEnd: false };
 }
 
 // ─── Webhook ────────────────────────────────────────────────────────────────
+//
+// Formatos da API. A partir da 2025-03-31 (basil), a fatura não tem mais
+// `subscription` (virou `parent.subscription_details.subscription`) e a
+// assinatura não tem mais `current_period_*` (foi para cada item). O cliente
+// usa a versão do stripe@22 (STRIPE_API_VERSION), mas o corpo do webhook vem na
+// versão configurada no endpoint do painel — então lemos os dois formatos.
+
+/** ID da assinatura de uma fatura, no formato novo ou no antigo. */
+function subIdDaFatura(invoice: any): string | null {
+  const s = invoice?.parent?.subscription_details?.subscription ?? invoice?.subscription;
+  if (!s) return null;
+  return typeof s === "string" ? s : (s.id ?? null);
+}
+
+/** Período atual: na assinatura (antigo) ou no item (novo; o app vende um item por assinatura). */
+function periodo(stripeSub: any): { inicio: string | null; fim: string | null } {
+  const item = stripeSub?.items?.data?.[0];
+  return {
+    inicio: iso(stripeSub?.current_period_start ?? item?.current_period_start),
+    fim: iso(stripeSub?.current_period_end ?? item?.current_period_end),
+  };
+}
+
+/** Segundos Unix → ISO; ausente vira null (antes, `new Date(NaN)` derrubava o webhook). */
+function iso(segundos: unknown): string | null {
+  return typeof segundos === "number" && Number.isFinite(segundos) ? new Date(segundos * 1000).toISOString() : null;
+}
+
+/** Só as chaves com valor: um período ausente não apaga o que o banco já tem. */
+function semVazios(dados: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(dados).filter(([, v]) => v !== null && v !== undefined));
+}
 
 export async function processStripeEvent(sb: SupabaseClient, stripe: Stripe, event: Stripe.Event) {
   switch (event.type) {
@@ -171,7 +203,7 @@ export async function processStripeEvent(sb: SupabaseClient, stripe: Stripe, eve
       await onPaymentFailed(sb, event.data.object as Stripe.Invoice);
       break;
     case "customer.subscription.deleted":
-      await onSubscriptionDeleted(sb, event.data.object as Stripe.Subscription);
+      await onSubscriptionDeleted(sb, stripe, event.data.object as Stripe.Subscription);
       break;
     case "customer.subscription.updated":
       await onSubscriptionUpdated(sb, event.data.object as Stripe.Subscription);
@@ -183,7 +215,9 @@ export async function processStripeEvent(sb: SupabaseClient, stripe: Stripe, eve
 }
 
 async function onInvoicePaid(sb: SupabaseClient, invoice: any) {
-  const sub = await findByStripeSubId(sb, invoice.subscription);
+  const subId = subIdDaFatura(invoice);
+  if (!subId) return; // fatura avulsa, sem assinatura
+  const sub = await findByStripeSubId(sb, subId);
   if (!sub) return;
   if (await findInvoiceByStripeId(sb, invoice.id)) return;
 
@@ -192,7 +226,7 @@ async function onInvoicePaid(sb: SupabaseClient, invoice: any) {
     stripeInvoiceId: invoice.id,
     amount: invoice.amount_paid / 100,
     status: "paid",
-    paidAt: new Date(invoice.status_transitions.paid_at * 1000).toISOString(),
+    paidAt: iso(invoice.status_transitions?.paid_at) ?? new Date().toISOString(),
     hostedUrl: invoice.hosted_invoice_url,
     pdfUrl: invoice.invoice_pdf,
   });
@@ -203,34 +237,55 @@ async function onInvoicePaid(sb: SupabaseClient, invoice: any) {
 }
 
 async function onPaymentFailed(sb: SupabaseClient, invoice: any) {
-  const sub = await findByStripeSubId(sb, invoice.subscription);
+  const subId = subIdDaFatura(invoice);
+  if (!subId) return; // fatura avulsa, sem assinatura
+  const sub = await findByStripeSubId(sb, subId);
   if (!sub) return;
   await updateSubscription(sb, sub.orgId, { status: "PAST_DUE" });
   await notify("payment-failed", { to: invoice.customer_email });
 }
 
-async function onSubscriptionDeleted(sb: SupabaseClient, stripeSub: any) {
+async function onSubscriptionDeleted(sb: SupabaseClient, stripe: Stripe, stripeSub: any) {
   const sub = await findByStripeSubId(sb, stripeSub.id);
   if (!sub) return;
   await updateSubscription(sb, sub.orgId, { status: "CANCELED" });
 
   const plan = await findPlanById(sb, sub.planId);
   await notify("subscription-canceled", {
-    to: stripeSub.customer_email,
+    to: await emailDoCliente(stripe, stripeSub.customer),
     planName: plan?.name,
-    accessUntil: new Date(stripeSub.current_period_end * 1000).toISOString(),
+    accessUntil: periodo(stripeSub).fim,
   });
+}
+
+/**
+ * A assinatura não traz e-mail (nunca trouxe: o `customer_email` que se lia
+ * aqui não existe no objeto, e o aviso de cancelamento não saía). O e-mail é
+ * do cliente. Falha na consulta não pode derrubar o webhook: sem e-mail, o
+ * aviso só não sai.
+ */
+async function emailDoCliente(stripe: Stripe, customer: any): Promise<string | null> {
+  if (customer && typeof customer === "object") return customer.email ?? null;
+  if (!customer) return null;
+  try {
+    const c: any = await stripe.customers.retrieve(String(customer));
+    return c && !c.deleted ? (c.email ?? null) : null;
+  } catch (e) {
+    console.warn("Stripe: e-mail do cliente indisponível", (e as Error)?.message);
+    return null;
+  }
 }
 
 async function onSubscriptionUpdated(sb: SupabaseClient, stripeSub: any) {
   const sub = await findByStripeSubId(sb, stripeSub.id);
   if (!sub) return;
-  await updateSubscription(sb, sub.orgId, {
+  const p = periodo(stripeSub);
+  await updateSubscription(sb, sub.orgId, semVazios({
     status: String(stripeSub.status).toUpperCase(),
-    currentPeriodStart: new Date(stripeSub.current_period_start * 1000).toISOString(),
-    currentPeriodEnd: new Date(stripeSub.current_period_end * 1000).toISOString(),
+    currentPeriodStart: p.inicio,
+    currentPeriodEnd: p.fim,
     cancelAtPeriodEnd: stripeSub.cancel_at_period_end,
-  });
+  }));
 }
 
 async function onCheckoutCompleted(sb: SupabaseClient, stripe: Stripe, session: any) {
@@ -242,15 +297,15 @@ async function onCheckoutCompleted(sb: SupabaseClient, stripe: Stripe, session: 
   const plan = await findPlan(sb, planTier);
   if (!plan) return;
 
+  const p = periodo(stripeSub);
   await upsertSubscriptionStripe(sb, orgId, {
+    ...semVazios({ currentPeriodStart: p.inicio, currentPeriodEnd: p.fim }),
     planId: plan.id,
     status: String(stripeSub.status).toUpperCase(),
     billingInterval: session.metadata?.interval || "monthly",
     stripeCustomerId: String(session.customer),
     stripeSubId: stripeSub.id,
-    currentPeriodStart: new Date(stripeSub.current_period_start * 1000).toISOString(),
-    currentPeriodEnd: new Date(stripeSub.current_period_end * 1000).toISOString(),
-    trialEndsAt: stripeSub.trial_end ? new Date(stripeSub.trial_end * 1000).toISOString() : null,
+    trialEndsAt: iso(stripeSub.trial_end),
     cancelAtPeriodEnd: !!stripeSub.cancel_at_period_end,
   });
   console.log("Checkout Stripe concluído", orgId, planTier);

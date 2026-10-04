@@ -101,6 +101,28 @@ describe('Performance ≥5k transações', function() {
     expect(recentes[0].id).toBe('nova');
   });
 
+  test('obterRecentes com `ate` deixa de fora as parcelas futuras', function() {
+    semear5k();
+    ['2026-01-04', '2026-02-04', '2026-03-04'].forEach(function(data, i) {
+      DADOS.salvarTransacao({
+        id: 'parc-' + (i + 1), tipo: 'despesa', valor: 100, categoria: 'compras',
+        data: data, descricao: 'Geladeira (' + (i + 1) + '/3)', banco: 'X', cartao: 'Roxo',
+      });
+    });
+    TRANSACOES.invalidateCache();
+    var ids = TRANSACOES.obterRecentes(3, { ate: '2026-01-31' }).map(function(t) { return t.id; });
+    expect(ids).toContain('parc-1');
+    expect(ids).not.toContain('parc-2');
+    expect(ids).not.toContain('parc-3');
+    // Sem `ate`, continua a mais nova de todas.
+    expect(TRANSACOES.obterRecentes(1)[0].id).toBe('parc-3');
+  });
+
+  test('o resumo pede as últimas só até hoje', function() {
+    var src = require('fs').readFileSync(require('path').join(__dirname, '..', 'js/render-dashboard.js'), 'utf8');
+    expect(src).toMatch(/obterRecentes\(3, \{ ate: UTILS\.dataLocalIso\(\) \}\)/);
+  });
+
   test('50 filtros mensais em 5k txs ficam abaixo de 500ms', function() {
     semear5k();
     DADOS.salvarConfig({

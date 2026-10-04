@@ -1,6 +1,14 @@
 /**
  * init-anexos.js — UI de anexos em transações
+ *
+ * ES Module (ADR 0005): chega sob demanda no chunk 'anexos'
+ * (js/esm/chunks/anexos.js, via LAZY.load), que o publica em window.
  */
+
+import { UTILS } from '../core/utils.js';
+import { INIT_MODALS } from './init-modals.js';
+import { ANEXOS } from '../anexos.js';
+
 const INIT_ANEXOS = {
   _bound: false,
   _pendentes: [],
@@ -8,11 +16,11 @@ const INIT_ANEXOS = {
   _salvosAtual: [],
 
   init: function() {
-    if (this._bound) return;
-    this._bound = true;
+    if (INIT_ANEXOS._bound) return;
+    INIT_ANEXOS._bound = true;
     if (typeof ANEXOS !== 'undefined') ANEXOS.init();
 
-    var self = this;
+    var self = INIT_ANEXOS;
     document.addEventListener('click', function(e) {
       var btn = e.target.closest('[data-action]');
       if (!btn) return;
@@ -61,9 +69,9 @@ const INIT_ANEXOS = {
       UTILS.mostrarToast(validacao.erro, 'error');
       return;
     }
-    var total = this._pendentes.length;
-    if (this._transacaoAtual) {
-      ANEXOS.listarMeta(this._transacaoAtual).then(function(salvos) {
+    var total = INIT_ANEXOS._pendentes.length;
+    if (INIT_ANEXOS._transacaoAtual) {
+      ANEXOS.listarMeta(INIT_ANEXOS._transacaoAtual).then(function(salvos) {
         if (salvos.length + total >= ANEXOS.MAX_POR_TX) {
           UTILS.mostrarToast('Máximo de ' + ANEXOS.MAX_POR_TX + ' anexos por transação', 'warning');
           return;
@@ -76,22 +84,22 @@ const INIT_ANEXOS = {
         UTILS.mostrarToast('Máximo de ' + ANEXOS.MAX_POR_TX + ' anexos por transação', 'warning');
         return;
       }
-      this._pendentes.push(file);
-      this._renderPreview();
+      INIT_ANEXOS._pendentes.push(file);
+      INIT_ANEXOS._renderPreview();
     }
   },
 
   limparPendentes: function() {
-    this._pendentes = [];
-    this._transacaoAtual = null;
-    this._salvosAtual = [];
-    this._renderPreview();
+    INIT_ANEXOS._pendentes = [];
+    INIT_ANEXOS._transacaoAtual = null;
+    INIT_ANEXOS._salvosAtual = [];
+    INIT_ANEXOS._renderPreview();
   },
 
   carregarParaTransacao: function(transacaoId) {
-    var self = this;
-    this._transacaoAtual = transacaoId;
-    this._pendentes = [];
+    var self = INIT_ANEXOS;
+    INIT_ANEXOS._transacaoAtual = transacaoId;
+    INIT_ANEXOS._pendentes = [];
     ANEXOS.listarMeta(transacaoId).then(function(lista) {
       self._salvosAtual = lista;
       self._renderPreview();
@@ -99,10 +107,10 @@ const INIT_ANEXOS = {
   },
 
   salvarPendentes: function(transacaoId) {
-    var self = this;
-    if (!this._pendentes.length) return Promise.resolve();
+    var self = INIT_ANEXOS;
+    if (!INIT_ANEXOS._pendentes.length) return Promise.resolve();
     var chain = Promise.resolve();
-    this._pendentes.forEach(function(file) {
+    INIT_ANEXOS._pendentes.forEach(function(file) {
       chain = chain.then(function() { return ANEXOS.salvar(transacaoId, file); });
     });
     return chain.then(function() {
@@ -124,13 +132,13 @@ const INIT_ANEXOS = {
   },
 
   _removerPendente: function(idx) {
-    if (idx < 0 || idx >= this._pendentes.length) return;
-    this._pendentes.splice(idx, 1);
-    this._renderPreview();
+    if (idx < 0 || idx >= INIT_ANEXOS._pendentes.length) return;
+    INIT_ANEXOS._pendentes.splice(idx, 1);
+    INIT_ANEXOS._renderPreview();
   },
 
   _removerSalvo: function(anexoId) {
-    var self = this;
+    var self = INIT_ANEXOS;
     ANEXOS.excluir(anexoId).then(function() {
       if (self._transacaoAtual) {
         return ANEXOS.listarMeta(self._transacaoAtual);
@@ -147,7 +155,7 @@ const INIT_ANEXOS = {
     var el = document.getElementById('anexo-preview-list');
     if (!el) return;
     var html = '';
-    var salvos = this._salvosAtual || [];
+    var salvos = INIT_ANEXOS._salvosAtual || [];
 
     salvos.forEach(function(a) {
       html += '<div class="anexo-chip anexo-chip--salvo">' +
@@ -158,7 +166,7 @@ const INIT_ANEXOS = {
       '</div>';
     });
 
-    this._pendentes.forEach(function(f, i) {
+    INIT_ANEXOS._pendentes.forEach(function(f, i) {
       html += '<div class="anexo-chip anexo-chip--pendente">' +
         '<i data-lucide="clock" aria-hidden="true"></i> ' +
         '<span>' + UTILS.escapeHtml(f.name || 'Novo arquivo') + '</span>' +
@@ -172,7 +180,7 @@ const INIT_ANEXOS = {
   },
 
   abrirVisualizador: function(transacaoId) {
-    var self = this;
+    var self = INIT_ANEXOS;
     ANEXOS.listarMeta(transacaoId).then(function(lista) {
       if (!lista.length) {
         UTILS.mostrarToast('Nenhum anexo nesta transação', 'info');
@@ -225,6 +233,5 @@ const INIT_ANEXOS = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = INIT_ANEXOS;
-}
+export { INIT_ANEXOS };
+export default INIT_ANEXOS;

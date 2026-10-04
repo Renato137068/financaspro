@@ -4,11 +4,14 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
+const { indexComTelas } = require('./helpers/index-com-telas.cjs');
 
 const root = path.join(__dirname, '..');
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const html = indexComTelas();
 const dadosSrc = fs.readFileSync(path.join(root, 'js', 'core', 'dados.js'), 'utf8');
-const extratoSrc = fs.readFileSync(path.join(root, 'js', 'modules', 'init-extrato.js'), 'utf8');
+// init-extrato.js e as partes em js/modules/extrato/.
+const extratoSrc = require('./helpers/esm-como-script.cjs').fonteComPartes(path.join(root, 'js', 'modules', 'init-extrato.js'));
 const navSrc = fs.readFileSync(path.join(root, 'js', 'modules', 'init-navigation.js'), 'utf8');
 const dashSrc = fs.readFileSync(path.join(root, 'js', 'render-dashboard.js'), 'utf8');
 
@@ -25,10 +28,9 @@ function carregarDadosReal(extra) {
   }, extra || {});
   sandbox.globalThis = sandbox;
   const ctx = vm.createContext(sandbox);
-  for (const rel of ['js/core/config.js', 'js/core/dados.js']) {
-    const file = path.join(root, rel);
-    vm.runInContext(fs.readFileSync(file, 'utf8'), ctx, { filename: file });
-  }
+  // dados.js é ES Module: traz config.js e o cliente Express pelo grafo de
+  // imports; o que o sandbox tem (UTILS…) entra como dublê.
+  rodarNoContexto(ctx, path.join(root, 'js/core/dados.js'));
   return sandbox;
 }
 
@@ -60,8 +62,9 @@ describe('auditoria — cota com banner exportável', function() {
 
   beforeEach(function() {
     banners = [];
+    // O DADOS acha o CONFIG_USER (UI) por window, na hora do clique.
     sandbox = carregarDadosReal({
-      CONFIG_USER: { exportarDados: jest.fn() },
+      window: { CONFIG_USER: { exportarDados: jest.fn() } },
     });
     sandbox.UTILS.mostrarBanner = (opts) => banners.push(opts);
     sandbox.UTILS.mostrarToast = () => {};
@@ -80,7 +83,7 @@ describe('auditoria — cota com banner exportável', function() {
     expect(banners[0].id).toBe('fp-banner-cota');
     expect(banners[0].acao).toMatch(/backup/i);
     banners[0].onAcao();
-    expect(sandbox.CONFIG_USER.exportarDados).toHaveBeenCalled();
+    expect(sandbox.window.CONFIG_USER.exportarDados).toHaveBeenCalled();
   });
 });
 
@@ -121,7 +124,7 @@ describe('auditoria — saldo realizado vs projetado', function() {
 
 describe('auditoria — fase 2 (roadmap)', function() {
   const formSrc = fs.readFileSync(path.join(root, 'js', 'modules', 'init-form.js'), 'utf8');
-  const htmlFresh = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const htmlFresh = indexComTelas();
 
   test('edição de transação oferece desfazer por 5s', function() {
     expect(formSrc).toMatch(/agendarExclusao\('edit-tx-'/);

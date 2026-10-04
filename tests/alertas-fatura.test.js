@@ -6,9 +6,9 @@
  * BÁSICO (free), com ação que leva às faturas. Vencida sem resposta segue fora
  * do limite — o alerta é o empurrão para responder, não uma decisão do app.
  */
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
 
 function loadAlertas(opts) {
   opts = opts || {};
@@ -31,6 +31,7 @@ function loadAlertas(opts) {
       },
       _rotuloCompetencia: function(c) { return c; },
     },
+    mudarAba: undefined,
     DADOS: { getTransacoes: function() { return [{ id: 1 }]; }, getConfig: function() { return {}; } },
     UTILS: {
       escapeHtml: function(s) { return String(s); },
@@ -40,11 +41,8 @@ function loadAlertas(opts) {
     module: { exports: {} },
   };
   vm.createContext(ctx);
-  vm.runInContext(
-    fs.readFileSync(path.join(__dirname, '..', 'js', 'alertas.js'), 'utf8'),
-    ctx,
-    { filename: path.join(__dirname, '..', 'js', 'alertas.js') },
-  );
+  // ES Module: UTILS, CARTOES, AI_ENGINE e mudarAba do ctx substituem os imports.
+  rodarNoContexto(ctx, path.join(__dirname, '..', 'js', 'alertas.js'));
   return ctx.ALERTAS;
 }
 

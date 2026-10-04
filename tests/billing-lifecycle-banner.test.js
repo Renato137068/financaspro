@@ -1,9 +1,9 @@
 /**
  * billing-lifecycle-banner.test.js — DOM do banner de dunning e de cota.
  */
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
 
 function loadInitBilling(billingStub) {
   const document = {
@@ -30,13 +30,14 @@ function loadInitBilling(billingStub) {
     FocusTrap: undefined,
     renderLucideIcons: undefined,
     renderLucideIconsNow: undefined,
-    module: { exports: {} },
     console: console,
+    // ES Module: os demais imports ficam ausentes (o banner não os usa).
+    FUNIL: undefined, mudarAba: undefined, INIT_MODALS: undefined,
+    _abrirAuthOverlay: undefined, DADOS: undefined, PLAY_BILLING: undefined,
   };
   vm.createContext(ctx);
-  const src = fs.readFileSync(path.join(__dirname, '..', 'js/modules/init-billing.js'), 'utf8');
-  vm.runInContext(src, ctx, { filename: path.join(__dirname, '..', 'js/modules/init-billing.js') });
-  return { INIT: ctx.module.exports || ctx.INIT_BILLING, banner: document._banner, document };
+  rodarNoContexto(ctx, path.join(__dirname, '..', 'js/modules/init-billing.js'));
+  return { INIT: ctx.INIT_BILLING, banner: document._banner, document };
 }
 
 describe('refreshUsageBanner', function() {

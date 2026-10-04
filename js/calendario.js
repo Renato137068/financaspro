@@ -5,8 +5,15 @@
  * moram em telas separadas: contas a pagar pendentes e vencimentos de fatura
  * de cartão. É a leitura que Mobills/Organizze dão no calendário — "o que cai
  * em cada dia" — reaproveitando os módulos que o app já tem. Puro, sem DOM.
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
-var CALENDARIO = {
+
+import { UTILS } from './core/utils.js';
+import { CARTOES } from './cartoes.js';
+import { CONTAS_PAGAR } from './contas-pagar.js';
+const CALENDARIO = {
   _hoje: function(hoje) {
     return (hoje && typeof hoje.getTime === 'function' && !isNaN(hoje.getTime()))
       ? hoje : new Date();
@@ -43,7 +50,7 @@ var CALENDARIO = {
     if (typeof CARTOES !== 'undefined' && CARTOES.listarResumos) {
       var prefixo = ano + '-' + String(mes).padStart(2, '0');
       var vistos = {};
-      CARTOES.listarResumos(this._hoje(hoje)).forEach(function(r) {
+      CARTOES.listarResumos(CALENDARIO._hoje(hoje)).forEach(function(r) {
         if (!r) return;
         [r.faturaAtual, r.proximaFatura].forEach(function(f) {
           if (!f || !f.vencimento || !(Number(f.total) > 0)) return;
@@ -83,6 +90,5 @@ var CALENDARIO = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = CALENDARIO;
-}
+export { CALENDARIO };
+export default CALENDARIO;

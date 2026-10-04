@@ -1,9 +1,12 @@
 /**
  * categorizador.js - Intelligent categorization with fuzzy matching + typo detection
  * Usa Levenshtein distance para detectar erros de digitação e contexto
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
 
-var CATEGORIZADOR = {
+const CATEGORIZADOR = {
   // Dicionário expandido com múltiplas variações e typos comuns
   DICIONARIO: {
     alimentacao: {
@@ -174,7 +177,7 @@ var CATEGORIZADOR = {
 
   // Calcular similaridade (0-1)
   similaridade: function(a, b) {
-    var dist = this.distancia(a.toLowerCase(), b.toLowerCase());
+    var dist = CATEGORIZADOR.distancia(a.toLowerCase(), b.toLowerCase());
     var maxLen = Math.max(a.length, b.length);
     return 1 - (dist / maxLen);
   },
@@ -186,11 +189,11 @@ var CATEGORIZADOR = {
     if (!texto || texto.length < 2) return null;
 
     var chave = texto.toLowerCase().trim();
-    if (this._cache.has(chave)) {
+    if (CATEGORIZADOR._cache.has(chave)) {
       // LRU: re-insert para mover para o final (mais recente)
-      var cached = this._cache.get(chave);
-      this._cache.delete(chave);
-      this._cache.set(chave, cached);
+      var cached = CATEGORIZADOR._cache.get(chave);
+      CATEGORIZADOR._cache.delete(chave);
+      CATEGORIZADOR._cache.set(chave, cached);
       return cached;
     }
 
@@ -201,7 +204,7 @@ var CATEGORIZADOR = {
     var palavras = normalizado.split(/\s+/);
     var melhorScore = 0, melhorCategoria = null, melhorTipo = null;
 
-    Object.keys(this.DICIONARIO).forEach(function(categoria) {
+    Object.keys(CATEGORIZADOR.DICIONARIO).forEach(function(categoria) {
       var dados = CATEGORIZADOR.DICIONARIO[categoria];
       var scoreCategoria = 0;
 
@@ -233,16 +236,15 @@ var CATEGORIZADOR = {
       confianca: melhorScore > 0.7 ? 'alta' : 'media'
     } : null;
 
-    this._cache.set(chave, resultado);
+    CATEGORIZADOR._cache.set(chave, resultado);
     // LRU eviction: remove oldest (primeira chave inserida)
-    if (this._cache.size > this._CACHE_MAX) {
-      var oldest = this._cache.keys().next().value;
-      this._cache.delete(oldest);
+    if (CATEGORIZADOR._cache.size > CATEGORIZADOR._CACHE_MAX) {
+      var oldest = CATEGORIZADOR._cache.keys().next().value;
+      CATEGORIZADOR._cache.delete(oldest);
     }
     return resultado;
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = CATEGORIZADOR;
-}
+export { CATEGORIZADOR };
+export default CATEGORIZADOR;

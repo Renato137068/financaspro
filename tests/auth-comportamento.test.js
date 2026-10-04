@@ -7,10 +7,33 @@
  *
  * Cada bloco corresponde a um defeito real já observado no aparelho.
  */
+const { carregarScript, viaGlobal } = require('./helpers/carregar-script.cjs');
 const fs = require('fs');
 const path = require('path');
+const vm = require('vm');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
 
 const root = path.join(__dirname, '..');
+
+/**
+ * Roda um script de js/ como no navegador, mas com o caminho real do arquivo
+ * (a cobertura V8 do Jest só conta script com filename em js/). Os globais que
+ * o módulo lê são repassados, por getter, ao global do teste — assim um dublê
+ * trocado depois do carregamento continua valendo, como com `new Function`.
+ */
+function rodarComoScript(rel, nomes) {
+  const arquivo = path.join(root, rel);
+  const sandbox = {};
+  nomes.forEach((nome) => {
+    Object.defineProperty(sandbox, nome, {
+      get: () => global[nome],
+      set: (v) => { global[nome] = v; },
+      enumerable: true,
+    });
+  });
+  // ES Module (ADR 0005): imports com getter no sandbox usam o global vivo.
+  return rodarNoContexto(vm.createContext(sandbox), arquivo);
+}
 
 /* ───────────────────────── Biometria ─────────────────────────
    Bug de origem: ao reabrir o app, a biometria não entrava. O cliente já
@@ -23,10 +46,10 @@ function carregarBiometria(nativo) {
     isNativePlatform: () => true,
     Plugins: { NativeBiometric: nativo },
   };
-  const src = fs.readFileSync(path.join(root, 'js/auth-biometric.js'), 'utf8');
-  // eslint-disable-next-line no-new-func
-  new Function(src)();
-  return global.window.AUTH_BIOMETRIC;
+  return rodarComoScript('js/auth-biometric.js', [
+    'window', 'document', 'navigator', 'localStorage', 'sessionStorage', 'console',
+    'setTimeout', 'clearTimeout', 'Promise', 'SUPA_AUTH', 'UTILS', 'INIT_MODALS', 'DADOS', 'CONFIG',
+  ]).AUTH_BIOMETRIC;
 }
 
 function nativoFake(over) {
@@ -136,7 +159,7 @@ describe('Biometria — entrar depois de reabrir o app', () => {
 
 /* ───────────────────────── PIN ───────────────────────── */
 
-const { PIN_SECURITY } = require('../js/pin.js');
+const { PIN_SECURITY } = carregarScript('js/pin.js', viaGlobal('DADOS'));
 
 describe('PIN — recusa os palpites óbvios', () => {
   test('barra os campeões de tentativa', () => {
@@ -237,36 +260,27 @@ describe('PIN — backoff depois das tentativas', () => {
 
 /* ───────────────────────── CSP ───────────────────────── */
 
-const { limparCsp, openFinanceLigado } = require('../scripts/harden-csp.cjs');
+const { limparCsp } = require('../scripts/harden-csp.cjs');
 
-describe('CSP — a lista de origens segue a feature flag', () => {
+describe('CSP — só o app e o Supabase', () => {
   const csp = fs.readFileSync(path.join(root, 'index.html'), 'utf8')
     .match(/<meta http-equiv="Content-Security-Policy"[^>]*>/)[0];
 
-  test('com Open Finance desligado, a Belvo sai do script-src', () => {
-    const out = limparCsp(csp, { openFinance: false });
-    expect(out).not.toContain('belvo');
-    expect(out).not.toContain('frame-src');
-  });
-
-  test('com Open Finance ligado, a Belvo permanece', () => {
-    const out = limparCsp(csp, { openFinance: true });
-    expect(out).toContain('cdn.belvo.com');
+  test('nenhum terceiro executa script, nem carrega frame (Belvo saiu com o Open Finance)', () => {
+    expect(csp).toMatch(/script-src 'self';/);
+    expect(csp).not.toContain('belvo');
+    expect(csp).not.toContain('frame-src');
   });
 
   test('origens de dev nunca sobrevivem ao build', () => {
+    const comDev = csp.replace("connect-src 'self'", "connect-src 'self' http://localhost:4000 http://127.0.0.1:4000");
     ['localhost', '127.0.0.1'].forEach((o) => {
-      expect(limparCsp(csp, { openFinance: true })).not.toContain(o);
-      expect(limparCsp(csp, { openFinance: false })).not.toContain(o);
+      expect(limparCsp(comDev)).not.toContain(o);
     });
   });
 
-  test('a flag é lida do fonte, não chutada', () => {
-    expect(typeof openFinanceLigado(path.join(root, 'js/core/config.js'))).toBe('boolean');
-  });
-
   test('o Supabase continua liberado — senão o app não fala com a nuvem', () => {
-    expect(limparCsp(csp, { openFinance: false })).toContain('supabase.co');
+    expect(limparCsp(csp)).toContain('supabase.co');
   });
 });
 
@@ -337,11 +351,13 @@ describe('Recuperação — o limite está no banco, não na tela', () => {
 });
 
 describe('CSP — OCR removido do produto', () => {
-  test('ocr.js é stub sem Tesseract', () => {
-    const ocr = fs.readFileSync(path.join(root, 'js/ocr.js'), 'utf8');
-    expect(ocr).not.toContain('CONFIG.TESSERACT_LOCAL');
-    expect(ocr).not.toMatch(/tesseract/i);
-    expect(ocr).toMatch(/no-op|desativado|removido/i);
+  test('ocr.js não existe mais (nem como stub)', () => {
+    expect(fs.existsSync(path.join(root, 'js/ocr.js'))).toBe(false);
+  });
+
+  test('connect-src de produção não libera o CDN do Tesseract (jsdelivr)', () => {
+    const { buildCspConnectSrc } = require('../scripts/csp-connect-src.cjs');
+    expect(buildCspConnectSrc()).not.toMatch(/jsdelivr/);
   });
 
   test('index não carrega script OCR', () => {

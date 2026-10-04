@@ -30,9 +30,11 @@ describe('play-rtdn — comparação do segredo', () => {
     expect(src).not.toMatch(/provided\s*!==\s*secret/);
   });
 
-  test('compara digests de tamanho fixo, acumulando XOR', () => {
-    expect(src).toMatch(/crypto\.subtle\.digest\("SHA-256"/);
-    expect(src).toMatch(/diff \|= x\[i\] \^ y\[i\]/);
+  test('compara digests de tamanho fixo, acumulando XOR (em _shared/segredo.ts)', () => {
+    const segredo = fs.readFileSync(path.join(__dirname, '..', 'supabase/functions/_shared/segredo.ts'), 'utf8');
+    expect(src).toContain('from "../_shared/segredo.ts"');
+    expect(segredo).toMatch(/crypto\.subtle\.digest\("SHA-256"/);
+    expect(segredo).toMatch(/diff \|= x\[i\] \^ y\[i\]/);
   });
 });
 

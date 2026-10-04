@@ -1,9 +1,14 @@
 /**
  * skeleton.js — Skeleton Loader Manager
  * Fase 7 UX — Depende de: (nenhum, self-contained)
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
 
-var SKELETON = (function() {
+import { CONFIG } from './core/config.js';
+
+const SKELETON = (function() {
   var _ativo = false;
   var _failsafeTimer = null;
 
@@ -135,3 +140,6 @@ window.addEventListener('load', function() {
     }
   }, 2200);
 });
+
+export { SKELETON };
+export default SKELETON;

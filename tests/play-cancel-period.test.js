@@ -2,6 +2,8 @@
  * play-cancel-period.test.js — cancelamento Play no período pago.
  * Detecta cancelAtPeriodEnd no payload v2 e mensagem de dias restantes.
  */
+const { carregarScript } = require('./helpers/carregar-script.cjs');
+const { regrasDoBilling } = require('./helpers/billing-regras.cjs');
 const fs = require('fs');
 const path = require('path');
 
@@ -33,7 +35,7 @@ describe('Play cancel-at-period-end', () => {
   });
 
   test('cliente anuncia dias restantes após cancelar', () => {
-    const billing = fs.readFileSync(path.join(root, 'js/billing.js'), 'utf8');
+    const billing = require('./helpers/esm-como-script.cjs').fonteComPartes(path.join(root, 'js/billing.js'));
     expect(billing).toMatch(/Mais ' \+ dias \+ ' dia/);
     expect(billing).toMatch(/Último dia de Pro/);
     expect(billing).toMatch(/\(cancelado\)/);
@@ -41,7 +43,7 @@ describe('Play cancel-at-period-end', () => {
 });
 
 describe('getLifecycleAlert — cancelamento', () => {
-  const billingHelpers = require('../js/billing.js');
+  const billingHelpers = regrasDoBilling(carregarScript('js/billing.js'));
 
   test('mostra dias restantes quando cancelAtPeriodEnd', () => {
     const em5 = new Date(Date.now() + 5 * 86400000).toISOString();

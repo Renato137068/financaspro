@@ -2,13 +2,15 @@
  * extrato-audit.test.js — regressões da auditoria da aba Extrato
  * @jest-environment jsdom
  */
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { rodarIsolado } = require('./helpers/esm-como-script.cjs');
+const { indexComTelas } = require('./helpers/index-com-telas.cjs');
 
 const root = path.join(__dirname, '..');
-const extratoSrc = fs.readFileSync(path.join(root, 'js', 'modules', 'init-extrato.js'), 'utf8');
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+// init-extrato.js e as partes em js/modules/extrato/.
+const extratoSrc = require('./helpers/esm-como-script.cjs').fonteComPartes(path.join(root, 'js', 'modules', 'init-extrato.js'));
+const html = indexComTelas();
 
 function carregarExtrato(extra) {
   var sandbox = Object.assign({
@@ -52,11 +54,8 @@ function carregarExtrato(extra) {
     Math: Math
   }, extra || {});
   sandbox.globalThis = sandbox;
-  var code = extratoSrc.replace(/\bconst INIT_EXTRATO =/, 'var INIT_EXTRATO =');
-  vm.runInContext(code, vm.createContext(sandbox), {
-    filename: path.join(root, 'js', 'modules', 'init-extrato.js')
-  });
-  var mod = sandbox.INIT_EXTRATO;
+  // ES Module: o sandbox é o dublê dos imports; o que falta fica ausente.
+  var mod = rodarIsolado(vm.createContext(sandbox), path.join(root, 'js', 'modules', 'init-extrato.js')).INIT_EXTRATO;
   mod.getCatIcon = function() { return ''; };
   mod.getCatCor = function() { return '#000'; };
   return mod;

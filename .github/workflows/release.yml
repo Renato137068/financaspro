@@ -1,0 +1,196 @@
+name: Release
+
+# Entrega contínua por tag (etapa 4 do roadmap). Uma tag vX.Y.Z publica:
+#   1. as migrações e as Edge Functions no Supabase (scripts/deploy-supabase.cjs);
+#   2. o AAB assinado, anexado a um GitHub Release e, se configurado, na faixa
+#      de teste interno da Play — de onde sai o smoke em aparelho
+#      (docs/release/smoke-aparelho.md) antes de promover.
+#
+# O deploy e a assinatura usam o ambiente "production" do GitHub: exija
+# aprovação nele (Settings → Environments) para ninguém publicar só por criar
+# uma tag. Segredos, todos no ambiente "production":
+#   SUPABASE_ACCESS_TOKEN, SUPABASE_PROJECT_REF, SUPABASE_DB_PASSWORD
+#   ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+#   PLAY_SERVICE_ACCOUNT_JSON (opcional: sem ele, o AAB fica só no Release)
+#   SUPABASE_URL, SUPABASE_ANON_KEY (opcionais: sobrescrevem o projeto do build)
+
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag existente a publicar (ex.: v11.3.19)'
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  verificar:
+    name: Versão e testes
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - name: Tag a publicar
+        id: tag
+        run: echo "tag=${{ github.event.inputs.tag || github.ref_name }}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ steps.tag.outputs.tag }}
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.x
+          cache: npm
+
+      - run: npm ci
+
+      # A tag precisa ser a versão do package.json (e o check:version garante
+      # que build.gradle e o cache do SW andam juntos): publicar v11.3.19 com
+      # o código ainda em 11.3.18 é uma versão que ninguém consegue rastrear.
+      - name: Tag bate com a versão do app
+        run: node scripts/release-tag.cjs "${{ steps.tag.outputs.tag }}"
+
+      - run: npm run check:version
+      - run: npm run lint
+      - run: npm run test:frontend:unit -- --ci
+
+      # A cobrança que vai ser publicada, executada antes de publicar.
+      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: 2.x
+      - run: npm run test:edge
+      - run: npm run check:edge-types
+      - run: npm run build
+      - run: npm run check:bundle
+      - run: npm audit --audit-level=high
+
+  supabase:
+    name: Supabase (migrações e Edge Functions)
+    needs: verificar
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.verificar.outputs.tag }}
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.x
+          cache: npm
+
+      - run: npm ci
+
+      - name: Deploy
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: node scripts/deploy-supabase.cjs
+
+  android:
+    name: AAB assinado
+    # Depois do Supabase: o app novo pode depender de migração ou função nova.
+    needs: [verificar, supabase]
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: write
+    env:
+      TEM_PLAY: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.verificar.outputs.tag }}
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.x
+          cache: npm
+
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - run: npm ci
+
+      - name: Build web e sync com o Android
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: npm run android:sync
+
+      # A keystore nunca vai para o repositório: chega em base64 pelo segredo
+      # e é apagada no fim do job (o runner é descartado, mas não custa).
+      - name: Keystore de upload
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          for v in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [ -z "${!v}" ]; then echo "::error::segredo $v ausente no ambiente production"; exit 1; fi
+          done
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/upload.jks
+          {
+            echo "storeFile=upload.jks"
+            echo "storePassword=$ANDROID_KEYSTORE_PASSWORD"
+            echo "keyAlias=$ANDROID_KEY_ALIAS"
+            echo "keyPassword=$ANDROID_KEY_PASSWORD"
+          } > android/keystore.properties
+
+      - name: bundleRelease
+        working-directory: android
+        run: ./gradlew bundleRelease --no-daemon
+
+      # jarsigner -verify sai com 0 até num arquivo sem assinatura ("jar is
+      # unsigned"): a prova é a linha "jar verified.".
+      - name: Conferir assinatura do AAB
+        run: |
+          jarsigner -verify android/app/build/outputs/bundle/release/app-release.aab | tee verificacao.txt
+          grep -q '^jar verified\.' verificacao.txt
+
+      - name: Nomear o AAB com a versão
+        run: cp android/app/build/outputs/bundle/release/app-release.aab "financaspro-${{ needs.verificar.outputs.tag }}.aab"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: aab-${{ needs.verificar.outputs.tag }}
+          path: financaspro-${{ needs.verificar.outputs.tag }}.aab
+          retention-days: 90
+
+      - name: GitHub Release com o AAB
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ needs.verificar.outputs.tag }}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "financaspro-$TAG.aab" --clobber
+          else
+            gh release create "$TAG" "financaspro-$TAG.aab" --title "$TAG" --generate-notes --verify-tag
+          fi
+
+      - name: Play (faixa de teste interno)
+        if: env.TEM_PLAY == 'true'
+        uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1.1.5
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.financaspro.mobile
+          releaseFiles: financaspro-${{ needs.verificar.outputs.tag }}.aab
+          track: internal
+          status: completed
+
+      - name: Apagar a keystore
+        if: always()
+        run: rm -f android/app/upload.jks android/keystore.properties

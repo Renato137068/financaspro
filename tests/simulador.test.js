@@ -3,14 +3,14 @@
  * compostos, financiamento Price). Carrega o módulo puro num contexto vm para
  * a cobertura mapear de volta ao arquivo-fonte.
  */
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { rodarIsolado } = require('./helpers/esm-como-script.cjs');
 
 function loadSimulador() {
   const ctx = vm.createContext({ Math, Number, JSON, parseFloat, isFinite });
   const file = path.join(__dirname, '..', 'js', 'simulador.js');
-  vm.runInContext(fs.readFileSync(file, 'utf8'), ctx, { filename: file });
+  rodarIsolado(ctx, file);
   return ctx.SIMULADOR;
 }
 

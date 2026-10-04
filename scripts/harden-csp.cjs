@@ -2,18 +2,13 @@
 /**
  * harden-csp.cjs — enxuga a Content-Security-Policy do build de produção.
  *
- * Duas limpezas, pelo mesmo motivo: toda origem listada na CSP é uma origem
- * que pode executar script ou receber dado no seu app. O que não está em uso
- * não deve estar na lista.
+ * Toda origem listada na CSP é uma origem que pode executar script ou receber
+ * dado no seu app. O que não está em uso não deve estar na lista: origens de
+ * desenvolvimento (localhost/127.0.0.1) nunca sobrevivem ao build, mesmo que
+ * alguém as acrescente ao index.html para depurar.
  *
- *   1. Origens de desenvolvimento (localhost/127.0.0.1) — o index.html de dev
- *      precisa delas para a API local; produção, não.
- *
- *   2. Origens do Open Finance (Belvo) — enquanto CONFIG.FEATURE_OPEN_FINANCE
- *      for false, o widget não é carregado e nada fala com a Belvo. Manter
- *      cdn.belvo.com em script-src significaria um terceiro autorizado a
- *      executar JavaScript numa página que guarda token de sessão. A CSP
- *      passa a seguir a feature flag sozinha: ligou a flag, as origens voltam.
+ * As origens do Open Finance (Belvo) e da API Express local saíram do
+ * index.html com eles (ADR 0007); não há mais flag a seguir.
  *
  * Uso: node scripts/harden-csp.cjs [caminho/para/index.html]
  * Encadeado no npm script `build`.
@@ -32,13 +27,6 @@ const TESSERACT_ORIGINS = [
   /https:\/\/cdn\.jsdelivr\.net\/npm\/tesseract\.js-core@[0-9.]+\/?[^\s;]*/g,
 ];
 
-const OPEN_FINANCE_ORIGINS = [
-  /https:\/\/cdn\.belvo\.com/g,
-  /https:\/\/api\.belvo\.com/g,
-  /https:\/\/sandbox\.belvo\.com/g,
-  /https:\/\/widget\.belvo\.io/g,
-];
-
 /** Lê uma feature flag direto do fonte, sem carregar o módulo inteiro. */
 function lerFlag(configPath, nome, padrao) {
   try {
@@ -50,11 +38,6 @@ function lerFlag(configPath, nome, padrao) {
   }
 }
 
-/** Sem match → conservador: mantém as origens (não quebra o app). */
-function openFinanceLigado(configPath) {
-  return lerFlag(configPath, 'FEATURE_OPEN_FINANCE', true);
-}
-
 /** Sem match → conservador: assume CDN (mantém o jsdelivr em script-src). */
 function tesseractLocal(configPath) {
   return lerFlag(configPath, 'TESSERACT_LOCAL', false);
@@ -63,18 +46,12 @@ function tesseractLocal(configPath) {
 /**
  * Função pura para permitir teste sem tocar em disco.
  * @param {string} html
- * @param {{openFinance: boolean}} opts
+ * @param {{tesseractLocal?: boolean}} [opts]
  * @returns {string}
  */
 function limparCsp(html, opts) {
   let out = html;
   DEV_ORIGINS.forEach((re) => { out = out.replace(re, ''); });
-
-  if (!opts || !opts.openFinance) {
-    OPEN_FINANCE_ORIGINS.forEach((re) => { out = out.replace(re, ''); });
-    // frame-src fica vazio sem o widget: remover a diretiva inteira.
-    out = out.replace(/frame-src\s*;\s*/g, '');
-  }
 
   /* Tesseract vendorizado: o jsdelivr sai do script-src (nada mais de fora
      executa JS na página) mas PERMANECE no connect-src — os .traineddata
@@ -96,7 +73,7 @@ function limparCsp(html, opts) {
   return out;
 }
 
-module.exports = { limparCsp, openFinanceLigado, tesseractLocal };
+module.exports = { limparCsp, tesseractLocal };
 
 // Execução direta (não em require de teste).
 if (require.main === module) {
@@ -108,17 +85,15 @@ if (require.main === module) {
   }
 
   const configPath = path.join(__dirname, '..', 'js', 'core', 'config.js');
-  const of = openFinanceLigado(configPath);
   const tl = tesseractLocal(configPath);
 
   const html = fs.readFileSync(target, 'utf8');
-  const out = limparCsp(html, { openFinance: of, tesseractLocal: tl });
+  const out = limparCsp(html, { tesseractLocal: tl });
 
   if (out !== html) {
     fs.writeFileSync(target, out, 'utf8');
     console.log('[harden-csp] CSP enxugada:', target);
     console.log('[harden-csp]   origens de dev removidas');
-    if (!of) console.log('[harden-csp]   Belvo removida (FEATURE_OPEN_FINANCE: false)');
     if (tl) console.log('[harden-csp]   jsdelivr fora do script-src (TESSERACT_LOCAL: true)');
   } else {
     console.log('[harden-csp] nada a remover (CSP já enxuta):', target);

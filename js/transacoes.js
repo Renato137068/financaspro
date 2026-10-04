@@ -2,7 +2,18 @@
  * @file transacoes.js — Transaction Management
  * @module TRANSACOES
  * Tier 1. Depende de: config.js, dados.js, utils.js
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
+
+import { CONFIG } from './core/config.js';
+import { UTILS } from './core/utils.js';
+import { VALIDATIONS } from './core/validations.js';
+import { FINANCE_CONTRACT } from './core/finance-contract.js';
+import { TRANSACTION_SERVICE } from './services/transactionService.js';
+import { APP_STATE } from './core/store.js';
+import { DADOS } from './core/dados.js';
 
 /**
  * @typedef {Object} ResumoMes
@@ -21,7 +32,7 @@
  * @property {'data-asc'|'data-desc'} [ordenarPor]
  */
 
-var TRANSACOES = {
+const TRANSACOES = {
   _cache: null,
   _cacheTimestamp: null,
   _cacheTTL: 30000, // 30 segundos
@@ -31,10 +42,10 @@ var TRANSACOES = {
    * Inicializa cache de transações a partir do localStorage.
    */
   init: function() {
-    this._cache = DADOS.getTransacoes();
-    this._cacheTimestamp = Date.now();
+    TRANSACOES._cache = DADOS.getTransacoes();
+    TRANSACOES._cacheTimestamp = Date.now();
     if (typeof APP_STATE !== 'undefined') {
-      APP_STATE.setState({ transacoes: this._cache });
+      APP_STATE.setState({ transacoes: TRANSACOES._cache });
     }
   },
 
@@ -42,18 +53,18 @@ var TRANSACOES = {
    * Verifica se o cache expirou
    */
   _isCacheExpired: function() {
-    return !this._cacheTimestamp || (Date.now() - this._cacheTimestamp) > this._cacheTTL;
+    return !TRANSACOES._cacheTimestamp || (Date.now() - TRANSACOES._cacheTimestamp) > TRANSACOES._cacheTTL;
   },
 
   /**
    * Atualiza cache se necessário
    */
   _refreshCache: function() {
-    if (this._isCacheExpired()) {
-      this._cache = DADOS.getTransacoes();
-      this._cacheTimestamp = Date.now();
+    if (TRANSACOES._isCacheExpired()) {
+      TRANSACOES._cache = DADOS.getTransacoes();
+      TRANSACOES._cacheTimestamp = Date.now();
       if (typeof APP_STATE !== 'undefined') {
-        APP_STATE.setState({ transacoes: this._cache });
+        APP_STATE.setState({ transacoes: TRANSACOES._cache });
       }
     }
   },
@@ -62,18 +73,18 @@ var TRANSACOES = {
    * Invalida cache forçadamente
    */
   invalidateCache: function() {
-    this._cacheTimestamp = null;
-    this._monthIndex = null;
-    this._refreshCache();
+    TRANSACOES._cacheTimestamp = null;
+    TRANSACOES._monthIndex = null;
+    TRANSACOES._refreshCache();
   },
 
   /** Índice ano-mês → transações; reconstruído quando o cache muda. */
   _ensureMonthIndex: function() {
-    if (this._monthIndex) return this._monthIndex;
+    if (TRANSACOES._monthIndex) return TRANSACOES._monthIndex;
     if (typeof TRANSACTION_SERVICE !== 'undefined' && TRANSACTION_SERVICE.buildMonthIndex) {
-      this._monthIndex = TRANSACTION_SERVICE.buildMonthIndex(this._cache || []);
+      TRANSACOES._monthIndex = TRANSACTION_SERVICE.buildMonthIndex(TRANSACOES._cache || []);
     }
-    return this._monthIndex;
+    return TRANSACOES._monthIndex;
   },
 
   /**
@@ -106,7 +117,7 @@ var TRANSACOES = {
    */
   criar: function(tipo, valor, categoria, data, descricao, banco, cartao, opts) {
     opts = opts || {};
-    descricao = this._sanitizarDescricao(descricao);
+    descricao = TRANSACOES._sanitizarDescricao(descricao);
     if (typeof CONFIG !== 'undefined' && typeof CONFIG.normalizeCategoriaFinal === 'function') {
       categoria = CONFIG.normalizeCategoriaFinal(categoria, tipo);
     }
@@ -149,12 +160,12 @@ var TRANSACOES = {
         };
       })();
     if (opts.clientKey) transacao.clientKey = opts.clientKey;
-    var tagsNovas = this.normalizarTags(opts.tags);
+    var tagsNovas = TRANSACOES.normalizarTags(opts.tags);
     if (tagsNovas.length) transacao.tags = tagsNovas;
     DADOS.salvarTransacao(transacao);
-    this._cache = DADOS.getTransacoes();
-    this._monthIndex = null;
-    if (typeof APP_STATE !== 'undefined') APP_STATE.setState({ transacoes: this._cache });
+    TRANSACOES._cache = DADOS.getTransacoes();
+    TRANSACOES._monthIndex = null;
+    if (typeof APP_STATE !== 'undefined') APP_STATE.setState({ transacoes: TRANSACOES._cache });
     return transacao;
   },
 
@@ -198,7 +209,7 @@ var TRANSACOES = {
       valor: valor,
       categoria: CONFIG.TIPO_TRANSFERENCIA,
       data: dados.data,
-      descricao: this._sanitizarDescricao(dados.descricao)
+      descricao: TRANSACOES._sanitizarDescricao(dados.descricao)
         || ('Transferência: ' + origem + ' → ' + destino),
       banco: origem,
       contaDestino: destino,
@@ -209,9 +220,9 @@ var TRANSACOES = {
     };
 
     DADOS.salvarTransacao(transacao);
-    this._cache = DADOS.getTransacoes();
-    this._monthIndex = null;
-    if (typeof APP_STATE !== 'undefined') APP_STATE.setState({ transacoes: this._cache });
+    TRANSACOES._cache = DADOS.getTransacoes();
+    TRANSACOES._monthIndex = null;
+    if (typeof APP_STATE !== 'undefined') APP_STATE.setState({ transacoes: TRANSACOES._cache });
     return transacao;
   },
 
@@ -221,15 +232,15 @@ var TRANSACOES = {
    * @returns {Transacao[]}
    */
   obter: function(filtros) {
-    this._refreshCache();
+    TRANSACOES._refreshCache();
     filtros = filtros || {};
     if (typeof TRANSACTION_SERVICE !== 'undefined') {
       if (filtros.mes && filtros.ano && !filtros.monthIndex) {
-        filtros = Object.assign({}, filtros, { monthIndex: this._ensureMonthIndex() });
+        filtros = Object.assign({}, filtros, { monthIndex: TRANSACOES._ensureMonthIndex() });
       }
-      return TRANSACTION_SERVICE.filterTransactions(this._cache || [], filtros);
+      return TRANSACTION_SERVICE.filterTransactions(TRANSACOES._cache || [], filtros);
     }
-    var resultado = this._cache.slice();
+    var resultado = TRANSACOES._cache.slice();
 
     if (filtros.mes && filtros.ano) {
       resultado = UTILS.filtrarPorMes(resultado, filtros.mes, filtros.ano);
@@ -251,14 +262,22 @@ var TRANSACOES = {
   /**
    * Últimas N transações por data, sem varrer/sortear o histórico inteiro
    * quando TRANSACTION_SERVICE.topByDate está disponível.
+   *
+   * `opts.ate` (YYYY-MM-DD) deixa de fora o que tem data depois dele: as
+   * parcelas futuras de uma compra parcelada, por exemplo, que o formulário
+   * grava já com a data de cada mês.
    * @param {number} [limite]
-   * @param {{ordenarPor?:string}} [opts]
+   * @param {{ordenarPor?:string, ate?:string}} [opts]
    */
   obterRecentes: function(limite, opts) {
     limite = limite || 3;
     opts = opts || {};
-    this._refreshCache();
-    var cache = this._cache || [];
+    TRANSACOES._refreshCache();
+    var cache = TRANSACOES._cache || [];
+    if (opts.ate) {
+      var ate = String(opts.ate).slice(0, 10);
+      cache = cache.filter(function(t) { return t && String(t.data || '').slice(0, 10) <= ate; });
+    }
     if (typeof TRANSACTION_SERVICE !== 'undefined' && TRANSACTION_SERVICE.topByDate) {
       return TRANSACTION_SERVICE.topByDate(cache, limite, opts.ordenarPor || 'data-desc');
     }
@@ -275,21 +294,21 @@ var TRANSACOES = {
   },
 
   obterPorId: function(id) {
-    for (var i = 0; i < this._cache.length; i++) {
-      if (this._cache[i].id === id) return this._cache[i];
+    for (var i = 0; i < TRANSACOES._cache.length; i++) {
+      if (TRANSACOES._cache[i].id === id) return TRANSACOES._cache[i];
     }
     return null;
   },
 
   atualizar: function(id, updates) {
-    var transacao = this.obterPorId(id);
+    var transacao = TRANSACOES.obterPorId(id);
     if (!transacao) throw new Error('Transacao nao encontrada');
     if (updates && updates.descricao != null) {
-      updates = Object.assign({}, updates, { descricao: this._sanitizarDescricao(updates.descricao) });
+      updates = Object.assign({}, updates, { descricao: TRANSACOES._sanitizarDescricao(updates.descricao) });
     }
     var updated = Object.assign({}, transacao, updates);
     if (updates && updates.tags != null) {
-      updated.tags = this.normalizarTags(updates.tags);
+      updated.tags = TRANSACOES.normalizarTags(updates.tags);
     }
     if (updates && (updates.banco != null || updates.accountId != null)) {
       var contasRef = (typeof DADOS !== 'undefined' && DADOS.getContas) ? DADOS.getContas() : [];
@@ -307,14 +326,14 @@ var TRANSACOES = {
     var validacao = UTILS.validarTransacao(updated);
     if (!validacao.valido) throw new Error(validacao.erro);
     DADOS.salvarTransacao(updated);
-    this.invalidateCache();
+    TRANSACOES.invalidateCache();
     return updated;
   },
 
   deletar: function(id) {
     if (typeof ANEXOS !== 'undefined') ANEXOS.excluirPorTransacao(id);
     var resultado = DADOS.deletarTransacao(id);
-    this.invalidateCache();
+    TRANSACOES.invalidateCache();
     return resultado;
   },
 
@@ -347,9 +366,9 @@ var TRANSACOES = {
 
   /** Lista distinta e ordenada de todas as tags em uso. */
   tagsUsadas: function() {
-    this._refreshCache();
+    TRANSACOES._refreshCache();
     var set = {};
-    var cache = this._cache || [];
+    var cache = TRANSACOES._cache || [];
     for (var i = 0; i < cache.length; i++) {
       var tags = cache[i] && cache[i].tags;
       if (!Array.isArray(tags)) continue;
@@ -360,10 +379,10 @@ var TRANSACOES = {
 
   /** Transações que carregam a tag informada. */
   porTag: function(tag) {
-    var alvo = this.normalizarTags(tag)[0];
+    var alvo = TRANSACOES.normalizarTags(tag)[0];
     if (!alvo) return [];
-    this._refreshCache();
-    return (this._cache || []).filter(function(t) {
+    TRANSACOES._refreshCache();
+    return (TRANSACOES._cache || []).filter(function(t) {
       return t && Array.isArray(t.tags) && t.tags.indexOf(alvo) !== -1;
     });
   },
@@ -383,10 +402,10 @@ var TRANSACOES = {
     opts = opts || {};
     var lista;
     if (opts.mes && opts.ano) {
-      lista = this.obter({ mes: opts.mes, ano: opts.ano });
+      lista = TRANSACOES.obter({ mes: opts.mes, ano: opts.ano });
     } else {
-      this._refreshCache();
-      lista = this._cache || [];
+      TRANSACOES._refreshCache();
+      lista = TRANSACOES._cache || [];
     }
 
     var mapa = {};
@@ -425,14 +444,14 @@ var TRANSACOES = {
    * @returns {ResumoMes}
    */
   obterResumoMes: function(mes, ano, opts) {
-    this._refreshCache();
+    TRANSACOES._refreshCache();
     opts = opts || {};
-    var cache = this._cache || [];
+    var cache = TRANSACOES._cache || [];
     if (typeof TRANSACTION_SERVICE !== 'undefined') {
-      if (!opts.monthIndex) opts.monthIndex = this._ensureMonthIndex();
+      if (!opts.monthIndex) opts.monthIndex = TRANSACOES._ensureMonthIndex();
       return TRANSACTION_SERVICE.summarizeMonth(cache, mes, ano, opts);
     }
-    var txMes = this.obter({ mes: mes, ano: ano });
+    var txMes = TRANSACOES.obter({ mes: mes, ano: ano });
     if (opts.ate) {
       var ate = String(opts.ate).slice(0, 10);
       txMes = txMes.filter(function(t) { return String(t.data || '').slice(0, 10) <= ate; });
@@ -456,13 +475,13 @@ var TRANSACOES = {
   },
 
   obterResumoPorCategoria: function(mes, ano, opts) {
-    this._refreshCache();
+    TRANSACOES._refreshCache();
     opts = opts || {};
     if (typeof TRANSACTION_SERVICE !== 'undefined') {
-      if (!opts.monthIndex) opts.monthIndex = this._ensureMonthIndex();
-      return TRANSACTION_SERVICE.summarizeByCategory(this._cache || [], mes, ano, opts);
+      if (!opts.monthIndex) opts.monthIndex = TRANSACOES._ensureMonthIndex();
+      return TRANSACTION_SERVICE.summarizeByCategory(TRANSACOES._cache || [], mes, ano, opts);
     }
-    var txMes = this.obter({ mes: mes, ano: ano });
+    var txMes = TRANSACOES.obter({ mes: mes, ano: ano });
     var resumo = {};
     txMes.forEach(function(t) {
       if (!resumo[t.categoria]) resumo[t.categoria] = { receita: 0, despesa: 0 };
@@ -480,7 +499,7 @@ var TRANSACOES = {
 
   // Compatibilidade com suíte de testes legado
   obterPorCategoria: function(mes, ano) {
-    var resumo = this.obterResumoPorCategoria(mes, ano);
+    var resumo = TRANSACOES.obterResumoPorCategoria(mes, ano);
     var resultado = {};
     Object.keys(resumo).forEach(function(cat) {
       resultado[cat] = resumo[cat].despesa || 0;
@@ -489,7 +508,7 @@ var TRANSACOES = {
   },
 
   obterResumoCategoriaMes: function(categoria, mes, ano) {
-    var transacoes = UTILS.filtrarPorMes(this._cache, mes, ano);
+    var transacoes = UTILS.filtrarPorMes(TRANSACOES._cache, mes, ano);
     return transacoes.filter(function(t) {
       return t.categoria === categoria && t.tipo === 'despesa';
     }).reduce(function(acc, t) {
@@ -498,6 +517,5 @@ var TRANSACOES = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = TRANSACOES;
-}
+export { TRANSACOES };
+export default TRANSACOES;

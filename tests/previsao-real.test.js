@@ -1,9 +1,9 @@
 /**
  * previsao-real.test.js — cache e formatação do módulo previsao.js.
  */
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
 
 function loadPrevisao() {
   const aiFile = path.join(__dirname, '..', 'js', 'ai-engine.js');
@@ -25,10 +25,11 @@ function loadPrevisao() {
       getConfig: function() { return {}; },
     },
     BILLING: { canUse: function() { return true; } },
+    APP_STORE: undefined,
   };
   vm.createContext(ctx);
-  vm.runInContext(fs.readFileSync(aiFile, 'utf8'), ctx, { filename: aiFile });
-  vm.runInContext(fs.readFileSync(prevFile, 'utf8'), ctx, { filename: prevFile });
+  rodarNoContexto(ctx, aiFile);
+  rodarNoContexto(ctx, prevFile);
   return ctx.PREVISAO;
 }
 

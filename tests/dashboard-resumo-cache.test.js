@@ -2,9 +2,8 @@
  * dashboard-resumo-cache.test.js — P2.1: memoização de obterResumoMes no ciclo render
  * @jest-environment jsdom
  */
-const fs = require('fs');
-const path = require('path');
 const vm = require('vm');
+const { carregarDashboard } = require('./helpers/dashboard-renderer.cjs');
 
 var RENDER_DASHBOARD;
 var sandbox;
@@ -59,9 +58,7 @@ beforeAll(function() {
   sandbox.window.UI = sandbox.UI;
   sandbox.globalThis = sandbox;
   var ctx = vm.createContext(sandbox);
-  var file = path.join(__dirname, '..', 'js', 'render-dashboard.js');
-  vm.runInContext(fs.readFileSync(file, 'utf8'), ctx, { filename: file });
-  RENDER_DASHBOARD = sandbox.window.RENDER_DASHBOARD;
+  RENDER_DASHBOARD = carregarDashboard(ctx);
 });
 
 describe('P2.1 — memoização de resumos mensais no ciclo de render', function() {

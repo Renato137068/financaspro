@@ -3,12 +3,13 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { indexComTelas } = require('./helpers/index-com-telas.cjs');
 
 const root = path.join(__dirname, '..');
 
 describe('Honestidade Play Store / privacidade', () => {
   test('meta e manifest não prometem “sem cadastro”', () => {
-    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+    const html = indexComTelas();
     const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'), 'utf8'));
     expect(html).not.toMatch(/sem cadastro/i);
     expect(manifest.description).not.toMatch(/sem cadastro/i);
@@ -22,9 +23,19 @@ describe('Honestidade Play Store / privacidade', () => {
     expect(priv).toMatch(/N[ãa]o<\/em>\s*criptografa|n[ãa]o criptografa/i);
     expect(priv).toMatch(/duas etapas/i);
     expect(priv).toMatch(/app autenticador/i);
-    expect(priv).toMatch(/2 de setembro de 2026|9 de setembro de 2026/);
+    expect(priv).toMatch(/\d{1,2} de setembro de 2026/);
     expect(priv).toMatch(/tokens de (acesso e )?renova|armazenamento local do WebView/i);
-    expect(priv).toMatch(/fp-transacoes/);
+    // Cifragem cobre os lançamentos também no IndexedDB (27/09).
+    expect(priv).toMatch(/lançamentos e configurações \(em <em>localStorage<\/em> ou IndexedDB\)/);
+    expect(priv).not.toMatch(/<strong>não<\/strong> entram nessa cifragem/);
+  });
+
+  test('privacidade declara os relatórios de erro, a retenção e como desligar', () => {
+    const priv = fs.readFileSync(path.join(root, 'privacidade.html'), 'utf8');
+    expect(priv).toMatch(/Relatórios de erro/);
+    expect(priv).toMatch(/Perfil → Enviar relatórios de erro/);
+    expect(priv).toMatch(/30 dias/);
+    expect(priv).not.toMatch(/n[ãa]o<\/strong> envia telemetria/);
   });
 
   test('Data Safety do beta Play é cenário CLOUD (não “não coleta”)', () => {
@@ -89,6 +100,25 @@ describe('Honestidade Play Store / privacidade', () => {
     if (/últimos 3 meses/i.test(ficha)) {
       expect(limites.FREE.historyMonths).toBe(3);
     }
+    // O gratuito tem uma meta só: "metas" no plural ali seria promessa falsa.
+    if (/metas ilimitadas no Pro/i.test(ficha)) {
+      expect(limites.FREE.maxGoals).toBe(1);
+      expect(limites.PRO.maxGoals).toBeNull();
+    }
+  });
+
+  test('a ficha não diz que dá para usar sem conta', () => {
+    // O app da loja (build cloud) abre no login; sem rede, só entra quem já
+    // tem sessão neste aparelho (js/authController.js). Uma versão do texto
+    // respondia "Preciso criar conta para usar? Não." — falso na loja.
+    const ficha = fs.readFileSync(path.join(root, 'docs/play-store-ficha.md'), 'utf8');
+    // Só o que vai para a loja: os blocos de código das descrições.
+    const secao = ficha.slice(ficha.indexOf('## Descrição curta'), ficha.indexOf('## Observações'));
+    const loja = (secao.match(/```[\s\S]*?```/g) || []).join('\n');
+    expect(loja).toMatch(/FinançasPro/);
+    expect(loja).not.toMatch(/sem conta|sem cadastro|sem login/i);
+    expect(loja).not.toMatch(/criar conta para usar\?\s*\n\s*Não/i);
+    expect(loja).not.toMatch(/se quiser criar uma conta|decide se quer criar/i);
   });
 
   test('paywall sem login é honesto sobre o que o modo local é', () => {

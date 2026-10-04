@@ -1,17 +1,16 @@
 /**
  * setup-guide.test.js — progresso de configuração inicial (facilidade p/ iniciantes).
  */
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
 function load() {
   const ctx = vm.createContext({ Math, Array, Object, String });
   // filename absoluto: é a chave que o provider v8 usa para mapear o código
   // executado no vm de volta ao arquivo-fonte. Com nome relativo o teste passa
   // mas o módulo aparece com 0% de cobertura no relatório.
   const file = path.join(__dirname, '..', 'js', 'core', 'setup-guide.js');
-  const code = fs.readFileSync(file, 'utf8');
-  vm.runInContext(code, ctx, { filename: file });
+  rodarNoContexto(ctx, file);
   return ctx.SETUP_GUIDE;
 }
 const SG = load();

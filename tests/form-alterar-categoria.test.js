@@ -6,15 +6,17 @@ const fs = require('fs');
 const path = require('path');
 
 const formSrc = fs.readFileSync(path.join(__dirname, '..', 'js', 'modules', 'init-form.js'), 'utf8');
+// O card de detecção inteligente mora em form-sugestoes.js (mixin de INIT_FORM).
+const sugSrc = fs.readFileSync(path.join(__dirname, '..', 'js', 'modules', 'form-sugestoes.js'), 'utf8');
 const css = fs.readFileSync(path.join(__dirname, '..', 'css', 'features', 'form-novo.css'), 'utf8');
 
 describe('P1.2 — Alterar categoria visível em qualquer confiança', function() {
   test('renderDeteccaoInteligente sempre inclui o botão Alterar categoria', function() {
-    expect(formSrc).toMatch(/id="ia-alterar-categoria"/);
-    expect(formSrc).toMatch(/Alterar categoria/);
-    expect(formSrc).toMatch(/mostrarGridCategoria/);
+    expect(sugSrc).toMatch(/id="ia-alterar-categoria"/);
+    expect(sugSrc).toMatch(/Alterar categoria/);
+    expect(sugSrc).toMatch(/mostrarGridCategoria/);
     // Não esvazia actions em alta/média — o botão fica em todos os níveis
-    const bloco = formSrc.match(/if \(actions\) \{[\s\S]*?if \(typeof renderLucideIcons/);
+    const bloco = sugSrc.match(/if \(actions\) \{[\s\S]*?if \(typeof renderLucideIcons/);
     expect(bloco).toBeTruthy();
     expect(bloco[0]).toMatch(/ia-alterar-categoria/);
     expect(bloco[0]).not.toMatch(/actions\.innerHTML = '';/);

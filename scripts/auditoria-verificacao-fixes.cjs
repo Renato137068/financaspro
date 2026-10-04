@@ -13,7 +13,7 @@ const fs = require('fs');
 const path = require('path');
 const { ROOT, loadCoreGlobals } = require('./lib/load-core.cjs');
 
-const OUT_DIR = path.join(ROOT, 'docs', 'audit-runs');
+const OUT_DIR = path.join(ROOT, 'docs', 'auditorias', 'execucoes');
 const OUT_JSON = path.join(OUT_DIR, 'verificacao-fixes-20260826.json');
 const OUT_MD = path.join(OUT_DIR, 'verificacao-fixes-20260826.md');
 

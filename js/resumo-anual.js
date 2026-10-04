@@ -5,8 +5,13 @@
  * de poupança e os meses mais caro e mais econômico. Reaproveita
  * RELATORIOS.resumoAno (que já ignora o mês corrente incompleto na disputa de
  * maior/menor). Só leitura, sem DOM.
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
-var RESUMO_ANUAL = {
+
+import { UTILS } from './core/utils.js';
+const RESUMO_ANUAL = {
 
   MESES: ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
     'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'],
@@ -18,7 +23,7 @@ var RESUMO_ANUAL = {
   },
 
   _nomeMes: function(mes) {
-    var n = this.MESES[mes - 1] || '';
+    var n = RESUMO_ANUAL.MESES[mes - 1] || '';
     return n.charAt(0).toUpperCase() + n.slice(1);
   },
 
@@ -34,24 +39,24 @@ var RESUMO_ANUAL = {
     var out = [];
     out.push('Meu ' + ano + ' em números');
     out.push('');
-    out.push('Receitas: ' + this._fmt(r.receitas));
-    out.push('Despesas: ' + this._fmt(r.despesas));
+    out.push('Receitas: ' + RESUMO_ANUAL._fmt(r.receitas));
+    out.push('Despesas: ' + RESUMO_ANUAL._fmt(r.despesas));
 
     if (r.saldo >= 0) {
-      out.push('Sobrou: ' + this._fmt(r.saldo));
+      out.push('Sobrou: ' + RESUMO_ANUAL._fmt(r.saldo));
       if (r.taxaPoupanca != null && r.taxaPoupanca > 0) {
         out.push('Você poupou ' + r.taxaPoupanca + '% do que ganhou');
       }
     } else {
-      out.push('Faltou: ' + this._fmt(Math.abs(r.saldo)) + ' (o ano fechou no vermelho)');
+      out.push('Faltou: ' + RESUMO_ANUAL._fmt(Math.abs(r.saldo)) + ' (o ano fechou no vermelho)');
     }
 
-    out.push('Média de gastos por mês: ' + this._fmt(r.mediaDespesaMensal));
+    out.push('Média de gastos por mês: ' + RESUMO_ANUAL._fmt(r.mediaDespesaMensal));
     if (r.maiorDespesaMes) {
-      out.push('Mês mais caro: ' + this._nomeMes(r.maiorDespesaMes.mes) + ' (' + this._fmt(r.maiorDespesaMes.despesas) + ')');
+      out.push('Mês mais caro: ' + RESUMO_ANUAL._nomeMes(r.maiorDespesaMes.mes) + ' (' + RESUMO_ANUAL._fmt(r.maiorDespesaMes.despesas) + ')');
     }
     if (r.menorDespesaMes && (!r.maiorDespesaMes || r.menorDespesaMes.mes !== r.maiorDespesaMes.mes)) {
-      out.push('Mês mais econômico: ' + this._nomeMes(r.menorDespesaMes.mes) + ' (' + this._fmt(r.menorDespesaMes.despesas) + ')');
+      out.push('Mês mais econômico: ' + RESUMO_ANUAL._nomeMes(r.menorDespesaMes.mes) + ' (' + RESUMO_ANUAL._fmt(r.menorDespesaMes.despesas) + ')');
     }
 
     out.push('');
@@ -60,6 +65,5 @@ var RESUMO_ANUAL = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = RESUMO_ANUAL;
-}
+export { RESUMO_ANUAL };
+export default RESUMO_ANUAL;

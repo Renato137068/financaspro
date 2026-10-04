@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FinançasPro na Play Store 04/out</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: relatório de uma coluna, nota geral no topo, depois a resposta sobre avaliações,
+   as notas por frente, os achados com evidência, a ficha pronta para colar e o roadmap. */
+:root{
+  --bg:#f5f8f6; --surface:#ffffff; --surface-2:#edf6f2; --line:#d5e2dc;
+  --ink:#10231c; --ink-2:#3c5249; --ink-3:#607a6f;
+  --brand:#12694e; --brand-deep:#0b3d2e; --brand-soft:#d3e9df; --accent:#2fa37b;
+  --ok:#1f7a4f; --ok-bg:#e1f3e9; --warn:#9a5b00; --warn-bg:#fdf0da; --bad:#b3261e; --bad-bg:#fbe4e2; --info:#2d5d8a; --info-bg:#e3edf7;
+  --bar-track:#e3ece8;
+  --f-display:'Plus Jakarta Sans','Inter',-apple-system,'Segoe UI',sans-serif;
+  --f-body:'Inter',-apple-system,'Segoe UI',Roboto,sans-serif;
+  --f-mono:'JetBrains Mono','SFMono-Regular',Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#08140f; --surface:#0f1f18; --surface-2:#132a20; --line:#21392e;
+    --ink:#e6f1ec; --ink-2:#b4c9bf; --ink-3:#86a295;
+    --brand:#5cc49a; --brand-deep:#a9d4c1; --brand-soft:#173a2c; --accent:#74b99c;
+    --ok:#6fd49f; --ok-bg:#133526; --warn:#f0b35a; --warn-bg:#3a2a10; --bad:#ff8a80; --bad-bg:#3d1714; --info:#8dbbe8; --info-bg:#132b40;
+    --bar-track:#1b3228;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#08140f; --surface:#0f1f18; --surface-2:#132a20; --line:#21392e;
+  --ink:#e6f1ec; --ink-2:#b4c9bf; --ink-3:#86a295;
+  --brand:#5cc49a; --brand-deep:#a9d4c1; --brand-soft:#173a2c; --accent:#74b99c;
+  --ok:#6fd49f; --ok-bg:#133526; --warn:#f0b35a; --warn-bg:#3a2a10; --bad:#ff8a80; --bad-bg:#3d1714; --info:#8dbbe8; --info-bg:#132b40;
+  --bar-track:#1b3228;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;margin:0}
+.wrap{max-width:1040px;margin:0 auto;padding-inline:20px;padding-block:32px 64px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;color:var(--ink)}
+h1{font-size:clamp(28px,5vw,40px);font-weight:800;letter-spacing:-.02em;line-height:1.15}
+h2{font-size:22px;font-weight:700;letter-spacing:-.01em}
+h3{font-size:16px;font-weight:700}
+p{margin:0}
+ul,ol{margin:0;padding-left:20px;display:grid;gap:6px}
+code,.mono{font-family:var(--f-mono);font-size:.86em}
+code{background:var(--surface-2);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--brand)}
+.muted{color:var(--ink-3)}
+section{display:grid;gap:18px;margin-top:48px}
+.sec-head{display:grid;gap:6px}
+.sec-head p{color:var(--ink-2);max-width:68ch}
+a{color:var(--brand)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+header.top{display:grid;gap:14px}
+.meta{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--ink-3)}
+.meta span strong{color:var(--ink-2);font-weight:600}
+.lede{font-size:17px;color:var(--ink-2);max-width:66ch}
+
+.hero{display:grid;grid-template-columns:minmax(0,240px) minmax(0,1fr);gap:28px;align-items:center;margin-top:28px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px}
+.gauge{position:relative;width:100%;max-width:220px;aspect-ratio:1;margin:0 auto}
+.gauge svg{width:100%;height:100%;display:block}
+.gauge .num{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.gauge .num b{font-family:var(--f-display);font-size:60px;font-weight:800;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
+.gauge .num small{font-size:13px;color:var(--ink-3)}
+.verdicts{display:grid;gap:12px}
+.verdict{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:baseline}
+.verdict p{grid-column:2;color:var(--ink-2);font-size:14px}
+.pill{display:inline-block;font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.warn{background:var(--warn-bg);color:var(--warn)}
+.pill.bad{background:var(--bad-bg);color:var(--bad)}
+.pill.info{background:var(--info-bg);color:var(--info)}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.kpi{border-top:2px solid var(--line);padding-top:8px}
+.kpi b{display:block;font-family:var(--f-display);font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+.kpi span{font-size:12.5px;color:var(--ink-3)}
+
+.note{border-radius:12px;padding:16px 18px;display:grid;gap:8px;font-size:14.5px;color:var(--ink-2)}
+.note strong{color:var(--ink)}
+.note.info{background:var(--info-bg)}
+.note.warn{background:var(--warn-bg)}
+.note.ok{background:var(--ok-bg)}
+
+.answer{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;gap:8px;align-content:start;min-width:0}
+.card p,.card li{color:var(--ink-2);font-size:14.5px}
+
+.dims{display:grid;gap:10px}
+.dim{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,180px) 48px;gap:16px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.dim h3{font-size:15px}
+.dim p{font-size:13.5px;color:var(--ink-3)}
+.dim .w{font-size:12px;color:var(--ink-3);font-family:var(--f-mono)}
+.bar{height:8px;border-radius:99px;background:var(--bar-track);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:99px}
+.bar i.bad{background:var(--bad)} .bar i.warn{background:var(--warn)} .bar i.ok{background:var(--ok)}
+.score{font-family:var(--f-display);font-weight:800;font-size:22px;text-align:right;font-variant-numeric:tabular-nums}
+
+.finding{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;gap:10px}
+.f-head{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+.f-id{font-family:var(--f-mono);font-size:12.5px;color:var(--ink-3)}
+.finding h3{font-size:17px}
+.finding p{color:var(--ink-2);font-size:14.5px;max-width:78ch}
+.finding .ev{font-size:13px;color:var(--ink-3)}
+.finding .fix{background:var(--surface-2);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--ink-2)}
+.finding .fix b{color:var(--brand)}
+
+.shots{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.shot{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:6px;align-content:start}
+.shot b{font-family:var(--f-display);font-size:14.5px;line-height:1.3}
+.shot span{font-size:12.5px;color:var(--ink-3)}
+.shot .n{font-family:var(--f-mono);font-size:12px;color:var(--brand)}
+
+.copy-block{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.copy-head{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.copy-head h3{font-size:15px}
+.copy-head .count{font-family:var(--f-mono);font-size:12px;color:var(--ink-3)}
+.copy-block pre{margin:0;padding:16px;white-space:pre-wrap;word-break:break-word;font-family:var(--f-body);font-size:14.5px;line-height:1.6;color:var(--ink)}
+button.copy{font:600 13px var(--f-body);color:var(--brand);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer}
+button.copy:hover{border-color:var(--brand)}
+.alts{display:grid;gap:6px;padding:0 16px 16px}
+.alts li{font-size:14px;color:var(--ink-2)}
+
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:14px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:600;background:var(--surface-2)}
+tr:last-child td{border-bottom:0}
+td .mono{white-space:nowrap}
+
+.roadmap{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.phase{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;gap:12px;align-content:start}
+.phase .when{font-family:var(--f-mono);font-size:12px;color:var(--ink-3)}
+.phase .target{font-size:13px;color:var(--brand);font-weight:600}
+.phase ol{gap:10px}
+.phase li{font-size:14px;color:var(--ink-2)}
+.phase li b{color:var(--ink)}
+.tag{display:inline-block;font-size:11px;font-weight:600;padding:1px 7px;border-radius:999px;background:var(--surface-2);color:var(--ink-3);margin-left:4px;white-space:nowrap}
+
+.sources li{font-size:13.5px;color:var(--ink-2)}
+footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);font-size:13px;color:var(--ink-3)}
+
+@media (max-width:820px){
+  .hero{grid-template-columns:minmax(0,1fr)}
+  .answer,.roadmap{grid-template-columns:minmax(0,1fr)}
+  .shots{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .dim{grid-template-columns:minmax(0,1fr) 48px}
+  .dim .bar{grid-column:1 / -1;grid-row:2}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <span class="eyebrow">Auditoria de loja (ASO) · Google Play</span>
+  <h1>FinançasPro na Play Store: o que falta para ser encontrado e escolhido</h1>
+  <p class="lede">Avaliação da ficha <code>com.financaspro.mobile</code> nos dias seguintes ao lançamento: avaliações, busca orgânica, imagens, texto, marca e o que o Google pesa no ranqueamento. Cada problema vem com a correção, e a ficha nova está pronta para colar no Play Console.</p>
+  <div class="meta">
+    <span><strong>Data</strong> 04/10/2026</span>
+    <span><strong>Versão do app</strong> 11.3.18 (versionCode 49)</span>
+    <span><strong>Idioma da ficha</strong> Português (Brasil)</span>
+    <span><strong>Base</strong> ficha, imagens e código do repositório</span>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="gauge" role="img" aria-label="Nota geral 36 de 100">
+    <svg viewBox="0 0 120 120" aria-hidden="true">
+      <circle cx="60" cy="60" r="52" fill="none" stroke="var(--bar-track)" stroke-width="10"></circle>
+      <circle cx="60" cy="60" r="52" fill="none" stroke="var(--bad)" stroke-width="10" stroke-linecap="round"
+        stroke-dasharray="117.6 326.7" transform="rotate(-90 60 60)"></circle>
+    </svg>
+    <div class="num"><b>36</b><small>de 100</small></div>
+  </div>
+  <div class="verdicts">
+    <div class="verdict"><span class="pill ok">Forte</span><h3>O produto e a conformidade</h3>
+      <p>O app é sólido, a seção de segurança dos dados está preenchida com honestidade e a exclusão de conta funciona. Isso sustenta qualquer crescimento.</p></div>
+    <div class="verdict"><span class="pill bad">Fraco</span><h3>A vitrine</h3>
+      <p>O título e as descrições quase não têm as palavras que as pessoas digitam na busca, e as capturas mostram telas vazias, cortadas e com avisos por cima. A ficha não vende o app que existe.</p></div>
+    <div class="verdict"><span class="pill warn">Normal</span><h3>Poucas avaliações</h3>
+      <p>Duas avaliações em poucos dias é o esperado. O que falta é um caminho legítimo para pedir avaliação dentro do app, que hoje não existe.</p></div>
+    <div class="kpis">
+      <div class="kpi"><b>0</b><span>vezes que a descrição diz "controle de gastos"</span></div>
+      <div class="kpi"><b>1.732</b><span>de 4.000 caracteres usados na descrição</span></div>
+      <div class="kpi"><b>3</b><span>capturas de celular, de 8 possíveis</span></div>
+      <div class="kpi"><b>~58</b><span>nota estimada após a etapa 1, sem código</span></div>
+    </div>
+  </div>
+</div>
+
+<section>
+  <div class="note warn">
+    <strong>O que eu não consegui ver</strong>
+    <p>A rede deste ambiente bloqueia <code>play.google.com</code>, então não abri a página publicada. A auditoria usa a ficha preparada no repositório (<code>docs/play-store-ficha.md</code>), as imagens enviadas para a loja (<code>docs/play-store/</code>), o código do app e as regras públicas do Google. Instalações, nota média, texto das avaliações e Android vitals vêm do Play Console e ficaram como "conferir". Se algo na loja estiver diferente do repositório, me diga e eu ajusto as notas. Para eu ver a página ao vivo da próxima vez, libere <code>play.google.com</code> no acesso à rede do ambiente.</p>
+  </div>
+</section>
+
+<section id="avaliacoes">
+  <div class="sec-head">
+    <span class="eyebrow">Sua primeira pergunta</span>
+    <h2>Por que as duas avaliações não aparecem na loja</h2>
+    <p>Não existe configuração no Play Console para tornar avaliações públicas. Elas ficam públicas sozinhas, quando o Google as aceita. Quatro motivos explicam o que você está vendo, do mais provável ao menos provável.</p>
+  </div>
+  <div class="answer">
+    <div class="card">
+      <span class="pill info">1 · Esperado</span>
+      <h3>Elas levam tempo e a nota só aparece com mais avaliações</h3>
+      <p>O Google segura cada avaliação nova por cerca de 24 horas para filtrar fraude. E a nota média (as estrelas no topo da ficha) só é exibida quando o app tem avaliações suficientes. A Ajuda do Play Console cita um mínimo de cinco. Com duas, a ficha fica sem nota e as avaliações podem não aparecer no destaque.</p>
+    </div>
+    <div class="card">
+      <span class="pill info">2 · Muito comum</span>
+      <h3>A loja mostra avaliações do seu país e do seu tipo de aparelho</h3>
+      <p>Desde 2021 cada pessoa vê as avaliações da própria região, e no celular só as feitas em celular. Se uma avaliação veio de um tablet, do navegador ou de outro país, ela não aparece para você no celular, mesmo sendo pública.</p>
+    </div>
+    <div class="card">
+      <span class="pill warn">3 · Confira</span>
+      <h3>Quem avaliou estava no teste fechado ou interno</h3>
+      <p>Comentários de testadores são feedback privado: só você vê, no Console, e nunca vão para a página pública. Se as duas pessoas entraram pelo link de teste antes do lançamento, é isso.</p>
+    </div>
+    <div class="card">
+      <span class="pill warn">4 · Confira</span>
+      <h3>O filtro antispam escondeu</h3>
+      <p>O Google esconde ou remove avaliações que parecem não espontâneas: contas novas, pessoas ligadas ao desenvolvedor (mesma rede, mesmo aparelho, família), várias avaliações no mesmo dia ou feitas em troca de algo. Pedir para amigos avaliarem é justamente o que o filtro procura, e a política proíbe avaliação incentivada ou combinada.</p>
+    </div>
+  </div>
+  <div class="note ok">
+    <strong>O que fazer agora</strong>
+    <ol>
+      <li>No Play Console, abra <b>Qualidade → Notas e avaliações → Avaliações</b>. Se as duas estão lá, são públicas e só estão filtradas por região ou aparelho. Se estão em <b>Testes → Feedback</b>, são de testadores e continuam privadas.</li>
+      <li><b>Responda às duas</b>, agradecendo e citando o que a pessoa elogiou. A resposta do desenvolvedor aparece embaixo da avaliação e mostra que alguém cuida do app.</li>
+      <li>Não peça avaliações a amigos e família, nem ofereça nada em troca. Além de serem filtradas, podem gerar advertência na conta.</li>
+      <li>Coloque no app o pedido oficial de avaliação do Google (achado A5): é o jeito legítimo e de maior volume de juntar as cinco primeiras e passar delas.</li>
+    </ol>
+  </div>
+</section>
+
+<section id="notas">
+  <div class="sec-head">
+    <span class="eyebrow">Notas por frente</span>
+    <h2>Onde a ficha ganha e onde perde</h2>
+    <p>Notas de 0 a 100. O peso de cada frente reflete quanto ela influencia aparecer na busca e convencer quem chegou à ficha. A nota geral é a média ponderada.</p>
+  </div>
+  <div class="dims">
+    <div class="dim"><div><h3>Avaliações e prova social <span class="w">peso 20%</span></h3><p>2 avaliações, sem nota visível, sem respostas e sem pedido de avaliação dentro do app.</p></div><div class="bar"><i class="bad" style="width:20%"></i></div><div class="score">20</div></div>
+    <div class="dim"><div><h3>Título e palavras-chave <span class="w">peso 20%</span></h3><p>Título só com a marca; descrição curta sem nenhum termo de busca; descrição longa com 0 "controle de gastos", 0 "gastos", 0 "finanças pessoais".</p></div><div class="bar"><i class="bad" style="width:30%"></i></div><div class="score">30</div></div>
+    <div class="dim"><div><h3>Imagens da ficha <span class="w">peso 20%</span></h3><p>3 capturas cruas, sem legenda, duas em estado vazio, com aviso por cima da barra e texto cortado. Gráfico de destaque genérico.</p></div><div class="bar"><i class="bad" style="width:32%"></i></div><div class="score">32</div></div>
+    <div class="dim"><div><h3>Proposta de valor e confiança <span class="w">peso 10%</span></h3><p>"Seu dinheiro, no seu aparelho" é um bom diferencial, mas divide espaço com termos técnicos ("sync", "Supabase") e com "versão em evolução".</p></div><div class="bar"><i class="warn" style="width:48%"></i></div><div class="score">48</div></div>
+    <div class="dim"><div><h3>Marca fora da loja <span class="w">peso 10%</span></h3><p>Sem site do desenvolvedor no ar, sem página com o selo da Play, e há outros apps e sites com nomes quase iguais.</p></div><div class="bar"><i class="bad" style="width:25%"></i></div><div class="score">25</div></div>
+    <div class="dim"><div><h3>Qualidade técnica <span class="w">peso 10%</span></h3><p>Estimada pelo código: testes amplos, relatório de falhas, app leve. Falta conferir os Android vitals no Console.</p></div><div class="bar"><i class="ok" style="width:70%"></i></div><div class="score">70</div></div>
+    <div class="dim"><div><h3>Conformidade da ficha <span class="w">peso 5%</span></h3><p>Segurança dos dados honesta, exclusão de conta com URL, política de privacidade. Ressalvas: "Sem anúncios" na imagem e preços na descrição.</p></div><div class="bar"><i class="ok" style="width:72%"></i></div><div class="score">72</div></div>
+    <div class="dim"><div><h3>Atualizações e campanhas na loja <span class="w">peso 5%</span></h3><p>Sem testes A/B da ficha, sem conteúdo promocional, sem calendário de novidades.</p></div><div class="bar"><i class="bad" style="width:30%"></i></div><div class="score">30</div></div>
+  </div>
+</section>
+
+<section id="achados">
+  <div class="sec-head">
+    <span class="eyebrow">Achados</span>
+    <h2>O que corrigir, com a evidência</h2>
+    <p>Ordenados por impacto em visibilidade e conversão.</p>
+  </div>
+
+  <article class="finding">
+    <div class="f-head"><span class="pill bad">Alta</span><span class="f-id">A1 · Título</span></div>
+    <h3>O título é só "FinançasPro"</h3>
+    <p>O título é o campo que mais pesa na busca da Play. Hoje ele não contém nenhuma palavra que alguém digita ao procurar um app como o seu. Quem busca "controle de gastos" encontra os concorrentes, porque o FinançasPro não diz que faz isso. Pesa também a confusão de nome: na busca aparecem "Finance Pro: Expense control", um site "FinançasPro" de terceiros com Open Finance e um projeto "financas-pro" no GitHub.</p>
+    <p class="ev">Evidência: <code>docs/play-store-ficha.md</code> (nome do app); busca pública por "com.financaspro.mobile".</p>
+    <p class="fix"><b>Correção:</b> usar <b>FinançasPro Controle de Gastos</b> (30 caracteres, o limite). A marca continua na frente e o termo de maior volume entra no campo mais forte. Sem "grátis", "sem anúncios", "melhor" ou "#1" no título: a política do Google proíbe.</p>
+  </article>
+
+  <article class="finding">
+    <div class="f-head"><span class="pill bad">Alta</span><span class="f-id">A2 · Descrição curta</span></div>
+    <h3>A descrição curta fala de tecnologia, não do que o app faz</h3>
+    <p>"Seu dinheiro no aparelho, com sync opcional na nuvem. Sem anúncios." aparece logo abaixo do nome, na busca e na ficha. Não diz que é controle de gastos, orçamento ou metas, e "sync" e "nuvem" não significam nada para a maioria das pessoas. É o segundo campo que mais pesa na busca.</p>
+    <p class="ev">Evidência: 67 de 80 caracteres, nenhum termo de busca.</p>
+    <p class="fix"><b>Correção:</b> "Controle de gastos, orçamento e metas. Funciona offline, direto no celular." (75 caracteres). Abre com o que a pessoa procura e fecha com o diferencial em palavras comuns. Outras opções estão na seção da ficha pronta.</p>
+  </article>
+
+  <article class="finding">
+    <div class="f-head"><span class="pill bad">Alta</span><span class="f-id">A3 · Descrição completa</span></div>
+    <h3>A descrição usa menos da metade do espaço e evita as palavras da busca</h3>
+    <p>O Google lê a descrição completa para decidir em quais buscas o app aparece. A atual tem 1.732 de 4.000 caracteres e nunca diz "controle de gastos", "gastos", "finanças pessoais", "controle financeiro", "planilha" ou "economizar". Cita o "Supabase", que ninguém busca, e termina com "Esta é uma versão em evolução", que tira confiança de quem está decidindo instalar. Os preços escritos no texto (R$ 16,99 e R$ 129,99) ficam errados no primeiro reajuste, e a própria Play já mostra a faixa de preço das compras no app.</p>
+    <p class="ev">Evidência: contagem de termos em <code>docs/play-store-ficha.md</code>.</p>
+    <p class="fix"><b>Correção:</b> a descrição nova, mais abaixo, usa cerca de 2.600 caracteres, repete os termos principais de forma natural (sem empilhar palavras, que o Google pune), organiza por benefício e responde às três dúvidas mais comuns. Sem preços e sem termos técnicos.</p>
+  </article>
+
+  <article class="finding">
+    <div class="f-head"><span class="pill bad">Alta</span><span class="f-id">A4 · Capturas de tela</span></div>
+    <h3>As capturas mostram o app no pior momento</h3>
+    <p>As capturas são o que mais convence quem abriu a ficha, e as três primeiras aparecem já na busca. As atuais são telas cruas do app, sem legenda, e têm problemas visíveis:</p>
+    <ul>
+      <li>Orçamento e Extrato mostram <b>R$ 0,00</b>, <b>0%</b> e <b>+0,0%</b>: parece um app vazio.</li>
+      <li>O Resumo mostra "Sem lançamentos h…" cortado, ao lado de R$ 8.950 de receitas. Uma frase diz que não há lançamentos e o número diz que há.</li>
+      <li>O aviso "Salvo neste dispositivo" cobre o botão de novo lançamento nas três telas.</li>
+      <li>Textos de outras partes da tela ("Indicador ok", "Tempo até fechamento", "CRÍTICAS") vazam por baixo da barra de navegação.</li>
+      <li>"Agosto 2026" envelhece a ficha em poucas semanas.</li>
+      <li>Só 3 capturas de celular, de 8 possíveis, e nenhuma mostra metas, cartão, previsão ou privacidade.</li>
+    </ul>
+    <p>Há ainda um arquivo <code>screenshot-placeholder-1080x1920.png</code> que é uma tela em branco com o ícone. Confira no Console que ele não foi enviado.</p>
+    <p class="ev">Evidência: <code>docs/play-store/screenshot-*-1080x1920.png</code>.</p>
+    <p class="fix"><b>Correção:</b> 8 capturas com uma frase de benefício no topo, dados de exemplo realistas, sem avisos por cima e sem datas. O roteiro está na seção "Capturas novas". O repositório já tem o gerador (<code>npm run screenshots:capture</code>); posso adaptá-lo para produzir as oito com legenda.</p>
+  </article>
+
+  <article class="finding">
+    <div class="f-head"><span class="pill bad">Alta</span><span class="f-id">A5 · Avaliações</span></div>
+    <h3>O app nunca pede avaliação</h3>
+    <p>Não há uso da API de avaliação no app do Google (In-App Review) no código Android nem no JavaScript. Sem ela, só avalia quem lembra de voltar à loja, e esse grupo tende a ser quem teve problema. Com ela, a janela de avaliar aparece dentro do app, sem sair dele, e a pessoa avalia em dois toques.</p>
+    <p class="ev">Evidência: nenhuma ocorrência de <code>ReviewManager</code>, <code>requestReview</code> ou pedido de avaliação em <code>js/</code> e <code>android/app/src/</code>.</p>
+    <p class="fix"><b>Correção:</b> chamar a avaliação em momentos bons e raros, como ao fechar o primeiro mês com saldo positivo, ao bater uma meta ou após 10 lançamentos em 7 dias, no máximo uma vez a cada 90 dias. Nunca depois de um erro, e nunca perguntando antes "você gosta do app?" para filtrar quem avalia: o Google proíbe isso.</p>
+  </article>
+
+  <article class="finding">
+    <div class="f-head"><span class="pill warn">Média</span><span class="f-id">A6 · Gráfico de destaque</span></div>
+    <h3>O gráfico de destaque é genérico e mistura mensagens</h3>
+    <p>A imagem 1024×500 traz só o ícone, o nome, a assinatura e dois selos. "Sem anúncios" em imagem é o tipo de texto promocional que o Google desaconselha nos recursos gráficos, e "Sincroniza na nuvem" contradiz "Seu dinheiro, no seu aparelho" na mesma linha. A imagem também não mostra o app.</p>
+    <p class="ev">Evidência: <code>docs/play-store/feature-graphic-1024x500.png</code>.</p>
+    <p class="fix"><b>Correção:</b> o celular com o Resumo à direita e, à esquerda, a frase "Saiba quanto sobra no fim do mês" com o nome menor. Tirar os selos. Manter a paleta verde, que já identifica a marca.</p>
+  </article>
+
+  <article class="finding">
+    <div class="f-head"><span class="pill warn">Média</span><span class="f-id">A7 · Ícone</span></div>
+    <h3>O ícone usa o cifrão sozinho</h3>
+    <p>O ícone é limpo e funciona em tamanho pequeno, mas o "$" isolado é o símbolo de muitos apps de finanças e, para o brasileiro, lembra dólar. Na lista de resultados da busca o ícone é o primeiro sinal de identidade, e hoje ele se confunde com os vizinhos.</p>
+    <p class="ev">Evidência: <code>icons/android/icon-512.png</code>.</p>
+    <p class="fix"><b>Correção:</b> não trocar no escuro. Criar duas variações (por exemplo, "R$" ou um símbolo próprio da marca) e testar contra o atual num experimento da ficha (etapa 2). O Google mostra qual converte mais.</p>
+  </article>
+
+  <article class="finding">
+    <div class="f-head"><span class="pill warn">Média</span><span class="f-id">A8 · Marca fora da loja</span></div>
+    <h3>Não há site, e a política de privacidade depende de uma hospedagem pendente</h3>
+    <p>A ficha não informa site. A política de privacidade aponta para <code>app.financaspro.com</code>, cuja hospedagem estática ainda é um passo pendente da operação (<code>docs/release/hospedagem-web.md</code>), e daqui não consegui confirmar que ela está no ar. Uma política fora do ar pode tirar o app da loja. Um site próprio também dá ao Google e às pessoas um lugar para confirmar que a marca existe, e é por onde chegam visitas de busca no Google para dentro da Play.</p>
+    <p class="fix"><b>Correção:</b> publicar a web e uma página inicial simples em <code>app.financaspro.com</code> com o selo "Disponível no Google Play", o que o app faz, prints e a política. Informar o site na ficha. Considerar registrar a marca no INPI, dado que há nomes parecidos em uso.</p>
+  </article>
+
+  <article class="finding">
+    <div class="f-head"><span class="pill warn">Média</span><span class="f-id">A9 · Campanhas e testes na loja</span></div>
+    <h3>A ficha é estática</h3>
+    <p>O Play Console oferece experimentos da ficha (teste A/B de ícone, capturas e textos), fichas personalizadas por público e conteúdo promocional (cards de eventos que aparecem na própria Play). Nada disso está em uso, e o texto de "Novidades" de cada versão é a chance de mostrar para quem já instalou que o app evolui.</p>
+    <p class="fix"><b>Correção:</b> um experimento por vez a partir da etapa 2 e um calendário de conteúdo promocional nas datas em que as pessoas mais procuram controle financeiro (13º salário, começo de ano, imposto de renda, Black Friday).</p>
+  </article>
+
+  <article class="finding">
+    <div class="f-head"><span class="pill info">Baixa</span><span class="f-id">A10 · Vídeo e tablets</span></div>
+    <h3>Sem vídeo, e capturas de tablet a conferir</h3>
+    <p>Um vídeo curto (30 s, mostrando um lançamento e o resumo do mês) ocupa o topo da ficha e aumenta a conversão. Existem capturas de tablet no repositório; confira se foram enviadas, porque sem elas o app aparece menos em tablets e Chromebooks.</p>
+  </article>
+</section>
+
+<section id="ficha">
+  <div class="sec-head">
+    <span class="eyebrow">Ficha nova</span>
+    <h2>Textos prontos para colar no Play Console</h2>
+    <p>Em <b>Crescimento → Presença na loja → Página principal da loja</b>. Todos dentro dos limites e sem termos que a política proíbe. Os recursos citados existem no app hoje.</p>
+  </div>
+
+  <div class="copy-block">
+    <div class="copy-head"><h3>Nome do app</h3><span class="count">30 / 30</span><button type="button" class="copy" data-alvo="t-titulo">Copiar</button></div>
+    <pre id="t-titulo">FinançasPro Controle de Gastos</pre>
+    <ul class="alts">
+      <li class="muted">Alternativas: "FinançasPro: Gastos e Metas" (27) · "FinançasPro: Finanças Pessoais" (30)</li>
+    </ul>
+  </div>
+
+  <div class="copy-block">
+    <div class="copy-head"><h3>Descrição curta</h3><span class="count">75 / 80</span><button type="button" class="copy" data-alvo="t-curta">Copiar</button></div>
+    <pre id="t-curta">Controle de gastos, orçamento e metas. Funciona offline, direto no celular.</pre>
+    <ul class="alts">
+      <li class="muted">Para testar depois (etapa 2): "Controle de gastos, orçamento 50/30/20 e fatura do cartão, direto no celular." (77)</li>
+      <li class="muted">"Controle financeiro simples: gastos, orçamento e metas. Seus dados no celular." (78)</li>
+    </ul>
+  </div>
+
+  <div class="copy-block">
+    <div class="copy-head"><h3>Descrição completa</h3><span class="count" id="c-longa">~2.600 / 4.000</span><button type="button" class="copy" data-alvo="t-longa">Copiar</button></div>
+<pre id="t-longa">O FinançasPro é um app de controle de gastos e finanças pessoais para quem quer saber quanto sobra no fim do mês. Registre receitas e despesas em segundos, monte o orçamento do mês e acompanhe suas metas, tudo sem anúncios.
+
+Crie sua conta grátis e comece. Seus lançamentos ficam guardados no celular e funcionam sem internet, com cópia na nuvem para você não perder nada se trocar de aparelho.
+
+CONTROLE DE GASTOS SIMPLES
+• Lançamentos ilimitados, também no plano gratuito
+• Categorias prontas e personalizadas para os seus gastos
+• Extrato completo com busca e filtros por mês, categoria e conta
+• Gastos fixos e contas a pagar com lembrete
+
+ORÇAMENTO MENSAL E REGRA 50/30/20
+• Orçamento por categoria, com alerta quando o limite está perto
+• Regra 50/30/20 pronta: necessidades, desejos e poupança
+• Resumo do mês com receitas, despesas e saldo
+
+CARTÃO DE CRÉDITO SEM SUSTO
+• Fatura do cartão mês a mês, com as compras parceladas
+• Até 5 contas e cartões no plano gratuito
+
+METAS E RELATÓRIOS
+• Meta financeira com progresso e ritmo (metas ilimitadas no Pro)
+• Gráficos e relatórios dos últimos 3 meses
+• Exportação em CSV e backup dos seus dados
+
+PRIVACIDADE EM PRIMEIRO LUGAR
+• Seus lançamentos ficam no aparelho e funcionam offline
+• Sem anúncios e sem venda de dados
+• PIN e biometria para abrir o app
+• Exclusão da conta e dos dados quando você quiser
+
+FINANÇASPRO PRO
+Para quem quer ir além do controle financeiro do dia a dia:
+• Todo o seu histórico, com comparação ano a ano
+• Previsão do saldo no fim do mês
+• Encontra assinaturas esquecidas que você ainda paga
+• Categoriza sozinho, aprendendo com você
+• Fatura do cartão projetada, com as parcelas futuras
+• Celular, tablet e navegador sincronizados
+• Modo casal: duas pessoas, uma vida financeira
+• Relatório em PDF pronto para apresentar
+
+O Pro tem 7 dias de teste pela Google Play. Ao criar uma conta, você ganha 14 dias de Pro sem cadastrar cartão.
+
+PERGUNTAS FREQUENTES
+Preciso pagar para usar?
+Não. O plano gratuito não tem prazo nem anúncios, e os lançamentos são ilimitados. O Pro é opcional.
+
+Funciona sem internet?
+Sim. Depois de entrar na sua conta uma vez, você registra e consulta tudo offline. O app sincroniza quando a internet volta.
+
+Vocês vendem meus dados?
+Não. O app não tem anúncios e não vende dados. Você pode excluir a conta e todos os dados quando quiser, pelo próprio app.
+
+PARA QUEM É
+Para quem quer organizar as finanças, sair do vermelho, economizar dinheiro todo mês ou trocar a planilha de gastos por um app de finanças fácil de usar.
+
+Dúvidas ou sugestões? Escreva para o e-mail de contato desta página. Lemos todas as mensagens.</pre>
+  </div>
+
+  <div class="note info">
+    <strong>Antes de colar, confira</strong>
+    <ul>
+      <li>A oferta de 14 dias de Pro ao criar conta continua valendo. Se mudar, tire a frase da descrição no mesmo dia.</li>
+      <li>"PIN e biometria": a biometria depende do aparelho. Se preferir não prometer, troque por "PIN para abrir o app".</li>
+      <li>Já está em <code>docs/play-store-ficha.md</code>, que é a fonte da ficha no repositório.</li>
+      <li><b>Corrigido no mesmo dia:</b> a primeira versão desta descrição dizia que o app funciona sem conta. O app da loja pede login na primeira abertura, e só entra sem rede quem já entrou antes no aparelho. A descrição curta, o segundo parágrafo e as perguntas frequentes foram reescritos, e um teste (<code>tests/play-store-honestidade.test.js</code>) barra a promessa de volta.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="capturas">
+  <div class="sec-head">
+    <span class="eyebrow">Capturas novas</span>
+    <h2>Oito telas, cada uma com um benefício</h2>
+    <p>Formato 1080×1920. Frase curta no topo, em fonte grande, sobre fundo verde da marca; o celular com a tela abaixo. As três primeiras aparecem na busca, então carregam a mensagem principal. Dados de exemplo realistas (salário, aluguel, mercado, parcelas), sem nomes reais e sem datas.</p>
+  </div>
+  <div class="shots">
+    <div class="shot"><span class="n">1</span><b>Saiba quanto sobra no fim do mês</b><span>Resumo com saldo positivo, receitas e despesas preenchidas</span></div>
+    <div class="shot"><span class="n">2</span><b>Registre um gasto em segundos</b><span>Novo lançamento com categoria sugerida</span></div>
+    <div class="shot"><span class="n">3</span><b>Orçamento 50/30/20 pronto</b><span>Orçamento com barras por categoria, uma perto do limite</span></div>
+    <div class="shot"><span class="n">4</span><b>A fatura do cartão, com as parcelas</b><span>Cartão com compras parceladas nos meses seguintes</span></div>
+    <div class="shot"><span class="n">5</span><b>Encontre qualquer gasto</b><span>Extrato filtrado por categoria</span></div>
+    <div class="shot"><span class="n">6</span><b>Metas que mostram o seu ritmo</b><span>Duas metas com progresso e previsão de conclusão</span></div>
+    <div class="shot"><span class="n">7</span><b>Veja o mês antes de ele acabar</b><span>Previsão de saldo (Pro)</span></div>
+    <div class="shot"><span class="n">8</span><b>Seus dados no seu celular</b><span>Tela de privacidade: funciona offline, sem anúncios, PIN</span></div>
+  </div>
+  <p class="muted">Sem frases como "Baixe agora" ou "Grátis por tempo limitado": o Google proíbe chamadas para ação e promoções nas imagens.</p>
+</section>
+
+<section id="palavras">
+  <div class="sec-head">
+    <span class="eyebrow">Palavras-chave</span>
+    <h2>O que as pessoas digitam e onde usar</h2>
+    <p>Os termos genéricos têm concorrentes fortes (Mobills, Organizze, Minhas Finanças). Um app novo ganha primeiro nas buscas mais específicas e sobe nas genéricas com instalações e avaliações. Depois de 30 dias, confirme os termos reais em <b>Estatísticas → Aquisição de usuários → Termos de busca</b> no Console.</p>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Termo</th><th>Intenção</th><th>Concorrência</th><th>Onde usar</th></tr></thead>
+      <tbody>
+        <tr><td>controle de gastos</td><td>Achar um app para anotar gastos</td><td><span class="pill bad">Alta</span></td><td>Título, curta e longa</td></tr>
+        <tr><td>controle financeiro</td><td>Organizar a vida financeira</td><td><span class="pill bad">Alta</span></td><td>Longa (e curta em teste A/B)</td></tr>
+        <tr><td>finanças pessoais</td><td>Termo amplo de categoria</td><td><span class="pill bad">Alta</span></td><td>Longa, primeira frase</td></tr>
+        <tr><td>orçamento mensal</td><td>Planejar o mês</td><td><span class="pill warn">Média</span></td><td>Curta e longa</td></tr>
+        <tr><td>regra 50/30/20</td><td>Método específico de orçamento</td><td><span class="pill ok">Baixa</span></td><td>Longa, captura 3</td></tr>
+        <tr><td>fatura do cartão / parcelas</td><td>Controlar o cartão de crédito</td><td><span class="pill warn">Média</span></td><td>Longa, captura 4</td></tr>
+        <tr><td>planilha de gastos</td><td>Quem quer trocar a planilha</td><td><span class="pill warn">Média</span></td><td>Longa</td></tr>
+        <tr><td>app de finanças offline</td><td>Privacidade, uso sem internet</td><td><span class="pill ok">Baixa</span></td><td>Longa e perguntas frequentes</td></tr>
+        <tr><td>metas financeiras</td><td>Juntar dinheiro para um objetivo</td><td><span class="pill warn">Média</span></td><td>Curta, longa, captura 6</td></tr>
+        <tr><td>assinaturas esquecidas</td><td>Cortar gastos recorrentes</td><td><span class="pill ok">Baixa</span></td><td>Longa (Pro)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="muted">Concorrência estimada pelo número de apps fortes que usam o termo no título. Não tive acesso a dados de volume de busca da Play.</p>
+</section>
+
+<section id="ranking">
+  <div class="sec-head">
+    <span class="eyebrow">Como a Play decide quem aparece</span>
+    <h2>O que pesa no ranqueamento orgânico</h2>
+    <p>O Google não publica a fórmula, mas confirma os sinais abaixo na documentação do Play Console e do Android.</p>
+  </div>
+  <div class="answer">
+    <div class="card"><h3>Relevância do texto</h3><p>Título, descrição curta e descrição completa dizem para quais buscas o app serve. É o que a etapa 1 corrige.</p></div>
+    <div class="card"><h3>Conversão da ficha</h3><p>Quantas pessoas que veem a ficha instalam. Capturas e gráfico de destaque decidem isso. Ficha que converte mais sobe mais.</p></div>
+    <div class="card"><h3>Avaliações e retenção</h3><p>Nota, número de avaliações e quantas pessoas continuam usando ou desinstalam. Avaliação legítima dentro do app ajuda as duas coisas.</p></div>
+    <div class="card"><h3>Qualidade técnica</h3><p>Acima de 1,09% de falhas ou 0,47% de travamentos (ANR) percebidos, o Google pode reduzir a visibilidade e até avisar na ficha que o app pode não funcionar bem. Confira em <b>Qualidade → Android vitals</b>.</p></div>
+  </div>
+</section>
+
+<section id="roadmap">
+  <div class="sec-head">
+    <span class="eyebrow">Roadmap</span>
+    <h2>De 36 para 80 em três etapas</h2>
+    <p>As etapas são uma sequência: a primeira não exige código e dá o maior salto; as seguintes dependem de ela estar no ar para medir resultado.</p>
+  </div>
+  <div class="roadmap">
+    <div class="phase">
+      <span class="when">Esta semana · sem código</span>
+      <h3>1. Arrumar a vitrine</h3>
+      <span class="target">36 → ~58</span>
+      <ol>
+        <li><b>Conferir as avaliações</b> no Console e responder às duas. <span class="tag">você</span></li>
+        <li><b>Novo título, descrição curta e completa</b>, colados desta página. <span class="tag">você</span></li>
+        <li><b>Oito capturas com legenda</b>, com dados de exemplo e sem avisos por cima. <span class="tag">eu gero</span></li>
+        <li><b>Novo gráfico de destaque</b>, com o app e sem selos. <span class="tag">eu gero</span></li>
+        <li><b>Conferir</b> que a captura em branco não está na loja e que a política de privacidade abre. <span class="tag">você</span></li>
+        <li><b>Atualizar <code>docs/play-store-ficha.md</code></b> com a ficha nova. <span class="tag">eu</span></li>
+      </ol>
+    </div>
+    <div class="phase">
+      <span class="when">2 a 4 semanas · com código</span>
+      <h3>2. Fazer a ficha trabalhar</h3>
+      <span class="target">~58 → ~70</span>
+      <ol>
+        <li><b>Pedido de avaliação dentro do app</b> (In-App Review) em momentos bons, no máximo 1 vez a cada 90 dias. <span class="tag">eu</span></li>
+        <li><b>Site em <code>app.financaspro.com</code></b> com página inicial, selo da Play e política; site informado na ficha. <span class="tag">eu + você</span></li>
+        <li><b>Experimento da ficha</b>: descrição curta A contra B; depois ícone atual contra uma variação. <span class="tag">você</span></li>
+        <li><b>"Novidades" escritas para o usuário</b> a cada versão, dizendo o que melhorou para ele. <span class="tag">eu redijo</span></li>
+        <li><b>Android vitals</b> abaixo dos limites, conferidos toda semana. <span class="tag">você</span></li>
+      </ol>
+    </div>
+    <div class="phase">
+      <span class="when">1 a 3 meses · crescimento</span>
+      <h3>3. Construir a marca</h3>
+      <span class="target">~70 → ~80</span>
+      <ol>
+        <li><b>Conteúdo promocional na Play</b> em datas de procura: 13º (nov/dez), metas de ano novo (jan), imposto de renda (mar a mai). <span class="tag">você</span></li>
+        <li><b>Vídeo de 30 s</b> no topo da ficha. <span class="tag">você</span></li>
+        <li><b>Artigos no site</b> sobre regra 50/30/20, controle do cartão e como sair do vermelho, todos com link para a Play. <span class="tag">eu redijo</span></li>
+        <li><b>Registro da marca no INPI</b> e perfis com o mesmo nome nas redes. <span class="tag">você</span></li>
+        <li><b>Ficha personalizada</b> para quem chega por campanha, e tradução para pt-PT se Portugal aparecer nas instalações. <span class="tag">você</span></li>
+      </ol>
+    </div>
+  </div>
+  <div class="note info">
+    <strong>Como medir</strong>
+    <p>No Console, acompanhe toda semana: <b>taxa de conversão da ficha</b> (visitantes que instalam), <b>termos de busca</b> que trazem instalações, <b>nota e número de avaliações</b>, <b>desinstalações</b> e <b>Android vitals</b>. Compare com a semana anterior à troca da ficha. Mudanças no texto levam alguns dias para refletir na busca.</p>
+  </div>
+</section>
+
+<section id="fontes">
+  <div class="sec-head">
+    <span class="eyebrow">Fontes</span>
+    <h2>Regras do Google usadas nesta auditoria</h2>
+  </div>
+  <ul class="sources">
+    <li><a href="https://support.google.com/googleplay/android-developer/answer/138230?hl=pt-BR">Ver e analisar as notas e avaliações do app (Ajuda do Play Console)</a>: atraso de cerca de 24 h e mínimo de avaliações para a nota.</li>
+    <li><a href="https://support.google.com/googleplay/answer/13870172?hl=en">About Google Play Reviews (Ajuda do Google Play)</a></li>
+    <li><a href="https://play.google/comment-posting-policy/">Política de comentários do Google Play</a>: avaliações falsas, incentivadas ou em nome de outros.</li>
+    <li><a href="https://android-developers.googleblog.com/2017/06/google-plays-policy-on-incentivized.html">Política do Google Play sobre avaliações e instalações incentivadas</a></li>
+    <li><a href="https://androidcentral.com/google-play-store-review-changes">Avaliações por país e por tipo de aparelho (Android Central)</a></li>
+    <li><a href="https://support.google.com/googleplay/android-developer/answer/9898842?hl=en">Metadata (Ajuda do Play Console)</a>: termos proibidos no título, ícone e nome do desenvolvedor.</li>
+    <li><a href="https://support.google.com/googleplay/android-developer/answer/13393723?hl=en">Best practices for your store listing (Ajuda do Play Console)</a></li>
+    <li><a href="https://developer.android.com/vitals">Android vitals</a> e <a href="https://android-developers.googleblog.com/2022/10/raising-bar-on-technical-quality-on-google-play.html">Raising the bar on technical quality on Google Play</a>: limites de falhas e travamentos.</li>
+    <li><a href="https://developer.android.com/guide/playcore/in-app-review">Google Play In-App Review API</a></li>
+  </ul>
+</section>
+
+<footer>
+  Auditoria de ficha da Play Store · FinançasPro 11.3.18 · 04/10/2026. Auditorias anteriores da loja: <a href="auditoria-play-store-2026-08-22.html">22/08</a> (prontidão para publicar) e <a href="auditoria-play-store-oculta-2026-09-01.html">01/09</a> (riscos de política).
+</footer>
+</div>
+
+<script>
+(function () {
+  var longa = document.getElementById('t-longa');
+  var contador = document.getElementById('c-longa');
+  if (longa && contador) contador.textContent = longa.textContent.length.toLocaleString('pt-BR') + ' / 4.000';
+
+  document.querySelectorAll('button.copy').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var alvo = document.getElementById(btn.getAttribute('data-alvo'));
+      if (!alvo) return;
+      var texto = alvo.textContent;
+      var ok = function () { btn.textContent = 'Copiado'; setTimeout(function () { btn.textContent = 'Copiar'; }, 1600); };
+      var selecionar = function () {
+        var r = document.createRange(); r.selectNodeContents(alvo);
+        var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+        btn.textContent = 'Selecionado: use Ctrl+C';
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(texto).then(ok, selecionar);
+      } else {
+        selecionar();
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>

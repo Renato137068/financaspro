@@ -3,20 +3,35 @@
  * SEM dependência externa e CSP-safe. Tudo opt-in via config.
  *
  * Ativação (via DADOS.getConfig()):
- *   obsErrorsEnabled: true            -> captura erros globais
- *   obsAnalyticsEnabled: true         -> registra eventos de produto
- *   obsEndpoint: 'https://.../ingest' -> envia beacons (opcional; senão só buffer local)
+ *   obsErrorsEnabled: false           -> NÃO envia relatórios de erro (o padrão
+ *                                        é enviar; o usuário desliga no Perfil)
+ *   obsAnalyticsEnabled: true         -> registra eventos de produto (opt-in)
+ *   obsEndpoint: 'https://.../ingest' -> endpoint próprio (sobrepõe o padrão)
+ *
+ * Erros vão por padrão para a Edge Function obs-ingest do Supabase (só no
+ * build de nuvem; no modo local nada sai do aparelho), no máximo MAX_ENVIOS
+ * por sessão. A função sanitiza e só aceita erros — analytics continua
+ * exigindo obsEndpoint explícito.
  *
  * Uso:
  *   OBS.captureError(err, { contexto: 'salvarTransacao' })
  *   OBS.track('transacao_criada', { tipo: 'despesa' })
  *   OBS.getBuffer()  // inspeção local (debug)
+ *   OBS.contarSessao() // aviso anônimo de uso, 1×/dia (chamado no boot)
  *
  * Privacidade: nunca serializa valores de transação nem PII por padrão.
- * Só envia se obsEndpoint estiver configurado e o usuário tiver consentido.
+ *
+ * Contagem de uso (painel de saúde): para saber quantos erros cada versão tem
+ * POR SESSÃO, o app avisa que foi aberto — no máximo uma vez por dia (UTC) por
+ * aparelho, só com a versão. Nada de usuário, id, horário ou dado financeiro;
+ * o servidor guarda só um contador por dia e versão, por 30 dias. Segue o
+ * mesmo opt-out e o mesmo destino dos relatórios de erro.
  */
 var OBS = (function() {
   var MAX_BUFFER = 50;
+  // Um erro em loop (render a cada frame) não pode virar uma rajada de envios.
+  var MAX_ENVIOS = 20;
+  var enviados = 0;
   var buffer = [];
   var started = false;
 
@@ -35,7 +50,7 @@ var OBS = (function() {
       kind: kind,
       ts: nowIso(),
       url: (location && location.pathname) || '',
-      app: (typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'v11'),
+      app: (typeof CONFIG !== 'undefined' && CONFIG.VERSION) || 'v11',
       data: payload || {}
     };
     buffer.push(entry);
@@ -43,15 +58,23 @@ var OBS = (function() {
     return entry;
   }
 
-  function beacon(entry) {
+  function endpoint(entry) {
     var c = cfg();
-    if (!c.obsEndpoint) return; // sem endpoint => só buffer local
+    if (c.obsEndpoint) return c.obsEndpoint;
+    var base = entry.kind === 'error' && typeof CONFIG !== 'undefined' && CONFIG.SUPABASE_URL;
+    return base ? base + '/functions/v1/obs-ingest' : '';
+  }
+
+  function beacon(entry) {
+    var url = endpoint(entry);
+    if (!url || enviados >= MAX_ENVIOS) return; // sem endpoint => só buffer local
+    enviados++;
     try {
       var body = JSON.stringify(entry);
       if (navigator && typeof navigator.sendBeacon === 'function') {
-        navigator.sendBeacon(c.obsEndpoint, body);
+        navigator.sendBeacon(url, body);
       } else if (typeof fetch === 'function') {
-        fetch(c.obsEndpoint, {
+        fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: body,
@@ -61,9 +84,53 @@ var OBS = (function() {
     } catch (e) { /* observabilidade nunca pode quebrar o app */ }
   }
 
+  var SESSAO_KEY = 'fp_obs_sessao_dia';
+
+  /** Dia em UTC (AAAA-MM-DD): o mesmo dia que o contador do servidor usa. */
+  function diaUtc() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  /**
+   * Avisa "o app foi aberto hoje nesta versão", uma vez por dia. Volta true se
+   * o aviso saiu. Não conta no limite de erros (MAX_ENVIOS) e não entra no
+   * buffer: não é um evento, é um tique no contador.
+   */
+  function contarSessao() {
+    try {
+      var c = cfg();
+      if (c.obsErrorsEnabled === false) return false;
+      // Coletor próprio (obsEndpoint) recebe erros, não este contador.
+      if (c.obsEndpoint) return false;
+      var base = typeof CONFIG !== 'undefined' && CONFIG.SUPABASE_URL;
+      var versao = typeof CONFIG !== 'undefined' && CONFIG.VERSION;
+      if (!base || !versao) return false; // modo local: nada sai do aparelho
+      var hoje = diaUtc();
+      if (localStorage.getItem(SESSAO_KEY) === hoje) return false;
+      // Marca antes de enviar: se o envio falhar, perde-se um tique — melhor
+      // que contar duas vezes.
+      localStorage.setItem(SESSAO_KEY, hoje);
+      var body = JSON.stringify({ kind: 'sessao', app: String(versao) });
+      var url = base + '/functions/v1/obs-ingest';
+      if (navigator && typeof navigator.sendBeacon === 'function') {
+        navigator.sendBeacon(url, body);
+      } else if (typeof fetch === 'function') {
+        fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: body,
+          keepalive: true
+        }).catch(function() {});
+      } else {
+        return false;
+      }
+      return true;
+    } catch (e) { return false; /* sem localStorage (modo privado) ou sem rede */ }
+  }
+
   function captureError(err, context) {
     try {
-      if (!cfg().obsErrorsEnabled) { push('error', shape(err, context)); return; }
+      if (cfg().obsErrorsEnabled === false) { push('error', shape(err, context)); return; }
       var entry = push('error', shape(err, context));
       beacon(entry);
     } catch (e) { /* noop */ }
@@ -183,6 +250,7 @@ var OBS = (function() {
   return {
     start: start,
     captureError: captureError,
+    contarSessao: contarSessao,
     track: track,
     getBuffer: function() { return buffer.slice(); },
     recordPerf: recordPerf,

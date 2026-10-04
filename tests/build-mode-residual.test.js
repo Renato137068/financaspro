@@ -4,8 +4,22 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+const { indexComTelas } = require('./helpers/index-com-telas.cjs');
+
+const os = require('os');
 
 const root = path.join(__dirname, '..');
+
+/**
+ * Cópia descartável do config.js. Os scripts reescrevem o arquivo; rodar contra
+ * o real fazia outro worker do jest ler um config.js pela metade.
+ */
+function copiaDoConfig() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fp-config-'));
+  const alvo = path.join(dir, 'config.js');
+  fs.copyFileSync(path.join(root, 'js/core/config.js'), alvo);
+  return alvo;
+}
 
 describe('Build mode local vs cloud', () => {
   test('config expõe FP_BUILD_MODE e BUILD_MODE', () => {
@@ -20,20 +34,22 @@ describe('Build mode local vs cloud', () => {
 
   test('set-build-mode alterna e restaura cloud', () => {
     const script = path.join(root, 'scripts/set-build-mode.cjs');
-    const cfgPath = path.join(root, 'js/core/config.js');
-    execSync('node "' + script + '" local', { stdio: 'pipe' });
+    const cfgPath = copiaDoConfig();
+    const env = { ...process.env, FP_CONFIG_PATH: cfgPath };
+    execSync('node "' + script + '" local', { stdio: 'pipe', env });
     expect(fs.readFileSync(cfgPath, 'utf8')).toContain("FP_BUILD_MODE = 'local'");
-    execSync('node "' + script + '" cloud', { stdio: 'pipe' });
+    execSync('node "' + script + '" cloud', { stdio: 'pipe', env });
     expect(fs.readFileSync(cfgPath, 'utf8')).toContain("FP_BUILD_MODE = 'cloud'");
   });
 
   test('inject-supabase-env sobrescreve e --clear restaura', () => {
     const script = path.join(root, 'scripts/inject-supabase-env.cjs');
-    const cfgPath = path.join(root, 'js/core/config.js');
+    const cfgPath = copiaDoConfig();
     execSync('node "' + script + '"', {
       stdio: 'pipe',
       env: {
         ...process.env,
+        FP_CONFIG_PATH: cfgPath,
         SUPABASE_URL: 'https://example-project.supabase.co',
         SUPABASE_ANON_KEY: 'test-anon-key',
       },
@@ -41,10 +57,18 @@ describe('Build mode local vs cloud', () => {
     let cfg = fs.readFileSync(cfgPath, 'utf8');
     expect(cfg).toContain("var _FP_ENV_URL = 'https://example-project.supabase.co'");
     expect(cfg).toContain("var _FP_ENV_ANON = 'test-anon-key'");
-    execSync('node "' + script + '" --clear', { stdio: 'pipe' });
+    execSync('node "' + script + '" --clear', { stdio: 'pipe', env: { ...process.env, FP_CONFIG_PATH: cfgPath } });
     cfg = fs.readFileSync(cfgPath, 'utf8');
     expect(cfg).toContain("var _FP_ENV_URL = ''");
     expect(cfg).toContain("var _FP_ENV_ANON = ''");
+  });
+
+  test('os scripts não tocam no config.js real quando recebem outro alvo', () => {
+    const real = path.join(root, 'js/core/config.js');
+    const antes = fs.readFileSync(real, 'utf8');
+    const env = { ...process.env, FP_CONFIG_PATH: copiaDoConfig() };
+    execSync('node "' + path.join(root, 'scripts/set-build-mode.cjs') + '" local', { stdio: 'pipe', env });
+    expect(fs.readFileSync(real, 'utf8')).toBe(antes);
   });
 
   test('package.json tem android:bundle:local e inject no build', () => {
@@ -78,26 +102,22 @@ describe('PIN flag plano + tema', () => {
 });
 
 describe('OCR desativado no produto', () => {
-  test('stub OCR sem Tesseract / câmera', () => {
-    const ocr = fs.readFileSync(path.join(root, 'js/ocr.js'), 'utf8');
-    expect(ocr).toMatch(/no-op|desativado|removido/i);
-    expect(ocr).not.toContain('tesseract.js@5.1.1');
-    expect(ocr).not.toContain('btn-ocr-scan');
+  test('sem stub OCR, Tesseract nem scripts de câmera no repositório', () => {
+    expect(fs.existsSync(path.join(root, 'js/ocr.js'))).toBe(false);
     expect(fs.existsSync(path.join(root, 'js/vendor/tesseract.min.js'))).toBe(false);
     expect(fs.existsSync(path.join(root, 'scripts/probe-ocr.cjs'))).toBe(false);
     expect(fs.existsSync(path.join(root, 'scripts/vendor-tesseract.cjs'))).toBe(false);
   });
 
   test('index não carrega ocr.js; lifecycle não chama OCR.init', () => {
-    const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+    const html = indexComTelas();
     const life = fs.readFileSync(path.join(root, 'js/core/lifecycle.js'), 'utf8');
     expect(html).not.toMatch(/src="js\/ocr\.js"/);
     expect(life).not.toMatch(/OCR\.init/);
   });
 
-  test('dados._apiAtiva é false em Capacitor nativo', () => {
-    const dados = fs.readFileSync(path.join(root, 'js/core/dados.js'), 'utf8');
-    expect(dados).toMatch(/isNativePlatform[\s\S]{0,120}return false/);
+  test('o cliente da API Express saiu do app (ADR 0007)', () => {
+    expect(fs.existsSync(path.join(root, 'js/core/dados-express.js'))).toBe(false);
   });
 
   test('authController não sugere localhost:4000', () => {
@@ -106,7 +126,7 @@ describe('OCR desativado no produto', () => {
   });
 
   test('billing portal/cancel no path Supabase usam Edge Functions', () => {
-    const billing = fs.readFileSync(path.join(root, 'js/billing.js'), 'utf8');
+    const billing = require('./helpers/esm-como-script.cjs').fonteComPartes(path.join(root, 'js/billing.js'));
     expect(billing).toContain('_supabaseAtivo');
     expect(billing).toMatch(/stripe-portal/);
     expect(billing).toMatch(/stripe-cancel/);
@@ -115,7 +135,7 @@ describe('OCR desativado no produto', () => {
   });
 
   test('dois trials distintos, cada um no seu canal', () => {
-    const billing = fs.readFileSync(path.join(root, 'js/billing.js'), 'utf8');
+    const billing = require('./helpers/esm-como-script.cjs').fonteComPartes(path.join(root, 'js/billing.js'));
     const initBilling = fs.readFileSync(path.join(root, 'js/modules/init-billing.js'), 'utf8');
     // 7 dias é o trial do SKU da loja; 14 é o Pro de boas-vindas, concedido
     // pelo backend sem cartão. São coisas diferentes e podem coexistir.
@@ -127,9 +147,9 @@ describe('OCR desativado no produto', () => {
 
   test('UI de equipe e aceite de convite no path Supabase', () => {
     const initBilling = fs.readFileSync(path.join(root, 'js/modules/init-billing.js'), 'utf8');
-    const billing = fs.readFileSync(path.join(root, 'js/billing.js'), 'utf8');
+    const billing = require('./helpers/esm-como-script.cjs').fonteComPartes(path.join(root, 'js/billing.js'));
     const supa = fs.readFileSync(path.join(root, 'js/core/supabase-billing.js'), 'utf8');
-    const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+    const index = indexComTelas();
     expect(initBilling).toMatch(/abrirEquipe/);
     expect(billing).toMatch(/inviteTeamMember/);
     expect(billing).toMatch(/org-invite/);
@@ -147,7 +167,7 @@ describe('OCR desativado no produto', () => {
   });
 
   test('lifecycle banner e revogar convite estão wired', () => {
-    const billing = fs.readFileSync(path.join(root, 'js/billing.js'), 'utf8');
+    const billing = require('./helpers/esm-como-script.cjs').fonteComPartes(path.join(root, 'js/billing.js'));
     const init = fs.readFileSync(path.join(root, 'js/modules/init-billing.js'), 'utf8');
     const nav = fs.readFileSync(path.join(root, 'js/modules/init-navigation.js'), 'utf8');
     expect(billing).toMatch(/getLifecycleAlert/);

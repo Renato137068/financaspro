@@ -1,7 +1,38 @@
 /**
  * lifecycle.js - Lifecycle manager para inicialização controlada
  * Registra módulos, gerencia dependências, retry, logs estruturados
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
+
+import { UTILS } from './utils.js';
+import { DOMUTILS } from './domUtils.js';
+import { AUTO_CATEGORIZER } from '../auto-categorizer.js';
+import { CATEGORIES } from '../categories.js';
+import { TRANSACOES } from '../transacoes.js';
+import { ORCAMENTO } from '../orcamento.js';
+import { RECORRENTES } from '../recorrentes.js';
+import { CONTAS_PAGAR } from '../contas-pagar.js';
+import { verificarBackupAutomatico } from '../services/healthService.js';
+import { INSIGHT_ACOES } from '../modules/insight-acoes.js';
+import { EVENT_INIT } from './event-bus.js';
+import { SHORTCUTS } from '../shortcuts.js';
+import { ALERTAS } from '../alertas.js';
+import { INSIGHTS } from '../insights.js';
+import { CONFIG_USER } from '../config-user.js';
+import { RENDER_CORE } from '../render-core.js';
+import { RENDER } from '../render.js';
+import { INIT_NAVIGATION } from '../modules/init-navigation.js';
+import { INIT_MODALS } from '../modules/init-modals.js';
+import { verificarPinAoAbrir } from '../pin.js';
+import { INIT_FORM } from '../modules/init-form.js';
+import { BILLING } from '../billing.js';
+import { setupAuthUI, atualizarBarraSessao, setupLogoutButton } from '../authController.js';
+import { DAILY_REMINDER } from '../utilities/daily-reminder.js';
+import { INIT_CONTAS_PAGAR } from '../modules/init-contas-pagar.js';
+import { APP_STORE } from './store.js';
+import { DADOS } from './dados.js';
 
 const LIFECYCLE = {
   // Registro de módulos
@@ -29,12 +60,12 @@ const LIFECYCLE = {
   register: function(name, initFn, options) {
     options = options || {};
 
-    if (this._modules.has(name)) {
+    if (LIFECYCLE._modules.has(name)) {
       console.warn('[LIFECYCLE] Módulo já registrado:', name);
       return false;
     }
 
-    this._modules.set(name, {
+    LIFECYCLE._modules.set(name, {
       name: name,
       init: initFn,
       depends: options.depends || [],
@@ -47,7 +78,7 @@ const LIFECYCLE = {
       duration: 0
     });
 
-    if (this._debug) {
+    if (LIFECYCLE._debug) {
       console.warn('[LIFECYCLE] Registrado:', name, 'deps:', options.depends || []);
     }
 
@@ -62,18 +93,18 @@ const LIFECYCLE = {
    * Inicializa todos os módulos em ordem de dependência
    */
   init: function() {
-    var self = this;
+    var self = LIFECYCLE;
     var startTime = performance.now();
-    this._initialized = [];
-    this._failed = [];
+    LIFECYCLE._initialized = [];
+    LIFECYCLE._failed = [];
 
     console.warn('[LIFECYCLE] Iniciando orquestração...');
 
     // Executar hooks beforeInit
-    this._runHooks('beforeInit');
+    LIFECYCLE._runHooks('beforeInit');
 
     // Resolver ordem de inicialização (topological sort)
-    var order = this._resolveOrder();
+    var order = LIFECYCLE._resolveOrder();
 
     if (!order) {
       return Promise.reject(new Error('Ciclo de dependências detectado!'));
@@ -114,31 +145,31 @@ const LIFECYCLE = {
    * Inicializa um módulo específico com retry
    */
   _initModule: function(name) {
-    var self = this;
-    var module = this._modules.get(name);
+    var self = LIFECYCLE;
+    var module = LIFECYCLE._modules.get(name);
     if (!module || module.initialized) return Promise.resolve();
 
     // Verificar dependências - incluindo falhas prévias
     for (var i = 0; i < module.depends.length; i++) {
       var dep = module.depends[i];
-      var depModule = this._modules.get(dep);
+      var depModule = LIFECYCLE._modules.get(dep);
 
       if (!depModule) {
         var error = 'Dependência não existe: ' + dep;
-        this._markFailed(module, error);
+        LIFECYCLE._markFailed(module, error);
         return module.critical ? Promise.reject({ critical: true, error: error }) : Promise.resolve();
       }
 
       if (!depModule.initialized) {
         // Verificar se dependência falhou
-        var depFailed = this._failed.find(function(f) { return f.name === dep; });
+        var depFailed = LIFECYCLE._failed.find(function(f) { return f.name === dep; });
         if (depFailed) {
-          var error = 'Dependência falhou: ' + dep + ' - ' + depFailed.error;
-          this._markFailed(module, error);
+          error = 'Dependência falhou: ' + dep + ' - ' + depFailed.error;
+          LIFECYCLE._markFailed(module, error);
           return module.critical ? Promise.reject({ critical: true, error: error }) : Promise.resolve();
         }
-        var error = 'Dependência não inicializada: ' + dep;
-        this._markFailed(module, error);
+        error = 'Dependência não inicializada: ' + dep;
+        LIFECYCLE._markFailed(module, error);
         return module.critical ? Promise.reject({ critical: true, error: error }) : Promise.resolve();
       }
     }
@@ -198,23 +229,29 @@ const LIFECYCLE = {
   _markSuccess: function(module) {
     module.initialized = true;
     module.error = null;
-    this._initialized.push(module.name);
+    LIFECYCLE._initialized.push(module.name);
 
-    if (this._debug) {
+    if (LIFECYCLE._debug) {
       console.warn('[LIFECYCLE] <i data-lucide="check"></i>', module.name, '(' + module.duration.toFixed(2) + 'ms)');
     }
   },
 
   _markFailed: function(module, error) {
     module.error = error;
-    this._failed.push({ name: module.name, error: error });
+    LIFECYCLE._failed.push({ name: module.name, error: error });
 
     // Executar hooks onError
-    this._runHooks('onError', { module: module.name, error: error });
+    LIFECYCLE._runHooks('onError', { module: module.name, error: error });
 
     if (module.critical) {
       console.error('[LIFECYCLE] ✗ CRÍTICO:', module.name, '-', error);
-      throw new Error('Falha crítica em ' + module.name + ': ' + error);
+      // `critical` é o que init() olha para interromper o boot. Sem a marca,
+      // a falha de um módulo crítico era engolida como não crítica: o boot
+      // seguia sem os dependentes e o app abria quebrado, sem o aviso de
+      // APP_BOOTSTRAP ("O app não conseguiu abrir").
+      var falha = new Error('Falha crítica em ' + module.name + ': ' + error);
+      falha.critical = true;
+      throw falha;
     } else {
       console.warn('[LIFECYCLE] ✗', module.name, '-', error, '(não crítico)');
     }
@@ -228,7 +265,7 @@ const LIFECYCLE = {
     var visited = new Set();
     var temp = new Set();
     var result = [];
-    var self = this;
+    var self = LIFECYCLE;
 
     var visit = function(name) {
       if (temp.has(name)) return false; // Ciclo detectado
@@ -251,7 +288,7 @@ const LIFECYCLE = {
 
     // ES5 compatible iteration
     var moduleNames = [];
-    this._modules.forEach(function(module, name) {
+    LIFECYCLE._modules.forEach(function(module, name) {
       moduleNames.push(name);
     });
 
@@ -267,19 +304,19 @@ const LIFECYCLE = {
   // ============================================================
 
   beforeInit: function(fn) {
-    this._hooks.beforeInit.push(fn);
+    LIFECYCLE._hooks.beforeInit.push(fn);
   },
 
   afterInit: function(fn) {
-    this._hooks.afterInit.push(fn);
+    LIFECYCLE._hooks.afterInit.push(fn);
   },
 
   onError: function(fn) {
-    this._hooks.onError.push(fn);
+    LIFECYCLE._hooks.onError.push(fn);
   },
 
   _runHooks: function(type, data) {
-    this._hooks[type].forEach(function(fn) {
+    LIFECYCLE._hooks[type].forEach(function(fn) {
       try {
         fn(data);
       } catch (e) {
@@ -299,12 +336,12 @@ const LIFECYCLE = {
   },
 
   setDebug: function(enabled) {
-    this._debug = enabled;
+    LIFECYCLE._debug = enabled;
   },
 
   getStatus: function() {
     var status = {};
-    this._modules.forEach(function(module, name) {
+    LIFECYCLE._modules.forEach(function(module, name) {
       status[name] = {
         initialized: module.initialized,
         attempts: module.attempts,
@@ -316,7 +353,7 @@ const LIFECYCLE = {
   },
 
   isInitialized: function(name) {
-    var module = this._modules.get(name);
+    var module = LIFECYCLE._modules.get(name);
     return module ? module.initialized : false;
   }
 };
@@ -368,6 +405,7 @@ const LIFECYCLE_BOOT = {
       if (typeof INIT_FORM !== 'undefined') INIT_FORM.init();
       if (typeof INIT_EXTRATO !== 'undefined') INIT_EXTRATO.init();
       if (typeof INIT_CONFIG !== 'undefined') INIT_CONFIG.init();
+      if (typeof INSIGHT_ACOES !== 'undefined') INSIGHT_ACOES.init();
       if (typeof INIT_MODALS !== 'undefined') INIT_MODALS.init();
       if (typeof METAS !== 'undefined') METAS.init();
       if (typeof INIT_METAS !== 'undefined') INIT_METAS.init();
@@ -383,7 +421,6 @@ const LIFECYCLE_BOOT = {
       if (typeof BILLING !== 'undefined') BILLING.init();
       if (typeof INIT_BILLING !== 'undefined') INIT_BILLING.init();
       if (typeof INIT_2FA !== 'undefined') INIT_2FA.init();
-      if (typeof INIT_OPEN_FINANCE !== 'undefined') INIT_OPEN_FINANCE.init();
     }, { depends: ['event-bus', 'render-core'], critical: false });
 
     // Finalização
@@ -442,11 +479,9 @@ const LIFECYCLE_BOOT = {
         if (typeof ONBOARDING !== 'undefined' && ONBOARDING.iniciar) ONBOARDING.iniciar();
       }, 400);
 
-      // Recorrentes devidas. Em modo local o próprio cliente materializa —
-      // até aqui isso dependia exclusivamente do worker BullMQ do backend, e
-      // quem usava o app offline cadastrava "Aluguel mensal" e nunca via o
-      // lançamento aparecer. Havendo sessão na nuvem, RECORRENTES.processar
-      // devolve vazio e o worker segue como dono do processo.
+      // Recorrentes devidas: o próprio cliente materializa, no modo local e na
+      // nuvem Supabase, que não tem worker de recorrência (ver
+      // RECORRENTES._ehModoLocal e docs/adr/0007).
       if (typeof RECORRENTES !== 'undefined' && RECORRENTES.processarNaAbertura) {
         try { RECORRENTES.processarNaAbertura(); } catch (e) {
           if (typeof OBS !== 'undefined' && OBS.captureError) {
@@ -454,6 +489,11 @@ const LIFECYCLE_BOOT = {
           }
         }
       }
+
+      // Painel de saúde: aviso anônimo de uso (1×/dia, só a versão; mesmo
+      // opt-out dos relatórios de erro). Aqui, e não no OBS, porque a
+      // preferência mora em DADOS, que só está pronto depois do boot.
+      if (typeof OBS !== 'undefined' && OBS.contarSessao) OBS.contarSessao();
 
       // Lembrete diário (se ativo e permissão concedida)
       setTimeout(function() {
@@ -487,7 +527,6 @@ const LIFECYCLE_BOOT = {
       // Fase 8: IA Nativa
       if (typeof ALERTAS !== 'undefined' && ALERTAS.init) ALERTAS.init();
       if (typeof PREVISAO !== 'undefined' && PREVISAO.init) PREVISAO.init();
-      // OCR/câmera removidos do produto — stub em js/ocr.js não injeta UI.
       if (typeof INSIGHTS !== 'undefined' && INSIGHTS.mostrarOrcamento) {
         setTimeout(function() { INSIGHTS.mostrarOrcamento(); }, 200);
       }
@@ -506,7 +545,4 @@ const LIFECYCLE_BOOT = {
   }
 };
 
-// Export
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { LIFECYCLE: LIFECYCLE, LIFECYCLE_BOOT: LIFECYCLE_BOOT };
-}
+export { LIFECYCLE, LIFECYCLE_BOOT };

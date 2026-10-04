@@ -2,9 +2,9 @@
  * resumo-anual.test.js — retrospectiva do ano compartilhável (RESUMO_ANUAL).
  * Módulo puro em vm com RELATORIOS/UTILS mockados.
  */
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
 
 const root = path.join(__dirname, '..');
 
@@ -15,8 +15,7 @@ function carregar(resumoAno) {
     UTILS: { formatarMoeda: function(v) { return 'R$ ' + Number(v).toFixed(2); } },
   };
   vm.createContext(ctx);
-  vm.runInContext(fs.readFileSync(path.join(root, 'js/resumo-anual.js'), 'utf8'), ctx,
-    { filename: path.join(root, 'js/resumo-anual.js') });
+  rodarNoContexto(ctx, path.join(root, 'js/resumo-anual.js'));
   return ctx.RESUMO_ANUAL;
 }
 

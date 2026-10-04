@@ -15,9 +15,10 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { indexComTelas } = require('./helpers/index-com-telas.cjs');
 
 const root = path.join(__dirname, '..');
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8')
+const html = indexComTelas()
   .replace(/<!--[\s\S]*?-->/g, ''); // comentários não contam
 
 /** Todos os campos interativos que o usuário realmente opera. */
@@ -755,9 +756,13 @@ describe('a11y — badges de confiança IA (aba Lançamentos)', () => {
  */
 describe('a11y — contraste do extrato (lista e KPIs)', () => {
   const AA = 4.5;
-  const extrato = fs.readFileSync(path.join(root, 'css', 'layouts', 'extrato.css'), 'utf8');
+  // O que só a tela do Extrato desenha mora em extrato-tela.css (chega com o
+  // chunk), inclusive os overrides do tema escuro dela.
+  const extrato = ['extrato.css', 'extrato-tela.css']
+    .map((f) => fs.readFileSync(path.join(root, 'css', 'layouts', f), 'utf8')).join('\n');
   const ds = fs.readFileSync(path.join(root, 'css', 'design-system.css'), 'utf8');
-  const dark = fs.readFileSync(path.join(root, 'css', 'themes', 'dark-mode.css'), 'utf8');
+  const dark = [path.join('themes', 'dark-mode.css'), path.join('layouts', 'extrato-tela.css')]
+    .map((f) => fs.readFileSync(path.join(root, 'css', f), 'utf8')).join('\n');
 
   function lerTokens(css, seletor) {
     const re = new RegExp(`${seletor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([\\s\\S]*?)\\n\\}`);
@@ -905,7 +910,11 @@ describe('a11y — contraste do extrato (lista e KPIs)', () => {
  * Documenta os elementos-chave de cada aba auditada (Resumo, Lançamentos, Extrato).
  */
 describe('a11y — padrão sistêmico de contraste no tema escuro', () => {
-  const dark = fs.readFileSync(path.join(root, 'css', 'themes', 'dark-mode.css'), 'utf8');
+  // Overrides escuros de superfícies que só uma tela sob demanda desenha foram
+  // com a folha da tela (layouts/*-tela.css).
+  const dark = [path.join('themes', 'dark-mode.css'),
+    ...['extrato', 'orcamento', 'config'].map((t) => path.join('layouts', t + '-tela.css'))]
+    .map((f) => fs.readFileSync(path.join(root, 'css', f), 'utf8')).join('\n');
 
   const superficiesAuditadas = [
     { aba: 'resumo', seletor: '.card-saldo-principal', obrigatorio: false },

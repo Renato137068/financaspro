@@ -30,7 +30,7 @@ function distDesatualizado() {
   const distMtime = fs.statSync(distSwPath).mtimeMs;
 
   let maisRecente = 0;
-  for (const dir of ['css', 'js', 'index.html']) {
+  for (const dir of ['css', 'js', 'telas', 'index.html']) {
     const alvo = path.join(root, dir);
     if (!fs.existsSync(alvo)) continue;
     (function varrer(p) {
@@ -88,8 +88,11 @@ descreveDist('service worker de produção — precache', () => {
   test('não precacheia os módulos individuais que já estão no bundle', () => {
     // Baixar js/core/store.js E js/app.bundle.js significa pagar duas vezes
     // pelo mesmo código.
+    // js/index-<hash>.js é o bundle dos ES Modules que o Vite gera (ADR 0005),
+    // não um módulo solto.
     const soltos = urls.filter(u => /^\/js\//.test(u))
-      .filter(u => !/(bundle|pin-guard)/.test(u));
+      .filter(u => !/(bundle|pin-guard)/.test(u))
+      .filter(u => !/^\/js\/index-[\w-]+\.js$/.test(u));
 
     expect(soltos).toEqual([]);
   });

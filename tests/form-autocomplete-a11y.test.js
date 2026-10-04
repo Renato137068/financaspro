@@ -5,10 +5,13 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { executarModulo } = require('./helpers/esm-como-script.cjs');
 
 const root = path.join(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-const formSrc = fs.readFileSync(path.join(root, 'js', 'modules', 'init-form.js'), 'utf8');
+// setupAutocomplete mora em form-sugestoes.js, que init-form.js mistura em INIT_FORM.
+const sugArquivo = path.join(root, 'js', 'modules', 'form-sugestoes.js');
+const sugSrc = fs.readFileSync(sugArquivo, 'utf8');
 
 describe('P1.1 — autocomplete combobox (markup)', function() {
   test('input tem role combobox e liga a listbox', function() {
@@ -25,7 +28,7 @@ describe('P1.1 — autocomplete combobox (markup)', function() {
   });
 
   test('setupAutocomplete implementa setas, Enter e Esc', function() {
-    const bloco = formSrc.match(/setupAutocomplete:\s*function\s*\(\)\s*\{[\s\S]*?\n  \},/);
+    const bloco = sugSrc.match(/setupAutocomplete:\s*function\s*\(\)\s*\{[\s\S]*?\n  \},/);
     expect(bloco).toBeTruthy();
     expect(bloco[0]).toMatch(/ArrowDown/);
     expect(bloco[0]).toMatch(/ArrowUp/);
@@ -69,24 +72,15 @@ describe('P1.1 — navegação por teclado (runtime)', function() {
       Event: Event
     };
     sandbox.globalThis = sandbox;
-    // init-form usa const INIT_FORM — forçar var para o sandbox
-    var code = formSrc.replace(/\bconst INIT_FORM =/, 'var INIT_FORM =');
     var ctx = vm.createContext(sandbox);
-    try {
-      vm.runInContext(code, ctx, { filename: path.join(root, 'js', 'modules', 'init-form.js') });
-      INIT_FORM = sandbox.INIT_FORM || ctx.INIT_FORM;
-    } catch (e) {
-      // Se o módulo inteiro não carrega (deps), o teste de markup acima já cobre o contrato.
-      INIT_FORM = null;
-    }
+    // Como no navegador: form-sugestoes.js importa init-form.js e copia as
+    // sugestões para INIT_FORM ao carregar.
+    executarModulo(ctx, sugArquivo);
+    INIT_FORM = sandbox.INIT_FORM;
   });
 
   test('setas e Enter selecionam opção; Esc fecha', function() {
-    if (!INIT_FORM || !INIT_FORM.setupAutocomplete) {
-      // Fallback: contrato estático já validado no bloco anterior
-      expect(formSrc).toMatch(/aria-activedescendant/);
-      return;
-    }
+    expect(typeof INIT_FORM.setupAutocomplete).toBe('function');
 
     document.body.innerHTML =
       '<input id="novo-descricao" role="combobox" aria-expanded="false" aria-controls="autocomplete-list">' +

@@ -248,6 +248,7 @@
 
 .previsao-card-row {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   gap: 4px;
@@ -255,9 +256,13 @@
 
 .previsao-label { font-size: var(--font-size-xs); color: var(--color-text-muted); }
 
+/* Em celular estreito o card tem ~140px: o valor desce para a linha de baixo
+   em vez de vazar pela borda ("R$ 4.062,2" cortado). */
 .previsao-valor {
   font-size: var(--font-size-sm);
   font-weight: 600;
+  white-space: nowrap;
+  margin-left: auto;
 }
 .previsao-valor.receita { color: var(--color-success-text); }
 .previsao-valor.despesa { color: var(--color-danger-text); }

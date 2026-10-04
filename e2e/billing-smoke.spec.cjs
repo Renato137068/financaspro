@@ -1,19 +1,17 @@
 /**
  * e2e/billing-smoke.spec.cjs — paywall/soft AI sem Stripe real.
- * Fonte (4322): INIT_BILLING vem de script clássico, não do lazy bundle do dist.
+ * Fonte (4322): o INIT_BILLING chega com o chunk 'conta' (ES Module sob
+ * demanda, como no build), pedido pelo caminho do app.
  */
 const { test, expect } = require('@playwright/test');
-const { seedOfflineStorage, dismissOverlays } = require('./helpers.cjs');
+const { seedOfflineStorage, dismissOverlays, carregarChunkConta } = require('./helpers.cjs');
 
 test.use({ baseURL: 'http://127.0.0.1:4322' });
 
 async function bootBilling(page) {
   await seedOfflineStorage(page);
   await page.goto('/?offline=1');
-  await page.waitForFunction(function() {
-    return typeof INIT_BILLING !== 'undefined'
-      && typeof INIT_BILLING.abrirPaywall === 'function';
-  }, { timeout: 30000 });
+  await carregarChunkConta(page);
   await dismissOverlays(page);
 }
 

@@ -2,7 +2,7 @@
 //
 // Port de backend/domain/services/play-billing.service.js.
 // Verificação e sincronização de entitlement do Google Play.
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import type { SupabaseClient } from "npm:@supabase/supabase-js@2.117.2";
 import { getSubscriptionV2 } from "./google-play.ts";
 import {
   findByPlayPurchaseToken,

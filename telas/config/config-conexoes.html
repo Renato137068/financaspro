@@ -1,0 +1,29 @@
+<!-- Tela "config-conexoes" (#aba-config-conexoes). Vem no chunk lazy "config": scripts/generate-telas.cjs
+     gera js/telas/config.js a partir deste arquivo. Rode `npm run telas:gerar` depois de editar. -->
+<div class="perfil-header">
+  <div class="perfil-avatar-wrapper">
+    <div class="perfil-avatar" style="background: var(--color-primary-500);" aria-hidden="true"><i data-lucide="landmark"></i></div>
+  </div>
+  <div class="perfil-info">
+    <h2 class="perfil-nome">Bancos e conexões</h2>
+    <div class="perfil-meta"><span>Contas e cartões</span></div>
+  </div>
+  <div class="perfil-actions">
+    <button class="perfil-action-btn" data-action="mudar-aba" data-aba="config" aria-label="Perfil e configurações">
+      <i data-lucide="arrow-left" aria-hidden="true"></i>
+    </button>
+  </div>
+</div>
+<div class="perfil-section">
+  <div class="perfil-cards-grid">
+    <button type="button" class="perfil-card" data-action="abrir-config-bancos" aria-label="Gerenciar bancos e cartões">
+      <div class="perfil-card-icon-wrapper"><i data-lucide="landmark" aria-hidden="true"></i></div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Bancos e cartões</span>
+        <span class="perfil-card-subtitle" id="perfil-bancos-display">Nenhum cadastrado</span>
+      </div>
+      <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
+    </button>
+  </div>
+</div>
+

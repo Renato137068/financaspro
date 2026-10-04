@@ -1,14 +1,25 @@
 /**
  * init-metas.js — UI de metas financeiras
+ *
+ * ES Module (ADR 0005): chega sob demanda no chunk 'metas'
+ * (js/esm/chunks/metas.js, via LAZY.load), que o publica em window.
  */
+
+import { UTILS } from '../core/utils.js';
+import { compartilharTextoUI } from '../utilities/share-texto.js';
+import { PLANO_METAS } from '../plano-metas.js';
+import { RENDER_DASHBOARD } from '../render-dashboard.js';
+import { INIT_MODALS } from './init-modals.js';
+import { METAS } from '../metas.js';
+
 const INIT_METAS = {
   _bound: false,
   _pendenteExclusao: {},
 
   init: function() {
-    if (this._bound) return;
-    this._bound = true;
-    var self = this;
+    if (INIT_METAS._bound) return;
+    INIT_METAS._bound = true;
+    var self = INIT_METAS;
     document.addEventListener('click', function(e) {
       var btn = e.target.closest('[data-action]');
       if (!btn) return;
@@ -97,9 +108,9 @@ const INIT_METAS = {
 
     return '<article class="meta-card' + (compact ? ' meta-card--compact' : '') + (prog.concluida ? ' meta-card--done' : urgClass) + '">' +
       '<div class="meta-card-header">' +
-        '<span class="meta-card-icon">' + this._iconHtml(meta.icone) + '</span>' +
+        '<span class="meta-card-icon">' + INIT_METAS._iconHtml(meta.icone) + '</span>' +
         '<div class="meta-card-titles">' +
-          '<h4 class="meta-card-title">' + UTILS.escapeHtml(this._tituloMeta(meta)) + '</h4>' +
+          '<h4 class="meta-card-title">' + UTILS.escapeHtml(INIT_METAS._tituloMeta(meta)) + '</h4>' +
           (prazoTxt ? '<span class="meta-card-prazo">' + UTILS.escapeHtml(prazoTxt) + '</span>' : '') +
         '</div>' +
         '<span class="meta-card-pct">' + prog.percentual + '%</span>' +
@@ -138,7 +149,7 @@ const INIT_METAS = {
    * reusar a projeção em vez de recalculá-la. Não muta o array recebido.
    */
   _projecoesOrdenadas: function(metas) {
-    var self = this;
+    var self = INIT_METAS;
     var arr = metas.map(function(m) {
       return { meta: m, prog: METAS.calcularProjecao(m) };
     });
@@ -153,7 +164,7 @@ const INIT_METAS = {
   renderOrcamento: function() {
     var el = document.getElementById('metas-list');
     if (!el || typeof METAS === 'undefined') return;
-    var ordenadas = this._projecoesOrdenadas(METAS.listar().filter(function(m) {
+    var ordenadas = INIT_METAS._projecoesOrdenadas(METAS.listar().filter(function(m) {
       return !INIT_METAS._pendenteExclusao[m.id];
     }));
     // Empty state tem UMA CTA principal ("Criar primeira meta"): esconde o grupo
@@ -165,7 +176,7 @@ const INIT_METAS = {
       if (headerAcoes) headerAcoes.hidden = true;
       if (headerBtn) headerBtn.hidden = true;
       el.innerHTML = '<div class="meta-empty">' +
-        '<div class="meta-empty-icon">' + this._iconHtml('target') + '</div>' +
+        '<div class="meta-empty-icon">' + INIT_METAS._iconHtml('target') + '</div>' +
         '<p class="meta-empty-title">Nenhuma meta ainda</p>' +
         '<p class="meta-empty-desc">Crie metas para viagem, reserva de emergência, carro ou qualquer objetivo.</p>' +
         '<button type="button" class="btn-primario" data-action="meta-nova">Criar primeira meta</button>' +
@@ -182,7 +193,7 @@ const INIT_METAS = {
     var el = document.getElementById('dashboard-metas-resumo');
     var sec = document.getElementById('secao-metas-resumo');
     if (!el || typeof METAS === 'undefined') return;
-    var ativas = this._projecoesOrdenadas(METAS.listar(true).filter(function(m) {
+    var ativas = INIT_METAS._projecoesOrdenadas(METAS.listar(true).filter(function(m) {
       return !INIT_METAS._pendenteExclusao[m.id];
     })).slice(0, 3);
     if (sec) sec.style.display = METAS.listar().length === 0 ? 'none' : '';
@@ -210,7 +221,7 @@ const INIT_METAS = {
   },
 
   _formMetaHtml: function(meta) {
-    var titulo = meta ? this._tituloMeta(meta) : '';
+    var titulo = meta ? INIT_METAS._tituloMeta(meta) : '';
     var valorAlvo = meta && meta.valorAlvo != null ? UTILS.formatarMoeda(meta.valorAlvo).replace(/^R\$\s?/, '') : '';
     var valorAtual = meta && meta.valorAtual != null ? UTILS.formatarMoeda(meta.valorAtual).replace(/^R\$\s?/, '') : '';
     var prazo = meta && meta.prazo ? String(meta.prazo).slice(0, 10) : '';
@@ -227,7 +238,7 @@ const INIT_METAS = {
       '<label class="form-label" for="meta-prazo">Prazo (opcional)</label>' +
       '<input type="date" id="meta-prazo" class="form-input" value="' + UTILS.escapeHtml(prazo) + '">' +
       '<label class="form-label" for="meta-icone">Ícone</label>' +
-      '<select id="meta-icone" class="form-input">' + this._iconesOptionsHtml(icone) + '</select>' +
+      '<select id="meta-icone" class="form-input">' + INIT_METAS._iconesOptionsHtml(icone) + '</select>' +
     '</div>';
   },
 
@@ -254,9 +265,9 @@ const INIT_METAS = {
   },
 
   abrirFormNova: function() {
-    var self = this;
+    var self = INIT_METAS;
     if (typeof INIT_MODALS === 'undefined' || !INIT_MODALS.fpAlert) return;
-    INIT_MODALS.fpAlert(this._formMetaHtml(null), {
+    INIT_MODALS.fpAlert(INIT_METAS._formMetaHtml(null), {
       trustedHtml: true,
       title: 'Nova meta financeira',
       okLabel: 'Criar meta',
@@ -280,9 +291,9 @@ const INIT_METAS = {
   abrirFormEditar: function(metaId) {
     var meta = METAS.obter(metaId);
     if (!meta) return;
-    var self = this;
+    var self = INIT_METAS;
     if (typeof INIT_MODALS === 'undefined' || !INIT_MODALS.fpAlert) return;
-    INIT_MODALS.fpAlert(this._formMetaHtml(meta), {
+    INIT_MODALS.fpAlert(INIT_METAS._formMetaHtml(meta), {
       trustedHtml: true,
       title: 'Editar meta',
       okLabel: 'Salvar',
@@ -310,14 +321,14 @@ const INIT_METAS = {
     var prog = METAS.calcularProgresso(meta);
     var html =
       '<div class="meta-form meta-form--aporte">' +
-        '<p class="meta-aporte-lead">Aporte em <strong>' + UTILS.escapeHtml(this._tituloMeta(meta)) + '</strong></p>' +
+        '<p class="meta-aporte-lead">Aporte em <strong>' + UTILS.escapeHtml(INIT_METAS._tituloMeta(meta)) + '</strong></p>' +
         '<p class="meta-aporte-restante">Faltam ' + UTILS.formatarMoeda(prog.restante) + '</p>' +
         '<label class="form-label" for="meta-aporte-valor">Valor do aporte (R$)</label>' +
         '<input type="text" id="meta-aporte-valor" class="form-input campo-moeda" placeholder="0,00" inputmode="decimal" autocomplete="off">' +
         '<p class="campo-moeda-preview" id="meta-aporte-preview" hidden></p>' +
       '</div>';
 
-    var self = this;
+    var self = INIT_METAS;
     INIT_MODALS.fpAlert(html, {
       trustedHtml: true,
       title: 'Registrar aporte',
@@ -349,8 +360,8 @@ const INIT_METAS = {
   confirmarExcluir: function(metaId) {
     var meta = METAS.obter(metaId);
     if (!meta) return;
-    var self = this;
-    var msg = 'Excluir a meta "' + this._tituloMeta(meta) + '"?';
+    var self = INIT_METAS;
+    var msg = 'Excluir a meta "' + INIT_METAS._tituloMeta(meta) + '"?';
     var efetivar = function() {
       self._pendenteExclusao[metaId] = true;
       self.renderOrcamento();
@@ -378,10 +389,6 @@ const INIT_METAS = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = INIT_METAS;
-}
-
 /* P2.5: dashboard notifica inscritos — ordem 10 (metas primeiro) */
 (function() {
   if (typeof RENDER_DASHBOARD === 'undefined' || !RENDER_DASHBOARD.onRender) return;
@@ -391,3 +398,6 @@ if (typeof module !== 'undefined' && module.exports) {
     if (INIT_METAS.renderResumo) INIT_METAS.renderResumo();
   }, 10);
 })();
+
+export { INIT_METAS };
+export default INIT_METAS;

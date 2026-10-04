@@ -6,7 +6,9 @@
  * categoria corrigida realmente passar a ser sugerida — era o que estava
  * quebrado (a alternativa correta nunca concorria com a primária errada).
  */
-const APRENDIZADO = require('../js/aprendizado.js');
+const { carregarScript, viaGlobal } = require('./helpers/carregar-script.cjs');
+// BILLING repassa ao global de cada teste: sem ele, _podeAprender() → true.
+const APRENDIZADO = carregarScript('js/aprendizado.js', viaGlobal('BILLING'));
 
 beforeEach(function() {
   global.DADOS = { obterAprendizado: function() { return {}; }, salvarAprendizado: function() {} };

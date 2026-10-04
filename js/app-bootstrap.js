@@ -2,13 +2,21 @@
  * app-bootstrap.js — Orquestrador de inicialização
  * Responsabilidade única: delegar ao LIFECYCLE e reagir ao resultado.
  * Toda a lógica de módulos vive em lifecycle.js (LIFECYCLE_BOOT).
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
 
-var APP_BOOTSTRAP = {
+import { UTILS } from './core/utils.js';
+import { FUNIL } from './utilities/funil.js';
+import { mudarAba } from './modules/init-navigation.js';
+import { LIFECYCLE, LIFECYCLE_BOOT } from './core/lifecycle.js';
+
+const APP_BOOTSTRAP = {
   _initialized: false,
 
   inicializar: function() {
-    if (this._initialized) {
+    if (APP_BOOTSTRAP._initialized) {
       console.warn('[BOOT] Já inicializado, ignorando...');
       return;
     }
@@ -18,11 +26,11 @@ var APP_BOOTSTRAP = {
       return;
     }
 
-    this._orquestrar();
+    APP_BOOTSTRAP._orquestrar();
   },
 
   _orquestrar: function() {
-    var self = this;
+    var self = APP_BOOTSTRAP;
 
     // Antes de qualquer módulo: é o passo 1 do funil e o marco que data todos
     // os outros ("no dia N de uso, ele encontrou o gate X").
@@ -54,7 +62,6 @@ var APP_BOOTSTRAP = {
         UTILS.tentar('bootstrap.mudarAba', function() { mudarAba(abaParam); },
           { dados: { aba: abaParam } });
         }
-        self._handleBelvoReturn();
       })
       .catch(function(e) {
         console.error('[BOOT] Falha crítica na inicialização:', e && e.message || e);
@@ -62,28 +69,6 @@ var APP_BOOTSTRAP = {
           UTILS.mostrarToast('O app não conseguiu abrir. Recarregue a página — seus dados continuam salvos.', 'error');
         }
       });
-  },
-
-  _handleBelvoReturn: function() {
-    if (typeof window === 'undefined' || typeof OPEN_FINANCE === 'undefined') return;
-    var params = new URLSearchParams(window.location.search);
-    if (!params.get('belvo')) return;
-
-    OPEN_FINANCE.handleBelvoCallback(params).then(function(conn) {
-      var clean = window.location.pathname + window.location.hash;
-      window.history.replaceState({}, '', clean);
-      if (conn && typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
-        UTILS.mostrarToast('Conta bancária conectada via Belvo.', 'success');
-      }
-      if (typeof INIT_OPEN_FINANCE !== 'undefined' && INIT_OPEN_FINANCE.refreshCard) {
-        INIT_OPEN_FINANCE.refreshCard();
-      }
-    }).catch(function(err) {
-      window.history.replaceState({}, '', window.location.pathname + window.location.hash);
-      if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
-        UTILS.mostrarToast(err.message || 'Falha ao concluir conexão Belvo.', 'error');
-      }
-    });
   }
 };
 
@@ -97,6 +82,5 @@ if (typeof window !== 'undefined') {
   }
 }
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = APP_BOOTSTRAP;
-}
+export { APP_BOOTSTRAP };
+export default APP_BOOTSTRAP;

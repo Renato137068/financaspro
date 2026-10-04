@@ -2,25 +2,19 @@
 
 Depois das melhorias de monetização (portal, cancel, org-invite, Resend, RPC de convite).
 
-## 1. Migration
+## 1 e 2. Migrations e Functions
+
+A cada tag `vX.Y.Z`, o workflow de release publica as duas coisas
+([`docs/release/entrega-continua.md`](release/entrega-continua.md)). À mão, é o
+mesmo script — ele lê as funções de `supabase/functions/` e sabe quais sobem
+com `--no-verify-jwt`:
 
 ```bash
-npx supabase db push
-# inclui 20260903140000_fp_accept_org_invitation.sql
+node scripts/deploy-supabase.cjs --dry-run   # confere os comandos
+node scripts/deploy-supabase.cjs             # db push + todas as funções
 ```
 
-## 2. Functions
-
-```bash
-npx supabase functions deploy stripe-checkout
-npx supabase functions deploy stripe-portal
-npx supabase functions deploy stripe-cancel
-npx supabase functions deploy org-invite
-npx supabase functions deploy welcome-trial
-npx supabase functions deploy stripe-webhook --no-verify-jwt
-npx supabase functions deploy play-verify
-npx supabase functions deploy play-rtdn --no-verify-jwt
-```
+(Precisa de `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF` e `SUPABASE_DB_PASSWORD`.)
 
 ## 3. Secrets
 

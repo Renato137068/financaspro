@@ -6,12 +6,7 @@
  * lifecycle — estava com 0% de cobertura. Carrega o módulo de produção num
  * contexto vm com um DADOS em memória como dependência das categorias custom.
  */
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
-
-const FILE = path.join(__dirname, '..', 'js', 'categories.js');
-const SRC = fs.readFileSync(FILE, 'utf8');
+const { carregarScript } = require('./helpers/carregar-script.cjs');
 
 /** Carrega uma instância fresca de CATEGORIES com DADOS/BILLING injetáveis. */
 function loadCategories(opts) {
@@ -21,14 +16,10 @@ function loadCategories(opts) {
     getConfig: function() { return store; },
     salvarConfig: function(patch) { Object.assign(store, patch); },
   };
-  // categories.js declara `const CATEGORIES` (não vira global do vm); capturamos
-  // pela linha module.exports, fornecendo um module no contexto.
-  var ctx = { Date, Math, Number, String, Array, Object, JSON, console, module: { exports: {} } };
-  ctx.DADOS = DADOS;
-  if (opts.BILLING) ctx.BILLING = opts.BILLING;
-  vm.createContext(ctx);
-  vm.runInContext(SRC, ctx, { filename: FILE });
-  return { C: ctx.module.exports, store: store };
+  // categories.js é ES Module (ADR 0005); DADOS e BILLING, globais clássicos,
+  // entram pelo sandbox.
+  var extras = { DADOS: DADOS, BILLING: opts.BILLING };
+  return { C: carregarScript('js/categories.js', extras), store: store };
 }
 
 describe('CATEGORIES — resolução padrão', () => {

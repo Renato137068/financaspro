@@ -1,11 +1,14 @@
 /**
- * password-policy.js — regras de senha alinhadas ao backend (registerSchema).
+ * password-policy.js — regras de senha do cadastro.
  * Tier 0. Sem dependências.
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
-var PASSWORD_POLICY = {
+const PASSWORD_POLICY = {
   MIN: 8,
   MAX: 128,
-  /** Mesmo regex de backend/middleware/validate.js */
+  /** Pelo menos um número ou caractere especial. */
   REQUIRES: /[0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/,
   HINT: 'Mínimo 8 caracteres, com pelo menos um número ou caractere especial',
 
@@ -50,10 +53,10 @@ var PASSWORD_POLICY = {
   },
 
   ehComum: function(senha) {
-    var n = this._normalizar(senha);
+    var n = PASSWORD_POLICY._normalizar(senha);
     if (!n) return false;
-    if (this._trivial(n)) return true;
-    return this.COMUNS.indexOf(n) >= 0;
+    if (PASSWORD_POLICY._trivial(n)) return true;
+    return PASSWORD_POLICY.COMUNS.indexOf(n) >= 0;
   },
 
   /**
@@ -64,7 +67,7 @@ var PASSWORD_POLICY = {
   forca: function(senha) {
     var s = String(senha == null ? '' : senha);
     if (!s) return { nota: 0, rotulo: '' };
-    if (this.ehComum(s)) return { nota: 0, rotulo: 'Muito fraca — senha conhecida' };
+    if (PASSWORD_POLICY.ehComum(s)) return { nota: 0, rotulo: 'Muito fraca — senha conhecida' };
 
     var pontos = 0;
     if (s.length >= 8) pontos++;
@@ -85,16 +88,16 @@ var PASSWORD_POLICY = {
 
   validar: function(senha) {
     var s = String(senha == null ? '' : senha);
-    if (s.length < this.MIN) {
+    if (s.length < PASSWORD_POLICY.MIN) {
       return { valido: false, erro: 'Senha deve ter pelo menos 8 caracteres' };
     }
-    if (s.length > this.MAX) {
+    if (s.length > PASSWORD_POLICY.MAX) {
       return { valido: false, erro: 'Senha muito longa' };
     }
-    if (!this.REQUIRES.test(s)) {
+    if (!PASSWORD_POLICY.REQUIRES.test(s)) {
       return { valido: false, erro: 'Senha deve conter pelo menos um número ou caractere especial' };
     }
-    if (this.ehComum(s)) {
+    if (PASSWORD_POLICY.ehComum(s)) {
       return {
         valido: false,
         erro: 'Essa senha é conhecida por atacantes. Escolha outra que só você usaria.',
@@ -104,6 +107,5 @@ var PASSWORD_POLICY = {
   },
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = PASSWORD_POLICY;
-}
+export { PASSWORD_POLICY };
+export default PASSWORD_POLICY;

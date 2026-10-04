@@ -119,3 +119,7 @@
   color: var(--color-info-text);
   margin-left: 4px;
 }
+
+/* Botão de ver comprovante na linha do extrato: mesmo visual do selo, sem a
+   caixa de 44px do .btn-anexo (a linha inteira já é o alvo de toque da edição;
+   aqui basta um alvo próprio que não empurre a data e as tags). */

@@ -1,23 +1,23 @@
 /**
  * billing-soft-ai-invite.test.js — soft paywall local + invite sem bypass Edge.
  */
+const { carregarScript } = require('./helpers/carregar-script.cjs');
+const { regrasDoBilling } = require('./helpers/billing-regras.cjs');
 const fs = require('fs');
 const path = require('path');
-const billingHelpers = require('../js/billing.js');
+const billingHelpers = regrasDoBilling(carregarScript('js/billing.js'));
 
 describe('OCR removido do produto', function() {
-  test('cota OCR é noop (Infinity) em qualquer tier', function() {
-    var free = billingHelpers.ocrQuota({ usesConsumed: 99, tier: 'FREE', consume: true });
-    expect(free.remaining).toBe(Infinity);
-    expect(free.remainingAfter).toBe(Infinity);
-    var pro = billingHelpers.ocrQuota({ usesConsumed: 0, tier: 'PRO' });
-    expect(pro.remaining).toBe(Infinity);
+  test('sem maquinaria de cota OCR no runtime', function() {
+    const billing = require('./helpers/esm-como-script.cjs').fonteComPartes(path.join(__dirname, '..', 'js/billing.js'));
+    expect(billing).not.toMatch(/ocrRemaining|consumeOcrUse|_OCR_USES_KEY|fp-ocr-uses/);
+    expect(billingHelpers.ocrQuota).toBeUndefined();
   });
 });
 
 describe('Invite Edge — sem bypass silencioso', function() {
   test('client não faz fallback para inviteMember em 404/503', function() {
-    const billing = fs.readFileSync(path.join(__dirname, '..', 'js/billing.js'), 'utf8');
+    const billing = require('./helpers/esm-como-script.cjs').fonteComPartes(path.join(__dirname, '..', 'js/billing.js'));
     expect(billing).toMatch(/org-invite-unavailable/);
     expect(billing).toMatch(/Serviço de convites indisponível/);
     // Não deve chamar inviteMember no catch do org-invite

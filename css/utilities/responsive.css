@@ -37,21 +37,6 @@ html {
     font-size: var(--font-size-lg);
     overflow-wrap: anywhere;
   }
-
-  .ordenacao-container {
-    flex-wrap: wrap;
-    gap: var(--space-2);
-  }
-
-  .extrato-periodo {
-    gap: var(--space-2);
-  }
-
-  .periodo-label {
-    font-size: var(--font-size-sm);
-    min-width: 0;
-    overflow-wrap: anywhere;
-  }
 }
 
 /* ── Mobile small (< 480px) ───────────────────────────────── */

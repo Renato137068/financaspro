@@ -1,0 +1,119 @@
+<!-- Tela "config-seguranca" (#aba-config-seguranca). Vem no chunk lazy "config": scripts/generate-telas.cjs
+     gera js/telas/config.js a partir deste arquivo. Rode `npm run telas:gerar` depois de editar. -->
+<div class="perfil-header">
+  <div class="perfil-avatar-wrapper">
+    <div class="perfil-avatar" style="background: var(--color-primary-500);" aria-hidden="true"><i data-lucide="shield-check"></i></div>
+  </div>
+  <div class="perfil-info">
+    <h2 class="perfil-nome">Segurança</h2>
+    <div class="perfil-meta"><span>Proteção deste aparelho e da sua conta</span></div>
+  </div>
+  <div class="perfil-actions">
+    <button class="perfil-action-btn" data-action="mudar-aba" data-aba="config" aria-label="Perfil e configurações">
+      <i data-lucide="arrow-left" aria-hidden="true"></i>
+    </button>
+  </div>
+</div>
+<div class="perfil-section">
+  <div class="perfil-cards-grid">
+    <div class="perfil-card perfil-card-toggle">
+      <div class="perfil-card-icon-wrapper">
+        <i data-lucide="lock" aria-hidden="true"></i>
+      </div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Proteção por PIN</span>
+        <span class="perfil-card-subtitle" id="perfil-pin-toggle-status">Desativado</span>
+        <span class="perfil-card-hint">Oculta saldos ao abrir o app neste aparelho. Não criptografa dados contra acesso técnico.</span>
+      </div>
+      <label class="perfil-switch">
+        <input type="checkbox" id="chk-pin" aria-label="Ativar proteção por PIN">
+        <span class="perfil-switch-slider"></span>
+      </label>
+    </div>
+
+    <div class="perfil-card perfil-card-toggle" id="perfil-biometric-card" data-requer-nuvem hidden>
+      <div class="perfil-card-icon-wrapper">
+        <i data-lucide="fingerprint" aria-hidden="true"></i>
+      </div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Entrar com biometria</span>
+        <span class="perfil-card-subtitle" id="perfil-biometric-status">Disponível no app Android</span>
+        <span class="perfil-card-hint">Desbloqueia sua conta com digital ou reconhecimento facial neste aparelho.</span>
+      </div>
+      <label class="perfil-switch">
+        <input type="checkbox" id="chk-biometric" aria-label="Ativar login com biometria">
+        <span class="perfil-switch-slider"></span>
+      </label>
+    </div>
+
+    <div class="perfil-card perfil-card-toggle" id="perfil-2fa-card" data-requer-nuvem>
+      <div class="perfil-card-icon-wrapper">
+        <i data-lucide="shield-check" aria-hidden="true"></i>
+      </div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Verificação em duas etapas</span>
+        <span class="perfil-card-subtitle" id="perfil-2fa-status">Requer login na nuvem</span>
+      </div>
+      <label class="perfil-switch">
+        <input type="checkbox" id="chk-2fa" aria-label="Ativar verificação em duas etapas">
+        <span class="perfil-switch-slider"></span>
+      </label>
+    </div>
+
+    <div class="perfil-card perfil-recovery-card" id="perfil-recovery-card" hidden>
+      <div class="perfil-card-icon-wrapper">
+        <i data-lucide="key-round" aria-hidden="true"></i>
+      </div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Códigos de recuperação</span>
+        <span class="perfil-card-subtitle" id="perfil-recovery-status">—</span>
+      </div>
+      <button type="button" class="btn-ghost perfil-recovery-btn" id="btn-recovery-gerar">Gerar novos</button>
+    </div>
+
+    <div class="perfil-card" id="perfil-sessoes-card" data-requer-nuvem>
+      <div class="perfil-card-icon-wrapper">
+        <i data-lucide="monitor-smartphone" aria-hidden="true"></i>
+      </div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Sessões em outros aparelhos</span>
+        <span class="perfil-card-subtitle" id="perfil-sessoes-status">Desconectar todos, menos este</span>
+      </div>
+      <button type="button" class="btn-ghost perfil-recovery-btn" id="btn-sair-outros">Desconectar</button>
+    </div>
+
+    <div class="perfil-card perfil-card-toggle" id="perfil-crypto-card">
+      <div class="perfil-card-icon-wrapper">
+        <i data-lucide="shield" aria-hidden="true"></i>
+      </div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Cifrar dados no dispositivo</span>
+        <span class="perfil-card-subtitle" id="perfil-crypto-status">Desativada</span>
+        <!-- O texto do estado é montado em init-config.js e diz de onde vem
+             a chave. Sem passphrase do usuário ela fica neste dispositivo,
+             e o rótulo precisa refletir isso em vez de sugerir uma garantia
+             que o desenho não dá. -->
+        <span class="perfil-card-hint">AES-GCM nos dados salvos no aparelho: lançamentos, configurações e anexos. Protege o armazenamento no aparelho contra acesso técnico; não cobre XSS.</span>
+      </div>
+      <label class="perfil-switch">
+        <input type="checkbox" id="chk-crypto" aria-label="Cifrar dados armazenados no dispositivo">
+        <span class="perfil-switch-slider"></span>
+      </label>
+    </div>
+
+    <div class="perfil-card perfil-card-toggle">
+      <div class="perfil-card-icon-wrapper">
+        <i data-lucide="alert-triangle" aria-hidden="true"></i>
+      </div>
+      <div class="perfil-card-content">
+        <span class="perfil-card-title">Enviar relatórios de erro</span>
+        <span class="perfil-card-hint">Quando algo falha, envia a mensagem técnica do erro para corrigirmos; uma vez por dia, avisa só a versão do app em uso. Sem valores, descrições ou e-mail.</span>
+      </div>
+      <label class="perfil-switch">
+        <input type="checkbox" id="chk-obs-erros" aria-label="Enviar relatórios de erro">
+        <span class="perfil-switch-slider"></span>
+      </label>
+    </div>
+  </div>
+</div>
+

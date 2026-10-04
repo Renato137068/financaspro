@@ -114,7 +114,6 @@ describe('parsing de dinheiro — guarda no código', () => {
     const PERMITIDOS = new Set([
       'js/core/utils.js',          // é a implementação
       'js/micro-interactions.js',  // máscara de digitação, outro propósito
-      'js/ocr.js',                 // normaliza texto reconhecido, não input
       'js/parser.js',              // tokeniza linguagem natural
       'js/modules/init-form.js',   // máscara do campo principal
       'js/modules/init-orcamento.js',

@@ -1,7 +1,13 @@
 /**
  * local-crypto.js — criptografia opcional at-rest no localStorage (Web Crypto)
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
-var LOCAL_CRYPTO = {
+
+import { DADOS } from '../core/dados.js';
+
+const LOCAL_CRYPTO = {
   _keyPromise: null,
 
   // Flag de cifragem at-rest guardado numa chave PLANA, FORA do prefixo 'fp-'.
@@ -51,7 +57,7 @@ var LOCAL_CRYPTO = {
   /** Indica se a cifragem at-rest está ligada (flag plano + suporte a WebCrypto). */
   isEnabled: function() {
     try {
-      return localStorage.getItem(this._ENABLED_KEY) === '1'
+      return localStorage.getItem(LOCAL_CRYPTO._ENABLED_KEY) === '1'
         && typeof crypto !== 'undefined' && !!crypto.subtle;
     } catch (e) {
       return false;
@@ -68,10 +74,10 @@ var LOCAL_CRYPTO = {
    */
   setEnabled: function(on) {
     try {
-      if (on) localStorage.setItem(this._ENABLED_KEY, '1');
-      else localStorage.removeItem(this._ENABLED_KEY);
+      if (on) localStorage.setItem(LOCAL_CRYPTO._ENABLED_KEY, '1');
+      else localStorage.removeItem(LOCAL_CRYPTO._ENABLED_KEY);
     } catch (e) { /* storage indisponível — mantém desligado */ }
-    return this.isEnabled();
+    return LOCAL_CRYPTO.isEnabled();
   },
 
   // Material de chave guardado FORA do prefixo 'fp-' para não ser cifrado pela
@@ -100,10 +106,10 @@ var LOCAL_CRYPTO = {
   _material: function() {
     var salt = null, dev = null;
     try {
-      salt = localStorage.getItem(this._SALT_KEY);
-      if (!salt) { salt = this._randHex(16); localStorage.setItem(this._SALT_KEY, salt); }
-      dev = localStorage.getItem(this._DEV_KEY);
-      if (!dev) { dev = this._randHex(32); localStorage.setItem(this._DEV_KEY, dev); }
+      salt = localStorage.getItem(LOCAL_CRYPTO._SALT_KEY);
+      if (!salt) { salt = LOCAL_CRYPTO._randHex(16); localStorage.setItem(LOCAL_CRYPTO._SALT_KEY, salt); }
+      dev = localStorage.getItem(LOCAL_CRYPTO._DEV_KEY);
+      if (!dev) { dev = LOCAL_CRYPTO._randHex(32); localStorage.setItem(LOCAL_CRYPTO._DEV_KEY, dev); }
     } catch (e) { /* storage indisponível */ }
     var cfg = typeof DADOS !== 'undefined' ? DADOS.getConfig() : {};
     /* Passphrase real do usuário tem prioridade; senão, segredo aleatório do
@@ -152,14 +158,14 @@ var LOCAL_CRYPTO = {
   _keyMats: null,
 
   _deriveKey: function(versao) {
-    var self = this;
-    var v = versao || this._VERSAO_ATUAL;
-    var m = this._material();
+    var self = LOCAL_CRYPTO;
+    var v = versao || LOCAL_CRYPTO._VERSAO_ATUAL;
+    var m = LOCAL_CRYPTO._material();
     var matId = m.passphrase + '|' + m.saltHex;
 
-    if (!this._keyPromises) { this._keyPromises = {}; this._keyMats = {}; }
-    if (this._keyPromises[v] && this._keyMats[v] === matId) return this._keyPromises[v];
-    this._keyMats[v] = matId;
+    if (!LOCAL_CRYPTO._keyPromises) { LOCAL_CRYPTO._keyPromises = {}; LOCAL_CRYPTO._keyMats = {}; }
+    if (LOCAL_CRYPTO._keyPromises[v] && LOCAL_CRYPTO._keyMats[v] === matId) return LOCAL_CRYPTO._keyPromises[v];
+    LOCAL_CRYPTO._keyMats[v] = matId;
 
     var p = crypto.subtle.importKey(
       'raw', new TextEncoder().encode(m.passphrase), { name: 'PBKDF2' }, false, ['deriveKey']
@@ -177,7 +183,7 @@ var LOCAL_CRYPTO = {
     p.catch(function() {
       if (self._keyPromises[v] === p) { self._keyPromises[v] = null; self._keyMats[v] = null; }
     });
-    this._keyPromises[v] = p;
+    LOCAL_CRYPTO._keyPromises[v] = p;
     return p;
   },
 
@@ -187,21 +193,21 @@ var LOCAL_CRYPTO = {
   // torna ilegível todo dado cifrado no formato 'enc1'. Coberto por teste.
   _PASSE_LEGADO: 'financaspro',
   _deriveLegacyKey: function() {
-    if (this._legacyKeyPromise) return this._legacyKeyPromise;
+    if (LOCAL_CRYPTO._legacyKeyPromise) return LOCAL_CRYPTO._legacyKeyPromise;
     var cfg = typeof DADOS !== 'undefined' ? DADOS.getConfig() : {};
-    var base = (cfg.cryptoPassphrase || cfg.nome || this._PASSE_LEGADO) + '|' + (cfg._deviceId || 'local');
-    this._legacyKeyPromise = crypto.subtle.digest('SHA-256', new TextEncoder().encode(base))
+    var base = (cfg.cryptoPassphrase || cfg.nome || LOCAL_CRYPTO._PASSE_LEGADO) + '|' + (cfg._deviceId || 'local');
+    LOCAL_CRYPTO._legacyKeyPromise = crypto.subtle.digest('SHA-256', new TextEncoder().encode(base))
       .then(function(raw) {
         return crypto.subtle.importKey('raw', raw, { name: 'AES-GCM' }, false, ['decrypt']);
       });
-    return this._legacyKeyPromise;
+    return LOCAL_CRYPTO._legacyKeyPromise;
   },
 
   encrypt: function(plain) {
-    if (!this.isEnabled()) return Promise.resolve(plain);
-    var self = this;
+    if (!LOCAL_CRYPTO.isEnabled()) return Promise.resolve(plain);
+    var self = LOCAL_CRYPTO;
     var iv = crypto.getRandomValues(new Uint8Array(12));
-    return this._deriveKey(this._VERSAO_ATUAL).then(function(key) {
+    return LOCAL_CRYPTO._deriveKey(LOCAL_CRYPTO._VERSAO_ATUAL).then(function(key) {
       return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, new TextEncoder().encode(plain));
     }).then(function(cipher) {
       var ivHex = Array.from(iv).map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
@@ -212,8 +218,8 @@ var LOCAL_CRYPTO = {
 
   decrypt: function(value) {
     if (!value || typeof value !== 'string') return Promise.resolve(value);
-    if (!this.isEncrypted(value)) return Promise.resolve(value);
-    if (!this.isEnabled()) return Promise.resolve(value);
+    if (!LOCAL_CRYPTO.isEncrypted(value)) return Promise.resolve(value);
+    if (!LOCAL_CRYPTO.isEnabled()) return Promise.resolve(value);
 
     var parts = value.split(':');
     if (parts.length !== 3) return Promise.resolve(value);
@@ -224,11 +230,11 @@ var LOCAL_CRYPTO = {
     var versao, iv, data, keyPromise;
     try {
       versao = parts[0];
-      iv = this._hexToBytes(parts[1]);
-      data = this._hexToBytes(parts[2]);
+      iv = LOCAL_CRYPTO._hexToBytes(parts[1]);
+      data = LOCAL_CRYPTO._hexToBytes(parts[2]);
       keyPromise = versao === 'enc1'
-        ? this._deriveLegacyKey()
-        : this._deriveKey(versao);
+        ? LOCAL_CRYPTO._deriveLegacyKey()
+        : LOCAL_CRYPTO._deriveKey(versao);
     } catch (e) {
       return Promise.resolve(value);
     }
@@ -246,20 +252,19 @@ var LOCAL_CRYPTO = {
   },
 
   wrapStorageValue: function(key, value) {
-    if (!this.isEnabled() || key.indexOf('fp-') !== 0) {
+    if (!LOCAL_CRYPTO.isEnabled() || key.indexOf('fp-') !== 0) {
       return Promise.resolve(value);
     }
-    return this.encrypt(value);
+    return LOCAL_CRYPTO.encrypt(value);
   },
 
   unwrapStorageValue: function(key, value) {
-    if (!this.isEnabled() || key.indexOf('fp-') !== 0) {
+    if (!LOCAL_CRYPTO.isEnabled() || key.indexOf('fp-') !== 0) {
       return Promise.resolve(value);
     }
-    return this.decrypt(value);
+    return LOCAL_CRYPTO.decrypt(value);
   },
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = LOCAL_CRYPTO;
-}
+export { LOCAL_CRYPTO };
+export default LOCAL_CRYPTO;

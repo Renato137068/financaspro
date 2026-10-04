@@ -1,7 +1,19 @@
 /**
  * authController.js - UI de autenticacao e sessao.
  * Login em duas etapas (e-mail → senha) estilo app financeiro.
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
+
+import { UTILS } from './core/utils.js';
+import { PASSWORD_POLICY } from './core/password-policy.js';
+import { VALIDATIONS } from './core/validations.js';
+import { TablistKeyboard } from './utilities/tablist-keyboard.js';
+import { INIT_MODALS } from './modules/init-modals.js';
+import { BILLING } from './billing.js';
+import { AUTH_BIOMETRIC } from './auth-biometric.js';
+import { DADOS } from './core/dados.js';
 
 var _authFocusTrap = null;
 var _authDesbloqueadoNestaCarga = false;
@@ -1092,42 +1104,11 @@ function setupAuthUI() {
     return false;
   }
 
-  var sessao = DADOS.getSessao();
-  if (sessao && sessao.user) {
-    if (DADOS._apiAtiva()) {
-      DADOS.validarSessaoApi().then(function(ok) {
-        if (ok && _authEstaDesbloqueado()) {
-          _fecharAuthOverlay(overlay);
-        } else if (ok) {
-          _abrirAuthOverlay(overlay);
-          _mostrarDesbloqueioSessao();
-        } else {
-          _abrirAuthOverlay(overlay);
-          showTab('login');
-        }
-        atualizarBarraSessao();
-      });
-      return false;
-    }
-    _fecharAuthOverlay(overlay);
-    showTab('login');
-    atualizarBarraSessao();
-    return true;
-  }
-
-  if (!DADOS._apiAtiva()) {
-    _fecharAuthOverlay(overlay);
-    showTab('login');
-    atualizarBarraSessao();
-    return true;
-  }
-
-  _abrirAuthOverlay(overlay);
+  // Sem Supabase (build local) não há conta: o app abre direto.
+  _fecharAuthOverlay(overlay);
   showTab('login');
   atualizarBarraSessao();
-  setupLogoutButton();
-  _atualizarBotaoSairAuth();
-  return false;
+  return true;
 }
 
 /** Ao voltar do background, pede senha/biometria de novo (estilo app bancário). */
@@ -1194,25 +1175,27 @@ function _atualizarBotaoSairAuth() {
 }
 
 function setupLogoutButton() {
-  var btn = document.getElementById('btn-logout');
-  if (!btn || btn.dataset.logoutBound === '1') return;
-  btn.dataset.logoutBound = '1';
-  btn.addEventListener('click', sairDaConta);
-
-  var authExit = document.getElementById('auth-exit-btn');
-  if (authExit && authExit.dataset.logoutBound !== '1') {
-    authExit.dataset.logoutBound = '1';
-    authExit.addEventListener('click', sairDaConta);
-  }
+  // Os dois botões são independentes: o do Perfil (#btn-logout) chega com o
+  // chunk 'config' (js/core/telas.js); o do overlay de login está no núcleo.
+  // Ligar um não pode depender de o outro já existir.
+  ['btn-logout', 'auth-exit-btn'].forEach(function(id) {
+    var btn = document.getElementById(id);
+    if (!btn || btn.dataset.logoutBound === '1') return;
+    btn.dataset.logoutBound = '1';
+    btn.addEventListener('click', sairDaConta);
+  });
 }
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = {
-    setupAuthUI: setupAuthUI,
-    authLimparAoSair: authLimparAoSair,
-    atualizarBarraSessao: atualizarBarraSessao,
-    setupLogoutButton: setupLogoutButton,
-    sairDaConta: sairDaConta,
-    authResendCooldown: authResendCooldown,
-  };
+// A tela do Perfil chega depois do boot: liga o botão de sair e o rótulo da sessão.
+if (typeof document !== 'undefined') {
+  document.addEventListener('fp:tela-carregada', function(e) {
+    if (e.detail.nome !== 'config') return;
+    setupLogoutButton();
+    atualizarBarraSessao();
+  });
 }
+
+export {
+  setupAuthUI, authLimparAoSair, atualizarBarraSessao, setupLogoutButton, sairDaConta,
+  authResendCooldown, _abrirAuthOverlay
+};

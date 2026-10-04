@@ -4,10 +4,17 @@
  * Só aparece quando algo precisa de atenção (offline, falha, pendente,
  * conflito). Estados saudáveis (local/ok) ficam silenciosos para não poluir
  * cada abertura do app. Toasts de progresso só após o boot inicial.
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
-(function() {
-  'use strict';
 
+import { UTILS } from '../core/utils.js';
+import { BILLING } from '../billing.js';
+import { APP_STORE } from '../core/store.js';
+import { DADOS } from '../core/dados.js';
+
+const SYNC_INDICATOR = (function() {
   var DISMISS_KEY = 'fp-sync-indicator-dismissed';
   var BOOT_GRACE_MS = 3500;
   var _lastCls = '';
@@ -239,11 +246,21 @@
     }
   }
 
+  // Espera o DOMContentLoaded mesmo com o documento já analisado: módulo roda
+  // antes dos scripts clássicos, e iniciar() assina o APP_STORE, que é um deles.
   if (typeof document !== 'undefined') {
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', iniciar);
-    } else {
+    if (document.readyState === 'complete') {
       iniciar();
+    } else {
+      document.addEventListener('DOMContentLoaded', iniciar);
     }
   }
+
+  return {
+    render: render,
+    classificar: classificar,
+    lerStatus: lerStatus
+  };
 })();
+
+export { SYNC_INDICATOR };

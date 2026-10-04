@@ -1,8 +1,18 @@
 /**
  * pipeline.js - Unified processing pipeline
+ *
+ * ES Module (ADR 0005): os scripts clássicos o recebem como global por
+ * js/esm/ponte.js.
  */
 
-var PIPELINE = {
+import { DOMUTILS } from './core/domUtils.js';
+import { SCORE } from './score.js';
+import { CATEGORIZADOR } from './categorizador.js';
+import { PARSER } from './parser.js';
+import { APRENDIZADO } from './aprendizado.js';
+import { CONTAS } from './contas.js';
+
+const PIPELINE = {
   processar: function(input) {
     if (!input || input.length < 2) return null;
 
@@ -62,8 +72,8 @@ var PIPELINE = {
       if (typeof atualizarTipoIndicator === 'function') atualizarTipoIndicator(r.tipo);
     }
 
-    this._setSelectComOpcao('novo-banco', r.banco);
-    this._setSelectComOpcao('novo-cartao', r.cartao);
+    PIPELINE._setSelectComOpcao('novo-banco', r.banco);
+    PIPELINE._setSelectComOpcao('novo-cartao', r.cartao);
 
     var vEl = document.getElementById('novo-valor');
     if (r.valor && vEl && !vEl.value) {
@@ -79,6 +89,5 @@ var PIPELINE = {
   }
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = PIPELINE;
-}
+export { PIPELINE };
+export default PIPELINE;

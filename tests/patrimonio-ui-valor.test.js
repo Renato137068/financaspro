@@ -12,6 +12,7 @@
  * atribuição de cobertura e derrubaria os limiares por-arquivo desses arquivos.
  * @jest-environment jsdom
  */
+const { carregarScript } = require('./helpers/carregar-script.cjs');
 const { loadCoreModules, resetFixtures } = require('./load-sources');
 
 loadCoreModules();
@@ -22,7 +23,10 @@ const DADOS = global.DADOS;
 // init-patrimonio.js não tem require de utils/patrimonio (referencia globais),
 // então carregá-lo por require não instrumenta os arquivos do core.
 global.INIT_MODALS = { fpAlert: function() {}, confirm: function(_m, fn) { fn(); } };
-const INIT_PATRIMONIO = require('../js/modules/init-patrimonio.js');
+// ES Module: os imports são os módulos do load-sources (mesma instância).
+const INIT_PATRIMONIO = carregarScript('js/modules/init-patrimonio.js', {
+  UTILS: UTILS, PATRIMONIO: PATRIMONIO, INIT_MODALS: global.INIT_MODALS, RENDER_DASHBOARD: undefined,
+});
 
 var toasts = [];
 UTILS.mostrarToast = function(msg, tipo) { toasts.push({ msg: msg, tipo: tipo }); };

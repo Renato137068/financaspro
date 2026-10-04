@@ -353,6 +353,11 @@
   overflow: hidden;
 }
 
+/* Era de themes/dark-mode.css: veio com a folha, que chega com o chunk. */
+[data-theme="dark"] .onb-progress-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
 .onb-progress-fill {
   height: 100%;
   background: var(--gradient-primary);

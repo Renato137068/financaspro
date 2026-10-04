@@ -1,6 +1,8 @@
 /**
- * plan-limits-parity.test.js — limites de plano iguais em JS, Express e SQL.
+ * plan-limits-parity.test.js — limites de plano iguais em JS e SQL.
  */
+const { carregarScript } = require('./helpers/carregar-script.cjs');
+const { regrasDoBilling } = require('./helpers/billing-regras.cjs');
 const fs = require('fs');
 const path = require('path');
 
@@ -8,11 +10,11 @@ const ROOT = path.join(__dirname, '..');
 const CANONICAL = JSON.parse(
   fs.readFileSync(path.join(ROOT, 'config/plan-limits.json'), 'utf8'),
 );
-const billing = require('../js/billing.js');
+const billing = regrasDoBilling(carregarScript('js/billing.js'));
 
 /**
  * Todas as chaves do contrato de plano. Manter esta lista fechada e o que
- * impede um limite novo de nascer em billing.js e nunca chegar ao backend --
+ * impede um limite novo de nascer em billing.js e nunca chegar ao banco --
  * o modo como as duas tabelas divergiram da ultima vez.
  */
 const FIELDS = [
@@ -120,5 +122,31 @@ describe('PLAN_LIMITS — paridade', function() {
         expect(sqlLimits[tier][field]).toBe(CANONICAL[tier][field]);
       });
     });
+  });
+});
+
+describe('supabase/seed/planos.sql — linhas da tabela Plan', function() {
+  // As Edge Functions leem maxUsers da linha do plano (convite de equipe:
+  // org-invite). A semente substituiu o seed do Express (ADR 0007) e não pode
+  // divergir do contrato.
+  const sql = fs.readFileSync(path.join(ROOT, 'supabase/seed/planos.sql'), 'utf8');
+  function linha(tier) {
+    const m = sql.match(new RegExp("'[^']+', '" + tier + "', ([\\d.]+), ([\\d.]+), (\\d+), (\\d+), (\\d+), (\\d+)"));
+    expect(m).not.toBeNull();
+    return { priceMonthly: Number(m[1]), priceYearly: Number(m[2]), maxUsers: Number(m[3]) };
+  }
+
+  test.each(['FREE', 'PRO', 'BUSINESS'])('maxUsers de %s bate com config/plan-limits.json (0 = ilimitado)', function(tier) {
+    const esperado = CANONICAL[tier].maxUsers === null ? 0 : CANONICAL[tier].maxUsers;
+    expect(linha(tier).maxUsers).toBe(esperado);
+  });
+
+  test('preço do Pro igual ao da vitrine (R$ 16,99 / R$ 129,99)', function() {
+    expect(linha('PRO')).toMatchObject({ priceMonthly: 16.99, priceYearly: 129.99 });
+  });
+
+  test('idempotente e sem apagar o ID de preço do Stripe', function() {
+    expect(sql).toMatch(/on conflict \(tier\) do update set/);
+    expect(sql.slice(sql.indexOf('on conflict'))).not.toMatch(/stripePriceId\w+"\s*=/);
   });
 });

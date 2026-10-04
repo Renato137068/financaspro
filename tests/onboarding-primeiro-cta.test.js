@@ -4,10 +4,10 @@
 /**
  * @jest-environment jsdom
  */
-const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const { loadCoreModules, resetFixtures } = require('./load-sources');
+const { rodarNoContexto } = require('./helpers/esm-como-script.cjs');
 
 var sandbox;
 
@@ -32,8 +32,8 @@ beforeAll(function() {
   };
   sandbox.globalThis = sandbox;
   var ctx = vm.createContext(sandbox);
-  var code = fs.readFileSync(path.join(__dirname, '..', 'js', 'onboarding.js'), 'utf8');
-  vm.runInContext(code, ctx, { filename: path.join(__dirname, '..', 'js', 'onboarding.js') });
+  // ES Module (chunk sob demanda): o que o sandbox tem entra como dublê dos imports.
+  rodarNoContexto(ctx, path.join(__dirname, '..', 'js', 'onboarding.js'));
   global.ONBOARDING = sandbox.ONBOARDING;
 });
 
