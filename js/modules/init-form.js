@@ -22,6 +22,7 @@ import { SCORE } from '../score.js';
 import { APRENDIZADO } from '../aprendizado.js';
 import { TRANSACOES } from '../transacoes.js';
 import { ORCAMENTO } from '../orcamento.js';
+import { CATEGORIES } from '../categories.js';
 import { CONTAS } from '../contas.js';
 import { PIPELINE } from '../pipeline.js';
 import { PERSIST_QUEUE } from '../core/persist-queue.js';
@@ -903,7 +904,9 @@ const INIT_FORM = {
     // antes eram valores da paleta clara cravados aqui, que não mudavam no
     // modo escuro. Aplicados inline em background/color — var() resolve normal.
     var cor = pctNovo > 100 ? 'var(--color-danger)' : pctNovo > 80 ? 'var(--color-warning)' : 'var(--color-success)';
-    var nomeCategoria = cat.charAt(0).toUpperCase() + cat.slice(1);
+    // Nome que a pessoa lê ('Alimentação'), inclusive de categoria criada por
+    // ela; o slug capitalizado aparecia como 'ALIMENTACAO' na prévia.
+    var nomeCategoria = CATEGORIES.getLabel(cat);
 
     el.innerHTML = '<div class="orc-preview-card">' +
       '<div class="orc-preview-header">' +
