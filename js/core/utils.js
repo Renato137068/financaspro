@@ -348,7 +348,10 @@ const UTILS = {
         } else {
           preview.hidden = false;
           preview.classList.remove('campo-moeda-preview--erro');
-          preview.textContent = 'Você está salvando ' + UTILS.formatarMoeda(valor);
+          // Confirmação neutra: o mesmo campo serve a despesa, limite de cartão,
+          // dívida e meta. "Você está salvando R$ 48,90" numa despesa lia como
+          // "economizando".
+          preview.textContent = 'Valor: ' + UTILS.formatarMoeda(valor);
         }
       }
       if (typeof opts.onChange === 'function') opts.onChange(valor, raw);

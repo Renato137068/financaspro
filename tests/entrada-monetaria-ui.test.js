@@ -44,7 +44,10 @@ describe('UTILS.bindCampoMoeda — preview e blur', function() {
     var prev = document.getElementById('prev');
     expect(prev.hidden).toBe(false);
     expect(prev.textContent).toMatch(/6\.000,00/);
-    expect(prev.textContent).not.toMatch(/^Você está salvando R\$\s*60,00$/);
+    expect(prev.textContent).not.toMatch(/60,00$/);
+    // Neutro: o campo serve a despesa, limite, dívida e meta.
+    expect(prev.textContent).toMatch(/^Valor: R\$\s*6\.000,00$/);
+    expect(prev.textContent).not.toMatch(/salvando/i);
 
     input.dispatchEvent(new Event('blur', { bubbles: true }));
     expect(global.UTILS.parseMoeda(input.value)).toBe(6000);

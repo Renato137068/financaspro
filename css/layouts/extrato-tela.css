@@ -862,6 +862,10 @@
   color: var(--color-text-primary);
   margin-bottom: var(--space-1);
   line-height: var(--line-height-tight);
+  /* Palavra longa num celular de 360px ("Supermercado") passava por baixo do
+     valor; agora quebra com hífen dentro da coluna. */
+  overflow-wrap: anywhere;
+  hyphens: auto;
 }
 
 .ext-tx-meta {
