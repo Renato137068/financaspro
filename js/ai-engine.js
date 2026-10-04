@@ -399,6 +399,29 @@ const AI_ENGINE = {
    * @param {Object} config — DADOS.getConfig()
    * @returns {Array} [{ id, tipo, titulo, msg, gravidade, acao, parametros }]
    */
+  /**
+   * Limite de um orçamento como o app grava ({ limite, definidoEm }, de
+   * BUDGET_SERVICE.setBudget) ou no formato antigo (o número puro).
+   *
+   * Lia só o número: com o formato atual, Number({...}) dava NaN, o limite
+   * virava 0 e "Orçamento quase no limite" / "excedido" nunca disparavam para
+   * quem definiu o orçamento pelo app. O teste passava porque usava o formato
+   * antigo.
+   */
+  _limiteOrcamento: function(entrada) {
+    var bruto = (entrada && typeof entrada === 'object') ? entrada.limite : entrada;
+    var n = Number(bruto);
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  },
+
+  /** Nome da categoria como a pessoa lê ("Alimentação"), não o slug ("Alimentacao"). */
+  _nomeCategoria: function(cat) {
+    var nomes = (typeof CONFIG !== 'undefined' && CONFIG.CATEGORIAS_LABELS) || {};
+    if (nomes[cat]) return nomes[cat];
+    var s = String(cat || '').replace(/_/g, ' ');
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  },
+
   gerarAlertas: function(transacoes, config, hoje) {
     config = config || {};
     var alertas  = [];
@@ -423,15 +446,16 @@ const AI_ENGINE = {
     var catsMes = AI_ENGINE.agregarPorCategoria(transacoes, mesKey);
     var orc     = config.orcamentos || {};
     Object.keys(orc).forEach(function(cat) {
-      var limite   = Number(orc[cat]) || 0;
+      var limite   = AI_ENGINE._limiteOrcamento(orc[cat]);
       var gasto    = (catsMes[cat] && catsMes[cat].despesas) || 0;
       var pct      = limite > 0 ? gasto / limite : 0;
+      var nomeCat  = AI_ENGINE._nomeCategoria(cat);
       if (pct >= 1.0) {
         alertas.push({
           id: 'orc-excedido-' + cat,
           tipo: 'orcamento',
           titulo: 'Orçamento excedido',
-          msg: cat.charAt(0).toUpperCase() + cat.slice(1) + ': R$ ' + gasto.toFixed(2).replace('.', ',') + ' / R$ ' + limite.toFixed(2).replace('.', ','),
+          msg: nomeCat + ': ' + UTILS.formatarMoeda(gasto) + ' / ' + UTILS.formatarMoeda(limite),
           gravidade: 'alta',
           acao: 'verExtrato',
           parametros: { categoria: cat }
@@ -441,7 +465,7 @@ const AI_ENGINE = {
           id: 'orc-alerta-' + cat,
           tipo: 'orcamento',
           titulo: 'Orçamento quase no limite',
-          msg: cat.charAt(0).toUpperCase() + cat.slice(1) + ': ' + Math.round(pct * 100) + '% usado.',
+          msg: nomeCat + ': ' + Math.round(pct * 100) + '% usado.',
           gravidade: 'media',
           acao: 'verExtrato',
           parametros: { categoria: cat }

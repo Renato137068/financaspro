@@ -262,14 +262,22 @@ const TRANSACOES = {
   /**
    * Últimas N transações por data, sem varrer/sortear o histórico inteiro
    * quando TRANSACTION_SERVICE.topByDate está disponível.
+   *
+   * `opts.ate` (YYYY-MM-DD) deixa de fora o que tem data depois dele: as
+   * parcelas futuras de uma compra parcelada, por exemplo, que o formulário
+   * grava já com a data de cada mês.
    * @param {number} [limite]
-   * @param {{ordenarPor?:string}} [opts]
+   * @param {{ordenarPor?:string, ate?:string}} [opts]
    */
   obterRecentes: function(limite, opts) {
     limite = limite || 3;
     opts = opts || {};
     TRANSACOES._refreshCache();
     var cache = TRANSACOES._cache || [];
+    if (opts.ate) {
+      var ate = String(opts.ate).slice(0, 10);
+      cache = cache.filter(function(t) { return t && String(t.data || '').slice(0, 10) <= ate; });
+    }
     if (typeof TRANSACTION_SERVICE !== 'undefined' && TRANSACTION_SERVICE.topByDate) {
       return TRANSACTION_SERVICE.topByDate(cache, limite, opts.ordenarPor || 'data-desc');
     }

@@ -646,9 +646,11 @@ const RENDER_DASHBOARD = (function() {
       var tx = DashboardRenderer._ctx.tx;
       var transacoes = [];
 
-      // Padronização de API: obterRecentes evita sort O(n log n) em históricos grandes
+      // Padronização de API: obterRecentes evita sort O(n log n) em históricos grandes.
+      // Só até hoje: "últimas" são as que já aconteceram. Sem o corte, quem
+      // parcelava uma compra em 12x via a parcela do ano que vem no topo.
       if (tx && typeof tx.obterRecentes === 'function') {
-        transacoes = tx.obterRecentes(3);
+        transacoes = tx.obterRecentes(3, { ate: UTILS.dataLocalIso() });
       } else if (tx && typeof tx.obter === 'function') {
         transacoes = tx.obter({});
       } else if (tx && typeof tx.getTodas === 'function') {
