@@ -48,10 +48,12 @@ describe('Vitrine da Play', function() {
       expect(tamanhoPng(path.join(dir, c.arquivo + '.png'))).toEqual({ w: 1080, h: 1920 });
     });
     expect(tamanhoPng(path.join(dir, 'destaque-1024x500.png'))).toEqual({ w: 1024, h: 500 });
-    // Tablet de 7" em retrato (achado A10: sem ele o app aparece menos em
-    // tablets e Chromebooks).
+    // Tablets de 7" e 10" em retrato (achado A10: sem eles o app aparece
+    // menos em tablets e Chromebooks). A Play só aceita 9:16 no tablet; as
+    // de 1200×1920 (16:10) ficavam de fora.
     CAPTURAS.forEach(function(c) {
-      expect(tamanhoPng(path.join(dir, 'tablet', c.arquivo + '.png'))).toEqual({ w: 1200, h: 1920 });
+      expect(tamanhoPng(path.join(dir, 'tablet', c.arquivo + '.png'))).toEqual({ w: 1080, h: 1920 });
+      expect(tamanhoPng(path.join(dir, 'tablet-10', c.arquivo + '.png'))).toEqual({ w: 1440, h: 2560 });
     });
   });
 
@@ -68,12 +70,15 @@ describe('Vitrine da Play', function() {
     expect(doMes.some(function(t) { return t.tipo === 'receita'; })).toBe(true);
     expect(doMes.some(function(t) { return t.tipo === 'despesa'; })).toBe(true);
   });
-  test('celular e tablet, nos tamanhos que a loja aceita', function() {
-    expect(FORMATOS.map(function(f) { return f.id; })).toEqual(['celular', 'tablet']);
+  test('celular e tablets de 7" e 10", todos em 9:16', function() {
+    expect(FORMATOS.map(function(f) { return f.id; })).toEqual(['celular', 'tablet', 'tablet-10']);
     FORMATOS.forEach(function(f) {
-      expect(f.tela.largura * f.tela.escala).toBe(f.saida.largura);
-      expect(f.saida.altura).toBe(1920);
+      expect(f.saida.largura * 16).toBe(f.saida.altura * 9);
+      expect(f.saida.largura).toBeGreaterThanOrEqual(1080);
     });
+    // O 10" pede lados a partir de 1080 px e tela de tablet grande de verdade.
+    var dez = FORMATOS.find(function(f) { return f.id === 'tablet-10'; });
+    expect(dez.tela.largura).toBeGreaterThanOrEqual(768);
   });
   test('imagens do conteúdo promocional em 16:9 e textos sem termo proibido', function() {
     function tamanhoPng(arquivo) {
