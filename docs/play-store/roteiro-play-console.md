@@ -134,6 +134,32 @@ PARTE 4 — Conferências (só ler e me relatar)
    e o que está listado. Não envie.
 ```
 
+## Alternativa: enviar pelo GitHub
+
+Textos e capturas de celular também podem ir sem abrir o Play Console, pelo
+workflow **Ficha da Play** (`.github/workflows/play-ficha.yml`, script
+`scripts/play-ficha.cjs`). Ele lê os textos de `docs/play-store-ficha.md` e as
+imagens de `docs/play-store/vitrine/`, e fala com a API da Play usando o
+segredo `PLAY_SERVICE_ACCOUNT_JSON` do ambiente `production`.
+
+Uma vez só, com login (o Claude não faz estes passos nem vê a chave):
+1. Google Cloud → IAM → Contas de serviço: crie uma conta (ou reuse a da
+   validação de compras, `docs/play-store-billing-runbook.md`) e gere uma
+   chave JSON. Ative a "Google Play Android Developer API" no projeto.
+2. Play Console → Usuários e permissões → Convidar novo usuário: o e-mail da
+   conta de serviço, com acesso ao FinançasPro e as permissões "Gerenciar a
+   presença na loja" e, para o release, "Lançar apps em faixas de teste".
+3. GitHub → Settings → Environments → production → segredo
+   `PLAY_SERVICE_ACCOUNT_JSON` com o conteúdo do JSON.
+
+Para usar: Actions → Ficha da Play → Run workflow. Desmarcado, "publicar"
+só valida (a Play confere e nada muda na loja). Marcado, a ficha vai para a
+revisão. `npm run check:ficha` faz a conferência local, sem rede.
+
+Fica de fora, ainda à mão: as capturas de tablet (até serem refeitas em
+9:16), respostas a avaliações e as conferências da Parte 4. As novidades da
+versão vão com o AAB, pelo `release.yml` (`distribution/whatsnew/`).
+
 ## Depois
 
 - **Envio:** quando a extensão relatar as mudanças pendentes, envie você mesmo
