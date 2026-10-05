@@ -1,0 +1,49 @@
+name: Ficha da Play
+
+# Atualiza a página do app na Play Store (nome, descrições, capturas de
+# celular e destaque) a partir do repositório: textos de
+# docs/play-store-ficha.md, imagens de docs/play-store/vitrine/.
+# Só roda à mão (Actions → Ficha da Play → Run workflow).
+#
+# Por padrão, só valida: monta a edição na Play, a Play confere e a edição é
+# descartada, sem mudar nada na loja. Marque "publicar" para confirmar; a
+# ficha vai para a revisão da Play.
+#
+# Segredo, no ambiente "production" (o mesmo do release.yml):
+#   PLAY_SERVICE_ACCOUNT_JSON — chave da conta de serviço com acesso ao app
+#   na Play Console (permissão de editar a presença na loja).
+
+on:
+  workflow_dispatch:
+    inputs:
+      publicar:
+        description: 'Publicar na loja (desmarcado = só validar, nada muda)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: play-ficha
+  cancel-in-progress: false
+
+jobs:
+  ficha:
+    name: Ficha da Play
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.x
+
+      - name: Conferir textos e imagens
+        run: node scripts/play-ficha.cjs
+
+      - name: Enviar para a Play
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: node scripts/play-ficha.cjs ${{ inputs.publicar && '--publicar' || '--validar' }}

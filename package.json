@@ -53,6 +53,7 @@
     "play-assets:generate": "node scripts/generate-play-assets.cjs",
     "screenshots:capture": "node scripts/capture-screenshots.cjs",
     "vitrine:gerar": "node scripts/gerar-vitrine-play.cjs",
+    "check:ficha": "node scripts/play-ficha.cjs",
     "test:e2e": "playwright test --config playwright.config.cjs",
     "test:e2e:smoke": "playwright test --config playwright.config.cjs e2e/smoke-boot.spec.cjs e2e/onboarding-primeiro-cta.spec.cjs e2e/billing-smoke.spec.cjs",
     "test:e2e:anual": "playwright test --config playwright.config.cjs e2e/persistencia-anual.spec.cjs",
