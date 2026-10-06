@@ -15,8 +15,9 @@ Pasta `docs/play-store/vitrine/` no GitHub:
 https://github.com/Renato137068/financaspro/tree/main/docs/play-store/vitrine
 
 Baixe os nove arquivos (abra cada um e use "Download raw file"):
-`01-resumo.png` … `08-privacidade.png` e `destaque-1024x500.png`; e, da
-subpasta `tablet/`, as oito capturas de tablet.
+`01-resumo.png` … `08-privacidade.png` e `destaque-1024x500.png`; da
+subpasta `tablet/`, as oito capturas de tablet de 7"; e da `tablet-10/`, as
+oito de tablet de 10".
 
 ## Prompt para colar na extensão
 
@@ -111,7 +112,9 @@ PARTE 2 — Imagens (eu envio, você me guia)
      05-extrato, 06-metas, 07-previsao, 08-privacidade, e que nenhuma
      captura em branco ficou na lista.
    - em "Capturas de tela de tablet de 7 polegadas", a mesma coisa com os
-     arquivos da pasta tablet/ (01 a 08, na mesma ordem).
+     arquivos da pasta tablet/ (01 a 08, na mesma ordem);
+   - em "Capturas de tela de tablet de 10 polegadas", a mesma coisa com os
+     arquivos da pasta tablet-10/ (01 a 08, na mesma ordem).
 5. Salve de novo.
 
 PARTE 3 — Avaliações

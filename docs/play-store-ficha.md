@@ -123,9 +123,11 @@ no app, e preço escrito na descrição fica errado no primeiro reajuste.
   (1080×1920, com legenda). Geradas por `npm run vitrine:gerar` a partir do app
   real com dados de exemplo. As antigas (`screenshot-*.png`) e a
   `screenshot-placeholder-1080x1920.png` (tela em branco) não vão para a loja.
-- Capturas de tablet de 7" (1200×1920, com legenda), na mesma ordem:
-  `docs/play-store/vitrine/tablet/01-*.png` a `08-*.png`. As antigas
-  `screenshot-*-tablet-*.png` saem da loja; as de 10" continuam como estão.
+- Capturas de tablet, na mesma ordem e com a mesma legenda, em 9:16 (a Play
+  só aceita essa proporção no tablet): 7" em `docs/play-store/vitrine/tablet/`
+  (1080×1920) e 10" em `docs/play-store/vitrine/tablet-10/` (1440×2560).
+  A tela dentro do aparelho é a do app numa largura de tablet de verdade
+  (600 e 800 px). As antigas `screenshot-*-tablet-*.png` (16:10) saem da loja.
 - Idioma padrão: Português (Brasil).
 - Pro com **trial de 7 dias** no Play Console, nos SKUs `financaspro.pro.monthly` e `.yearly` (ver `play-store-billing-runbook.md`).
 - Preços dos SKUs: **R$ 16,99/mês** e **R$ 129,99/ano** (tiers do Play). Preço
