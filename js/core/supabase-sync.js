@@ -101,9 +101,18 @@
     );
   }
 
+  // Falha de sync que não é falta de rede (RLS, coluna, dado recusado) é dado
+  // do cliente que não chega à nuvem: entra no relatório de erros.
+  function relatarSync(contexto, err) {
+    var msg = String((err && err.message) || err || '');
+    if (/fetch|network|load failed|timeout|abort/i.test(msg)) return;
+    if (typeof OBS !== 'undefined' && OBS.captureError) OBS.captureError(err, { contexto: contexto });
+  }
+
   function afterPushError(err, fallback) {
     if (handleQuotaExceeded(err)) return fallback;
     console.warn('Supabase push falhou:', err && err.message);
+    relatarSync('sync.push', err);
     return fallback;
   }
 
@@ -191,6 +200,7 @@
         });
       }).catch(function (err) {
         console.warn('Supabase pull falhou, dados locais preservados:', err && err.message);
+        relatarSync('sync.pull', err);
         if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
           APP_STORE.dispatch(ACTIONS.SYNC_FALHAR, { erro: err && err.message });
         }
@@ -247,6 +257,7 @@
       }).catch(function (e) {
         if (handleQuotaExceeded(e)) return;
         console.warn('Reconciliação (subida) falhou:', e && e.message);
+        relatarSync('sync.reconciliar', e);
       });
     },
 
