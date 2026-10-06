@@ -4,7 +4,8 @@
  * Gera em docs/play-store/vitrine/:
  *   01..08-*.png        capturas de celular 1080×1920, uma frase de benefício
  *                       no topo e o app de verdade num aparelho abaixo;
- *   tablet/01..08-*.png as mesmas oito em tablet de 7" (1200×1920);
+ *   tablet/01..08-*.png as mesmas oito em tablet de 7" (1080×1920);
+ *   tablet-10/01..08-*.png e em tablet de 10" (1440×2560);
  *   destaque-1024x500.png  gráfico de destaque (feature graphic);
  *   promocional/*.png   imagens 1920×1080 do conteúdo promocional da Play.
  *
@@ -36,13 +37,20 @@ const BASE = 'http://127.0.0.1:' + PORTA + '/?offline=1';
 
 /**
  * Formatos gerados. `tela` é a viewport do app em px de CSS e a escala;
- * `saida`, a imagem final. O tablet de 7" em retrato é o que o Play pede para
- * o app aparecer bem em tablets e Chromebooks (achado A10 da auditoria).
+ * `saida`, a imagem final. Os tablets em retrato são o que a Play pede para o
+ * app aparecer bem em tablets e Chromebooks (achado A10 da auditoria).
+ *
+ * Toda saída é 9:16: a Play só aceita essa proporção nas capturas de tablet
+ * (as de 1200×1920, 16:10, ficavam de fora; revisão da vitrine de 04/out).
+ * A tela do tablet continua 16:10 dentro do aparelho; o que é 9:16 é a peça.
+ * A composição é desenhada em 1080×1920 e ampliada para a saída.
  */
 const FORMATOS = [
-  { id: 'celular', pasta: '', tela: { largura: 360, altura: 640, escala: 3 }, saida: { largura: 1080, altura: 1920 } },
-  { id: 'tablet', pasta: 'tablet', tela: { largura: 600, altura: 960, escala: 2 }, saida: { largura: 1200, altura: 1920 } },
+  { id: 'celular', pasta: '', tela: { largura: 360, altura: 640, escala: 3, movel: true }, saida: { largura: 1080, altura: 1920 } },
+  { id: 'tablet', pasta: 'tablet', tela: { largura: 600, altura: 960, escala: 2 }, saida: { largura: 1080, altura: 1920 } },
+  { id: 'tablet-10', pasta: 'tablet-10', tela: { largura: 800, altura: 1280, escala: 2 }, saida: { largura: 1440, altura: 2560 } },
 ];
+const BASE_PECA = { largura: 1080, altura: 1920 };
 
 const CORES = {
   fundo1: '#0B3D2E',
@@ -72,7 +80,7 @@ const CAPTURAS = [
     arquivo: '02-lancamento',
     legenda: 'Registre um gasto em segundos',
     apoio: 'Atalhos dos seus gastos mais comuns',
-    preparar: async function(page) {
+    preparar: async function(page, tela) {
       await irPara(page, 'novo');
       await page.evaluate(function() {
         [['novo-valor', '48,90'], ['novo-descricao', 'Padaria']].forEach(function(par) {
@@ -84,7 +92,16 @@ const CAPTURAS = [
         var ac = document.getElementById('autocomplete-list');
         if (ac) ac.hidden = true;
       });
-      await rolarAte(page, '.quick-label', 10);
+      // Do título da aba ("Novo lançamento"), nos três formatos. No celular,
+      // a linha de apoio do título e a entrada por frase saem da foto para o valor
+      // caber acima da barra com o título à vista.
+      if (tela.largura < 500) {
+        await page.evaluate(function() {
+          document.querySelectorAll('#aba-novo .perfil-header .perfil-meta, #aba-novo .er-wrapper')
+            .forEach(function(el) { el.style.setProperty('display', 'none', 'important'); });
+        });
+      }
+      await rolarAte(page, '#aba-novo .perfil-header', 8);
     },
   },
   {
@@ -93,21 +110,24 @@ const CAPTURAS = [
     apoio: 'Necessidades, desejos e poupança',
     preparar: async function(page) {
       await irPara(page, 'orcamento');
-      await rolarAte(page, '.orc-regra', 64);
+      await rolarAte(page, '.orc-regra', 8);
     },
   },
   {
     arquivo: '04-cartao',
     legenda: 'A fatura do cartão, com as parcelas',
     apoio: 'Quanto já está comprometido nos próximos meses',
-    preparar: async function(page) {
+    preparar: async function(page, tela) {
       await page.evaluate(function() {
         var al = document.getElementById('dashboard-alertas');
         if (al) al.style.display = 'none';
         document.querySelectorAll('.dashboard-mais').forEach(function(el) { el.classList.remove('dashboard-mais'); });
         if (typeof CARTOES !== 'undefined' && CARTOES.render) CARTOES.render();
       });
-      await rolarAte(page, '#secao-cartoes', 8);
+      // No tablet de 10" o Resumo tem duas colunas e os cartões ficam na da
+      // direita: a tela começa na linha das últimas transações, para as duas
+      // colunas abrirem inteiras, com a fatura logo abaixo.
+      await rolarAte(page, tela.largura >= 768 ? '#secao-ultimas-transacoes' : '#secao-cartoes', 8);
     },
   },
   {
@@ -172,7 +192,13 @@ const CAPTURAS = [
           INIT_CONFIG._refreshCryptoToggle();
         }
       });
-      await rolarAte(page, '#chk-pin', 120);
+      // Do título da tela (Segurança), com o cartão do PIN logo abaixo.
+      await page.evaluate(function() {
+        var t = [].slice.call(document.querySelectorAll('.perfil-header .perfil-nome'))
+          .filter(function(h) { return h.textContent.trim() === 'Segurança' && h.getClientRects().length; })[0];
+        if (t) t.closest('.perfil-header').setAttribute('data-vitrine-alvo', '1');
+      });
+      await rolarAte(page, '[data-vitrine-alvo], #chk-pin', 8);
     },
   },
 ];
@@ -186,18 +212,65 @@ async function irPara(page, aba) {
   await esperar(page, 2500);
 }
 
-/** Rola até o primeiro seletor que existir, deixando `margem` px de CSS acima. */
+/**
+ * Rola até o primeiro seletor que existir, deixando `margem` px de CSS entre
+ * ele e o que fica preso no topo (cabeçalho fixo, abas "sticky"). O que sobra
+ * cortado acima do alvo (meio cartão, a última linha de uma lista) fica
+ * coberto pelo fundo do app: a tela começa limpa no alvo.
+ */
 async function rolarAte(page, seletores, margem) {
-  await page.evaluate(function(args) {
+  var args = { sel: seletores, margem: margem || 0 };
+  // Espaço no fim da página, para o alvo chegar ao topo mesmo perto do fim
+  // (sem isso a rolagem para antes e sobra conteúdo cortado acima dele).
+  await page.evaluate(function() {
+    var main = document.querySelector('main') || document.body;
+    var folga = document.createElement('div');
+    folga.style.height = window.innerHeight + 'px';
+    main.appendChild(folga);
+  });
+  // Duas passadas: a primeira rola; a segunda vê o que grudou no topo depois
+  // da rolagem e desce o que faltar para o alvo não ficar por baixo.
+  for (var passada = 0; passada < 2; passada++) {
+    await page.evaluate(function(a) {
+      var el = null;
+      a.sel.split(',').some(function(s) { el = document.querySelector(s.trim()); return !!el; });
+      if (!el) return;
+      var topo = 0;
+      [].forEach.call(document.querySelectorAll('header, .app-header, [class], [id]'), function(n) {
+        var cs = getComputedStyle(n);
+        if ((cs.position !== 'fixed' && cs.position !== 'sticky') || cs.display === 'none' || cs.visibility === 'hidden') return;
+        if (n.contains(el) || n.classList.contains('nav-bottom') || n.closest('.nav-bottom')) return;
+        var r = n.getBoundingClientRect();
+        if (r.height < 1 || r.top < -1 || r.top > window.innerHeight / 4 || r.bottom <= 0 || r.height > window.innerHeight / 4) return;
+        topo = Math.max(topo, r.bottom);
+      });
+      var y = window.scrollY + el.getBoundingClientRect().top - topo - a.margem;
+      window.scrollTo(0, Math.max(0, y));
+    }, args);
+    await page.waitForTimeout(300);
+  }
+  await page.evaluate(function(a) {
     var el = null;
-    args.sel.split(',').some(function(s) { el = document.querySelector(s.trim()); return !!el; });
-    if (!el) return;
-    var header = document.querySelector('header, .app-header');
-    var alturaHeader = header ? header.getBoundingClientRect().height : 0;
-    var y = el.getBoundingClientRect().top + window.scrollY - alturaHeader - args.margem;
-    window.scrollTo(0, Math.max(0, y));
-  }, { sel: seletores, margem: margem || 0 });
-  await page.waitForTimeout(300);
+    a.sel.split(',').some(function(s) { el = document.querySelector(s.trim()); return !!el; });
+    if (!el || window.scrollY === 0) return;
+    // O que ficou inteiro acima do alvo, ou cortado pela borda de cima (meio
+    // cartão, o cabeçalho que some ao rolar), some da foto: a tela começa
+    // limpa no alvo. Com duas colunas, cada uma perde só o que está acima da
+    // linha do alvo. O que fica preso no topo (abas "sticky") continua.
+    var linha = el.getBoundingClientRect().top + 1;
+    var presos = [].filter.call(document.querySelectorAll('[class], [id], header'), function(n) {
+      var p = getComputedStyle(n).position;
+      return (p === 'fixed' || p === 'sticky') && n.getBoundingClientRect().top >= -1;
+    });
+    [].forEach.call(document.querySelectorAll('main *, header, .app-header'), function(n) {
+      if (n.contains(el) || el.contains(n)) return;
+      if (presos.some(function(p) { return p.contains(n) || n.contains(p); })) return;
+      if (n.closest('.nav-bottom')) return;
+      var r = n.getBoundingClientRect();
+      if (r.height < 1 || r.bottom <= 0 || r.bottom > linha) return;
+      n.style.setProperty('visibility', 'hidden', 'important');
+    });
+  }, args);
 }
 
 /** O que aparece sozinho e não é a tela: avisos, toasts, banners. */
@@ -209,6 +282,31 @@ async function limparSobreposicoes(page) {
     var auth = document.getElementById('auth-overlay');
     if (auth) auth.style.display = 'none';
     document.body.classList.remove('auth-overlay-open');
+  });
+}
+
+/**
+ * A barra de navegação flutua translúcida sobre a lista. Numa foto parada isso
+ * vira texto fantasma atrás dos ícones e uma linha cortada abaixo da barra.
+ * Na captura, a barra fica opaca e o espaço até a borda da tela ganha o fundo
+ * do app, como se a lista terminasse ali.
+ */
+async function assentarNavegacao(page) {
+  await page.evaluate(function() {
+    var nav = document.querySelector('.nav-bottom');
+    if (!nav || getComputedStyle(nav).display === 'none') return;
+    var cs = getComputedStyle(document.body);
+    var fundo = cs.backgroundColor && cs.backgroundColor !== 'rgba(0, 0, 0, 0)' ? cs.backgroundColor : '#f5f8f6';
+    var cartao = getComputedStyle(document.documentElement).getPropertyValue('--color-bg-card').trim() || '#ffffff';
+    nav.style.setProperty('background', cartao, 'important');
+    nav.style.setProperty('backdrop-filter', 'none', 'important');
+    nav.style.setProperty('-webkit-backdrop-filter', 'none', 'important');
+    var r = nav.getBoundingClientRect();
+    var faixa = document.getElementById('vitrine-faixa-nav') || document.createElement('div');
+    faixa.id = 'vitrine-faixa-nav';
+    faixa.style.cssText = 'position:fixed;left:0;right:0;bottom:0;height:' + Math.ceil(window.innerHeight - r.top + 14) + 'px;'
+      + 'background:' + fundo + ';z-index:' + ((parseInt(getComputedStyle(nav).zIndex, 10) || 100) - 1) + ';pointer-events:none';
+    document.body.appendChild(faixa);
   });
 }
 
@@ -237,7 +335,9 @@ async function capturarTelas(browser, hoje, TELA) {
       deviceScaleFactor: TELA.escala,
       locale: 'pt-BR',
       timezoneId: 'America/Sao_Paulo',
-      isMobile: true,
+      // Só o celular simula viewport móvel: no tablet, um elemento mais largo
+      // que a tela faria o Chromium afastar o zoom e cortar a barra de baixo.
+      isMobile: !!TELA.movel,
       hasTouch: true,
     });
     await ctx.addInitScript(function(dados) {
@@ -268,10 +368,11 @@ async function capturarTelas(browser, hoje, TELA) {
     await esperar(page, 4000);
     await page.addStyleTag({ content: '*,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important;transition-delay:0s!important;caret-color:transparent!important}' });
     await limparSobreposicoes(page);
-    await c.preparar(page);
+    await c.preparar(page, TELA);
     await limparSobreposicoes(page);
     await esperar(page, 1200);
     await limparSobreposicoes(page);
+    await assentarNavegacao(page);
     brutas[c.arquivo] = await page.screenshot({ type: 'png', scale: 'device', animations: 'disabled', fullPage: !!process.env.VITRINE_PAGINA_INTEIRA });
     if (process.env.VITRINE_BRUTAS) fs.writeFileSync(path.join(process.env.VITRINE_BRUTAS, c.arquivo + '.png'), brutas[c.arquivo]);
     await ctx.close();
@@ -293,7 +394,7 @@ function htmlCaptura(c, tela, fmt) {
   var altImg = 1387;
   var largImg = Math.round(altImg * fmt.tela.largura / fmt.tela.altura);
   return '<!doctype html><html><head><meta charset="utf-8"><style>'
-    + 'html,body{margin:0;width:' + fmt.saida.largura + 'px;height:' + fmt.saida.altura + 'px;overflow:hidden}'
+    + 'html,body{margin:0;width:' + BASE_PECA.largura + 'px;height:' + BASE_PECA.altura + 'px;overflow:hidden}'
     + 'body{background:linear-gradient(165deg,' + CORES.fundo2 + ' 0%,' + CORES.fundo1 + ' 62%);'
     + 'font-family:"Inter","Segoe UI",Roboto,Arial,sans-serif;color:' + CORES.texto + ';position:relative}'
     + '.topo{position:absolute;left:90px;right:90px;top:120px;text-align:center}'
@@ -350,8 +451,8 @@ const PROMOCIONAIS = [
   { arquivo: 'promo-black-friday', tela: '04-cartao', titulo: 'Antes de comprar, veja a fatura', apoio: 'Saiba quanto do cartão já está comprometido.' },
 ];
 
-async function renderizar(browser, html, largura, altura, destino) {
-  var ctx = await browser.newContext({ viewport: { width: largura, height: altura }, deviceScaleFactor: 1 });
+async function renderizar(browser, html, largura, altura, destino, escala) {
+  var ctx = await browser.newContext({ viewport: { width: largura, height: altura }, deviceScaleFactor: escala || 1 });
   var page = await ctx.newPage();
   await page.setContent(html, { waitUntil: 'load' });
   await page.screenshot({ path: destino, type: 'png' });
@@ -385,8 +486,8 @@ async function main() {
       for (var i = 0; i < CAPTURAS.length; i++) {
         var c = CAPTURAS[i];
         if (!brutas[c.arquivo]) continue;
-        await renderizar(browser, htmlCaptura(c, brutas[c.arquivo], fmt), fmt.saida.largura, fmt.saida.altura,
-          path.join(pasta, c.arquivo + '.png'));
+        await renderizar(browser, htmlCaptura(c, brutas[c.arquivo], fmt), BASE_PECA.largura, BASE_PECA.altura,
+          path.join(pasta, c.arquivo + '.png'), fmt.saida.largura / BASE_PECA.largura);
         console.log('✓ docs/play-store/vitrine/' + (fmt.pasta ? fmt.pasta + '/' : '') + c.arquivo + '.png');
       }
     }
