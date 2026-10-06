@@ -465,49 +465,6 @@
 .chart-container { min-height: 80px; }
 .chart-svg { width: 100%; height: auto; display: block; }
 
-/* ── Transação item (dashboard) ───────────────────────────── */
-
-.transacao-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--space-3) 0;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.transacao-item:last-of-type { border-bottom: none; }
-
-.transacao-item .transacao-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.transacao-item .transacao-descricao {
-  font-weight: var(--font-weight-semibold);
-  font-size: var(--font-size-sm);
-  color: var(--color-text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-bottom: 2px;
-}
-
-.transacao-item .transacao-data {
-  font-size: var(--font-size-2xs);
-  color: var(--color-text-muted);
-}
-
-.transacao-item .transacao-valor {
-  font-weight: var(--font-weight-bold);
-  font-size: var(--font-size-sm);
-  text-align: right;
-  flex-shrink: 0;
-  margin-left: var(--space-3);
-}
-
-.transacao-item .transacao-valor.receita { color: var(--color-success-text); }
-.transacao-item .transacao-valor.despesa { color: var(--color-danger-text); }
-
 /* ── Greeting ─────────────────────────────────────────────── */
 
 .dashboard-greeting { margin-bottom: var(--space-5); }

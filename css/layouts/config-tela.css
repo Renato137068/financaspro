@@ -711,3 +711,37 @@
   min-width: var(--tap-target-min);
   min-height: var(--tap-target-min);
 }
+
+/* "Editar perfil" escrito no botão. No celular o botão ocupa a largura toda e
+   mostrava só um lápis numa pílula vazia; no desktop ele é um quadrado de
+   ícone, e o texto fica só para leitor de tela. */
+.perfil-action-btn:has(.perfil-action-texto) {
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.perfil-action-texto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+  .perfil-action-texto {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+  }
+}
+
+/* No escuro o botão herdava um cinza que, com a escala invertida, ficava
+   quase da cor do fundo (1,2:1). Com texto escrito, usa a cor de texto. */
+[data-theme="dark"] .perfil-action-btn:has(.perfil-action-texto) {
+  color: var(--color-text-primary);
+}

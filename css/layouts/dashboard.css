@@ -818,3 +818,71 @@
   padding-left: var(--space-2);
   border-left: 2px solid var(--color-warning);
 }
+
+/* Item de "Últimas transações" do painel: ícone da categoria, nome e categoria
+   à esquerda, valor à direita, numa linha só. A classe não tinha estilo, e o
+   item saía em três linhas soltas (ícone, texto e o valor sozinho embaixo). */
+.transacao-resumo-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.transacao-resumo-item:last-child { border-bottom: none; }
+
+.transacao-resumo-item .transacao-icon {
+  width: var(--space-10);
+  height: var(--space-10);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.transacao-resumo-item .transacao-icon svg {
+  width: var(--space-5);
+  height: var(--space-5);
+}
+
+.transacao-resumo-item .transacao-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.transacao-resumo-item .transacao-desc {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.transacao-resumo-item .transacao-meta {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.transacao-resumo-item .transacao-valor {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.transacao-resumo-item .valor-receita { color: var(--color-success-text); }
+.transacao-resumo-item .valor-despesa { color: var(--color-danger-text); }
+
+/* Primeiro uso, sem lançamentos: só saudação, "Comece em 3 passos" e saldo. */
+.resumo-primeiro-uso .cards-container,
+.resumo-primeiro-uso #dashboard-indicadores,
+.resumo-primeiro-uso #secao-orcamento-resumo,
+.resumo-primeiro-uso #secao-ultimas-transacoes {
+  display: none;
+}

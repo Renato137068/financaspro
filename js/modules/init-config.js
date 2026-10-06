@@ -119,6 +119,7 @@ const INIT_CONFIG = {
     // uma proteção DESLIGADA em verde lê como "tudo certo", que é o oposto.
     var pinPill = document.getElementById('security-pin-status');
     if (pinPill) pinPill.classList.toggle('security-indicator--neutro', !config.pinAtivo);
+    INIT_CONFIG._refreshContaStatus();
     INIT_CONFIG._refreshCryptoToggle();
     INIT_CONFIG._refreshExportHint();
     INIT_CONFIG._refreshSairOutrosBtn();
@@ -365,6 +366,18 @@ const INIT_CONFIG = {
     el.textContent = naNuvem
       ? 'JSON com lançamentos, contas e preferências. A nuvem continua sendo a fonte da verdade da conta.'
       : 'JSON com lançamentos, contas e preferências deste aparelho.';
+  },
+
+  // O selo dizia "Conta protegida" sempre, inclusive em sessão local e logo
+  // ao lado de "PIN desativado". Agora diz onde os dados estão, e só fica
+  // verde quando há login na nuvem.
+  _refreshContaStatus: function() {
+    var texto = document.getElementById('perfil-conta-status');
+    var pill = document.getElementById('security-account-status');
+    if (!texto || !pill) return;
+    var naNuvem = typeof BILLING !== 'undefined' && BILLING.isCloudUser && BILLING.isCloudUser();
+    texto.textContent = naNuvem ? 'Conta com login' : 'Só neste aparelho';
+    pill.classList.toggle('security-indicator--neutro', !naNuvem);
   },
 
   _refreshSairOutrosBtn: function() {

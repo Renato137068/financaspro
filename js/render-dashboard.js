@@ -53,8 +53,10 @@ const RENDER_DASHBOARD = (function() {
     ].join(':');
   }
 
+  // Nome para a saudação, ou '' quando é o padrão: "Bom dia, Usuário!" soava
+  // como formulário não preenchido. Sem nome, a saudação fica só "Bom dia!".
   function _nomeExibicao(nome) {
-    if (!nome || nome === 'Usuario') return 'Usuário';
+    if (!nome || nome === 'Usuario' || nome === 'Usuário') return '';
     return nome;
   }
 
@@ -252,6 +254,11 @@ const RENDER_DASHBOARD = (function() {
       // Mostra só no primeiro uso, junto do onboarding, e some quando há dados.
       var tagline = document.getElementById('dashboard-method-tagline');
       if (tagline) tagline.hidden = total > 0;
+      // Sem nenhum lançamento, receitas, despesas, indicadores, limites e
+      // últimas transações só mostravam R$ 0,00 e um segundo botão igual ao do
+      // "Comece em 3 passos". Ficam escondidos até o primeiro lançamento.
+      var aba = document.getElementById('aba-resumo');
+      if (aba) aba.classList.toggle('resumo-primeiro-uso', total === 0);
       if (!el.hidden && typeof renderLucideIconsNow === 'function') {
         renderLucideIconsNow(el);
       }
@@ -278,7 +285,7 @@ const RENDER_DASHBOARD = (function() {
       var container = DashboardRenderer.create('div', { class: 'greeting-text greeting-text--resumo' });
 
       var hello = DashboardRenderer.create('span', { class: 'greeting-hello' });
-      hello.textContent = saudacao + ', ' + nome + '!';
+      hello.textContent = nome ? saudacao + ', ' + nome + '!' : saudacao + '!';
       container.appendChild(hello);
 
       var sub = DashboardRenderer.create('span', { class: 'greeting-context' });

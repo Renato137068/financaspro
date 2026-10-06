@@ -10,6 +10,7 @@
  */
 
 import { UI_UTILS } from './_base.js';
+import { CATEGORIA_VISUAL } from '../core/categoria-visual.js';
 
 /**
  * Transaction card component
@@ -81,9 +82,18 @@ const CardTransacao = {
     var item = document.createElement('div');
     item.className = 'transacao-resumo-item transacao-tipo-' + t.tipo;
 
+    // Mesmo ícone e cor de categoria do Extrato. Antes era uma seta genérica
+    // de receita/despesa, e o item não tinha CSS: ícone, nome e valor saíam
+    // empilhados em três linhas no painel principal.
+    var cor = CATEGORIA_VISUAL.cor(t.categoria);
     var icon = document.createElement('div');
     icon.className = 'transacao-icon';
-    icon.innerHTML = isReceita ? '<i data-lucide="trending-up" aria-hidden="true"></i>' : '<i data-lucide="trending-down" aria-hidden="true"></i>';
+    icon.style.color = cor;
+    icon.style.backgroundColor = cor + '20';
+    var i = document.createElement('i');
+    i.setAttribute('data-lucide', CATEGORIA_VISUAL.nomeIcone(t.categoria));
+    i.setAttribute('aria-hidden', 'true');
+    icon.appendChild(i);
     item.appendChild(icon);
 
     var info = document.createElement('div');

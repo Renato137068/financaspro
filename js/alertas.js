@@ -34,6 +34,10 @@ const ALERTAS = {
     return tipo === 'saldo' || tipo === 'orcamento' || tipo === 'fatura';
   },
 
+  _tipoDeteccao: function(tipo) {
+    return tipo === 'padrao' || tipo === 'projecao' || tipo === 'anomalia';
+  },
+
   _podeAlertasAvancados: function() {
     return typeof BILLING === 'undefined' || BILLING.canUse('advancedAlerts');
   },
@@ -92,7 +96,13 @@ const ALERTAS = {
     var avancados = ALERTAS._podeAlertasAvancados();
     var tinhaAvancados = false;
     if (!avancados) {
-      tinhaAvancados = alertas.some(function(a) { return !ALERTAS._tipoBasico(a.tipo); });
+      // O teaser diz "o app detectou algo fora do padrão", então só pode
+      // aparecer quando houver uma detecção de verdade escondida: um padrão, uma
+      // projeção ou um gasto incomum. Lembretes de hábito ("Sem lançamentos
+      // hoje") não contam: antes eles bastavam para disparar o aviso, e uma
+      // conta recém-criada, com R$ 0,00, já via "detectou algo fora do padrão".
+      tinhaAvancados = alertas.some(function(a) { return ALERTAS._tipoDeteccao(a.tipo); })
+        || AI_ENGINE.detectarAnomalias(txs).length > 0;
       alertas = alertas.filter(function(a) { return ALERTAS._tipoBasico(a.tipo); });
       // Nunca silenciar: o usuario precisa SABER que o app detectou algo, mesmo
       // sem poder ver o que. Teaser vale mais que ausencia -- ausencia nao
