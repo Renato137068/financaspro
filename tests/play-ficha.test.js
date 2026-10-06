@@ -40,10 +40,16 @@ describe('ficha lida de docs/play-store-ficha.md', () => {
     expect(conferir(t, imagens())).toEqual([]);
   });
 
-  test('envia as capturas de celular 01 a 08, em ordem, e nenhuma de tablet', () => {
-    const { phoneScreenshots, featureGraphic } = imagens();
-    expect(phoneScreenshots.map((f) => path.basename(f).slice(0, 2))).toEqual(['01', '02', '03', '04', '05', '06', '07', '08']);
-    expect(phoneScreenshots.join()).not.toMatch(/tablet|placeholder/);
+  test('envia as capturas 01 a 08 de celular, tablet 7" e 10", em ordem, cada uma da sua pasta', () => {
+    const { phoneScreenshots, sevenInchScreenshots, tenInchScreenshots, featureGraphic } = imagens();
+    const ordem = ['01', '02', '03', '04', '05', '06', '07', '08'];
+    for (const cap of [phoneScreenshots, sevenInchScreenshots, tenInchScreenshots]) {
+      expect(cap.map((f) => path.basename(f).slice(0, 2))).toEqual(ordem);
+      expect(cap.join()).not.toMatch(/placeholder|screenshot-/);
+    }
+    expect(phoneScreenshots.join()).not.toMatch(/tablet/);
+    expect(sevenInchScreenshots.every((f) => path.dirname(f).endsWith('vitrine/tablet'))).toBe(true);
+    expect(tenInchScreenshots.every((f) => path.dirname(f).endsWith('vitrine/tablet-10'))).toBe(true);
     expect(featureGraphic.map((f) => path.basename(f))).toEqual(['destaque-1024x500.png']);
   });
 });
@@ -71,8 +77,16 @@ describe('conferir', () => {
     expect(erros).toMatch(/d é 1024x512/);
   });
 
-  test('recusa menos de 2 capturas', () => {
+  test('recusa menos de 2 capturas de celular', () => {
     expect(conferir(ok, { ...imgs, phoneScreenshots: ['a'] }, lerFalso())).toEqual(['1 capturas de celular (a Play aceita de 2 a 8)']);
+  });
+
+  test('tablet: 9:16 obrigatório e 10" com lado menor de pelo menos 1080', () => {
+    const tab = { ...imgs, sevenInchScreenshots: ['s'], tenInchScreenshots: ['t'] };
+    expect(conferir(ok, tab, lerFalso({ s: png(1080, 1920), t: png(1440, 2560) }))).toEqual([]);
+    const erros = conferir(ok, tab, lerFalso({ s: png(1200, 1920), t: png(720, 1280) })).join('\n');
+    expect(erros).toMatch(/s é 1200x1920, fora de 9:16/);
+    expect(erros).toMatch(/t é 720x1280, lados fora de 1080 a 7680/);
   });
 });
 
