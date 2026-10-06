@@ -1,7 +1,7 @@
 // FinançasPro - Service Worker (PWA offline-first, stale-while-revalidate)
 // Gerado por scripts/generate-sw-cache.cjs — não edite urlsParaCache manualmente
 
-const CACHE_NAME = 'financaspro-v11318-p3';
+const CACHE_NAME = 'financaspro-v11319-p3';
 const urlsParaCache = [
   "/",
   "/css/base.css",
