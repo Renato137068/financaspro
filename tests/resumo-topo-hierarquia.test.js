@@ -71,3 +71,51 @@ describe('hierarquia do topo — "Disponível para gastar" logo abaixo do Saldo'
     expect(posDisp).toBeLessThan(posInd);
   });
 });
+
+describe('primeiro uso — painel sem cartões zerados', function() {
+  beforeEach(function() {
+    document.body.innerHTML +=
+      '<div id="aba-resumo"></div>';
+  });
+
+  test('sem lançamentos → #aba-resumo ganha resumo-primeiro-uso', function() {
+    txs = [];
+    RD.renderOnboarding();
+    expect(document.getElementById('aba-resumo').classList.contains('resumo-primeiro-uso')).toBe(true);
+  });
+
+  test('com lançamentos → a classe sai', function() {
+    txs = [{ id: 1 }];
+    RD.renderOnboarding();
+    expect(document.getElementById('aba-resumo').classList.contains('resumo-primeiro-uso')).toBe(false);
+  });
+
+  test('o CSS esconde os blocos que só mostrariam R$ 0,00', function() {
+    var css = fs.readFileSync(path.join(__dirname, '..', 'css', 'layouts', 'dashboard.css'), 'utf8');
+    ['.cards-container', '#dashboard-indicadores', '#secao-orcamento-resumo', '#secao-ultimas-transacoes']
+      .forEach(function(sel) { expect(css).toContain('.resumo-primeiro-uso ' + sel); });
+  });
+});
+
+describe('saudação', function() {
+  // O renderer guarda o elemento em cache: o mesmo nó serve a todas as chamadas.
+  var greeting = document.createElement('div');
+  greeting.id = 'dashboard-greeting';
+
+  function saudar(nome) {
+    document.body.appendChild(greeting);
+    RD._ctx = { config: { nome: nome }, agora: new Date(2026, 9, 6, 9), ano: 2026 };
+    RD.renderGreeting();
+    return greeting.querySelector('.greeting-hello').textContent;
+  }
+
+  test('sem nome não cumprimenta "Usuário"', function() {
+    expect(saudar('Usuário')).toBe('Bom dia!');
+    expect(saudar('Usuario')).toBe('Bom dia!');
+    expect(saudar('')).toBe('Bom dia!');
+  });
+
+  test('com nome usa o nome', function() {
+    expect(saudar('Maria')).toBe('Bom dia, Maria!');
+  });
+});

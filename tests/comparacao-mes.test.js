@@ -21,9 +21,10 @@ beforeAll(function() {
 });
 
 describe('UI.ComparacaoMes.html', function() {
-  test('sem mês anterior mostra travessão neutro', function() {
+  test('sem mês anterior diz isso, em vez de um travessão solto', function() {
     expect(UI.ComparacaoMes.html(100, 0)).toContain('comp-neutro');
-    expect(UI.ComparacaoMes.html(100, null)).toContain('—');
+    expect(UI.ComparacaoMes.html(100, null)).toContain('Sem mês anterior');
+    expect(UI.ComparacaoMes.html(100, null)).not.toContain('—');
   });
 
   test('alta relevante é positiva com seta para cima', function() {

@@ -8,9 +8,12 @@
  */
 
 const ComparacaoMes = {
+  // Sem mês anterior não há variação. Um "—" solto parecia dado faltando.
+  SEM_ANTERIOR: 'Sem mês anterior',
+
   // html(atual, anterior, inverso?) → string span para innerHTML
   html: function(atual, anterior, inverso) {
-    if (!anterior || anterior === 0) return '<span class="comp-neutro">—</span>';
+    if (!anterior || anterior === 0) return '<span class="comp-neutro">' + ComparacaoMes.SEM_ANTERIOR + '</span>';
     var diff = ((atual - anterior) / anterior) * 100;
     var arred = Math.round(diff);
     // Variação que arredonda a 0% é estável: nada de "↑ +0%" nem "↓ -0%"
@@ -28,7 +31,7 @@ const ComparacaoMes = {
     var span = document.createElement('span');
     if (!anterior || anterior === 0) {
       span.className = 'comp-neutro';
-      span.textContent = '—';
+      span.textContent = ComparacaoMes.SEM_ANTERIOR;
       return span;
     }
     var diff = ((atual - anterior) / anterior) * 100;

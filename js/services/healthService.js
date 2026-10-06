@@ -47,7 +47,14 @@ const HEALTH_SERVICE = {
         precisa = dias > diasLimite;
       }
       if (!precisa || sessionStorage.getItem('_avisoBackup')) return false;
+      // O sessionStorage só segura o aviso dentro de uma sessão: cada vez que o
+      // app abria, o banner voltava por cima do cabeçalho. Agora ele aparece no
+      // máximo uma vez a cada `diasLimite` dias, mesmo sem backup feito.
+      var CHAVE_ULTIMO_AVISO = 'fp-lembrete-exportar-em';
+      var ultimoAviso = Number(localStorage.getItem(CHAVE_ULTIMO_AVISO)) || 0;
+      if (ultimoAviso && (Date.now() - ultimoAviso) < diasLimite * 24 * 60 * 60 * 1000) return false;
       sessionStorage.setItem('_avisoBackup', '1');
+      localStorage.setItem(CHAVE_ULTIMO_AVISO, String(Date.now()));
 
       setTimeout(function() {
         if (typeof UTILS === 'undefined' || !UTILS.mostrarBanner) return;
