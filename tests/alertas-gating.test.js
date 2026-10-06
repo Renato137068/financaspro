@@ -16,13 +16,14 @@ function loadAlertas(opts) {
     },
     AI_ENGINE: {
       gerarAlertas: function() {
+        if (opts.alertas) return opts.alertas;
         return [
           { id: 's1', tipo: 'saldo', titulo: 'Saldo', msg: 'ok', gravidade: 'alta' },
           { id: 'p1', tipo: 'padrao', titulo: 'Padrão', msg: 'adv', gravidade: 'baixa' },
           { id: 'h1', tipo: 'habito', titulo: 'Hábito', msg: 'adv', gravidade: 'baixa' },
         ];
       },
-      detectarAnomalias: function() { return []; },
+      detectarAnomalias: function() { return opts.anomalias || []; },
       detectarPadroesRecorrentes: function() { return []; },
     },
     CARTOES: undefined,
@@ -78,5 +79,22 @@ describe('ALERTAS gating Pro', function() {
     const A = loadAlertas({ canAdvanced: true, isCloud: true });
     const list = A.verificar(true);
     expect(list.some(function(a) { return a.tipo === 'upsell'; })).toBe(false);
+  });
+
+  test('lembrete de hábito sozinho não vira "detectou algo fora do padrão"', function() {
+    // Conta nova, sem nada detectado: o único alerta avançado é "Sem
+    // lançamentos hoje". O teaser afirmaria uma detecção que não existe.
+    const A = loadAlertas({
+      canAdvanced: false,
+      alertas: [{ id: 'sem-lancamento', tipo: 'habito', titulo: 'Sem lançamentos hoje', msg: 'x', gravidade: 'baixa' }],
+    });
+    const list = A.verificar(true);
+    expect(list.some(function(a) { return a.tipo === 'upsell'; })).toBe(false);
+  });
+
+  test('gasto incomum escondido no FREE aciona o teaser', function() {
+    const A = loadAlertas({ canAdvanced: false, alertas: [], anomalias: [{ transacao: { id: 't1' } }] });
+    const list = A.verificar(true);
+    expect(list.some(function(a) { return a.tipo === 'upsell'; })).toBe(true);
   });
 });
