@@ -1,14 +1,7 @@
-/* Metas financeiras */
-.metas-section {
-  margin-top: var(--space-6);
-}
-
-.metas-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
+/* Metas: o que o boot desenha (grade do Resumo e o formulário .meta-form,
+   usado também por bancos, patrimônio, gastos fixos e contas a pagar).
+   Os cartões e o aporte da sub-aba Metas ficam em metas-tela.css, que chega
+   com o chunk 'metas' (scripts/generate-telas.cjs). */
 .metas-resumo-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -19,159 +12,6 @@
   .metas-resumo-grid {
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   }
-}
-
-.meta-card {
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-xl);
-  padding: var(--space-4);
-  box-shadow: var(--shadow-superficie);
-}
-
-.meta-card--compact {
-  padding: var(--space-3);
-}
-
-.meta-card--done {
-  border-color: rgba(47, 156, 109, 0.35);
-}
-
-.metas-header-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.metas-header-actions i {
-  width: 1rem;
-  height: 1rem;
-}
-
-/* Acento de urgência: a meta que precisa de ação salta na lista. */
-.meta-card--atrasada {
-  border-left: 3px solid var(--color-warning);
-}
-
-.meta-card--vencida {
-  border-left: 3px solid var(--color-danger);
-}
-
-.meta-card-header {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-  margin-bottom: var(--space-3);
-}
-
-.meta-card-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-lg);
-  background: rgba(18, 105, 78, 0.1);
-  color: var(--color-primary-text);
-  flex-shrink: 0;
-}
-
-.meta-card-icon svg {
-  width: 20px;
-  height: 20px;
-}
-
-.meta-card-titles {
-  flex: 1;
-  min-width: 0;
-}
-
-.meta-card-title {
-  margin: 0;
-  font-size: var(--font-size-base);
-  font-weight: 700;
-  color: var(--color-text-primary);
-}
-
-.meta-card-prazo {
-  display: block;
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
-  margin-top: 2px;
-}
-
-.meta-card-pct {
-  font-size: var(--font-size-sm);
-  font-weight: 700;
-  color: var(--color-primary-text);
-}
-
-.meta-card-valores {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-  margin-bottom: var(--space-2);
-  font-weight: 600;
-}
-
-.meta-card-alvo {
-  font-size: var(--font-size-sm);
-  font-weight: 500;
-  color: var(--color-text-muted);
-}
-
-.meta-progress {
-  margin-bottom: var(--space-2);
-}
-
-/* Progresso de meta = saudável (verde); âmbar fica só para limites de orçamento. */
-.meta-progress .orc-progress-fill.attention {
-  background: var(--color-success);
-}
-
-.meta-card-done-msg {
-  margin: var(--space-2) 0 0;
-  font-size: var(--font-size-sm);
-  color: var(--color-success-text);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.meta-card-actions {
-  display: flex;
-  gap: var(--space-2);
-  margin-top: var(--space-3);
-  flex-wrap: wrap;
-}
-
-.meta-btn-danger {
-  color: var(--color-danger-text) !important;
-}
-
-.meta-empty {
-  text-align: center;
-  padding: var(--space-6) var(--space-4);
-  background: var(--color-bg-card);
-  border-radius: var(--radius-xl);
-  border: 1px dashed var(--color-border-light);
-}
-
-.meta-empty-icon {
-  font-size: var(--font-size-3xl);
-  margin-bottom: var(--space-3);
-  color: var(--color-primary-text);
-}
-
-.meta-empty-title {
-  font-weight: 700;
-  margin: 0 0 var(--space-2);
-}
-
-.meta-empty-desc {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
-  margin: 0 0 var(--space-4);
 }
 
 .meta-form .form-label {
@@ -195,53 +35,12 @@
   font-size: var(--font-size-base);
 }
 
-.meta-form--aporte {
-  text-align: left;
-}
-
-.meta-aporte-lead {
-  margin: 0 0 var(--space-2);
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-primary);
-  text-align: left;
-  line-height: 1.4;
-}
-
-.meta-aporte-restante {
-  margin: 0 0 var(--space-4);
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
-  text-align: left;
-}
-
-.modal-box .meta-form p.campo-moeda-preview,
-.modal-box .meta-form--aporte .meta-aporte-lead,
-.modal-box .meta-form--aporte .meta-aporte-restante {
+.modal-box .meta-form p.campo-moeda-preview {
   text-align: left;
   margin-bottom: var(--space-2);
 }
 
-.modal-box .meta-form--aporte .meta-aporte-restante {
-  margin-bottom: var(--space-4);
+/* Fica no boot: css/components/buttons.css estiliza o hover desta classe. */
+.meta-btn-danger {
+  color: var(--color-danger-text) !important;
 }
-
-/* .btn-sm canônico em css/components/buttons.css */
-
-/* ── Diagnóstico da meta ──────────────────────────────────────────
-   A barra de progresso responde "onde estou". Esta linha responde
-   "vou conseguir?" — e, quando a resposta é não, diz de quanto é o
-   ajuste. Cores vindas dos tokens semânticos, que já existem nos
-   dois temas (o .insight aprendeu isso da forma difícil).
-─────────────────────────────────────────────────────────────────── */
-
-.meta-diagnostico {
-  margin: var(--space-2) 0 0;
-  font-size: var(--font-size-xs);
-  line-height: 1.4;
-}
-
-.meta-diagnostico--ok      { color: var(--color-success-text); }
-.meta-diagnostico--alerta  { color: var(--color-warning-text); }
-.meta-diagnostico--erro    { color: var(--color-danger-text); }
-.meta-diagnostico--neutro  { color: var(--color-text-secondary); }

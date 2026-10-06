@@ -59,7 +59,7 @@
 @import './features/superficie.css';
 
 /* ── Chegam com o chunk, não no primeiro acesso ───────────────
-   onboarding, assinaturas, relatorios, patrimonio, simulador,
+   onboarding, assinaturas, relatorios, patrimonio, simulador, metas-tela,
    open-finance, billing-planos e layouts/{extrato,orcamento,config}-tela:
    usadas só pelas telas de um chunk sob demanda. Os layouts acima guardam
    só o que o boot desenha (resumo, formulário, cascas). scripts/generate-telas.cjs (CSS_DOS_CHUNKS) as embute

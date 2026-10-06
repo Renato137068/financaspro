@@ -35,6 +35,7 @@ const CSS_DOS_CHUNKS = {
   config: ['css/layouts/config-tela.css'],
   conta: ['css/features/billing-planos.css'],
   extrato: ['css/layouts/extrato-tela.css'],
+  metas: ['css/features/metas-tela.css'],
   onboarding: ['css/features/onboarding.css'],
   orcamento: ['css/layouts/orcamento-tela.css'],
   patrimonio: ['css/features/patrimonio.css'],
