@@ -55,9 +55,9 @@ describe('Auth Fase 3 — Supabase e recovery', () => {
   });
 
   test('exclusão Supabase exige reautenticação com senha', () => {
-    const nav = fs.readFileSync(path.join(root, 'js/modules/init-navigation.js'), 'utf8');
-    expect(nav).toContain('reauthWithPassword');
-    expect(nav).toMatch(/Digite sua senha para confirmar a exclusão/);
+    const fluxo = fs.readFileSync(path.join(root, 'js/modules/excluir-conta.js'), 'utf8');
+    expect(fluxo).toContain('reauthWithPassword');
+    expect(fluxo).toMatch(/Digite sua senha para confirmar a exclusão/);
   });
 
   test('supabase expõe MFA TOTP (enroll/verify/gate)', () => {

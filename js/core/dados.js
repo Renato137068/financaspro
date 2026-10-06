@@ -931,21 +931,72 @@ const DADOS = {
     return merged;
   },
 
+  /**
+   * O que "Apagar todos os dados" deixa no aparelho. Só o que não é dado
+   * financeiro e cuja perda faria outra coisa que a pessoa não pediu: a sessão
+   * de login e a biometria presa a ela (sair da conta é outra ação) e as chaves
+   * da cifragem local (sem elas, uma frase-senha deixaria de abrir o que for
+   * gravado depois).
+   */
+  CHAVES_PRESERVADAS_AO_LIMPAR: [
+    'fp-supabase-auth',
+    'fp-biometric-enabled',
+    'financaspro_crypto_enabled',
+    'financaspro_ckey_salt',
+    'financaspro_ckey_dev',
+    'fp-dev-sw'
+  ],
+
+  /** Bancos IndexedDB do app: lançamentos (kv) e comprovantes. */
+  BANCOS_IDB: ['financaspro-kv', 'financaspro-anexos'],
+
+  /**
+   * Apaga tudo o que o app guardou neste aparelho, menos as chaves acima.
+   * Antes só saíam lançamentos e configuração, e ficavam contas, comprovantes
+   * e o histórico do aprendizado (palavras das descrições e valor médio por
+   * categoria) enquanto a tela dizia "Não sobrou nada neste aparelho".
+   * Por isso a limpeza é por exclusão: uma chave nova que alguém criar amanhã
+   * já sai sem precisar lembrar de incluí-la aqui.
+   */
   limparTodos: function() {
     DADOS._transacoesCache = [];
     DADOS._transacoesBackend = 'localStorage';
+    DADOS._plainCache = {};
     try {
-      localStorage.removeItem(DADOS.TX_BACKEND_KEY);
-      localStorage.removeItem(DADOS.TX_SYNC_PING_KEY);
-    } catch (e) { /* noop */ }
-    if (typeof IDB_KV !== 'undefined') {
-      IDB_KV.remove(CONFIG.STORAGE_TRANSACOES);
-    }
-    DADOS._storageRemoveRaw(CONFIG.STORAGE_TRANSACOES);
-    DADOS._storageRemoveRaw(CONFIG.STORAGE_CONFIG);
+      var preservar = DADOS.CHAVES_PRESERVADAS_AO_LIMPAR;
+      var apagar = [];
+      for (var i = 0; i < localStorage.length; i++) {
+        var chave = localStorage.key(i);
+        if (chave && preservar.indexOf(chave) === -1) apagar.push(chave);
+      }
+      apagar.forEach(function(k) { localStorage.removeItem(k); });
+    } catch (e) { /* sem localStorage (modo privado): não há o que apagar */ }
+    try { sessionStorage.clear(); } catch (e) { /* noop */ }
+    DADOS._apagarBancosIdb();
     DADOS._initialized = false;
     DADOS._initPromise = null;
     return DADOS.init();
+  },
+
+  /**
+   * Fecha as conexões abertas e apaga os bancos IndexedDB. Uma conexão aberta
+   * deixaria o deleteDatabase bloqueado até o reload que vem logo depois.
+   */
+  _apagarBancosIdb: function() {
+    if (typeof indexedDB === 'undefined') return;
+    var conexoes = [
+      typeof IDB_KV !== 'undefined' ? IDB_KV : null,
+      typeof window !== 'undefined' ? window.ANEXOS : null
+    ];
+    conexoes.forEach(function(mod) {
+      if (mod && mod._db) {
+        try { mod._db.close(); } catch (e) { /* noop */ }
+        mod._db = null;
+      }
+    });
+    DADOS.BANCOS_IDB.forEach(function(nome) {
+      try { indexedDB.deleteDatabase(nome); } catch (e) { /* noop */ }
+    });
   },
 
   getRecorrentes: function() {

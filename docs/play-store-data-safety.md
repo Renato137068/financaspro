@@ -31,26 +31,34 @@
     versão (`fp_app_sessao_dia`), sem IP, user-agent ou id; retenção 30 dias.
     Finalidade: **análise** (erros por sessão de cada versão). Não vinculado à
     conta. Marque como **coletado**, não compartilhado.
-  - **Identificadores do app / compras:** tokens de compra Google Play
-    (verificação de assinatura Pro) enviados aos nossos backends (Supabase Edge
-    / API) para validar entitlement — **não** enviamos o número do cartão.
+  - **Informações financeiras → Histórico de compras:** tokens de compra do
+    Google Play e status da assinatura Pro, enviados à Edge Function
+    `play-verify` para validar o entitlement. Finalidade: **funcionalidade do
+    app**. **Não** recebemos nem enviamos número de cartão.
 - **Finalidade:** funcionalidade do app, sincronização entre aparelhos,
   autenticação, processamento de assinatura.
 - **O app criptografa dados em trânsito?** → **SIM** (HTTPS / TLS).
 - **Dados criptografados em repouso no dispositivo?** → parcial: cifragem AES
   local é **opcional** (Perfil); PIN **não** cifra o armazenamento. Seja
   honesto no questionário: “dados podem ficar em texto no aparelho”.
-- **Compartilhado com terceiros?** → **SIM**, só provedores necessários:
-  - **Supabase** (Auth + banco + sync)
+- **Compartilhado com terceiros?** → **NÃO**, em todas as categorias.
+  Pela regra da Play, dados enviados a um **prestador de serviço** que os trata
+  em nome do desenvolvedor, conforme suas instruções, **não contam como
+  compartilhamento**. É o caso de todos os fornecedores do app:
+  - **Supabase** (Auth + banco + sync + Edge Functions)
   - **Google Play** (Billing / assinaturas no Android)
-  - **Stripe** (assinaturas em builds web / fora do fluxo Play; no APK da loja
-    o caminho principal de cobrança é Play Billing)
+  - **Stripe** (assinaturas em builds web / fora do fluxo Play)
+  - **Resend** (e-mails de assinatura e convites)
   - Open Finance / Belvo: **desligado** nesta versão — não marque até liberar.
+  Os fornecedores continuam listados na política de privacidade (seção 5).
+  Marcar "compartilhado" não é infração, mas aparece na ficha como se os dados
+  fossem a terceiros para fins próprios, o que não é verdade.
 - **O usuário pode pedir exclusão dos dados?** → **SIM**
   - No app: Perfil → Zona de perigo → Excluir conta
   - Na web (obrigatório Play):  
     `https://app.financaspro.com/privacidade.html#exclusao-de-conta`  
-    (hoje o contato documentado em `privacidade.html` também aceita pedido por e-mail)
+    (a seção 10 de `privacidade.html` também aceita pedido por e-mail e avisa
+    que excluir a conta não cancela a assinatura na loja)
 - **Sessão:** o app guarda tokens de sessão (incl. refresh) em `localStorage`
   no WebView — declare armazenamento no dispositivo / identificadores de conta
   conforme o formulário atual do Console.

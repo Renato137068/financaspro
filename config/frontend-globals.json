@@ -73,6 +73,7 @@
     "EVENT_HANDLERS": "writable",
     "EVENT_INIT": "writable",
     "EVENTS": "writable",
+    "EXCLUIR_CONTA": "writable",
     "executarInsight": "writable",
     "exportarDados": "writable",
     "exportarExcel": "writable",

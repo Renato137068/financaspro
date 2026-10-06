@@ -23,7 +23,7 @@ describe('Honestidade Play Store / privacidade', () => {
     expect(priv).toMatch(/N[ãa]o<\/em>\s*criptografa|n[ãa]o criptografa/i);
     expect(priv).toMatch(/duas etapas/i);
     expect(priv).toMatch(/app autenticador/i);
-    expect(priv).toMatch(/\d{1,2} de setembro de 2026/);
+    expect(priv).toMatch(/\d{1,2} de (setembro|outubro) de 2026/);
     expect(priv).toMatch(/tokens de (acesso e )?renova|armazenamento local do WebView/i);
     // Cifragem cobre os lançamentos também no IndexedDB (27/09).
     expect(priv).toMatch(/lançamentos e configurações \(em <em>localStorage<\/em> ou IndexedDB\)/);

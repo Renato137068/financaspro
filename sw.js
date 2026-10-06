@@ -138,6 +138,7 @@ const urlsParaCache = [
   "/js/micro-interactions.js",
   "/js/modules/config-backup.js",
   "/js/modules/config-bancos.js",
+  "/js/modules/excluir-conta.js",
   "/js/modules/extrato/acoes.js",
   "/js/modules/extrato/base.js",
   "/js/modules/extrato/filtros.js",
