@@ -878,3 +878,11 @@
 
 .transacao-resumo-item .valor-receita { color: var(--color-success-text); }
 .transacao-resumo-item .valor-despesa { color: var(--color-danger-text); }
+
+/* Primeiro uso, sem lançamentos: só saudação, "Comece em 3 passos" e saldo. */
+.resumo-primeiro-uso .cards-container,
+.resumo-primeiro-uso #dashboard-indicadores,
+.resumo-primeiro-uso #secao-orcamento-resumo,
+.resumo-primeiro-uso #secao-ultimas-transacoes {
+  display: none;
+}

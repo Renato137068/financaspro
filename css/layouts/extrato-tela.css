@@ -1733,8 +1733,17 @@
 }
 
 @media (max-width: 480px) {
+  /* Espaçamento menor no celular: com 16px de gap e de padding, a coluna do
+     nome ficava com ~90px a 360px e quebrava no meio da palavra
+     ("Supermerc / ado", "Combustív / el"). */
   .ext-tx {
     align-items: flex-start;
+    gap: var(--space-2);
+    padding: var(--space-3);
+  }
+
+  .ext-tx .tx-checkbox {
+    margin-right: 0;
   }
 
   .extrato-item-valor,
