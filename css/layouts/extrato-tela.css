@@ -1733,8 +1733,17 @@
 }
 
 @media (max-width: 480px) {
+  /* Num celular de 360px a descrição ficava com ~100px e "Supermercado"
+     quebrava no meio; espaço mais justo devolve a palavra inteira. */
   .ext-tx {
     align-items: flex-start;
+    padding-inline: var(--space-3);
+    gap: var(--space-3);
+  }
+
+  .ext-tx-icon {
+    width: 36px;
+    height: 36px;
   }
 
   .extrato-item-valor,

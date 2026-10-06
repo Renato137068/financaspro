@@ -1,7 +1,7 @@
 name: Ficha da Play
 
 # Atualiza a página do app na Play Store (nome, descrições, capturas de
-# celular e destaque) a partir do repositório: textos de
+# celular e tablet e destaque) a partir do repositório: textos de
 # docs/play-store-ficha.md, imagens de docs/play-store/vitrine/.
 # Só roda à mão (Actions → Ficha da Play → Run workflow).
 #

@@ -139,7 +139,8 @@ PARTE 4 — Conferências (só ler e me relatar)
 
 ## Alternativa: enviar pelo GitHub
 
-Textos e capturas de celular também podem ir sem abrir o Play Console, pelo
+Textos, capturas de celular e de tablet (7" e 10") e o destaque também podem
+ir sem abrir o Play Console, pelo
 workflow **Ficha da Play** (`.github/workflows/play-ficha.yml`, script
 `scripts/play-ficha.cjs`). Ele lê os textos de `docs/play-store-ficha.md` e as
 imagens de `docs/play-store/vitrine/`, e fala com a API da Play usando o
@@ -159,8 +160,8 @@ Para usar: Actions → Ficha da Play → Run workflow. Desmarcado, "publicar"
 só valida (a Play confere e nada muda na loja). Marcado, a ficha vai para a
 revisão. `npm run check:ficha` faz a conferência local, sem rede.
 
-Fica de fora, ainda à mão: as capturas de tablet (até serem refeitas em
-9:16), respostas a avaliações e as conferências da Parte 4. As novidades da
+Fica de fora, ainda à mão: respostas a avaliações e as conferências da
+Parte 4. As novidades da
 versão vão com o AAB, pelo `release.yml` (`distribution/whatsnew/`).
 
 ## Depois

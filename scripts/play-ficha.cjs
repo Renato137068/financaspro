@@ -3,8 +3,8 @@
  * play-ficha.cjs — envia a ficha da loja (textos e imagens) para a Play.
  *
  * Fonte única: o texto sai de docs/play-store-ficha.md (nome, descrição curta
- * e completa) e as imagens de docs/play-store/vitrine/ (capturas 01 a 08 e o
- * destaque). Ninguém copia texto para outro lugar: muda a ficha, roda isto.
+ * e completa) e as imagens de docs/play-store/vitrine/ (capturas 01 a 08 de
+ * celular, tablet/ para 7", tablet-10/ para 10" e o destaque). Ninguém copia texto para outro lugar: muda a ficha, roda isto.
  *
  * Fala com a Google Play Developer Publishing API por uma "edição": tudo o
  * que muda fica numa transação que só vale se for confirmada (commit). Sem
@@ -18,8 +18,9 @@
  * A chave da conta de serviço vem de PLAY_SERVICE_ACCOUNT_JSON (o mesmo
  * segredo do release.yml). Nunca é impressa.
  *
- * As capturas de tablet ficam de fora até serem refeitas em 9:16
- * (revisão da vitrine de 04/out): a Play recusa ou esconde as 16:10.
+ * Todas as capturas precisam ser 9:16 (revisão da vitrine de 04/out): a Play
+ * recusa ou esconde as 16:10. Uma pasta de tablet vazia ou ausente fica de
+ * fora do envio, e o que já está na loja para aquele tamanho não é apagado.
  * As "novidades da versão" vão junto com o AAB, no release.yml.
  */
 const fs = require('fs');
@@ -35,6 +36,13 @@ const API = 'https://androidpublisher.googleapis.com/androidpublisher/v3/applica
 const UPLOAD = 'https://androidpublisher.googleapis.com/upload/androidpublisher/v3/applications/' + PACOTE;
 
 const LIMITES = { title: 30, shortDescription: 80, fullDescription: 4000 };
+
+/** Tipo de imagem da API → pasta, nome legível e menor/maior lado aceitos. */
+const CAPTURAS = {
+  phoneScreenshots: { pasta: '', nome: 'celular', min: 1080, max: 3840, obrigatoria: true },
+  sevenInchScreenshots: { pasta: 'tablet', nome: 'tablet 7"', min: 320, max: 3840 },
+  tenInchScreenshots: { pasta: 'tablet-10', nome: 'tablet 10"', min: 1080, max: 7680 },
+};
 
 /** Seção "## <titulo>" do markdown, até a próxima "## ". */
 function secao(md, titulo) {
@@ -69,12 +77,16 @@ function dimensoes(buf) {
 }
 
 function imagens() {
-  const dir = path.join(ROOT, VITRINE);
-  const capturas = fs.readdirSync(dir).filter((f) => /^0[1-8]-[\w-]+\.png$/.test(f)).sort();
-  return {
-    phoneScreenshots: capturas.map((f) => path.join(VITRINE, f)),
-    featureGraphic: [path.join(VITRINE, 'destaque-1024x500.png')],
-  };
+  const imgs = {};
+  for (const [tipo, { pasta, obrigatoria }] of Object.entries(CAPTURAS)) {
+    const dir = path.join(ROOT, VITRINE, pasta);
+    const capturas = fs.existsSync(dir)
+      ? fs.readdirSync(dir).filter((f) => /^0[1-8]-[\w-]+\.png$/.test(f)).sort()
+      : [];
+    if (capturas.length || obrigatoria) imgs[tipo] = capturas.map((f) => path.join(VITRINE, pasta, f));
+  }
+  imgs.featureGraphic = [path.join(VITRINE, 'destaque-1024x500.png')];
+  return imgs;
 }
 
 /** Lista de problemas que fariam a Play recusar a ficha (vazia = ok). */
@@ -85,13 +97,16 @@ function conferir(t, imgs, ler = (rel) => fs.readFileSync(path.join(ROOT, rel)))
     if (!n) erros.push(campo + ' vazio');
     else if (n > max) erros.push(campo + ' com ' + n + ' caracteres (máx. ' + max + ')');
   }
-  const cap = imgs.phoneScreenshots;
-  if (cap.length < 2 || cap.length > 8) erros.push(cap.length + ' capturas de celular (a Play aceita de 2 a 8)');
-  for (const rel of cap) {
-    const { w, h, alfa } = dimensoes(ler(rel));
-    if (w * 16 !== h * 9 && w * 9 !== h * 16) erros.push(rel + ' é ' + w + 'x' + h + ', fora de 9:16');
-    if (Math.min(w, h) < 1080 || Math.max(w, h) > 3840) erros.push(rel + ' é ' + w + 'x' + h + ', lados fora de 1080 a 3840');
-    if (alfa) erros.push(rel + ' tem canal alfa');
+  for (const [tipo, { nome, min, max, obrigatoria }] of Object.entries(CAPTURAS)) {
+    const cap = imgs[tipo];
+    if (!cap) continue;
+    if ((obrigatoria && cap.length < 2) || cap.length > 8) erros.push(cap.length + ' capturas de ' + nome + ' (a Play aceita de 2 a 8)');
+    for (const rel of cap) {
+      const { w, h, alfa } = dimensoes(ler(rel));
+      if (w * 16 !== h * 9 && w * 9 !== h * 16) erros.push(rel + ' é ' + w + 'x' + h + ', fora de 9:16');
+      if (Math.min(w, h) < min || Math.max(w, h) > max) erros.push(rel + ' é ' + w + 'x' + h + ', lados fora de ' + min + ' a ' + max);
+      if (alfa) erros.push(rel + ' tem canal alfa');
+    }
   }
   for (const rel of imgs.featureGraphic) {
     const { w, h, alfa } = dimensoes(ler(rel));
@@ -194,7 +209,8 @@ if (require.main === module) {
     process.exit(1);
   }
   console.log('[play-ficha] ✓ título ' + [...t.title].length + '/30, curta ' + [...t.shortDescription].length
-    + '/80, completa ' + [...t.fullDescription].length + '/4000; ' + imgs.phoneScreenshots.length + ' capturas de celular e o destaque');
+    + '/80, completa ' + [...t.fullDescription].length + '/4000; capturas: '
+    + Object.entries(CAPTURAS).map(([tipo, c]) => (imgs[tipo] || []).length + ' de ' + c.nome).join(', ') + '; e o destaque');
   if (validar) {
     enviar(t, imgs, publicar).catch((e) => {
       console.error('[play-ficha] ✗ ' + e.message);

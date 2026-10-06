@@ -92,9 +92,16 @@ const CAPTURAS = [
         var ac = document.getElementById('autocomplete-list');
         if (ac) ac.hidden = true;
       });
-      // No celular, dos atalhos para baixo, para o valor caber acima da barra;
-      // no tablet cabe a partir do título da aba.
-      await rolarAte(page, tela.largura < 500 ? '.quick-label' : '#aba-novo .perfil-header', tela.largura < 500 ? 10 : 8);
+      // Do título da aba ("Novo lançamento"), nos três formatos. No celular,
+      // a linha de apoio do título e a entrada por frase saem da foto para o valor
+      // caber acima da barra com o título à vista.
+      if (tela.largura < 500) {
+        await page.evaluate(function() {
+          document.querySelectorAll('#aba-novo .perfil-header .perfil-meta, #aba-novo .er-wrapper')
+            .forEach(function(el) { el.style.setProperty('display', 'none', 'important'); });
+        });
+      }
+      await rolarAte(page, '#aba-novo .perfil-header', 8);
     },
   },
   {
