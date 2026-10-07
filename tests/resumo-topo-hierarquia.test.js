@@ -92,7 +92,7 @@ describe('primeiro uso — painel sem cartões zerados', function() {
 
   test('o CSS esconde os blocos que só mostrariam R$ 0,00', function() {
     var css = fs.readFileSync(path.join(__dirname, '..', 'css', 'layouts', 'dashboard.css'), 'utf8');
-    ['.cards-container', '#dashboard-indicadores', '#secao-orcamento-resumo', '#secao-ultimas-transacoes']
+    ['.cards-container', '#dashboard-indicadores', '#secao-orcamento-resumo', '#secao-ultimas-transacoes', '#secao-analises']
       .forEach(function(sel) { expect(css).toContain('.resumo-primeiro-uso ' + sel); });
   });
 });

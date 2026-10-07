@@ -421,16 +421,13 @@ main {
   [id="aba-resumo"] > .btn-primario,
   #insights-container,
   #previsao-mini,
-  #secao-relatorios {
+  #secao-analises {
     grid-column: 1;
   }
 
   /* Coluna lateral (~1fr): limites, metas, análise/previsão e widgets */
   #secao-orcamento-resumo,
   #secao-metas-resumo,
-  #btn-graficos,
-  #graficos-panel,
-  #secao-previsao,
   #secao-assinaturas-resumo,
   #secao-patrimonio-resumo,
   #secao-cartoes,

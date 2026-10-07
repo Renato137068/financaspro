@@ -200,6 +200,8 @@ const UTILS = {
 
   /**
    * Banner dispensável (não-modal) para avisos como backup pendente.
+   * Com `opts.apos` (id de um elemento na página), entra no fluxo logo depois
+   * dele em vez de flutuar por cima do topo da tela.
    */
   mostrarBanner: function(opts) {
     opts = opts || {};
@@ -247,7 +249,13 @@ const UTILS = {
     }
 
     banner.appendChild(actions);
-    document.body.appendChild(banner);
+    var ancora = opts.apos ? document.getElementById(opts.apos) : null;
+    if (ancora && ancora.parentNode) {
+      banner.className += ' fp-banner--inline';
+      ancora.parentNode.insertBefore(banner, ancora.nextSibling);
+    } else {
+      document.body.appendChild(banner);
+    }
     return banner;
   },
 

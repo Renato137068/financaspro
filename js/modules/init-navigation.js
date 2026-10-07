@@ -250,6 +250,7 @@ const INIT_NAVIGATION = {
       'editar-renda-orcamento': function() { safeCall('editarRendaOrcamento'); },
       'editar-regra-503020': function() { safeCall('editarRegra503020'); },
       'toggle-detalhes-categorias': function() { safeCall('toggleDetalhesCategorias'); },
+      'toggle-analises': function() { self.toggleAnalises(); },
       'toggle-graficos': function() { self.toggleGraficos(); },
       'toggle-previsao': function() { self.togglePrevisao(); },
       'toggle-relatorios': function() { self.toggleRelatorios(); },
@@ -418,6 +419,20 @@ const INIT_NAVIGATION = {
         });
       },
     );
+  },
+
+  /**
+   * Alterna o bloco "Ver análises do mês" (relatório, gráficos e previsão).
+   */
+  toggleAnalises: function() {
+    var painel = document.getElementById('analises-painel');
+    var arrow  = document.getElementById('analises-arrow');
+    var btn    = document.getElementById('btn-analises');
+    if (!painel) return;
+    var aberto = painel.style.display !== 'none';
+    painel.style.display = aberto ? 'none' : 'block';
+    if (arrow) arrow.classList.toggle('expanded', !aberto);
+    if (btn)   btn.setAttribute('aria-expanded', String(!aberto));
   },
 
   /**

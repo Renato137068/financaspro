@@ -63,6 +63,9 @@ const HEALTH_SERVICE = {
           : 'Você tem ' + txs.length + ' transações sem backup. Exporte seus dados para não perder nada.';
         UTILS.mostrarBanner({
           id: 'backup-reminder-banner',
+          // No fluxo do Resumo, abaixo da saudação: flutuando, cobria o
+          // cabeçalho no celular e cortava o "Bom dia" no desktop.
+          apos: 'dashboard-greeting',
           mensagem: msg,
           acao: 'Exportar',
           tipo: 'info',

@@ -473,6 +473,17 @@ describe('a11y — densidade da aba Resumo', () => {
     expect(pos('secao-previsao')).toBeGreaterThan(pos('graficos-panel'));
   });
 
+  test('relatório, gráficos e previsão ficam atrás de um único "Ver análises do mês"', () => {
+    expect(html).toMatch(/id="btn-analises"[^>]*aria-expanded="false"[^>]*aria-controls="analises-painel"/);
+    expect(html).toMatch(/id="analises-painel"[^>]*style="display:none"/);
+    var ini = pos('analises-painel');
+    var fim = html.indexOf('id="secao-alertas-painel"');
+    ['secao-relatorios', 'btn-graficos', 'secao-previsao'].forEach(function(id) {
+      expect(pos(id)).toBeGreaterThan(ini);
+      expect(pos(id)).toBeLessThan(fim);
+    });
+  });
+
   test('seções colapsáveis iniciam fechadas', () => {
     expect(html).toMatch(/id="btn-graficos"[^>]*aria-expanded="false"/);
     expect(html).toMatch(/id="btn-previsao"[^>]*aria-expanded="false"/);
