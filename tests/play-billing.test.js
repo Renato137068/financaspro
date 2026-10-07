@@ -102,6 +102,70 @@ describe('PLAY_BILLING', () => {
     );
   });
 
+  test('reconhece a compra na Play só depois de o servidor confirmar', async () => {
+    const ordem = [];
+    const invoke = jest.fn(() => { ordem.push('verify'); return Promise.resolve({ ok: true }); });
+    const acknowledge = jest.fn(() => { ordem.push('ack'); return Promise.resolve(); });
+    const { PB } = loadPlayBilling({
+      invoke,
+      window: {
+        Capacitor: { isNativePlatform: () => true },
+        __fpNativeBilling: {
+          purchase: () => Promise.resolve({ purchaseToken: 'tok-1' }),
+          acknowledge,
+        },
+      },
+    });
+    await PB.purchase('financaspro.pro.monthly');
+    expect(ordem).toEqual(['verify', 'ack']);
+    expect(acknowledge).toHaveBeenCalledWith('tok-1');
+  });
+
+  test('servidor recusou: a compra fica sem reconhecimento (a Play devolve sozinha)', async () => {
+    const acknowledge = jest.fn(() => Promise.resolve());
+    const { PB } = loadPlayBilling({
+      invoke: jest.fn(() => Promise.reject(new Error('token-em-uso'))),
+      window: {
+        Capacitor: { isNativePlatform: () => true },
+        __fpNativeBilling: {
+          purchase: () => Promise.resolve({ purchaseToken: 'tok-1' }),
+          acknowledge,
+        },
+      },
+    });
+    await expect(PB.purchase('financaspro.pro.monthly')).rejects.toThrow('token-em-uso');
+    expect(acknowledge).not.toHaveBeenCalled();
+  });
+
+  test('falha ao reconhecer não desfaz a compra já confirmada', async () => {
+    const { PB } = loadPlayBilling({
+      window: {
+        Capacitor: { isNativePlatform: () => true },
+        __fpNativeBilling: {
+          purchase: () => Promise.resolve({ purchaseToken: 'tok-1' }),
+          acknowledge: () => Promise.reject(new Error('falha-reconhecer')),
+        },
+      },
+    });
+    await expect(PB.purchase('financaspro.pro.monthly')).resolves.toEqual({ ok: true });
+  });
+
+  test('restore verifica e reconhece cada compra', async () => {
+    const acknowledge = jest.fn(() => Promise.resolve());
+    const { PB, invoke } = loadPlayBilling({
+      window: {
+        Capacitor: { isNativePlatform: () => true },
+        __fpNativeBilling: {
+          restore: () => Promise.resolve([{ productId: 'financaspro.pro.yearly', purchaseToken: 'tok-r' }]),
+          acknowledge,
+        },
+      },
+    });
+    await PB.restore();
+    expect(invoke).toHaveBeenCalledWith('play-verify', expect.objectContaining({ purchaseToken: 'tok-r' }));
+    expect(acknowledge).toHaveBeenCalledWith('tok-r');
+  });
+
   test('restore devolve lista vazia sem plugin purchases', async () => {
     const { PB } = loadPlayBilling({
       window: {

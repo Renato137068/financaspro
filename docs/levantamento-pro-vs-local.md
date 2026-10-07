@@ -106,8 +106,9 @@ um teto é mudar um dado, não reescrever enforcement.
 | Pro | R$ 16,99 | **R$ 129,99** (−36%) | tiers do Play; anual é o plano promovido |
 | Business | R$ 79,90 | R$ 799 | fora do paywall (`SHOW_BUSINESS_PLAN: false`) |
 
-O anual fica abaixo do Mobills Premium (R$ 99,90/ano), que é a âncora do mercado
-brasileiro. Sem marca, cobrar acima do líder não converte.
+O anual fica cerca de 30% acima do Mobills Premium (R$ 99,90/ano), que é a âncora
+do mercado brasileiro. Baixar o anual para esse patamar está em aberto (auditoria
+de monetização de 07/10/2026); até lá, o preço acima é o que vale.
 
 Trials: **7 dias** no SKU da loja (Play/Stripe) e **14 dias** de Pro de
 boas-vindas concedidos pelo backend na criação da conta, sem cartão. São coisas

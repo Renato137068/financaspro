@@ -69,6 +69,12 @@ export async function createCheckout(
   const successSep = opts.successUrl.includes("?") ? "&" : "?";
   const cancelSep = opts.cancelUrl.includes("?") ? "&" : "?";
 
+  // Teste grátis só na primeira assinatura de loja da org. Sem isto, cancelar e
+  // assinar de novo dava mais 7 dias a cada volta. O Pro de boas-vindas
+  // (welcome:) não conta: não é assinatura, é cortesia sem cartão.
+  const jaAssinou = String(existing?.stripeSubId || "").startsWith("play:")
+    || isStripeManagedSubId(existing?.stripeSubId);
+
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     customer: stripeCustomerId,
@@ -77,7 +83,7 @@ export async function createCheckout(
     cancel_url: opts.cancelUrl + cancelSep + "billing=cancel",
     allow_promotion_codes: true,
     subscription_data: {
-      trial_period_days: TRIAL_DAYS,
+      ...(jaAssinou ? {} : { trial_period_days: TRIAL_DAYS }),
       metadata: { orgId: opts.orgId, planTier: opts.planTier },
     },
     metadata: { orgId: opts.orgId, planTier: opts.planTier, interval: opts.interval },

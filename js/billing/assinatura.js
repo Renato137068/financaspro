@@ -14,9 +14,16 @@ Object.assign(BILLING, {
 
   listPlans: function() {
     var self = BILLING;
+    // A tabela Plan dá os preços; os textos da vitrine são sempre os do app
+    // (STATIC_PLANS), para a tela não prometer o que o plano grátis já tem.
+    var copyPorTier = {};
+    BILLING.STATIC_PLANS.forEach(function(p) { copyPorTier[p.tier] = p.features; });
     var onlyVitrine = function(plans) {
       return (plans || []).filter(function(p) {
         return p && p.tier !== 'BUSINESS';
+      }).map(function(p) {
+        if (!copyPorTier[p.tier]) return p;
+        return Object.assign({}, p, { features: copyPorTier[p.tier].slice() });
       });
     };
     if (BILLING._cache.plans) return Promise.resolve(onlyVitrine(BILLING._cache.plans));

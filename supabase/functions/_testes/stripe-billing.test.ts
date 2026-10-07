@@ -125,6 +125,20 @@ Deno.test("checkout: sessão com trial de 7 dias, metadados para o webhook e pri
   });
 });
 
+Deno.test("checkout: teste grátis só na primeira assinatura; a cortesia de boas-vindas não conta", async () => {
+  await comAmbiente(VARS, async () => {
+    const trialDe = async (stripeSubId: string) => {
+      const st = cliente();
+      const sb = banco([{ id: "s1", orgId: "org1", status: "CANCELED", stripeCustomerId: "cus_1", stripeSubId }]);
+      await checkout(sb, st);
+      return (chamadas("checkout.sessions.create")[0].args[0] as any).subscription_data.trial_period_days;
+    };
+    assert.equal(await trialDe("sub_antiga"), undefined);
+    assert.equal(await trialDe("play:token"), undefined);
+    assert.equal(await trialDe("welcome:user1"), 7);
+  });
+});
+
 Deno.test("checkout: usa ? ou & conforme a URL de retorno já tenha querystring", async () => {
   await comAmbiente(VARS, async () => {
     const st = cliente();
