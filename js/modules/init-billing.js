@@ -17,7 +17,8 @@ import { PLAY_BILLING } from '../play-billing.js';
 const INIT_BILLING = {
   _overlay: null,
   _focusTrap: null,
-  _interval: 'monthly',
+  // O anual é o plano promovido (−36%): o paywall abre nele.
+  _interval: 'yearly',
   // Business sai da vitrine: nao existe ICP para "membros ilimitados e
   // multiplas organizacoes" num app cuja tela principal e o 50/30/20 pessoal.
   // Como ancora de preco tambem nao serve -- ancora so ancora quando e
@@ -403,6 +404,13 @@ const INIT_BILLING = {
     // morto quando OCR/previsão esgotam usos grátis offline.
     INIT_BILLING._fecharPaywall();
 
+    // Abre no anual; quem já paga uma assinatura da loja vê o ciclo dela.
+    INIT_BILLING._interval = (self._assinaturaDeLoja() && BILLING.getBillingInterval
+      && BILLING.getBillingInterval()) || 'yearly';
+    var ativo = function(interval) {
+      return INIT_BILLING._interval === interval ? ' ativo' : '';
+    };
+
     var ov = document.createElement('div');
     ov.className = 'modal-overlay billing-overlay';
     ov.setAttribute('role', 'dialog');
@@ -417,8 +425,8 @@ const INIT_BILLING = {
           '<p class="billing-lead" id="billing-lead">' + UTILS.escapeHtml(contextMsg || 'Previsão de fim de mês, histórico completo, categorização automática e o app em todos os seus aparelhos. Cancela quando quiser.') + '</p>' +
         '</div>' +
         '<div class="billing-interval" role="group" aria-label="Periodicidade">' +
-          '<button type="button" class="billing-interval-btn ativo" data-action="billing-interval" data-interval="monthly">Mensal</button>' +
-          '<button type="button" class="billing-interval-btn" data-action="billing-interval" data-interval="yearly">Anual <span class="billing-save" id="billing-save-badge" hidden></span></button>' +
+          '<button type="button" class="billing-interval-btn' + ativo('monthly') + '" data-action="billing-interval" data-interval="monthly">Mensal</button>' +
+          '<button type="button" class="billing-interval-btn' + ativo('yearly') + '" data-action="billing-interval" data-interval="yearly">Anual <span class="billing-save" id="billing-save-badge" hidden></span></button>' +
         '</div>' +
         '<div class="billing-plans" id="billing-plans"><p class="billing-loading">Carregando planos…</p></div>' +
         '<div class="billing-footer" id="billing-footer"></div>' +
@@ -471,6 +479,82 @@ const INIT_BILLING = {
   },
 
   /**
+   * Há uma assinatura de loja (Play ou Stripe) dando o Pro agora?
+   *
+   * O Pro de boas-vindas não conta: é cortesia sem cartão. Tratá-lo como
+   * assinatura mostrava "Plano atual" no Pro mensal para quem nunca pagou, e
+   * "Mudar para anual" no lugar de "Assinar".
+   */
+  _assinaturaDeLoja: function() {
+    if (typeof BILLING === 'undefined' || !BILLING.getTier || BILLING.getTier() === 'FREE') return false;
+    var sub = BILLING._cache ? BILLING._cache.subscription : null;
+    return !(sub && BILLING.isWelcomeTrial && BILLING.isWelcomeTrial(sub));
+  },
+
+  /**
+   * Dias de teste grátis que esta compra teria, ou 0.
+   *
+   * Na Play, quem decide é ela: getProductDetails só traz a oferta de teste
+   * para quem ainda tem direito. No Stripe, o servidor dá o teste só na
+   * primeira assinatura da conta (stripe-billing.ts), e aqui vale a mesma regra.
+   */
+  _diasDeTeste: function(playId) {
+    var self = INIT_BILLING;
+    if (typeof PLAY_BILLING !== 'undefined' && PLAY_BILLING.isAvailable && PLAY_BILLING.isAvailable()) {
+      var dias = playId && self._playTrialByProductId ? self._playTrialByProductId[playId] : 0;
+      return dias > 0 ? dias : 0;
+    }
+    var sub = typeof BILLING !== 'undefined' && BILLING._cache ? BILLING._cache.subscription : null;
+    var id = sub && typeof sub.stripeSubId === 'string' ? sub.stripeSubId : '';
+    if (id && id.indexOf('welcome:') !== 0) return 0;
+    return (typeof BILLING !== 'undefined' && BILLING.TRIAL_DAYS) || 7;
+  },
+
+  /**
+   * O que acontece depois do toque, dito antes dele: teste, preço depois do
+   * teste, renovação automática e onde cancelar. A Play mostra isso na janela
+   * dela, mas a oferta é esta tela, e a política de assinaturas pede os termos
+   * claros na oferta.
+   */
+  _termosDaOferta: function(diasTeste, priceLabel, usePlay) {
+    var onde = usePlay ? 'na Google Play, em Assinaturas' : 'no app, em Perfil › Plano e assinatura';
+    var depois = diasTeste > 0
+      ? diasTeste + ' dias grátis. Depois, ' + priceLabel
+      : priceLabel;
+    return depois + ', com renovação automática. Cancele quando quiser ' + onde + '.';
+  },
+
+  /**
+   * Texto que a pessoa vê quando a compra não termina. Os erros da Play e do
+   * servidor chegam como código ("compra-cancelada"); mostrar o código cru
+   * assustava quem só desistiu. null = não mostrar nada.
+   * @returns {{msg: string, tipo: string}|null}
+   */
+  _mensagemErroCompra: function(err) {
+    var codigo = String((err && (err.code || err.message)) || '');
+    var msgs = {
+      'compra-cancelada': null,
+      'compra-pendente': { msg: 'Pagamento em processamento. O Pro é liberado assim que o Google Play confirmar.', tipo: 'info' },
+      'compra-em-andamento': { msg: 'Já existe uma compra em andamento. Termine ou feche a janela da Google Play.', tipo: 'info' },
+      'produto-nao-encontrado': { msg: 'Este plano ainda não está disponível na Google Play. Tente mais tarde.', tipo: 'error' },
+      'oferta-indisponivel': { msg: 'Este plano ainda não está disponível na Google Play. Tente mais tarde.', tipo: 'error' },
+      'billing-indisponivel': { msg: 'A Google Play não respondeu. Confira a conexão e tente de novo.', tipo: 'error' },
+      'play-billing-indisponivel': { msg: 'A Google Play não respondeu. Confira a conexão e tente de novo.', tipo: 'error' },
+      'plugin-play-billing-nao-instalado': { msg: 'Atualize o app pela Google Play para assinar.', tipo: 'error' },
+      'falha-restaurar': { msg: 'A Google Play não respondeu. Confira a conexão e tente de novo.', tipo: 'error' },
+      'conta-cloud-indisponivel': { msg: 'Entre na sua conta para assinar o Pro.', tipo: 'info' },
+      'nuvem-indisponivel': { msg: 'Entre na sua conta para assinar o Pro.', tipo: 'info' },
+      'token-em-uso': { msg: 'Esta compra já está ligada a outra conta do FinançasPro. Entre com essa conta para usar o Pro.', tipo: 'error' },
+      'sem-permissao': { msg: 'Só quem criou a conta pode assinar o Pro.', tipo: 'error' },
+      'compra-falhou': { msg: 'A compra não foi concluída. Tente de novo.', tipo: 'error' },
+    };
+    if (Object.prototype.hasOwnProperty.call(msgs, codigo)) return msgs[codigo];
+    // Mensagem já escrita para gente passa como está; código desconhecido, não.
+    if (codigo && !/^[a-z0-9]+(-[a-z0-9]+)+$/.test(codigo)) return { msg: codigo, tipo: 'error' };
+    return { msg: 'Não foi possível concluir a assinatura. Tente de novo.', tipo: 'error' };
+  },
+
+  /**
    * Desconto do plano anual sobre 12 meses, em pontos percentuais inteiros.
    *
    * O selo era fixo em "-17%" no seletor de periodicidade, mas cada plano tem
@@ -512,7 +596,10 @@ const INIT_BILLING = {
     if (!container) return;
 
     var render = function(plans) {
-      var tierAtual = typeof BILLING !== 'undefined' ? BILLING.getTier() : 'FREE';
+      // Cortesia de boas-vindas não é plano da loja: a oferta é a de quem está no grátis.
+      var tierAtual = self._assinaturaDeLoja() ? BILLING.getTier() : 'FREE';
+      var usePlay = typeof PLAY_BILLING !== 'undefined' && PLAY_BILLING.isAvailable
+        && PLAY_BILLING.isAvailable();
       // Sem login/nuvem: mostra preços, mas não "Assinar" (política Play + CTA morto).
       var canAssinar = typeof BILLING !== 'undefined'
         && BILLING.isCloudUser && BILLING.isCloudUser()
@@ -555,6 +642,7 @@ const INIT_BILLING = {
         features = features.filter(function(f) {
           return !/ocr/i.test(String(f || ''));
         });
+        var diasTeste = (tierAtual === 'FREE' || cancelPending) ? self._diasDeTeste(playId) : 0;
         var ctaHtml;
         if (isCurrent) {
           ctaHtml = '<span class="billing-plan-current-label">Plano atual</span>';
@@ -564,7 +652,7 @@ const INIT_BILLING = {
             '</button>';
         } else if (canAssinar) {
           var ctaLabel = tierAtual === 'FREE' || cancelPending
-            ? 'Assinar'
+            ? (diasTeste > 0 ? 'Testar ' + diasTeste + ' dias grátis' : 'Assinar')
             : (isIntervalSwitch
               ? (self._interval === 'yearly' ? 'Mudar para anual' : 'Mudar para mensal')
               : 'Mudar plano');
@@ -579,6 +667,8 @@ const INIT_BILLING = {
           '<p class="billing-plan-price">' + UTILS.escapeHtml(priceLabel) +
             (desconto ? ' <span class="billing-plan-save">economize ' + desconto + '%</span>' : '') +
           '</p>' +
+          (isCurrent ? '' : '<p class="billing-note billing-plan-terms">' +
+            UTILS.escapeHtml(self._termosDaOferta(diasTeste, priceLabel, usePlay)) + '</p>') +
           '<ul class="billing-plan-features">' +
             features.map(function(frozen) {
               return '<li><i data-lucide="check" aria-hidden="true"></i> ' + UTILS.escapeHtml(frozen) + '</li>';
@@ -587,6 +677,9 @@ const INIT_BILLING = {
           ctaHtml +
         '</article>';
       });
+      if (html) {
+        html += '<p class="billing-note billing-free-note">Registrar seus lançamentos e exportar seus dados continua grátis, com ou sem Pro.</p>';
+      }
       container.innerHTML = html || '<p class="billing-empty">Nenhum plano pago disponível no momento.</p>';
       self._atualizarSeloAnual(ov, plans);
       if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(container);
@@ -606,10 +699,13 @@ const INIT_BILLING = {
             && PLAY_BILLING.isAvailable() && PLAY_BILLING.getProductDetails) {
           PLAY_BILLING.getProductDetails().then(function(products) {
             var byId = {};
+            var testes = {};
             (products || []).forEach(function(p) {
               if (p && p.productId && p.formattedPrice) byId[p.productId] = p.formattedPrice;
+              if (p && p.productId) testes[p.productId] = Number(p.trialDays) || 0;
             });
             self._playPriceByProductId = byId;
+            self._playTrialByProductId = testes;
             render(plans);
           }).catch(function() { render(plans); });
           return;
@@ -654,9 +750,9 @@ const INIT_BILLING = {
     var webStripe = supaBilling && !usePlay;
     var trialDays = (typeof BILLING !== 'undefined' && BILLING.TRIAL_DAYS) ? BILLING.TRIAL_DAYS : 7;
     var html = usePlay
-      ? '<p class="billing-note">Pagamento via Google Play. Trial de ' + trialDays + ' dias no Pro.</p>'
+      ? '<p class="billing-note">Pagamento via Google Play. Teste grátis de ' + trialDays + ' dias no Pro para quem ainda não assinou.</p>'
       : (webStripe
-        ? '<p class="billing-note">Pagamento seguro via Stripe Checkout. Trial de ' + trialDays + ' dias no Pro.</p>'
+        ? '<p class="billing-note">Pagamento seguro via Stripe Checkout. Teste grátis de ' + trialDays + ' dias no Pro para quem ainda não assinou.</p>'
         : '<p class="billing-note">Assinatura Pro no app Android via Google Play. No navegador, o plano gratuito na nuvem permanece ativo.</p>');
     if (usePlay) {
       html += '<button type="button" class="btn-secundario" data-action="billing-restaurar">Restaurar compras</button>';
@@ -756,6 +852,7 @@ const INIT_BILLING = {
     }
 
     var btn = ov.querySelector('[data-tier="' + tier + '"]');
+    var rotulo = btn ? btn.textContent : 'Assinar';
     if (btn) {
       btn.disabled = true;
       btn.textContent = 'Processando…';
@@ -770,10 +867,11 @@ const INIT_BILLING = {
     };
 
     var onError = function(err) {
-      UTILS.mostrarToast(err.message || 'Falha ao assinar', 'error');
+      var aviso = self._mensagemErroCompra(err);
+      if (aviso) UTILS.mostrarToast(aviso.msg, aviso.tipo);
       if (btn) {
         btn.disabled = false;
-        btn.textContent = 'Assinar';
+        btn.textContent = rotulo;
       }
     };
 
@@ -785,11 +883,19 @@ const INIT_BILLING = {
       }
       var purchaseOpts = null;
       var intervalAtual = (BILLING.getBillingInterval && BILLING.getBillingInterval()) || null;
-      if (BILLING.getTier() === tier && intervalAtual && intervalAtual !== INIT_BILLING._interval) {
+      if (self._assinaturaDeLoja() && BILLING.getTier() === tier
+          && intervalAtual && intervalAtual !== INIT_BILLING._interval) {
         var oldProductId = PLAY_BILLING.productIdForTier(tier, intervalAtual);
         if (oldProductId) purchaseOpts = { oldProductId: oldProductId };
       }
-      PLAY_BILLING.purchase(productId, purchaseOpts).then(onSuccess).catch(onError);
+      PLAY_BILLING.purchase(productId, purchaseOpts).then(function() {
+        // A volta do Stripe marca isto em _handleBillingReturn; na Play, a
+        // compra termina aqui, e sem o marco o funil nunca via a conversão.
+        if (typeof FUNIL !== 'undefined' && FUNIL.marco) {
+          FUNIL.marco(FUNIL.E.ASSINATURA_ATIVA, { dia: FUNIL.diasDeUso(), loja: 'play' });
+        }
+        onSuccess();
+      }).catch(onError);
       return;
     }
 
@@ -816,7 +922,8 @@ const INIT_BILLING = {
       self._renderFooter(ov);
       self.refreshPlanoCard();
     }).catch(function(err) {
-      UTILS.mostrarToast(err.message || 'Não foi possível restaurar compras', 'info');
+      var aviso = self._mensagemErroCompra(err);
+      if (aviso) UTILS.mostrarToast(aviso.msg, 'info');
     });
   },
 

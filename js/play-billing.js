@@ -69,6 +69,24 @@ const PLAY_BILLING = {
   },
 
   /**
+   * Verifica no servidor e só então reconhece a compra na Play.
+   *
+   * A ordem importa: compra sem reconhecimento a Play devolve sozinha em 3
+   * dias. Reconhecer antes de o servidor gravar o Pro tirava essa rede de quem
+   * pagou e não recebeu. Falhar ao reconhecer não desfaz a compra: a
+   * restauração ao voltar ao app tenta de novo.
+   */
+  _verificarEReconhecer: function(productId, purchaseToken) {
+    return PLAY_BILLING.verifyOnServer(productId, purchaseToken).then(function(resp) {
+      var nativo = typeof window !== 'undefined' ? window.__fpNativeBilling : null;
+      if (!nativo || typeof nativo.acknowledge !== 'function') return resp;
+      return nativo.acknowledge(purchaseToken)
+        .catch(function() { /* a restauração tenta de novo */ })
+        .then(function() { return resp; });
+    });
+  },
+
+  /**
    * Compra (ou troca de ciclo) via plugin nativo.
    * @param {string} productId
    * @param {{ oldProductId?: string, oldPurchaseToken?: string }=} opts
@@ -84,7 +102,7 @@ const PLAY_BILLING = {
       var self = PLAY_BILLING;
       opts = opts || {};
       return window.__fpNativeBilling.purchase(productId, opts).then(function(result) {
-        return self.verifyOnServer(productId, result.purchaseToken);
+        return self._verificarEReconhecer(productId, result.purchaseToken);
       });
     }
     return Promise.reject(new Error('plugin-play-billing-nao-instalado'));
@@ -102,7 +120,7 @@ const PLAY_BILLING = {
         var chain = Promise.resolve();
         list.forEach(function(p) {
           chain = chain.then(function() {
-            return self.verifyOnServer(p.productId, p.purchaseToken);
+            return self._verificarEReconhecer(p.productId, p.purchaseToken);
           });
         });
         return chain.then(function() { return list; });
@@ -113,7 +131,8 @@ const PLAY_BILLING = {
 
   /**
    * Preços oficiais do Play (quando o plugin expõe getProductDetails).
-   * @returns {Promise<Array<{productId:string,formattedPrice:string}>>}
+   * `trialDays` > 0 quando a Play oferece teste grátis a esta conta Google.
+   * @returns {Promise<Array<{productId:string,formattedPrice:string,trialDays:number}>>}
    */
   getProductDetails: function(productIds) {
     if (!PLAY_BILLING.isAvailable()) {

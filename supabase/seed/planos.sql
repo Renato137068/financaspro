@@ -21,12 +21,13 @@ insert into public."Plan" as p
   (id, name, tier, "priceMonthly", "priceYearly", "maxUsers", "maxTransPerMonth", "maxAccounts", "maxBudgets", features)
 values
   (gen_random_uuid()::text, 'Gratuito', 'FREE', 0, 0, 1, 100, 3, 5,
-   '["Transações básicas", "Orçamentos", "Relatórios simples"]'::jsonb),
+   '["Lançamentos ilimitados, sempre", "Orçamento 50/30/20 completo", "5 contas e cartões", "Últimos 3 meses de gráficos e relatórios", "Exportação CSV e backup livres"]'::jsonb),
   -- 129,99 = ~36% de desconto sobre 12 x 16,99 (203,88). Tiers do Play (não
   -- aceita 16,90). Pro é individual/casal (2 membros); colaboração de time é o
-  -- gancho exclusivo do Business. 0 = ilimitado.
+  -- gancho exclusivo do Business. 0 = ilimitado. Os recursos espelham
+  -- STATIC_PLANS (js/billing/base.js), que é o texto que o app mostra.
   (gen_random_uuid()::text, 'Pro', 'PRO', 16.99, 129.99, 2, 0, 20, 0,
-   '["Tudo do Gratuito", "Transações ilimitadas", "Casal — até 2 membros", "IA e previsão financeira", "Exportação de relatórios", "Alertas automáticos"]'::jsonb),
+   '["Todo o seu histórico nos gráficos e relatórios", "Previsão de fim de mês e do fluxo futuro", "Encontra assinaturas esquecidas que você ainda paga", "Categoriza sozinho, aprendendo com você", "Alertas que avisam antes de estourar o orçamento", "Metas, recorrentes e contas a pagar sem limite", "Modo casal — duas pessoas, uma vida financeira"]'::jsonb),
   (gen_random_uuid()::text, 'Business', 'BUSINESS', 79.90, 799.00, 0, 0, 0, 0,
    '["Tudo do Pro", "Membros ilimitados", "Múltiplas organizações", "API access", "Suporte prioritário", "Relatórios customizados", "Auditoria completa"]'::jsonb)
 on conflict (tier) do update set
