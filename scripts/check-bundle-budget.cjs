@@ -59,7 +59,9 @@ const BUDGETS = {
   // Perfil que só essas telas desenham chega com o chunk (layouts/*-tela.css).
   // 1110→1082 KB (2026-10-02): sai o cliente da API Express e o sync v2
   // (ADR 0007): 1106 → 1079 KB.
-  precacheTotal: { max: 1082 * KB, label: 'Precache total (1º acesso)' },
+  // 1082→1086 KB (2026-10-08): correções da auditoria de segurança (troca de
+  // conta no aparelho, link de login de outra conta, entrada offline): 1084 KB.
+  precacheTotal: { max: 1086 * KB, label: 'Precache total (1º acesso)' },
   // 580→590 KB (2026-09-13): correção do KPI "Folga poupança" no Orçamento
   // (cálculo da folga da fatia de poupança) + referência de ritmo no Resumo
   // adicionam alguns KB de código — aumento intencional.
@@ -91,7 +93,8 @@ const BUDGETS = {
   // dois arquivos: app.bundle.js (scripts clássicos) e js/index-<hash>.js (a
   // entrada ESM que o Vite gera). O teto vale para a soma: migrar um módulo de
   // um para o outro não abre espaço.
-  appBundle: { max: 450 * KB, label: 'App eager (clássico + ESM)', glob: /^js\/(app\.bundle|index-[\w-]+)\.js$/ },
+  // 450→454 KB (2026-10-08): mesmas correções de segurança (452 KB).
+  appBundle: { max: 454 * KB, label: 'App eager (clássico + ESM)', glob: /^js\/(app\.bundle|index-[\w-]+)\.js$/ },
   // 260→262 KB (2026-09-27): supabase-js 2.112 → 2.117. O vendor é só
   // supabase-js + lucide; não há o que mover para lazy aqui.
   vendorBundle: { max: 262 * KB, label: 'js/vendor.bundle.js', file: 'js/vendor.bundle.js' },

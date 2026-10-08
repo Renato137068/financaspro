@@ -46,6 +46,29 @@ const AUTH_BIOMETRIC = (function() {
       return _readPref();
     },
 
+    /**
+     * Confere a digital/rosto no próprio aparelho, sem rede e sem tocar na
+     * sessão. É o que guarda a entrada sem conexão: lá a senha não tem como
+     * ser conferida, e sem esta checagem bastava o modo avião para entrar.
+     * @returns {Promise<'ok'|'falhou'|'indisponivel'>} 'indisponivel' quando
+     *   a biometria não está ligada no app ou o aparelho não a oferece.
+     */
+    confirmarIdentidade: function() {
+      var nb = _native();
+      if (!nb || !_readPref() || typeof nb.verifyIdentity !== 'function') {
+        return Promise.resolve('indisponivel');
+      }
+      return AUTH_BIOMETRIC.isAvailable().then(function(ok) {
+        if (!ok) return 'indisponivel';
+        return nb.verifyIdentity({
+          reason: 'Entrar no FinançasPro sem conexão',
+          title: 'FinançasPro',
+          subtitle: 'Confirme sua identidade',
+          description: '',
+        }).then(function() { return 'ok'; }, function() { return 'falhou'; });
+      });
+    },
+
     refreshBiometricUI: function() {
       var card = document.getElementById('perfil-biometric-card');
       var chk = document.getElementById('chk-biometric');
