@@ -42,6 +42,15 @@
       _refs = 0;
       sync();
     },
+    /**
+     * Esconde (ou volta a mostrar) o app na lista de apps recentes, sem
+     * bloquear print no uso normal. Ligado enquanto o PIN estiver ativo.
+     */
+    ocultarRecentes: function(ativo) {
+      var p = plugin();
+      if (!p || typeof p.ocultarRecentes !== 'function') return;
+      p.ocultarRecentes({ ativo: !!ativo }).catch(function() { /* noop */ });
+    },
   };
 
   /* pin-guard pode marcar bloqueio antes deste script carregar. */

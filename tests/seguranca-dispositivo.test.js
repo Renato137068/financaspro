@@ -233,3 +233,117 @@ describe('Entrada sem conexão — confirmação de identidade', () => {
     expect(corpo).toContain('PIN_SECURITY.exigirSeAtivo');
   });
 });
+
+/* ───────────────────────── 4. Backup com senha ───────────────────────── */
+
+function carregarBackupCifrado() {
+  const { webcrypto } = require('crypto');
+  const util = require('util');
+  const sandbox = {
+    crypto: webcrypto,
+    TextEncoder: util.TextEncoder,
+    TextDecoder: util.TextDecoder,
+    btoa: global.btoa,
+    atob: global.atob,
+    Uint8Array,
+    Promise,
+    Number,
+    String,
+    JSON,
+    Error,
+    document: global.document,
+    UTILS: { escapeHtml: (s) => String(s) },
+    console,
+  };
+  return rodarNoContexto(vm.createContext(sandbox), path.join(root, 'js/modules/backup-cifrado.js')).BACKUP_CIFRADO;
+}
+
+describe('Backup com senha', () => {
+  const BC = carregarBackupCifrado();
+  const original = JSON.stringify({ transacoes: [{ id: 't1', valor: 12.34, descricao: 'Mercado' }], config: { nome: 'Ana' } });
+
+  test('cifra e decifra de volta com a mesma senha', async () => {
+    const envelope = JSON.parse(await BC.cifrar(original, 'senha-forte'));
+    expect(BC.ehCifrado(envelope)).toBe(true);
+    await expect(BC.decifrar(envelope, 'senha-forte')).resolves.toBe(original);
+  });
+
+  test('o arquivo não mostra nada do conteúdo', async () => {
+    const texto = await BC.cifrar(original, 'senha-forte');
+    expect(texto).not.toContain('Mercado');
+    expect(texto).not.toContain('Ana');
+    expect(texto).not.toContain('12.34');
+  });
+
+  test('senha errada não abre e diz que é a senha', async () => {
+    const envelope = JSON.parse(await BC.cifrar(original, 'senha-forte'));
+    await expect(BC.decifrar(envelope, 'outra')).rejects.toThrow('SENHA_INCORRETA');
+  });
+
+  test('backup comum (sem senha) não é tratado como cifrado', () => {
+    expect(BC.ehCifrado(JSON.parse(original))).toBe(false);
+    expect(BC.ehCifrado(null)).toBe(false);
+  });
+
+  test('anexo grande (vários MB) não estoura a pilha', async () => {
+    const grande = JSON.stringify({ anexos: ['x'.repeat(3 * 1024 * 1024)] });
+    const envelope = JSON.parse(await BC.cifrar(grande, 'senha-forte'));
+    await expect(BC.decifrar(envelope, 'senha-forte')).resolves.toHaveLength(grande.length);
+  });
+
+  test('exportar pergunta a senha e importar reconhece o arquivo com senha', () => {
+    const src = fs.readFileSync(path.join(root, 'js/modules/config-backup.js'), 'utf8');
+    const exportar = src.slice(src.indexOf('  exportarDados: function'), src.indexOf('var finalizar'));
+    expect(exportar).toContain('pedirSenhaExportacao');
+    expect(src).toContain('BACKUP_CIFRADO.cifrar(texto, senha)');
+    expect(src).toMatch(/ehCifrado\(data\)[\s\S]{0,80}_importarCifrado/);
+  });
+});
+
+/* ─────────────── 5. Prévia nos apps recentes com PIN ligado ─────────────── */
+
+describe('Prévia nos apps recentes', () => {
+  function carregarSecureScreen(pluginFake) {
+    const sandbox = {
+      window: {
+        Capacitor: {
+          isNativePlatform: () => true,
+          Plugins: { FpSecureScreen: pluginFake },
+        },
+      },
+    };
+    vm.createContext(sandbox);
+    const arquivo = path.join(root, 'js/fp-secure-screen.js');
+    vm.runInContext(fs.readFileSync(arquivo, 'utf8'), sandbox, { filename: arquivo });
+    return sandbox.window.FP_SECURE_SCREEN;
+  }
+
+  test('ocultarRecentes repassa o estado ao plugin nativo', () => {
+    const plugin = { ocultarRecentes: jest.fn(() => Promise.resolve()) };
+    const fp = carregarSecureScreen(plugin);
+    fp.ocultarRecentes(true);
+    fp.ocultarRecentes(false);
+    expect(plugin.ocultarRecentes.mock.calls).toEqual([[{ ativo: true }], [{ ativo: false }]]);
+  });
+
+  test('app antigo sem o método nativo não quebra', () => {
+    const fp = carregarSecureScreen({});
+    expect(() => fp.ocultarRecentes(true)).not.toThrow();
+  });
+
+  test('o estado do PIN liga e desliga a ocultação', () => {
+    const pin = fs.readFileSync(path.join(root, 'js/pin.js'), 'utf8');
+    const sync = pin.slice(pin.indexOf('  syncLockFlag: function'), pin.indexOf('  bytesToHex'));
+    expect(sync).toContain('FP_SECURE_SCREEN.ocultarRecentes(!!ativo)');
+  });
+
+  test('o nativo usa setRecentsScreenshotEnabled (13+) e FLAG_SECURE no onPause (anteriores)', () => {
+    const dir = path.join(root, 'android/app/src/main/java/com/financaspro/app');
+    const plugin = fs.readFileSync(path.join(dir, 'FpSecureScreenPlugin.java'), 'utf8');
+    const main = fs.readFileSync(path.join(dir, 'MainActivity.java'), 'utf8');
+    expect(plugin).toContain('public void ocultarRecentes(PluginCall call)');
+    expect(plugin).toContain('setRecentsScreenshotEnabled(!ocultarRecentes)');
+    expect(main).toMatch(/onPause\(\)[\s\S]*FLAG_SECURE[\s\S]*super\.onPause\(\)/);
+    expect(main).toMatch(/onResume\(\)[\s\S]*!FpSecureScreenPlugin\.telaSensivel/);
+  });
+});

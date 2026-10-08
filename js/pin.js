@@ -71,6 +71,11 @@ const PIN_SECURITY = {
       if (ativo) localStorage.setItem(PIN_SECURITY.LOCK_FLAG_KEY, '1');
       else localStorage.removeItem(PIN_SECURITY.LOCK_FLAG_KEY);
     } catch (e) { /* noop */ }
+    /* Quem liga o PIN quer privacidade: a foto da tela que o Android guarda
+       para a lista de apps recentes não pode mostrar saldos. */
+    if (typeof FP_SECURE_SCREEN !== 'undefined' && FP_SECURE_SCREEN.ocultarRecentes) {
+      FP_SECURE_SCREEN.ocultarRecentes(!!ativo);
+    }
   },
 
   /**
