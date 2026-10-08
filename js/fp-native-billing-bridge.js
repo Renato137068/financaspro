@@ -31,6 +31,10 @@ function instalarPonteBillingNativa() {
         return (result && result.purchases) ? result.purchases : [];
       });
     },
+    acknowledge: function(purchaseToken) {
+      if (typeof plugin.acknowledge !== 'function') return Promise.resolve();
+      return plugin.acknowledge({ purchaseToken: purchaseToken });
+    },
     getProductDetails: function(productIds) {
       return plugin.getProductDetails({ productIds: productIds || [] }).then(function(result) {
         return (result && result.products) ? result.products : [];

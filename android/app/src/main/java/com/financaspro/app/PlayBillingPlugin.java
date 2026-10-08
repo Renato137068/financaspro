@@ -24,6 +24,8 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @CapacitorPlugin(name = "PlayBilling")
 public class PlayBillingPlugin extends Plugin implements PurchasesUpdatedListener {
@@ -133,7 +135,7 @@ public class PlayBillingPlugin extends Plugin implements PurchasesUpdatedListene
                     BillingFlowParams.ProductDetailsParams productParams =
                         BillingFlowParams.ProductDetailsParams.newBuilder()
                             .setProductDetails(details)
-                            .setOfferToken(offers.get(0).getOfferToken())
+                            .setOfferToken(escolherOferta(offers).getOfferToken())
                             .build();
 
                     Activity activity = getActivity();
@@ -255,7 +257,6 @@ public class PlayBillingPlugin extends Plugin implements PurchasesUpdatedListene
                     if (purchases != null) {
                         for (Purchase purchase : purchases) {
                             if (purchase.getPurchaseState() != Purchase.PurchaseState.PURCHASED) continue;
-                            acknowledgeIfNeeded(purchase);
                             for (String pid : purchase.getProducts()) {
                                 JSObject item = new JSObject();
                                 item.put("productId", pid);
@@ -296,8 +297,6 @@ public class PlayBillingPlugin extends Plugin implements PurchasesUpdatedListene
             call.reject("compra-pendente");
             return;
         }
-
-        acknowledgeIfNeeded(purchase);
 
         String productId = purchase.getProducts().isEmpty() ? "" : purchase.getProducts().get(0);
         JSObject ret = new JSObject();
@@ -357,14 +356,18 @@ public class PlayBillingPlugin extends Plugin implements PurchasesUpdatedListene
                             String formatted = "";
                             List<ProductDetails.SubscriptionOfferDetails> offers =
                                 details.getSubscriptionOfferDetails();
+                            int trialDays = 0;
                             if (offers != null && !offers.isEmpty()) {
+                                ProductDetails.SubscriptionOfferDetails oferta = escolherOferta(offers);
+                                trialDays = diasDeTeste(oferta);
                                 List<ProductDetails.PricingPhase> phases =
-                                    offers.get(0).getPricingPhases().getPricingPhaseList();
+                                    oferta.getPricingPhases().getPricingPhaseList();
                                 if (phases != null && !phases.isEmpty()) {
                                     formatted = phases.get(phases.size() - 1).getFormattedPrice();
                                 }
                             }
                             item.put("formattedPrice", formatted);
+                            item.put("trialDays", trialDays);
                             out.put(item);
                         }
                     }
@@ -376,14 +379,76 @@ public class PlayBillingPlugin extends Plugin implements PurchasesUpdatedListene
         });
     }
 
-    private void acknowledgeIfNeeded(Purchase purchase) {
-        if (purchase == null || purchase.isAcknowledged()) return;
-        if (billingClient == null || !billingClient.isReady()) return;
-        billingClient.acknowledgePurchase(
-            AcknowledgePurchaseParams.newBuilder()
-                .setPurchaseToken(purchase.getPurchaseToken())
-                .build(),
-            result -> { /* best effort */ }
-        );
+    /**
+     * Reconhece a compra. O JS chama isto só DEPOIS de o servidor confirmar e
+     * gravar o Pro (play-verify): se a verificação falhar, a compra fica sem
+     * reconhecimento e a Play devolve o dinheiro sozinha em 3 dias, em vez de a
+     * pessoa pagar sem receber. Reconhecer duas vezes é inofensivo.
+     */
+    @PluginMethod
+    public void acknowledge(PluginCall call) {
+        String token = call.getString("purchaseToken");
+        if (token == null || token.isEmpty()) {
+            call.reject("purchase-token-obrigatorio");
+            return;
+        }
+        ensureConnected(() -> {
+            if (billingClient == null || !billingClient.isReady()) {
+                call.reject("billing-indisponivel");
+                return;
+            }
+            billingClient.acknowledgePurchase(
+                AcknowledgePurchaseParams.newBuilder().setPurchaseToken(token).build(),
+                result -> {
+                    if (result.getResponseCode() == BillingClient.BillingResponseCode.OK) {
+                        call.resolve();
+                    } else {
+                        call.reject("falha-reconhecer");
+                    }
+                }
+            );
+        });
+    }
+
+    /**
+     * A oferta com teste grátis, quando a Play a devolve (ela só devolve para
+     * quem ainda tem direito ao teste); senão, o plano base. A ordem da lista
+     * não é garantida, então escolher pela posição podia cobrar na hora quem
+     * tinha direito ao teste.
+     */
+    static ProductDetails.SubscriptionOfferDetails escolherOferta(
+        List<ProductDetails.SubscriptionOfferDetails> offers
+    ) {
+        ProductDetails.SubscriptionOfferDetails base = null;
+        for (ProductDetails.SubscriptionOfferDetails offer : offers) {
+            if (diasDeTeste(offer) > 0) return offer;
+            if (base == null && offer.getOfferId() == null) base = offer;
+        }
+        return base != null ? base : offers.get(0);
+    }
+
+    /** Dias da fase grátis da oferta (0 quando não há teste). */
+    static int diasDeTeste(ProductDetails.SubscriptionOfferDetails offer) {
+        if (offer == null || offer.getPricingPhases() == null) return 0;
+        List<ProductDetails.PricingPhase> phases = offer.getPricingPhases().getPricingPhaseList();
+        if (phases == null) return 0;
+        for (ProductDetails.PricingPhase phase : phases) {
+            if (phase.getPriceAmountMicros() == 0) return diasDoPeriodo(phase.getBillingPeriod());
+        }
+        return 0;
+    }
+
+    /** Período ISO 8601 da Play (P7D, P1W, P1M) em dias. */
+    static int diasDoPeriodo(String iso) {
+        if (iso == null) return 0;
+        Matcher m = Pattern.compile("^P(\\d+)([DWMY])$").matcher(iso);
+        if (!m.matches()) return 0;
+        int n = Integer.parseInt(m.group(1));
+        switch (m.group(2)) {
+            case "D": return n;
+            case "W": return n * 7;
+            case "M": return n * 30;
+            default: return n * 365;
+        }
     }
 }

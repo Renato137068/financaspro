@@ -119,6 +119,11 @@ export const BILLING = {
    * Vitrine do paywall. Os precos reais vem da loja (Play getProductDetails) ou
    * do backend; isto e o fallback offline e a fonte da copy.
    *
+   * Cada item tem de ser algo que o FREE NAO tem: a fatura projetada e a
+   * sincronizacao entre aparelhos sao do FREE, entao nao entram aqui. A copy
+   * vale tambem com a nuvem ligada: listPlans() usa estes textos por cima dos
+   * da tabela Plan, que so fornece os precos.
+   *
    * A copy vende CAPACIDADE, nao remocao de limite. "Sem limites" posiciona a
    * assinatura como pedagio -- o usuario paga para desfazer um obstaculo que o
    * proprio app criou. O que converte e o que o Pro FAZ por ele.
@@ -143,12 +148,12 @@ export const BILLING = {
       priceMonthly: 16.99,
       priceYearly: 129.99,
       features: [
-        'Todo o seu histórico, com comparativo ano a ano',
+        'Todo o seu histórico nos gráficos e relatórios',
         'Previsão de fim de mês e do fluxo futuro',
         'Encontra assinaturas esquecidas que você ainda paga',
         'Categoriza sozinho, aprendendo com você',
-        'Fatura do cartão projetada, parcelas incluídas',
-        'Celular, tablet e navegador sincronizados',
+        'Alertas que avisam antes de estourar o orçamento',
+        'Metas, recorrentes e contas a pagar sem limite',
         'Modo casal — duas pessoas, uma vida financeira',
       ],
     },

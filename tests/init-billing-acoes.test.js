@@ -119,6 +119,70 @@ describe('_assinar', () => {
     expect(play.purchase).toHaveBeenCalledWith('pro_yearly', { oldProductId: 'pro_monthly' });
   });
 
+  test('Pro de boas-vindas não é assinatura: compra nova, sem trocar produto', async () => {
+    play = {
+      isAvailable: () => true,
+      productIdForTier: (tier, int) => `${tier.toLowerCase()}_${int}`,
+      purchase: jest.fn(() => Promise.resolve()),
+    };
+    billing.getTier = () => 'PRO';
+    billing.getBillingInterval = () => 'monthly';
+    billing.isWelcomeTrial = () => true;
+    billing._cache.subscription = { stripeSubId: 'welcome:u1', plan: { tier: 'PRO' } };
+    INIT_BILLING._interval = 'yearly';
+    INIT_BILLING._assinar('PRO', overlay('<div id="billing-footer"></div>'));
+    await esperar();
+    expect(play.purchase).toHaveBeenCalledWith('pro_yearly', null);
+  });
+
+  test('Play: compra concluída marca a assinatura ativa no funil', async () => {
+    funil.E.ASSINATURA_ATIVA = 'assinatura_ativa';
+    funil.marco = jest.fn();
+    play = {
+      isAvailable: () => true,
+      productIdForTier: (tier, int) => `${tier.toLowerCase()}_${int}`,
+      purchase: jest.fn(() => Promise.resolve()),
+    };
+    INIT_BILLING._assinar('PRO', overlay('<div id="billing-footer"></div>'));
+    await esperar();
+    expect(funil.marco).toHaveBeenCalledWith('assinatura_ativa', { dia: 4, loja: 'play' });
+  });
+
+  describe('compra que não termina', () => {
+    const comErro = async (codigo) => {
+      play = {
+        isAvailable: () => true,
+        productIdForTier: () => 'pro_yearly',
+        purchase: jest.fn(() => Promise.reject(new Error(codigo))),
+      };
+      const ov = overlay('<button data-tier="PRO">Testar 7 dias grátis</button>');
+      INIT_BILLING._assinar('PRO', ov);
+      await esperar();
+      await esperar();
+      return ov.querySelector('[data-tier="PRO"]');
+    };
+
+    test('desistir na janela da Play: sem aviso, botão volta como estava', async () => {
+      const btn = await comErro('compra-cancelada');
+      expect(toasts).toEqual([]);
+      expect(btn.disabled).toBe(false);
+      expect(btn.textContent).toBe('Testar 7 dias grátis');
+    });
+
+    test('pagamento pendente: explica que o Pro vem quando a Play confirmar', async () => {
+      await comErro('compra-pendente');
+      expect(toasts).toEqual([{
+        msg: 'Pagamento em processamento. O Pro é liberado assim que o Google Play confirmar.',
+        tipo: 'info',
+      }]);
+    });
+
+    test('código desconhecido nunca aparece cru', async () => {
+      await comErro('algum-codigo-novo');
+      expect(toasts).toEqual([{ msg: 'Não foi possível concluir a assinatura. Tente de novo.', tipo: 'error' }]);
+    });
+  });
+
   test('Play sem produto para o plano: avisa e devolve o botão', () => {
     play = { isAvailable: () => true, productIdForTier: () => null, purchase: jest.fn() };
     const ov = overlay('<button data-tier="PRO">Assinar</button>');
@@ -294,6 +358,48 @@ describe('portal e cancelamento', () => {
   });
 });
 
+describe('_renderPlans', () => {
+  const PLANOS = [
+    { tier: 'FREE', name: 'Gratuito', priceMonthly: 0, priceYearly: 0, features: [] },
+    { tier: 'PRO', name: 'Pro', priceMonthly: 16.99, priceYearly: 129.99, features: ['Previsão'] },
+  ];
+  const desenhar = async (trialDays) => {
+    INIT_BILLING._renderPlans.mockRestore();
+    billing.listPlans = () => Promise.resolve(PLANOS);
+    play = {
+      isAvailable: () => true,
+      productIdForTier: (tier, int) => `${tier.toLowerCase()}_${int}`,
+      getProductDetails: () => Promise.resolve([
+        { productId: 'pro_yearly', formattedPrice: 'R$ 129,99', trialDays },
+        { productId: 'pro_monthly', formattedPrice: 'R$ 16,99', trialDays },
+      ]),
+    };
+    const ov = overlay('<span id="billing-save-badge"></span><div id="billing-plans"></div>');
+    INIT_BILLING._interval = 'yearly';
+    INIT_BILLING._renderPlans(ov);
+    await esperar();
+    await esperar();
+    return ov;
+  };
+
+  test('com direito ao teste: botão de teste e os termos antes do toque', async () => {
+    const ov = await desenhar(7);
+    expect(ov.querySelector('[data-action="billing-assinar"]').textContent).toBe('Testar 7 dias grátis');
+    expect(ov.querySelector('.billing-plan-terms').textContent).toBe(
+      '7 dias grátis. Depois, R$ 129,99 /ano, com renovação automática. '
+      + 'Cancele quando quiser na Google Play, em Assinaturas.',
+    );
+    expect(ov.querySelector('.billing-free-note')).not.toBeNull();
+  });
+
+  test('sem direito ao teste: "Assinar" e termos sem teste', async () => {
+    const ov = await desenhar(0);
+    expect(ov.querySelector('[data-action="billing-assinar"]').textContent).toBe('Assinar');
+    expect(ov.querySelector('.billing-plan-terms').textContent)
+      .toMatch(/^R\$ 129,99 \/ano, com renovação automática\./);
+  });
+});
+
 describe('_renderFooter', () => {
   const rodape = () => overlay('<div id="billing-footer"></div>');
 
@@ -311,7 +417,7 @@ describe('_renderFooter', () => {
     billing._cache.subscription = { plan: { tier: 'PRO' }, cancelAtPeriodEnd: false };
     const ov = rodape();
     INIT_BILLING._renderFooter(ov);
-    expect(ov.textContent).toContain('Pagamento via Google Play. Trial de 7 dias no Pro.');
+    expect(ov.textContent).toContain('Pagamento via Google Play. Teste grátis de 7 dias no Pro para quem ainda não assinou.');
     expect(ov.querySelector('[data-action="billing-restaurar"]')).not.toBeNull();
     expect(ov.querySelector('[data-action="billing-cancelar"]')).not.toBeNull();
   });

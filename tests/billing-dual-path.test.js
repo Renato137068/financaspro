@@ -75,6 +75,29 @@ describe('Sem Supabase (modo local)', function() {
     expect(planos.map(function(p) { return p.tier; })).toEqual(['FREE', 'PRO']);
   });
 
+  test('textos da vitrine são sempre os do app; do banco vêm só os preços', async function() {
+    BILLING._cache.plans = [
+      { tier: 'FREE', priceMonthly: 0, priceYearly: 0, features: ['Transações básicas'] },
+      { tier: 'PRO', priceMonthly: 19.99, priceYearly: 149.99, features: ['Transações ilimitadas'] },
+    ];
+    const planos = await BILLING.listPlans();
+    const pro = planos.filter(function(p) { return p.tier === 'PRO'; })[0];
+    const estatico = BILLING.STATIC_PLANS.filter(function(p) { return p.tier === 'PRO'; })[0];
+    expect(pro.priceYearly).toBe(149.99);
+    expect(pro.features).toEqual(estatico.features);
+    expect(BILLING._cache.plans[1].features).toEqual(['Transações ilimitadas']);
+  });
+
+  test('a semente da tabela Plan repete os textos do app', function() {
+    const fs = require('fs');
+    const sql = fs.readFileSync(path.join(__dirname, '..', 'supabase/seed/planos.sql'), 'utf8');
+    BILLING.STATIC_PLANS.forEach(function(plano) {
+      const linha = sql.slice(sql.indexOf("', '" + plano.tier + "', "));
+      const json = linha.match(/'(\[[^']*\])'::jsonb/);
+      expect(JSON.parse(json[1])).toEqual(plano.features);
+    });
+  });
+
   test.each([
     ['ensureOrg', function() { return BILLING.ensureOrg(); }],
     ['fetchSubscription', function() { return BILLING.fetchSubscription(); }],

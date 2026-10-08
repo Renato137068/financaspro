@@ -72,12 +72,12 @@ PRIVACIDADE EM PRIMEIRO LUGAR
 
 FINANÇASPRO PRO
 Para quem quer ir além do controle financeiro do dia a dia:
-• Todo o seu histórico, com comparação ano a ano
+• Todo o seu histórico nos gráficos e relatórios
 • Previsão do saldo no fim do mês
 • Encontra assinaturas esquecidas que você ainda paga
 • Categoriza sozinho, aprendendo com você
-• Fatura do cartão projetada, com as parcelas futuras
-• Celular, tablet e navegador sincronizados
+• Alertas que avisam antes de estourar o orçamento
+• Metas, recorrentes e contas a pagar sem limite
 • Modo casal: duas pessoas, uma vida financeira
 • Relatório em PDF pronto para apresentar
 
