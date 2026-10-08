@@ -113,9 +113,25 @@ test.describe('chunks lazy no build de produção', function() {
 
   test('backup pelo lembrete do dashboard baixa o arquivo antes de abrir o Perfil', async function({ page }) {
     await prepareOfflinePage(page);
-    const download = page.waitForEvent('download');
     await page.evaluate(function() { CONFIG_USER.exportarDados(); });
+    // Antes de baixar, o app pergunta se o backup leva senha (auditoria de
+    // segurança de 08/10/2026).
+    const download = page.waitForEvent('download');
+    await page.locator('#bs-alternativo').click();
     expect((await download).suggestedFilename()).toMatch(/\.json$/);
+  });
+
+  test('backup com senha baixa um arquivo que não mostra os lançamentos', async function({ page }) {
+    await prepareOfflinePage(page);
+    await page.evaluate(function() { CONFIG_USER.exportarDados(); });
+    await page.locator('#input-senha-bkp').fill('senha-e2e');
+    await page.locator('#input-senha-bkp2').fill('senha-e2e');
+    const download = page.waitForEvent('download');
+    await page.locator('#bs-ok').click();
+    const arquivo = await (await download).path();
+    const texto = require('fs').readFileSync(arquivo, 'utf8');
+    expect(JSON.parse(texto).formato).toBe('backup-cifrado-financaspro');
+    expect(texto).not.toContain('Salário');
   });
 
   test('editar pelo alerta abre a transação mesmo antes de abrir o Extrato', async function({ page }) {
