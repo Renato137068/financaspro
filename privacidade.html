@@ -24,43 +24,52 @@
 <body>
   <a href="index.html" class="voltar-app" aria-label="Voltar ao aplicativo">&larr; Voltar ao app</a>
   <h1>Política de Privacidade — FinançasPro</h1>
-  <p class="meta">Última atualização: 30 de setembro de 2026</p>
+  <p class="meta">Última atualização: 6 de outubro de 2026</p>
 
-  <p>O FinançasPro é um aplicativo de controle financeiro pessoal. Esta política explica quais dados o app trata, como e por quê, e quais são os seus direitos. Ao usar o app, você concorda com os termos abaixo.</p>
+  <p>O FinançasPro é um aplicativo de controle financeiro pessoal. Esta política explica quais dados o app trata, como, por quê e com que base legal, e quais são os seus direitos pela Lei Geral de Proteção de Dados (Lei 13.709/2018, LGPD).</p>
 
-  <h2>1. Dados que o app trata</h2>
+  <h2 id="controlador">1. Quem é o controlador</h2>
+  <p>O controlador dos dados pessoais tratados pelo FinançasPro é <strong>Renato José Soares</strong>, desenvolvedor do app. Para qualquer assunto sobre seus dados, inclusive exercer os direitos da seção 9, o canal de atendimento é <strong>renato.soares1370@gmail.com</strong>.</p>
+
+  <h2>2. Dados que o app trata</h2>
   <ul>
-    <li><strong>Dados financeiros que você registra</strong> — transações, categorias, orçamentos, metas, contas, anexos e configurações. Uma cópia fica no seu aparelho. Com login na nuvem (padrão no app Android/Play Store), uma cópia sincronizada também fica nos servidores do provedor de autenticação e banco (<strong>Supabase</strong>).</li>
+    <li><strong>Dados financeiros que você registra</strong> — transações, categorias, orçamentos, metas, contas e configurações. Uma cópia fica no seu aparelho. Com login na nuvem (padrão no app Android/Play Store), uma cópia sincronizada também fica nos servidores do provedor de autenticação e banco (<strong>Supabase</strong>).</li>
+    <li><strong>Comprovantes (anexos)</strong> — as fotos e arquivos que você anexa a um lançamento ficam <strong>só no seu aparelho</strong>. Eles não são enviados para a nuvem.</li>
     <li><strong>Dados de conta</strong> — ao criar uma conta, tratamos nome, e-mail e senha (hash gerenciado pelo Supabase Auth) para login, desbloqueio no aparelho e sincronização.</li>
+    <li><strong>Convites</strong> — se você convidar alguém para a sua organização, guardamos o e-mail dessa pessoa para enviar o convite. Convites vencidos são apagados em até 30 dias.</li>
     <li><strong>Conexão bancária via Open Finance</strong> — <strong>ainda não disponível nesta versão do app.</strong> O recurso está desligado e nenhum dado bancário é lido ou compartilhado. Quando for liberado, a integração será feita pelo provedor <strong>Belvo</strong>, será sempre opcional, os dados trafegarão criptografados e serão usados apenas para trazer suas transações ao app — e esta política será atualizada antes disso.</li>
-    <li><strong>Dados de pagamento (opcional)</strong> — assinaturas no Android usam o <strong>Google Play Billing</strong>; em outras versões podem usar <strong>Stripe</strong>. O app não armazena números completos de cartão.</li>
+    <li><strong>Dados de pagamento (opcional)</strong> — assinaturas no Android usam o <strong>Google Play Billing</strong>; em outras versões podem usar <strong>Stripe</strong>. Guardamos o status e o período da assinatura e o token de compra que a loja nos dá para confirmar o pagamento. O app não recebe nem armazena números de cartão.</li>
     <li><strong>Relatórios de erro</strong> — quando algo falha no app, enviamos a mensagem técnica do erro, a versão do app, a tela em que ocorreu e o identificador do navegador/aparelho (user-agent), para encontrar e corrigir a falha. Não incluem valores, descrições, categorias, e-mail nem identificadores da sua conta; e-mails, valores em reais e números longos que apareçam na mensagem são mascarados antes de gravar. Ficam guardados por 30 dias. Você pode desligar o envio em <strong>Perfil → Enviar relatórios de erro</strong>.</li>
     <li><strong>Contagem de uso anônima</strong> — no máximo uma vez por dia, o app avisa apenas a versão que está em uso, para sabermos quantos erros cada versão tem em relação a quantas vezes é aberta. O aviso não leva usuário, identificador do aparelho, horário nem dado financeiro, e não guardamos o endereço IP nem o user-agent dele: no servidor fica só um contador por dia e versão (por exemplo, “versão 11.3.18: 1.240 aberturas em 30/09”), apagado após 30 dias. Desligar <strong>Perfil → Enviar relatórios de erro</strong> também desliga este aviso.</li>
-    <li><strong>Métricas de uso (opcional)</strong> — outras métricas de uso só são enviadas se você habilitar; sem isso, ficam apenas no aparelho.</li>
+    <li><strong>Métricas de uso</strong> — o app não envia outras métricas de uso. Elas ficam apenas no aparelho.</li>
   </ul>
 
-  <h2>2. Como usamos os dados</h2>
+  <h2>3. Para que usamos os dados, e com que base legal</h2>
   <ul>
-    <li>Exibir resumos, gráficos, orçamento, metas e insights financeiros.</li>
-    <li>Sincronizar dados entre dispositivos, quando você usa login na nuvem.</li>
-    <li>Trazer transações bancárias, se e quando o Open Finance for liberado e você conectar uma conta.</li>
-    <li>Processar assinaturas, quando habilitado.</li>
-    <li>Melhorar a estabilidade e a segurança do serviço.</li>
+    <li><strong>Prestar o serviço que você usa</strong>: mostrar resumos, gráficos, orçamento, metas e insights; manter sua conta; sincronizar entre aparelhos; processar a assinatura. Base legal: <em>execução de contrato</em> (art. 7º, V).</li>
+    <li><strong>Corrigir falhas e manter o app estável e seguro</strong>, com os relatórios de erro e a contagem de uso. Base legal: <em>legítimo interesse</em> (art. 7º, IX), com dados mascarados ou anônimos e a opção de desligar no Perfil.</li>
+    <li><strong>Cumprir obrigações legais</strong>, como guardar registros de pagamento pelo prazo da lei. Base legal: <em>obrigação legal</em> (art. 7º, II).</li>
+    <li><strong>Trazer transações bancárias</strong>, se e quando o Open Finance for liberado e você conectar uma conta. Base legal: <em>consentimento</em> (art. 7º, I), que você poderá revogar a qualquer momento desconectando a conta.</li>
   </ul>
   <p>Não usamos seus dados financeiros para publicidade. O app <strong>não exibe anúncios</strong> e não vende dados.</p>
 
-  <h2>3. Armazenamento local e nuvem</h2>
-  <p>Os lançamentos ficam no aparelho (navegador/app). Com login ativo, também sincronizam com a nuvem para backup e uso em mais de um dispositivo. Sem login (ou após sair da conta), os dados locais permanecem só neste aparelho. Você pode exportá-los ou apagá-los em <strong>Perfil → Dados</strong>. Desinstalar o app remove os dados locais; a conta na nuvem só some com exclusão de conta.</p>
+  <h2>4. Armazenamento local e nuvem</h2>
+  <p>Os lançamentos ficam no aparelho (navegador/app). Com login ativo, também sincronizam com a nuvem para backup e uso em mais de um dispositivo. Sem login (ou após sair da conta), os dados locais permanecem só neste aparelho. Você pode exportá-los em <strong>Perfil → Backup e dados</strong> e apagá-los em <strong>Perfil → Zona de perigo → Apagar todos os dados</strong>. Desinstalar o app remove os dados locais; a conta na nuvem só some com exclusão de conta.</p>
   <p>A sessão de login (tokens de acesso e renovação) também fica armazenada neste aparelho, em armazenamento local do WebView/navegador, para você não precisar entrar de novo a cada abertura. Ao sair da conta, esses tokens são apagados.</p>
 
-  <h2>3.1 Controlador e contato (LGPD)</h2>
-  <p>O tratamento dos dados pessoais é feito pelo responsável pelo FinançasPro. Para exercer direitos (acesso, correção, exclusão, portabilidade) ou tirar dúvidas sobre esta política, use
-  <strong>renato.soares1370@gmail.com</strong>. Pedidos de exclusão de conta também podem seguir a seção 8 abaixo.</p>
+  <h2>5. Com quem os dados são compartilhados</h2>
+  <p>Não vendemos seus dados. Usamos apenas fornecedores necessários ao funcionamento, que tratam os dados em nosso nome e conforme nossas instruções:</p>
+  <ul>
+    <li><strong>Supabase</strong> — autenticação, banco de dados e sincronização.</li>
+    <li><strong>Google Play</strong> e <strong>Stripe</strong> — processamento das assinaturas.</li>
+    <li><strong>Resend</strong> — envio de e-mails sobre a assinatura e de convites (recebe o endereço de e-mail e o texto da mensagem).</li>
+  </ul>
+  <p>Também podemos fornecer dados quando uma autoridade os exigir por lei ou ordem judicial.</p>
 
-  <h2>4. Compartilhamento</h2>
-  <p>Não vendemos seus dados. Compartilhamos informações apenas com provedores estritamente necessários ao funcionamento — <strong>Supabase</strong> (autenticação e sync) e <strong>Google Play</strong> / <strong>Stripe</strong> (pagamentos) — sob contratos de proteção de dados. Cada um trata os dados conforme suas próprias políticas.</p>
+  <h2 id="transferencia-internacional">6. Transferência internacional</h2>
+  <p>Os servidores desses fornecedores podem ficar fora do Brasil (por exemplo, nos Estados Unidos). Quando isso acontece, a transferência é feita com as garantias previstas no art. 33 da LGPD, como as cláusulas contratuais de proteção de dados oferecidas pelos fornecedores, e só para as finalidades desta política.</p>
 
-  <h2>5. Segurança</h2>
+  <h2>7. Segurança</h2>
   <p>Usamos HTTPS, tokens de sessão, hash de senhas (Supabase Auth) e boas práticas de desenvolvimento. No Android, a tela de login e o PIN usam proteção contra captura de tela (FLAG_SECURE).</p>
   <ul>
     <li><strong>PIN local</strong> — oculta saldos ao abrir o app neste aparelho. <em>Não</em> criptografa o armazenamento contra quem tenha acesso técnico ao aparelho.</li>
@@ -68,49 +77,59 @@
     <li><strong>Biometria</strong> (Android, opcional) — desbloqueia a sessão neste aparelho; ao sair da conta, a biometria é desativada.</li>
     <li><strong>Verificação em duas etapas (TOTP)</strong> — opcional, via app autenticador (Google Authenticator, Authy etc.), no Perfil. No login, após a senha (ou biometria), o app pede o código de 6 dígitos. Requer MFA habilitado no projeto Supabase.</li>
   </ul>
+  <p>Se ocorrer um incidente de segurança que possa trazer risco ou dano relevante a você, comunicaremos você e a Autoridade Nacional de Proteção de Dados (ANPD), como pede o art. 48 da LGPD.</p>
 
-  <h2>6. Retenção e exclusão</h2>
-  <p>Dados locais permanecem no dispositivo até você apagá-los ou desinstalar o app. Relatórios de erro e a contagem de uso por versão são apagados após 30 dias. Dados de conta na nuvem são mantidos enquanto a conta existir; você pode solicitar a exclusão da conta e dos dados associados a qualquer momento.</p>
+  <h2>8. Retenção</h2>
+  <p>Dados locais permanecem no dispositivo até você apagá-los ou desinstalar o app. Relatórios de erro e a contagem de uso por versão são apagados após 30 dias. Dados de conta na nuvem são mantidos enquanto a conta existir; você pode solicitar a exclusão da conta e dos dados associados a qualquer momento (seção 10).</p>
 
-  <h2>7. Seus direitos (LGPD)</h2>
-  <p>Você pode solicitar acesso, correção, portabilidade ou exclusão dos seus dados. Para dados apenas locais, use as funções de exportar e apagar em Perfil. Para dados de conta, use o app ou o e-mail de contato abaixo.</p>
+  <h2>9. Seus direitos (LGPD, art. 18)</h2>
+  <p>Você pode, a qualquer momento:</p>
+  <ul>
+    <li>confirmar se tratamos dados seus e ter acesso a eles;</li>
+    <li>corrigir dados incompletos, inexatos ou desatualizados;</li>
+    <li>pedir a anonimização, o bloqueio ou a eliminação de dados desnecessários ou tratados em desacordo com a lei;</li>
+    <li>levar seus dados para outro serviço (portabilidade): <strong>Perfil → Backup e dados</strong> exporta tudo;</li>
+    <li>pedir a eliminação dos seus dados e da conta (seção 10);</li>
+    <li>saber com quem compartilhamos seus dados (seção 5);</li>
+    <li>revogar um consentimento que tenha dado, e saber o que acontece se não der;</li>
+    <li>se opor a um tratamento baseado em legítimo interesse, como os relatórios de erro (desligue em <strong>Perfil → Enviar relatórios de erro</strong>);</li>
+    <li>reclamar à Autoridade Nacional de Proteção de Dados (ANPD), em <strong>gov.br/anpd</strong>.</li>
+  </ul>
+  <p>Para dados apenas locais, use as funções de exportar e apagar no Perfil. Para o resto, escreva para <strong>renato.soares1370@gmail.com</strong>; respondemos em até 15 dias.</p>
 
   <!-- Secao com ancora propria (#exclusao-de-conta) porque o Google Play exige,
        para apps que permitem criar conta, DOIS caminhos de exclusao: um dentro
        do app e um endereco web publico, acessivel sem instalar o app, informado
-       no Play Console. O caminho no app ja existia (Perfil -> Zona de perigo, e
-       DELETE /api/v1/users/me na API); faltava a URL. Ao publicar esta pagina,
-       informe no Play Console:
+       no Play Console. Ao publicar esta pagina, informe no Play Console:
          https://app.financaspro.com/privacidade.html#exclusao-de-conta -->
-  <h2 id="exclusao-de-conta">8. Como excluir sua conta e seus dados</h2>
+  <h2 id="exclusao-de-conta">10. Como excluir sua conta e seus dados</h2>
+  <p><strong>Antes, se você assina o Pro:</strong> excluir a conta <strong>não cancela a cobrança</strong> na loja. Cancele primeiro a assinatura na Play Store (<em>Pagamentos e assinaturas → Assinaturas</em>) ou, fora do Android, em <em>Perfil → Plano e assinatura</em>.</p>
   <p><strong>Pelo app:</strong> abra <em>Perfil → Zona de perigo → Excluir conta</em>. A
   exclusão é imediata e não precisa de aprovação nossa.</p>
   <p><strong>Sem o app instalado:</strong> envie um pedido para
   <strong>renato.soares1370@gmail.com</strong> a partir do e-mail cadastrado na conta.
   Respondemos em até 7 dias corridos e concluímos a exclusão em até 30 dias.</p>
   <p><strong>O que é apagado:</strong> seus lançamentos, contas, orçamentos, metas, conexões
-  bancárias, sessões ativas e o cadastro (nome, e-mail e senha).</p>
+  bancárias, os registros da assinatura no nosso banco, sessões ativas e o cadastro (nome, e-mail e senha).</p>
   <p><strong>O que é mantido, e por quê:</strong> registros de auditoria são
-  <em>anonimizados</em> — perdem o vínculo com você, mas permanecem pelo prazo da política de
-  retenção, porque são a prova de que as operações aconteceram. Registros fiscais de
-  pagamentos, quando existirem, são mantidos pelo prazo que a legislação exige.
+  <em>anonimizados</em> — perdem o vínculo com você e o endereço IP, mas permanecem por até 1 ano,
+  porque são a prova de que as operações aconteceram. Os registros fiscais dos pagamentos ficam com
+  quem processou a cobrança (Google Play ou Stripe), pelo prazo que a lei exige.
   Guardamos também o <em>identificador interno</em> de quem já recebeu o período
   gratuito de boas-vindas — só o identificador, sem nome, e-mail ou dado financeiro —
   para que o benefício não possa ser renovado indefinidamente criando contas novas.</p>
   <p><strong>Dados que ficam só no aparelho</strong> não passam por nós: desinstalar o app
-  ou usar <em>Perfil → Apagar dados locais</em> remove tudo, sem pedido nenhum.</p>
+  ou usar <em>Perfil → Zona de perigo → Apagar todos os dados</em> remove lançamentos, contas,
+  comprovantes e preferências deste aparelho, sem pedido nenhum. Se você estiver logado, a sessão
+  continua; para sair, use <em>Sair da conta</em>.</p>
 
-  <h2>9. Crianças</h2>
+  <h2>11. Crianças</h2>
   <p>O app é destinado a maiores de 18 anos e não é direcionado a crianças.</p>
 
-  <h2>10. Alterações</h2>
-  <p>Podemos atualizar esta política. A data no topo indica a versão vigente.</p>
+  <h2>12. Alterações</h2>
+  <p>Podemos atualizar esta política. A data no topo indica a versão vigente. Mudanças que alterem a finalidade ou o compartilhamento dos dados serão avisadas no app antes de valer.</p>
 
-  <h2>11. Contato</h2>
+  <h2>13. Contato</h2>
   <p>Dúvidas sobre privacidade ou solicitações sobre seus dados: <strong>renato.soares1370@gmail.com</strong>.</p>
-
-  <div class="box">Documento pronto para hospedagem pública (ex.: GitHub Pages ou seu domínio). Antes de publicar: confirme a data e, se necessário, ajuste o e-mail de contato no item 11.
-  A URL com a âncora <code>#exclusao-de-conta</code> precisa ser informada no Play Console,
-  em Política → Segurança dos dados → Exclusão de conta.</div>
 </body>
 </html>

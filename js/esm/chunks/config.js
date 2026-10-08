@@ -10,7 +10,9 @@ import '../../telas/config.js';
 import { INIT_CONFIG } from '../../modules/init-config.js';
 import { CONFIG_BACKUP } from '../../modules/config-backup.js';
 import { CONFIG_BANCOS } from '../../modules/config-bancos.js';
+import { EXCLUIR_CONTA } from '../../modules/excluir-conta.js';
 
 window.INIT_CONFIG = INIT_CONFIG;
 window.CONFIG_BACKUP = CONFIG_BACKUP;
 window.CONFIG_BANCOS = CONFIG_BANCOS;
+window.EXCLUIR_CONTA = EXCLUIR_CONTA;

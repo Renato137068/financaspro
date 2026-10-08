@@ -15,10 +15,8 @@ import { HEALTH_SERVICE } from '../services/healthService.js';
 import { FINANCE_RECONCILER } from '../utilities/finance-reconciler.js';
 import { ALERTAS } from '../alertas.js';
 import { CONFIG_USER } from '../config-user.js';
-import { INIT_MODALS } from './init-modals.js';
 import { INIT_FORM } from './init-form.js';
 import { BILLING } from '../billing.js';
-import { authLimparAoSair } from '../authController.js';
 import { DADOS } from '../core/dados.js';
 
 const INIT_NAVIGATION = {
@@ -351,73 +349,13 @@ const INIT_NAVIGATION = {
 
   /**
    * Exclui a conta na nuvem — LGPD art. 18, VI e exigencia do Google Play.
-   *
-   * A API ja fazia o trabalho pesado (anonimiza o log de auditoria na mesma
-   * transacao em que apaga o usuario). Faltava o caminho dentro do app: sem ele
-   * o unico jeito era pedir por e-mail, e o Play recusa apps com criacao de
-   * conta que nao oferecem exclusao in-app.
-   *
-   * Dupla confirmacao de proposito: e destrutivo, definitivo e nao tem desfazer.
-   * Os dados locais ficam — apagar tudo de uma vez surpreenderia quem so queria
-   * sair da nuvem e continuar usando offline. Quem quiser os dois usa tambem
-   * "Apagar todos os dados".
+   * O fluxo mora em excluir-conta.js, no chunk 'config' (o do Perfil, onde fica
+   * o botão): é raro e não precisa pesar no primeiro acesso.
    */
   excluirConta: function() {
-    if (typeof DADOS === 'undefined' || !DADOS._nuvemAtiva || !DADOS._nuvemAtiva()) {
-      if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
-        UTILS.mostrarToast('Faça login na nuvem para excluir a conta.', 'warning');
-      }
-      return;
-    }
-
-    var sessao = DADOS.getSessao ? DADOS.getSessao() : null;
-    if (!sessao || !sessao.user) {
-      if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
-        UTILS.mostrarToast('Faça login na nuvem para excluir a conta.', 'warning');
-      }
-      return;
-    }
-
-    var confirmar = (typeof INIT_MODALS !== 'undefined' && INIT_MODALS.confirm)
-      ? INIT_MODALS.confirm.bind(INIT_MODALS)
-      : function(msg, ok) { if (window.confirm(msg)) ok(); };
-
-    confirmar(
-      'Excluir sua conta apaga da nuvem seus lançamentos, contas, orçamentos e o cadastro. '
-      + 'Não há como desfazer. Os dados salvos neste aparelho continuam aqui.',
-      function() {
-        confirmar('Confirma a exclusão definitiva da conta?', function() {
-          var email = sessao.user.email;
-          var senha = window.prompt('Digite sua senha para confirmar a exclusão da conta:');
-          if (!senha) return;
-          var promessa = (typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.reauthWithPassword && SUPA_AUTH.deleteAccount)
-            ? SUPA_AUTH.reauthWithPassword(email, senha).then(function() {
-              return SUPA_AUTH.deleteAccount();
-            })
-            : Promise.reject(new Error('Supabase indisponível'));
-
-          promessa
-            .then(function() {
-              if (typeof authLimparAoSair === 'function') {
-                authLimparAoSair();
-              } else {
-                DADOS.encerrarSessao();
-              }
-              if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
-                UTILS.mostrarToast('Conta excluída', 'info');
-              }
-              if (typeof INIT_CONFIG !== 'undefined' && INIT_CONFIG.refreshPerfil) {
-                INIT_CONFIG.refreshPerfil();
-              }
-            })
-            .catch(function() {
-              if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
-                UTILS.mostrarToast('Não foi possível excluir agora. Tente de novo.', 'error');
-              }
-            });
-        });
-      },
-    );
+    INIT_NAVIGATION.carregarChunkConfig(function() {
+      if (typeof EXCLUIR_CONTA !== 'undefined') EXCLUIR_CONTA.iniciar();
+    });
   },
 
   /**
