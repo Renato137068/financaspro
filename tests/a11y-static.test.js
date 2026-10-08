@@ -961,3 +961,37 @@ describe('a11y — padrão sistêmico de contraste no tema escuro', () => {
     );
   });
 });
+
+/**
+ * Auditoria de acessibilidade de 08/10/2026: o que o TalkBack fala.
+ * O axe não acusava nada disto; foi achado lendo a árvore de acessibilidade.
+ */
+describe('a11y — nome falado bate com o que está na tela', () => {
+  test('cartões com título visível não têm aria-label (WCAG 2.5.3)', () => {
+    // O aria-label trocava o título por outra frase e escondia o subtítulo
+    // ("Nunca exportado", "7 categorias") do leitor de tela.
+    const comRotulo = [];
+    for (const m of html.matchAll(/<(button|a)\b([^>]*class="perfil-card"[^>]*)>([\s\S]*?)<\/\1>/g)) {
+      if (/perfil-card-title/.test(m[3]) && /aria-label=/.test(m[2])) comRotulo.push(m[2].trim().slice(0, 80));
+    }
+    expect(comRotulo).toEqual([]);
+  });
+
+  test('o botão Novo da navegação tem nome que começa pelo texto visível', () => {
+    const botoes = html.match(/<button[^>]*data-aba="novo"[^>]*data-action="mudar-aba"[^>]*>/g) || [];
+    expect(botoes.length).toBeGreaterThan(0);
+    for (const b of botoes) expect(b).toMatch(/aria-label="Novo/);
+  });
+
+  test('Receitas e Despesas do Resumo não escondem o rótulo do leitor', () => {
+    const labels = html.match(/<div class="card-label"[^>]*>/g) || [];
+    expect(labels.length).toBe(2);
+    for (const l of labels) expect(l).not.toMatch(/aria-hidden/);
+  });
+
+  test('a linha do Extrato fala tipo e valor, não só a descrição', () => {
+    const lista = fs.readFileSync(path.join(root, 'js/modules/extrato/lista.js'), 'utf8');
+    expect(lista).not.toMatch(/aria-label="Transação: /);
+    expect(lista).toMatch(/'receita' : 'despesa'\) \+\s*' de ' \+ UTILS\.formatarMoeda\(t\.valor\)/);
+  });
+});

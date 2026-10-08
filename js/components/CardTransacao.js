@@ -113,7 +113,17 @@ const CardTransacao = {
 
     var valorEl = document.createElement('div');
     valorEl.className = 'transacao-valor ' + (isReceita ? 'valor-receita' : 'valor-despesa');
-    valorEl.textContent = (isReceita ? '+ ' : '- ') + u.moeda(t.valor);
+    // O sinal e a cor sozinhos não dizem ao leitor de tela se é receita ou
+    // despesa: o TalkBack lê "R$ 89,90" e pula o hífen.
+    var tipoSr = document.createElement('span');
+    tipoSr.className = 'sr-only';
+    tipoSr.textContent = isReceita ? 'Receita de ' : 'Despesa de ';
+    valorEl.appendChild(tipoSr);
+    var valorVisivel = document.createElement('span');
+    valorVisivel.setAttribute('aria-hidden', 'true');
+    valorVisivel.textContent = (isReceita ? '+ ' : '- ');
+    valorEl.appendChild(valorVisivel);
+    valorEl.appendChild(document.createTextNode(u.moeda(t.valor)));
     item.appendChild(valorEl);
 
     if (typeof renderLucideIcons === 'function') {

@@ -195,7 +195,7 @@
       <span class="nav-emoji" aria-hidden="true"><i data-lucide="bar-chart"></i></span>
       <span>Resumo</span>
     </button>
-    <button class="nav-btn sidebar-btn" data-aba="novo" data-action="mudar-aba" aria-label="Registrar nova transação">
+    <button class="nav-btn sidebar-btn" data-aba="novo" data-action="mudar-aba" aria-label="Novo lançamento">
       <span class="nav-emoji" aria-hidden="true"><i data-lucide="plus"></i></span>
       <span>Novo Lançamento</span>
     </button>
@@ -282,13 +282,13 @@
     <div id="dashboard-alertas" class="dashboard-alertas"></div>
     <section class="cards-container" aria-label="Resumo de receitas e despesas">
       <div class="card receita">
-        <div class="card-label" aria-hidden="true"><i data-lucide="trending-up"></i> Receitas</div>
-        <div class="card-valor" id="resumo-receitas" aria-label="Receitas do mês">R$ 0,00</div>
+        <div class="card-label"><i data-lucide="trending-up" aria-hidden="true"></i> Receitas</div>
+        <div class="card-valor" id="resumo-receitas">R$ 0,00</div>
         <div class="card-comparacao" id="comp-receitas"></div>
       </div>
       <div class="card despesa">
-        <div class="card-label" aria-hidden="true"><i data-lucide="trending-down"></i> Despesas</div>
-        <div class="card-valor" id="resumo-despesas" aria-label="Despesas do mês">R$ 0,00</div>
+        <div class="card-label"><i data-lucide="trending-down" aria-hidden="true"></i> Despesas</div>
+        <div class="card-valor" id="resumo-despesas">R$ 0,00</div>
         <div class="card-comparacao" id="comp-despesas"></div>
       </div>
     </section>
@@ -412,7 +412,6 @@
 
   <!-- ABA 2: NOVO LANÇAMENTO (Redesenhada) -->
   <div id="aba-novo" class="aba">
-    <h2 class="sr-only">Novo lançamento</h2>
     <div class="perfil-header perfil-header-compact">
       <div class="perfil-card-icon-wrapper" aria-hidden="true"><i data-lucide="plus-circle"></i></div>
       <div class="perfil-info">
@@ -737,7 +736,7 @@
     <span class="nav-emoji" aria-hidden="true"><i data-lucide="clipboard-list"></i></span>
     <span>Extrato</span>
   </button>
-  <button class="nav-btn" data-aba="novo" data-action="mudar-aba" aria-label="Registrar nova transação">
+  <button class="nav-btn" data-aba="novo" data-action="mudar-aba" aria-label="Novo lançamento">
     <span class="nav-emoji" aria-hidden="true"><i data-lucide="plus"></i></span>
     <span>Novo</span>
   </button>

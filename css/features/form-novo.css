@@ -677,7 +677,7 @@ button.btn-primario.btn-registrar {
   .quick-amount {
     /* Continua ≥44px; só aperta tipografia/padding lateral. */
     padding: var(--space-2) 0;
-    font-size: var(--font-size-2xs);
+    font-size: var(--font-size-xs);
   }
 }
 

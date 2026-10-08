@@ -148,7 +148,10 @@ const INIT_MODALS = {
   fpConfirm: function(msg, onOk, onNo, options) {
     options = options || {};
     var old = document.querySelector('.modal-overlay');
-    if (old) old.remove();
+    if (old) {
+      if (typeof old._fpFechar === 'function') old._fpFechar();
+      else old.remove();
+    }
 
     var destrutivo = (typeof options.danger === 'boolean')
       ? options.danger
@@ -178,44 +181,41 @@ const INIT_MODALS = {
     var bc = ov.querySelector('#mc');
     
     // Initialize focus trap if available
+    // Em confirmação destrutiva o foco começa em Cancelar: com o foco em
+    // "Confirmar", um Enter ou um toque duplo do TalkBack logo ao abrir
+    // apagava o item sem a pessoa ter ouvido a pergunta inteira.
+    var focoInicial = destrutivo ? bc : bo;
     var focusTrap = null;
     if (FocusTrap) {
       focusTrap = new FocusTrap(ov);
-      focusTrap.activate(bo);
-    } else if (bo) {
-      bo.focus();
+      focusTrap.activate(focoInicial);
+    } else if (focoInicial) {
+      focoInicial.focus();
     }
-    
-    // Event listeners
-    bo.addEventListener('click', function() { 
+
+    // Fecha uma vez só. O ouvinte de Escape sai em qualquer caminho: antes ele
+    // só saía no próprio Escape, e depois de um clique em Confirmar o próximo
+    // Escape (em qualquer tela) ainda chamava onNo desta caixa já fechada.
+    var fechada = false;
+    var onKey = function(e) {
+      if (e.key === 'Escape') fechar(onNo);
+    };
+    var fechar = function(cb) {
+      if (fechada) return;
+      fechada = true;
+      document.removeEventListener('keydown', onKey);
       if (focusTrap) focusTrap.deactivate();
-      ov.remove(); 
-      if (onOk) onOk(); 
+      ov.remove();
+      if (cb) cb();
+    };
+
+    bo.addEventListener('click', function() { fechar(onOk); });
+    bc.addEventListener('click', function() { fechar(onNo); });
+    ov.addEventListener('click', function(e) {
+      if (e.target === ov) fechar(onNo);
     });
-    
-    bc.addEventListener('click', function() { 
-      if (focusTrap) focusTrap.deactivate();
-      ov.remove(); 
-      if (onNo) onNo(); 
-    });
-    
-    ov.addEventListener('click', function(e) { 
-      if (e.target === ov) { 
-        if (focusTrap) focusTrap.deactivate();
-        ov.remove(); 
-        if (onNo) onNo(); 
-      } 
-    });
-    
-    // Keyboard support
-    document.addEventListener('keydown', function h(e) {
-      if (e.key === 'Escape') { 
-        if (focusTrap) focusTrap.deactivate();
-        ov.remove(); 
-        if (onNo) onNo(); 
-        document.removeEventListener('keydown', h); 
-      }
-    });
+    ov._fpFechar = function() { fechar(null); };
+    document.addEventListener('keydown', onKey);
   },
 
   /**

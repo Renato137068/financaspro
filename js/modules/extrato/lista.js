@@ -390,8 +390,12 @@ Object.assign(INIT_EXTRATO, {
     // Descrição vem guardada escapada; decodifica para exibir/rotular sem escape
     // duplo. As saídas abaixo continuam passando por escapeHtml, então seguras.
     var desc = UTILS.desescapeHtml(t.descricao || t.categoria);
+    // O aria-label substitui o conteúdo da linha no leitor de tela: com só
+    // "Transação: <descrição>", o TalkBack não falava valor, tipo nem data.
+    var rotulo = desc + ', ' + (t.tipo === CONFIG.TIPO_RECEITA ? 'receita' : 'despesa') +
+      ' de ' + UTILS.formatarMoeda(t.valor) + ', ' + dataStr + ', ' + CONFIG.getCatLabel(t.categoria);
 
-    return '<div class="ext-tx" role="listitem" tabindex="0" data-id="' + UTILS.escapeHtml(String(t.id)) + '" aria-label="Transação: ' + UTILS.escapeHtml(desc) + '">' +
+    return '<div class="ext-tx" role="listitem" tabindex="0" data-id="' + UTILS.escapeHtml(String(t.id)) + '" aria-label="' + UTILS.escapeHtml(rotulo) + '">' +
       '<input type="checkbox" class="tx-checkbox" data-tx-id="' + UTILS.escapeHtml(String(t.id)) + '" ' + isChecked +
         ' aria-label="Selecionar: ' + UTILS.escapeHtml(desc) + '">' +
       '<div class="ext-tx-icon" style="background: ' + catCor + '20; color: ' + catCor + '">' + catIcon + '</div>' +

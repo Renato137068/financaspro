@@ -56,3 +56,27 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ── Fonte ampliada (Android) ─────────────────────────────── */
+/* No app Android, o WebView aplica o tamanho de fonte do sistema a todo
+   texto (textZoom). A 150-200% o valor do saldo e os cartões de receita e
+   despesa estouravam a largura e eram cortados ("R$ 5.000,0"). As bases em
+   `em` crescem com a fonte: com texto normal nada muda; com texto grande, o
+   ícone desce e os dois cartões viram uma coluna. */
+.card-saldo-principal {
+  flex-wrap: wrap;
+}
+
+.card-saldo-principal .saldo-info {
+  flex: 1 1 9em;
+  min-width: 0;
+}
+
+.card-saldo-principal .saldo-valor,
+.cards-container .card-valor {
+  overflow-wrap: anywhere;
+}
+
+.cards-container {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.5em), 1fr));
+}
