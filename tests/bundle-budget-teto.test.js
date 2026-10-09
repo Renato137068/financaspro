@@ -19,11 +19,8 @@ const TETO_KB = {
   // 1205→1180 e 300→253 (30/09): CSS das telas sob demanda chega com o chunk.
   // 1180→1110 e 253→184 (1º/out): CSS de Extrato, Orçamento e Perfil no chunk.
   // 1110→1082 (02/10): saem o cliente da API Express e o sync v2 (ADR 0007).
-  // 1082→1086 (08/10): correções da auditoria de segurança (troca de conta,
-  // link de login de outra conta, entrada offline). O orçamento estava no
-  // limite exato (1082/1082); a correção de segurança não pode esperar uma
-  // dieta do bundle.
-  precacheTotal: 1086,
+  // 1082→1087 (08/10): segurança (PR 108) e acessibilidade (PR 109) juntas.
+  precacheTotal: 1087,
   // 514→512 (27/09): a soma passou a incluir a entrada ESM (ADR 0005).
   // 512→507→503 (27–28/09): quarta e quinta fatias ESM.
   // 503→478 (29/09): idem.

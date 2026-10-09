@@ -147,7 +147,7 @@ header h1,
 
 /* Títulos de seção — mais arejados */
 .secao-titulo {
-  font-size: var(--font-size-2xs);
+  font-size: var(--font-size-xs);
   letter-spacing: 0.12em;
 }
 

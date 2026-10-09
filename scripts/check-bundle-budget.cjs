@@ -59,9 +59,9 @@ const BUDGETS = {
   // Perfil que só essas telas desenham chega com o chunk (layouts/*-tela.css).
   // 1110→1082 KB (2026-10-02): sai o cliente da API Express e o sync v2
   // (ADR 0007): 1106 → 1079 KB.
-  // 1082→1086 KB (2026-10-08): correções da auditoria de segurança (troca de
-  // conta no aparelho, link de login de outra conta, entrada offline): 1084 KB.
-  precacheTotal: { max: 1086 * KB, label: 'Precache total (1º acesso)' },
+  // 1082→1086/1083 KB (2026-10-08): segurança (PR 108) e acessibilidade (PR 109)
+  // juntas; teto final acertado na consolidação.
+  precacheTotal: { max: 1087 * KB, label: 'Precache total (1º acesso)' },
   // 580→590 KB (2026-09-13): correção do KPI "Folga poupança" no Orçamento
   // (cálculo da folga da fatia de poupança) + referência de ritmo no Resumo
   // adicionam alguns KB de código — aumento intencional.
