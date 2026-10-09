@@ -38,7 +38,9 @@ async function exportar(app) {
   let blob = null;
   app.window.URL.createObjectURL = (b) => { blob = b; return 'blob:teste'; };
   app.window.HTMLAnchorElement.prototype.click = function() {};
-  app.window.INIT_CONFIG.exportarDados();
+  // null = "Exportar sem senha" na pergunta do backup-cifrado.js (PR 108);
+  // sem argumento, o app abriria essa pergunta e o arquivo não sairia.
+  app.window.INIT_CONFIG.exportarDados(null);
   expect(await app.esperar(() => !!blob)).toBe(true);
   return new Promise((resolve) => {
     const fr = new app.window.FileReader();
