@@ -612,7 +612,7 @@ const INIT_FORM = {
       var descSafe = UTILS.escapeHtml(resultado.descricao || texto);
       var catSafe = cat ? UTILS.escapeHtml(cat) : '';
       var msg = '<i data-lucide="check" aria-hidden="true"></i> ' + descSafe + (catSafe ? ' · ' + catSafe : '');
-      if (resultado.valor) msg += ' · R$ ' + resultado.valor.toFixed(2).replace('.', ',');
+      if (resultado.valor) msg += ' · ' + UTILS.formatarMoeda(resultado.valor);
       if (feedback) {
         feedback.innerHTML = msg;
         feedback.className = 'er-feedback sucesso';

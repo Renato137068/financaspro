@@ -44,7 +44,7 @@ describe('entrada rápida', () => {
     expect($('novo-categoria').value).toBe('alimentacao');
     expect($('novo-tipo').value).toBe('despesa');
     expect($('er-feedback').className).toMatch(/sucesso/);
-    expect($('er-feedback').textContent).toMatch(/R\$ 50,00/);
+    expect($('er-feedback').textContent).toMatch(/R\$\s50,00/);
     expect(frase.value).toBe('');
     expect(app.erros).toEqual([]);
   });

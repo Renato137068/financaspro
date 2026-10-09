@@ -40,7 +40,7 @@
    *   4. no Resumo → minimiza o app, sem perder o estado.
    */
   function janelaAberta() {
-    var seletores = '.modal-overlay, .onboarding-overlay, [role="dialog"], [role="alertdialog"], [aria-modal="true"]';
+    var seletores = '.modal-overlay, [role="dialog"], [role="alertdialog"], [aria-modal="true"]';
     var lista = document.querySelectorAll(seletores);
     for (var i = 0; i < lista.length; i++) {
       var el = lista[i];

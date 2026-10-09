@@ -1042,6 +1042,22 @@ function setupAuthUI() {
     }
   }
 
+  /**
+   * Primeiro acesso sem internet (app recém-instalado, nenhuma sessão aqui).
+   * Antes a tela dizia só "Sem conexão com o servidor. Verifique sua internet
+   * e tente de novo." e a pessoa não sabia se o app só funcionava online.
+   * Agora diz que é só desta vez, e o aviso some sozinho quando a rede volta.
+   */
+  function _avisarPrimeiroAcessoSemRede() {
+    if (!warning) return;
+    warning.style.display = 'block';
+    warning.textContent = 'Sem internet. Para entrar ou criar sua conta pela primeira vez, '
+      + 'conecte-se. Depois disso o app abre mesmo sem internet.';
+    if (_avisarPrimeiroAcessoSemRede._ouvindo || typeof window === 'undefined') return;
+    _avisarPrimeiroAcessoSemRede._ouvindo = true;
+    window.addEventListener('online', function() { _checkCloudReachable(); });
+  }
+
   if (typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.isActive()) {
     if (totpForm) {
       totpForm.hidden = true;
@@ -1074,7 +1090,10 @@ function setupAuthUI() {
       var _resolvidoOffline = false;
       alcance.then(function(online) {
         if (online || _authEstaDesbloqueado()) return;
-        if (!(SUPA_AUTH.temSessaoPersistida && SUPA_AUTH.temSessaoPersistida())) return;
+        if (!(SUPA_AUTH.temSessaoPersistida && SUPA_AUTH.temSessaoPersistida())) {
+          _avisarPrimeiroAcessoSemRede();
+          return;
+        }
         _resolvidoOffline = true;
         _mostrarEntradaOffline(overlay);
       });

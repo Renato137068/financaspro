@@ -148,8 +148,8 @@ const INSIGHTS = {
         insights.push({
           tipo:      'ritmo',
           msg:       '<i data-lucide="trending-up" aria-hidden="true"></i> Ritmo de gastos ' + ritmo.variacao +
-                     '% acima do mesmo período do mês passado (R$ ' + ritmo.atual.toFixed(2).replace('.', ',') +
-                     ' até o dia ' + ritmo.dia + ' vs R$ ' + ritmo.anterior.toFixed(2).replace('.', ',') + ').',
+                     '% acima do mesmo período do mês passado (' + UTILS.formatarMoeda(ritmo.atual) +
+                     ' até o dia ' + ritmo.dia + ' vs ' + UTILS.formatarMoeda(ritmo.anterior) + ').',
           gravidade: ritmo.variacao >= 50 ? 'alta' : 'media'
         });
       }
@@ -181,13 +181,13 @@ const INSIGHTS = {
         if (proj.saldoProjetado >= 0) {
           insights.push({
             tipo:      'projecao',
-            msg:       '<i data-lucide="calendar" aria-hidden="true"></i> Projeção: você vai fechar o mês com saldo de +R$ ' + proj.saldoProjetado.toFixed(2).replace('.', ',') + '.',
+            msg:       '<i data-lucide="calendar" aria-hidden="true"></i> Projeção: você vai fechar o mês com saldo de +' + UTILS.formatarMoeda(proj.saldoProjetado) + '.',
             gravidade: 'baixa'
           });
         } else {
           insights.push({
             tipo:      'projecao',
-            msg:       '<i data-lucide="calendar" aria-hidden="true"></i> Projeção: no ritmo atual, saldo negativo de –R$ ' + Math.abs(proj.saldoProjetado).toFixed(2).replace('.', ',') + ' ao fim do mês.',
+            msg:       '<i data-lucide="calendar" aria-hidden="true"></i> Projeção: no ritmo atual, saldo negativo de –' + UTILS.formatarMoeda(Math.abs(proj.saldoProjetado)) + ' ao fim do mês.',
             gravidade: 'alta'
           });
         }
@@ -203,25 +203,25 @@ const INSIGHTS = {
     if (typeof AI_ENGINE.mensagemAssinaturasEsquecidas === 'function') {
       var assin = AI_ENGINE.mensagemAssinaturasEsquecidas(txs);
       if (assin && assin.itens && assin.itens.length) {
-        var totalFmt = assin.totalAnual.toFixed(2).replace('.', ',');
+        var totalFmt = UTILS.formatarMoeda(assin.totalAnual);
         if (proAi) {
           var maior = assin.itens[0];
           insights.push({
             tipo:      'assinaturas',
             msg:       '<i data-lucide="repeat" aria-hidden="true"></i> ' + assin.quantidade +
-                       ' cobrança(s) recorrente(s) somam R$ ' + totalFmt +
-                       '/ano. Maior: "' + esc(maior.nome) + '" (R$ ' + maior.custoAnual.toFixed(2).replace('.', ',') + '/ano). Ainda usa?',
+                       ' cobrança(s) recorrente(s) somam ' + totalFmt +
+                       '/ano. Maior: "' + esc(maior.nome) + '" (' + UTILS.formatarMoeda(maior.custoAnual) + '/ano). Ainda usa?',
             gravidade: assin.totalAnual >= 600 ? 'alta' : 'media'
           });
         } else {
           insights.push({
             tipo:       'assinaturas-teaser',
             msg:        '<i data-lucide="repeat" aria-hidden="true"></i> Encontramos ' + assin.quantidade +
-                        ' cobrança(s) recorrente(s) somando R$ ' + totalFmt + '/ano.',
+                        ' cobrança(s) recorrente(s) somando ' + totalFmt + '/ano.',
             gravidade:  assin.totalAnual >= 600 ? 'alta' : 'media',
             acao:       'abrirPaywall',
             botao:      'Ver quais',
-            parametros: { message: 'Você tem R$ ' + totalFmt +
+            parametros: { message: 'Você tem ' + totalFmt +
                                    '/ano em cobranças recorrentes. O Pro mostra quais são — e costuma se pagar já na primeira que você cancela.' }
           });
         }
@@ -285,7 +285,7 @@ const INSIGHTS = {
         var catLabel = esc((typeof CONFIG !== 'undefined' && CONFIG.getCatLabel) ? CONFIG.getCatLabel(top.categoria) : top.categoria);
         insights.push({
           tipo:      'concentracao',
-          msg:       '<i data-lucide="map-pin" aria-hidden="true"></i> ' + Math.round(top.percentual) + '% dos gastos em ' + catLabel + ' (R$ ' + top.total.toFixed(2).replace('.', ',') + ').',
+          msg:       '<i data-lucide="map-pin" aria-hidden="true"></i> ' + Math.round(top.percentual) + '% dos gastos em ' + catLabel + ' (' + UTILS.formatarMoeda(top.total) + ').',
           gravidade: top.percentual >= 50 ? 'alta' : 'media'
         });
       }
@@ -356,7 +356,7 @@ const INSIGHTS = {
     if (gastoHoje > mediaDesp * 2 && gastoHoje > 50) {
       insights.push({
         tipo:      'padrao',
-        msg:       '<i data-lucide="zap" aria-hidden="true"></i> Gasto alto hoje: R$ ' + gastoHoje.toFixed(2).replace('.', ',') + ' (mais que o dobro da média por transação).',
+        msg:       '<i data-lucide="zap" aria-hidden="true"></i> Gasto alto hoje: ' + UTILS.formatarMoeda(gastoHoje) + ' (mais que o dobro da média por transação).',
         gravidade: 'media'
       });
     }
@@ -367,7 +367,7 @@ const INSIGHTS = {
     padroesRec.slice(0, 2).forEach(function(p) {
       insights.push({
         tipo:       'recorrencia',
-        msg:        '<i data-lucide="refresh-cw" aria-hidden="true"></i> "' + esc(dtext(p.descricao)) + '" aparece há ' + p.meses + ' meses (média R$ ' + p.valorMedio.toFixed(2).replace('.', ',') + ').',
+        msg:        '<i data-lucide="refresh-cw" aria-hidden="true"></i> "' + esc(dtext(p.descricao)) + '" aparece há ' + p.meses + ' meses (média ' + UTILS.formatarMoeda(p.valorMedio) + ').',
         gravidade:  'media',
         acao:       'marcarRecorrente',
         parametros: { descricao: dtext(p.descricao) },
@@ -407,7 +407,7 @@ const INSIGHTS = {
         var catCorteLabel = esc((typeof CONFIG !== 'undefined' && CONFIG.getCatLabel) ? CONFIG.getCatLabel(corte.categoriaAlvo) : corte.categoriaAlvo);
         insights.push({
           tipo:      'meta',
-          msg:       '<i data-lucide="target" aria-hidden="true"></i> Reduza R$ ' + corte.corteNecessario.toFixed(2).replace('.', ',') + ' em ' + catCorteLabel + ' para atingir 20% de poupança (você está em ' + corte.taxaAtual + '%).',
+          msg:       '<i data-lucide="target" aria-hidden="true"></i> Reduza ' + UTILS.formatarMoeda(corte.corteNecessario) + ' em ' + catCorteLabel + ' para atingir 20% de poupança (você está em ' + corte.taxaAtual + '%).',
           gravidade: 'media'
         });
       }
@@ -438,7 +438,7 @@ const INSIGHTS = {
         var mvLabel = esc((typeof CONFIG !== 'undefined' && CONFIG.getCatLabel) ? CONFIG.getCatLabel(mv.categoria) : mv.categoria);
         insights.push({
           tipo:      'variacao-cat',
-          msg:       (mv.variacao > 0 ? '<i data-lucide="trending-up" aria-hidden="true"></i>' : '<i data-lucide="trending-down" aria-hidden="true"></i>') + ' ' + mvLabel + ' ' + (mv.variacao > 0 ? 'subiu' : 'caiu') + ' ' + Math.abs(mv.variacao) + '% em relação ao mês passado (R$ ' + mv.atual.toFixed(2).replace('.', ',') + ').',
+          msg:       (mv.variacao > 0 ? '<i data-lucide="trending-up" aria-hidden="true"></i>' : '<i data-lucide="trending-down" aria-hidden="true"></i>') + ' ' + mvLabel + ' ' + (mv.variacao > 0 ? 'subiu' : 'caiu') + ' ' + Math.abs(mv.variacao) + '% em relação ao mês passado (' + UTILS.formatarMoeda(mv.atual) + ').',
           gravidade: mv.variacao > 50 ? 'alta' : 'media'
         });
       }

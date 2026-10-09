@@ -338,7 +338,7 @@ const AI_ENGINE = {
 
         var nomeCat = (typeof CONFIG !== 'undefined' && CONFIG.CATEGORIAS_LABELS
           && CONFIG.CATEGORIAS_LABELS[cat]) || cat;
-        var habitual = 'R$ ' + mediana.toFixed(2).replace('.', ',');
+        var habitual = UTILS.formatarMoeda(mediana);
 
         anomalias.push({
           transacao: t,
@@ -459,7 +459,7 @@ const AI_ENGINE = {
         id: 'saldo-negativo',
         tipo: 'saldo',
         titulo: 'Saldo negativo',
-        msg: 'Você está gastando R$ ' + Math.abs(mesSel.saldo).toFixed(2).replace('.', ',') + ' a mais do que recebe este mês.',
+        msg: 'Você está gastando ' + UTILS.formatarMoeda(Math.abs(mesSel.saldo)) + ' a mais do que recebe este mês.',
         gravidade: 'critica'
       });
     }
@@ -530,7 +530,7 @@ const AI_ENGINE = {
           id: 'recorrente-' + (r.id || r.descricao),
           tipo: 'recorrente',
           titulo: 'Vencimento próximo',
-          msg: '"' + (typeof UTILS !== 'undefined' ? UTILS.escapeHtml(r.descricao || 'Conta') : (r.descricao || 'Conta')) + '" vence em ' + (diaVenc - diaMes) + ' dia(s) — R$ ' + Number(r.valor).toFixed(2).replace('.', ','),
+          msg: '"' + (typeof UTILS !== 'undefined' ? UTILS.escapeHtml(r.descricao || 'Conta') : (r.descricao || 'Conta')) + '" vence em ' + (diaVenc - diaMes) + ' dia(s) — ' + UTILS.formatarMoeda(Number(r.valor)),
           gravidade: 'media',
           acao: 'lancarRecorrente',
           parametros: r
@@ -580,7 +580,7 @@ const AI_ENGINE = {
           id:       'projecao-negativa',
           tipo:     'projecao',
           titulo:   'Projeção: saldo negativo',
-          msg:      'No ritmo atual, você vai gastar R$ ' + proj.projecaoDespesas.toFixed(2).replace('.', ',') + ' este mês — saldo estimado: –R$ ' + Math.abs(proj.saldoProjetado).toFixed(2).replace('.', ',') + '.',
+          msg:      'No ritmo atual, você vai gastar ' + UTILS.formatarMoeda(proj.projecaoDespesas) + ' este mês — saldo estimado: –' + UTILS.formatarMoeda(Math.abs(proj.saldoProjetado)) + '.',
           gravidade: 'alta'
         });
       }
@@ -738,8 +738,8 @@ const AI_ENGINE = {
       quantidade: lista.length,
       totalAnual: totalAnual,
       itens:      lista,
-      texto:      'Você tem ' + lista.length + ' cobrança(s) recorrente(s) somando R$ ' +
-                  totalAnual.toFixed(2).replace('.', ',') + '/ano. Ainda usa todas?'
+      texto:      'Você tem ' + lista.length + ' cobrança(s) recorrente(s) somando ' +
+                  UTILS.formatarMoeda(totalAnual) + '/ano. Ainda usa todas?'
     };
   },
 
@@ -842,14 +842,14 @@ const AI_ENGINE = {
     var p = AI_ENGINE.projetarFimMes(transacoes, hoje);
     if (!p || p.dadosInsuficientes) return null;
     var s = p.saldoProjetado;
-    var abs = Math.abs(s).toFixed(2).replace('.', ',');
+    var abs = UTILS.formatarMoeda(Math.abs(s));
     var tom, texto;
     if (s > 0) {
       tom = 'positivo';
-      texto = 'Neste ritmo, você fecha o mês com R$ ' + abs + ' sobrando.';
+      texto = 'Neste ritmo, você fecha o mês com ' + abs + ' sobrando.';
     } else if (s < 0) {
       tom = 'alerta';
-      texto = 'Neste ritmo, o mês fecha no vermelho: R$ ' + abs + ' negativos.';
+      texto = 'Neste ritmo, o mês fecha no vermelho: ' + abs + ' negativos.';
     } else {
       tom = 'neutro';
       texto = 'Neste ritmo, o mês fecha zerado.';
