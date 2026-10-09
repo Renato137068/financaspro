@@ -1,0 +1,56 @@
+name: Android vitals
+
+# Toda segunda-feira lê na Play a taxa de travamentos e de "app não responde"
+# (scripts/vitals-relatorio.cjs) e abre uma issue quando a média de 7 dias
+# passa do limite de mau comportamento da Play (1,09% e 0,47%).
+#
+# Usa o segredo PLAY_SERVICE_ACCOUNT_JSON (o mesmo da ficha e do release).
+# Fica inerte, com um aviso e o job verde, até a Google Play Developer
+# Reporting API estar ativa para essa conta de serviço
+# (docs/observabilidade/android-vitals.md).
+
+on:
+  schedule:
+    - cron: '23 11 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: vitals
+  cancel-in-progress: true
+
+jobs:
+  relatorio:
+    name: Travamentos e ANR
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.x
+
+      # Só node (fetch e crypto nativos): o script não tem dependência do npm.
+      - name: Relatório
+        id: vitals
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: node scripts/vitals-relatorio.cjs --saida vitals.md
+
+      # Uma issue aberta por vez: se já existe, comenta em vez de duplicar.
+      - name: Abrir ou atualizar a issue do alerta
+        if: steps.vitals.outputs.alerta == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TITULO="Android vitals acima do limite da Play"
+          NUM=$(gh issue list --state open --search "in:title \"$TITULO\"" --json number,title \
+            --jq ".[] | select(.title == \"$TITULO\") | .number" | head -n1)
+          if [ -n "$NUM" ]; then
+            gh issue comment "$NUM" --body-file vitals.md
+          else
+            gh issue create --title "$TITULO" --body-file vitals.md
+          fi

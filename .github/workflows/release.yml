@@ -128,7 +128,17 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          # Mapas de código para ler a pilha dos erros relatados (npm run
+          # erro:pilha). O build os tira do dist/ antes do sync: não vão no AAB.
+          FP_SOURCEMAPS: '1'
         run: npm run android:sync
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sourcemaps-${{ needs.verificar.outputs.tag }}
+          path: sourcemaps/
+          if-no-files-found: error
+          retention-days: 90
 
       # A keystore nunca vai para o repositório: chega em base64 pelo segredo
       # e é apagada no fim do job (o runner é descartado, mas não custa).

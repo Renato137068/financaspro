@@ -139,7 +139,9 @@ describe('chunks lazy', () => {
 
 describe('build de produção', () => {
   test('sourcemap desligado — não publicamos o fonte junto do bundle', () => {
+    // Só o release liga (FP_SOURCEMAPS=1), em modo 'hidden', e o build tira os
+    // mapas do dist/ antes do APK e do site (tests/erro-pilha.test.js).
     const vite = fs.readFileSync(path.join(root, 'vite.config.cjs'), 'utf8');
-    expect(vite).toMatch(/sourcemap:\s*false/);
+    expect(vite).toMatch(/sourcemap:\s*process\.env\.FP_SOURCEMAPS === '1' \? 'hidden' : false/);
   });
 });

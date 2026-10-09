@@ -52,7 +52,7 @@ module.exports = defineConfig({
     // Sem sourcemap em produção: publicar o mapa junto do bundle entrega o
     // fonte original a qualquer visitante e amplia a superfície de análise sem
     // nenhum benefício para o usuário final.
-    sourcemap: false,
+    sourcemap: process.env.FP_SOURCEMAPS === '1' ? 'hidden' : false,
     target: 'es2015',
   },
 

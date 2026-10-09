@@ -63,8 +63,6 @@
     "CONTAS_PAGAR": "writable",
     "DADOS": "writable",
     "DAILY_REMINDER": "writable",
-    "DOM_SAFE": "writable",
-    "DOM_SAFE_PATCH": "writable",
     "DOMUTILS": "writable",
     "editarRegra503020": "writable",
     "editarRendaOrcamento": "writable",

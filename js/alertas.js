@@ -282,7 +282,11 @@ const ALERTAS = {
           self._acaoLabel(a.acao) +
           '</button>';
       }
-      return '<div class="alerta-item ' + cls + '" role="alert">' +
+      // role="alert" interrompe o leitor de tela no meio do que ele estiver
+      // lendo: só para o que é crítico. O resto (e o convite ao Pro) é
+      // anunciado sem interromper (auditoria de acessibilidade de 08/10).
+      var papel = a.gravidade === 'critica' && a.tipo !== 'upsell' ? 'alert' : 'status';
+      return '<div class="alerta-item ' + cls + '" role="' + papel + '">' +
         '<div class="alerta-conteudo">' +
           '<strong class="alerta-titulo">' + self._esc(a.titulo) + '</strong>' +
           '<span class="alerta-msg">' + self._esc(a.msg) + '</span>' +
