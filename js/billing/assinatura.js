@@ -73,6 +73,7 @@ Object.assign(BILLING, {
   },
 
   _WELCOME_KEY: 'fp-welcome-trial-pedido',
+  _WELCOME_RECUSAS_FINAIS: ['welcome-trial-ja-concedido', 'assinatura-paga-existe'],
 
   /**
    * E o Pro de boas-vindas, e nao o trial do SKU da loja?
@@ -140,9 +141,14 @@ Object.assign(BILLING, {
         return out;
       });
     }).catch(function(err) {
-      // 409 = ja concedido, ou ja existe assinatura. Nos dois casos nao ha o
-      // que fazer de novo, e insistir a cada login so gasta rede.
-      if (err && err.status === 409) marcar();
+      // So as duas recusas definitivas viram marca local: ja concedido, ou a
+      // org ja tem assinatura paga. O antigo "assinatura-ja-existe" saia ate
+      // para a FREE que toda org ganha ao nascer (auditoria do servidor,
+      // 09/10); servidor ainda nao atualizado nao pode fazer o app desistir
+      // para sempre. Qualquer outro erro tenta de novo no proximo login.
+      if (err && err.status === 409 && self._WELCOME_RECUSAS_FINAIS.indexOf(err.message) !== -1) {
+        marcar();
+      }
       return null;
     });
   },

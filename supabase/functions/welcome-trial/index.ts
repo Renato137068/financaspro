@@ -11,7 +11,7 @@
 //
 // Não é assinatura da loja — é entitlement nosso (TRIALING + trialEndsAt), e
 // por isso convive com o trial do SKU sem conflitar com a política da Play.
-import { adminClient, findPlan, orgRoleOf } from "../_shared/db.ts";
+import { adminClient, findPlan, findPlanById, orgRoleOf } from "../_shared/db.ts";
 import { WELCOME_TRIAL_DAYS } from "../_shared/billing-constants.ts";
 import { corsHeadersFor, corsPreflight } from "../_shared/cors.ts";
 
@@ -59,17 +59,29 @@ Deno.serve(async (req) => {
       return json(req, { error: "welcome-trial-ja-concedido", data: jaConcedido }, 409);
     }
 
-    // ── Nunca por cima de uma assinatura existente ───────────────────────
+    // ── Nunca por cima de uma assinatura de verdade ──────────────────────
     // Quem já paga (ou já está em trial da loja) não pode ter o entitlement
     // sobrescrito por um trial gratuito — isso apagaria uma assinatura real.
+    //
+    // Mas toda org nasce com uma Subscription FREE ACTIVE, criada pelo gatilho
+    // handle_new_organization (20260901120000_org_bootstrap.sql). Recusar
+    // "qualquer assinatura" recusava todo mundo, e o Pro de boas-vindas nunca
+    // era concedido (achado 1 da auditoria do servidor de 09/10). A FREE do
+    // gatilho é trocada pelo trial; qualquer outra assinatura é recusada.
     const { data: subExistente } = await sb
       .from("Subscription")
-      .select("id, status")
+      .select("id, status, planId, stripeSubId")
       .eq("orgId", orgId)
       .maybeSingle();
 
     if (subExistente) {
-      return json(req, { error: "assinatura-ja-existe" }, 409);
+      const planoAtual = subExistente.planId ? await findPlanById(sb, subExistente.planId) : null;
+      const ehFreeDoGatilho = planoAtual?.tier === "FREE" &&
+        subExistente.status === "ACTIVE" &&
+        !subExistente.stripeSubId;
+      if (!ehFreeDoGatilho) {
+        return json(req, { error: "assinatura-paga-existe" }, 409);
+      }
     }
 
     const plan = await findPlan(sb, "PRO");
@@ -80,9 +92,7 @@ Deno.serve(async (req) => {
     const nowIso = agora.toISOString();
     const fimIso = fim.toISOString();
 
-    const { error: insErr } = await sb.from("Subscription").insert({
-      id: crypto.randomUUID(),
-      orgId,
+    const trial = {
       planId: plan.id,
       status: "TRIALING",
       billingInterval: "monthly",
@@ -93,10 +103,29 @@ Deno.serve(async (req) => {
       cancelAtPeriodEnd: false,
       trialEndsAt: fimIso,
       updatedAt: nowIso,
-    });
-    if (insErr) throw new Error(insErr.message);
+    };
 
-    // O registro de concessão vem DEPOIS do insert: se a assinatura falhar, o
+    if (subExistente) {
+      // Update condicionado ao estado lido: se uma compra (ou outro pedido de
+      // boas-vindas) gravou a linha entre a leitura e aqui, nada é trocado.
+      const { data: trocadas, error: updErr } = await sb
+        .from("Subscription")
+        .update(trial)
+        .eq("id", subExistente.id)
+        .eq("planId", subExistente.planId)
+        .eq("status", "ACTIVE")
+        .is("stripeSubId", null)
+        .select("id");
+      if (updErr) throw new Error(updErr.message);
+      if (!Array.isArray(trocadas) || trocadas.length === 0) {
+        return json(req, { error: "assinatura-paga-existe" }, 409);
+      }
+    } else {
+      const { error: insErr } = await sb.from("Subscription").insert({ id: crypto.randomUUID(), orgId, ...trial });
+      if (insErr) throw new Error(insErr.message);
+    }
+
+    // O registro de concessão vem DEPOIS da assinatura: se a assinatura falhar, o
     // usuário não fica marcado como "já ganhou" sem nunca ter recebido nada.
     const { error: grantErr } = await sb.from("fp_welcome_trial_grant").insert({
       user_id: user.id,
