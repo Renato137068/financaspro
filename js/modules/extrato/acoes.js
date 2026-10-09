@@ -34,6 +34,11 @@ Object.assign(INIT_EXTRATO, {
     document.getElementById('novo-categoria').value = tx.categoria;
     document.getElementById('novo-tipo').value = tx.tipo;
     document.getElementById('novo-data').value = tx.data;
+    // Conta e forma de pagamento também: sem isso o form ficava em "Sem banco" /
+    // "Sem forma" e salvar a edição apagava os dois do lançamento — a compra
+    // saía da fatura do cartão e do saldo da conta sem o usuário ver.
+    INIT_EXTRATO._selecionarOpcao('novo-banco', tx.banco);
+    INIT_EXTRATO._selecionarOpcao('novo-cartao', tx.cartao);
     var tagsEl = document.getElementById('novo-tags');
     if (tagsEl) {
       tagsEl.value = Array.isArray(tx.tags) ? tx.tags.join(', ') : '';
@@ -44,6 +49,7 @@ Object.assign(INIT_EXTRATO, {
     INIT_FORM.atualizarTipoIndicator(tx.tipo);
     INIT_FORM.renderCategoriasBtns(tx.tipo);
     INIT_FORM.atualizarOrcamentoPreview();
+    if (INIT_FORM.atualizarPaymentChipsAtivos) INIT_FORM.atualizarPaymentChipsAtivos();
 
     // Navegar para aba de edição
     mudarAba('novo');
@@ -61,6 +67,23 @@ Object.assign(INIT_EXTRATO, {
     }
 
     UTILS.mostrarToast('Edite a transação e clique em Atualizar', 'info');
+  },
+
+  /**
+   * Põe `valor` no <select>; se a opção não existe mais (banco/cartão removido
+   * das configurações), cria uma para não trocar o valor guardado por vazio.
+   */
+  _selecionarOpcao: function(id, valor) {
+    var sel = document.getElementById(id);
+    if (!sel) return;
+    var v = valor == null ? '' : String(valor);
+    if (v && !Array.prototype.some.call(sel.options, function(o) { return o.value === v; })) {
+      var opt = document.createElement('option');
+      opt.value = v;
+      opt.textContent = v;
+      sel.appendChild(opt);
+    }
+    sel.value = v;
   },
 
   /**
@@ -139,26 +162,43 @@ Object.assign(INIT_EXTRATO, {
     
     // Resumo
     csv += 'RESUMO FINANCEIRO\n';
-    csv += 'Receitas Total,' + UTILS.formatarMoeda(receitas).replace('R$ ', '') + '\n';
-    csv += 'Despesas Total,' + UTILS.formatarMoeda(despesas).replace('R$ ', '') + '\n';
-    csv += 'Saldo do Período,' + UTILS.formatarMoeda(saldo).replace('R$ ', '') + '\n';
+    // Mesmo formato numérico da tabela (ponto decimal, sem "R$"): o valor em
+    // reais com vírgula ("5.000,00") partia a linha em duas colunas no CSV.
+    csv += 'Receitas Total,' + receitas.toFixed(2) + '\n';
+    csv += 'Despesas Total,' + despesas.toFixed(2) + '\n';
+    csv += 'Saldo do Período,' + saldo.toFixed(2) + '\n';
     csv += '\n';
     
     // Header da tabela
     csv += 'Data,Descrição,Categoria,Tipo,Valor,Saldo Acumulado\n';
     
     // Dados das transações com saldo acumulado
-    var saldoAcumulado = 0;
-    txs.forEach(function(t) {
+    // Saldo acumulado só faz sentido em ordem cronológica (TRANSACOES.obter
+    // devolve a mais recente primeiro), em centavos, e com a mesma regra do
+    // resumo: transferência entre contas não entra — assim a última linha
+    // fecha com o "Saldo do Período".
+    var saldoAcumuladoC = 0;
+    txs.slice().sort(function(a, b) {
+      return a.data < b.data ? -1 : a.data > b.data ? 1 : 0;
+    }).forEach(function(t) {
       var data = new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR');
-      var valor = t.tipo === CONFIG.TIPO_RECEITA ? t.valor : -t.valor;
-      saldoAcumulado += valor;
-      
-      var tipoStr = t.tipo === CONFIG.TIPO_RECEITA ? 'Receita' : 'Despesa';
+      var valorC = _extratoCent(t.valor);
+      var tipoStr;
+      if (t.tipo === CONFIG.TIPO_RECEITA) {
+        tipoStr = 'Receita';
+        saldoAcumuladoC += valorC;
+      } else if (t.tipo === CONFIG.TIPO_DESPESA) {
+        tipoStr = 'Despesa';
+        valorC = -valorC;
+        saldoAcumuladoC += valorC;
+      } else {
+        tipoStr = 'Transferência';
+      }
+
       var descricao = INIT_EXTRATO._neutralizarCsvCelula(UTILS.desescapeHtml(t.descricao || ''));
       var categoria = INIT_EXTRATO._neutralizarCsvCelula(t.categoria);
-      
-      csv += data + ',"' + descricao + '","' + categoria + '",' + tipoStr + ',' + valor.toFixed(2) + ',' + saldoAcumulado.toFixed(2) + '\n';
+
+      csv += data + ',"' + descricao + '","' + categoria + '",' + tipoStr + ',' + (valorC / 100).toFixed(2) + ',' + (saldoAcumuladoC / 100).toFixed(2) + '\n';
     });
 
     // Total de transações
@@ -228,6 +268,7 @@ Object.assign(INIT_EXTRATO, {
     html += 'tr:hover { background: #fbfcfb; }';
     html += '.receita { color: #16a34a; font-weight: 600; }';
     html += '.despesa { color: #dc2626; font-weight: 600; }';
+    html += '.transferencia { color: #55605a; font-weight: 600; }';
     html += '.categoria { font-weight: 500; color: #55605a; }';
     html += '.footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e9e7; text-align: center; color: #98a39d; font-size: 12px; }';
     html += '@media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }';
@@ -255,13 +296,17 @@ Object.assign(INIT_EXTRATO, {
     
     txs.forEach(function(t) {
       var data = new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR');
-      var valor = (t.tipo === CONFIG.TIPO_RECEITA ? '+' : '-') + UTILS.formatarMoeda(t.valor);
-      var valorClass = t.tipo === CONFIG.TIPO_RECEITA ? 'receita' : 'despesa';
+      // Transferência entre contas não é receita nem gasto (o resumo acima
+      // já a deixa de fora): sai sem sinal e com o próprio rótulo.
+      var transf = t.tipo !== CONFIG.TIPO_RECEITA && t.tipo !== CONFIG.TIPO_DESPESA;
+      var valor = (transf ? '' : t.tipo === CONFIG.TIPO_RECEITA ? '+' : '-') + UTILS.formatarMoeda(t.valor);
+      var valorClass = transf ? 'transferencia' : t.tipo === CONFIG.TIPO_RECEITA ? 'receita' : 'despesa';
+      var tipoStr = transf ? 'Transferência' : t.tipo === CONFIG.TIPO_RECEITA ? 'Receita' : 'Despesa';
       html += '<tr>';
       html += '<td>' + data + '</td>';
       html += '<td>' + UTILS.escapeHtml(UTILS.desescapeHtml(t.descricao || '')) + '</td>';
       html += '<td class="categoria">' + INIT_EXTRATO.getCatIcon(t.categoria) + ' ' + UTILS.escapeHtml(t.categoria) + '</td>';
-      html += '<td>' + (t.tipo === CONFIG.TIPO_RECEITA ? 'Receita' : 'Despesa') + '</td>';
+      html += '<td>' + tipoStr + '</td>';
       html += '<td class="' + valorClass + '">' + valor + '</td>';
       html += '</tr>';
     });

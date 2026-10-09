@@ -44,6 +44,10 @@ const TRANSACOES = {
   init: function() {
     TRANSACOES._cache = DADOS.getTransacoes();
     TRANSACOES._cacheTimestamp = Date.now();
+    // O índice por mês é derivado do cache: sem zerá-lo junto, um lançamento
+    // que chega de fora (outra aba) ficava fora de toda consulta por mês — o
+    // saldo do Resumo não mudava até recarregar a página.
+    TRANSACOES._monthIndex = null;
     if (typeof APP_STATE !== 'undefined') {
       APP_STATE.setState({ transacoes: TRANSACOES._cache });
     }
