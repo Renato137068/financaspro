@@ -157,6 +157,7 @@ const INIT_NAVIGATION = {
       'patrimonio-divida-excluir': true,
       'patrimonio-importar-conta': true,
       'conta-nova': true,
+      'conta-editar': true,
       'conta-pagar': true,
       'conta-excluir': true,
       'conta-mes-prev': true,
