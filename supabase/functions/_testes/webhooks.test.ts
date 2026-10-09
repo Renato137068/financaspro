@@ -199,6 +199,8 @@ Deno.test("play-rtdn: OIDC do Pub/Sub com a conta de serviço esperada é aceito
     assert.equal((await playRtdn(rtdn(corpo, { authorization: "Bearer token-alheio" }))).status, 403);
     assert.equal((await playRtdn(rtdn(corpo, { authorization: "Bearer lixo" }))).status, 403);
     assert.equal((await playRtdn(rtdn(corpo, { authorization: "Bearer token-bom" }))).status, 200);
+    const consultas = rede.pedidosPara(/tokeninfo/);
+    assert.ok(consultas.length > 0 && consultas.every((p) => p.sinal), "tokeninfo sem tempo limite");
   });
 });
 

@@ -23,6 +23,7 @@
 import { adminClient, claimEvent, releaseEvent } from "../_shared/db.ts";
 import { handleRtdn } from "../_shared/play-billing.ts";
 import { segredoConfere } from "../_shared/segredo.ts";
+import { TEMPO_LIMITE_MS } from "../_shared/erro.ts";
 
 /**
  * Valida o token OIDC que o Pub/Sub anexa. Usa o tokeninfo do próprio Google
@@ -34,8 +35,11 @@ async function oidcConfere(req: Request, saEsperada: string, audiencia: string |
   const token = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "";
   if (!token) return false;
   try {
+    // Sem tempo limite, um Google lento prendia a função até o teto da
+    // plataforma. Estourou: 403, e o Pub/Sub reentrega depois.
     const r = await fetch(
       "https://oauth2.googleapis.com/tokeninfo?id_token=" + encodeURIComponent(token),
+      { signal: AbortSignal.timeout(TEMPO_LIMITE_MS) },
     );
     if (!r.ok) return false;
     const info = await r.json();

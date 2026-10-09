@@ -54,6 +54,7 @@ servem.
 | `rls_coverage.test.sql` | nenhuma tabela de `public` sem RLS; `_prisma_migrations` fechada para `anon` e `authenticated` |
 | `rls_policies.test.sql` | isolamento entre duas contas e uma org: quem é de fora não vê, não edita nem insere em nome de outro; ninguém cria `Subscription` pelo cliente |
 | `rls_initplan.test.sql` | as regras das tabelas financeiras e as de 2FA estão na forma indexável (calculadas uma vez por consulta); OWNER, MEMBER, VIEWER e quem é de fora veem e editam o que devem; 2FA aplicado pela própria tabela |
+| `funcoes_privilegiadas.test.sql` | toda função SECURITY DEFINER fixa `search_path` terminando em `pg_temp`; `fp_plan_tier` fora do alcance de `anon` |
 | `mfa_aal2.test.sql` | conta com TOTP verificado não passa com sessão AAL1; as 14 tabelas com dado do usuário têm a regra RESTRICTIVE |
 | `mfa_recovery.test.sql` | códigos de recuperação do 2FA: só emitidos em AAL2, guardados só como hash, de outra conta recusados, usáveis em AAL1 pelo dono |
 | `mfa_recovery_rate_limit.test.sql` | teto de tentativas no consumo de código de recuperação |

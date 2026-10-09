@@ -14,6 +14,7 @@
 import { adminClient, exigir, findPlan, findPlanById, orgRoleOf } from "../_shared/db.ts";
 import { WELCOME_TRIAL_DAYS } from "../_shared/billing-constants.ts";
 import { corsHeadersFor, corsPreflight } from "../_shared/cors.ts";
+import { erroParaCliente } from "../_shared/erro.ts";
 
 function json(req: Request, body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -148,9 +149,7 @@ Deno.serve(async (req) => {
       },
     });
   } catch (err) {
-    const status = (err as any)?.status ?? 500;
-    const message = (err as Error)?.message ?? "erro-interno";
-    if (status >= 500) console.error("welcome-trial erro", message);
-    return json(req, { error: message }, status);
+    const { status, error } = erroParaCliente(err, "welcome-trial");
+    return json(req, { error }, status);
   }
 });

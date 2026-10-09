@@ -4,6 +4,7 @@
 import { adminClient, findPlanById, findSubscription, orgRoleOf } from "../_shared/db.ts";
 import { notify } from "../_shared/email.ts";
 import { corsHeadersFor, corsPreflight } from "../_shared/cors.ts";
+import { erroParaCliente } from "../_shared/erro.ts";
 
 function json(req: Request, body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -102,9 +103,7 @@ Deno.serve(async (req) => {
 
     return json(req, { data: inv });
   } catch (err) {
-    const status = (err as any)?.status ?? 500;
-    const message = (err as Error)?.message ?? "erro-interno";
-    if (status >= 500) console.error("org-invite erro", message);
-    return json(req, { error: message }, status);
+    const { status, error } = erroParaCliente(err, "org-invite");
+    return json(req, { error }, status);
   }
 });

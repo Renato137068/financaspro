@@ -137,3 +137,16 @@ Deno.test("welcome-trial: quem não é dono da org não pede", async () => {
     assert.equal(sb.escritas.length, 0);
   });
 });
+
+Deno.test("welcome-trial: falha do banco é 500 'erro-interno', sem a mensagem crua (que vai só para o log)", async () => {
+  await comAmbiente(VARS, async (logs) => {
+    const sb = banco();
+    sb.falharEm("Subscription", "update", 'relation "Subscription" column "x" segredo-interno');
+    const r = await pedir();
+    assert.equal(r.status, 500);
+    const corpo = await r.json();
+    assert.deepEqual(corpo, { error: "erro-interno" });
+    assert.ok(logs.error.some((l) => String(l[1]).includes("segredo-interno")), "detalhe fica no log");
+    assert.equal(sb.linhas("fp_welcome_trial_grant").length, 0, "sem assinatura, sem marca de concedido");
+  });
+});

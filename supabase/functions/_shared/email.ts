@@ -1,5 +1,7 @@
 // supabase/functions/_shared/email.ts
 // Templates de billing/equipe + envio via Resend (fallback: log).
+import { TEMPO_LIMITE_MS } from "./erro.ts";
+
 type Payload = Record<string, unknown>;
 
 function appBase(): string {
@@ -98,19 +100,29 @@ export async function notify(
     return { ok: true, simulated: true };
   }
 
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${key}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from,
-      to: [String(payload.to)],
-      subject: rendered.subject,
-      text: rendered.text,
-    }),
-  });
+  // E-mail é aviso, não a cobrança: tempo esgotado ou rede fora vira
+  // { ok: false }, como uma recusa do Resend, e não derruba o webhook que já
+  // gravou (um 500 ali faria a loja reentregar e reprocessar tudo).
+  let res: Response;
+  try {
+    res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from,
+        to: [String(payload.to)],
+        subject: rendered.subject,
+        text: rendered.text,
+      }),
+      signal: AbortSignal.timeout(TEMPO_LIMITE_MS),
+    });
+  } catch (e) {
+    console.error(`[email:${templateName}] resend-sem-resposta`, (e as Error)?.message);
+    return { ok: false };
+  }
 
   if (!res.ok) {
     const body = await res.text().catch(() => "");

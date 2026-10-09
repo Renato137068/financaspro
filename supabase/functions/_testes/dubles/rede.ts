@@ -7,6 +7,8 @@ export interface Pedido {
   metodo: string;
   headers: Headers;
   corpo: string;
+  /** O signal passado ao fetch (tempo limite); null quando não veio nenhum. */
+  sinal: AbortSignal | null;
 }
 
 export type Rota = (p: Pedido) => Response | Promise<Response>;
@@ -30,6 +32,7 @@ export class Rede {
         metodo: req.method,
         headers: req.headers,
         corpo: init?.body instanceof URLSearchParams ? init.body.toString() : await req.text(),
+        sinal: init?.signal ?? null,
       };
       this.pedidos.push(p);
       for (const [re, fn] of this.rotas) if (re.test(p.url)) return fn(p);
