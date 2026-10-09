@@ -46,6 +46,15 @@ const DADOS_NUVEM = {
     return Promise.resolve({ categoria: categoria, limite: limite });
   },
   _pushConfigApi: function(config) { return Promise.resolve(config); },
+  /**
+   * Desativa o orçamento da categoria na tabela da nuvem. Não é sobrescrito
+   * pelo supabase-sync: delega ao SUPA_SYNC quando ele existe (Supabase ativo).
+   */
+  _deleteOrcamentoApi: function(categoria) {
+    var sync = (typeof window !== 'undefined') ? window.SUPA_SYNC : undefined;
+    if (sync && typeof sync.deleteBudget === 'function') return sync.deleteBudget(categoria);
+    return Promise.resolve(true);
+  },
 
   // ─── Autenticação (sobrescrita por supabase.js) ────────────────────────────
 
@@ -102,13 +111,21 @@ const DADOS_NUVEM = {
 
     if (Array.isArray(snapshot.transactions)) {
       var txsPt = snapshot.transactions.map(function(tx) { return FINANCE_CONTRACT.txEnToPt(tx); });
-      this._storageSetTransacoes(SYNC_MERGE.mergeDelta(this.getTransacoesRaw(), [], txsPt));
+      var mergedTx = SYNC_MERGE.mergeDelta(this.getTransacoesRaw(), [], txsPt);
+      var pendTx = this._pendentesParaNuvem(mergedTx, txsPt);
+      this._storageSetTransacoes(pendTx.lista);
+      pendTx.excluir.forEach(function(id) { this._deleteTransacaoApi(id); }, this);
+      pendTx.enviar.forEach(function(tx) { this._pushTransacaoApi(tx); }, this);
     }
 
     if (Array.isArray(snapshot.accounts)) {
       var contasPt = snapshot.accounts.map(function(ac) { return FINANCE_CONTRACT.contaEnToPt(ac); });
-      var mergedContas = SYNC_MERGE.mergeDelta(this.getContas(), [], contasPt);
+      // Raw (com as desativadas): com getContas() a conta desativada aqui não
+      // entrava no merge e a cópia ativa da nuvem voltava como "nova".
+      var mergedContas = SYNC_MERGE.mergeDelta(this.getContasRaw(), [], contasPt);
       this._storageSetRaw(CONFIG.STORAGE_CONTAS, JSON.stringify(mergedContas));
+      this._pendentesParaNuvem(mergedContas, contasPt).enviar
+        .forEach(function(c) { this._pushContasApi(c); }, this);
     }
 
     var cfg = this.getConfig();
@@ -128,6 +145,47 @@ const DADOS_NUVEM = {
     this._storageSetRaw(CONFIG.STORAGE_CONFIG, JSON.stringify(cfg));
 
     if (typeof APP_STORE !== 'undefined') APP_STORE.hydrateFromDados();
+  },
+
+  /**
+   * O que mudou neste aparelho e a nuvem ainda não tem.
+   *
+   * Os envios (push, exclusão) engolem a falha de rede de propósito, para não
+   * travar quem está sem sinal; mas nada os repetia. A reconciliação do pull
+   * só sobe registro que NÃO existe na nuvem, então editar ou excluir sem
+   * rede ficava só neste aparelho para sempre (e a exclusão voltava). Depois
+   * do merge, compara cada registro local com a cópia da nuvem:
+   *   - local mais novo que a nuvem → reenviar;
+   *   - marcado como excluído aqui e vivo na nuvem → reenviar a exclusão;
+   *   - marcado como excluído e já fora da nuvem → a marca pode sair.
+   * Um envio bem-sucedido grava na nuvem um updatedAt >= o local, então o
+   * registro deixa de aparecer aqui no pull seguinte.
+   *
+   * @param {Array} lista  resultado do merge (formato do aparelho)
+   * @param {Array} nuvem  o que veio da nuvem (formato do aparelho)
+   * @returns {{lista: Array, enviar: Array, excluir: Array}}
+   */
+  _pendentesParaNuvem: function(lista, nuvem) {
+    var naNuvem = {};
+    (nuvem || []).forEach(function(r) { if (r && r.id != null) naNuvem[r.id] = r; });
+    var ms = function(v) { var t = Date.parse(v); return isNaN(t) ? NaN : t; };
+    var out = { lista: [], enviar: [], excluir: [] };
+    (lista || []).forEach(function(r) {
+      if (!r || r.id == null) return;
+      var remoto = naNuvem[r.id];
+      if (r.deletedAt) {
+        if (remoto && !remoto.deletedAt) {
+          out.excluir.push(r.id);
+          out.lista.push(r);
+        }
+        return; // fora da nuvem (ou já excluído lá): a marca cumpriu o papel
+      }
+      out.lista.push(r);
+      if (remoto && !remoto.deletedAt && ms(r.updatedAt) > ms(remoto.updatedAt)) {
+        out.enviar.push(r);
+      }
+    });
+    return out;
   },
 };
 

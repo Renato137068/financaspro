@@ -153,7 +153,9 @@
       }
       return Promise.all([
         fetchAllRows(function () {
-          return SB.from('Transaction').select('*').is('deletedAt', null);
+          // Inclui as excluídas: é assim que a exclusão feita em outro aparelho
+          // chega aqui (SYNC_MERGE remove o que vem com deletedAt).
+          return SB.from('Transaction').select('*');
         }),
         fetchAllRows(function () { return SB.from('Account').select('*'); }),
         fetchAllRows(function () { return SB.from('Budget').select('*'); }),
@@ -255,6 +257,11 @@
       if (!u || !tx) return Promise.resolve(tx);
       var en = (typeof FINANCE_CONTRACT !== 'undefined') ? FINANCE_CONTRACT.txPtToEn(tx) : {};
       var row = clean(Object.assign({}, en, { id: tx.id, userId: u, updatedAt: nowIso() }));
+      // Salvar é ação explícita sobre um lançamento vivo (inclusive o que
+      // voltou de um backup depois de excluído): a nuvem precisa limpar a
+      // marca de exclusão, senão o próximo pull o apagaria de novo. O clean()
+      // tira o null de propósito para a reconciliação; aqui ele volta.
+      if (!tx.deletedAt) row.deletedAt = null;
       return SB.from('Transaction').upsert(row, { onConflict: 'id' }).then(function (r) {
         if (r.error) throw r.error; return tx;
       }).catch(function (e) { return afterPushError(e, tx); });
@@ -280,7 +287,8 @@
     pushBudget: function (categoria, limite) {
       var u = uid();
       if (!u) return Promise.resolve();
-      var patch = { limit: Number(limite), updatedAt: nowIso() };
+      // active:true reativa o orçamento que foi excluído e depois recriado.
+      var patch = { limit: Number(limite), active: true, updatedAt: nowIso() };
       return SB.from('Budget').select('id')
         .eq('userId', u).eq('category', categoria).eq('period', 'monthly').maybeSingle()
         .then(function (r) {
@@ -291,6 +299,16 @@
             period: 'monthly', updatedAt: nowIso()
           });
         }).catch(function (e) { return afterPushError(e, undefined); });
+    },
+
+    /** Desativa o orçamento da categoria (o pull ignora os inativos). */
+    deleteBudget: function (categoria) {
+      var u = uid();
+      if (!u || !categoria) return Promise.resolve(true);
+      return SB.from('Budget').update({ active: false, updatedAt: nowIso() })
+        .eq('userId', u).eq('category', categoria)
+        .then(function (r) { if (r && r.error) throw r.error; return true; })
+        .catch(function (e) { return afterPushError(e, false); });
     },
 
     pushConfig: function (config) {

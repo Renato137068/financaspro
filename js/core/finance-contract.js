@@ -132,6 +132,9 @@ const FINANCE_CONTRACT = {
       balance: conta.saldo != null ? Number(conta.saldo) : (conta.balance != null ? Number(conta.balance) : 0),
       currency: conta.moeda || conta.currency || 'BRL',
       institution: conta.banco || conta.institution || null,
+      // Conta excluída no aparelho sobe desativada; sem este campo a nuvem
+      // continuava com ela ativa e o próximo pull a trazia de volta.
+      active: conta.ativo !== false && conta.active !== false,
     };
   },
 
