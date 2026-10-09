@@ -20,13 +20,16 @@ const TETO_KB = {
   // 1180→1110 e 253→184 (1º/out): CSS de Extrato, Orçamento e Perfil no chunk.
   // 1110→1082 (02/10): saem o cliente da API Express e o sync v2 (ADR 0007).
   // 1082→1087 (08/10): segurança (PR 108) e acessibilidade (PR 109) juntas.
-  precacheTotal: 1087,
+  // 1082→1086 e 450→453 (09/10): correções de perda de dado na sincronização
+  // e no IndexedDB (auditoria de integridade); ver check-bundle-budget.cjs.
+  // 1086→1088 e 453→455 (09/10): botão voltar do Android e aviso sem internet.
+  precacheTotal: 1088,
   // 514→512 (27/09): a soma passou a incluir a entrada ESM (ADR 0005).
   // 512→507→503 (27–28/09): quarta e quinta fatias ESM.
   // 503→478 (29/09): idem.
   // 478→450 (02/10): saem o cliente da API Express e o sync v2 (ADR 0007).
   // 450→454 (08/10): idem (452 KB medidos).
-  appBundle: 454,
+  appBundle: 455,
   vendorBundle: 262,
   cssBundle: 184,
   indexHtml: 48,

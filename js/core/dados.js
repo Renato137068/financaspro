@@ -85,6 +85,8 @@ const DADOS = {
   _transacoesBackend: null,
   _transacoesCache: null,
   _idbWriteChain: Promise.resolve(),
+  _falhaGravacaoIdb: null,
+  _avisouFalhaGravacao: false,
   _initPromise: null,
   _ignorarStorageSync: false,
   TX_BACKEND_KEY: 'fp-tx-backend',
@@ -230,7 +232,13 @@ const DADOS = {
    */
   aguardarDisco: function() {
     var chain = DADOS._diskWriteChain || Promise.resolve();
-    return chain.then(function() { return true; }, function() { return false; });
+    var disco = chain.then(function() { return true; }, function() { return false; });
+    // Backend 'idb' (quem tem muitos lançamentos): a gravação vai pela fila do
+    // IndexedDB, que esta função ignorava — o "Salvo" saía antes do disco.
+    var idb = (DADOS._idbWriteChain || Promise.resolve()).then(function(ok) {
+      return ok !== false && !DADOS._falhaGravacaoIdb;
+    }, function() { return false; });
+    return Promise.all([disco, idb]).then(function(r) { return r[0] && r[1]; });
   },
 
   _storageSetRaw: function(key, value) {
@@ -343,11 +351,10 @@ const DADOS = {
             // Regrava pela cadeia serial a partir do cache em memória — no
             // backend 'idb' ele é a fonte de verdade e já inclui qualquer
             // lançamento salvo enquanto a leitura acima acontecia.
-            DADOS._idbWriteChain = DADOS._idbWriteChain.then(function() {
-              var lista = Array.isArray(DADOS._transacoesCache) ? DADOS._transacoesCache : [];
-              return DADOS._idbGravarTransacoes(JSON.stringify(lista));
+            var lista = Array.isArray(DADOS._transacoesCache) ? DADOS._transacoesCache : [];
+            return DADOS._enfileirarGravacaoIdb(JSON.stringify(lista)).then(function(ok) {
+              if (!ok) throw new Error('Falha ao regravar lançamentos — migração incompleta');
             });
-            return DADOS._idbWriteChain;
           }
           if (enable) {
             return LOCAL_CRYPTO.encrypt(it.plain).then(function(enc) { localStorage.setItem(it.key, enc); });
@@ -405,9 +412,24 @@ const DADOS = {
         SESSION_LOG.registrar('init_dados', { backend: DADOS._transacoesBackend || 'localStorage' });
       }
       DADOS.sincronizarComApi();
+      DADOS._sincronizarAoVoltarRede();
       DADOS._initialized = true;
     });
     return DADOS._initPromise;
+  },
+
+  /**
+   * Sem rede, os envios falham em silêncio e só o pull seguinte os repete
+   * (_pendentesParaNuvem). O pull só rodava ao abrir o app ou entrar na conta;
+   * agora roda também quando a conexão volta, com o app aberto.
+   */
+  _sincronizarAoVoltarRede: function() {
+    if (DADOS._ouvindoRede || typeof window === 'undefined' || !window.addEventListener) return;
+    DADOS._ouvindoRede = true;
+    window.addEventListener('online', function() {
+      if (!DADOS._nuvemAtiva()) return;
+      try { DADOS.sincronizarComApi(); } catch (e) { /* o pull já registra a própria falha */ }
+    });
   },
 
   _mostrarBannerMultiAba: function(mensagem) {
@@ -437,9 +459,7 @@ const DADOS = {
     if (DADOS._transacoesBackend === 'idb') {
       DADOS._transacoesCache = lista;
       var json = JSON.stringify(lista);
-      DADOS._idbWriteChain = DADOS._idbWriteChain.then(function() {
-        return DADOS._idbGravarTransacoes(json);
-      });
+      DADOS._enfileirarGravacaoIdb(json);
     } else {
       DADOS._storageSetRaw(CONFIG.STORAGE_TRANSACOES, JSON.stringify(lista));
     }
@@ -542,6 +562,59 @@ const DADOS = {
     return IDB_KV.set(key, json);
   },
 
+  /**
+   * Põe uma gravação do blob de lançamentos na fila serial do IndexedDB.
+   *
+   * A fila nunca fica rejeitada: antes, uma única falha (cifra que rejeitou,
+   * conexão fechada) deixava `_idbWriteChain` rejeitada e TODAS as gravações
+   * seguintes eram puladas em silêncio até o app ser reaberto, com a tela
+   * mostrando os lançamentos como salvos. Agora cada job roda mesmo que o
+   * anterior tenha falhado, e uma recusa do banco (set() === false) vira
+   * aviso ao usuário e falha em aguardarDisco().
+   *
+   * @param {string} json
+   * @param {Function} [depois] roda só se a gravação foi confirmada
+   * @returns {Promise<boolean>} true se o banco confirmou esta gravação
+   */
+  _enfileirarGravacaoIdb: function(json, depois) {
+    function job() {
+      return DADOS._idbGravarTransacoes(json).then(function(ok) {
+        if (ok === false) {
+          var motivo = (typeof IDB_KV !== 'undefined' && IDB_KV.ultimoErro) || null;
+          var err = new Error('O aparelho recusou a gravação dos lançamentos'
+            + (motivo && motivo.name ? ' (' + motivo.name + ')' : ''));
+          err.causa = motivo;
+          throw err;
+        }
+        DADOS._falhaGravacaoIdb = null;
+        if (depois) depois();
+        return true;
+      });
+    }
+    DADOS._idbWriteChain = DADOS._idbWriteChain.then(job, job).catch(function(e) {
+      DADOS._falhaGravacaoIdb = e;
+      DADOS._avisarFalhaGravacao(e);
+      return false;
+    });
+    return DADOS._idbWriteChain;
+  },
+
+  /** Falha ao gravar no aparelho: avisa uma vez por sessão e registra. */
+  _avisarFalhaGravacao: function(e) {
+    console.error('Erro ao gravar lançamentos no aparelho:', e && e.message);
+    if (typeof OBS !== 'undefined' && OBS.captureError) {
+      try { OBS.captureError(e, { contexto: 'DADOS.idb' }); } catch (e2) { /* noop */ }
+    }
+    if (DADOS._avisouFalhaGravacao) return;
+    DADOS._avisouFalhaGravacao = true;
+    if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+      var cota = e && e.causa && DADOS._ehErroDeCota(e.causa);
+      UTILS.mostrarToast(cota
+        ? 'Sem espaço para salvar. Exporte um backup e libere espaço no aparelho.'
+        : 'Não consegui salvar no aparelho. Exporte um backup e reabra o app.', 'error');
+    }
+  },
+
   /** Lê o blob de lançamentos do IndexedDB, decifrando se estiver cifrado. */
   _idbLerTransacoes: function() {
     var key = CONFIG.STORAGE_TRANSACOES;
@@ -580,17 +653,18 @@ const DADOS = {
   _ativarBackendIdbTransacoes: function(lista) {
     DADOS._transacoesBackend = 'idb';
     DADOS._transacoesCache = Array.isArray(lista) ? lista : [];
-    try {
-      localStorage.setItem(DADOS.TX_BACKEND_KEY, 'idb');
-      localStorage.setItem(CONFIG.STORAGE_TRANSACOES, DADOS.TX_IDB_SENTINEL);
-    } catch (e) { /* noop */ }
     var json = JSON.stringify(DADOS._transacoesCache);
-    DADOS._idbWriteChain = DADOS._idbWriteChain.then(function() {
-      return DADOS._idbGravarTransacoes(json);
-    }).then(function() {
+    // O localStorage só passa a apontar para o IndexedDB DEPOIS que o banco
+    // confirma a gravação. Antes o marcador ia primeiro: se a gravação falhasse
+    // (cota, banco fechado), o blob antigo já tinha sido trocado pelo marcador
+    // e todos os lançamentos sumiam no próximo boot.
+    return DADOS._enfileirarGravacaoIdb(json, function() {
+      try {
+        localStorage.setItem(DADOS.TX_BACKEND_KEY, 'idb');
+        localStorage.setItem(CONFIG.STORAGE_TRANSACOES, DADOS.TX_IDB_SENTINEL);
+      } catch (e) { /* noop */ }
       DADOS._pingTransacoesSync();
     });
-    return DADOS._idbWriteChain;
   },
 
   _prepararStorageTransacoes: function() {
@@ -798,11 +872,7 @@ const DADOS = {
     var json = JSON.stringify(transacoes);
     if (DADOS._transacoesBackend === 'idb' && typeof IDB_KV !== 'undefined') {
       DADOS._transacoesCache = transacoes;
-      DADOS._idbWriteChain = DADOS._idbWriteChain.then(function() {
-        return DADOS._idbGravarTransacoes(json);
-      }).then(function() {
-        DADOS._pingTransacoesSync();
-      });
+      DADOS._enfileirarGravacaoIdb(json, DADOS._pingTransacoesSync);
       return;
     }
     var check = UTILS.verificarStorageDisponivel(transacoes, CONFIG.STORAGE_TRANSACOES);
@@ -881,7 +951,17 @@ const DADOS = {
     var transacoes = DADOS.getTransacoesRaw();
     var index = transacoes.findIndex(function(t) { return t.id === id && !t.deletedAt; });
     if (index >= 0) {
-      transacoes.splice(index, 1);
+      if (DADOS._nuvemAtiva()) {
+        // Com a nuvem, a exclusão vira marca (tombstone) até a nuvem confirmar.
+        // Tirar da lista na hora fazia o lançamento VOLTAR: se o aviso de
+        // exclusão não chegasse (sem rede), o próximo pull trazia a cópia da
+        // nuvem como "nova". Com a marca, o merge por data mantém a exclusão e
+        // o pull reenvia o aviso (DADOS._reenviarPendentesNuvem).
+        var agora = new Date().toISOString();
+        transacoes[index] = Object.assign({}, transacoes[index], { deletedAt: agora, updatedAt: agora });
+      } else {
+        transacoes.splice(index, 1);
+      }
       DADOS._storageSetTransacoes(transacoes);
       DADOS._deleteTransacaoApi(id).catch(function(err) {
         if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
@@ -1124,6 +1204,10 @@ const DADOS = {
     if (idx >= 0) lista[idx] = Object.assign({}, lista[idx], conta);
     else lista.push(conta);
     DADOS._storageSetRaw(CONFIG.STORAGE_CONTAS, JSON.stringify(lista));
+    // Edição de conta que já existe sobe na hora. Antes só conta NOVA subia
+    // (na reconciliação); renomear ou corrigir o saldo ficava só neste
+    // aparelho, e os outros mostravam o valor antigo para sempre.
+    if (idx >= 0) DADOS._pushContasApi(lista[idx]);
     if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
       APP_STORE.dispatch(ACTIONS.CONTAS_SALVAR, lista);
     }
@@ -1137,8 +1221,20 @@ const DADOS = {
       if (lista[i].id === id) { alvo = lista[i]; break; }
     }
     if (!alvo) return false;
-    var restante = lista.filter(function(c) { return c.id !== id; });
-    DADOS._storageSetRaw(CONFIG.STORAGE_CONTAS, JSON.stringify(restante));
+    var restante;
+    if (DADOS._nuvemAtiva()) {
+      // Com a nuvem, a conta é desativada (ativo:false) e o aviso sobe. Antes
+      // ela só saía do aparelho, a nuvem nunca sabia, e o próximo pull a trazia
+      // de volta (getContas já esconde as inativas).
+      var desativada = Object.assign({}, alvo, { ativo: false, updatedAt: new Date().toISOString() });
+      restante = lista.map(function(c) { return c.id === id ? desativada : c; });
+      DADOS._storageSetRaw(CONFIG.STORAGE_CONTAS, JSON.stringify(restante));
+      DADOS._pushContasApi(desativada);
+      restante = restante.filter(function(c) { return c.ativo !== false; });
+    } else {
+      restante = lista.filter(function(c) { return c.id !== id; });
+      DADOS._storageSetRaw(CONFIG.STORAGE_CONTAS, JSON.stringify(restante));
+    }
     if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
       APP_STORE.dispatch(ACTIONS.CONTAS_SALVAR, restante);
     }
@@ -1168,6 +1264,9 @@ const DADOS = {
     if (!config.orcamentos || !config.orcamentos[categoria]) return false;
     delete config.orcamentos[categoria];
     DADOS.salvarConfig(config);
+    // A tabela de orçamentos da nuvem também guarda o limite; sem desativá-lo
+    // lá, o próximo pull devolvia o orçamento apagado.
+    DADOS._deleteOrcamentoApi(categoria);
     return true;
   },
 

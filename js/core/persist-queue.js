@@ -169,7 +169,12 @@ const PERSIST_QUEUE = (function() {
       })
       .then(function(tx) {
         next.txId = tx && tx.id;
-        return aguardarDisco().then(function() { return tx; });
+        return aguardarDisco().then(function(ok) {
+          // false = o disco recusou (cota, IndexedDB fechado). Anunciar "Salvo"
+          // aqui seria mentir: o lançamento some no próximo boot.
+          if (ok === false) throw new Error('O aparelho não confirmou a gravação');
+          return tx;
+        });
       })
       .then(function() {
         // Confirma que o clientKey está no storage (anti-perda silenciosa).

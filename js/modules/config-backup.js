@@ -264,7 +264,9 @@ const CONFIG_BACKUP = {
       if (data.transacoes && Array.isArray(data.transacoes)) {
         data.transacoes.forEach(function(tx) {
           if (!tx || !tx.id || !tx.valor || !tx.data || !tx.tipo || !tx.categoria) return;
-          var jaExiste = DADOS.getTransacoesRaw().some(function(t) { return t.id === tx.id; });
+          // Lançamento excluído aqui (marca de exclusão) volta com o backup:
+          // restaurar é justamente como se recupera o que foi apagado sem querer.
+          var jaExiste = DADOS.getTransacoesRaw().some(function(t) { return t.id === tx.id && !t.deletedAt; });
           if (jaExiste) return;
           DADOS.salvarTransacao(Object.assign({}, tx));
           transacoesImportadas++;
@@ -282,9 +284,17 @@ const CONFIG_BACKUP = {
       // os `contaId` das transações já recém-importadas resolvam para um nome.
       var contasImportadas = 0;
       if (data.contas && Array.isArray(data.contas)) {
-        var validas = data.contas.filter(function(c) { return c && c.id && c.nome; });
+        // Soma ao que já existe: gravar só as do backup apagava as contas
+        // criadas depois dele, e os lançamentos delas ficavam sem conta.
+        var atuais = DADOS.getContasRaw ? DADOS.getContasRaw() : DADOS.getContas();
+        var idsAtuais = {};
+        atuais.forEach(function(c) { if (c && c.id && c.ativo !== false) idsAtuais[c.id] = true; });
+        var validas = data.contas.filter(function(c) { return c && c.id && c.nome && !idsAtuais[c.id]; });
         if (validas.length) {
-          DADOS.salvarContas(validas);
+          var restantes = atuais.filter(function(c) {
+            return !validas.some(function(v) { return v.id === c.id; });
+          });
+          DADOS.salvarContas(restantes.concat(validas));
           if (typeof CONTAS !== 'undefined' && CONTAS.init) CONTAS.init();
           contasImportadas = validas.length;
         }
