@@ -36,6 +36,7 @@ function loadDados(opts) {
     APP_STORE: { dispatch: () => {}, hydrateFromDados: () => {} },
     ACTIONS: { TRANSACAO_CRIAR: 't/c', TRANSACAO_EDITAR: 't/e', TRANSACAO_DELETAR: 't/d', CONFIG_SALVAR: 'c/s', CONTAS_SALVAR: 'k/s' },
     module: { exports: {} },
+    document: opts.document,
   });
   ctx.SYNC_MERGE = carregarScript('js/core/sync-merge.js');
   ctx.FINANCE_CONTRACT = carregarScript('js/core/finance-contract.js');
@@ -200,5 +201,38 @@ describe('fila de gravação no IndexedDB', () => {
     await D._ativarBackendIdbTransacoes([{ id: 'velho' }, { id: 'novo' }]);
     expect(storage.getItem('fp-tx-backend')).toBe('idb');
     expect(storage.getItem('fp-transacoes')).toBe(D.TX_IDB_SENTINEL);
+  });
+});
+
+describe('sincronizar ao voltar do segundo plano', () => {
+  test('volta depois de minutos fora puxa a nuvem; troca rápida de app não', () => {
+    const ouvintes = [];
+    const doc = { visibilityState: 'visible', addEventListener: (ev, fn) => { if (ev === 'visibilitychange') ouvintes.push(fn); } };
+    const { D } = loadDados({ document: doc });
+    let pulls = 0;
+    let nuvem = true;
+    D.sincronizarComApi = () => { pulls++; return Promise.resolve(true); };
+    D._nuvemAtiva = () => nuvem;
+    let agora = Date.parse('2026-10-09T12:00:00Z');
+    const nowAntes = Date.now;
+    Date.now = () => agora;
+    try {
+      D._sincronizarAoVoltarAoApp();
+      D._sincronizarAoVoltarAoApp();
+      expect(ouvintes).toHaveLength(1);
+      const mudar = (estado) => { doc.visibilityState = estado; ouvintes[0](); };
+
+      mudar('hidden'); agora += 30 * 1000; mudar('visible');
+      expect(pulls).toBe(0);
+
+      mudar('hidden'); agora += D._SYNC_RETORNO_MS; mudar('visible');
+      expect(pulls).toBe(1);
+
+      nuvem = false;
+      mudar('hidden'); agora += 60 * 60 * 1000; mudar('visible');
+      expect(pulls).toBe(1);
+    } finally {
+      Date.now = nowAntes;
+    }
   });
 });

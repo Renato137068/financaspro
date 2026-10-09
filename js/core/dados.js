@@ -413,6 +413,7 @@ const DADOS = {
       }
       DADOS.sincronizarComApi();
       DADOS._sincronizarAoVoltarRede();
+      DADOS._sincronizarAoVoltarAoApp();
       DADOS._initialized = true;
     });
     return DADOS._initPromise;
@@ -428,6 +429,29 @@ const DADOS = {
     DADOS._ouvindoRede = true;
     window.addEventListener('online', function() {
       if (!DADOS._nuvemAtiva()) return;
+      try { DADOS.sincronizarComApi(); } catch (e) { /* o pull já registra a própria falha */ }
+    });
+  },
+
+  /** Tempo mínimo no segundo plano para o retorno puxar a nuvem de novo. */
+  _SYNC_RETORNO_MS: 5 * 60 * 1000,
+
+  /**
+   * No celular o app quase nunca é fechado: fica dias no segundo plano e volta
+   * sem passar pelo boot, então o pull da abertura não roda e o que foi feito
+   * em outro aparelho não aparece (auditoria de integridade, 09/10). Ao voltar
+   * depois de alguns minutos fora, puxa de novo. Trocas rápidas de app não
+   * disparam nada; o pull já ignora uma chamada com outro em andamento.
+   */
+  _sincronizarAoVoltarAoApp: function() {
+    if (DADOS._ouvindoRetorno || typeof document === 'undefined' || !document.addEventListener) return;
+    DADOS._ouvindoRetorno = true;
+    var saiuEm = null;
+    document.addEventListener('visibilitychange', function() {
+      if (document.visibilityState === 'hidden') { saiuEm = Date.now(); return; }
+      var fora = saiuEm === null ? 0 : Date.now() - saiuEm;
+      saiuEm = null;
+      if (fora < DADOS._SYNC_RETORNO_MS || !DADOS._nuvemAtiva()) return;
       try { DADOS.sincronizarComApi(); } catch (e) { /* o pull já registra a própria falha */ }
     });
   },
