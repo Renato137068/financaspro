@@ -58,6 +58,8 @@ Deno.serve(async (req) => {
         .eq("orgId", orgId)
         .is("acceptedAt", null)
         .gt("expiresAt", new Date().toISOString());
+      // Contagem que falhou não pode valer zero e liberar assento a mais.
+      if (mem.error || pend.error) throw new Error("db contagem de assentos: " + (mem.error || pend.error)!.message);
       const seats = (mem.count || 0) + (pend.count || 0);
       if (seats >= maxUsers) return json(req, { error: "limite-membros" }, 402);
     }

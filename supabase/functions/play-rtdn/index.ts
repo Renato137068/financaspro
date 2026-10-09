@@ -129,7 +129,11 @@ Deno.serve(async (req) => {
       });
     } catch (err) {
       // Falha de processamento: libera o claim para o Pub/Sub reentregar.
-      if (messageId) await releaseEvent(sb, `rtdn:${messageId}`).catch(() => {});
+      if (messageId) {
+        await releaseEvent(sb, `rtdn:${messageId}`).catch((e) => {
+          console.error("play-rtdn: claim não liberado; o Pub/Sub não vai reentregar", messageId, (e as Error)?.message);
+        });
+      }
       throw err;
     }
   } catch (err) {

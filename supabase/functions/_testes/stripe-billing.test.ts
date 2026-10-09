@@ -14,6 +14,7 @@ import {
   createPortal,
   processStripeEvent,
   resumeSubscription,
+  statusDoStripe,
 } from "../_shared/stripe-billing.ts";
 import { TRIAL_DAYS } from "../_shared/billing-constants.ts";
 
@@ -484,5 +485,65 @@ Deno.test("evento que o app não trata é aceito sem efeito colateral", async ()
     await processStripeEvent(sb, cliente(), ev("customer.created", { id: "cus_1" }));
     assert.equal(sb.escritas.length, 0);
     assert.equal(stripe.chamadas.length, 0);
+  });
+});
+
+// ─── Status do Stripe x enum SubStatus ──────────────────────────────────────
+
+Deno.test("statusDoStripe: todo status do Stripe cabe no enum; desconhecido lança", () => {
+  const esperado: Record<string, string> = {
+    trialing: "TRIALING", active: "ACTIVE", past_due: "PAST_DUE", canceled: "CANCELED", unpaid: "UNPAID",
+    incomplete: "UNPAID", paused: "UNPAID", incomplete_expired: "CANCELED",
+  };
+  for (const [stripeStatus, enumStatus] of Object.entries(esperado)) {
+    assert.equal(statusDoStripe(stripeStatus), enumStatus, stripeStatus);
+  }
+  assert.throws(() => statusDoStripe("algo_novo"), /status-stripe-desconhecido/);
+  assert.throws(() => statusDoStripe(undefined), /status-stripe-desconhecido/);
+});
+
+Deno.test("assinatura atualizada para 'paused' grava UNPAID (antes: recusado pelo enum em silêncio)", async () => {
+  await comAmbiente(VARS, async () => {
+    const sb = banco([{ ...SUB, status: "TRIALING" }]);
+    await processStripeEvent(sb, cliente(), ev("customer.subscription.updated", { id: "sub_1", status: "paused", cancel_at_period_end: false }));
+    assert.equal(sb.linhas("Subscription")[0].status, "UNPAID");
+  });
+});
+
+Deno.test("dublê do banco: recusa status fora do enum, como o Postgres", async () => {
+  const sb = banco([{ ...SUB }]);
+  const { error } = await sb.from("Subscription").update({ status: "INCOMPLETE" }).eq("orgId", "org1");
+  assert.equal(error?.code, "22P02");
+  assert.equal(sb.linhas("Subscription")[0].status, "TRIALING");
+});
+
+Deno.test("gravação recusada pelo banco lança, em vez de passar por feita", async () => {
+  await comAmbiente({ ...VARS, RESEND_API_KEY: "re_teste" }, async () => {
+    const rede = comResend();
+    const sb = banco([{ ...SUB, status: "ACTIVE" }]);
+    sb.falharEm("Subscription", "update", "connection reset");
+    await assert.rejects(
+      processStripeEvent(sb, cliente(), ev("invoice.payment_failed", { id: "in_1", subscription: "sub_1", customer_email: "a@b.c" })),
+      /connection reset/,
+    );
+    assert.equal(rede.pedidosPara(/resend/).length, 0, "não avisa o cliente do que não gravou");
+
+    const sb2 = banco([{ ...SUB }]);
+    sb2.falharEm("Invoice", "insert");
+    await assert.rejects(
+      processStripeEvent(sb2, cliente(), ev("invoice.payment_succeeded", { id: "in_2", subscription: "sub_1", amount_paid: 1990 })),
+      /Invoice.insert/,
+    );
+  });
+});
+
+Deno.test("leitura recusada pelo banco lança, em vez de parecer 'assinatura não encontrada'", async () => {
+  await comAmbiente(VARS, async () => {
+    const sb = banco([{ ...SUB }]);
+    sb.falharEm("Subscription", "select");
+    await assert.rejects(
+      processStripeEvent(sb, cliente(), ev("customer.subscription.deleted", { id: "sub_1" })),
+      /Subscription.select/,
+    );
   });
 });

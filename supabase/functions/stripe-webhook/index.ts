@@ -46,7 +46,9 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     // Falha de processamento: libera o claim para o Stripe reentregar.
-    await releaseEvent(sb, event.id).catch(() => {});
+    await releaseEvent(sb, event.id).catch((e) => {
+      console.error("stripe-webhook: claim não liberado; o Stripe não vai reentregar", event.id, (e as Error)?.message);
+    });
     console.error("stripe-webhook erro", (err as Error)?.message);
     return new Response(JSON.stringify({ error: "erro-interno" }), { status: 500 });
   }

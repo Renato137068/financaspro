@@ -13,6 +13,7 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.117.2";
 import type Stripe from "npm:stripe@22.6.2";
 import { revokePlayEntitlement, updateSubscription } from "./db.ts";
+import { statusDoStripe } from "./stripe-billing.ts";
 import { syncFromToken } from "./play-billing.ts";
 
 /**
@@ -62,8 +63,14 @@ export async function reconcilePlay(sb: SupabaseClient, agora = new Date()): Pro
     const pelaData = () => revokePlayEntitlement(sb, linha.orgId, { expiresAt: fim });
 
     if (semGoogle) {
-      await pelaData();
-      r.revogadas++;
+      // Gravação recusada conta como falha, nunca como revogada.
+      try {
+        await pelaData();
+        r.revogadas++;
+      } catch (e) {
+        r.falhas++;
+        console.error("reconcile-play: revogação não gravada", linha.orgId, (e as Error)?.message);
+      }
       continue;
     }
 
@@ -74,13 +81,18 @@ export async function reconcilePlay(sb: SupabaseClient, agora = new Date()): Pro
       else r.revogadas++;
     } catch (e) {
       const vencidaHa = fim ? agora.getTime() - new Date(fim).getTime() : Infinity;
+      console.warn("reconcile-play: Google não confirmou", linha.orgId, (e as Error)?.message);
       if (vencidaHa > CARENCIA_SEM_GOOGLE_MS) {
-        await pelaData();
-        r.revogadas++;
+        try {
+          await pelaData();
+          r.revogadas++;
+        } catch (e2) {
+          r.falhas++;
+          console.error("reconcile-play: revogação não gravada", linha.orgId, (e2 as Error)?.message);
+        }
       } else {
         r.falhas++;
       }
-      console.warn("reconcile-play: Google não confirmou", linha.orgId, (e as Error)?.message);
     }
   }
   return r;
@@ -115,6 +127,9 @@ export async function reconcileStripe(sb: SupabaseClient, stripe: Stripe): Promi
     .select("orgId, stripeSubId, status")
     .not("stripeSubId", "is", null)
     .not("stripeSubId", "like", "play:%")
+    // O Pro de boas-vindas guarda "welcome:<usuário>" na mesma coluna e não
+    // existe no Stripe: consultá-lo só somava uma falha por dia por usuário.
+    .not("stripeSubId", "like", "welcome:%")
     .neq("status", "CANCELED");
   if (error) throw new Error("reconcile-stripe: " + error.message);
 
@@ -126,7 +141,7 @@ export async function reconcileStripe(sb: SupabaseClient, stripe: Stripe): Promi
       const s: any = await stripe.subscriptions.retrieve(String(linha.stripeSubId));
       const p = periodo(s);
       const dados: Record<string, unknown> = {
-        status: String(s.status).toUpperCase(),
+        status: statusDoStripe(s.status),
         cancelAtPeriodEnd: !!s.cancel_at_period_end,
       };
       // Período ausente não apaga o que o banco já tem.

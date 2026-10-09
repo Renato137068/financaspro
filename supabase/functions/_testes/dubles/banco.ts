@@ -9,6 +9,10 @@
 // devolvia a linha inteira, e um select que esquecia uma coluna passava nos
 // testes (foi assim que o teto de membros do org-invite ficou quebrado).
 //
+// Como o Postgres, recusa valor fora do enum (Subscription.status) e, com
+// falharEm(tabela, op), devolve erro numa operação: o supabase-js não lança,
+// e é assim que se prova que as funções leem o `error`.
+//
 // Restrições únicas que o código depende delas (e que o Postgres garante):
 // StripeWebhookEvent.id (idempotência de webhook, erro 23505) e
 // Subscription.orgId (uma assinatura por org).
@@ -22,6 +26,22 @@ const UNICAS: Record<string, string[]> = {
   Invoice: ["stripeInvoiceId"],
 };
 
+// Colunas de enum do Postgres que as funções gravam (prisma/schema.prisma).
+// O banco de verdade recusa valor fora da lista (22P02); o falso aceitava
+// tudo, e "INCOMPLETE" do Stripe passava nos testes e caía em produção.
+const ENUMS: Record<string, Record<string, string[]>> = {
+  Subscription: { status: ["TRIALING", "ACTIVE", "PAST_DUE", "CANCELED", "UNPAID"] },
+};
+
+function violaEnum(tabela: string, dados: Linha | null): { code: string; message: string } | null {
+  for (const [col, valores] of Object.entries(ENUMS[tabela] || {})) {
+    if (dados && col in dados && dados[col] != null && !valores.includes(dados[col])) {
+      return { code: "22P02", message: `invalid input value for enum: "${dados[col]}" (${tabela}.${col})` };
+    }
+  }
+  return null;
+}
+
 export interface Escrita {
   tabela: string;
   op: "insert" | "update" | "delete";
@@ -33,6 +53,14 @@ export class BancoFalso {
   escritas: Escrita[] = [];
   /** JWT → usuário, para auth.getUser. */
   usuarios: Record<string, Linha> = {};
+  /** "Tabela.op" → erro devolvido (como o supabase-js: em `error`, sem lançar). */
+  falhas: Record<string, { code?: string; message: string }> = {};
+
+  /** Faz toda operação `op` em `tabela` devolver erro, como um banco fora do ar. */
+  falharEm(tabela: string, op: "select" | "insert" | "update" | "delete", message = "falha simulada") {
+    this.falhas[`${tabela}.${op}`] = { code: "XX000", message };
+    return this;
+  }
 
   constructor(inicial: Record<string, Linha[]> = {}) {
     for (const [t, linhas] of Object.entries(inicial)) {
@@ -147,6 +175,12 @@ class Consulta implements PromiseLike<{ data: any; error: any }> {
 
   private executar(): { data: any; error: any; count?: number } {
     const linhas = this.banco.linhas(this.tabela);
+    const falha = this.banco.falhas[`${this.tabela}.${this.op}`];
+    if (falha) return { data: null, error: falha };
+    if (this.op === "insert" || this.op === "update") {
+      const erro = violaEnum(this.tabela, this.payload);
+      if (erro) return { data: null, error: erro };
+    }
     switch (this.op) {
       case "select": {
         const achadas = this.casa();

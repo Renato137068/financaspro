@@ -11,7 +11,7 @@
 //
 // Não é assinatura da loja — é entitlement nosso (TRIALING + trialEndsAt), e
 // por isso convive com o trial do SKU sem conflitar com a política da Play.
-import { adminClient, findPlan, findPlanById, orgRoleOf } from "../_shared/db.ts";
+import { adminClient, exigir, findPlan, findPlanById, orgRoleOf } from "../_shared/db.ts";
 import { WELCOME_TRIAL_DAYS } from "../_shared/billing-constants.ts";
 import { corsHeadersFor, corsPreflight } from "../_shared/cors.ts";
 
@@ -49,11 +49,13 @@ Deno.serve(async (req) => {
     // ── Idempotência, checada por USUÁRIO ────────────────────────────────
     // Sair da conta e entrar de novo não pode renovar o Pro, e criar uma org
     // nova também não. A chave é a pessoa, não a organização.
-    const { data: jaConcedido } = await sb
-      .from("fp_welcome_trial_grant")
-      .select("user_id, ends_at")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    const jaConcedido = await exigir(
+      sb.from("fp_welcome_trial_grant")
+        .select("user_id, ends_at")
+        .eq("user_id", user.id)
+        .maybeSingle(),
+      "fp_welcome_trial_grant.select",
+    );
 
     if (jaConcedido) {
       return json(req, { error: "welcome-trial-ja-concedido", data: jaConcedido }, 409);
@@ -68,11 +70,13 @@ Deno.serve(async (req) => {
     // "qualquer assinatura" recusava todo mundo, e o Pro de boas-vindas nunca
     // era concedido (achado 1 da auditoria do servidor de 09/10). A FREE do
     // gatilho é trocada pelo trial; qualquer outra assinatura é recusada.
-    const { data: subExistente } = await sb
-      .from("Subscription")
-      .select("id, status, planId, stripeSubId")
-      .eq("orgId", orgId)
-      .maybeSingle();
+    const subExistente = await exigir(
+      sb.from("Subscription")
+        .select("id, status, planId, stripeSubId")
+        .eq("orgId", orgId)
+        .maybeSingle(),
+      "Subscription.select org",
+    );
 
     if (subExistente) {
       const planoAtual = subExistente.planId ? await findPlanById(sb, subExistente.planId) : null;
