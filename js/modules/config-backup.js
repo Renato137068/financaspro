@@ -41,10 +41,17 @@ const CONFIG_BACKUP = {
         errors.push('transacoes deve ser um array');
       } else {
         data.transacoes.forEach(function(tx, idx) {
+          if (!tx || typeof tx !== 'object') {
+            errors.push('transacao[' + idx + ']: não é um lançamento');
+            return;
+          }
           if (!tx.id) errors.push('transacao[' + idx + ']: id ausente');
           if (typeof tx.valor !== 'number') errors.push('transacao[' + idx + ']: valor inválido');
           if (!tx.data) errors.push('transacao[' + idx + ']: data ausente');
-          if (!tx.tipo || !['receita', 'despesa'].includes(tx.tipo)) {
+          // Transferência entre contas é um tipo do próprio app e sai no
+          // backup: recusá-la aqui fazia o backup inteiro de quem já transferiu
+          // uma vez ser rejeitado na hora de restaurar.
+          if (!tx.tipo || !['receita', 'despesa', 'transferencia'].includes(tx.tipo)) {
             errors.push('transacao[' + idx + ']: tipo inválido');
           }
           if (!tx.categoria) errors.push('transacao[' + idx + ']: categoria ausente');
