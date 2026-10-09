@@ -59,10 +59,10 @@ const BUDGETS = {
   // Perfil que só essas telas desenham chega com o chunk (layouts/*-tela.css).
   // 1110→1082 KB (2026-10-02): sai o cliente da API Express e o sync v2
   // (ADR 0007): 1106 → 1079 KB.
-  // 1082→1084 KB (2026-10-08): auditoria de acessibilidade — nomes falados
-  // no Extrato e no Resumo e o CSS de fonte ampliada (≈1 KB); o total já
-  // estava encostado no limite.
-  precacheTotal: { max: 1084 * KB, label: 'Precache total (1º acesso)' },
+  // 1082→1083 KB (2026-10-08): auditoria de acessibilidade — tipo falado nas
+  // últimas transações e o CSS de fonte ampliada (+460 bytes, 1081,7 →
+  // 1082,2 KB); a main estava a 300 bytes do teto.
+  precacheTotal: { max: 1083 * KB, label: 'Precache total (1º acesso)' },
   // 580→590 KB (2026-09-13): correção do KPI "Folga poupança" no Orçamento
   // (cálculo da folga da fatia de poupança) + referência de ritmo no Resumo
   // adicionam alguns KB de código — aumento intencional.
