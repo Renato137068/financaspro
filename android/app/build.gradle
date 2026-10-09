@@ -19,7 +19,16 @@ android {
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
-            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+            //
+            // Fora do APK também o que o build web (dist/) só tem para o site
+            // (scripts/copy-static.cjs): as capturas da instalação como PWA, a
+            // página "sobre", os artigos com as imagens deles (site/), robots,
+            // sitemap e os cabeçalhos da hospedagem. Nada disso é aberto dentro
+            // do app (tests/apk-assets-web.test.js) e era metade do peso web do
+            // APK: ~780 de ~1.500 KB comprimidos.
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~' +
+                ':!<dir>screenshots:!<dir>site:!<dir>artigos' +
+                ':!<file>sobre.html:!<file>robots.txt:!<file>sitemap.xml:!<file>_headers'
         }
     }
     signingConfigs {
