@@ -39,6 +39,7 @@ const RENDER_DASHBOARD = (function() {
   var _cachedElements = {};
   var _lastFingerprint = null;
   var _ultimoSaldoAnunciado = null;
+  var _limparAnuncioSaldo = null;
 
   function _fingerprintDados() {
     if (typeof APP_STORE === 'undefined') return null;
@@ -342,6 +343,10 @@ const RENDER_DASHBOARD = (function() {
       if (anuncio && saldo !== _ultimoSaldoAnunciado) {
         _ultimoSaldoAnunciado = saldo;
         anuncio.textContent = 'Saldo do mês (realizado): ' + DashboardRenderer.money(saldo);
+        // Depois de anunciado, esvazia: senão o TalkBack lê o saldo duas
+        // vezes ao passar o dedo (o cartão e esta região ficam lado a lado).
+        clearTimeout(_limparAnuncioSaldo);
+        _limparAnuncioSaldo = setTimeout(function() { anuncio.textContent = ''; }, 4000);
       }
     } catch (e) {
       _reportarErroRender('cardSaldo', e, el);
