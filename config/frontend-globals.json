@@ -6,6 +6,8 @@
     "__FP_PIN_EARLY_SECURE_HELD__": "writable",
     "__fpHandleAndroidBack": "writable",
     "__fpNativeBilling": "writable",
+    "__fpVoltarAndroid": "writable",
+    "__fpVoltarOuvindo": "writable",
     "_abrirAuthOverlay": "writable",
     "_config": "writable",
     "_extrato": "writable",
