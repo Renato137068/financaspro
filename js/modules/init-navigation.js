@@ -201,6 +201,7 @@ const INIT_NAVIGATION = {
             if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.mudarSubAba) {
               INIT_ORCAMENTO.mudarSubAba(sub);
             }
+            self._renderSubOrcamento(sub);
           });
         });
       },
@@ -467,6 +468,23 @@ const INIT_NAVIGATION = {
   },
 
   /**
+   * Desenha a lista da sub-aba do Orçamento. As telas de Metas, Gastos fixos e
+   * Patrimônio só eram desenhadas na próxima renderização do Resumo: tocar na
+   * sub-aba pela primeira vez mostrava o painel vazio.
+   */
+  _renderSubOrcamento: function(sub) {
+    if (sub === 'metas' && typeof INIT_METAS !== 'undefined' && INIT_METAS.renderOrcamento) {
+      INIT_METAS.renderOrcamento();
+    }
+    if (sub === 'assinaturas' && typeof INIT_ASSINATURAS !== 'undefined' && INIT_ASSINATURAS.render) {
+      INIT_ASSINATURAS.render();
+    }
+    if (sub === 'patrimonio' && typeof INIT_PATRIMONIO !== 'undefined' && INIT_PATRIMONIO.render) {
+      INIT_PATRIMONIO.render();
+    }
+  },
+
+  /**
    * Perfil (chunk 'config'). INIT_CONFIG.init liga os controles das telas do
    * Perfil e aplica a visibilidade da nuvem — tudo que ele toca mora nessas
    * telas. Roda uma vez, na primeira carga real do chunk.
@@ -688,15 +706,7 @@ function mudarAba(nomeAba, opcoes) {
           if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.renderDashboard) {
             INIT_ORCAMENTO.renderDashboard();
           }
-          if (orcSubPref === 'metas' && typeof INIT_METAS !== 'undefined' && INIT_METAS.renderOrcamento) {
-            INIT_METAS.renderOrcamento();
-          }
-          if (orcSubPref === 'assinaturas' && typeof INIT_ASSINATURAS !== 'undefined' && INIT_ASSINATURAS.render) {
-            INIT_ASSINATURAS.render();
-          }
-          if (orcSubPref === 'patrimonio' && typeof INIT_PATRIMONIO !== 'undefined' && INIT_PATRIMONIO.render) {
-            INIT_PATRIMONIO.render();
-          }
+          INIT_NAVIGATION._renderSubOrcamento(orcSubPref);
         };
         // Primeiro a tela (chunk 'orcamento'), depois a sub-aba pedida.
         INIT_NAVIGATION.carregarChunkOrcamento(function() {

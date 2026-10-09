@@ -95,7 +95,7 @@ const INIT_ASSINATURAS = {
     // Contas a pagar só aparecem no Resumo depois que existe uma; sem esta
     // entrada, ninguém conseguia cadastrar a primeira (auditoria de 08/10).
     html += '<div class="sub-contas-pagar">' +
-      '<p class="sub-sugestoes-title">Boletos com vencimento, como aluguel e luz, vão para Contas a pagar e aparecem no Resumo até serem pagos.</p>' +
+      '<p class="sub-contas-pagar-texto">Boletos com vencimento, como aluguel e luz, vão para Contas a pagar e aparecem no Resumo até serem pagos.</p>' +
       '<button type="button" class="btn-secundario btn-sm" data-action="conta-nova">Nova conta a pagar</button>' +
     '</div>';
 
