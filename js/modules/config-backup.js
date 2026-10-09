@@ -284,6 +284,10 @@ const CONFIG_BACKUP = {
       return { tx: tx, edicao: index >= 0 };
     });
     DADOS._storageSetTransacoes(transacoes);
+    // O cache de TRANSACOES (TTL de 30 s) não enxerga escrita direta no DADOS:
+    // sem isto, Resumo e Extrato seguiam mostrando o aparelho vazio depois do
+    // "Importado: N transações".
+    if (TRANSACOES.invalidateCache) TRANSACOES.invalidateCache();
     feitas.forEach(function(f) {
       if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
         APP_STORE.dispatch(f.edicao ? ACTIONS.TRANSACAO_EDITAR : ACTIONS.TRANSACAO_CRIAR, f.tx);
