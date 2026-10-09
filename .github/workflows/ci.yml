@@ -13,6 +13,11 @@ on:
   pull_request:
     branches: [main, master]
 
+# Só leitura: nenhum job daqui publica nada. Sem isto, o token herdava a
+# permissão padrão do repositório (que pode ser escrita).
+permissions:
+  contents: read
+
 jobs:
   test:
     name: Testes (${{ matrix.node-version }})
@@ -156,15 +161,50 @@ jobs:
       - name: Checagem de tipos das Edge Functions
         run: node scripts/test-edge.cjs --tipos
 
+  # O projeto Android só compilava no workflow de release, na hora de publicar:
+  # um plugin novo, uma versão de biblioteca ou um erro no Java aparecia ali,
+  # com a versão pronta. Aqui ele compila (debug, sem assinatura) a cada PR.
+  android:
+    name: Android (compila)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout codigo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # O gradle-wrapper.jar roda com acesso a tudo no job (no release, à
+      # keystore): confere que é o jar oficial do Gradle.
+      - name: Gradle wrapper oficial
+        uses: gradle/actions/wrapper-validation@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.x
+          cache: npm
+
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - run: npm ci
+
+      - name: Build web e sync com o Android
+        run: npm run android:sync
+
+      - name: assembleDebug
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
   quality-gate:
     name: Quality Gate
     runs-on: ubuntu-latest
-    needs: [test, edge]
+    needs: [test, edge, android]
     if: always()
     steps:
       - name: Verificar resultado dos testes
         run: |
-          if [ "${{ needs.test.result }}" != "success" ] || [ "${{ needs.edge.result }}" != "success" ]; then
+          if [ "${{ needs.test.result }}" != "success" ] || [ "${{ needs.edge.result }}" != "success" ] || [ "${{ needs.android.result }}" != "success" ]; then
             echo "Testes falharam - pipeline bloqueado"
             exit 1
           fi
