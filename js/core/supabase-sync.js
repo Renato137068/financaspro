@@ -132,7 +132,13 @@
     return clean(Object.assign({}, en, { id: c.id, userId: u, updatedAt: c.updatedAt || nowIso() }));
   }
 
-  /** PostgREST limita ~1000 linhas por página — paginar pull de contas grandes. */
+  /**
+   * PostgREST limita ~1000 linhas por página — paginar pull de contas grandes.
+   * Toda consulta paginada precisa de .order(): sem ordem, o Postgres não
+   * garante que a página 2 continue de onde a 1 parou (linha repetida ou
+   * pulada). A ordem é pela chave primária (id), que a RLS indexável de
+   * 20261009120000_rls_initplan_desempenho.sql resolve em ~1 ms por página.
+   */
   var PULL_PAGE_SIZE = 1000;
 
   function fetchAllRows(buildQuery) {
@@ -169,11 +175,11 @@
         fetchAllRows(function () {
           // Inclui as excluídas: é assim que a exclusão feita em outro aparelho
           // chega aqui (SYNC_MERGE remove o que vem com deletedAt).
-          return SB.from('Transaction').select('*');
+          return SB.from('Transaction').select('*').order('id');
         }),
-        fetchAllRows(function () { return SB.from('Account').select('*'); }),
-        fetchAllRows(function () { return SB.from('Budget').select('*'); }),
-        fetchAllRows(function () { return SB.from('RecurringTransaction').select('*'); }),
+        fetchAllRows(function () { return SB.from('Account').select('*').order('id'); }),
+        fetchAllRows(function () { return SB.from('Budget').select('*').order('id'); }),
+        fetchAllRows(function () { return SB.from('RecurringTransaction').select('*').order('id'); }),
         SB.from('UserConfig').select('data').eq('userId', u).maybeSingle()
       ]).then(function (res) {
         // maybeSingle() resolve {data:null, error} em vez de rejeitar; sem este

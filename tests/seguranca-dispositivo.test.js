@@ -28,6 +28,7 @@ function carregarSync(opts) {
       select: () => api,
       is: () => api,
       eq: () => api,
+      order: () => api,
       range: () => { estado.selects++; return Promise.resolve({ data: [], error: null }); },
       maybeSingle: () => { estado.selects++; return Promise.resolve({ data: null, error: null }); },
       upsert: () => Promise.resolve({ error: null }),
