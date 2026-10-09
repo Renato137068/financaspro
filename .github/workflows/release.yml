@@ -161,6 +161,18 @@ jobs:
           jarsigner -verify android/app/build/outputs/bundle/release/app-release.aab | tee verificacao.txt
           grep -q '^jar verified\.' verificacao.txt
 
+      # android/app/build.gradle (ignoreAssetsPattern) tira do pacote o que o
+      # dist/ só tem para o site. Só o build do AAB prova que o padrão pegou:
+      # se algo escapar, avisa no resumo da execução sem travar a publicação.
+      - name: Conferir que o site ficou fora do AAB
+        run: |
+          AAB=android/app/build/outputs/bundle/release/app-release.aab
+          unzip -l "$AAB" | awk '{print $4}' > conteudo-aab.txt
+          grep -c '^base/assets/public/' conteudo-aab.txt
+          if grep -E '^base/assets/public/(screenshots|site|artigos)/|^base/assets/public/(sobre\.html|robots\.txt|sitemap\.xml|_headers)$' conteudo-aab.txt; then
+            echo "::warning::Arquivos do site entraram no AAB (lista acima): confira o ignoreAssetsPattern."
+          fi
+
       - name: Nomear o AAB com a versão
         run: cp android/app/build/outputs/bundle/release/app-release.aab "financaspro-${{ needs.verificar.outputs.tag }}.aab"
 
