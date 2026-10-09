@@ -13,6 +13,7 @@
  *   npx playwright install chromium
  *   npm run screenshots:capture
  */
+/* global ONBOARDING, mudarAba -- usados dentro de page.evaluate, no navegador */
 const fs = require('fs');
 const path = require('path');
 const { spawn, execSync } = require('child_process');
@@ -37,7 +38,13 @@ function demoSeed() {
     renda: 8500,
     pinAtivo: false,
     onboardingConcluido: true,
-    orcamentos: { alimentacao: 1200, transporte: 600, moradia: 2000 },
+    // Mesmo formato que o app grava (DADOS.upsertOrcamento): com número puro,
+    // "Limites de orçamento" saía "R$ 0,00 / R$ 0,00" nas capturas.
+    orcamentos: {
+      alimentacao: { limite: 1200, definidoEm: y + '-01-01T12:00:00.000Z' },
+      transporte: { limite: 600, definidoEm: y + '-01-01T12:00:00.000Z' },
+      moradia: { limite: 2000, definidoEm: y + '-01-01T12:00:00.000Z' },
+    },
     regra503020: { necessidades: 50, desejos: 30, poupanca: 20 },
     metas: [
       { id: 'meta-1', nome: 'Reserva de emergência', valorAlvo: 10000, valorAtual: 4200, prazo: y + '-12-31' },
