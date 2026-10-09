@@ -38,7 +38,7 @@ mesmos dados sincronizam com o Supabase.
   `js/core` (`PASSWORD_POLICY`, `VALIDATIONS`, `FINANCE_CONTRACT`,
   `SYNC_MERGE`, `SESSION_LOG`, `IDB_KV`, `CATEGORIA_VISUAL`, `TELAS`, `LAZY`,
   `DOMUTILS`), a infraestrutura de eventos e persistência (`EVENT_BUS`,
-  `EVENTS`, `DOM_SAFE`, `PERSIST_QUEUE`, `FINANCE_RECONCILER`), utilitários (`LOCAL_CRYPTO`, `FUNIL`, `TablistKeyboard`,
+  `EVENTS`, `PERSIST_QUEUE`, `FINANCE_RECONCILER`), utilitários (`LOCAL_CRYPTO`, `FUNIL`, `TablistKeyboard`,
   `compartilharTextoUI`), o domínio de lançamentos (`TRANSACOES`, `ORCAMENTO`,
   `CATEGORIES`, `AUTO_CATEGORIZER`, `CATEGORIZADOR`, `APRENDIZADO`, `PARSER`,
   `SCORE`, `PIPELINE`), contas e compromissos (`CONTAS`, `CARTOES`,

@@ -96,7 +96,6 @@ const urlsParaCache = [
   "/js/core/config.js",
   "/js/core/dados-nuvem.js",
   "/js/core/dados.js",
-  "/js/core/dom-safe.js",
   "/js/core/domUtils.js",
   "/js/core/event-bus.js",
   "/js/core/events-catalog.js",
