@@ -404,19 +404,21 @@
 
 /* ── Botão CTA principal do dashboard ──────────────────────── */
 
-#aba-resumo > #secao-relatorios {
+#secao-analises,
+#analises-painel > #secao-relatorios {
   padding: 0;
   box-shadow: none;
   border: none;
   background: transparent;
 }
 
-#aba-resumo > #secao-relatorios .dashboard-section-toggle {
+#secao-analises > .dashboard-section-toggle,
+#analises-painel > #secao-relatorios .dashboard-section-toggle {
   width: 100%;
   margin-bottom: 0;
 }
 
-#aba-resumo > #secao-relatorios .rel-panel {
+#analises-painel > #secao-relatorios .rel-panel {
   margin-top: 0;
   padding: var(--space-4);
   background: var(--color-bg-card);
@@ -426,12 +428,16 @@
   box-shadow: var(--shadow-xs);
 }
 
-#aba-resumo > #secao-relatorios .rel-panel[style*="display: none"],
-#aba-resumo > #secao-relatorios .rel-panel[style*="display:none"] {
+#analises-painel > #secao-relatorios .rel-panel[style*="display: none"],
+#analises-painel > #secao-relatorios .rel-panel[style*="display:none"] {
   display: none !important;
   padding: 0;
   border: none;
   box-shadow: none;
+}
+
+#analises-painel {
+  padding-top: var(--space-3);
 }
 
 #aba-resumo > .btn-primario {
@@ -883,6 +889,7 @@
 .resumo-primeiro-uso .cards-container,
 .resumo-primeiro-uso #dashboard-indicadores,
 .resumo-primeiro-uso #secao-orcamento-resumo,
-.resumo-primeiro-uso #secao-ultimas-transacoes {
+.resumo-primeiro-uso #secao-ultimas-transacoes,
+.resumo-primeiro-uso #secao-analises {
   display: none;
 }

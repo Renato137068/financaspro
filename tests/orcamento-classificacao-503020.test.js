@@ -84,7 +84,7 @@ function montarHeaderDom() {
     '<div id="orc-saldo-disponivel"></div><div id="orc-percent-restante"></div>' +
     '<div id="orc-tendencia"></div><div id="orc-total-planejado"></div>' +
     '<div id="orc-total-realizado"></div><div id="orc-categorias-criticas"></div>' +
-    '<div id="orc-economia-mes"></div><div id="orc-trend-indicator"></div>' +
+    '<div id="orc-trend-indicator"></div>' +
     '<span id="orc-nec-pct"></span><span id="orc-des-pct"></span><span id="orc-pou-pct"></span>' +
     '<span id="orc-nec-gasto"></span><span id="orc-nec-limite"></span>' +
     '<div class="orc-progress"><div id="orc-nec-bar" class="orc-progress-fill"></div></div>' +

@@ -49,6 +49,8 @@ describe('lembrete de backup', function() {
     expect(H.verificarBackupAutomatico()).toBe(true);
     expect(banners).toHaveLength(1);
     expect(Number(local.getItem('fp-lembrete-exportar-em'))).toBeGreaterThan(0);
+    // Entra abaixo da saudação, não por cima do cabeçalho.
+    expect(banners[0].apos).toBe('dashboard-greeting');
   });
 
   test('não volta na abertura seguinte dentro de 7 dias', function() {
