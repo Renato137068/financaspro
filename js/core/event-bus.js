@@ -104,6 +104,7 @@ const EVENT_BUS = {
         }
       } catch (e) {
         console.error('[EVENT_BUS] Erro no handler:', namespace + '.' + action, e);
+        if (typeof OBS !== 'undefined' && OBS.captureError) OBS.captureError(e, { contexto: 'acao:' + namespace + '.' + action });
       }
     };
   },

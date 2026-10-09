@@ -99,6 +99,7 @@ const INIT_NAVIGATION = {
             mudarAba(aba, orcSub ? { orcSub: orcSub } : null);
           } catch (err) {
             console.error('[INIT_NAVIGATION] Erro ao mudar aba:', err);
+            if (typeof OBS !== 'undefined' && OBS.captureError) OBS.captureError(err, { contexto: 'mudarAba', aba: aba });
           }
         }
       }
@@ -114,6 +115,7 @@ const INIT_NAVIGATION = {
         INIT_NAVIGATION.handleAction(action, target);
       } catch (err) {
         console.error('[INIT_NAVIGATION] Erro na ação', action, ':', err);
+        if (typeof OBS !== 'undefined' && OBS.captureError) OBS.captureError(err, { contexto: 'acao:' + action });
       }
     };
 

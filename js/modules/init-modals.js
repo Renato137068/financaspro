@@ -108,6 +108,7 @@ const INIT_MODALS = {
           if (options.onOk(ov) === false) return;
         } catch (err) {
           console.error('[INIT_MODALS] onOk falhou:', err);
+          if (typeof OBS !== 'undefined' && OBS.captureError) OBS.captureError(err, { contexto: 'modal.onOk' });
           return;
         }
       }

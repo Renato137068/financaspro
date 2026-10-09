@@ -130,6 +130,7 @@ const RENDER_CORE = {
       return true;
     } catch (e) {
       console.error('[RENDER_CORE] Erro renderizando:', name, e);
+      if (typeof OBS !== 'undefined' && OBS.captureError) OBS.captureError(e, { contexto: 'render:' + name });
       return false;
     }
   },
