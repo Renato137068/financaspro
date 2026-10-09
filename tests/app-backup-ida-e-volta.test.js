@@ -112,3 +112,27 @@ test('arquivo que não é backup é recusado sem mexer em nada', async () => {
   expect(await destino.esperar(() => /Schema inválido/.test(g.toast()))).toBe(true);
   expect(destino.window.DADOS.getTransacoes()).toHaveLength(1);
 });
+
+// Auditoria de integridade (09/10): a restauração gravava lançamento por
+// lançamento; uma falha no meio (cota cheia) deixava parte dentro e parte fora,
+// e o aviso dizia "Nada foi alterado".
+test('restaurar grava os lançamentos numa escrita só; se o disco recusar, nada entra', async () => {
+  const origem = await abrirPerfil({ transacoes: TRANSACOES });
+  const texto = await exportar(origem);
+
+  const destino = await abrirPerfil({ transacoes: [TRANSACOES[0]] });
+  const D = destino.window.DADOS;
+  const real = D._storageSetTransacoes;
+  let escritas = 0;
+  D._storageSetTransacoes = function(lista) { escritas++; return real.call(this, lista); };
+  importar(destino, texto);
+  expect(await destino.esperar(() => D.getTransacoes().length === 3)).toBe(true);
+  expect(escritas).toBe(1);
+
+  const terceiro = await abrirPerfil({ transacoes: [TRANSACOES[0]] });
+  const g = gestos(terceiro);
+  terceiro.window.DADOS._storageSetTransacoes = function() { throw new Error('QuotaExceededError'); };
+  importar(terceiro, texto);
+  expect(await terceiro.esperar(() => /Nada foi alterado/.test(g.toast()))).toBe(true);
+  expect(terceiro.window.DADOS.getTransacoes().map((t) => t.id)).toEqual(['r1']);
+});

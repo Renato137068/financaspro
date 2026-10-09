@@ -23,6 +23,8 @@ import { RENDER } from '../render.js';
 import { INIT_MODALS } from './init-modals.js';
 import { DADOS } from '../core/dados.js';
 import { BACKUP_CIFRADO } from './backup-cifrado.js';
+import { APP_STORE } from '../core/store.js';
+import { ACTIONS } from '../services/actions.js';
 
 const CONFIG_BACKUP = {
   /**
@@ -253,24 +255,70 @@ const CONFIG_BACKUP = {
   },
 
   /**
+   * Grava vários lançamentos numa escrita só (restauração de backup). Ou entram
+   * todos ou nenhum: salvarTransacao um a um regravava a lista inteira a cada
+   * item, e uma falha no meio (cota cheia) deixava parte dentro e parte fora.
+   * Avisa a tela e a nuvem só depois que o disco aceitou. Fica aqui, no chunk
+   * do Perfil, e não no DADOS: o primeiro acesso não tem folga de peso.
+   * @param {Transacao[]} novas
+   * @returns {number} quantos foram gravados
+   * @throws {Error} se o armazenamento recusar (nada é alterado)
+   */
+  _salvarTransacoesEmLote: function(novas) {
+    if (!Array.isArray(novas) || !novas.length) return 0;
+    var transacoes = DADOS.getTransacoesRaw().slice();
+    var agora = new Date().toISOString();
+    var feitas = novas.map(function(original) {
+      var tx = Object.assign({}, original);
+      // Mesma idempotência por clientKey do salvarTransacao.
+      if (tx.clientKey) {
+        var mesma = transacoes.find(function(t) { return t && t.clientKey === tx.clientKey && !t.deletedAt; });
+        if (mesma) { tx.id = mesma.id; tx.dataCriacao = mesma.dataCriacao || tx.dataCriacao; }
+      }
+      tx.id = tx.id || UTILS.gerarId();
+      tx.dataCriacao = tx.dataCriacao || agora;
+      tx.updatedAt = agora;
+      tx.deletedAt = null;
+      var index = transacoes.findIndex(function(t) { return t.id === tx.id; });
+      if (index >= 0) transacoes[index] = tx; else transacoes.push(tx);
+      return { tx: tx, edicao: index >= 0 };
+    });
+    DADOS._storageSetTransacoes(transacoes);
+    feitas.forEach(function(f) {
+      if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
+        APP_STORE.dispatch(f.edicao ? ACTIONS.TRANSACAO_EDITAR : ACTIONS.TRANSACAO_CRIAR, f.tx);
+      }
+      DADOS._pushTransacaoApi(f.tx, f.edicao ? 'PATCH' : 'POST').catch(function(err) {
+        if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
+          APP_STORE.dispatch(ACTIONS.SYNC_FALHAR, { erro: (err && err.message) || 'push-tx' });
+        }
+      });
+    });
+    return feitas.length;
+  },
+
+  /**
    * Importa dados do arquivo
    */
   importarDados: function(data) {
+    var transacoesImportadas = 0;
     try {
-      var transacoesImportadas = 0;
       var configImportada = false;
-      
-      // Importar transações
+
+      // Importar transações: valida tudo antes e grava de uma vez. Se o disco
+      // recusar, nada entra e o "Nada foi alterado" do aviso é verdade.
       if (data.transacoes && Array.isArray(data.transacoes)) {
-        data.transacoes.forEach(function(tx) {
-          if (!tx || !tx.id || !tx.valor || !tx.data || !tx.tipo || !tx.categoria) return;
+        var existentes = {};
+        DADOS.getTransacoesRaw().forEach(function(t) { if (t && t.id && !t.deletedAt) existentes[t.id] = true; });
+        var novas = data.transacoes.filter(function(tx) {
+          if (!tx || !tx.id || !tx.valor || !tx.data || !tx.tipo || !tx.categoria) return false;
           // Lançamento excluído aqui (marca de exclusão) volta com o backup:
           // restaurar é justamente como se recupera o que foi apagado sem querer.
-          var jaExiste = DADOS.getTransacoesRaw().some(function(t) { return t.id === tx.id && !t.deletedAt; });
-          if (jaExiste) return;
-          DADOS.salvarTransacao(Object.assign({}, tx));
-          transacoesImportadas++;
+          if (existentes[tx.id]) return false;
+          existentes[tx.id] = true;
+          return true;
         });
+        if (novas.length) transacoesImportadas = INIT_CONFIG._salvarTransacoesEmLote(novas);
       }
       
       // Importar configurações (PIN local preservado)
@@ -338,7 +386,13 @@ const CONFIG_BACKUP = {
       
     } catch (err) {
       console.error('Erro ao importar:', err);
-      UTILS.mostrarToast('Não foi possível importar esse arquivo. Nada foi alterado.', 'error');
+      if (transacoesImportadas > 0) {
+        if (typeof RENDER !== 'undefined' && RENDER.init) RENDER.init();
+        UTILS.mostrarToast('Importação incompleta: ' + transacoesImportadas
+          + ' transações entraram, mas o resto do backup não. Tente importar de novo.', 'error');
+      } else {
+        UTILS.mostrarToast('Não foi possível importar esse arquivo. Nada foi alterado.', 'error');
+      }
     }
   },
 
