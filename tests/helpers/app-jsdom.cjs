@@ -141,7 +141,16 @@ function criarSupabaseFalso(opts) {
         return ok({ session: sessao, user: user });
       },
       signOut: () => { sessao = null; setTimeout(() => avisar('SIGNED_OUT'), 0); return Promise.resolve({ error: null }); },
-      signUp: (cred) => { chamadas.push({ metodo: 'signUp', email: cred.email }); return ok({ user: null, session: null }); },
+      /* `opts.jaCadastrados`: e-mails que o projeto recusa com "User already
+         registered" (projeto sem confirmação de e-mail). */
+      signUp: (cred) => {
+        const dados = (cred.options && cred.options.data) || {};
+        chamadas.push({ metodo: 'signUp', email: cred.email, nome: dados.name });
+        if ((opts.jaCadastrados || []).indexOf(cred.email) >= 0) {
+          return Promise.resolve({ data: { user: null, session: null }, error: { message: 'User already registered', status: 422, code: 'user_already_exists' } });
+        }
+        return ok({ user: null, session: null });
+      },
       resetPasswordForEmail: (email) => { chamadas.push({ metodo: 'resetPasswordForEmail', email: email }); return ok({}); },
       resend: () => ok({}),
       setSession: (s) => { sessao = s; return ok({ session: s }); },
