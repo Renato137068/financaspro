@@ -34,7 +34,11 @@ function loadInsights() {
         ];
       },
     },
-    SETUP_GUIDE: undefined,
+    SETUP_GUIDE: (function() {
+      const sg = vm.createContext({ Math, Array, Object, String, Number });
+      rodarNoContexto(sg, path.join(root, 'js', 'core', 'setup-guide.js'));
+      return sg.SETUP_GUIDE;
+    })(),
     CONFIG: undefined,
     ORCAMENTO: undefined,
   };
@@ -51,7 +55,6 @@ const INSIGHTS = loadInsights();
 describe('INSIGHTS._estadoSetup', function() {
   test('sem dados marca passos pendentes', function() {
     var e = INSIGHTS._estadoSetup([]);
-    expect(e.perfil).toBe(false);
     expect(e.transacao).toBe(false);
     expect(e.orcamento).toBe(false);
     expect(e.meta).toBe(false);
@@ -60,6 +63,16 @@ describe('INSIGHTS._estadoSetup', function() {
   test('com transação marca passo concluído', function() {
     var e = INSIGHTS._estadoSetup([{ id: '1' }]);
     expect(e.transacao).toBe(true);
+  });
+
+  test('renda: só despesa não conclui; receita lançada conclui', function() {
+    // A config do contexto não tem renda planejada.
+    expect(INSIGHTS._estadoSetup([{ id: '1', tipo: 'despesa' }]).renda).toBe(false);
+    expect(INSIGHTS._estadoSetup([{ id: '1', tipo: 'despesa' }, { id: '2', tipo: 'receita' }]).renda).toBe(true);
+  });
+
+  test('não há mais passo de perfil no guia', function() {
+    expect(INSIGHTS._estadoSetup([])).not.toHaveProperty('perfil');
   });
 });
 
