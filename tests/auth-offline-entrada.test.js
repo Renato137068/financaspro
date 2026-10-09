@@ -162,7 +162,9 @@ describe('Entrada offline', () => {
     expect(painel).toContain('getSessionSync');
   });
 
-  const entrar = corpoDaFuncao(auth, 'function _entrarOffline(');
+  // _entrarOffline confere a identidade (biometria) e delega a entrada a
+  // _concluirEntradaOffline — auditoria de segurança de 08/10/2026.
+  const entrar = corpoDaFuncao(auth, 'function _concluirEntradaOffline(');
 
   test('entrar offline desbloqueia de verdade e avisa o usuário', () => {
     expect(entrar).toContain('_authOnSuccess');

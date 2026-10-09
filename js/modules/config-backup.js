@@ -22,6 +22,7 @@ import { CONTAS } from '../contas.js';
 import { RENDER } from '../render.js';
 import { INIT_MODALS } from './init-modals.js';
 import { DADOS } from '../core/dados.js';
+import { BACKUP_CIFRADO } from './backup-cifrado.js';
 
 const CONFIG_BACKUP = {
   /**
@@ -179,23 +180,11 @@ const CONFIG_BACKUP = {
     reader.onload = function(e) {
       try {
         var data = JSON.parse(e.target.result);
-        
-        // Validar schema antes de importar
-        var schemaValidacao = INIT_CONFIG._validateImportSchema(data);
-        if (!schemaValidacao.valid) {
-          UTILS.mostrarToast(schemaValidacao.message, 'error');
+        if (BACKUP_CIFRADO.ehCifrado(data)) {
+          INIT_CONFIG._importarCifrado(data);
           return;
         }
-        
-        INIT_CONFIG._pendingImport = data;
-        if (INIT_CONFIG._importTemOverridesSensiveis(data)) {
-          INIT_MODALS.confirm(
-            'O backup pode alterar preferências. Seu PIN local e o plano de assinatura não serão substituídos. Continuar?',
-            function() { INIT_CONFIG.importarDados(INIT_CONFIG._pendingImport); }
-          );
-        } else {
-          INIT_CONFIG.importarDados(data);
-        }
+        INIT_CONFIG._importarObjeto(data);
       } catch (err) {
         console.error('Erro ao parsear JSON:', err);
         UTILS.mostrarToast('Esse arquivo não parece ser um backup do app. Nada foi alterado.', 'error');
@@ -205,6 +194,55 @@ const CONFIG_BACKUP = {
       UTILS.mostrarToast('Não foi possível ler esse arquivo. Nada foi alterado.', 'error');
     };
     reader.readAsText(file);
+  },
+
+  /**
+   * Backup com senha: pede a senha, decifra e segue pelo caminho normal.
+   * Senha errada pede de novo; cancelar não altera nada.
+   */
+  _importarCifrado: function(envelope, erro) {
+    if (!BACKUP_CIFRADO.disponivel()) {
+      UTILS.mostrarToast('Este aparelho não consegue abrir backups com senha. Nada foi alterado.', 'error');
+      return;
+    }
+    BACKUP_CIFRADO.pedirSenhaImportacao(function(senha) {
+      BACKUP_CIFRADO.decifrar(envelope, senha).then(function(texto) {
+        var data;
+        try {
+          data = JSON.parse(texto);
+        } catch (e) {
+          UTILS.mostrarToast('O backup abriu, mas o conteúdo está corrompido. Nada foi alterado.', 'error');
+          return;
+        }
+        INIT_CONFIG._importarObjeto(data);
+      }).catch(function(err) {
+        if (err && err.message === 'SENHA_INCORRETA') {
+          INIT_CONFIG._importarCifrado(envelope, 'Senha incorreta. Tente de novo.');
+          return;
+        }
+        UTILS.mostrarToast('Esse arquivo de backup está danificado. Nada foi alterado.', 'error');
+      });
+    }, erro);
+  },
+
+  /** Valida e importa o backup já lido (e decifrado, se tinha senha). */
+  _importarObjeto: function(data) {
+    // Validar schema antes de importar
+    var schemaValidacao = INIT_CONFIG._validateImportSchema(data);
+    if (!schemaValidacao.valid) {
+      UTILS.mostrarToast(schemaValidacao.message, 'error');
+      return;
+    }
+
+    INIT_CONFIG._pendingImport = data;
+    if (INIT_CONFIG._importTemOverridesSensiveis(data)) {
+      INIT_MODALS.confirm(
+        'O backup pode alterar preferências. Seu PIN local e o plano de assinatura não serão substituídos. Continuar?',
+        function() { INIT_CONFIG.importarDados(INIT_CONFIG._pendingImport); }
+      );
+    } else {
+      INIT_CONFIG.importarDados(data);
+    }
   },
 
   /**
@@ -288,10 +326,17 @@ const CONFIG_BACKUP = {
   },
 
   /**
-   * Exporta todos os dados
+   * Exporta todos os dados. Chamada sem argumento (botão do Perfil), pergunta
+   * antes se o arquivo leva senha (backup-cifrado.js) e volta aqui com a
+   * escolha: a senha, ou null para o JSON legível de sempre.
    */
-  exportarDados: function() {
+  exportarDados: function(senha) {
     var self = this;
+    if (senha === undefined && BACKUP_CIFRADO.disponivel()) {
+      BACKUP_CIFRADO.pedirSenhaExportacao(function(escolha) { self.exportarDados(escolha); });
+      return;
+    }
+    senha = senha || null;
     var finalizar = function(anexos) {
       try {
         var exportData = {
@@ -314,14 +359,22 @@ const CONFIG_BACKUP = {
           }
         };
 
-        var blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-        var link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'financaspro_backup_' + new Date().toISOString().split('T')[0] + '.json';
-        link.click();
+        var texto = JSON.stringify(exportData, null, 2);
+        var pronto = senha ? BACKUP_CIFRADO.cifrar(texto, senha) : Promise.resolve(texto);
+        pronto.then(function(conteudo) {
+          var blob = new Blob([conteudo], { type: 'application/json' });
+          var link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = 'financaspro_backup_' + new Date().toISOString().split('T')[0] + '.json';
+          link.click();
 
-        DADOS.salvarConfig({ ultimoExportoDados: new Date().toISOString() });
-        UTILS.mostrarToast('Backup exportado' + ((anexos && anexos.length) ? ' (com anexos)' : ''), 'success');
+          DADOS.salvarConfig({ ultimoExportoDados: new Date().toISOString() });
+          UTILS.mostrarToast('Backup exportado' + (senha ? ' com senha' : '')
+            + ((anexos && anexos.length) ? ' (com anexos)' : ''), 'success');
+        }).catch(function(err) {
+          console.error('Erro ao cifrar o backup:', err);
+          UTILS.mostrarToast('Não foi possível exportar. Seus dados continuam salvos aqui.', 'error');
+        });
       } catch (err) {
         console.error('Erro ao exportar:', err);
         UTILS.mostrarToast('Não foi possível exportar. Seus dados continuam salvos aqui.', 'error');
