@@ -66,7 +66,10 @@ const BUDGETS = {
   // avisa em vez de sumir (1085 KB). Correção de perda de dado, não feature.
   // 1086→1088 KB (2026-10-09): botão voltar do Android (capacitor-init.js) e
   // aviso de primeiro acesso sem internet (1087 KB).
-  precacheTotal: { max: 1088 * KB, label: 'Precache total (1º acesso)' },
+  // 1088→1090 KB (2026-10-10): auditorias de testes, servidor e retenção —
+  // cadastro que mostra o próprio título, aviso de renda no primeiro gasto,
+  // guia "Comece aqui" sem o passo do perfil, pull ordenado (1088 KB).
+  precacheTotal: { max: 1090 * KB, label: 'Precache total (1º acesso)' },
   // 580→590 KB (2026-09-13): correção do KPI "Folga poupança" no Orçamento
   // (cálculo da folga da fatia de poupança) + referência de ritmo no Resumo
   // adicionam alguns KB de código — aumento intencional.
