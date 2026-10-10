@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Atalho do ícone (tocar e segurar): abre direto no "Novo lançamento".
+     O link só escolhe a aba; js/capacitor-init.js aceita só abas da lista. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="novo_lancamento"
+        android:enabled="true"
+        android:icon="@drawable/ic_atalho_novo"
+        android:shortcutShortLabel="@string/atalho_novo_curto"
+        android:shortcutLongLabel="@string/atalho_novo_longo">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.financaspro.mobile"
+            android:targetClass="com.financaspro.app.MainActivity"
+            android:data="https://app.financaspro.com/?aba=novo" />
+    </shortcut>
+</shortcuts>

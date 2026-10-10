@@ -4,4 +4,6 @@
     <string name="title_activity_main">FinançasPro</string>
     <string name="package_name">com.financaspro.mobile</string>
     <string name="custom_url_scheme">com.financaspro.app</string>
+    <string name="atalho_novo_curto">Lançar</string>
+    <string name="atalho_novo_longo">Novo lançamento</string>
 </resources>
