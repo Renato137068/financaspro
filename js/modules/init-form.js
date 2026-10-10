@@ -792,13 +792,17 @@ const INIT_FORM = {
       // bater com o tipo escolhido no toggle. Nunca troca Receita↔Despesa em
       // silêncio (auditoria personas — UX).
       var sugestaoConfirmada = INIT_FORM._iaConfirmed === true;
+      // Marco "aha" do funil: a categoria veio sozinha, sem a pessoa escolher.
+      INIT_FORM._categoriaAutomatica = false;
       if (!escolhaManual && sugestaoOriginal && (sugestaoOriginal.confianca === 'alta' || sugestaoConfirmada)) {
         var tipoSug = sugestaoOriginal.tipo || tipo;
         if (tipoSug === tipo) {
           categoria = sugestaoOriginal.categoria || categoria;
+          INIT_FORM._categoriaAutomatica = !!sugestaoOriginal.categoria;
         } else if (sugestaoConfirmada) {
           tipo = tipoSug;
           categoria = sugestaoOriginal.categoria || categoria;
+          INIT_FORM._categoriaAutomatica = !!sugestaoOriginal.categoria;
         }
       }
       if (typeof CONFIG !== 'undefined' && typeof CONFIG.normalizeCategoriaFinal === 'function') {
@@ -1113,7 +1117,12 @@ const INIT_FORM = {
       // Passo 3 do funil. Só o marco, sem nada do lançamento em si.
       if (typeof FUNIL !== 'undefined') {
         FUNIL.marco(FUNIL.E.PRIMEIRO_LANCAMENTO, { dia: FUNIL.diasDeUso() });
+        // Passo 4: a primeira vez que a categoria foi escolhida sozinha.
+        if (INIT_FORM._categoriaAutomatica) {
+          FUNIL.marco(FUNIL.E.AHA_AUTOCATEGORIA, { dia: FUNIL.diasDeUso() });
+        }
       }
+      INIT_FORM._categoriaAutomatica = false;
       INIT_FORM.mostrarSucesso(sucessoMsg);
       INIT_FORM._finalizarTransacao();
       // Momento bom para pedir avaliação na Play (regras em avaliacao-loja.js).

@@ -39,6 +39,11 @@ function lancamentos() {
   return app.window.DADOS.getTransacoes();
 }
 
+/** Marcos do funil gravados no aparelho (só nomes e datas). */
+function marcos() {
+  return JSON.parse(app.window.localStorage.getItem('fp-funil-marcos') || '{}');
+}
+
 describe('Novo lançamento', () => {
   test('despesa com descrição conhecida é salva com a categoria deduzida e baixa o saldo', async () => {
     app = await subirApp({ agora: AGORA, transacoes: [SALARIO] });
@@ -55,7 +60,22 @@ describe('Novo lançamento', () => {
     expect(await app.esperar(() => /R\$ 4\.957,50/.test(saldoDoMes()))).toBe(true);
     // O formulário volta limpo para o próximo lançamento.
     expect(app.document.getElementById('novo-valor').value).toBe('');
+    // Funil: primeiro lançamento e a categoria escolhida sozinha ("aha").
+    expect(await app.esperar(() => !!marcos().funil_aha_autocategoria)).toBe(true);
+    expect(marcos().funil_primeiro_lancamento).toBeTruthy();
     expect(app.erros).toEqual([]);
+  });
+
+  test('descrição que o app não reconhece: sem o marco "aha" da autocategoria', async () => {
+    app = await subirApp({ agora: AGORA, transacoes: [SALARIO] });
+    app.window.mudarAba('novo');
+    digitar(app.document.getElementById('novo-valor'), '30,00');
+    digitar(app.document.getElementById('novo-descricao'), 'qwzx');
+    enviar();
+
+    expect(await app.esperar(() => lancamentos().length === 2)).toBe(true);
+    expect(await app.esperar(() => !!marcos().funil_primeiro_lancamento)).toBe(true);
+    expect(marcos().funil_aha_autocategoria).toBeUndefined();
   });
 
   test('a prévia de orçamento mostra o nome da categoria, não o slug', async () => {

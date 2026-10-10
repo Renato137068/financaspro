@@ -47,6 +47,7 @@ const $ = (id) => app.document.getElementById(id);
 const mensagem = () => $('auth-message').textContent.trim();
 const toasts = () => Array.from(app.document.querySelectorAll('.toast')).map((t) => t.textContent.trim());
 const chamadasSignUp = () => app.supabase.chamadas.filter((c) => c.metodo === 'signUp');
+const marcos = () => JSON.parse(app.window.localStorage.getItem('fp-funil-marcos') || '{}');
 
 async function abrirCadastro() {
   clicar($('auth-tab-register'));
@@ -92,6 +93,9 @@ describe('Criar conta na nuvem', () => {
     expect($('auth-resend-email-btn').hidden).toBe(false);
     // Sem sessão (falta confirmar), o app continua fechado.
     expect(app.document.body.classList.contains('auth-overlay-open')).toBe(true);
+    // Funil: o marco de conta criada, sem e-mail nem nome dentro dele.
+    expect(marcos().funil_conta_criada).toBeTruthy();
+    expect(JSON.stringify(marcos())).not.toMatch(/bia/i);
     expect(app.erros).toEqual([]);
   });
 
@@ -126,6 +130,7 @@ describe('Criar conta na nuvem', () => {
     expect(await app.esperar(() => /Não foi possível concluir o cadastro/.test(mensagem()), 3000)).toBe(true);
     expect(mensagem()).not.toMatch(/já|already|registered/i);
     expect(chamadasSignUp()).toHaveLength(1);
+    expect(marcos().funil_conta_criada).toBeUndefined();
     expect($('auth-register-form').hidden).toBe(false);
     // O botão volta a aceitar toque depois da falha.
     expect(await app.esperar(() => !$('auth-register-form').querySelector('button[type="submit"]').disabled, 1000)).toBe(true);

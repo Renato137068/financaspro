@@ -997,6 +997,10 @@ function setupAuthUI() {
       cloudReady.then(function() {
         return DADOS.registrarApi(nome, email, password);
       }).then(function(result) {
+        // Passo 5 do funil: só o marco, nada da conta (nem e-mail, nem nome).
+        if (result && typeof FUNIL !== 'undefined' && FUNIL.marco) {
+          FUNIL.marco(FUNIL.E.CONTA_CRIADA, { dia: FUNIL.diasDeUso() });
+        }
         if (result && result.needsEmailConfirmation) {
           UTILS.mostrarToast('Confirme seu e-mail para entrar.', 'info');
           _lembrarUsuario(email, nome);
