@@ -544,6 +544,8 @@ function setupAuthUI() {
       totpForm.style.display = 'none';
       totpForm.hidden = true;
     }
+    // Antes do título e da mensagem: showLoginStep escreve os do login.
+    if (name !== 'login') showLoginStep('email');
     if (screenTitle) {
       screenTitle.textContent = name === 'register' ? 'Criar conta' : 'Entrar';
     }
@@ -555,7 +557,6 @@ function setupAuthUI() {
     if (name === 'login') {
       _prefillLogin();
     } else {
-      showLoginStep('email');
       var focusTarget = document.getElementById('auth-register-name');
       if (focusTarget) focusTarget.focus();
     }
@@ -997,15 +998,16 @@ function setupAuthUI() {
         return DADOS.registrarApi(nome, email, password);
       }).then(function(result) {
         if (result && result.needsEmailConfirmation) {
-          if (message) {
-            message.textContent = 'Conta criada! Abra o e-mail de confirmação e depois toque em Entrar com a mesma senha.';
-          }
           UTILS.mostrarToast('Confirme seu e-mail para entrar.', 'info');
           _lembrarUsuario(email, nome);
           showTab('login');
           var loginEmail = document.getElementById('auth-login-email');
           if (loginEmail) loginEmail.value = email;
           showLoginStep('password');
+          // Depois da troca de passo, que escreve a sua própria instrução.
+          if (message) {
+            message.textContent = 'Conta criada! Abra o e-mail de confirmação e depois toque em Entrar com a mesma senha.';
+          }
           _authMostrarReenviarEmail(true, email);
           return false;
         }

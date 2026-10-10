@@ -29,7 +29,21 @@ async function loginSupabase(page, email, password, totpSecret) {
   await expect(page.locator('#auth-overlay')).toBeHidden({ timeout: 25000 });
 }
 
+/* Build cloud de verdade, sem o modo local que playwright.config.cjs aplica
+   por padrão: com `fp-force-local` o overlay de login nunca aparece, e o teste
+   do e-mail inválido passava sem conferir nada. Mesmo opt-out de
+   auth-offline-entrada.spec.cjs. Vale também para o login real abaixo. */
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe('Auth Supabase — UI estática', function() {
+  /* Nenhum teste de UI fala com o Supabase de produção: o health responde
+     aqui mesmo, e nada mais é chamado antes do login. */
+  test.beforeEach(async function({ page }) {
+    await page.route('**://*.supabase.co/**', function(rota) {
+      return rota.fulfill({ status: 200, contentType: 'application/json', body: '{"name":"GoTrue"}' });
+    });
+  });
+
   test('dist inclui overlay de login, recovery e TOTP', async function({ page }) {
     await page.goto('/');
     await expect(page.locator('#auth-overlay')).toBeAttached();
@@ -46,13 +60,21 @@ test.describe('Auth Supabase — UI estática', function() {
 
   test('etapa e-mail rejeita formato inválido', async function({ page }) {
     await page.goto('/');
-    var overlay = page.locator('#auth-overlay');
-    if (await overlay.isVisible()) {
-      await page.fill('#auth-login-email', 'email-invalido');
-      await page.locator('#auth-login-step-email button[type="submit"]').click();
-      await expect(page.locator('#auth-message')).toContainText(/e-mail válido/i);
-      await expect(page.locator('#auth-login-form')).toBeHidden();
-    }
+    await expect(page.locator('#auth-overlay')).toBeVisible({ timeout: 20000 });
+    var campo = page.locator('#auth-login-email');
+    var continuar = page.locator('#auth-login-step-email button[type="submit"]');
+
+    // Sem "@": o próprio navegador barra o envio (input type=email).
+    await campo.fill('email-invalido');
+    await continuar.click();
+    expect(await campo.evaluate(function(el) { return el.validity.typeMismatch; })).toBe(true);
+    await expect(page.locator('#auth-login-form')).toBeHidden();
+
+    // Sem domínio com ponto: o navegador aceita, a regra do app recusa.
+    await campo.fill('ana@exemplo');
+    await continuar.click();
+    await expect(page.locator('#auth-message')).toContainText(/e-mail válido/i);
+    await expect(page.locator('#auth-login-form')).toBeHidden();
   });
 });
 
