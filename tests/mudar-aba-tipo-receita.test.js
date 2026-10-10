@@ -27,6 +27,7 @@ test('mudar-aba com data-tipo="receita" abre o Novo já em Receita', () => {
     + 'var DADOS = { getConfig: function(){ return {}; } };'
     + 'var TablistKeyboard, LAZY, CONTAS, HEALTH_SERVICE, FINANCE_RECONCILER, ALERTAS, CONFIG_USER, INIT_MODALS;',
     ctx,
+    { filename: path.join(__dirname, 'stubs-mudar-aba.js') },
   );
   rodarNoContexto(ctx, path.join(root, 'js/modules/init-navigation.js'));
 
@@ -62,6 +63,7 @@ test('sem data-tipo o Novo abre como sempre (sem clicar em tipo)', () => {
     + 'var DADOS = { getConfig: function(){ return {}; } };'
     + 'var TablistKeyboard, LAZY, CONTAS, HEALTH_SERVICE, FINANCE_RECONCILER, ALERTAS, CONFIG_USER, INIT_MODALS;',
     ctx,
+    { filename: path.join(__dirname, 'stubs-mudar-aba.js') },
   );
   rodarNoContexto(ctx, path.join(root, 'js/modules/init-navigation.js'));
   let cliques = 0;

@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Painel de saúde: retenção D1/D7/D30 (pgTAP) —
--- supabase/migrations/20261009130000_saude_retencao_nuvem.sql
+-- supabase/migrations/20261009140000_saude_retencao_nuvem.sql
 --
 -- O que precisa ser verdade:
 --   • "voltou no dia N" = lançamento que chegou ao servidor em

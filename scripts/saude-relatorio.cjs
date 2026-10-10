@@ -243,7 +243,7 @@ function main(argv) {
   try {
     retencao = consultar(url, 'select * from saude.retencao_nuvem order by semana desc limit ' + SEMANAS_FUNIL);
   } catch (e) {
-    // Migração 20261009130000 ainda não aplicada (ou papel sem SELECT nela).
+    // Migração 20261009140000 ainda não aplicada (ou papel sem SELECT nela).
     console.error('[saude] retencao_nuvem indisponível: ' + e.message);
   }
   const decisao = decidirAlerta(resumo);

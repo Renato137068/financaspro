@@ -47,7 +47,7 @@ nem `anon` nem `authenticated` têm acesso a ele.
 `ativos_d30` = contas que lançaram algo 30 dias ou mais depois do cadastro.
 Fica nulo até a semana completar 30 dias, para não parecer queda.
 
-`d1`, `d7`, `d30` (migração `20261009130000_saude_retencao_nuvem.sql`) = contas
+`d1`, `d7`, `d30` (migração `20261009140000_saude_retencao_nuvem.sql`) = contas
 com pelo menos um lançamento que **chegou à nuvem** entre N e N+1 dias (blocos
 de 24 h) depois do cadastro: retenção no dia exato, não "em algum dia ≥ N".
 Mede "lançou", não "abriu"; quem lançou sem rede aparece no dia em que

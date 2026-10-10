@@ -65,6 +65,7 @@ servem.
 | `client_error_log.test.sql` | relatórios de erro do app: RLS fechada, escrita só pela Edge Function |
 | `saude_telemetria.test.sql` | telemetria do painel de saúde: tabela fechada ao cliente, soma de avisos, funil da semana, leitura pelo schema `saude` |
 | `saude_erros_frequentes.test.sql` | ranking de erros frequentes do painel de saúde |
+| `saude_retencao_nuvem.test.sql` | retenção D1, D7 e D30 por semana de cadastro no painel de saúde, leitura só pelo schema `saude` |
 
 O mesmo padrão "dono OU membro da org" cobre `Transaction`, `Account`, `Budget`
 e `RecurringTransaction` (as regras são geradas em laço na migração).
