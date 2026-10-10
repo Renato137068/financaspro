@@ -199,6 +199,8 @@ Deno.test("play-rtdn: OIDC do Pub/Sub com a conta de serviço esperada é aceito
     assert.equal((await playRtdn(rtdn(corpo, { authorization: "Bearer token-alheio" }))).status, 403);
     assert.equal((await playRtdn(rtdn(corpo, { authorization: "Bearer lixo" }))).status, 403);
     assert.equal((await playRtdn(rtdn(corpo, { authorization: "Bearer token-bom" }))).status, 200);
+    const consultas = rede.pedidosPara(/tokeninfo/);
+    assert.ok(consultas.length > 0 && consultas.every((p) => p.sinal), "tokeninfo sem tempo limite");
   });
 });
 
@@ -236,5 +238,48 @@ Deno.test("play-rtdn: falha ao falar com o Google libera o claim (500) para o Pu
     assert.equal(r.status, 500);
     assert.equal(sb.linhas("StripeWebhookEvent").length, 0, "claim liberado");
     assert.equal(sb.linhas("Subscription")[0].status, "ACTIVE", "não revogou por falha do Google");
+  });
+});
+
+// ─── Gravação recusada pelo banco ───────────────────────────────────────────
+// O supabase-js não lança em erro de banco. Antes, a escrita recusada passava
+// por gravada: 200 para a loja, claim mantido, aviso perdido para sempre.
+
+Deno.test("stripe-webhook: gravação recusada pelo banco é 500 e libera o claim", async () => {
+  await comAmbiente(STRIPE_VARS, async (logs) => {
+    const sb = bancoStripe();
+    sb.falharEm("Subscription", "update", "connection reset");
+    const r = await stripeWebhook(eventoStripe("evt_db", "customer.subscription.updated", ATUALIZADA));
+    assert.equal(r.status, 500);
+    assert.deepEqual(await r.json(), { error: "erro-interno" });
+    assert.equal(sb.linhas("StripeWebhookEvent").length, 0, "claim liberado");
+    assert.equal(sb.linhas("Subscription")[0].status, "TRIALING");
+    assert.ok(logs.error.some((l) => String(l[1]).includes("connection reset")));
+  });
+});
+
+Deno.test("stripe-webhook: status 'incomplete' do Stripe grava a assinatura (antes: recusado pelo enum, 200 e nada gravado)", async () => {
+  await comAmbiente(STRIPE_VARS, async () => {
+    const sb = bancoStripe();
+    stripe.respostas["subscriptions.retrieve"] = () => ({ ...ATUALIZADA, id: "sub_9", status: "incomplete", metadata: {} });
+    const sessao = { metadata: { orgId: "org1", planTier: "PRO" }, subscription: "sub_9", customer: "cus_9" };
+    const r = await stripeWebhook(eventoStripe("evt_inc", "checkout.session.completed", sessao));
+    assert.equal(r.status, 200);
+    const sub = sb.linhas("Subscription")[0];
+    assert.equal(sub.stripeSubId, "sub_9");
+    assert.equal(sub.status, "UNPAID");
+  });
+});
+
+Deno.test("play-rtdn: gravação recusada pelo banco é 500 e libera o claim", async () => {
+  const token = tokenDeCompra("h");
+  const { sb, sa } = await bancoPlay(token, EXPIRADA);
+  await comAmbiente({ ...BASE, PLAY_RTDN_SECRET: "s", GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: sa }, async () => {
+    google(new Rede(), { [token]: EXPIRADA as any }).instalar();
+    sb.falharEm("Subscription", "update");
+    const r = await playRtdn(rtdn(envelope("m7", { subscriptionNotification: { purchaseToken: token } }), { "x-rtdn-secret": "s" }));
+    assert.equal(r.status, 500);
+    assert.equal(sb.linhas("StripeWebhookEvent").length, 0, "claim liberado");
+    assert.equal(sb.linhas("Subscription")[0].status, "ACTIVE");
   });
 });

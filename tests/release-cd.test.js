@@ -221,3 +221,12 @@ describe('Novidades da versão na loja', () => {
     expect(texto).not.toMatch(/\b(fix|feat|chore|refactor)\(|\bcommit\b|\bbug\b/i);
   });
 });
+
+describe('portão do release (job verificar)', () => {
+  test('roda pgTAP e o smoke no navegador antes de publicar', () => {
+    const v = job('verificar');
+    expect(v).toMatch(/npm run test:db:ci/);
+    expect(v).toMatch(/npm run test:e2e:smoke/);
+    expect(v).toMatch(/postgres:16/);
+  });
+});

@@ -1,49 +1,61 @@
-# Execução da migração — passo a passo ordenado
+# Execução no Supabase — passo a passo ordenado
 
-Roteiro único que amarra tudo que já está no repo (schema Prisma, RLS, testes,
-Edge Functions) numa sequência executável. Faça na ordem. Detalhes de cada
-parte: `supabase/README.md` (RLS) e `supabase/functions/README.md` (functions).
+Roteiro para ligar um projeto Supabase ao app: schema, regras de acesso (RLS),
+Edge Functions e segredos. Faça na ordem. Detalhes de cada parte:
+`supabase/README.md` (RLS e testes do banco) e `supabase/functions/README.md`
+(funções e segredos).
 
-Legenda: 🧑 = você (precisa da conta) · 🤖 = eu faço (código, quando o projeto existir).
+Legenda: 🧑 = você (precisa da conta) · 🤖 = comando do repo.
+
+> **Migrações só pelo `scripts/deploy-supabase.cjs`.** Ele roda
+> `supabase db push`, que registra cada migração aplicada em
+> `supabase_migrations.schema_migrations` e aplica só as que faltam, em ordem.
+> Não aplique arquivo de `supabase/migrations/` com `psql` nem pelo SQL Editor:
+> o `db push` seguinte não sabe que ela entrou, tenta de novo e falha (algumas
+> migrações antigas não são reexecutáveis, e uma delas regrava limites de
+> plano antes de falhar).
 
 ---
 
-## Fase 1 — Projeto + schema + RLS
+## Fase 1 — Projeto e schema
 
-1. 🧑 **Criar o projeto** em supabase.com (login com GitHub). Anote de
-   **Settings → API**: `Project URL`, `anon key`, `service_role key`. De
-   **Settings → Database**: a **connection string**.
+1. 🧑 **Criar o projeto** em supabase.com. Anote de **Settings → API**:
+   `Project URL`, `anon key`, `service_role key`; de **Settings → Database**: a
+   senha do Postgres e a **connection string direta** (porta 5432; o pooler,
+   6543, não serve para migração).
 
-   > ⚠️ Prisma usa DUAS conexões: **migrations** exigem a conexão **direta**
-   > (porta 5432); o runtime usa o **pooler** (6543). Para os comandos abaixo,
-   > use a **direta**.
-
-2. 🤖 **Criar as tabelas** (migrations Prisma já versionadas em `prisma/migrations/`):
+2. 🤖 **Tabelas do Prisma** (migrações em `prisma/migrations/`). As migrações
+   do Supabase dependem delas, então vêm antes, uma vez por projeto novo:
    ```bash
    DATABASE_URL="<conexão DIRETA :5432>" npm run db:migrate:prod
    ```
 
-3. 🤖 **Semear os planos** (Gratuito, Pro e Business, com os preços
-   recalibrados). Pode rodar de novo quando quiser: atualiza preço e limites e
-   não apaga os IDs de preço do Stripe já gravados. Sem `psql`, cole o arquivo
-   no *SQL Editor* do painel do Supabase.
+3. 🤖 **Migrações do Supabase** (RLS, gatilhos, cotas, 2FA, agendamentos, tudo
+   em `supabase/migrations/`), pelo mesmo script do release:
+   ```bash
+   export SUPABASE_ACCESS_TOKEN=<token da conta> SUPABASE_PROJECT_REF=<REF> SUPABASE_DB_PASSWORD=<senha>
+   node scripts/deploy-supabase.cjs --dry-run        # mostra os comandos
+   node scripts/deploy-supabase.cjs --so-migracoes   # link + db push
+   npx supabase migration list                       # confere: local e remoto iguais
+   ```
+   Se a produção já recebeu alguma migração por `psql` (roteiros antigos
+   mandavam), o `migration list` mostra a linha só do lado local. Não rode o
+   arquivo de novo: marque como aplicada e siga.
+   ```bash
+   npx supabase migration repair --status applied <versão>   # ex.: 20260828120000
+   ```
+
+4. 🤖 **Semear os planos** (Gratuito, Pro e Business). Não é migração: é um
+   seed reexecutável, que atualiza preço e limites sem apagar os IDs de preço
+   do Stripe já gravados. Rode pelo SQL Editor do painel (cole o arquivo) ou:
    ```bash
    psql "<conexão DIRETA :5432>" -f supabase/seed/planos.sql
    ```
 
-4. 🤖 **Aplicar a RLS**:
+5. 🤖 **Testes do banco** antes de liberar dado real (Postgres local, sem tocar
+   na produção; ver `supabase/README.md`):
    ```bash
-   psql "<conexão DIRETA :5432>" -f supabase/migrations/20260828120000_rls_policies.sql
-   ```
-
-4b. 🤖 **Bootstrap de organização** (membro OWNER + plano FREE ao criar org):
-   ```bash
-   psql "<conexão DIRETA :5432>" -f supabase/migrations/20260901120000_org_bootstrap.sql
-   ```
-
-5. 🤖 **Rodar os testes de RLS** (precisa do Supabase CLI + Docker, ou pgTAP no banco):
-   ```bash
-   supabase test db
+   INTEGRATION_TEST_DATABASE_URL="postgresql://..." npm run test:db:ci
    ```
    ⛔ **Não libere dado real antes destes testes passarem.**
 
@@ -51,73 +63,63 @@ Legenda: 🧑 = você (precisa da conta) · 🤖 = eu faço (código, quando o p
 
 ## Fase 2 — Auth
 
-6. 🤖 **Trigger de auth** (`auth.users` → cria linha em `User`) — SQL pronto em
-   `docs/migracao-supabase-plano.md`. Vai junto de uma **migration Prisma** que
-   torna `passwordHash`/`passwordSalt`/`totp*` opcionais (o Supabase Auth passa
-   a cuidar). Faço via edição do `schema.prisma` + `db:migrate` para não gerar
-   drift.
+6. 🧑 No painel **Authentication → Providers**: habilitar e-mail/senha (e o que
+   mais quiser) e configurar os templates de e-mail. O gatilho que cria a
+   linha em `User` para cada conta nova já vem nas migrações (passo 3).
 
-7. 🧑 No painel **Authentication → Providers**: habilitar e-mail/senha (e o que
-   mais quiser). Configurar templates de e-mail.
-
-8. 🤖 **Front**: adicionar `SUPABASE_URL` + `SUPABASE_ANON_KEY` em
-   `js/core/config.js` (vazios por padrão, como o `API_BASE_URL`) e ligar o
-   `supabase-js` no login. App segue local-first se ficarem vazios.
+7. 🤖 **Front**: `SUPABASE_URL` e `SUPABASE_ANON_KEY` entram no build por
+   `scripts/inject-supabase-env.cjs` (vazios, o app segue só local).
 
 ---
 
-## Fase 3 — Edge Functions (billing)
+## Fase 3 — Edge Functions (cobrança)
 
-9. 🧑 **Deploy** (todas as funções; migrations junto): pelo workflow de release
-   (tag `vX.Y.Z`, `docs/release/entrega-continua.md`) ou à mão:
+8. 🧑 **Deploy das funções**: pelo workflow de release (tag `vX.Y.Z`, ver
+   `docs/release/entrega-continua.md`), que roda o mesmo script, ou à mão:
    ```bash
-   node scripts/deploy-supabase.cjs --dry-run   # confere
-   node scripts/deploy-supabase.cjs
+   node scripts/deploy-supabase.cjs --so-funcoes
    ```
+   O script sabe quais sobem com `--no-verify-jwt` (webhooks, cron e
+   relatório de erro); não publique função à mão sem essa lista.
 
-10. 🧑 **Secrets** (lista completa em `supabase/functions/README.md`):
-    `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`, `PLAY_PACKAGE_NAME`, `PLAY_RTDN_SECRET`,
-    `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `APP_URL`.
+9. 🧑 **Segredos** (lista completa em `supabase/functions/README.md`):
+   `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`, `PLAY_PACKAGE_NAME`,
+   `PLAY_RTDN_SERVICE_ACCOUNT`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`,
+   `APP_URL`, `BILLING_RECONCILE_SECRET`.
 
-11. 🧑 **Stripe dashboard**: endpoint de webhook →
-    `https://<REF>.supabase.co/functions/v1/stripe-webhook`, assinando os 5
-    eventos listados no README.
+10. 🧑 **Stripe dashboard**: endpoint de webhook →
+    `https://<REF>.supabase.co/functions/v1/stripe-webhook`, assinando os
+    eventos listados em `supabase/functions/README.md`.
 
-12. 🧑 **Play Console** (runbook `docs/play-store-billing-runbook.md`, Fase 3):
-    a URL de push do Pub/Sub passa a ser
-    `https://<REF>.supabase.co/functions/v1/play-rtdn?secret=<PLAY_RTDN_SECRET>`.
+11. 🧑 **Play Console / Pub/Sub** (runbook `docs/play-store-billing-runbook.md`):
+    a URL de push é só
+    `https://<REF>.supabase.co/functions/v1/play-rtdn`, **sem** `?secret=` (a
+    função recusa segredo na URL com 403: URL vai para log de proxy e de
+    plataforma). A autenticação é o token OIDC que o próprio Pub/Sub assina:
+    ```bash
+    gcloud pubsub subscriptions update <SUB> \
+      --push-auth-service-account=<SA>@<PROJETO>.iam.gserviceaccount.com
+    npx supabase secrets set PLAY_RTDN_SERVICE_ACCOUNT=<SA>@<PROJETO>.iam.gserviceaccount.com
+    # só se você definiu audience no push:
+    npx supabase secrets set PLAY_RTDN_AUDIENCE=<audience>
+    ```
+    A função confere o token no Google e exige que o e-mail seja o da conta de
+    serviço configurada. O segredo `PLAY_RTDN_SECRET` existe só para chamada
+    que você mesmo dispara (staging, `curl`), sempre no header
+    `x-rtdn-secret`; o Pub/Sub não manda header próprio. Sem nenhum dos dois
+    configurados, a função recusa tudo (503).
 
-13. 🤖 **Front**: apontar a compra do app para a function `play-verify` e o
-    checkout web para `stripe-checkout`.
+12. 🧑 **Reconciliação diária** (`billing-reconcile`, agendada pelo `pg_cron`
+    nas migrações): habilite as extensões `pg_cron` e `pg_net` (**Database →
+    Extensions**) e grave no Vault do projeto `fp_project_url` e
+    `fp_billing_reconcile_secret` (o mesmo valor de `BILLING_RECONCILE_SECRET`).
+    Sem eles, o agendamento roda, avisa no log do banco e não chama nada.
 
 ---
 
-## Fase 4 — Sync
+## Fase 4 — Conferir
 
-14. 🤖 Reescrever a camada de sync do `js/core/dados.js` para `supabase-js`
-    (`upsert`/`select` com RLS) no lugar de `/api/v1/sync`. Núcleo local
-    (IndexedDB) e o guard `_apiAtiva()` continuam.
-
-15. 🧑 Testar multi-dispositivo.
-
----
-
-## Fase 5 — Desligar a infra antiga
-
-16. ✅ Removidos do repo o backend Express, os workers BullMQ e o Dockerfile (ADR 0007).
-17. 🧑 Cancelar Neon, Upstash e Railway.
-18. 🤖 (Opcional) Emails reais: trocar o stub `notify()` das functions por Resend.
-
----
-
-## Estado atual (o que já está pronto no repo)
-
-| Item | Arquivo | Executado? |
-|---|---|---|
-| Plano de arquitetura | `docs/migracao-supabase-plano.md` | — |
-| RLS + testes pgTAP | `supabase/migrations/…rls_policies.sql`, `supabase/tests/…` | ❌ (sem Postgres no ambiente) |
-| Edge Functions Play | `supabase/functions/play-*`, `_shared/*` | ❌ (sem Deno no ambiente) |
-| Edge Functions Stripe | `supabase/functions/stripe-*`, `_shared/stripe*` | ❌ |
-
-Tudo revisado à mão; nada rodado aqui. A execução começa na **Fase 1**, que
-depende do projeto Supabase.
+13. 🧑 Testar multi-dispositivo (entrar em dois aparelhos, lançar num, ver no
+    outro) e uma compra de teste na Play.
+14. 🧑 `npx supabase migration list` depois de cada release: local e remoto
+    devem bater.

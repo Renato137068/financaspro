@@ -15,6 +15,7 @@ import { BILLING } from './billing.js';
 import { AUTH_BIOMETRIC } from './auth-biometric.js';
 import { PIN_SECURITY } from './pin.js';
 import { DADOS } from './core/dados.js';
+import { FUNIL } from './utilities/funil.js';
 
 var _authFocusTrap = null;
 var _authDesbloqueadoNestaCarga = false;
@@ -544,6 +545,8 @@ function setupAuthUI() {
       totpForm.style.display = 'none';
       totpForm.hidden = true;
     }
+    // Antes do título e da mensagem: showLoginStep escreve os do login.
+    if (name !== 'login') showLoginStep('email');
     if (screenTitle) {
       screenTitle.textContent = name === 'register' ? 'Criar conta' : 'Entrar';
     }
@@ -555,7 +558,6 @@ function setupAuthUI() {
     if (name === 'login') {
       _prefillLogin();
     } else {
-      showLoginStep('email');
       var focusTarget = document.getElementById('auth-register-name');
       if (focusTarget) focusTarget.focus();
     }
@@ -996,16 +998,21 @@ function setupAuthUI() {
       cloudReady.then(function() {
         return DADOS.registrarApi(nome, email, password);
       }).then(function(result) {
+        // Passo 5 do funil: só o marco, nada da conta (nem e-mail, nem nome).
+        if (result && FUNIL.marco) {
+          FUNIL.marco(FUNIL.E.CONTA_CRIADA, { dia: FUNIL.diasDeUso() });
+        }
         if (result && result.needsEmailConfirmation) {
-          if (message) {
-            message.textContent = 'Conta criada! Abra o e-mail de confirmação e depois toque em Entrar com a mesma senha.';
-          }
           UTILS.mostrarToast('Confirme seu e-mail para entrar.', 'info');
           _lembrarUsuario(email, nome);
           showTab('login');
           var loginEmail = document.getElementById('auth-login-email');
           if (loginEmail) loginEmail.value = email;
           showLoginStep('password');
+          // Depois da troca de passo, que escreve a sua própria instrução.
+          if (message) {
+            message.textContent = 'Conta criada! Abra o e-mail de confirmação e depois toque em Entrar com a mesma senha.';
+          }
           _authMostrarReenviarEmail(true, email);
           return false;
         }

@@ -5,6 +5,8 @@
 // com a Web Crypto nativa (crypto.subtle) e usa fetch. Verifica assinaturas via
 // purchases.subscriptionsv2.get.
 
+import { TEMPO_LIMITE_MS } from "./erro.ts";
+
 const SCOPE = "https://www.googleapis.com/auth/androidpublisher";
 const DEFAULT_TOKEN_URI = "https://oauth2.googleapis.com/token";
 const API_BASE =
@@ -97,6 +99,24 @@ async function signJwt(sa: ServiceAccount, now: number): Promise<string> {
   return `${input}.${b64url(sig)}`;
 }
 
+/**
+ * fetch ao Google com tempo limite. Sem ele, um Google lento prendia a função
+ * até o teto da plataforma; quem chamava (app, RTDN, reconciliação) só via o
+ * corte. Estourou ou caiu a rede: 502, como qualquer falha do Google, e o
+ * RTDN libera o claim para o Pub/Sub reentregar.
+ */
+async function buscarGoogle(url: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, { ...init, signal: AbortSignal.timeout(TEMPO_LIMITE_MS) });
+  } catch (e) {
+    const tempo = (e as Error)?.name === "TimeoutError";
+    console.error("Google Play: " + (tempo ? "sem resposta em " + TEMPO_LIMITE_MS + " ms" : "falha de rede"), (e as Error)?.message);
+    const err: any = new Error(tempo ? "google-play-tempo-esgotado" : "google-play-rede");
+    err.status = 502;
+    throw err;
+  }
+}
+
 async function getAccessToken(sa: ServiceAccount): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   const cached = tokenCache.get(sa.client_email);
@@ -104,7 +124,7 @@ async function getAccessToken(sa: ServiceAccount): Promise<string> {
 
   const tokenUri = sa.token_uri || DEFAULT_TOKEN_URI;
   const assertion = await signJwt(sa, now);
-  const res = await fetch(tokenUri, {
+  const res = await buscarGoogle(tokenUri, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -181,7 +201,7 @@ export async function getSubscriptionV2(opts: {
     encodeURIComponent(opts.packageName)
   }/purchases/subscriptionsv2/tokens/${encodeURIComponent(opts.purchaseToken)}`;
 
-  const res = await fetch(url, {
+  const res = await buscarGoogle(url, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   if (res.status === 404 || res.status === 410) {

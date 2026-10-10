@@ -13,7 +13,8 @@
  */
 const { carregarScript } = require('./helpers/carregar-script.cjs');
 const { regrasDoBilling } = require('./helpers/billing-regras.cjs');
-const billing = regrasDoBilling(carregarScript('js/billing.js'));
+const BILLING = carregarScript('js/billing.js');
+const billing = regrasDoBilling(BILLING);
 
 const DIA = 86400000;
 
@@ -103,5 +104,68 @@ describe('Aviso de fim de trial', function() {
       true,
     );
     expect(alerta).toBeNull();
+  });
+});
+
+describe('Pedido do Pro de boas-vindas (claimWelcomeTrial)', function() {
+  // A marca local de "já pedido" só pode nascer de uma recusa definitiva. O
+  // servidor antigo respondia 409 "assinatura-ja-existe" até para a FREE que
+  // toda org ganha ao nascer, e o app desistia para sempre (auditoria do
+  // servidor, 09/10).
+  const KEY = BILLING._WELCOME_KEY;
+  let resposta;
+  const originais = {};
+
+  beforeAll(function() {
+    ['isCloudUser', '_useSupabaseBilling', 'ensureOrg', 'sync', 'invalidateCache'].forEach(function(k) {
+      originais[k] = BILLING[k];
+    });
+    BILLING.isCloudUser = () => true;
+    BILLING._useSupabaseBilling = () => true;
+    BILLING.ensureOrg = () => Promise.resolve('org1');
+    BILLING.sync = () => Promise.resolve(null);
+    BILLING.invalidateCache = () => {};
+    global.SUPA_BILLING = { invoke: jest.fn(() => resposta()) };
+  });
+
+  afterAll(function() {
+    Object.assign(BILLING, originais);
+    delete global.SUPA_BILLING;
+  });
+
+  beforeEach(function() {
+    localStorage.removeItem(KEY);
+    global.SUPA_BILLING.invoke.mockClear();
+  });
+
+  function recusa(status, codigo) {
+    return () => Promise.reject(Object.assign(new Error(codigo), { status: status }));
+  }
+
+  test.each([
+    ['welcome-trial-ja-concedido'],
+    ['assinatura-paga-existe'],
+  ])('409 %s marca e não pede de novo', async function(codigo) {
+    resposta = recusa(409, codigo);
+    await BILLING.claimWelcomeTrial();
+    expect(localStorage.getItem(KEY)).toBe('1');
+    await BILLING.claimWelcomeTrial();
+    expect(global.SUPA_BILLING.invoke).toHaveBeenCalledTimes(1);
+  });
+
+  test.each([
+    [409, 'assinatura-ja-existe'],
+    [500, 'erro-interno'],
+    [401, 'nao-autenticado'],
+  ])('%s %s não marca: tenta no próximo login', async function(status, codigo) {
+    resposta = recusa(status, codigo);
+    await expect(BILLING.claimWelcomeTrial()).resolves.toBeNull();
+    expect(localStorage.getItem(KEY)).toBeNull();
+  });
+
+  test('concedido marca', async function() {
+    resposta = () => Promise.resolve({ tier: 'PRO', status: 'TRIALING' });
+    await BILLING.claimWelcomeTrial();
+    expect(localStorage.getItem(KEY)).toBe('1');
   });
 });

@@ -42,12 +42,14 @@ function loadSupaSync(mocks) {
   var mergeCalled = false;
 
   function chain(table) {
+    var ordem = null;
     var api = {
       select: function() { return api; },
       is: function() { return api; },
       eq: function() { return api; },
+      order: function(col) { ordem = col; return api; },
       range: function(from, to) {
-        selects.push({ table: table, from: from, to: to });
+        selects.push({ table: table, from: from, to: to, order: ordem });
         var batch = mocks.rows && mocks.rows[table] ? mocks.rows[table] : [];
         return Promise.resolve({ data: batch, error: null });
       },
@@ -168,6 +170,20 @@ describe('supabase-sync — pull mockado', function() {
     expect(ctx.mergeCalled).toBe(true);
     expect(ctx.DADOS._lastSnapshot.transactions.length).toBe(1);
     expect(ctx.upserts.some(function(u) { return u.table === 'Account'; })).toBe(true);
+  });
+
+  test('pull pagina as 4 tabelas em ordem de id (páginas estáveis entre si)', async function() {
+    // Sem order, o Postgres não garante que a página 2 continue de onde a 1
+    // parou: linha repetida ou pulada (auditoria do servidor, 09/10).
+    var ctx = loadSupaSync({
+      rows: { Transaction: [], Account: [], Budget: [], RecurringTransaction: [] },
+      userConfig: null,
+    });
+    await ctx.SUPA_SYNC.pull();
+    var paginadas = ctx.selects.filter(function(s) { return s.from === 0; });
+    expect(paginadas.map(function(s) { return s.table; }).sort())
+      .toEqual(['Account', 'Budget', 'RecurringTransaction', 'Transaction']);
+    paginadas.forEach(function(s) { expect(s.order).toBe('id'); });
   });
 
   test('reconcile não reenvia deletedAt:null (não ressuscita exclusão de outro aparelho)', async function() {

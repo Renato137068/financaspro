@@ -55,7 +55,10 @@ const APP_BOOTSTRAP = {
         } else if (typeof renderLucideIcons === 'function') {
           renderLucideIcons();
         }
-        var abaParam = _bootParams.get('aba');
+        window.__fpBootPronto = true;
+        // ?aba= do endereço, ou a do atalho do ícone no Android (capacitor-init.js).
+        var abaParam = _bootParams.get('aba') || window.__fpAbaAtalho;
+        window.__fpAbaAtalho = null;
         if (abaParam && typeof mudarAba === 'function') {
           // Aba vinda de deep link pode não existir (link antigo, typo).
         // Falhar aqui não impede o app de abrir no dashboard.

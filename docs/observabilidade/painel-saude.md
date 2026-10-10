@@ -41,10 +41,17 @@ nem `anon` nem `authenticated` têm acesso a ele.
 | `saude.versao_diaria` | dia e versão | `sessoes`, `erros`, `erros_por_mil` |
 | `saude.versao_resumo` | versão (janela de 30 dias) | `primeiro_dia`, `ultimo_dia`, `sessoes`, `erros`, `erros_por_mil` |
 | `saude.funil_nuvem` | semana de cadastro | `contas`, `com_lancamento`, `ativos_d30`, `com_trial`, `assinantes` |
+| `saude.retencao_nuvem` | semana de cadastro | `contas`, `d1`, `d7`, `d30` e as mesmas em `%` (`d1_pct`…) |
 | `saude.erros_frequentes` | versão, mensagem e onde (últimos 7 dias) | `ocorrencias`, `primeira`, `ultima`, `pilha` (1ª linha de código do caso mais recente), `novo` |
 
 `ativos_d30` = contas que lançaram algo 30 dias ou mais depois do cadastro.
 Fica nulo até a semana completar 30 dias, para não parecer queda.
+
+`d1`, `d7`, `d30` (migração `20261009140000_saude_retencao_nuvem.sql`) = contas
+com pelo menos um lançamento que **chegou à nuvem** entre N e N+1 dias (blocos
+de 24 h) depois do cadastro: retenção no dia exato, não "em algum dia ≥ N".
+Mede "lançou", não "abriu"; quem lançou sem rede aparece no dia em que
+sincronizou. Cada coluna fica nula até a semana inteira passar do dia N.
 
 No dia a dia: **Supabase → SQL Editor** →
 `select * from saude.versao_resumo order by ultimo_dia desc;` e
@@ -97,6 +104,8 @@ Rodar localmente: `SAUDE_DATABASE_URL=postgresql://... node scripts/saude-relato
 - `tests/observability-envio.test.js`: 1×/dia, opt-out, modo local.
 - `supabase/tests/saude_erros_frequentes.test.sql` (pgTAP): agrupamento,
   janela, pilha, `novo` e quem lê.
+- `supabase/tests/saude_retencao_nuvem.test.sql` (pgTAP): janelas do D1/D7/D30,
+  limites, nulos de semana recente e quem lê.
 - `tests/saude-relatorio.test.js`: as regras dos alertas e o workflow.
 - `tests/lifecycle-real.test.js`, `tests/supabase-sync.test.js`: falha de boot
   e de sync viram relatório (rede e cota, não).

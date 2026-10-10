@@ -4,6 +4,7 @@
 import { adminClient, findPlanById, findSubscription, orgRoleOf } from "../_shared/db.ts";
 import { notify } from "../_shared/email.ts";
 import { corsHeadersFor, corsPreflight } from "../_shared/cors.ts";
+import { erroParaCliente } from "../_shared/erro.ts";
 
 function json(req: Request, body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -58,6 +59,8 @@ Deno.serve(async (req) => {
         .eq("orgId", orgId)
         .is("acceptedAt", null)
         .gt("expiresAt", new Date().toISOString());
+      // Contagem que falhou não pode valer zero e liberar assento a mais.
+      if (mem.error || pend.error) throw new Error("db contagem de assentos: " + (mem.error || pend.error)!.message);
       const seats = (mem.count || 0) + (pend.count || 0);
       if (seats >= maxUsers) return json(req, { error: "limite-membros" }, 402);
     }
@@ -100,9 +103,7 @@ Deno.serve(async (req) => {
 
     return json(req, { data: inv });
   } catch (err) {
-    const status = (err as any)?.status ?? 500;
-    const message = (err as Error)?.message ?? "erro-interno";
-    if (status >= 500) console.error("org-invite erro", message);
-    return json(req, { error: message }, status);
+    const { status, error } = erroParaCliente(err, "org-invite");
+    return json(req, { error }, status);
   }
 });

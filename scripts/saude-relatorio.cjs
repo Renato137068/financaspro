@@ -6,7 +6,8 @@
  * script lê por conexão direta, com psql, e monta um relatório em Markdown:
  *   • por versão (últimos 30 dias): sessões, erros e erros por 1.000 sessões;
  *   • os erros mais frequentes dos últimos 7 dias (mensagem, onde, pilha);
- *   • funil de nuvem das últimas semanas de cadastro.
+ *   • funil de nuvem das últimas semanas de cadastro;
+ *   • retenção D1/D7/D30 por semana de cadastro (saude.retencao_nuvem).
  *
  * E decide os alertas (listarAlertas), cada um com o título da sua issue:
  *   • a versão mais nova com uso suficiente piorou em relação à anterior;
@@ -197,6 +198,19 @@ function montarRelatorio(resumo, funil, decisao, extra) {
   });
   if (!funil || !funil.length) linhas.push('| — | — | — | — | — | — |');
   linhas.push('', '"Ativas no 30º dia" fica — até a semana completar 30 dias.', '');
+  if (x.retencao) {
+    const pct = (n, p) => (n === null || n === undefined ? '—' : n + ' (' + p + '%)');
+    linhas.push('## Retenção (por semana de cadastro)', '');
+    linhas.push('| Semana | Contas | Lançaram no D1 | No D7 | No D30 |');
+    linhas.push('|---|---:|---:|---:|---:|');
+    x.retencao.forEach((r) => {
+      linhas.push('| ' + [r.semana, numero(r.contas), pct(r.d1, r.d1_pct), pct(r.d7, r.d7_pct),
+        pct(r.d30, r.d30_pct)].join(' | ') + ' |');
+    });
+    if (!x.retencao.length) linhas.push('| — | — | — | — | — |');
+    linhas.push('', 'Dia N = lançamento que chegou à nuvem entre N e N+1 dias depois do cadastro.'
+      + ' Fica — até a semana inteira passar do dia N.', '');
+  }
   return linhas.join('\n');
 }
 
@@ -225,9 +239,16 @@ function main(argv) {
     // Migração 20261006120000 ainda não aplicada (ou papel sem SELECT nela).
     console.error('[saude] erros_frequentes indisponível: ' + e.message);
   }
+  let retencao;
+  try {
+    retencao = consultar(url, 'select * from saude.retencao_nuvem order by semana desc limit ' + SEMANAS_FUNIL);
+  } catch (e) {
+    // Migração 20261009140000 ainda não aplicada (ou papel sem SELECT nela).
+    console.error('[saude] retencao_nuvem indisponível: ' + e.message);
+  }
   const decisao = decidirAlerta(resumo);
   const alertas = listarAlertas({ resumo, erros, ultimoDiaComSessao });
-  const texto = montarRelatorio(resumo, funil, decisao, { erros, alertas, ultimoDiaComSessao });
+  const texto = montarRelatorio(resumo, funil, decisao, { erros, alertas, ultimoDiaComSessao, retencao });
   process.stdout.write(texto + '\n');
 
   const i = argv.indexOf('--saida');

@@ -114,10 +114,8 @@ jobs:
         if: matrix.node-version == '22.x'
         run: npx playwright install chromium
 
-      - name: Smoke boot dist (pageerror)
-        if: matrix.node-version == '22.x'
-        run: npm run test:e2e:smoke
-
+      # O smoke (smoke-boot, onboarding, billing) já roda dentro da suíte
+      # completa abaixo; rodá-lo antes repetia as 3 specs a cada PR.
       - name: Testes E2E
         if: matrix.node-version == '22.x'
         run: npm run test:e2e

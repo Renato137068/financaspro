@@ -192,3 +192,50 @@ Deno.test("billing-reconcile: erro do banco vira 500 sem detalhe", async () => {
     assert.ok(logs.error.length > 0);
   });
 });
+
+// ─── Gravação recusada não conta como feita ─────────────────────────────────
+
+Deno.test("billing-reconcile: Stripe com gravação recusada conta falha, não atualizada", async () => {
+  await comAmbiente({ ...BASE, STRIPE_SECRET_KEY: "sk_test_x" }, async () => {
+    const sb = banco([{ id: "s1", orgId: "org1", planId: "plan_pro", stripeSubId: "sub_1", status: "ACTIVE" }]);
+    sb.falharEm("Subscription", "update");
+    stripe.respostas["subscriptions.retrieve"] = (id: string) => ({ id, status: "past_due", cancel_at_period_end: false });
+    const corpo = await (await reconciliar(pedido())).json();
+    assert.deepEqual(corpo.stripe, { conferidas: 1, atualizadas: 0, falhas: 1 });
+  });
+});
+
+Deno.test("billing-reconcile: status do Stripe fora do enum é mapeado (paused vira UNPAID, incomplete_expired vira CANCELED)", async () => {
+  await comAmbiente({ ...BASE, STRIPE_SECRET_KEY: "sk_test_x" }, async () => {
+    const sb = banco([
+      { id: "s1", orgId: "org1", planId: "plan_pro", stripeSubId: "sub_p", status: "TRIALING" },
+      { id: "s2", orgId: "org2", planId: "plan_pro", stripeSubId: "sub_x", status: "UNPAID" },
+    ]);
+    stripe.respostas["subscriptions.retrieve"] = (id: string) => ({
+      id, status: id === "sub_p" ? "paused" : "incomplete_expired", cancel_at_period_end: false,
+    });
+    const corpo = await (await reconciliar(pedido())).json();
+    assert.deepEqual(corpo.stripe, { conferidas: 2, atualizadas: 2, falhas: 0 });
+    assert.deepEqual(sb.linhas("Subscription").map((s) => s.status), ["UNPAID", "CANCELED"]);
+  });
+});
+
+Deno.test("billing-reconcile: Pro de boas-vindas (welcome:) não é consultado no Stripe", async () => {
+  await comAmbiente({ ...BASE, STRIPE_SECRET_KEY: "sk_test_x" }, async () => {
+    banco([{ id: "s1", orgId: "org1", planId: "plan_pro", stripeSubId: "welcome:u1", status: "TRIALING" }]);
+    const corpo = await (await reconciliar(pedido())).json();
+    assert.deepEqual(corpo.stripe, { conferidas: 0, atualizadas: 0, falhas: 0 });
+    assert.equal(stripe.chamadas.length, 0);
+  });
+});
+
+Deno.test("billing-reconcile: Play revogada pela data com gravação recusada conta falha, não revogada", async () => {
+  await comAmbiente(BASE, async () => {
+    const sb = banco([play("org1", tokenDeCompra("z"), SEMANA_PASSADA)]);
+    sb.falharEm("Subscription", "update");
+    const corpo = await (await reconciliar(pedido())).json();
+    assert.equal(corpo.play.revogadas, 0);
+    assert.equal(corpo.play.falhas, 1);
+    assert.equal(sb.linhas("Subscription")[0].status, "ACTIVE");
+  });
+});

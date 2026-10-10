@@ -6,6 +6,7 @@
 import { adminClient, orgRoleOf } from "../_shared/db.ts";
 import { verifyPurchase } from "../_shared/play-billing.ts";
 import { corsHeadersFor, corsPreflight } from "../_shared/cors.ts";
+import { erroParaCliente } from "../_shared/erro.ts";
 
 function json(req: Request, body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -39,9 +40,7 @@ Deno.serve(async (req) => {
     const out = await verifyPurchase(sb, orgId, { productId, purchaseToken, packageName });
     return json(req, { data: out });
   } catch (err) {
-    const status = (err as any)?.status ?? 500;
-    const message = (err as Error)?.message ?? "erro-interno";
-    if (status >= 500) console.error("play-verify erro", message);
-    return json(req, { error: message }, status);
+    const { status, error } = erroParaCliente(err, "play-verify");
+    return json(req, { error }, status);
   }
 });

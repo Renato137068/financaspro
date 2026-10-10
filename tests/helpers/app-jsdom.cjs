@@ -141,7 +141,16 @@ function criarSupabaseFalso(opts) {
         return ok({ session: sessao, user: user });
       },
       signOut: () => { sessao = null; setTimeout(() => avisar('SIGNED_OUT'), 0); return Promise.resolve({ error: null }); },
-      signUp: (cred) => { chamadas.push({ metodo: 'signUp', email: cred.email }); return ok({ user: null, session: null }); },
+      /* `opts.jaCadastrados`: e-mails que o projeto recusa com "User already
+         registered" (projeto sem confirmação de e-mail). */
+      signUp: (cred) => {
+        const dados = (cred.options && cred.options.data) || {};
+        chamadas.push({ metodo: 'signUp', email: cred.email, nome: dados.name });
+        if ((opts.jaCadastrados || []).indexOf(cred.email) >= 0) {
+          return Promise.resolve({ data: { user: null, session: null }, error: { message: 'User already registered', status: 422, code: 'user_already_exists' } });
+        }
+        return ok({ user: null, session: null });
+      },
       resetPasswordForEmail: (email) => { chamadas.push({ metodo: 'resetPasswordForEmail', email: email }); return ok({}); },
       resend: () => ok({}),
       setSession: (s) => { sessao = s; return ok({ session: s }); },
@@ -152,7 +161,10 @@ function criarSupabaseFalso(opts) {
         enroll: () => ok({}), challengeAndVerify: () => ok({}), unenroll: () => ok({}),
       },
     },
-    from: () => consulta(),
+    /* `opts.from(tabela)`: um teste pode servir as tabelas que lhe interessam
+       (devolvendo um construtor de consulta); o que ficar de fora é a
+       consulta vazia de sempre. */
+    from: (tabela) => (opts.from && opts.from(tabela)) || consulta(),
     rpc: (nome) => {
       if (nome === 'fp_delete_own_account') {
         chamadas.push({ metodo: 'rpc', nome: nome });
@@ -196,7 +208,8 @@ function completarJanela(w) {
  * @param {Array}  [opts.transacoes]   fp-transacoes inicial
  * @param {object} [opts.storage]      chaves extras do localStorage
  * @param {object|boolean} [opts.nuvem] build de nuvem com Supabase falso;
- *                                      { contas: {email: senha}, sessao, mfa: {codigo} }
+ *                                      { contas: {email: senha}, sessao, mfa: {codigo},
+ *                                        jaCadastrados: [email], from: (tabela) => consulta }
  * @param {string} [opts.agora]       data/hora ISO em que o app "acorda" (o relógio da
  *                                      janela anda a partir dela). Padrão: AGORA_PADRAO;
  *                                      'real' deixa o relógio da máquina

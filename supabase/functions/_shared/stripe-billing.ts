@@ -190,6 +190,43 @@ function periodo(stripeSub: any): { inicio: string | null; fim: string | null } 
   };
 }
 
+/**
+ * Status do Stripe → enum SubStatus do banco (prisma/schema.prisma: TRIALING,
+ * ACTIVE, PAST_DUE, CANCELED, UNPAID).
+ *
+ * Antes gravava `String(status).toUpperCase()`, e os status que não existem no
+ * enum eram recusados pelo banco em silêncio: num checkout `incomplete` o
+ * stripeSubId nunca era gravado (achado 2 da auditoria do servidor, 09/10).
+ *
+ * - incomplete: primeira cobrança ainda não passou (cartão recusado ou 3DS
+ *   pendente). UNPAID, e não PAST_DUE: o app mantém o Pro em PAST_DUE até o
+ *   fim do período, e aqui nada foi pago ainda. Quando a cobrança passa, o
+ *   customer.subscription.updated grava ACTIVE.
+ * - paused: trial acabou sem forma de pagamento. Sem acesso, mas pode voltar
+ *   (resume): UNPAID, que a reconciliação continua conferindo (ela pula só
+ *   CANCELED).
+ * - incomplete_expired: a primeira cobrança venceu e a assinatura morreu.
+ *
+ * Status que o Stripe vier a criar lança erro: o webhook responde 500 e a loja
+ * reentrega, em vez de gravar um palpite.
+ */
+const STATUS_STRIPE: Record<string, string> = {
+  trialing: "TRIALING",
+  active: "ACTIVE",
+  past_due: "PAST_DUE",
+  canceled: "CANCELED",
+  unpaid: "UNPAID",
+  incomplete: "UNPAID",
+  paused: "UNPAID",
+  incomplete_expired: "CANCELED",
+};
+
+export function statusDoStripe(status: unknown): string {
+  const s = STATUS_STRIPE[String(status ?? "").toLowerCase()];
+  if (!s) throw httpError(500, "status-stripe-desconhecido: " + String(status));
+  return s;
+}
+
 /** Segundos Unix → ISO; ausente vira null (antes, `new Date(NaN)` derrubava o webhook). */
 function iso(segundos: unknown): string | null {
   return typeof segundos === "number" && Number.isFinite(segundos) ? new Date(segundos * 1000).toISOString() : null;
@@ -287,7 +324,7 @@ async function onSubscriptionUpdated(sb: SupabaseClient, stripeSub: any) {
   if (!sub) return;
   const p = periodo(stripeSub);
   await updateSubscription(sb, sub.orgId, semVazios({
-    status: String(stripeSub.status).toUpperCase(),
+    status: statusDoStripe(stripeSub.status),
     currentPeriodStart: p.inicio,
     currentPeriodEnd: p.fim,
     cancelAtPeriodEnd: stripeSub.cancel_at_period_end,
@@ -307,7 +344,7 @@ async function onCheckoutCompleted(sb: SupabaseClient, stripe: Stripe, session: 
   await upsertSubscriptionStripe(sb, orgId, {
     ...semVazios({ currentPeriodStart: p.inicio, currentPeriodEnd: p.fim }),
     planId: plan.id,
-    status: String(stripeSub.status).toUpperCase(),
+    status: statusDoStripe(stripeSub.status),
     billingInterval: session.metadata?.interval || "monthly",
     stripeCustomerId: String(session.customer),
     stripeSubId: stripeSub.id,

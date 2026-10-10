@@ -37,6 +37,23 @@ jobs:
   verificar:
     name: Versão e testes
     runs-on: ubuntu-latest
+    # Banco descartável para o pgTAP: o mesmo do CI. Antes, o release não
+    # rodava as regras de acesso nem o smoke no navegador (auditoria de
+    # testes de ponta a ponta, 09/10).
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: financaspro
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: financaspro_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
     steps:
@@ -74,6 +91,18 @@ jobs:
       - run: npm run build
       - run: npm run check:bundle
       - run: npm audit --audit-level=high
+
+      - name: pgTAP (regras de acesso, cotas, 2FA)
+        run: |
+          sudo apt-get update && sudo apt-get install -y postgresql-client postgresql-16-pgtap
+          npm run test:db:ci
+        env:
+          INTEGRATION_TEST_DATABASE_URL: postgresql://financaspro:testpass@localhost:5432/financaspro_test
+
+      - name: Smoke no navegador (build da tag)
+        run: |
+          npx playwright install chromium
+          npm run test:e2e:smoke
 
   supabase:
     name: Supabase (migrações e Edge Functions)

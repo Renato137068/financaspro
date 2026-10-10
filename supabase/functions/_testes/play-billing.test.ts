@@ -342,3 +342,27 @@ Deno.test("resolveTier: só os quatro SKUs do app", () => {
   assert.equal(resolveTier("financaspro.business.yearly"), "BUSINESS");
   assert.equal(resolveTier("financaspro.pro.weekly"), null);
 });
+
+// ─── Tempo limite nas chamadas ao Google ────────────────────────────────────
+
+Deno.test("Google: toda chamada leva tempo limite; estourou, 502 sem gravar nada", async () => {
+  const token = tokenDeCompra("lento");
+  const { rede, vars } = await comGoogle({ [token]: ATIVA("financaspro.pro.monthly") });
+  await comAmbiente(vars, async () => {
+    const sb = banco();
+    await verifyPurchase(sb, "org1", { productId: "financaspro.pro.monthly", purchaseToken: token });
+    for (const p of rede.pedidos) assert.ok(p.sinal, "sem tempo limite: " + p.url);
+
+    // O Google não responde: o AbortSignal.timeout dispara TimeoutError.
+    rede.rota(/subscriptionsv2/, () => {
+      throw new DOMException("signal timed out", "TimeoutError");
+    });
+    const sb2 = banco();
+    await falhaCom(
+      verifyPurchase(sb2, "org1", { productId: "financaspro.pro.monthly", purchaseToken: token }),
+      502,
+      "google-play-tempo-esgotado",
+    );
+    assert.equal(sb2.escritas.length, 0);
+  });
+});

@@ -91,6 +91,46 @@
     return 'minimizar';
   };
 
+  /* Atalho do ícone ("Novo lançamento", res/xml/shortcuts.xml): abre o app
+     com https://app.financaspro.com/?aba=novo. Daqui só sai a troca de aba,
+     e só para abas da lista: o resto do link é ignorado (sessão e conta são
+     assunto de supabase.js, que não confia em link). */
+  var ABAS_DE_ATALHO = { novo: true, extrato: true };
+
+  function abaDoLink(url) {
+    try {
+      var u = new URL(url);
+      if (u.protocol !== 'https:' || u.hostname !== 'app.financaspro.com') return null;
+      var aba = u.searchParams.get('aba');
+      return ABAS_DE_ATALHO[aba] ? aba : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  window.__fpAbrirAbaDoLink = function(url) {
+    var aba = abaDoLink(url);
+    if (!aba) return false;
+    // Antes do boot terminar, app-bootstrap.js abre a aba guardada aqui.
+    if (window.__fpBootPronto && typeof window.mudarAba === 'function') window.mudarAba(aba);
+    else window.__fpAbaAtalho = aba;
+    return true;
+  };
+
+  if (plugins.App && !window.__fpAtalhoOuvindo) {
+    window.__fpAtalhoOuvindo = true;
+    if (plugins.App.getLaunchUrl) {
+      plugins.App.getLaunchUrl().then(function(r) {
+        if (r && r.url) window.__fpAbrirAbaDoLink(r.url);
+      }).catch(function() {});
+    }
+    if (plugins.App.addListener) {
+      plugins.App.addListener('appUrlOpen', function(ev) {
+        if (ev && ev.url) window.__fpAbrirAbaDoLink(ev.url);
+      });
+    }
+  }
+
   if (!window.__fpVoltarOuvindo) {
     window.__fpVoltarOuvindo = true;
     document.addEventListener('backbutton', function(e) {

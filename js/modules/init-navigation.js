@@ -195,6 +195,11 @@ const INIT_NAVIGATION = {
         if (aba && typeof mudarAba === 'function') {
           mudarAba(aba, orcSub ? { orcSub: orcSub } : null);
         }
+        // data-tipo="receita" (passo "renda" do guia e aviso do saldo): o Novo
+        // já abre em Receita.
+        var tipo = target.dataset.tipo;
+        var btnTipo = tipo && document.querySelector('.tipo-btn[data-tipo="' + tipo + '"]');
+        if (btnTipo) btnTipo.click();
       },
       'orc-sub-aba': function() {
         var sub = target.dataset.orcSub || 'planejamento';

@@ -130,3 +130,17 @@ Deno.test("org-invite: quem pode convidar e o que é aceito", async () => {
     assert.equal(get.status, 405);
   });
 });
+
+Deno.test("org-invite: e-mail com tempo limite; Resend sem resposta não derruba o convite", async () => {
+  await comAmbiente(VARS, async (logs) => {
+    const rede = new Rede().rota(/api\.resend\.com\/emails/, () => {
+      throw new DOMException("signal timed out", "TimeoutError");
+    }).instalar();
+    const sb = banco("plan_pro");
+    const r = await convidar({ orgId: "org1", email: "bia@exemplo.com" });
+    assert.equal(r.status, 200);
+    assert.equal(sb.linhas("Invitation").length, 1);
+    assert.ok(rede.pedidosPara(/resend/)[0].sinal, "fetch do Resend sem tempo limite");
+    assert.ok(logs.error.some((l) => String(l[0]).includes("resend-sem-resposta")));
+  });
+});

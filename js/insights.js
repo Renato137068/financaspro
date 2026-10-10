@@ -55,8 +55,8 @@ const INSIGHTS = {
       return !!(cfg.orcamentos && Object.keys(cfg.orcamentos).length);
     }, { padrao: false }).valor;
     return {
-      perfil:    !!(cfg.nome && cfg.nome !== 'Usuário'),
       transacao: Array.isArray(txs) && txs.length > 0,
+      renda:     SETUP_GUIDE.rendaInformada(cfg, txs),
       orcamento: temOrcamento,
       meta:      Array.isArray(cfg.metas) && cfg.metas.length > 0
     };
@@ -344,10 +344,12 @@ const INSIGHTS = {
     }
 
     // ── 5. Padrão de gastos hoje ───────────────────────────────────
-    var hoje    = new Date();
-    var diaAtual = hoje.getDate();
+    // Data completa de hoje (local): comparar só o dia do mês somava as
+    // despesas do dia 10 de todos os meses como "gasto de hoje".
+    var hoje     = new Date();
+    var hojeIso  = hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0') + '-' + String(hoje.getDate()).padStart(2, '0');
     var gastoHoje = txs.filter(function(t) {
-      return t.tipo === 'despesa' && parseInt((t.data || '').split('-')[2], 10) === diaAtual;
+      return t.tipo === 'despesa' && String(t.data || '').slice(0, 10) === hojeIso;
     }).reduce(function(a, t) { return a + _insightsCent(t.valor); }, 0) / 100;
 
     var mediaDesp = txs.filter(function(t) { return t.tipo === 'despesa'; })
