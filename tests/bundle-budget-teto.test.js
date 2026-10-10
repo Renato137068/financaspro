@@ -30,7 +30,8 @@ const TETO_KB = {
   // 503→478 (29/09): idem.
   // 478→450 (02/10): saem o cliente da API Express e o sync v2 (ADR 0007).
   // 450→454 (08/10): idem (452 KB medidos).
-  appBundle: 455,
+  // 455→456 (10/10): atalho do ícone no Android e marcos do funil.
+  appBundle: 456,
   vendorBundle: 262,
   cssBundle: 184,
   indexHtml: 48,

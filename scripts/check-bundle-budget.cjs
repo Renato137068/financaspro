@@ -104,7 +104,9 @@ const BUDGETS = {
   // 450→454 KB (2026-10-08): mesmas correções de segurança (452 KB).
   // 450→453 KB (2026-10-09): mesmas correções de integridade (452 KB).
   // 453→455 KB (2026-10-09): botão voltar do Android e aviso sem internet (454 KB).
-  appBundle: { max: 455 * KB, label: 'App eager (clássico + ESM)', glob: /^js\/(app\.bundle|index-[\w-]+)\.js$/ },
+  // 455→456 KB (2026-10-10): atalho "Novo lançamento" do ícone no Android e
+  // marcos do funil de conta criada e categoria automática (455,3 KB).
+  appBundle: { max: 456 * KB, label: 'App eager (clássico + ESM)', glob: /^js\/(app\.bundle|index-[\w-]+)\.js$/ },
   // 260→262 KB (2026-09-27): supabase-js 2.112 → 2.117. O vendor é só
   // supabase-js + lucide; não há o que mover para lazy aqui.
   vendorBundle: { max: 262 * KB, label: 'js/vendor.bundle.js', file: 'js/vendor.bundle.js' },
