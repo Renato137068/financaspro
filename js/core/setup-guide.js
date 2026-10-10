@@ -7,14 +7,19 @@
  */
 const SETUP_GUIDE = {
   /**
-   * @param {Object} estado { perfil, transacao, orcamento, meta } — booleans
+   * @param {Object} estado { transacao, renda, orcamento, meta } — booleans
+   *
+   * Mesma ordem do "Comece em 3 passos" (lançar, renda) e do aviso de renda
+   * do Resumo. Até 10/2026 o primeiro passo era "Personalize seu perfil", que
+   * virava o próximo passo logo depois do primeiro lançamento e não ajudava a
+   * pessoa a ver valor no app.
    * @returns {{ passos, concluidos, total, percentual, proximo, completo }}
    */
   computeProgress: function(estado) {
     estado = estado || {};
     var passos = [
-      { chave: 'perfil',    titulo: 'Personalize seu perfil',        cta: 'Abrir perfil',        feito: !!estado.perfil },
       { chave: 'transacao', titulo: 'Adicione sua primeira transação', cta: 'Adicionar transação', feito: !!estado.transacao },
+      { chave: 'renda',     titulo: 'Informe sua renda do mês',      cta: 'Lançar receita',      feito: !!estado.renda },
       { chave: 'orcamento', titulo: 'Defina um orçamento',            cta: 'Criar orçamento',     feito: !!estado.orcamento },
       { chave: 'meta',      titulo: 'Crie uma meta de economia',      cta: 'Criar meta',          feito: !!estado.meta }
     ];
@@ -32,6 +37,15 @@ const SETUP_GUIDE = {
       proximo:    proximo,
       completo:   concluidos === total
     };
+  },
+
+  /**
+   * Passo "renda": renda planejada (Orçamento ou tour) ou qualquer receita
+   * lançada. O mesmo critério decide o aviso de renda no saldo do Resumo.
+   */
+  rendaInformada: function(cfg, txs) {
+    return Number(cfg.renda) > 0 || Number(cfg.rendaMensal) > 0
+      || (txs || []).some(function(t) { return t && t.tipo === 'receita'; });
   },
 
   /**
@@ -69,7 +83,8 @@ const SETUP_GUIDE = {
       var badge = ehProximo ? ' <span class="setup-badge">Próximo</span>' : '';
       return '<div class="' + cls + '"><i data-lucide="' + icon + '" aria-hidden="true"></i> <span>' + s.titulo + '</span>' + badge + '</div>';
     }).join('');
-    var abaMap = { perfil: 'config', transacao: 'novo', orcamento: 'orcamento', meta: 'config' };
+    // Renda: a aba Novo já em Receita (data-tipo, tratado pelo 'mudar-aba').
+    var abaMap = { transacao: 'novo', renda: 'novo" data-tipo="receita', orcamento: 'orcamento', meta: 'config' };
     var cta = p.proximo
       ? '<button type="button" class="setup-cta" data-action="mudar-aba" data-aba="' +
           (abaMap[p.proximo.chave] || 'resumo') + '">' + p.proximo.cta +
@@ -108,7 +123,7 @@ const SETUP_GUIDE = {
   diffProgresso: function(anterior, atual) {
     var antes = anterior || {};
     var agora = atual || {};
-    var chaves = ['perfil', 'transacao', 'orcamento', 'meta'];
+    var chaves = ['transacao', 'renda', 'orcamento', 'meta'];
 
     var novos = chaves.filter(function(k) {
       return !!agora[k] && !antes[k];

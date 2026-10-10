@@ -126,6 +126,21 @@ describe('montarRelatorio', () => {
     expect(md.indexOf('a \\| b')).toBeLessThan(md.indexOf('raro'));
   });
 
+  test('retenção D1/D7/D30 com porcentagem; dia ainda aberto vira —', () => {
+    const retencao = [
+      { semana: '2026-10-05', contas: 4, d1: null, d7: null, d30: null, d1_pct: null, d7_pct: null, d30_pct: null },
+      { semana: '2026-08-03', contas: 3, d1: 2, d7: 1, d30: 0, d1_pct: 66.7, d7_pct: 33.3, d30_pct: 0 },
+    ];
+    const md = montarRelatorio([], [], decidirAlerta([]), { retencao });
+    expect(md).toContain('## Retenção (por semana de cadastro)');
+    expect(md).toContain('| 2026-08-03 | 3 | 2 (66.7%) | 1 (33.3%) | 0 (0%) |');
+    expect(md).toContain('| 2026-10-05 | 4 | — | — | — |');
+  });
+
+  test('sem a view de retenção (migração não aplicada), o relatório sai sem a seção', () => {
+    expect(montarRelatorio([], [], decidirAlerta([]))).not.toMatch(/Retenção/);
+  });
+
   test('sem nenhum aviso de uso, o relatório diz que a telemetria não está ligada', () => {
     const md = montarRelatorio([], [], decidirAlerta([]), { ultimoDiaComSessao: null });
     expect(md).toMatch(/telemetria não está ligada/);

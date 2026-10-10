@@ -137,3 +137,32 @@ describe('renda no onboarding aceita formato BR', function() {
     expect(global.DADOS.getConfig().rendaMensal).toBe(5000);
   });
 });
+
+describe('primeiro passo do tour diz a verdade em cada modo', function() {
+  function textoPrimeiroPasso() {
+    global.ONBOARDING.abrirTourExplicito();
+    var t = document.getElementById('onboarding-tooltip') || document.body;
+    return t.textContent;
+  }
+
+  test('modo local: sem cadastro, dados neste aparelho', function() {
+    var orig = global.DADOS._nuvemAtiva;
+    global.DADOS._nuvemAtiva = function() { return false; };
+    try {
+      var txt = textoPrimeiroPasso();
+      expect(txt).toMatch(/neste aparelho/);
+      expect(txt).toMatch(/Sem cadastro, sem e-mail/);
+    } finally { global.DADOS._nuvemAtiva = orig; }
+  });
+
+  test('app da loja (nuvem): não promete "sem cadastro"', function() {
+    var orig = global.DADOS._nuvemAtiva;
+    global.DADOS._nuvemAtiva = function() { return true; };
+    try {
+      var txt = textoPrimeiroPasso();
+      expect(txt).not.toMatch(/Sem cadastro|sem e-mail/i);
+      expect(txt).toMatch(/na sua conta/);
+      expect(txt).toMatch(/sem conectar o seu banco/);
+    } finally { global.DADOS._nuvemAtiva = orig; }
+  });
+});

@@ -55,8 +55,8 @@ const INSIGHTS = {
       return !!(cfg.orcamentos && Object.keys(cfg.orcamentos).length);
     }, { padrao: false }).valor;
     return {
-      perfil:    !!(cfg.nome && cfg.nome !== 'Usuário'),
       transacao: Array.isArray(txs) && txs.length > 0,
+      renda:     SETUP_GUIDE.rendaInformada(cfg, txs),
       orcamento: temOrcamento,
       meta:      Array.isArray(cfg.metas) && cfg.metas.length > 0
     };

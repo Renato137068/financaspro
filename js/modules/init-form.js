@@ -621,8 +621,18 @@ const INIT_FORM = {
       }
       input.value = '';
 
-      var valInput = document.getElementById('novo-valor');
-      if (valInput) setTimeout(function() { valInput.focus(); valInput.select(); }, 80);
+      // Com valor lido, o próximo passo é registrar: o botão ficava abaixo da
+      // tela (auditoria de ativação, 09/10/2026). Rola até ele, no centro (a
+      // barra inferior cobre o rodapé), e foca: Enter ou um toque salva. Sem
+      // valor, o foco vai para o valor, como antes. Não salva sozinho: a frase
+      // pode ter sido lida errado e o formulário mostra o que vai ser gravado.
+      var alvo = resultado.valor ? document.querySelector('.btn-registrar') : document.getElementById('novo-valor');
+      if (alvo) {
+        setTimeout(function() {
+          alvo.scrollIntoView({ block: 'center' });
+          alvo.focus({ preventScroll: true });
+        }, 80);
+      }
     }
 
     input.addEventListener('keydown', function(e) {

@@ -33,11 +33,20 @@ const ONBOARDING = (function() {
       return Number(cfg.renda) || 0;
     }, { padrao: 0 }).valor;
 
+    // App da loja (nuvem): a pessoa acabou de criar conta com e-mail. Só o
+    // modo local pode dizer "sem cadastro".
+    var nuvem = UTILS.tentar('onboarding.modoNuvem', function() {
+      return !!(DADOS && DADOS._nuvemAtiva && DADOS._nuvemAtiva());
+    }, { padrao: false }).valor;
+
     var passos = [
       {
         emoji:  '<i data-lucide="hand" aria-hidden="true"></i>',
-        titulo: 'Seus dados ficam neste aparelho.',
-        texto:  'Sem cadastro, sem e-mail e sem conectar o seu banco. Você exporta tudo quando quiser — e apaga tudo também.',
+        titulo: nuvem ? 'Seus dados ficam na sua conta.' : 'Seus dados ficam neste aparelho.',
+        texto:  (nuvem
+          ? 'Trocou de celular? É só entrar de novo. E sem conectar o seu banco.'
+          : 'Sem cadastro, sem e-mail e sem conectar o seu banco.')
+          + ' Você exporta tudo quando quiser — e apaga tudo também.',
         dica:   'Esc para fechar • Enter para continuar'
       }
     ];

@@ -17,6 +17,7 @@ import { UI } from './components/ui.js';
 import { BILLING } from './billing.js';
 import { APP_STORE } from './core/store.js';
 import { DADOS } from './core/dados.js';
+import { SETUP_GUIDE } from './core/setup-guide.js';
 
 const RENDER_DASHBOARD = (function() {
   var DashboardRenderer = Object.create(RENDERER_BASE);
@@ -333,6 +334,19 @@ const RENDER_DASHBOARD = (function() {
         hint.textContent = 'Projetado no mês (incl. futuros): ' + DashboardRenderer.money(proj.saldo || 0);
         hint.title = 'Inclui lançamentos com data futura ainda não realizados.';
         info.appendChild(hint);
+      }
+
+      // Primeiro gasto sem renda: o saldo negativo ganha o porquê e o passo
+      // "renda" do guia (auditoria de ativação, 09/10/2026).
+      var res = DashboardRenderer._ctx.resumo;
+      if (res.despesas > 0 && !res.receitas
+        && !SETUP_GUIDE.rendaInformada(DashboardRenderer._ctx.config, DADOS.getTransacoes())) {
+        info.appendChild(DashboardRenderer.create('p', { class: 'saldo-projetado-hint' }, [
+          'Só gastos até agora. ',
+          DashboardRenderer.create('button', {
+            type: 'button', class: 'btn-link-secundario', 'data-action': 'mudar-aba', 'data-aba': 'novo', 'data-tipo': 'receita',
+          }, 'Informe sua renda do mês'),
+        ]));
       }
 
       el.appendChild(info);

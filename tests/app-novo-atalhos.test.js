@@ -49,6 +49,29 @@ describe('entrada rápida', () => {
     expect(app.erros).toEqual([]);
   });
 
+  test('com valor lido, o Enter rola até o Registrar e o foca (não salva sozinho)', async () => {
+    // Auditoria de ativação (09/10/2026): depois da frase o Registrar ficava
+    // abaixo da tela de 760 px e a pessoa não via como terminar.
+    app = await subirApp({ agora: AGORA });
+    app.window.mudarAba('novo');
+    const registrar = app.document.querySelector('.btn-registrar');
+    let rolou = 0;
+    registrar.scrollIntoView = function(o) { rolou++; expect(o).toEqual({ block: 'center' }); };
+    const antes = lancamentos().length;
+
+    digitar($('entrada-rapida-input'), 'padaria 12 hoje');
+    tecla($('entrada-rapida-input'), 'Enter');
+    await new Promise((r) => setTimeout(r, 120));
+
+    expect(rolou).toBe(1);
+    expect(app.document.activeElement).toBe(registrar);
+    expect(lancamentos().length).toBe(antes);
+
+    enviar();
+    expect(await app.esperar(() => lancamentos().length === antes + 1)).toBe(true);
+    expect(app.erros).toEqual([]);
+  });
+
   test('o botão faz o mesmo que o Enter; Esc limpa e esconde o aviso', async () => {
     app = await subirApp({ agora: AGORA });
     app.window.mudarAba('novo');
