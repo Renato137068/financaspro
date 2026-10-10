@@ -98,6 +98,8 @@ function loadCoreModules() {
     + ' getTransacoesRaw:function(){return txs;},'
     + ' salvarConfig:function(p){cfg=Object.assign({},cfg,p);return cfg;},'
     + ' salvarTransacao:function(t){ var i=idx(t.id); if(i>=0){txs[i]=t;}else{txs.push(t);} return t; },'
+    + ' _storageSetTransacoes:function(l){ txs.length=0; Array.prototype.push.apply(txs,l); },'
+    + ' _pushTransacaoApi:function(t){ return Promise.resolve(t); },'
     + ' deletarTransacao:function(id){ var i=idx(id); if(i>=0){txs.splice(i,1);return true;} return false; },'
     + ' getRecorrentes:function(){return Array.isArray(cfg.recorrentes)?cfg.recorrentes.slice():[];},'
     + ' getContas:function(){return contas.slice();},'

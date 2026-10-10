@@ -92,7 +92,7 @@ const INSIGHT_ACOES = {
       try {
         ORCAMENTO.definirLimite(parametros.categoria, parametros.novoLimite);
         UTILS.mostrarToast('Limite de ' + UTILS.labelCategoria(parametros.categoria) +
-          ' → R$ ' + parametros.novoLimite.toFixed(2), 'success');
+          ' → ' + UTILS.formatarMoeda(parametros.novoLimite), 'success');
       } catch (_e) {
         UTILS.mostrarToast('Não foi possível atualizar o limite. Tente de novo.', 'error');
       }

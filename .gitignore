@@ -38,3 +38,6 @@ financaspro-*-*.json
 
 /_to_delete/
 /AUDITORIA_*.html
+
+# Mapas de código do release (npm run erro:pilha); nunca no git nem no dist/
+sourcemaps/

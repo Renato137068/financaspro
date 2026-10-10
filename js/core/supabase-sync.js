@@ -101,9 +101,18 @@
     );
   }
 
+  // Falha de sync que não é falta de rede (RLS, coluna, dado recusado) é dado
+  // do cliente que não chega à nuvem: entra no relatório de erros.
+  function relatarSync(contexto, err) {
+    var msg = String((err && err.message) || err || '');
+    if (/fetch|network|load failed|timeout|abort/i.test(msg)) return;
+    if (typeof OBS !== 'undefined' && OBS.captureError) OBS.captureError(err, { contexto: contexto });
+  }
+
   function afterPushError(err, fallback) {
     if (handleQuotaExceeded(err)) return fallback;
     console.warn('Supabase push falhou:', err && err.message);
+    relatarSync('sync.push', err);
     return fallback;
   }
 
@@ -147,13 +156,20 @@
     pull: function () {
       var u = uid();
       if (!u || _pulling) return Promise.resolve(false);
+      // Conta diferente da dona do aparelho: quem resolve é trocouDeConta(),
+      // que apaga os dados daqui antes. Sincronizar antes disso misturaria as
+      // duas contas (o DADOS.init do boot também chama o pull).
+      var dono = window.SUPA_AUTH.donoDoAparelho ? window.SUPA_AUTH.donoDoAparelho() : null;
+      if (dono && dono !== u) return Promise.resolve(false);
       _pulling = true;
       if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
         APP_STORE.dispatch(ACTIONS.SYNC_INICIAR);
       }
       return Promise.all([
         fetchAllRows(function () {
-          return SB.from('Transaction').select('*').is('deletedAt', null);
+          // Inclui as excluídas: é assim que a exclusão feita em outro aparelho
+          // chega aqui (SYNC_MERGE remove o que vem com deletedAt).
+          return SB.from('Transaction').select('*');
         }),
         fetchAllRows(function () { return SB.from('Account').select('*'); }),
         fetchAllRows(function () { return SB.from('Budget').select('*'); }),
@@ -191,6 +207,7 @@
         });
       }).catch(function (err) {
         console.warn('Supabase pull falhou, dados locais preservados:', err && err.message);
+        relatarSync('sync.pull', err);
         if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
           APP_STORE.dispatch(ACTIONS.SYNC_FALHAR, { erro: err && err.message });
         }
@@ -247,6 +264,7 @@
       }).catch(function (e) {
         if (handleQuotaExceeded(e)) return;
         console.warn('Reconciliação (subida) falhou:', e && e.message);
+        relatarSync('sync.reconciliar', e);
       });
     },
 
@@ -255,6 +273,11 @@
       if (!u || !tx) return Promise.resolve(tx);
       var en = (typeof FINANCE_CONTRACT !== 'undefined') ? FINANCE_CONTRACT.txPtToEn(tx) : {};
       var row = clean(Object.assign({}, en, { id: tx.id, userId: u, updatedAt: nowIso() }));
+      // Salvar é ação explícita sobre um lançamento vivo (inclusive o que
+      // voltou de um backup depois de excluído): a nuvem precisa limpar a
+      // marca de exclusão, senão o próximo pull o apagaria de novo. O clean()
+      // tira o null de propósito para a reconciliação; aqui ele volta.
+      if (!tx.deletedAt) row.deletedAt = null;
       return SB.from('Transaction').upsert(row, { onConflict: 'id' }).then(function (r) {
         if (r.error) throw r.error; return tx;
       }).catch(function (e) { return afterPushError(e, tx); });
@@ -280,7 +303,8 @@
     pushBudget: function (categoria, limite) {
       var u = uid();
       if (!u) return Promise.resolve();
-      var patch = { limit: Number(limite), updatedAt: nowIso() };
+      // active:true reativa o orçamento que foi excluído e depois recriado.
+      var patch = { limit: Number(limite), active: true, updatedAt: nowIso() };
       return SB.from('Budget').select('id')
         .eq('userId', u).eq('category', categoria).eq('period', 'monthly').maybeSingle()
         .then(function (r) {
@@ -291,6 +315,16 @@
             period: 'monthly', updatedAt: nowIso()
           });
         }).catch(function (e) { return afterPushError(e, undefined); });
+    },
+
+    /** Desativa o orçamento da categoria (o pull ignora os inativos). */
+    deleteBudget: function (categoria) {
+      var u = uid();
+      if (!u || !categoria) return Promise.resolve(true);
+      return SB.from('Budget').update({ active: false, updatedAt: nowIso() })
+        .eq('userId', u).eq('category', categoria)
+        .then(function (r) { if (r && r.error) throw r.error; return true; })
+        .catch(function (e) { return afterPushError(e, false); });
     },
 
     pushConfig: function (config) {
@@ -317,9 +351,46 @@
     DADOS._pushConfigApi = function (cfg) { return SUPA_SYNC.pushConfig(cfg); };
   }
 
+  /**
+   * Outra conta entrou neste aparelho?
+   *
+   * O pull mescla a nuvem no que está no aparelho e a reconciliação sobe para
+   * a nuvem o que só existe aqui. Com a conta de outra pessoa, isso mostrava
+   * os lançamentos de quem usou o aparelho antes e os enviava, junto com o
+   * perfil (nome, telefone, endereço), para a conta nova: "Sair" deixa os
+   * dados no aparelho de propósito, para a mesma pessoa voltar.
+   *
+   * Regra: a primeira conta a entrar vira a dona (assim quem já usa o app
+   * não perde nada ao atualizar, e quem começou sem conta leva os dados para
+   * ela). Se entrar uma conta diferente da dona, os dados do aparelho são
+   * apagados antes de qualquer sincronização e o app recarrega já com a conta
+   * nova como dona. O que a conta anterior já tinha sincronizado continua na
+   * nuvem dela.
+   *
+   * @returns {boolean} true quando a troca foi tratada (não sincronizar agora)
+   */
+  function trocouDeConta(session) {
+    var novo = session && session.user && session.user.id;
+    var auth = window.SUPA_AUTH;
+    if (!novo || !auth.donoDoAparelho || !auth.definirDono) return false;
+    var dono = auth.donoDoAparelho();
+    if (!dono) { auth.definirDono(novo); return false; }
+    if (dono === novo) return false;
+    if (typeof DADOS !== 'undefined' && DADOS.limparTodos) {
+      try { DADOS.limparTodos(); } catch (e) { console.warn('Troca de conta: limpeza falhou', e && e.message); }
+    }
+    auth.definirDono(novo);
+    // Dá tempo de o IndexedDB terminar de apagar antes de recarregar.
+    setTimeout(function () {
+      if (window.location && typeof window.location.reload === 'function') window.location.reload();
+    }, 500);
+    return true;
+  }
+
   // Puxa os dados ao entrar (login) e no boot com sessão existente.
   SB.auth.onAuthStateChange(function (evt, session) {
     if (session && (evt === 'SIGNED_IN' || evt === 'INITIAL_SESSION')) {
+      if (trocouDeConta(session)) return;
       SUPA_SYNC.pull();
       if (typeof BILLING !== 'undefined' && BILLING.sync) {
         BILLING.sync().catch(function () {});

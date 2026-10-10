@@ -60,34 +60,28 @@
       </div>
     </div>
 
-    <!-- KPIs Secundários -->
+    <!-- KPIs Secundários: só o que o usuário lê de primeira (planejado ×
+         gasto). As categorias em alerta aparecem só quando existem. -->
     <div class="orc-kpi-secondary">
       <div class="orc-kpi-card">
         <div class="orc-kpi-card-icon"><i data-lucide="clipboard-list" aria-hidden="true"></i></div>
         <div class="orc-kpi-card-content">
-          <span class="orc-kpi-card-label" title="Soma da renda usada como base do 50/30/20">Total planejado</span>
+          <span class="orc-kpi-card-label" title="Renda usada como base do 50/30/20">Planejado</span>
           <span class="orc-kpi-card-value" id="orc-total-planejado">R$ 0,00</span>
         </div>
       </div>
       <div class="orc-kpi-card">
         <div class="orc-kpi-card-icon"><i data-lucide="check-circle" aria-hidden="true"></i></div>
         <div class="orc-kpi-card-content">
-          <span class="orc-kpi-card-label" title="Soma das despesas lançadas no mês">Total realizado</span>
+          <span class="orc-kpi-card-label" title="Soma das despesas lançadas no mês">Gasto no mês</span>
           <span class="orc-kpi-card-value" id="orc-total-realizado">R$ 0,00</span>
         </div>
       </div>
-      <div class="orc-kpi-card">
+      <div class="orc-kpi-card" id="orc-kpi-criticas" style="display:none">
         <div class="orc-kpi-card-icon"><i data-lucide="alert-triangle" aria-hidden="true"></i></div>
         <div class="orc-kpi-card-content">
-          <span class="orc-kpi-card-label" title="Categorias acima do limite ou em risco">Críticas</span>
+          <span class="orc-kpi-card-label" title="Categorias que já passaram do limite ou vão passar no ritmo atual">Perto ou acima do limite</span>
           <span class="orc-kpi-card-value" id="orc-categorias-criticas">0</span>
-        </div>
-      </div>
-      <div class="orc-kpi-card">
-        <div class="orc-kpi-card-icon"><i data-lucide="trending-up" aria-hidden="true"></i></div>
-        <div class="orc-kpi-card-content">
-          <span class="orc-kpi-card-label" title="Fatia de 20% menos o que você já poupou — base: receitas − despesas do mês">Folga poupança</span>
-          <span class="orc-kpi-card-value" id="orc-economia-mes">R$ 0,00</span>
         </div>
       </div>
     </div>
@@ -96,7 +90,7 @@
     <div class="perfil-section">
       <h2 class="perfil-section-title">Ações</h2>
       <div class="perfil-cards-grid">
-        <button type="button" class="perfil-card" data-action="editar-renda-orcamento" aria-label="Editar renda">
+        <button type="button" class="perfil-card" data-action="editar-renda-orcamento">
           <div class="perfil-card-icon-wrapper"><i data-lucide="pencil" aria-hidden="true"></i></div>
           <div class="perfil-card-content">
             <span class="perfil-card-title">Editar renda</span>
@@ -104,7 +98,7 @@
           </div>
           <i data-lucide="chevron-right" class="perfil-card-arrow" aria-hidden="true"></i>
         </button>
-        <button type="button" class="perfil-card" data-action="editar-regra-503020" aria-label="Personalizar regra">
+        <button type="button" class="perfil-card" data-action="editar-regra-503020">
           <div class="perfil-card-icon-wrapper"><i data-lucide="settings" aria-hidden="true"></i></div>
           <div class="perfil-card-content">
             <span class="perfil-card-title">Personalizar</span>

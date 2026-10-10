@@ -37,6 +37,7 @@ function carregar(extra) {
           .replace(/"/g, '&quot;');
       },
       mostrarToast: function() {},
+      paraCentavos: function(v) { return Math.round(Number(v) * 100); },
       labelCategoria: function(c) { return c; }
     },
     DADOS: {
@@ -116,8 +117,7 @@ function montarHeaderDom() {
     '<div id="orc-tendencia">vs mês anterior</div>' +
     '<div id="orc-total-planejado">R$ 0,00</div>' +
     '<div id="orc-total-realizado">R$ 0,00</div>' +
-    '<div id="orc-categorias-criticas">0</div>' +
-    '<div id="orc-economia-mes">R$ 0,00</div>' +
+    '<div id="orc-kpi-criticas" style="display:none"><div id="orc-categorias-criticas">0</div></div>' +
     '<div id="orc-trend-indicator"></div>' +
     '<span id="orc-nec-pct"></span><span id="orc-des-pct"></span><span id="orc-pou-pct"></span>' +
     '<span id="orc-nec-gasto"></span><span id="orc-nec-limite"></span>' +
@@ -153,47 +153,68 @@ describe('P0 — header estratégico', function() {
     expect(document.getElementById('orc-total-planejado').textContent).toBe('R$ 5000,00');
     expect(document.getElementById('orc-total-realizado').textContent).toBe('R$ 2800,00');
     expect(document.getElementById('orc-saldo-disponivel').textContent).toBe('R$ 2200,00');
-    // "Folga poupança" ≠ Saldo: é o que ainda cabe na fatia de 20% (1000),
-    // já que nada foi poupado (receitas 0 − despesas). Antes repetia o Saldo.
-    expect(document.getElementById('orc-economia-mes').textContent).toBe('R$ 1000,00');
     expect(document.getElementById('orc-percent-restante').textContent).toMatch(/44%/);
     expect(document.getElementById('orc-nec-gasto').textContent).toBe('R$ 2000,00');
   });
 });
 
-describe('Folga poupança — não repete o Saldo e bate com o tooltip', function() {
-  function hojeStr() {
+describe('Header enxuto: tendência honesta e alerta só quando existe', function() {
+  function str(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' +
+      String(d.getDate()).padStart(2, '0');
+  }
+  function mesPassado() {
     var h = new Date();
-    return h.getFullYear() + '-' + String(h.getMonth() + 1).padStart(2, '0') + '-' +
-      String(h.getDate()).padStart(2, '0');
+    return str(new Date(h.getFullYear(), h.getMonth() - 1, 10));
   }
 
-  test('poupou parte da meta → folga = limite(20%) − poupado, ≠ Saldo', function() {
-    var d = hojeStr();
-    montarHeaderDom();
-    var sb = carregar(); // renda 5000 → fatia poupança (20%) = 1000
-    sb._setTxs([
-      { tipo: 'receita', valor: 6000, categoria: 'salario', data: d },
-      { tipo: 'despesa', valor: 5500, categoria: 'alimentacao', data: d }
-    ]);
-    sb.INIT_ORCAMENTO.renderDashboard();
-    // poupancaReal = 6000 − 5500 = 500 → folga = 1000 − 500 = 500.
-    expect(document.getElementById('orc-economia-mes').textContent).toBe('R$ 500,00');
-    // Saldo = renda − despesas = 5000 − 5500 = −500 → prova que são leituras distintas.
-    expect(document.getElementById('orc-saldo-disponivel').textContent).toBe('R$ -500,00');
-  });
-
-  test('meta batida → folga não fica negativa (piso em 0)', function() {
-    var d = hojeStr();
+  test('sem lançamentos no mês anterior → "Sem mês anterior", sem seta', function() {
     montarHeaderDom();
     var sb = carregar();
+    sb._setTxs([{ tipo: 'despesa', valor: 1000, categoria: 'alimentacao', data: str(new Date()) }]);
+    sb.INIT_ORCAMENTO.renderDashboard();
+    // Antes: a renda inteira virava o "saldo" do mês anterior → "-20%".
+    expect(document.getElementById('orc-tendencia').textContent).toBe('Sem mês anterior');
+    expect(document.getElementById('orc-trend-indicator').style.display).toBe('none');
+  });
+
+  test('com mês anterior → mantém a comparação em %', function() {
+    montarHeaderDom();
+    var sb = carregar(); // renda 5000
     sb._setTxs([
-      { tipo: 'receita', valor: 3000, categoria: 'salario', data: d },
-      { tipo: 'despesa', valor: 500, categoria: 'alimentacao', data: d }
+      { tipo: 'despesa', valor: 1000, categoria: 'alimentacao', data: str(new Date()) },
+      { tipo: 'despesa', valor: 3000, categoria: 'alimentacao', data: mesPassado() }
     ]);
     sb.INIT_ORCAMENTO.renderDashboard();
-    // poupancaReal = 2500 ≥ fatia 1000 → folga = 0 (não negativa).
-    expect(document.getElementById('orc-economia-mes').textContent).toBe('R$ 0,00');
+    // saldo 4000 vs 2000 → +100%.
+    expect(document.getElementById('orc-tendencia').textContent).toBe('+100% vs mês anterior');
+    expect(document.getElementById('orc-trend-indicator').style.display).toBe('');
+  });
+
+  test('nenhuma categoria em risco → cartão de alerta escondido', function() {
+    montarHeaderDom();
+    var sb = carregar();
+    sb._setTxs([{ tipo: 'despesa', valor: 100, categoria: 'alimentacao', data: str(new Date()) }]);
+    sb.INIT_ORCAMENTO.renderDashboard();
+    expect(document.getElementById('orc-kpi-criticas').style.display).toBe('none');
+  });
+
+  test('categoria estourada → cartão aparece com a contagem', function() {
+    montarHeaderDom();
+    var sb = carregar();
+    sb._orc()._cache = { alimentacao: 500 };
+    sb._setTxs([{ tipo: 'despesa', valor: 800, categoria: 'alimentacao', data: str(new Date()) }]);
+    sb.INIT_ORCAMENTO.renderDashboard();
+    expect(document.getElementById('orc-kpi-criticas').style.display).toBe('');
+    expect(document.getElementById('orc-categorias-criticas').textContent).toBe('1');
+  });
+
+  test('a tela não tem mais "Críticas" nem "Folga poupança" no topo', function() {
+    var html = fs.readFileSync(path.join(root, 'telas', 'orcamento', 'orcamento.html'), 'utf8');
+    var header = html.slice(html.indexOf('orc-kpi-secondary'), html.indexOf('Ações rápidas'));
+    expect(header).not.toMatch(/>Críticas</);
+    expect(header).not.toMatch(/Folga poupança/);
+    expect(header).not.toMatch(/orc-economia-mes/);
   });
 });
 

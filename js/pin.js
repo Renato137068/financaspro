@@ -44,11 +44,38 @@ const PIN_SECURITY = {
   ALGORITMO_ID_LEGADO: 'pbkdf2-sha256-100k',
   LOCK_FLAG_KEY: 'financaspro_pin_locked',
 
+  /**
+   * O PIN já foi digitado desde que o app voltou para a frente pela última
+   * vez? Zera quando o app vai para o fundo (listener no fim do arquivo).
+   */
+  _liberadoNestaVisita: false,
+
+  /**
+   * Mostra a tela do PIN se ele estiver ligado e ainda não tiver sido
+   * digitado nesta visita. Serve para os caminhos que entram no app sem
+   * passar pela abertura a frio, como "Continuar sem conexão" ao voltar do
+   * fundo: sem isto, o modo avião abria o app sem PIN nenhum.
+   * @returns {boolean} true se a tela do PIN foi mostrada
+   */
+  exigirSeAtivo: function() {
+    var config = DADOS.getConfig();
+    if (!config.pinAtivo || !config.pinHash) return false;
+    if (PIN_SECURITY._liberadoNestaVisita) return false;
+    if (typeof document !== 'undefined' && document.querySelector('.pin-lock-screen')) return true;
+    verificarPinAoAbrir();
+    return true;
+  },
+
   syncLockFlag: function(ativo) {
     try {
       if (ativo) localStorage.setItem(PIN_SECURITY.LOCK_FLAG_KEY, '1');
       else localStorage.removeItem(PIN_SECURITY.LOCK_FLAG_KEY);
     } catch (e) { /* noop */ }
+    /* Quem liga o PIN quer privacidade: a foto da tela que o Android guarda
+       para a lista de apps recentes não pode mostrar saldos. */
+    if (typeof FP_SECURE_SCREEN !== 'undefined' && FP_SECURE_SCREEN.ocultarRecentes) {
+      FP_SECURE_SCREEN.ocultarRecentes(!!ativo);
+    }
   },
 
   /**
@@ -529,6 +556,7 @@ function tentarDesbloquear() {
   PIN_SECURITY.derivar(pin, config.pinSalt, iteracoesGuardadas).then(function(hash) {
     if (PIN_SECURITY.comparar(hash, config.pinHash)) {
       PIN_SECURITY.resetarFalhas();
+      PIN_SECURITY._liberadoNestaVisita = true;
       /* Acertou com hash antigo: regrava no formato forte agora, enquanto o
          PIN em claro ainda está na mão. Falha aqui não bloqueia a entrada. */
       if (PIN_SECURITY.precisaMigrar(config.pinAlgoritmo)) {
@@ -560,6 +588,14 @@ function tentarDesbloquear() {
   }).catch(function(e) {
     console.error('Erro ao verificar PIN:', e);
     UTILS.mostrarToast('Não foi possível confirmar seu PIN. Seus dados continuam guardados e intactos.', 'error');
+  });
+}
+
+/* Ir para o fundo encerra a visita: a próxima entrada sem abertura a frio
+   (PIN_SECURITY.exigirSeAtivo) volta a pedir o PIN. */
+if (typeof document !== 'undefined' && document.addEventListener) {
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'hidden') PIN_SECURITY._liberadoNestaVisita = false;
   });
 }
 

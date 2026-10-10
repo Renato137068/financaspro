@@ -101,7 +101,7 @@ describe('testes das Edge Functions (Deno)', () => {
   test('o CI tem o job do Deno e o Quality Gate depende dele; o release roda antes de publicar', () => {
     const ci = ler('.github/workflows/ci.yml');
     expect(ci).toMatch(/\n {2}edge:\n[\s\S]*?denoland\/setup-deno@[0-9a-f]{40}[\s\S]*?node scripts\/test-edge\.cjs/);
-    expect(ci).toMatch(/needs: \[test, edge\]/);
+    expect(ci).toMatch(/needs: \[test, edge(, android)?\]/);
     expect(ci).toMatch(/needs\.edge\.result/);
     const release = ler('.github/workflows/release.yml');
     const verificar = release.slice(release.indexOf('\n  verificar:'), release.indexOf('\n  supabase:'));

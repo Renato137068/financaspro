@@ -83,6 +83,92 @@ describe('OBS — envio de relatórios de erro', function() {
   });
 });
 
+describe('OBS — o mesmo erro uma vez, e nada se perde sem rede', function() {
+  function semRede(valor) {
+    Object.defineProperty(global.navigator, 'onLine', { value: !valor, configurable: true });
+  }
+  afterEach(function() { semRede(false); });
+
+  test('o mesmo erro repetido sai uma vez; outro erro ainda tem vez', function() {
+    const OBS = carregarObs({});
+    for (let i = 0; i < 30; i++) OBS.captureError(new Error('x is undefined'), { contexto: 'render:resumo' });
+    OBS.captureError(new Error('x is undefined'), { contexto: 'render:extrato' }); // outro lugar
+    OBS.captureError(new Error('outro erro'), { contexto: 'render:resumo' });
+    expect(enviar).toHaveBeenCalledTimes(3);
+    // O buffer local guarda todas as ocorrências (inspeção no aparelho).
+    expect(OBS.getBuffer().filter(function(e) { return e.kind === 'error'; })).toHaveLength(32);
+  });
+
+  test('sem rede, o relatório fica guardado e sai quando a rede volta', function() {
+    semRede(true);
+    const OBS = carregarObs({});
+    OBS.captureError(new Error('falhou offline'));
+    expect(enviar).not.toHaveBeenCalled();
+    expect(JSON.parse(localStorage.getItem('fp_obs_pendentes'))).toHaveLength(1);
+
+    semRede(false);
+    window.dispatchEvent(new Event('online'));
+    expect(enviar).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(enviar.mock.calls[0][1]).data.message).toBe('falhou offline');
+    expect(localStorage.getItem('fp_obs_pendentes')).toBeNull();
+  });
+
+  test('sendBeacon recusou: guarda; na próxima abertura, envia', function() {
+    enviar.mockReturnValueOnce(false);
+    carregarObs({}).captureError(new Error('fila cheia'));
+    expect(JSON.parse(localStorage.getItem('fp_obs_pendentes'))).toHaveLength(1);
+
+    const reaberto = carregarObs({});
+    expect(reaberto.enviarPendentes()).toBe(1);
+    expect(enviar).toHaveBeenCalledTimes(2);
+    expect(localStorage.getItem('fp_obs_pendentes')).toBeNull();
+  });
+
+  test('a fila guarda no máximo 10, os mais recentes', function() {
+    semRede(true);
+    const OBS = carregarObs({});
+    for (let i = 0; i < 15; i++) OBS.captureError(new Error('e' + i));
+    const fila = JSON.parse(localStorage.getItem('fp_obs_pendentes'));
+    expect(fila.map(function(e) { return e.data.message; })).toEqual(
+      ['e5', 'e6', 'e7', 'e8', 'e9', 'e10', 'e11', 'e12', 'e13', 'e14']);
+  });
+
+  test('quem desligou no Perfil: nada é guardado, e o que estava guardado é descartado', function() {
+    semRede(true);
+    carregarObs({ obsErrorsEnabled: false }).captureError(new Error('x'));
+    expect(localStorage.getItem('fp_obs_pendentes')).toBeNull();
+
+    localStorage.setItem('fp_obs_pendentes', JSON.stringify([{ kind: 'error', data: { message: 'antigo' } }]));
+    semRede(false);
+    expect(carregarObs({ obsErrorsEnabled: false }).enviarPendentes()).toBe(0);
+    expect(enviar).not.toHaveBeenCalled();
+    expect(localStorage.getItem('fp_obs_pendentes')).toBeNull();
+  });
+
+  test('sem rede, o aviso de uso espera: o dia não é marcado', function() {
+    semRede(true);
+    const OBS = carregarObs({});
+    expect(OBS.contarSessao()).toBe(false);
+    expect(localStorage.getItem('fp_obs_sessao_dia')).toBeNull();
+  });
+});
+
+describe('falhas que antes só iam para o console agora chegam ao relatório', function() {
+  const fonte = (f) => fs.readFileSync(path.join(root, f), 'utf8');
+  test.each([
+    ['js/app-bootstrap.js', "OBS.captureError(e, { contexto: 'boot' })"],
+    ['js/core/lifecycle.js', "OBS.captureError(error, { contexto: 'boot:' + module.name })"],
+    ['js/render-core.js', "OBS.captureError(e, { contexto: 'render:' + name })"],
+    ['js/core/event-bus.js', "OBS.captureError(e, { contexto: 'acao:' + namespace + '.' + action })"],
+    ['js/modules/init-navigation.js', "OBS.captureError(err, { contexto: 'mudarAba', aba: aba })"],
+    ['js/modules/init-navigation.js', "OBS.captureError(err, { contexto: 'acao:' + action })"],
+    ['js/modules/init-modals.js', "OBS.captureError(err, { contexto: 'modal.onOk' })"],
+    ['js/core/supabase-sync.js', "relatarSync('sync.pull', err)"],
+  ])('%s', function(arquivo, trecho) {
+    expect(fonte(arquivo)).toContain(trecho);
+  });
+});
+
 describe('OBS.contarSessao — contagem de uso anônima', function() {
   test('no máximo um aviso por dia, só com o kind e a versão', function() {
     const OBS = carregarObs({});

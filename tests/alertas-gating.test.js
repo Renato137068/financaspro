@@ -39,6 +39,9 @@ function loadAlertas(opts) {
     },
     module: { exports: {} },
   };
+  if (opts.container) {
+    ctx.document = { getElementById: function(id) { return id === 'dashboard-alertas' ? opts.container : null; } };
+  }
   vm.createContext(ctx);
   // ES Module: UTILS, CARTOES, AI_ENGINE e mudarAba do ctx substituem os imports.
   rodarNoContexto(ctx, path.join(__dirname, '..', 'js', 'alertas.js'));
@@ -96,5 +99,30 @@ describe('ALERTAS gating Pro', function() {
     const A = loadAlertas({ canAdvanced: false, alertas: [], anomalias: [{ transacao: { id: 't1' } }] });
     const list = A.verificar(true);
     expect(list.some(function(a) { return a.tipo === 'upsell'; })).toBe(true);
+  });
+});
+
+describe('ALERTAS — papel para o leitor de tela', function() {
+  function renderizar(alertas, canAdvanced) {
+    const el = { innerHTML: '', addEventListener: function() {}, removeEventListener: function() {} };
+    const A = loadAlertas({ canAdvanced: canAdvanced, alertas: alertas, container: el });
+    A.renderizar();
+    return el.innerHTML;
+  }
+
+  test('convite ao Pro não interrompe o TalkBack (status, não alert)', function() {
+    const html = renderizar([{ id: 'p1', tipo: 'padrao', titulo: 'P', msg: 'x', gravidade: 'baixa' }], false);
+    expect(html).toMatch(/O app detectou algo fora do padrão/);
+    expect(html).not.toMatch(/role="alert"/);
+    expect(html).toMatch(/role="status"/);
+  });
+
+  test('só o alerta crítico interrompe', function() {
+    const html = renderizar([
+      { id: 'c1', tipo: 'saldo', titulo: 'Saldo negativo', msg: 'x', gravidade: 'critica' },
+      { id: 'm1', tipo: 'saldo', titulo: 'Quase no limite', msg: 'x', gravidade: 'media' },
+    ], true);
+    expect(html.match(/role="alert"/g)).toHaveLength(1);
+    expect(html.match(/role="status"/g)).toHaveLength(1);
   });
 });

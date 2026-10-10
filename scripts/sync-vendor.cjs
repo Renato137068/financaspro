@@ -20,6 +20,19 @@ if (fs.existsSync(lucideSrc)) {
   console.warn('[vendor:sync] lucide não encontrado — execute npm ci primeiro');
 }
 
+// supabase-js: o app carrega a cópia em js/vendor/ (vira o vendor.bundle.js).
+// Copiar daqui faz o `npm install` de uma versão nova (inclusive a de um PR do
+// Dependabot) chegar de fato ao app. tests/vendor-supabase-versao.test.js
+// falha se a cópia commitada não for a versão do package-lock.
+const supaSrc = path.join(root, 'node_modules', '@supabase', 'supabase-js', 'dist', 'umd', 'supabase.js');
+const supaDest = path.join(vendorDir, 'supabase.js');
+if (fs.existsSync(supaSrc)) {
+  fs.copyFileSync(supaSrc, supaDest);
+  console.log('[vendor:sync] supabase.js atualizado');
+} else {
+  console.warn('[vendor:sync] @supabase/supabase-js não encontrado — execute npm ci primeiro');
+}
+
 const tessDest = path.join(vendorDir, 'tesseract.min.js');
 if (fs.existsSync(tessDest)) {
   fs.unlinkSync(tessDest);

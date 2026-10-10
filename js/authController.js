@@ -13,6 +13,7 @@ import { TablistKeyboard } from './utilities/tablist-keyboard.js';
 import { INIT_MODALS } from './modules/init-modals.js';
 import { BILLING } from './billing.js';
 import { AUTH_BIOMETRIC } from './auth-biometric.js';
+import { PIN_SECURITY } from './pin.js';
 import { DADOS } from './core/dados.js';
 
 var _authFocusTrap = null;
@@ -424,7 +425,33 @@ function setupAuthUI() {
     if (hint) hint.hidden = !mostrar;
   }
 
+  /**
+   * Sem rede, a senha não confere. Antes, "Continuar sem conexão" entrava
+   * direto: bastava pôr o celular no modo avião para passar pelo bloqueio que
+   * o app pede ao voltar do fundo. Agora a entrada offline exige a biometria
+   * (quando ligada no app) e, depois, o PIN (quando ligado). Sem nenhum dos
+   * dois, segue entrando direto: não há segredo que o aparelho confira sozinho.
+   */
   function _entrarOffline(overlay) {
+    if (_authBiometricInFlight) return;
+    var confirmar = (typeof AUTH_BIOMETRIC !== 'undefined' && AUTH_BIOMETRIC.confirmarIdentidade)
+      ? AUTH_BIOMETRIC.confirmarIdentidade()
+      : Promise.resolve('indisponivel');
+    _authBiometricInFlight = true;
+    confirmar.catch(function() { return 'falhou'; }).then(function(res) {
+      _authBiometricInFlight = false;
+      if (res === 'falhou') {
+        if (message) message.textContent = 'Não foi possível confirmar sua identidade. Tente de novo.';
+        return;
+      }
+      _concluirEntradaOffline(overlay);
+      if (typeof PIN_SECURITY !== 'undefined' && PIN_SECURITY.exigirSeAtivo) {
+        PIN_SECURITY.exigirSeAtivo();
+      }
+    });
+  }
+
+  function _concluirEntradaOffline(overlay) {
     if (message) {
       message.textContent = 'Você entrou sem conexão. Os dados são os deste aparelho.';
     }
@@ -1042,6 +1069,22 @@ function setupAuthUI() {
     }
   }
 
+  /**
+   * Primeiro acesso sem internet (app recém-instalado, nenhuma sessão aqui).
+   * Antes a tela dizia só "Sem conexão com o servidor. Verifique sua internet
+   * e tente de novo." e a pessoa não sabia se o app só funcionava online.
+   * Agora diz que é só desta vez, e o aviso some sozinho quando a rede volta.
+   */
+  function _avisarPrimeiroAcessoSemRede() {
+    if (!warning) return;
+    warning.style.display = 'block';
+    warning.textContent = 'Sem internet. Para entrar ou criar sua conta pela primeira vez, '
+      + 'conecte-se. Depois disso o app abre mesmo sem internet.';
+    if (_avisarPrimeiroAcessoSemRede._ouvindo || typeof window === 'undefined') return;
+    _avisarPrimeiroAcessoSemRede._ouvindo = true;
+    window.addEventListener('online', function() { _checkCloudReachable(); });
+  }
+
   if (typeof SUPA_AUTH !== 'undefined' && SUPA_AUTH.isActive()) {
     if (totpForm) {
       totpForm.hidden = true;
@@ -1074,7 +1117,10 @@ function setupAuthUI() {
       var _resolvidoOffline = false;
       alcance.then(function(online) {
         if (online || _authEstaDesbloqueado()) return;
-        if (!(SUPA_AUTH.temSessaoPersistida && SUPA_AUTH.temSessaoPersistida())) return;
+        if (!(SUPA_AUTH.temSessaoPersistida && SUPA_AUTH.temSessaoPersistida())) {
+          _avisarPrimeiroAcessoSemRede();
+          return;
+        }
         _resolvidoOffline = true;
         _mostrarEntradaOffline(overlay);
       });

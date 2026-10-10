@@ -99,6 +99,7 @@ const INIT_NAVIGATION = {
             mudarAba(aba, orcSub ? { orcSub: orcSub } : null);
           } catch (err) {
             console.error('[INIT_NAVIGATION] Erro ao mudar aba:', err);
+            if (typeof OBS !== 'undefined' && OBS.captureError) OBS.captureError(err, { contexto: 'mudarAba', aba: aba });
           }
         }
       }
@@ -114,6 +115,7 @@ const INIT_NAVIGATION = {
         INIT_NAVIGATION.handleAction(action, target);
       } catch (err) {
         console.error('[INIT_NAVIGATION] Erro na ação', action, ':', err);
+        if (typeof OBS !== 'undefined' && OBS.captureError) OBS.captureError(err, { contexto: 'acao:' + action });
       }
     };
 
@@ -157,6 +159,7 @@ const INIT_NAVIGATION = {
       'patrimonio-divida-excluir': true,
       'patrimonio-importar-conta': true,
       'conta-nova': true,
+      'conta-editar': true,
       'conta-pagar': true,
       'conta-excluir': true,
       'conta-mes-prev': true,
@@ -200,6 +203,7 @@ const INIT_NAVIGATION = {
             if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.mudarSubAba) {
               INIT_ORCAMENTO.mudarSubAba(sub);
             }
+            self._renderSubOrcamento(sub);
           });
         });
       },
@@ -248,6 +252,7 @@ const INIT_NAVIGATION = {
       'editar-renda-orcamento': function() { safeCall('editarRendaOrcamento'); },
       'editar-regra-503020': function() { safeCall('editarRegra503020'); },
       'toggle-detalhes-categorias': function() { safeCall('toggleDetalhesCategorias'); },
+      'toggle-analises': function() { self.toggleAnalises(); },
       'toggle-graficos': function() { self.toggleGraficos(); },
       'toggle-previsao': function() { self.togglePrevisao(); },
       'toggle-relatorios': function() { self.toggleRelatorios(); },
@@ -359,6 +364,20 @@ const INIT_NAVIGATION = {
   },
 
   /**
+   * Alterna o bloco "Ver análises do mês" (relatório, gráficos e previsão).
+   */
+  toggleAnalises: function() {
+    var painel = document.getElementById('analises-painel');
+    var arrow  = document.getElementById('analises-arrow');
+    var btn    = document.getElementById('btn-analises');
+    if (!painel) return;
+    var aberto = painel.style.display !== 'none';
+    painel.style.display = aberto ? 'none' : 'block';
+    if (arrow) arrow.classList.toggle('expanded', !aberto);
+    if (btn)   btn.setAttribute('aria-expanded', String(!aberto));
+  },
+
+  /**
    * Alterna painel de gráficos
    */
   toggleGraficos: function() {
@@ -463,6 +482,23 @@ const INIT_NAVIGATION = {
       return;
     }
     finish();
+  },
+
+  /**
+   * Desenha a lista da sub-aba do Orçamento. As telas de Metas, Gastos fixos e
+   * Patrimônio só eram desenhadas na próxima renderização do Resumo: tocar na
+   * sub-aba pela primeira vez mostrava o painel vazio.
+   */
+  _renderSubOrcamento: function(sub) {
+    if (sub === 'metas' && typeof INIT_METAS !== 'undefined' && INIT_METAS.renderOrcamento) {
+      INIT_METAS.renderOrcamento();
+    }
+    if (sub === 'assinaturas' && typeof INIT_ASSINATURAS !== 'undefined' && INIT_ASSINATURAS.render) {
+      INIT_ASSINATURAS.render();
+    }
+    if (sub === 'patrimonio' && typeof INIT_PATRIMONIO !== 'undefined' && INIT_PATRIMONIO.render) {
+      INIT_PATRIMONIO.render();
+    }
   },
 
   /**
@@ -687,15 +723,7 @@ function mudarAba(nomeAba, opcoes) {
           if (typeof INIT_ORCAMENTO !== 'undefined' && INIT_ORCAMENTO.renderDashboard) {
             INIT_ORCAMENTO.renderDashboard();
           }
-          if (orcSubPref === 'metas' && typeof INIT_METAS !== 'undefined' && INIT_METAS.renderOrcamento) {
-            INIT_METAS.renderOrcamento();
-          }
-          if (orcSubPref === 'assinaturas' && typeof INIT_ASSINATURAS !== 'undefined' && INIT_ASSINATURAS.render) {
-            INIT_ASSINATURAS.render();
-          }
-          if (orcSubPref === 'patrimonio' && typeof INIT_PATRIMONIO !== 'undefined' && INIT_PATRIMONIO.render) {
-            INIT_PATRIMONIO.render();
-          }
+          INIT_NAVIGATION._renderSubOrcamento(orcSubPref);
         };
         // Primeiro a tela (chunk 'orcamento'), depois a sub-aba pedida.
         INIT_NAVIGATION.carregarChunkOrcamento(function() {

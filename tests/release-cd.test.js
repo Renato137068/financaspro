@@ -129,12 +129,22 @@ describe('workflow de release (.github/workflows/release.yml)', () => {
       'npm run build', 'npm run check:bundle', 'npm audit --audit-level=high'].forEach((c) => expect(v).toContain(c));
   });
 
-  test('deploy e assinatura exigem o ambiente production; o AAB sai depois do Supabase', () => {
+  test('deploy e assinatura exigem o ambiente production; o banco só migra com o AAB pronto', () => {
     expect(job('supabase')).toMatch(/environment: production/);
     expect(job('supabase')).toContain('node scripts/deploy-supabase.cjs');
+    // Auditoria de dependências (09/10): um erro no Gradle deixava o banco
+    // novo com o app antigo. Agora: AAB → Supabase → publicar.
+    expect(job('supabase')).toMatch(/needs: \[verificar, android\]/);
+    const p = job('publicar');
+    expect(p).toMatch(/environment: production/);
+    expect(p).toMatch(/needs: \[verificar, android, supabase\]/);
+    expect(p).toContain('gh release create');
+    expect(p).toContain('name: aab-${{ needs.verificar.outputs.tag }}');
     const a = job('android');
     expect(a).toMatch(/environment: production/);
-    expect(a).toMatch(/needs: \[verificar, supabase\]/);
+    expect(a).toMatch(/needs: verificar\n/);
+    expect(a).not.toContain('gh release');
+    expect(a).not.toContain('upload-google-play');
     expect(a).toContain("java-version: '21'");
     expect(a).toContain('./gradlew bundleRelease');
     expect(a).toMatch(/grep -q '\^jar verified/);
@@ -144,7 +154,7 @@ describe('workflow de release (.github/workflows/release.yml)', () => {
     const a = job('android');
     expect(a).toMatch(/if: always\(\)\n\s+run: rm -f android\/app\/upload\.jks android\/keystore\.properties/);
     const appId = JSON.parse(ler('capacitor.config.json')).appId;
-    expect(a).toContain('packageName: ' + appId);
+    expect(job('publicar')).toContain('packageName: ' + appId);
   });
 
   test('todo script chamado existe, e todo segredo usado está documentado no cabeçalho', () => {

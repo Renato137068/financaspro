@@ -64,7 +64,66 @@
     }
   }
 
-  /** Consome tokens do hash (#access_token=…) após link de e-mail (reset, confirmação). */
+  /**
+   * Dono dos dados deste aparelho: o id da última conta que entrou aqui.
+   * Chave plana, fora do prefixo 'fp-' (não passa pela cifragem local) e fora
+   * das preservadas por DADOS.limparTodos: apagar os dados apaga o dono junto.
+   * Quem decide o que fazer quando outra conta entra é supabase-sync.js.
+   */
+  var DONO_KEY = 'financaspro_dono_uid';
+
+  function _lerDono() {
+    try { return localStorage.getItem(DONO_KEY) || null; } catch (e) { return null; }
+  }
+
+  function _gravarDono(uid) {
+    try {
+      if (uid) localStorage.setItem(DONO_KEY, uid);
+      else localStorage.removeItem(DONO_KEY);
+    } catch (e) { /* storage indisponível */ }
+  }
+
+  /** Id do usuário da sessão gravada neste aparelho, sem rede. */
+  function _uidDaSessaoGravada() {
+    try {
+      var dados = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+      return (dados && dados.user && dados.user.id) || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /**
+   * `sub` do JWT, sem verificar assinatura: serve só para comparar com o dono
+   * do aparelho ANTES de aceitar a sessão. Quem confere o token é o servidor.
+   */
+  function _uidDoToken(jwt) {
+    try {
+      var p = String(jwt).split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      while (p.length % 4) p += '=';
+      return JSON.parse(atob(p)).sub || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function _limparHash(loc) {
+    try {
+      var clean = loc.pathname + (loc.search || '');
+      window.history.replaceState({}, '', clean);
+    } catch (e) { /* noop */ }
+  }
+
+  /**
+   * Consome tokens do hash (#access_token=…) após link de e-mail (reset, confirmação).
+   *
+   * Um link desses troca a sessão sem pedir senha. Antes, qualquer link com
+   * tokens de QUALQUER conta era aceito: quem mandasse um link com a sessão
+   * dele punha a vítima logada na conta do atacante, e a reconciliação do
+   * login subia os lançamentos e o perfil da vítima para essa conta. Agora,
+   * se este aparelho já tem dono (sessão gravada ou último login), o link só
+   * vale para essa mesma conta. Outra conta entra com e-mail e senha.
+   */
   function _consumeAuthHashFromLocation(loc) {
     if (!loc || !loc.hash) return Promise.resolve(null);
     var raw = String(loc.hash).replace(/^#/, '');
@@ -74,13 +133,21 @@
     var refresh = params.get('refresh_token');
     var type = params.get('type') || '';
     if (!access || !refresh) return Promise.resolve(null);
+    var dono = _uidDaSessaoGravada() || _lerDono();
+    if (dono && _uidDoToken(access) !== dono) {
+      _limparHash(loc);
+      console.warn('[auth] Link de login de outra conta ignorado neste aparelho.');
+      setTimeout(function () {
+        if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
+          UTILS.mostrarToast('Esse link é de outra conta. Para usar outra conta aqui, entre com e-mail e senha.', 'warning');
+        }
+      }, 1500);
+      return Promise.resolve(null);
+    }
     return client.auth.setSession({ access_token: access, refresh_token: refresh }).then(function (r) {
       if (r.error) throw new Error(_msg(r.error));
       _session = (r.data && r.data.session) || null;
-      try {
-        var clean = loc.pathname + (loc.search || '');
-        window.history.replaceState({}, '', clean);
-      } catch (e) { /* noop */ }
+      _limparHash(loc);
       if (type === 'recovery') _emitRecoveryPending();
       return type || 'session';
     });
@@ -387,6 +454,11 @@
      * Aqui a pergunta é outra: "esta pessoa já entrou neste aparelho?". A
      * resposta está no disco e não depende de ninguém.
      */
+    /** Id da conta dona dos dados deste aparelho (ver DONO_KEY). */
+    donoDoAparelho: function () { return _lerDono(); },
+
+    definirDono: function (uid) { _gravarDono(uid); },
+
     temSessaoPersistida: function () {
       try {
         var bruto = localStorage.getItem(STORAGE_KEY);

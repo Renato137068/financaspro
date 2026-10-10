@@ -5,14 +5,22 @@
  * O schema fica fora da API do Supabase (migração 20260930120000): este
  * script lê por conexão direta, com psql, e monta um relatório em Markdown:
  *   • por versão (últimos 30 dias): sessões, erros e erros por 1.000 sessões;
+ *   • os erros mais frequentes dos últimos 7 dias (mensagem, onde, pilha);
  *   • funil de nuvem das últimas semanas de cadastro.
  *
- * E decide o alerta: a versão mais nova com uso suficiente tem erros por
- * 1.000 sessões bem acima da anterior? O workflow .github/workflows/saude.yml
- * roda isto todo dia e abre uma issue quando sim.
+ * E decide os alertas (listarAlertas), cada um com o título da sua issue:
+ *   • a versão mais nova com uso suficiente piorou em relação à anterior;
+ *   • ela passa de TETO erros por 1.000 sessões (pega a primeira versão, que
+ *     não tem anterior para comparar);
+ *   • os avisos de uso pararam de chegar (função fora do ar, app quebrado
+ *     antes do boot, CSP bloqueando): sem isto, "sem erros" e "sem dados"
+ *     ficam iguais no painel;
+ *   • um erro novo, que não existia antes da janela, já se repetiu bastante.
+ * O workflow .github/workflows/saude.yml roda isto todo dia.
  *
  *   SAUDE_DATABASE_URL=postgresql://... node scripts/saude-relatorio.cjs
  *     [--saida relatorio.md]   grava o relatório (senão, só stdout)
+ *     [--alertas alertas.txt]  grava um título de issue por linha
  *
  * Sai com 0 mesmo com alerta: quem decide abrir a issue é o workflow, pela
  * linha "alerta=true" em $GITHUB_OUTPUT.
@@ -27,6 +35,15 @@ const MIN_SESSOES = 200;
 const FATOR = 1.5;
 const FOLGA = 2;
 const SEMANAS_FUNIL = 8;
+// Acima disto (por mil sessões) a versão está ruim mesmo sem anterior pior.
+const TETO = 20;
+// Dias sem nenhum aviso de uso, depois de já ter havido, até alertar.
+const DIAS_SEM_SESSAO = 2;
+// Um erro novo vira alerta com isto de ocorrências em 7 dias (no máximo
+// MAX_ERROS_NOVOS issues por dia, para não inundar o repositório).
+const MIN_ERRO_NOVO = 10;
+const MAX_ERROS_NOVOS = 3;
+const TOP_ERROS = 10;
 
 function compararVersao(a, b) {
   const x = String(a).split('.').map(Number);
@@ -61,13 +78,96 @@ function decidirAlerta(resumo, opts) {
   };
 }
 
+function diasEntre(de, ate) {
+  return Math.round((Date.parse(String(ate).slice(0, 10)) - Date.parse(String(de).slice(0, 10))) / 86_400_000);
+}
+
+/** Texto de usuário em título de issue: uma linha, sem crase nem aspas. */
+function limparTitulo(t) {
+  return String(t || '').replace(/[\r\n`"]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 70);
+}
+
+/**
+ * @param {object} dados
+ * @param {Array} dados.resumo            saude.versao_resumo
+ * @param {Array} [dados.erros]           saude.erros_frequentes
+ * @param {string|null} [dados.ultimoDiaComSessao]  AAAA-MM-DD
+ * @param {string} [dados.hoje]           AAAA-MM-DD (UTC)
+ * @returns {Array<{titulo:string, motivo:string}>}
+ */
+function listarAlertas(dados) {
+  const d = dados || {};
+  const hoje = d.hoje || new Date().toISOString().slice(0, 10);
+  const alertas = [];
+
+  const regressao = decidirAlerta(d.resumo);
+  if (regressao.alerta) {
+    alertas.push({
+      titulo: 'Saúde: v' + regressao.nova.app_version + ' com mais erros por sessão que a versão anterior',
+      motivo: regressao.motivo,
+    });
+  }
+
+  const comUso = (d.resumo || [])
+    .filter((v) => /^\d+\.\d+\.\d+$/.test(v.app_version) && Number(v.sessoes) >= MIN_SESSOES)
+    .sort((a, b) => compararVersao(b.app_version, a.app_version));
+  const nova = comUso[0];
+  if (!regressao.alerta && nova && Number(nova.erros_por_mil) > TETO) {
+    alertas.push({
+      titulo: 'Saúde: v' + nova.app_version + ' com mais de ' + TETO + ' erros por 1.000 sessões',
+      motivo: 'v' + nova.app_version + ': ' + nova.erros_por_mil + ' erros/mil sessões (teto ' + TETO + ')',
+    });
+  }
+
+  if (d.ultimoDiaComSessao && diasEntre(d.ultimoDiaComSessao, hoje) >= DIAS_SEM_SESSAO) {
+    alertas.push({
+      titulo: 'Saúde: os avisos de uso pararam de chegar',
+      motivo: 'último aviso de uso em ' + d.ultimoDiaComSessao + ' (' + diasEntre(d.ultimoDiaComSessao, hoje)
+        + ' dias). Confira a função obs-ingest e se o app abre.',
+    });
+  }
+
+  // Erro "novo" só faz sentido com histórico de antes da janela de 7 dias.
+  const primeiroDia = (d.resumo || []).map((v) => String(v.primeiro_dia || '')).filter(Boolean).sort()[0];
+  const temHistorico = primeiroDia && diasEntre(primeiroDia, hoje) > 7;
+  if (temHistorico) {
+    (d.erros || [])
+      .filter((e) => e.novo && Number(e.ocorrencias) >= MIN_ERRO_NOVO)
+      .sort((a, b) => Number(b.ocorrencias) - Number(a.ocorrencias))
+      .slice(0, MAX_ERROS_NOVOS)
+      .forEach((e) => {
+        alertas.push({
+          titulo: limparTitulo('Saúde: erro novo — ' + e.message),
+          motivo: 'erro novo na v' + e.app_version + ' (' + (e.onde || 'sem contexto') + '): '
+            + e.ocorrencias + ' vezes em 7 dias',
+        });
+      });
+  }
+  return alertas;
+}
+
+/** Célula de tabela Markdown: uma linha, sem quebrar a tabela. */
+function celula(v) {
+  return String(v === null || v === undefined || v === '' ? '—' : v).replace(/[\r\n]+/g, ' ').replace(/\|/g, '\\|');
+}
+
 function numero(v) {
   return v === null || v === undefined ? '—' : String(v);
 }
 
-function montarRelatorio(resumo, funil, decisao) {
+function montarRelatorio(resumo, funil, decisao, extra) {
+  const x = extra || {};
   const linhas = ['# Saúde do FinançasPro', ''];
-  linhas.push(decisao.alerta ? '**⚠️ Alerta:** ' + decisao.motivo : 'Sem alerta — ' + decisao.motivo, '');
+  const outros = (x.alertas || []).filter((a) => !decisao.alerta || a.motivo !== decisao.motivo);
+  linhas.push(decisao.alerta ? '**⚠️ Alerta:** ' + decisao.motivo
+    : (outros.length ? 'Sem piora entre versões — ' : 'Sem alerta — ') + decisao.motivo, '');
+  outros.forEach((a) => {
+    linhas.push('**⚠️ Alerta:** ' + a.motivo, '');
+  });
+  if (x.ultimoDiaComSessao === null) {
+    linhas.push('Nenhum aviso de uso registrado ainda: a telemetria não está ligada em produção'
+      + ' (docs/release/ligar-operacao.md, passos 2 e 3).', '');
+  }
   linhas.push('## Por versão (últimos 30 dias)', '');
   linhas.push('| Versão | Sessões | Erros | Erros / 1.000 sessões | De | Até |');
   linhas.push('|---|---:|---:|---:|---|---|');
@@ -77,6 +177,17 @@ function montarRelatorio(resumo, funil, decisao) {
   });
   if (!resumo || !resumo.length) linhas.push('| — | — | — | — | — | — |');
   linhas.push('', 'Versões com menos de ' + MIN_SESSOES + ' sessões ficam de fora do alerta.', '');
+  if (x.erros) {
+    linhas.push('## Erros mais frequentes (últimos 7 dias)', '');
+    linhas.push('| Versão | Ocorrências | Mensagem | Onde | Pilha | Última vez |');
+    linhas.push('|---|---:|---|---|---|---|');
+    [...x.erros].sort((a, b) => Number(b.ocorrencias) - Number(a.ocorrencias)).slice(0, TOP_ERROS).forEach((e) => {
+      linhas.push('| ' + [celula(e.app_version), celula(e.ocorrencias), celula((e.novo ? '🆕 ' : '') + e.message),
+        celula(e.onde), celula(e.pilha && String(e.pilha).trim().slice(0, 120)), celula(String(e.ultima || '').slice(0, 16))].join(' | ') + ' |');
+    });
+    if (!x.erros.length) linhas.push('| — | — | — | — | — | — |');
+    linhas.push('');
+  }
   linhas.push('## Funil de nuvem (por semana de cadastro)', '');
   linhas.push('| Semana | Contas | Lançaram | Ativas no 30º dia | Trial | Assinantes |');
   linhas.push('|---|---:|---:|---:|---:|---:|');
@@ -105,16 +216,27 @@ function main(argv) {
   }
   const resumo = consultar(url, 'select * from saude.versao_resumo');
   const funil = consultar(url, 'select * from saude.funil_nuvem order by semana desc limit ' + SEMANAS_FUNIL);
+  const dia = consultar(url, 'select max(dia)::text as dia from saude.versao_diaria where sessoes > 0');
+  const ultimoDiaComSessao = (dia[0] && dia[0].dia) || null;
+  let erros;
+  try {
+    erros = consultar(url, 'select * from saude.erros_frequentes order by ocorrencias desc limit 50');
+  } catch (e) {
+    // Migração 20261006120000 ainda não aplicada (ou papel sem SELECT nela).
+    console.error('[saude] erros_frequentes indisponível: ' + e.message);
+  }
   const decisao = decidirAlerta(resumo);
-  const texto = montarRelatorio(resumo, funil, decisao);
+  const alertas = listarAlertas({ resumo, erros, ultimoDiaComSessao });
+  const texto = montarRelatorio(resumo, funil, decisao, { erros, alertas, ultimoDiaComSessao });
   process.stdout.write(texto + '\n');
 
   const i = argv.indexOf('--saida');
   if (i !== -1 && argv[i + 1]) fs.writeFileSync(argv[i + 1], texto + '\n');
+  const j = argv.indexOf('--alertas');
+  if (j !== -1 && argv[j + 1]) fs.writeFileSync(argv[j + 1], alertas.map((a) => a.titulo).join('\n') + '\n');
   if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, texto + '\n');
   if (process.env.GITHUB_OUTPUT) {
-    fs.appendFileSync(process.env.GITHUB_OUTPUT, 'alerta=' + decisao.alerta + '\n'
-      + (decisao.alerta ? 'versao=' + decisao.nova.app_version + '\n' : ''));
+    fs.appendFileSync(process.env.GITHUB_OUTPUT, 'alerta=' + (alertas.length > 0) + '\n');
   }
   return 0;
 }
@@ -128,4 +250,7 @@ if (require.main === module) {
   }
 }
 
-module.exports = { decidirAlerta, montarRelatorio, compararVersao, MIN_SESSOES, FATOR, FOLGA };
+module.exports = {
+  decidirAlerta, listarAlertas, montarRelatorio, compararVersao, MIN_SESSOES, FATOR, FOLGA, TETO,
+  DIAS_SEM_SESSAO, MIN_ERRO_NOVO, MAX_ERROS_NOVOS,
+};

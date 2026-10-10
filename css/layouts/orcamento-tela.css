@@ -284,7 +284,7 @@
 
 .orc-kpi-secondary {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: var(--space-4);
 }
 
@@ -564,7 +564,7 @@
 .orc-regra-card-base {
   display: block;
   margin-top: var(--space-1);
-  font-size: var(--font-size-2xs);
+  font-size: var(--font-size-xs);
   color: var(--color-text-muted);
   line-height: 1.4;
 }

@@ -377,7 +377,10 @@
   background: var(--color-bg-card);
   border: 1.5px solid var(--color-border);
   border-radius: var(--radius-md);
-  padding: var(--space-3);
+  /* Sem padding vertical: a altura vem do campo (44px), e o toque em
+     qualquer ponto da caixa cai no campo. Antes o campo tinha 21px de altura
+     dentro de uma caixa de ~45px, e tocar perto da borda não abria o teclado. */
+  padding: 0 var(--space-3);
   margin-bottom: var(--space-2);
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
@@ -395,6 +398,7 @@
 
 .er-input {
   flex: 1;
+  min-height: var(--tap-target-min, 44px);
   border: none;
   background: transparent;
   font-size: var(--font-size-sm);

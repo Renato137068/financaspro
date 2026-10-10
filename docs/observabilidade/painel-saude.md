@@ -1,14 +1,14 @@
 # Painel de saúde
 
 Etapa 4 do roadmap. Responde, por versão do app: **quantos erros por 1.000
-sessões** ela tem, se a versão nova ficou pior que a anterior, e como anda o
-funil de quem cria conta na nuvem.
+sessões** ela tem, se a versão nova ficou pior que a anterior, **quais erros**
+mais acontecem, e como anda o funil de quem cria conta na nuvem.
 
 ## De onde vêm os números
 
 | Dado | Origem | O que fica guardado | Prazo |
 |---|---|---|---|
-| Erros | `OBS.captureError` → Edge Function `obs-ingest` → `fp_client_error` | mensagem mascarada, versão, tela, user-agent | 30 dias |
+| Erros | `OBS.captureError` → Edge Function `obs-ingest` → `fp_client_error` | mensagem mascarada, versão, tela, onde (`contexto`), user-agent | 30 dias |
 | Sessões | `OBS.contarSessao` (1×/dia por aparelho, no boot) → `obs-ingest` → `fp_obs_contar_sessao` | **só** um contador por dia (UTC) e versão em `fp_app_sessao_dia` | 30 dias |
 | Funil | tabelas que já existem (`User`, `Transaction`, `fp_welcome_trial_grant`, `Subscription`) | nada novo | — |
 
@@ -22,6 +22,14 @@ coletor próprio em `obsEndpoint`. Textos para o usuário: `privacidade.html`
 Os relatórios de erro não carregam identificador de sessão, de propósito; por
 isso a métrica é a **razão** erros ÷ sessões, e não "sessões sem erro".
 
+O que vira relatório: erros não tratados (`window.onerror`,
+`unhandledrejection`), módulo do boot que não subiu (`boot:<módulo>`), tela
+que não renderizou (`render:<tela>`), ação de botão ou de modal que quebrou
+(`acao:…`, `modal.onOk`), troca de aba (`mudarAba`) e sync recusado pela nuvem
+(`sync.push`, `sync.pull`, `sync.reconciliar`; falta de rede não conta). O
+mesmo erro sai uma vez por sessão, até 20 por sessão; sem rede, até 10 ficam
+guardados no aparelho e saem quando a rede volta ou na próxima abertura.
+
 ## Onde ler
 
 Schema `saude` (migração `supabase/migrations/20260930120000_saude_telemetria.sql`),
@@ -33,26 +41,31 @@ nem `anon` nem `authenticated` têm acesso a ele.
 | `saude.versao_diaria` | dia e versão | `sessoes`, `erros`, `erros_por_mil` |
 | `saude.versao_resumo` | versão (janela de 30 dias) | `primeiro_dia`, `ultimo_dia`, `sessoes`, `erros`, `erros_por_mil` |
 | `saude.funil_nuvem` | semana de cadastro | `contas`, `com_lancamento`, `ativos_d30`, `com_trial`, `assinantes` |
+| `saude.erros_frequentes` | versão, mensagem e onde (últimos 7 dias) | `ocorrencias`, `primeira`, `ultima`, `pilha` (1ª linha de código do caso mais recente), `novo` |
 
 `ativos_d30` = contas que lançaram algo 30 dias ou mais depois do cadastro.
 Fica nulo até a semana completar 30 dias, para não parecer queda.
 
 No dia a dia: **Supabase → SQL Editor** →
-`select * from saude.versao_resumo order by ultimo_dia desc;`
+`select * from saude.versao_resumo order by ultimo_dia desc;` e
+`select * from saude.erros_frequentes order by ocorrencias desc limit 20;`
 
 ## Alerta diário
 
 `.github/workflows/saude.yml` roda todo dia (e à mão, em Actions) o
-`scripts/saude-relatorio.cjs`, que publica o relatório no resumo do job e
-**abre uma issue** quando a versão mais nova com uso suficiente passa do
-limite em relação à anterior:
+`scripts/saude-relatorio.cjs`, que publica o relatório (com os 10 erros mais
+frequentes) no resumo do job e **abre uma issue por alerta**:
 
-- só entram versões com **200+ sessões** na janela (menos que isso, um
-  aparelho com problema vira "a versão piorou");
-- alerta quando `erros_por_mil(nova) > 1,5 × erros_por_mil(anterior) + 2`.
+| Alerta | Quando |
+|---|---|
+| Versão pior que a anterior | `erros_por_mil(nova) > 1,5 × erros_por_mil(anterior) + 2`, só entre versões com **200+ sessões** na janela (menos que isso, um aparelho com problema vira "a versão piorou") |
+| Versão acima do teto | a mais nova com 200+ sessões passa de **20 erros por 1.000 sessões** (pega a primeira versão, que não tem anterior) |
+| Avisos de uso pararam | nenhum aviso de uso há **2 dias**, depois de já ter havido: função fora do ar, app que quebra antes do boot ou CSP bloqueando. Sem isto, "sem erros" e "sem dados" ficam iguais |
+| Erro novo | mensagem que não existia antes da janela de 7 dias e já apareceu **10+ vezes** (até 3 por dia; só depois de 7 dias de histórico, senão tudo seria novo) |
 
-Se a issue daquela versão já está aberta, o job comenta nela em vez de abrir
-outra. Sem o segredo abaixo, o job só avisa e sai verde.
+Se a issue com aquele título já está aberta, o job comenta nela em vez de
+abrir outra. Sem o segredo abaixo, o job só avisa e sai verde. Feche a issue
+quando resolver; se o problema voltar, outra é aberta.
 
 ### Configurar o segredo
 
@@ -62,6 +75,8 @@ Crie um papel que só lê o schema `saude` (no SQL Editor do Supabase, uma vez):
 create role saude_leitura login password '<senha forte>';
 grant usage on schema saude to saude_leitura;
 grant select on all tables in schema saude to saude_leitura;
+-- Views que migrações futuras criarem no schema também ficam legíveis.
+alter default privileges in schema saude grant select on tables to saude_leitura;
 -- As views leem as tabelas com o dono delas; o papel não precisa de acesso
 -- a public.
 ```
@@ -80,4 +95,8 @@ Rodar localmente: `SAUDE_DATABASE_URL=postgresql://... node scripts/saude-relato
   soma atômica, versão inválida recusada, contas do painel e do funil.
 - `tests/obs-sanitize.test.js`: o aviso de uso só deixa passar a versão.
 - `tests/observability-envio.test.js`: 1×/dia, opt-out, modo local.
-- `tests/saude-relatorio.test.js`: a regra do alerta e o workflow.
+- `supabase/tests/saude_erros_frequentes.test.sql` (pgTAP): agrupamento,
+  janela, pilha, `novo` e quem lê.
+- `tests/saude-relatorio.test.js`: as regras dos alertas e o workflow.
+- `tests/lifecycle-real.test.js`, `tests/supabase-sync.test.js`: falha de boot
+  e de sync viram relatório (rede e cota, não).

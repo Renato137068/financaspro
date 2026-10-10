@@ -9,7 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const {
-  decidirAlerta, montarRelatorio, compararVersao, MIN_SESSOES,
+  decidirAlerta, listarAlertas, montarRelatorio, compararVersao, MIN_SESSOES, TETO, MIN_ERRO_NOVO,
 } = require('../scripts/saude-relatorio.cjs');
 
 const ROOT = path.join(__dirname, '..');
@@ -58,6 +58,51 @@ describe('decidirAlerta', () => {
   });
 });
 
+describe('listarAlertas', () => {
+  const HOJE = '2026-10-20';
+  const comHistorico = (lista) => lista.map((x) => Object.assign({ primeiro_dia: '2026-09-25' }, x));
+  const erro = (message, ocorrencias, novo) => ({
+    app_version: '11.3.19', message, onde: 'render:resumo', ocorrencias, novo, pilha: 'at f (app.bundle.js:1:2)',
+  });
+
+  test('a piora entre versões vira issue com o título de sempre', () => {
+    const a = listarAlertas({ resumo: [v('11.3.18', 500, 4), v('11.3.19', 400, 25)], hoje: HOJE });
+    expect(a.map((x) => x.titulo)).toEqual(['Saúde: v11.3.19 com mais erros por sessão que a versão anterior']);
+  });
+
+  test(`primeira versão (sem anterior) acima de ${TETO} por mil também alerta`, () => {
+    const a = listarAlertas({ resumo: [v('11.3.19', 400, TETO + 5)], hoje: HOJE });
+    expect(a.map((x) => x.titulo)).toEqual(['Saúde: v11.3.19 com mais de ' + TETO + ' erros por 1.000 sessões']);
+    expect(listarAlertas({ resumo: [v('11.3.19', 400, TETO)], hoje: HOJE })).toEqual([]);
+  });
+
+  test('avisos de uso parados há 2 dias alertam; sem nenhum aviso ainda, não', () => {
+    expect(listarAlertas({ resumo: [], ultimoDiaComSessao: '2026-10-19', hoje: HOJE })).toEqual([]);
+    const a = listarAlertas({ resumo: [], ultimoDiaComSessao: '2026-10-18', hoje: HOJE });
+    expect(a[0].titulo).toBe('Saúde: os avisos de uso pararam de chegar');
+    expect(a[0].motivo).toMatch(/2026-10-18 \(2 dias\)/);
+    expect(listarAlertas({ resumo: [], ultimoDiaComSessao: null, hoje: HOJE })).toEqual([]);
+  });
+
+  test(`erro novo com ${MIN_ERRO_NOVO}+ ocorrências alerta, no máximo 3 por dia`, () => {
+    const erros = [erro('a is undefined', MIN_ERRO_NOVO, true), erro('velho', 500, false),
+      erro('raro', MIN_ERRO_NOVO - 1, true), erro('b', 40, true), erro('c', 30, true), erro('d', 20, true)];
+    const a = listarAlertas({ resumo: comHistorico([v('11.3.19', 100, 1)]), erros, hoje: HOJE });
+    expect(a.map((x) => x.titulo)).toEqual(['Saúde: erro novo — b', 'Saúde: erro novo — c', 'Saúde: erro novo — d']);
+  });
+
+  test('sem histórico anterior à janela, todo erro pareceria novo: não alerta', () => {
+    const a = listarAlertas({ resumo: [v('11.3.19', 100, 1)].map((x) => Object.assign(x, { primeiro_dia: '2026-10-17' })),
+      erros: [erro('x', 99, true)], hoje: HOJE });
+    expect(a).toEqual([]);
+  });
+
+  test('o título vindo de mensagem de erro sai numa linha, sem aspas nem crase', () => {
+    const a = listarAlertas({ resumo: comHistorico([v('11.3.19', 100, 1)]), erros: [erro('quebrou "x"\n`y`', 50, true)], hoje: HOJE });
+    expect(a[0].titulo).toBe('Saúde: erro novo — quebrou x y');
+  });
+});
+
 describe('montarRelatorio', () => {
   test('tabela por versão (mais nova primeiro) e funil com nulo como —', () => {
     const resumo = [v('11.3.9', 500, 2), v('11.3.10', 400, 3)];
@@ -67,6 +112,30 @@ describe('montarRelatorio', () => {
     expect(md).toMatch(/Sem alerta/);
     expect(md.indexOf('| 11.3.10 |')).toBeLessThan(md.indexOf('| 11.3.9 |'));
     expect(md).toContain('| 2026-09-21 | 5 | 3 | — | 2 | 1 |');
+  });
+
+  test('erros mais frequentes: mais vistos primeiro, novos marcados, pipe não quebra a tabela', () => {
+    const erros = [
+      { app_version: '11.3.19', message: 'raro', onde: null, ocorrencias: 2, novo: false, pilha: '', ultima: '2026-10-05T10:00:00Z' },
+      { app_version: '11.3.19', message: 'a | b', onde: 'render:resumo', ocorrencias: 9, novo: true,
+        pilha: '    at f (app.bundle.js:1:2)', ultima: '2026-10-06T10:00:00Z' },
+    ];
+    const md = montarRelatorio([], [], decidirAlerta([]), { erros });
+    expect(md).toContain('## Erros mais frequentes (últimos 7 dias)');
+    expect(md).toContain('| 11.3.19 | 9 | 🆕 a \\| b | render:resumo | at f (app.bundle.js:1:2) | 2026-10-06T10:00 |');
+    expect(md.indexOf('a \\| b')).toBeLessThan(md.indexOf('raro'));
+  });
+
+  test('sem nenhum aviso de uso, o relatório diz que a telemetria não está ligada', () => {
+    const md = montarRelatorio([], [], decidirAlerta([]), { ultimoDiaComSessao: null });
+    expect(md).toMatch(/telemetria não está ligada/);
+  });
+
+  test('outros alertas aparecem mesmo sem piora entre versões', () => {
+    const alertas = [{ titulo: 't', motivo: 'último aviso de uso em 2026-10-01' }];
+    const md = montarRelatorio([], [], decidirAlerta([]), { alertas });
+    expect(md).toMatch(/Sem piora entre versões/);
+    expect(md).toContain('**⚠️ Alerta:** último aviso de uso em 2026-10-01');
   });
 
   test('com alerta, o motivo abre o relatório', () => {
@@ -92,9 +161,13 @@ describe('script e workflow', () => {
     expect(wf).toMatch(/::notice::SAUDE_DATABASE_URL não configurado/);
   });
 
-  test('abre issue só com alerta, sem duplicar a da mesma versão', () => {
-    expect(wf).toContain('node scripts/saude-relatorio.cjs --saida relatorio.md');
+  test('abre uma issue por alerta, sem duplicar a do mesmo título', () => {
+    expect(wf).toContain('node scripts/saude-relatorio.cjs --saida relatorio.md --alertas alertas.txt');
     expect(wf).toMatch(/if: steps\.saude\.outputs\.alerta == 'true'/);
+    expect(wf).toContain('done < alertas.txt');
+    // O título pode trazer a mensagem de um erro: vai como dado, nunca como código.
+    expect(wf).toContain('jq -r --arg t "$TITULO"');
+    expect(wf).not.toMatch(/select\(\.title == \\"\$TITULO/);
     expect(wf).toMatch(/gh issue comment "\$NUM"/);
     expect(wf).toMatch(/gh issue create --title "\$TITULO"/);
     expect(wf).toMatch(/permissions:\n\s+contents: read\n\s+issues: write/);

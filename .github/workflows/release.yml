@@ -1,9 +1,12 @@
 name: Release
 
-# Entrega contínua por tag (etapa 4 do roadmap). Uma tag vX.Y.Z publica:
-#   1. as migrações e as Edge Functions no Supabase (scripts/deploy-supabase.cjs);
-#   2. o AAB assinado, anexado a um GitHub Release e, se configurado, na faixa
-#      de teste interno da Play — de onde sai o smoke em aparelho
+# Entrega contínua por tag (etapa 4 do roadmap). Uma tag vX.Y.Z:
+#   1. monta e assina o AAB (sem publicar nada ainda);
+#   2. só com o AAB pronto, aplica as migrações e as Edge Functions no
+#      Supabase (scripts/deploy-supabase.cjs) — um erro no Gradle não deixa
+#      mais o banco novo com o app antigo;
+#   3. publica o AAB num GitHub Release e, se configurado, na faixa de teste
+#      interno da Play — de onde sai o smoke em aparelho
 #      (docs/release/smoke-aparelho.md) antes de promover.
 #
 # O deploy e a assinatura usam o ambiente "production" do GitHub: exija
@@ -74,7 +77,8 @@ jobs:
 
   supabase:
     name: Supabase (migrações e Edge Functions)
-    needs: verificar
+    # Depois do AAB montado e assinado (auditoria de dependências, 09/10).
+    needs: [verificar, android]
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -98,14 +102,11 @@ jobs:
 
   android:
     name: AAB assinado
-    # Depois do Supabase: o app novo pode depender de migração ou função nova.
-    needs: [verificar, supabase]
+    # Monta antes de mexer no banco; quem publica é o job "publicar", depois
+    # do Supabase (o app novo pode depender de migração ou função nova).
+    needs: verificar
     runs-on: ubuntu-latest
     environment: production
-    permissions:
-      contents: write
-    env:
-      TEM_PLAY: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -128,7 +129,17 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          # Mapas de código para ler a pilha dos erros relatados (npm run
+          # erro:pilha). O build os tira do dist/ antes do sync: não vão no AAB.
+          FP_SOURCEMAPS: '1'
         run: npm run android:sync
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sourcemaps-${{ needs.verificar.outputs.tag }}
+          path: sourcemaps/
+          if-no-files-found: error
+          retention-days: 90
 
       # A keystore nunca vai para o repositório: chega em base64 pelo segredo
       # e é apagada no fim do job (o runner é descartado, mas não custa).
@@ -161,6 +172,18 @@ jobs:
           jarsigner -verify android/app/build/outputs/bundle/release/app-release.aab | tee verificacao.txt
           grep -q '^jar verified\.' verificacao.txt
 
+      # android/app/build.gradle (ignoreAssetsPattern) tira do pacote o que o
+      # dist/ só tem para o site. Só o build do AAB prova que o padrão pegou:
+      # se algo escapar, avisa no resumo da execução sem travar a publicação.
+      - name: Conferir que o site ficou fora do AAB
+        run: |
+          AAB=android/app/build/outputs/bundle/release/app-release.aab
+          unzip -l "$AAB" | awk '{print $4}' > conteudo-aab.txt
+          grep -c '^base/assets/public/' conteudo-aab.txt
+          if grep -E '^base/assets/public/(screenshots|site|artigos)/|^base/assets/public/(sobre\.html|robots\.txt|sitemap\.xml|_headers)$' conteudo-aab.txt; then
+            echo "::warning::Arquivos do site entraram no AAB (lista acima): confira o ignoreAssetsPattern."
+          fi
+
       - name: Nomear o AAB com a versão
         run: cp android/app/build/outputs/bundle/release/app-release.aab "financaspro-${{ needs.verificar.outputs.tag }}.aab"
 
@@ -169,6 +192,28 @@ jobs:
           name: aab-${{ needs.verificar.outputs.tag }}
           path: financaspro-${{ needs.verificar.outputs.tag }}.aab
           retention-days: 90
+
+      - name: Apagar a keystore
+        if: always()
+        run: rm -f android/app/upload.jks android/keystore.properties
+
+  publicar:
+    name: GitHub Release e Play
+    needs: [verificar, android, supabase]
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: write
+    env:
+      TEM_PLAY: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.verificar.outputs.tag }}
+
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: aab-${{ needs.verificar.outputs.tag }}
 
       - name: GitHub Release com o AAB
         env:
@@ -192,7 +237,3 @@ jobs:
           status: completed
           # "Novidades" da versão na loja (whatsnew-<idioma>, até 500 caracteres).
           whatsNewDirectory: distribution/whatsnew
-
-      - name: Apagar a keystore
-        if: always()
-        run: rm -f android/app/upload.jks android/keystore.properties

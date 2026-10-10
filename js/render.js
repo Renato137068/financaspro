@@ -22,7 +22,6 @@ const RENDER = {
     }
     RENDER.renderExtrato();
     RENDER.atualizarHeaderSaldo();
-    if (typeof OBS !== 'undefined' && OBS.markRender) OBS.markRender();
   },
 
   // ----------------------------------------------------------------

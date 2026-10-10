@@ -494,8 +494,9 @@
 /* Checkbox para seleção em massa */
 
 .tx-checkbox {
-  width: 20px;
-  height: 20px;
+  /* 24px: alvo mínimo do WCAG 2.2 (2.5.8). */
+  width: 24px;
+  height: 24px;
   margin-right: var(--space-3);
   cursor: pointer;
   accent-color: var(--color-primary-500);

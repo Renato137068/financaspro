@@ -2,8 +2,9 @@ name: Saúde do app
 
 # Painel de saúde (etapa 4 do roadmap): todo dia lê o schema `saude` do
 # Supabase (scripts/saude-relatorio.cjs), publica o relatório no resumo do
-# job e abre uma issue quando a versão mais nova tem erros por 1.000 sessões
-# bem acima da anterior. Sem o segredo, o job só avisa e sai verde.
+# job e abre uma issue por alerta: versão nova pior que a anterior, versão
+# acima do teto de erros, avisos de uso que pararam de chegar ou erro novo
+# que já se repetiu. Sem o segredo, o job só avisa e sai verde.
 #
 # Segredo do repositório (Settings → Secrets → Actions):
 #   SAUDE_DATABASE_URL — conexão direta ao Postgres do Supabase com um papel
@@ -50,20 +51,23 @@ jobs:
       - name: Relatório
         id: saude
         if: steps.segredo.outputs.tem == 'true'
-        run: node scripts/saude-relatorio.cjs --saida relatorio.md
+        run: node scripts/saude-relatorio.cjs --saida relatorio.md --alertas alertas.txt
 
-      # Uma issue por versão: se já existe aberta, comenta em vez de duplicar.
-      - name: Abrir ou atualizar a issue do alerta
+      # Uma issue por alerta (o título identifica): se já existe aberta,
+      # comenta em vez de duplicar. O título é comparado com jq --arg, nunca
+      # interpolado em código: ele pode trazer a mensagem de um erro.
+      - name: Abrir ou atualizar as issues dos alertas
         if: steps.saude.outputs.alerta == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSAO: ${{ steps.saude.outputs.versao }}
         run: |
-          TITULO="Saúde: v$VERSAO com mais erros por sessão que a versão anterior"
-          NUM=$(gh issue list --state open --search "in:title \"$TITULO\"" --json number,title \
-            --jq ".[] | select(.title == \"$TITULO\") | .number" | head -n1)
-          if [ -n "$NUM" ]; then
-            gh issue comment "$NUM" --body-file relatorio.md
-          else
-            gh issue create --title "$TITULO" --body-file relatorio.md
-          fi
+          while IFS= read -r TITULO; do
+            [ -z "$TITULO" ] && continue
+            NUM=$(gh issue list --state open --limit 200 --json number,title \
+              | jq -r --arg t "$TITULO" '.[] | select(.title == $t) | .number' | head -n1)
+            if [ -n "$NUM" ]; then
+              gh issue comment "$NUM" --body-file relatorio.md
+            else
+              gh issue create --title "$TITULO" --body-file relatorio.md
+            fi
+          done < alertas.txt

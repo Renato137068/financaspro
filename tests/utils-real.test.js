@@ -365,6 +365,21 @@ domDescribe('UTILS.mostrarToast (jsdom)', function() {
     expect(clicou).toBe(true);
     expect(document.getElementById('teste-banner')).toBeNull();
   });
+
+  test('mostrarBanner com `apos` entra no fluxo, logo depois da âncora', function() {
+    document.body.innerHTML = '<main><div id="ancora-saudacao"></div><div id="depois"></div></main>';
+    var b = global.UTILS.mostrarBanner({ id: 'teste-inline', mensagem: 'Oi', apos: 'ancora-saudacao' });
+    expect(b.parentNode.tagName).toBe('MAIN');
+    expect(b.previousElementSibling.id).toBe('ancora-saudacao');
+    expect(b.classList.contains('fp-banner--inline')).toBe(true);
+  });
+
+  test('mostrarBanner com âncora ausente volta a flutuar no body', function() {
+    document.body.innerHTML = '';
+    var b = global.UTILS.mostrarBanner({ id: 'teste-sem-ancora', mensagem: 'Oi', apos: 'nao-existe' });
+    expect(b.parentNode).toBe(document.body);
+    expect(b.classList.contains('fp-banner--inline')).toBe(false);
+  });
 });
 
 /**

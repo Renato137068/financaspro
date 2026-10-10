@@ -1,0 +1,44 @@
+# Dependabot — atualizações de dependências (auditoria de segurança de 08/10/2026).
+#
+# Correções de segurança chegam assim que publicadas, em PR próprio. As
+# atualizações comuns vêm uma vez por semana, agrupadas num PR só por
+# ecossistema, para não encher a fila. Versões major ficam em PRs separados:
+# costumam pedir mudança de código e merecem revisão própria.
+#
+# Atenção: js/vendor/supabase.js é uma cópia do supabase-js. Quando o PR do
+# Dependabot subir @supabase/supabase-js, o CI falha até a cópia ser regerada:
+# rode `npm ci` (o postinstall copia) e commite js/vendor/supabase.js no PR.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: America/Sao_Paulo
+    open-pull-requests-limit: 5
+    groups:
+      npm-menores:
+        update-types: [minor, patch]
+    labels: [dependencias]
+
+  - package-ecosystem: gradle
+    directory: /android
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: America/Sao_Paulo
+    open-pull-requests-limit: 3
+    groups:
+      android-menores:
+        update-types: [minor, patch]
+    labels: [dependencias]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ['*']
+    labels: [dependencias]

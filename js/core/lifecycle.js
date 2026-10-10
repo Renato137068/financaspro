@@ -243,6 +243,13 @@ const LIFECYCLE = {
     // Executar hooks onError
     LIFECYCLE._runHooks('onError', { module: module.name, error: error });
 
+    // Módulo que não subiu é a pior falha que um cliente vê (tela quebrada ou
+    // o app que não abre) e, sem isto, só aparecia no console do aparelho.
+    // Quem só caiu porque a dependência falhou não é outro erro.
+    if (typeof OBS !== 'undefined' && OBS.captureError && !/^Dependência falhou/.test(String(error))) {
+      OBS.captureError(error, { contexto: 'boot:' + module.name });
+    }
+
     if (module.critical) {
       console.error('[LIFECYCLE] ✗ CRÍTICO:', module.name, '-', error);
       // `critical` é o que init() olha para interromper o boot. Sem a marca,
@@ -493,7 +500,10 @@ const LIFECYCLE_BOOT = {
       // Painel de saúde: aviso anônimo de uso (1×/dia, só a versão; mesmo
       // opt-out dos relatórios de erro). Aqui, e não no OBS, porque a
       // preferência mora em DADOS, que só está pronto depois do boot.
-      if (typeof OBS !== 'undefined' && OBS.contarSessao) OBS.contarSessao();
+      if (typeof OBS !== 'undefined' && OBS.contarSessao) {
+        OBS.contarSessao();
+        OBS.enviarPendentes();
+      }
 
       // Lembrete diário (se ativo e permissão concedida)
       setTimeout(function() {

@@ -168,6 +168,18 @@ describe('falhas', () => {
     expect(erros).toHaveBeenCalledWith('[LIFECYCLE] ✗ CRÍTICO:', 'dados', '-', expect.stringMatching(/IDB corrompido/));
   });
 
+  test('módulo que falha vai para o relatório de erros; quem só caiu pela dependência, não', async () => {
+    global.OBS = { captureError: jest.fn() };
+    LIFECYCLE.register('opcional', () => { throw new Error('x'); }, { critical: false });
+    LIFECYCLE.register('usa-opcional', jest.fn(), { depends: ['opcional'], critical: false });
+    LIFECYCLE.register('dados', () => { throw new Error('IDB corrompido'); });
+    await expect(LIFECYCLE.init()).rejects.toThrow(/Falha crítica em dados/);
+    expect(global.OBS.captureError.mock.calls).toEqual([
+      ['Falhou após 1 tentativas: x', { contexto: 'boot:opcional' }],
+      ['Falhou após 1 tentativas: IDB corrompido', { contexto: 'boot:dados' }],
+    ]);
+  });
+
   test('dependente de um módulo que falhou: o não crítico só é pulado; o crítico interrompe', async () => {
     LIFECYCLE.register('opcional', () => { throw new Error('x'); }, { critical: false });
     LIFECYCLE.register('usa-opcional', jest.fn(), { depends: ['opcional'], critical: false });
@@ -231,7 +243,7 @@ describe('LIFECYCLE_BOOT.registerDefaults', () => {
     spy('SUPA_AUTH', ['isActive']);
     spy('ONBOARDING', ['iniciar']);
     spy('RECORRENTES', ['processarNaAbertura']);
-    spy('OBS', ['captureError', 'contarSessao']);
+    spy('OBS', ['captureError', 'contarSessao', 'enviarPendentes']);
     spy('DAILY_REMINDER', ['maybeRemind']);
     spy('INSIGHTS', ['mostrarOrcamento']);
     spy('UTILS', ['mostrarToast']);
@@ -273,6 +285,7 @@ describe('LIFECYCLE_BOOT.registerDefaults', () => {
     // Recorrente quebrada não derruba o boot: vai para os relatórios de erro.
     expect(g.OBS.captureError).toHaveBeenCalledWith(expect.any(Error), { contexto: 'lifecycle.recorrentes' });
     expect(g.OBS.contarSessao).toHaveBeenCalled();
+    expect(g.OBS.enviarPendentes).toHaveBeenCalled(); // o que ficou guardado sem rede
 
     // Agendados: insights 200 ms, onboarding 400, aviso do PIN 1 s,
     // lembretes 2,5 s e reconciliação da Play 2,8 s.

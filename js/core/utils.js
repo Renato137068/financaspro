@@ -157,6 +157,37 @@ const UTILS = {
   },
 
   _exclusoesPendentes: {},
+  _saidaVigiada: false,
+
+  /**
+   * Efetiva agora toda exclusão ainda na janela de "Desfazer". Chamado quando
+   * o app sai de cena: sem isso, fechar o app nos 5 s do toast cancelava a
+   * exclusão e o item "apagado" voltava na próxima abertura.
+   * @returns {number} quantas exclusões foram efetivadas
+   */
+  efetivarExclusoesPendentes: function() {
+    var chaves = Object.keys(UTILS._exclusoesPendentes);
+    chaves.forEach(function(chave) {
+      var p = UTILS._exclusoesPendentes[chave];
+      if (!p || typeof p.efetivar !== 'function') return;
+      if (p.toast && p.toast.fechar) p.toast.fechar();
+      p.efetivar();
+    });
+    return chaves.length;
+  },
+
+  _vigiarSaidaComExclusoes: function() {
+    if (UTILS._saidaVigiada || typeof document === 'undefined') return;
+    UTILS._saidaVigiada = true;
+    // No Android o WebView quase nunca dispara pagehide ao fechar pelo
+    // multitarefa; ir para o fundo (visibilitychange → hidden) é o último aviso.
+    document.addEventListener('visibilitychange', function() {
+      if (document.visibilityState === 'hidden') UTILS.efetivarExclusoesPendentes();
+    });
+    if (typeof window !== 'undefined') {
+      window.addEventListener('pagehide', function() { UTILS.efetivarExclusoesPendentes(); });
+    }
+  },
 
   /**
    * Agenda exclusão definitiva após janela de desfazer (~5s).
@@ -176,13 +207,17 @@ const UTILS = {
       }
     }
 
-    var timer = setTimeout(function() {
+    function efetivar() {
+      clearTimeout(timer);
+      if (self._exclusoesPendentes[chave] !== pendente) return;
       try {
         if (typeof efetivarFn === 'function') efetivarFn();
       } finally {
         delete self._exclusoesPendentes[chave];
       }
-    }, duracao);
+    }
+    var pendente = { efetivar: efetivar };
+    var timer = setTimeout(efetivar, duracao);
 
     var toast = UTILS.mostrarToastAcao(
       opts.mensagem || 'Excluído',
@@ -195,11 +230,16 @@ const UTILS = {
       { duracaoMs: duracao, tipo: opts.tipo || 'info' }
     );
 
-    UTILS._exclusoesPendentes[chave] = { timer: timer, toast: toast };
+    pendente.timer = timer;
+    pendente.toast = toast;
+    UTILS._exclusoesPendentes[chave] = pendente;
+    UTILS._vigiarSaidaComExclusoes();
   },
 
   /**
    * Banner dispensável (não-modal) para avisos como backup pendente.
+   * Com `opts.apos` (id de um elemento na página), entra no fluxo logo depois
+   * dele em vez de flutuar por cima do topo da tela.
    */
   mostrarBanner: function(opts) {
     opts = opts || {};
@@ -247,7 +287,13 @@ const UTILS = {
     }
 
     banner.appendChild(actions);
-    document.body.appendChild(banner);
+    var ancora = opts.apos ? document.getElementById(opts.apos) : null;
+    if (ancora && ancora.parentNode) {
+      banner.className += ' fp-banner--inline';
+      ancora.parentNode.insertBefore(banner, ancora.nextSibling);
+    } else {
+      document.body.appendChild(banner);
+    }
     return banner;
   },
 

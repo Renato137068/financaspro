@@ -178,7 +178,7 @@ const PREVISAO = {
         var catLabel = (typeof CONFIG !== 'undefined' && CONFIG.getCatLabel && corte.categoriaAlvo)
           ? CONFIG.getCatLabel(corte.categoriaAlvo) : (corte.categoriaAlvo || '');
         return '<div class="previsao-meta previsao-meta-corte">' +
-          '<i data-lucide="target" aria-hidden="true"></i> Para atingir 20% de poupança, reduza <strong>R$ ' + corte.corteNecessario.toFixed(2).replace('.', ',') + '</strong>' +
+          '<i data-lucide="target" aria-hidden="true"></i> Para atingir 20% de poupança, reduza <strong>' + PREVISAO._formatarMoeda(corte.corteNecessario) + '</strong>' +
           (catLabel ? ' em <strong>' + catLabel + '</strong>' : '') + '.' +
         '</div>';
       }());

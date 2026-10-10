@@ -114,6 +114,7 @@ function loadSupaSync(mocks) {
     ACTIONS: { SYNC_INICIAR: 'SYNC_INICIAR', SYNC_CONCLUIR: 'SYNC_CONCLUIR', SYNC_FALHAR: 'SYNC_FALHAR' },
     BILLING: mocks.billing || {},
     UTILS: mocks.utils || {},
+    OBS: mocks.obs,
     console: console,
   };
   sandbox.window = sandbox;
@@ -198,6 +199,24 @@ describe('supabase-sync — pull mockado', function() {
     var out = await ctx.SUPA_SYNC.pushTx(tx);
     expect(out).toBe(tx);
     expect(billing.onPaymentRequired).toHaveBeenCalled();
+  });
+
+  test('falha de sync que não é rede entra no relatório de erros; cota e rede não', async function() {
+    var obs = { captureError: jest.fn() };
+    var tx = { id: 'tx1', tipo: 'despesa', valor: 10 };
+    var silenciar = jest.spyOn(console, 'warn').mockImplementation(function() {});
+    try {
+      await loadSupaSync({ upsertError: { code: '42501', message: 'new row violates row-level security' }, obs: obs }).SUPA_SYNC.pushTx(tx);
+      expect(obs.captureError).toHaveBeenCalledWith(expect.objectContaining({ code: '42501' }), { contexto: 'sync.push' });
+
+      obs.captureError.mockClear();
+      await loadSupaSync({ upsertError: { message: 'TypeError: Failed to fetch' }, obs: obs }).SUPA_SYNC.pushTx(tx);
+      await loadSupaSync({ upsertError: { code: 'P0001', message: 'QUOTA_EXCEEDED:transaction' }, obs: obs, billing: { onPaymentRequired: jest.fn() } })
+        .SUPA_SYNC.pushTx(tx);
+      expect(obs.captureError).not.toHaveBeenCalled();
+    } finally {
+      silenciar.mockRestore();
+    }
   });
 
   test('P0001 sem marcador de cota NÃO é tratado como quota (não mostra "assine o Pro")', async function() {

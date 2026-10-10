@@ -7,12 +7,14 @@ Uma tag `vX.Y.Z` publica a versão inteira pelo workflow
    (`scripts/release-tag.cjs`), versões alinhadas (`check:version`), lint,
    testes do frontend, testes das Edge Functions (`test:edge`), build,
    orçamento do bundle e `npm audit`.
-2. **Supabase** — `scripts/deploy-supabase.cjs`: `db push` das migrações e o
-   deploy de toda Edge Function (as que recebem chamada sem JWT de usuário com
-   `--no-verify-jwt`).
-3. **Android** — build, `cap sync`, `bundleRelease` assinado com a keystore de
-   upload, conferência da assinatura, AAB anexado a um GitHub Release e, se
-   configurado, enviado à faixa de **teste interno** da Play.
+2. **Android** — build, `cap sync`, `bundleRelease` assinado com a keystore de
+   upload e conferência da assinatura. Nada é publicado ainda.
+3. **Supabase** — só com o AAB pronto: `scripts/deploy-supabase.cjs`, `db push`
+   das migrações e o deploy de toda Edge Function (as que recebem chamada sem
+   JWT de usuário com `--no-verify-jwt`). Assim um erro no Gradle não deixa o
+   banco novo com o app antigo.
+4. **Publicar** — o AAB vai para um GitHub Release e, se configurado, para a
+   faixa de **teste interno** da Play.
 
 Antes da primeira tag, o que só o dono das contas pode fazer (ambiente
 `production`, segredos, painel, Play Console) está em
@@ -53,7 +55,7 @@ qualquer coisa. Para republicar uma tag existente (ex.: o job da Play caiu):
 ## Configuração (uma vez)
 
 **Ambiente `production`** (*Settings → Environments*): crie-o com *Required
-reviewers*. Os jobs de Supabase e Android esperam essa aprovação — criar uma
+reviewers*. Os jobs de Android, Supabase e publicação esperam essa aprovação — criar uma
 tag não publica nada sozinho.
 
 **Segredos do ambiente `production`:**

@@ -53,17 +53,28 @@ function extractScriptPaths(html) {
   return paths;
 }
 
-function minifyConcat(relPaths) {
+// FP_SOURCEMAPS=1 (só no release): grava ao lado do bundle o mapa de código e
+// a lista de onde começa cada arquivo na concatenação. scripts/sourcemaps-guardar.cjs
+// tira os dois do dist/ antes de irem para o APK ou para o site; o código
+// minificado sai igual com ou sem o mapa.
+const COM_MAPAS = process.env.FP_SOURCEMAPS === '1';
+
+function minifyConcat(relPaths, nome) {
   let combined = '';
+  let linha = 1;
+  const partes = [];
   for (const rel of relPaths) {
     const file = path.join(dist, rel);
     if (!fs.existsSync(file)) {
       console.warn('[bundle-app] ausente:', rel);
       continue;
     }
-    combined += fs.readFileSync(file, 'utf8') + '\n;\n';
+    const src = fs.readFileSync(file, 'utf8') + '\n;\n';
+    partes.push({ arquivo: rel, linha: linha });
+    linha += src.split('\n').length - 1;
+    combined += src;
   }
-  return esbuild.transformSync(combined, {
+  const out = esbuild.transformSync(combined, {
     minify: true,
     target: 'es2015',
     legalComments: 'none',
@@ -73,7 +84,14 @@ function minifyConcat(relPaths) {
     // debugger nunca deve chegar ao usuário final.
     pure: ['console.log', 'console.debug', 'console.info', 'console.trace'],
     drop: ['debugger'],
-  }).code;
+    sourcemap: COM_MAPAS ? 'external' : false,
+    sourcefile: nome + '.src.js',
+  });
+  if (COM_MAPAS) {
+    fs.writeFileSync(path.join(dist, 'js', nome + '.js.map'), out.map);
+    fs.writeFileSync(path.join(dist, 'js', nome + '.js.partes.json'), JSON.stringify(partes));
+  }
+  return out.code;
 }
 
 const allPaths = extractScriptPaths(fs.readFileSync(indexPath, 'utf8'));
@@ -93,14 +111,14 @@ const appPaths = bundlable.filter((p) => !p.startsWith(VENDOR_PREFIX));
 const injects = [];
 
 if (vendorPaths.length) {
-  const code = minifyConcat(vendorPaths);
+  const code = minifyConcat(vendorPaths, 'vendor.bundle');
   fs.writeFileSync(path.join(dist, 'js', 'vendor.bundle.js'), code);
   injects.push('<script defer src="js/vendor.bundle.js"></script>');
   console.log('[bundle-app]', vendorPaths.length, 'vendor →', 'js/vendor.bundle.js (', Math.round(code.length / 1024), 'KB )');
 }
 
 if (appPaths.length) {
-  const code = minifyConcat(appPaths);
+  const code = minifyConcat(appPaths, 'app.bundle');
   fs.writeFileSync(path.join(dist, 'js', 'app.bundle.js'), code);
   injects.push('<script defer src="js/app.bundle.js"></script>');
   console.log('[bundle-app]', appPaths.length, 'app →', 'js/app.bundle.js (', Math.round(code.length / 1024), 'KB )');

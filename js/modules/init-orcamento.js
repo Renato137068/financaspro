@@ -331,7 +331,7 @@ const INIT_ORCAMENTO = {
     var realizadoC = gastoNecC + gasDesC;
     /* Saldo do orçamento = o que sobra da renda planejada após despesas.
        "Folga poupança" é OUTRA leitura (quanto ainda cabe na fatia de 20%) e
-       é calculada no _renderHeader a partir de limPou e poupancaReal. */
+       sai do cartão Poupança do 50/30/20 (limPou × poupancaReal). */
     var saldoDisponivelC = rendaC - realizadoC;
     var catGastos = {};
     Object.keys(catGastosC).forEach(function(k) { catGastos[k] = catGastosC[k] / 100; });
@@ -359,14 +359,6 @@ const INIT_ORCAMENTO = {
     INIT_ORCAMENTO._updateElement('orc-total-planejado', UTILS.formatarMoeda(data.renda));
     INIT_ORCAMENTO._updateElement('orc-total-realizado', UTILS.formatarMoeda(realizado));
     INIT_ORCAMENTO._updateElement('orc-saldo-disponivel', UTILS.formatarMoeda(saldo));
-    // "Folga poupança": quanto ainda cabe na fatia de poupança (bate com o
-    // tooltip do card). Antes recebia o mesmo `saldo` do KPI ao lado —
-    // duplicava a cifra e contradizia o próprio tooltip. Já poupado no mês
-    // (receitas − despesas, sem contar negativo) abatido do limite da fatia;
-    // meta batida → folga 0.
-    var poupado = Math.max(0, data.poupancaReal != null ? data.poupancaReal : 0);
-    var folgaPoupanca = Math.max(0, (data.limPou || 0) - poupado);
-    INIT_ORCAMENTO._updateElement('orc-economia-mes', UTILS.formatarMoeda(folgaPoupanca));
     INIT_ORCAMENTO._updateElement('orc-percent-restante', pctRestante + '% restante');
 
     var criticas = 0;
@@ -376,6 +368,10 @@ const INIT_ORCAMENTO = {
       } catch (_e) { criticas = 0; }
     }
     INIT_ORCAMENTO._updateElement('orc-categorias-criticas', String(criticas));
+    // Um "0" num cartão de alerta é ruído: o cartão só aparece quando há o
+    // que avisar.
+    var cardCriticas = document.getElementById('orc-kpi-criticas');
+    if (cardCriticas) cardCriticas.style.display = criticas > 0 ? '' : 'none';
 
     // Tendência vs mês anterior (mesmo renda × despesas do mês -1)
     var dAnt = new Date(data.ano, data.mes - 2, 1);
@@ -390,7 +386,12 @@ const INIT_ORCAMENTO = {
     var saldoAnt = data.renda - despAnt;
     var delta = saldo - saldoAnt;
     var trendTxt;
-    if (despAnt === 0 && realizado === 0) {
+    var semMesAnterior = txsAnt.length === 0;
+    if (semMesAnterior) {
+      // Sem lançamentos no mês anterior não há base: a conta usaria a renda
+      // inteira como "saldo" dele e inventaria um "-20%". Mesmo texto do Resumo.
+      trendTxt = 'Sem mês anterior';
+    } else if (despAnt === 0 && realizado === 0) {
       trendTxt = 'vs mês anterior';
     } else if (Math.abs(saldoAnt) < 0.005) {
       trendTxt = delta >= 0 ? 'melhor que o mês anterior' : 'pior que o mês anterior';
@@ -401,7 +402,8 @@ const INIT_ORCAMENTO = {
     INIT_ORCAMENTO._updateElement('orc-tendencia', trendTxt);
 
     var indicator = document.getElementById('orc-trend-indicator');
-    if (indicator) {
+    if (indicator) indicator.style.display = semMesAnterior ? 'none' : '';
+    if (indicator && !semMesAnterior) {
       var iconName = delta >= 0 ? 'trending-up' : 'trending-down';
       indicator.innerHTML = '<span class="trend-icon">' + INIT_ORCAMENTO._lucideHtml(iconName) + '</span>';
       if (typeof renderLucideIconsNow === 'function') renderLucideIconsNow(indicator);

@@ -65,6 +65,10 @@ const APP_BOOTSTRAP = {
       })
       .catch(function(e) {
         console.error('[BOOT] Falha crítica na inicialização:', e && e.message || e);
+        // A falha de um módulo já foi relatada pelo LIFECYCLE (e.critical).
+        if (!(e && e.critical) && typeof OBS !== 'undefined' && OBS.captureError) {
+          OBS.captureError(e, { contexto: 'boot' });
+        }
         if (typeof UTILS !== 'undefined' && UTILS.mostrarToast) {
           UTILS.mostrarToast('O app não conseguiu abrir. Recarregue a página — seus dados continuam salvos.', 'error');
         }

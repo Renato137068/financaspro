@@ -22,6 +22,9 @@ import { CONTAS } from '../contas.js';
 import { RENDER } from '../render.js';
 import { INIT_MODALS } from './init-modals.js';
 import { DADOS } from '../core/dados.js';
+import { BACKUP_CIFRADO } from './backup-cifrado.js';
+import { APP_STORE } from '../core/store.js';
+import { ACTIONS } from '../services/actions.js';
 
 const CONFIG_BACKUP = {
   /**
@@ -40,10 +43,17 @@ const CONFIG_BACKUP = {
         errors.push('transacoes deve ser um array');
       } else {
         data.transacoes.forEach(function(tx, idx) {
+          if (!tx || typeof tx !== 'object') {
+            errors.push('transacao[' + idx + ']: não é um lançamento');
+            return;
+          }
           if (!tx.id) errors.push('transacao[' + idx + ']: id ausente');
           if (typeof tx.valor !== 'number') errors.push('transacao[' + idx + ']: valor inválido');
           if (!tx.data) errors.push('transacao[' + idx + ']: data ausente');
-          if (!tx.tipo || !['receita', 'despesa'].includes(tx.tipo)) {
+          // Transferência entre contas é um tipo do próprio app e sai no
+          // backup: recusá-la aqui fazia o backup inteiro de quem já transferiu
+          // uma vez ser rejeitado na hora de restaurar.
+          if (!tx.tipo || !['receita', 'despesa', 'transferencia'].includes(tx.tipo)) {
             errors.push('transacao[' + idx + ']: tipo inválido');
           }
           if (!tx.categoria) errors.push('transacao[' + idx + ']: categoria ausente');
@@ -179,23 +189,11 @@ const CONFIG_BACKUP = {
     reader.onload = function(e) {
       try {
         var data = JSON.parse(e.target.result);
-        
-        // Validar schema antes de importar
-        var schemaValidacao = INIT_CONFIG._validateImportSchema(data);
-        if (!schemaValidacao.valid) {
-          UTILS.mostrarToast(schemaValidacao.message, 'error');
+        if (BACKUP_CIFRADO.ehCifrado(data)) {
+          INIT_CONFIG._importarCifrado(data);
           return;
         }
-        
-        INIT_CONFIG._pendingImport = data;
-        if (INIT_CONFIG._importTemOverridesSensiveis(data)) {
-          INIT_MODALS.confirm(
-            'O backup pode alterar preferências. Seu PIN local e o plano de assinatura não serão substituídos. Continuar?',
-            function() { INIT_CONFIG.importarDados(INIT_CONFIG._pendingImport); }
-          );
-        } else {
-          INIT_CONFIG.importarDados(data);
-        }
+        INIT_CONFIG._importarObjeto(data);
       } catch (err) {
         console.error('Erro ao parsear JSON:', err);
         UTILS.mostrarToast('Esse arquivo não parece ser um backup do app. Nada foi alterado.', 'error');
@@ -208,22 +206,119 @@ const CONFIG_BACKUP = {
   },
 
   /**
+   * Backup com senha: pede a senha, decifra e segue pelo caminho normal.
+   * Senha errada pede de novo; cancelar não altera nada.
+   */
+  _importarCifrado: function(envelope, erro) {
+    if (!BACKUP_CIFRADO.disponivel()) {
+      UTILS.mostrarToast('Este aparelho não consegue abrir backups com senha. Nada foi alterado.', 'error');
+      return;
+    }
+    BACKUP_CIFRADO.pedirSenhaImportacao(function(senha) {
+      BACKUP_CIFRADO.decifrar(envelope, senha).then(function(texto) {
+        var data;
+        try {
+          data = JSON.parse(texto);
+        } catch (e) {
+          UTILS.mostrarToast('O backup abriu, mas o conteúdo está corrompido. Nada foi alterado.', 'error');
+          return;
+        }
+        INIT_CONFIG._importarObjeto(data);
+      }).catch(function(err) {
+        if (err && err.message === 'SENHA_INCORRETA') {
+          INIT_CONFIG._importarCifrado(envelope, 'Senha incorreta. Tente de novo.');
+          return;
+        }
+        UTILS.mostrarToast('Esse arquivo de backup está danificado. Nada foi alterado.', 'error');
+      });
+    }, erro);
+  },
+
+  /** Valida e importa o backup já lido (e decifrado, se tinha senha). */
+  _importarObjeto: function(data) {
+    // Validar schema antes de importar
+    var schemaValidacao = INIT_CONFIG._validateImportSchema(data);
+    if (!schemaValidacao.valid) {
+      UTILS.mostrarToast(schemaValidacao.message, 'error');
+      return;
+    }
+
+    INIT_CONFIG._pendingImport = data;
+    if (INIT_CONFIG._importTemOverridesSensiveis(data)) {
+      INIT_MODALS.confirm(
+        'O backup pode alterar preferências. Seu PIN local e o plano de assinatura não serão substituídos. Continuar?',
+        function() { INIT_CONFIG.importarDados(INIT_CONFIG._pendingImport); }
+      );
+    } else {
+      INIT_CONFIG.importarDados(data);
+    }
+  },
+
+  /**
+   * Grava vários lançamentos numa escrita só (restauração de backup). Ou entram
+   * todos ou nenhum: salvarTransacao um a um regravava a lista inteira a cada
+   * item, e uma falha no meio (cota cheia) deixava parte dentro e parte fora.
+   * Avisa a tela e a nuvem só depois que o disco aceitou. Fica aqui, no chunk
+   * do Perfil, e não no DADOS: o primeiro acesso não tem folga de peso.
+   * @param {Transacao[]} novas
+   * @returns {number} quantos foram gravados
+   * @throws {Error} se o armazenamento recusar (nada é alterado)
+   */
+  _salvarTransacoesEmLote: function(novas) {
+    if (!Array.isArray(novas) || !novas.length) return 0;
+    var transacoes = DADOS.getTransacoesRaw().slice();
+    var agora = new Date().toISOString();
+    var feitas = novas.map(function(original) {
+      var tx = Object.assign({}, original);
+      // Mesma idempotência por clientKey do salvarTransacao.
+      if (tx.clientKey) {
+        var mesma = transacoes.find(function(t) { return t && t.clientKey === tx.clientKey && !t.deletedAt; });
+        if (mesma) { tx.id = mesma.id; tx.dataCriacao = mesma.dataCriacao || tx.dataCriacao; }
+      }
+      tx.id = tx.id || UTILS.gerarId();
+      tx.dataCriacao = tx.dataCriacao || agora;
+      tx.updatedAt = agora;
+      tx.deletedAt = null;
+      var index = transacoes.findIndex(function(t) { return t.id === tx.id; });
+      if (index >= 0) transacoes[index] = tx; else transacoes.push(tx);
+      return { tx: tx, edicao: index >= 0 };
+    });
+    DADOS._storageSetTransacoes(transacoes);
+    feitas.forEach(function(f) {
+      if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
+        APP_STORE.dispatch(f.edicao ? ACTIONS.TRANSACAO_EDITAR : ACTIONS.TRANSACAO_CRIAR, f.tx);
+      }
+      DADOS._pushTransacaoApi(f.tx, f.edicao ? 'PATCH' : 'POST').catch(function(err) {
+        if (typeof APP_STORE !== 'undefined' && typeof ACTIONS !== 'undefined') {
+          APP_STORE.dispatch(ACTIONS.SYNC_FALHAR, { erro: (err && err.message) || 'push-tx' });
+        }
+      });
+    });
+    return feitas.length;
+  },
+
+  /**
    * Importa dados do arquivo
    */
   importarDados: function(data) {
+    var transacoesImportadas = 0;
     try {
-      var transacoesImportadas = 0;
       var configImportada = false;
-      
-      // Importar transações
+
+      // Importar transações: valida tudo antes e grava de uma vez. Se o disco
+      // recusar, nada entra e o "Nada foi alterado" do aviso é verdade.
       if (data.transacoes && Array.isArray(data.transacoes)) {
-        data.transacoes.forEach(function(tx) {
-          if (!tx || !tx.id || !tx.valor || !tx.data || !tx.tipo || !tx.categoria) return;
-          var jaExiste = DADOS.getTransacoesRaw().some(function(t) { return t.id === tx.id; });
-          if (jaExiste) return;
-          DADOS.salvarTransacao(Object.assign({}, tx));
-          transacoesImportadas++;
+        var existentes = {};
+        DADOS.getTransacoesRaw().forEach(function(t) { if (t && t.id && !t.deletedAt) existentes[t.id] = true; });
+        var novas = data.transacoes.filter(function(tx) {
+          if (!tx || !tx.id || !tx.valor || !tx.data || !tx.tipo || !tx.categoria) return false;
+          // Lançamento excluído aqui (marca de exclusão) volta com o backup:
+          // restaurar é justamente como se recupera o que foi apagado sem querer.
+          if (existentes[tx.id]) return false;
+          existentes[tx.id] = true;
+          return true;
         });
+        if (novas.length) transacoesImportadas = INIT_CONFIG._salvarTransacoesEmLote(novas);
       }
       
       // Importar configurações (PIN local preservado)
@@ -237,9 +332,17 @@ const CONFIG_BACKUP = {
       // os `contaId` das transações já recém-importadas resolvam para um nome.
       var contasImportadas = 0;
       if (data.contas && Array.isArray(data.contas)) {
-        var validas = data.contas.filter(function(c) { return c && c.id && c.nome; });
+        // Soma ao que já existe: gravar só as do backup apagava as contas
+        // criadas depois dele, e os lançamentos delas ficavam sem conta.
+        var atuais = DADOS.getContasRaw ? DADOS.getContasRaw() : DADOS.getContas();
+        var idsAtuais = {};
+        atuais.forEach(function(c) { if (c && c.id && c.ativo !== false) idsAtuais[c.id] = true; });
+        var validas = data.contas.filter(function(c) { return c && c.id && c.nome && !idsAtuais[c.id]; });
         if (validas.length) {
-          DADOS.salvarContas(validas);
+          var restantes = atuais.filter(function(c) {
+            return !validas.some(function(v) { return v.id === c.id; });
+          });
+          DADOS.salvarContas(restantes.concat(validas));
           if (typeof CONTAS !== 'undefined' && CONTAS.init) CONTAS.init();
           contasImportadas = validas.length;
         }
@@ -283,15 +386,28 @@ const CONFIG_BACKUP = {
       
     } catch (err) {
       console.error('Erro ao importar:', err);
-      UTILS.mostrarToast('Não foi possível importar esse arquivo. Nada foi alterado.', 'error');
+      if (transacoesImportadas > 0) {
+        if (typeof RENDER !== 'undefined' && RENDER.init) RENDER.init();
+        UTILS.mostrarToast('Importação incompleta: ' + transacoesImportadas
+          + ' transações entraram, mas o resto do backup não. Tente importar de novo.', 'error');
+      } else {
+        UTILS.mostrarToast('Não foi possível importar esse arquivo. Nada foi alterado.', 'error');
+      }
     }
   },
 
   /**
-   * Exporta todos os dados
+   * Exporta todos os dados. Chamada sem argumento (botão do Perfil), pergunta
+   * antes se o arquivo leva senha (backup-cifrado.js) e volta aqui com a
+   * escolha: a senha, ou null para o JSON legível de sempre.
    */
-  exportarDados: function() {
+  exportarDados: function(senha) {
     var self = this;
+    if (senha === undefined && BACKUP_CIFRADO.disponivel()) {
+      BACKUP_CIFRADO.pedirSenhaExportacao(function(escolha) { self.exportarDados(escolha); });
+      return;
+    }
+    senha = senha || null;
     var finalizar = function(anexos) {
       try {
         var exportData = {
@@ -314,14 +430,22 @@ const CONFIG_BACKUP = {
           }
         };
 
-        var blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-        var link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'financaspro_backup_' + new Date().toISOString().split('T')[0] + '.json';
-        link.click();
+        var texto = JSON.stringify(exportData, null, 2);
+        var pronto = senha ? BACKUP_CIFRADO.cifrar(texto, senha) : Promise.resolve(texto);
+        pronto.then(function(conteudo) {
+          var blob = new Blob([conteudo], { type: 'application/json' });
+          var link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = 'financaspro_backup_' + new Date().toISOString().split('T')[0] + '.json';
+          link.click();
 
-        DADOS.salvarConfig({ ultimoExportoDados: new Date().toISOString() });
-        UTILS.mostrarToast('Backup exportado' + ((anexos && anexos.length) ? ' (com anexos)' : ''), 'success');
+          DADOS.salvarConfig({ ultimoExportoDados: new Date().toISOString() });
+          UTILS.mostrarToast('Backup exportado' + (senha ? ' com senha' : '')
+            + ((anexos && anexos.length) ? ' (com anexos)' : ''), 'success');
+        }).catch(function(err) {
+          console.error('Erro ao cifrar o backup:', err);
+          UTILS.mostrarToast('Não foi possível exportar. Seus dados continuam salvos aqui.', 'error');
+        });
       } catch (err) {
         console.error('Erro ao exportar:', err);
         UTILS.mostrarToast('Não foi possível exportar. Seus dados continuam salvos aqui.', 'error');
