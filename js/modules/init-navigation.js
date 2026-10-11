@@ -18,6 +18,7 @@ import { CONFIG_USER } from '../config-user.js';
 import { INIT_FORM } from './init-form.js';
 import { BILLING } from '../billing.js';
 import { DADOS } from '../core/dados.js';
+import { APP_STORE } from '../core/store.js';
 
 const INIT_NAVIGATION = {
   _listeners: [],
@@ -38,7 +39,43 @@ const INIT_NAVIGATION = {
     // existe depois disso. initTablists ignora o que já está ligado.
     var self = INIT_NAVIGATION;
     document.addEventListener('fp:tela-carregada', function() { self.initTablists(); });
+    INIT_NAVIGATION._redesenharOrcamentoQuandoDadosMudarem();
     INIT_NAVIGATION._initialized = true;
+  },
+
+  /**
+   * Os dados mudaram (a sincronização com a nuvem terminou, outra aba gravou)
+   * com o Orçamento aberto: redesenha a tela e a sub-aba visível.
+   *
+   * O store só redesenhava o Resumo. Quem reinstalava o app, entrava na conta
+   * e abria o Orçamento antes de a nuvem responder via Metas e Patrimônio
+   * vazios: os dados já estavam no aparelho, mas a tela só era desenhada de
+   * novo ao salvar algo, e aí "voltava todo o histórico".
+   */
+  _redesenharOrcamentoQuandoDadosMudarem: function() {
+    if (typeof APP_STORE === 'undefined' || !APP_STORE.subscribe) return;
+    var agendado = false;
+    APP_STORE.subscribe('dados', function() {
+      // Uma sincronização mexe em vários contadores de uma vez: um desenho só.
+      if (agendado) return;
+      agendado = true;
+      setTimeout(function() {
+        agendado = false;
+        INIT_NAVIGATION._redesenharOrcamentoAberto();
+      }, 0);
+    });
+  },
+
+  _redesenharOrcamentoAberto: function() {
+    var aba = document.getElementById('aba-orcamento');
+    if (!aba || !aba.classList.contains('ativo')) return;
+    if (typeof INIT_ORCAMENTO === 'undefined') return;
+    var subAtiva = aba.querySelector('[data-orc-sub].ativo');
+    var sub = subAtiva ? subAtiva.getAttribute('data-orc-sub') : 'planejamento';
+    UTILS.tentar('orcamento.redesenhar', function() {
+      if (INIT_ORCAMENTO.renderDashboard) INIT_ORCAMENTO.renderDashboard();
+      INIT_NAVIGATION._renderSubOrcamento(sub);
+    });
   },
 
   /**
