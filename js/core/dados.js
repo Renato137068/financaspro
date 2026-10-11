@@ -92,6 +92,7 @@ const DADOS = {
   TX_BACKEND_KEY: 'fp-tx-backend',
   TX_SYNC_PING_KEY: 'fp-tx-sync-ping',
   TX_IDB_SENTINEL: '{"_idb":1}',
+  CONFIG_ILEGIVEL_KEY: 'fp-config-ilegivel',
   LIMIAR_MIGRAR_TX_COUNT: 2500,
   LIMIAR_MIGRAR_TX_BYTES: 3 * 1024 * 1024,
 
@@ -288,6 +289,31 @@ const DADOS = {
     }
   },
 
+  /** Há algum valor gravado na chave (cifrado ou não)? */
+  _existeNoDisco: function(key) {
+    try { return !!localStorage.getItem(key); } catch (e) { return false; }
+  },
+
+  /**
+   * Com a cifra local ligada, decifra as chaves 'fp-' para a memória ANTES do
+   * boot. A leitura síncrona (_storageGetRaw) só dispara o decifrar em segundo
+   * plano e devolve null na primeira vez; sem isto, o boot via "sem dados",
+   * gravava a lista vazia e a config padrão por cima e, na abertura seguinte,
+   * tudo tinha sumido. Valor que não decifra fica fora do cache (continua
+   * ilegível, mas intacto no disco).
+   */
+  _decifrarAntesDoBoot: function() {
+    if (typeof LOCAL_CRYPTO === 'undefined' || !LOCAL_CRYPTO.isEnabled()) return Promise.resolve();
+    return Promise.all(DADOS._CRYPTO_KEYS().map(function(key) {
+      var raw;
+      try { raw = localStorage.getItem(key); } catch (e) { raw = null; }
+      if (!raw || !LOCAL_CRYPTO.isEncrypted(raw)) return Promise.resolve();
+      return LOCAL_CRYPTO.unwrapStorageValue(key, raw).then(function(plain) {
+        if (plain != null && !LOCAL_CRYPTO.isEncrypted(plain)) DADOS._plainCache[key] = plain;
+      }, function() { /* fica ilegível; não sobrescreve */ });
+    }));
+  },
+
   // Chaves elegíveis à cifragem (prefixo 'fp-'). aprendizado/rascunho ficam de fora.
   _CRYPTO_KEYS: function() {
     return [CONFIG.STORAGE_TRANSACOES, CONFIG.STORAGE_CONFIG, CONFIG.STORAGE_CONTAS];
@@ -395,12 +421,17 @@ const DADOS = {
   init: function() {
     if (DADOS._initialized) return Promise.resolve();
     if (DADOS._initPromise) return DADOS._initPromise;
-    DADOS._initPromise = DADOS._prepararStorageTransacoes().then(function() {
+    DADOS._initPromise = DADOS._decifrarAntesDoBoot().then(function() {
+      return DADOS._prepararStorageTransacoes();
+    }).then(function() {
       DADOS._limparSessaoExpressLegada();
-      if (DADOS._transacoesBackend !== 'idb' && !DADOS._storageGetRaw(CONFIG.STORAGE_TRANSACOES)) {
+      // "Existe no disco?" pelo valor cru: com a cifra ligada, _storageGetRaw
+      // devolve null para o que não decifrou, e gravar o padrão aqui apagava
+      // os lançamentos e a config cifrados.
+      if (DADOS._transacoesBackend !== 'idb' && !DADOS._existeNoDisco(CONFIG.STORAGE_TRANSACOES)) {
         DADOS._storageSetRaw(CONFIG.STORAGE_TRANSACOES, JSON.stringify([]));
       }
-      if (!DADOS._storageGetRaw(CONFIG.STORAGE_CONFIG)) {
+      if (!DADOS._existeNoDisco(CONFIG.STORAGE_CONFIG)) {
         var defaults = Object.assign({}, CONFIG.DEFAULT_CONFIG, { _schemaVer: DADOS.SCHEMA_VERSION });
         DADOS._storageSetRaw(CONFIG.STORAGE_CONFIG, JSON.stringify(defaults));
       } else {
@@ -803,6 +834,24 @@ const DADOS = {
 
   _migrarSchema: function() {
     try {
+      // Config ilegível (JSON truncado, ou cifrado que não decifrou): getConfig
+      // devolve os padrões, e gravar _schemaVer por cima apagaria de vez o
+      // texto original no mesmo instante em que o app pede para exportar um
+      // backup. Guarda uma cópia e não migra nesta abertura.
+      var cru = null;
+      try { cru = localStorage.getItem(CONFIG.STORAGE_CONFIG); } catch (e) { cru = null; }
+      var legivel = DADOS._storageGetRaw(CONFIG.STORAGE_CONFIG);
+      var ilegivel = !!cru && (legivel == null || (function() {
+        try { JSON.parse(legivel); return false; } catch (e) { return true; }
+      })());
+      if (ilegivel) {
+        try {
+          if (!localStorage.getItem(DADOS.CONFIG_ILEGIVEL_KEY)) {
+            localStorage.setItem(DADOS.CONFIG_ILEGIVEL_KEY, cru);
+          }
+        } catch (e) { /* sem espaço para a cópia: ao menos não sobrescreve */ }
+        return;
+      }
       var cfg = DADOS.getConfig();
       var atual = cfg._schemaVer || 1;
       if (atual >= DADOS.SCHEMA_VERSION) return;

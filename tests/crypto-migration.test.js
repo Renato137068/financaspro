@@ -24,8 +24,8 @@ afterAll(function() {
   else delete global.crypto;
 });
 
-function freshContext() {
-  global.localStorage.clear();
+function freshContext(manterDisco) {
+  if (!manterDisco) global.localStorage.clear();
   // Sandbox próprio com os globais de HOST injetados como propriedades próprias
   // (crypto, TextEncoder/Decoder, localStorage, console). No Node 18, o
   // vm.createContext(global) não projeta esses globais como identificador nu; um
@@ -143,5 +143,45 @@ describe('DADOS.aplicarCriptografia — migração segura', function() {
     const cifrado = await global.LOCAL_CRYPTO.encrypt(TX);
     expect(cifrado.indexOf('enc3:')).toBe(0);
     expect(await global.LOCAL_CRYPTO.decrypt(cifrado)).toBe(TX);
+  });
+});
+
+describe('Reabrir o app com a cifra ligada', function() {
+  const TX = JSON.stringify([{ id: '1', tipo: 'despesa', valor: 10, categoria: 'alimentacao', data: '2026-10-01', descricao: 'Pão' }]);
+  const CFG = JSON.stringify({ nome: 'Renato', moeda: 'BRL', _schemaVer: 2 });
+
+  afterEach(function() { global.localStorage.clear(); });
+
+  test('duas aberturas seguidas mantêm lançamentos e config (antes, a 2ª abria vazia)', async function() {
+    freshContext();
+    global.LOCAL_CRYPTO.setEnabled(false);
+    global.localStorage.setItem('fp-transacoes', TX);
+    global.localStorage.setItem('fp-config', CFG);
+    expect(await global.DADOS.aplicarCriptografia(true)).toBe(true);
+
+    for (let abertura = 1; abertura <= 2; abertura++) {
+      freshContext(true);
+      await global.DADOS.init();
+      expect(global.DADOS.getConfig().nome).toBe('Renato');
+      expect(global.DADOS.getTransacoes()).toHaveLength(1);
+      // No disco continua cifrado, não foi trocado pelo padrão.
+      expect(global.localStorage.getItem('fp-config').indexOf('enc')).toBe(0);
+      expect(global.localStorage.getItem('fp-transacoes').indexOf('enc')).toBe(0);
+    }
+  }, 30000); // PBKDF2 de 600k iterações, três vezes, em máquina de CI
+});
+
+describe('Config ilegível ao abrir', function() {
+  afterEach(function() { global.localStorage.clear(); });
+
+  test('a migração de esquema não grava os padrões por cima e guarda uma cópia', async function() {
+    freshContext();
+    global.LOCAL_CRYPTO.setEnabled(false);
+    const truncado = '{"nome":"Renato","rendaMensal":8000,"metas":[{"id":"m1"';
+    global.localStorage.setItem('fp-config', truncado);
+    freshContext(true);
+    await global.DADOS.init();
+    expect(global.localStorage.getItem('fp-config')).toBe(truncado);
+    expect(global.localStorage.getItem('fp-config-ilegivel')).toBe(truncado);
   });
 });

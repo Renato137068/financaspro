@@ -31,8 +31,7 @@ Object.assign(INIT_EXTRATO, {
 
     // Calcular tendência vs mês anterior
     var info = INIT_EXTRATO.getExtratoMesAno();
-    var mesAnterior = new Date(info.date);
-    mesAnterior.setMonth(mesAnterior.getMonth() - 1);
+    var mesAnterior = new Date(info.ano, info.mes - 2, 1);
     var txsAnterior = TRANSACOES.obter({
       mes: mesAnterior.getMonth() + 1,
       ano: mesAnterior.getFullYear()

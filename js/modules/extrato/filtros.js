@@ -208,8 +208,10 @@ Object.assign(INIT_EXTRATO, {
    * Obtém informação do mês/ano atual baseado no offset
    */
   getExtratoMesAno: function() {
-    var d = new Date();
-    d.setMonth(d.getMonth() + INIT_EXTRATO.state.mesOffset);
+    // Ancorado no dia 1: setMonth sobre "hoje" transbordava nos dias 29 a 31
+    // (31/out − 1 mês = "31/set" = 1º/out), e o mês anterior não abria.
+    var hoje = new Date();
+    var d = new Date(hoje.getFullYear(), hoje.getMonth() + INIT_EXTRATO.state.mesOffset, 1);
     return { mes: d.getMonth() + 1, ano: d.getFullYear(), date: d };
   },
 

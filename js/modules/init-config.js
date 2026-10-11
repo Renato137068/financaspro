@@ -527,7 +527,10 @@ const INIT_CONFIG = {
     if (!nascimento) {
       return { valid: true, value: '' }; // Data é opcional
     }
-    var data = new Date(nascimento);
+    // "AAAA-MM-DD" com new Date() é meia-noite UTC (21h da véspera em
+    // Brasília): uma data de amanhã passava como "hoje". Monta pela data local.
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(nascimento));
+    var data = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(nascimento);
     if (isNaN(data.getTime())) {
       return { valid: false, message: 'Data de nascimento inválida' };
     }

@@ -17,6 +17,11 @@ import { INIT_MODALS } from '../init-modals.js';
 import { INIT_FORM } from '../init-form.js';
 import { BILLING } from '../../billing.js';
 
+/** Centavos → "1234,56" (sem milhar, vírgula decimal), como o Excel pt-BR lê. */
+function _csvNum(centavos) {
+  return (centavos / 100).toFixed(2).replace('.', ',');
+}
+
 Object.assign(INIT_EXTRATO, {
 
   /**
@@ -145,9 +150,6 @@ Object.assign(INIT_EXTRATO, {
       // Explícito e não `else`: transferência entre contas não é gasto.
       else if (t.tipo === CONFIG.TIPO_DESPESA) despesasC += _extratoCent(t.valor);
     });
-    var receitas = receitasC / 100, despesas = despesasC / 100;
-    var saldo = (receitasC - despesasC) / 100;
-
     var nomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
     var mesNome = nomes[info.mes - 1];
 
@@ -161,16 +163,18 @@ Object.assign(INIT_EXTRATO, {
     csv += '\n';
     
     // Resumo
+    // Ponto e vírgula e vírgula decimal: é o que o Excel em português espera
+    // ao abrir o arquivo com dois cliques. Com "," e ponto decimal tudo caía
+    // na coluna A e "-123.45" virava texto (ou data). O Google Sheets detecta
+    // o separador sozinho.
     csv += 'RESUMO FINANCEIRO\n';
-    // Mesmo formato numérico da tabela (ponto decimal, sem "R$"): o valor em
-    // reais com vírgula ("5.000,00") partia a linha em duas colunas no CSV.
-    csv += 'Receitas Total,' + receitas.toFixed(2) + '\n';
-    csv += 'Despesas Total,' + despesas.toFixed(2) + '\n';
-    csv += 'Saldo do Período,' + saldo.toFixed(2) + '\n';
+    csv += 'Receitas Total;' + _csvNum(receitasC) + '\n';
+    csv += 'Despesas Total;' + _csvNum(despesasC) + '\n';
+    csv += 'Saldo do Período;' + _csvNum(receitasC - despesasC) + '\n';
     csv += '\n';
     
     // Header da tabela
-    csv += 'Data,Descrição,Categoria,Tipo,Valor,Saldo Acumulado\n';
+    csv += 'Data;Descrição;Categoria;Tipo;Valor;Saldo Acumulado;Conta;Cartão\n';
     
     // Dados das transações com saldo acumulado
     // Saldo acumulado só faz sentido em ordem cronológica (TRANSACOES.obter
@@ -195,22 +199,33 @@ Object.assign(INIT_EXTRATO, {
         tipoStr = 'Transferência';
       }
 
-      var descricao = INIT_EXTRATO._neutralizarCsvCelula(UTILS.desescapeHtml(t.descricao || ''));
-      var categoria = INIT_EXTRATO._neutralizarCsvCelula(t.categoria);
+      var cel = function(v) { return '"' + INIT_EXTRATO._neutralizarCsvCelula(v) + '"'; };
+      // Nome da categoria como aparece na tela ("Serviços financeiros"), não
+      // o código interno ("servicos_financeiros").
+      var categoria = UTILS.labelCategoria(t.categoria) || t.categoria || '';
 
-      csv += data + ',"' + descricao + '","' + categoria + '",' + tipoStr + ',' + (valorC / 100).toFixed(2) + ',' + (saldoAcumuladoC / 100).toFixed(2) + '\n';
+      csv += [
+        data,
+        cel(UTILS.desescapeHtml(t.descricao || '')),
+        cel(categoria),
+        tipoStr,
+        _csvNum(valorC),
+        _csvNum(saldoAcumuladoC),
+        cel(t.banco || ''),
+        cel(t.cartao || '')
+      ].join(';') + '\n';
     });
 
     // Total de transações
-    csv += '\nTotal de transações,' + txs.length + '\n';
+    csv += '\nTotal de transações;' + txs.length + '\n';
 
-    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    var link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'extrato_' + mesNome.toLowerCase() + '_' + info.ano + '.csv';
-    link.click();
-    
-    UTILS.mostrarToast('Planilha exportada', 'success');
+    var nome = 'extrato_' + mesNome.toLowerCase() + '_' + info.ano + '.csv';
+    return UTILS.salvarArquivo(nome, csv, 'text/csv;charset=utf-8;', 'Extrato de ' + mesNome)
+      .then(function(r) {
+        if (r.ok) UTILS.mostrarToast('Planilha exportada', 'success');
+        else if (!r.cancelado) UTILS.mostrarToast('Não foi possível salvar a planilha', 'error');
+        return r;
+      });
   },
 
   /**
@@ -305,7 +320,7 @@ Object.assign(INIT_EXTRATO, {
       html += '<tr>';
       html += '<td>' + data + '</td>';
       html += '<td>' + UTILS.escapeHtml(UTILS.desescapeHtml(t.descricao || '')) + '</td>';
-      html += '<td class="categoria">' + INIT_EXTRATO.getCatIcon(t.categoria) + ' ' + UTILS.escapeHtml(t.categoria) + '</td>';
+      html += '<td class="categoria">' + INIT_EXTRATO.getCatIcon(t.categoria) + ' ' + UTILS.escapeHtml(UTILS.labelCategoria(t.categoria) || t.categoria) + '</td>';
       html += '<td>' + tipoStr + '</td>';
       html += '<td class="' + valorClass + '">' + valor + '</td>';
       html += '</tr>';
@@ -320,6 +335,20 @@ Object.assign(INIT_EXTRATO, {
     html += '</div>';
     
     html += '</body></html>';
+
+    // No APK não há janela nova nem impressão no WebView: o relatório vai
+    // como arquivo pela folha de compartilhar, e o navegador ou o leitor que
+    // a pessoa escolher imprime ou salva em PDF.
+    var cap = window.Capacitor;
+    if (cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform()) {
+      var nomeRel = 'relatorio_' + mesNome.toLowerCase() + '_' + info.ano + '.html';
+      return UTILS.salvarArquivo(nomeRel, html, 'text/html;charset=utf-8', 'Relatório de ' + mesNome)
+        .then(function(r) {
+          if (r.ok) UTILS.mostrarToast('Relatório pronto. Abra e use Imprimir › Salvar como PDF', 'success');
+          else if (!r.cancelado) UTILS.mostrarToast('Não foi possível gerar o relatório', 'error');
+          return r;
+        });
+    }
 
     var win = window.open('', '_blank');
     if (win) {

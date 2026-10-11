@@ -265,3 +265,19 @@ describe('CONTAS_PAGAR — exclusão', function() {
     expect(CP().obter('fantasma')).toBeFalsy();
   });
 });
+
+describe('CONTAS_PAGAR — conta recorrente do dia 31', function() {
+  test('volta ao dia 31 depois de fevereiro (antes ficava no dia 28 para sempre)', function() {
+    const c = CP().criar({ descricao: 'Aluguel', valor: 1500, vencimento: '2027-01-31', recorrente: true });
+    const venc = [];
+    for (let i = 0; i < 4; i++) {
+      CP().marcarPago(c.id, false);
+      venc.push(CP().obter(c.id).vencimento);
+    }
+    expect(venc).toEqual(['2027-02-28', '2027-03-31', '2027-04-30', '2027-05-31']);
+  });
+
+  test('conta antiga, sem o dia guardado, segue avançando um mês', function() {
+    expect(CP()._addMes('2027-03-28')).toBe('2027-04-28');
+  });
+});

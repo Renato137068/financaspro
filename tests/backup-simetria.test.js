@@ -157,8 +157,11 @@ describe('backup — um único formato', () => {
     // comercial. Agora ele casa com qualquer prefixo seguido de _backup_.
     const geradores = arquivos.filter(f => {
       const s = fs.readFileSync(f, 'utf8');
+      // Desde 11/10 o arquivo sai por UTILS.salvarArquivo (no APK o
+      // <a download> não funciona), então casa as duas formas.
       return /link\.download\s*=\s*'[a-z0-9]+[_-]backup[_-]/i.test(s)
-        || /download.*[a-z0-9]+[_-]backup|[a-z0-9]+[_-]backup.*download/is.test(s);
+        || /download.*[a-z0-9]+[_-]backup|[a-z0-9]+[_-]backup.*download/is.test(s)
+        || /'[a-z0-9]+[_-]backup[_-][\s\S]{0,200}salvarArquivo/i.test(s);
     });
 
     expect(geradores.map(f => path.relative(root, f))).toEqual([

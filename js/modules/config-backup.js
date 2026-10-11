@@ -27,6 +27,8 @@ import { APP_STORE } from '../core/store.js';
 import { ACTIONS } from '../services/actions.js';
 
 const CONFIG_BACKUP = {
+  LIMITE_IMPORT_BYTES: 50 * 1024 * 1024,
+
   /**
    * Valida schema de JSON de importação
    */
@@ -179,9 +181,11 @@ const CONFIG_BACKUP = {
       return;
     }
     
-    // Validar tamanho (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      UTILS.mostrarToast('Arquivo muito grande (máximo 5MB)', 'error');
+    // Teto de 50 MB: os anexos vão em base64 no backup (até 10 fotos de 2 MB
+    // no plano grátis passam de 25 MB). Com o antigo teto de 5 MB, o app
+    // recusava o próprio backup de quem tinha três fotos.
+    if (file.size > INIT_CONFIG.LIMITE_IMPORT_BYTES) {
+      UTILS.mostrarToast('Arquivo muito grande (máximo 50 MB)', 'error');
       return;
     }
     
@@ -437,15 +441,19 @@ const CONFIG_BACKUP = {
         var texto = JSON.stringify(exportData, null, 2);
         var pronto = senha ? BACKUP_CIFRADO.cifrar(texto, senha) : Promise.resolve(texto);
         pronto.then(function(conteudo) {
-          var blob = new Blob([conteudo], { type: 'application/json' });
-          var link = document.createElement('a');
-          link.href = URL.createObjectURL(blob);
-          link.download = 'financaspro_backup_' + new Date().toISOString().split('T')[0] + '.json';
-          link.click();
-
-          DADOS.salvarConfig({ ultimoExportoDados: new Date().toISOString() });
-          UTILS.mostrarToast('Backup exportado' + (senha ? ' com senha' : '')
-            + ((anexos && anexos.length) ? ' (com anexos)' : ''), 'success');
+          // Data local no nome: o UTC dava "amanhã" para backup feito depois das 21h.
+          var nome = 'financaspro_backup_' + UTILS.dataLocalIso() + '.json';
+          return UTILS.salvarArquivo(nome, conteudo, 'application/json', 'Backup do FinançasPro').then(function(r) {
+            if (!r.ok) {
+              // Só conta como backup feito se o arquivo saiu: marcar antes
+              // calava o lembrete de backup de quem não tinha cópia nenhuma.
+              if (!r.cancelado) UTILS.mostrarToast('Não foi possível salvar o backup. Tente de novo.', 'error');
+              return;
+            }
+            DADOS.salvarConfig({ ultimoExportoDados: new Date().toISOString() });
+            UTILS.mostrarToast('Backup exportado' + (senha ? ' com senha' : '')
+              + ((anexos && anexos.length) ? ' (com anexos)' : ''), 'success');
+          });
         }).catch(function(err) {
           console.error('Erro ao cifrar o backup:', err);
           UTILS.mostrarToast('Não foi possível exportar. Seus dados continuam salvos aqui.', 'error');

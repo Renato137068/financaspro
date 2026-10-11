@@ -60,11 +60,11 @@ async function exportarCsv() {
 /** Linhas de dados da tabela do CSV (depois do cabeçalho "Data,..."). */
 function linhasTabela(csv) {
   const linhas = csv.split('\n');
-  const ini = linhas.findIndex((l) => l.startsWith('Data,'));
-  return linhas.slice(ini + 1).filter((l) => /^\d{2}\/\d{2}\/\d{4},/.test(l));
+  const ini = linhas.findIndex((l) => l.startsWith('Data;'));
+  return linhas.slice(ini + 1).filter((l) => /^\d{2}\/\d{2}\/\d{4};/.test(l));
 }
 
-/** Divide uma linha CSV respeitando aspas (o que o Excel faz). */
+/** Divide uma linha CSV (separador ";", o do Excel pt-BR) respeitando aspas. */
 function colunas(linha) {
   const out = [];
   let atual = '';
@@ -76,7 +76,7 @@ function colunas(linha) {
       else if (c === '"') aspas = false;
       else atual += c;
     } else if (c === '"') aspas = true;
-    else if (c === ',') { out.push(atual); atual = ''; }
+    else if (c === ';') { out.push(atual); atual = ''; }
     else atual += c;
   }
   out.push(atual);
@@ -175,18 +175,18 @@ describe('Exportar CSV', () => {
     expect(nomeArquivo).toBe('extrato_setembro_2026.csv');
 
     const resumo = (rotulo) => colunas(texto.split('\n').find((l) => l.startsWith(rotulo)));
-    // Uma célula de rótulo + uma de valor: "R$ 5.000,00" sem aspas virava três.
-    expect(resumo('Receitas Total')).toEqual(['Receitas Total', '5000.00']);
-    expect(resumo('Despesas Total')).toEqual(['Despesas Total', '1334.56']);
-    expect(resumo('Saldo do Período')).toEqual(['Saldo do Período', '3665.44']);
+    // Uma célula de rótulo + uma de valor, com vírgula decimal (Excel pt-BR).
+    expect(resumo('Receitas Total')).toEqual(['Receitas Total', '5000,00']);
+    expect(resumo('Despesas Total')).toEqual(['Despesas Total', '1334,56']);
+    expect(resumo('Saldo do Período')).toEqual(['Saldo do Período', '3665,44']);
 
     const linhas = linhasTabela(texto).map(colunas);
     // Ordem cronológica: o acumulado só faz sentido do dia 1 em diante.
     expect(linhas.map((c) => c[0])).toEqual(['01/09/2026', '05/09/2026', '06/09/2026', '10/09/2026']);
-    expect(linhas.map((c) => c[5])).toEqual(['5000.00', '3765.44', '3765.44', '3665.44']);
+    expect(linhas.map((c) => c[5])).toEqual(['5000,00', '3765,44', '3765,44', '3665,44']);
     // A última linha fecha com o resumo.
     expect(linhas[linhas.length - 1][5]).toBe(resumo('Saldo do Período')[1]);
-    expect(texto).toMatch(/Total de transações,4/);
+    expect(texto).toMatch(/Total de transações;4/);
   });
 
   test('transferência entre contas sai como Transferência, sem mexer no saldo', async () => {
@@ -194,8 +194,8 @@ describe('Exportar CSV', () => {
     const { texto } = await exportarCsv();
     const transf = linhasTabela(texto).map(colunas).find((c) => c[1] === 'Para a reserva');
     expect(transf[3]).toBe('Transferência');
-    expect(transf[4]).toBe('1000.00');
-    expect(transf[5]).toBe('5000.00');
+    expect(transf[4]).toBe('1000,00');
+    expect(transf[5]).toBe('5000,00');
   });
 
   test('descrição com fórmula ou aspas não vira comando nem quebra a coluna', async () => {
@@ -203,8 +203,20 @@ describe('Exportar CSV', () => {
     await abrirExtrato({ transacoes: [perigosa] });
     const { texto } = await exportarCsv();
     const [linha] = linhasTabela(texto).map(colunas);
-    expect(linha).toHaveLength(6);
+    expect(linha).toHaveLength(8);
     expect(linha[1]).toBe('\'=HYPERLINK("http://x","clique")');
+  });
+
+  test('abre em colunas no Excel pt-BR: categoria pelo nome, conta e cartão', async () => {
+    await abrirExtrato({ transacoes: [MERCADO] });
+    const { texto } = await exportarCsv();
+    expect(texto).toMatch(/^.*\nData;Descrição;Categoria;Tipo;Valor;Saldo Acumulado;Conta;Cartão\n/s);
+    const [linha] = linhasTabela(texto).map(colunas);
+    expect(linha[2]).not.toBe('alimentacao');
+    expect(linha[2]).toBe(app.window.CONFIG.getCatLabel('alimentacao'));
+    expect(linha[4]).toBe('-100,00');
+    expect(linha[6]).toBe('Nubank');
+    expect(linha[7]).toBe('Crédito');
   });
 
   test('mês sem lançamentos avisa e não baixa nada', async () => {
@@ -257,5 +269,19 @@ describe('Exportar PDF', () => {
     app.window.BILLING.canUse = () => true;
     app.window.INIT_EXTRATO.exportarExtrato();
     expect(g.toast()).toMatch(/bloqueou a janela de impressão/);
+  });
+});
+
+describe('Mês do Extrato no fim do mês', () => {
+  test('no dia 31, "mês anterior" abre o mês anterior (e não repete o atual)', async () => {
+    await abrirExtrato({ agora: '2026-10-31T12:00:00.000-03:00', transacoes: [] });
+    const ext = app.window.INIT_EXTRATO;
+    const meses = [0, -1, -2, -3, -4, -5, -6, -7, -8].map((o) => {
+      ext.state.mesOffset = o;
+      const i = ext.getExtratoMesAno();
+      return i.mes + '/' + i.ano;
+    });
+    expect(meses).toEqual(['10/2026', '9/2026', '8/2026', '7/2026', '6/2026', '5/2026', '4/2026', '3/2026', '2/2026']);
+    ext.state.mesOffset = 0;
   });
 });
