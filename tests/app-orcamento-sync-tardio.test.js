@@ -27,6 +27,11 @@ const CONFIG_NA_NUVEM = {
     ativos: [{ id: 'a-casa', nome: 'Casa', tipo: 'imovel', valor: 300000 }],
     dividas: [{ id: 'd-carro', nome: 'Financiamento do carro', tipo: 'financiamento', valor: 20000 }],
   },
+  assinaturas: [{
+    id: 's-streaming', nome: 'Streaming', valor: 39.9, diaCobranca: 10, ativa: true,
+    icone: 'tv', criadoEm: '2026-01-01T00:00:00.000Z',
+  }],
+  renda: 8000,
 };
 
 /**
@@ -92,6 +97,39 @@ test('Patrimônio aberto antes da nuvem responder: ativos e dívidas aparecem', 
   expect(await app.esperar(() => /Casa/.test(painel()), 3000)).toBe(true);
   expect(painel()).toMatch(/Financiamento do carro/);
   expect(painel()).toMatch(/280\.000,00/);
+  expect(app.erros).toEqual([]);
+});
+
+test('Gastos fixos abertos antes da nuvem responder: a assinatura aparece', async () => {
+  const nuvem = nuvemLenta();
+  app = await subirApp({ nuvem: { sessao: SESSAO, from: nuvem.from } });
+  const g = gestos(app);
+  g.w.mudarAba('orcamento');
+  await app.esperar(() => g.d.querySelector('[data-orc-sub="assinaturas"]'));
+  await abrirSubAba(g, 'assinaturas', '#assinaturas-list');
+  expect(g.d.querySelector('#assinaturas-list').textContent).not.toMatch(/Streaming/);
+
+  nuvem.responder();
+
+  expect(await app.esperar(() => /Streaming/.test(g.d.querySelector('#assinaturas-list').textContent), 3000)).toBe(true);
+  expect(app.erros).toEqual([]);
+});
+
+test('Planejamento aberto antes da nuvem responder: a renda que veio da nuvem monta o painel', async () => {
+  const nuvem = nuvemLenta();
+  // Aparelho recém-instalado: sem renda, o Planejamento pede para cadastrá-la.
+  app = await subirApp({ nuvem: { sessao: SESSAO, from: nuvem.from }, config: { renda: 0 } });
+  const g = gestos(app);
+  g.w.mudarAba('orcamento');
+  const painel = () => g.d.getElementById('orc-dashboard');
+  const pedeRenda = () => g.d.getElementById('orc-renda-setup');
+  await app.esperar(() => pedeRenda() && pedeRenda().style.display === 'block');
+  expect(painel().style.display).toBe('none');
+
+  nuvem.responder();
+
+  expect(await app.esperar(() => painel().style.display === 'block', 3000)).toBe(true);
+  expect(pedeRenda().style.display).toBe('none');
   expect(app.erros).toEqual([]);
 });
 
