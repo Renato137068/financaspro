@@ -16,7 +16,7 @@ function montarSw({ fetchImpl, falharUrls = [] }) {
   const cache = {
     add: (req) => (falharUrls.includes(new URL(req.url).pathname)
       ? Promise.reject(new Error('404')) : Promise.resolve()),
-    put: (req, res) => { puts.push(req.url || String(req)); return Promise.resolve(); },
+    put: (req) => { puts.push(req.url || String(req)); return Promise.resolve(); },
   };
   const ctx = {
     self: {
