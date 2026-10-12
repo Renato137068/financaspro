@@ -42,12 +42,12 @@ function enviarForm() {
 }
 
 /** Roda a exportação e devolve o texto do CSV que iria para o download. */
-async function exportarCsv() {
+async function exportarCsv(periodo) {
   let blob = null;
   let nomeArquivo = '';
   app.window.URL.createObjectURL = (b) => { blob = b; return 'blob:teste'; };
   app.window.HTMLAnchorElement.prototype.click = function() { nomeArquivo = this.download; };
-  app.window.INIT_EXTRATO.exportarExcel();
+  app.window.INIT_EXTRATO.exportarExcel(periodo);
   if (!blob) return { texto: null, nomeArquivo };
   const texto = await new Promise((resolve) => {
     const fr = new app.window.FileReader();
@@ -203,20 +203,67 @@ describe('Exportar CSV', () => {
     await abrirExtrato({ transacoes: [perigosa] });
     const { texto } = await exportarCsv();
     const [linha] = linhasTabela(texto).map(colunas);
-    expect(linha).toHaveLength(8);
+    expect(linha).toHaveLength(10);
     expect(linha[1]).toBe('\'=HYPERLINK("http://x","clique")');
   });
 
   test('abre em colunas no Excel pt-BR: categoria pelo nome, conta e cartão', async () => {
     await abrirExtrato({ transacoes: [MERCADO] });
     const { texto } = await exportarCsv();
-    expect(texto).toMatch(/^.*\nData;Descrição;Categoria;Tipo;Valor;Saldo Acumulado;Conta;Cartão\n/s);
+    expect(texto).toMatch(/^.*\nData;Descrição;Categoria;Tipo;Valor;Saldo Acumulado;Conta;Cartão;Parcela;Tags\n/s);
     const [linha] = linhasTabela(texto).map(colunas);
     expect(linha[2]).not.toBe('alimentacao');
     expect(linha[2]).toBe(app.window.CONFIG.getCatLabel('alimentacao'));
     expect(linha[4]).toBe('-100,00');
     expect(linha[6]).toBe('Nubank');
     expect(linha[7]).toBe('Crédito');
+  });
+
+  test('parcela e tags em colunas próprias', async () => {
+    const tv = { ...MERCADO, id: 'p2', descricao: 'TV (2/10)', tags: ['casa', 'eletrônicos'] };
+    await abrirExtrato({ transacoes: [tv] });
+    const { texto } = await exportarCsv();
+    const [linha] = linhasTabela(texto).map(colunas);
+    expect(linha[8]).toBe('2/10');
+    expect(linha[9]).toBe('casa, eletrônicos');
+  });
+
+  test('sai com os filtros da tela e diz quais são', async () => {
+    await abrirExtrato({ transacoes: [SALARIO, ALUGUEL, MERCADO] });
+    app.window.INIT_EXTRATO.state.filtroCat = 'alimentacao';
+    const { texto } = await exportarCsv();
+    const linhas = linhasTabela(texto).map(colunas);
+    expect(linhas.map((c) => c[1])).toEqual(['Mercado']);
+    expect(texto).toMatch(/Filtros: categoria /);
+    expect(texto).toMatch(/Total de transações;1/);
+  });
+
+  test('filtro sem resultado avisa que é por causa dos filtros', async () => {
+    const g = await abrirExtrato({ transacoes: [ALUGUEL] });
+    app.window.INIT_EXTRATO.state.filtroCat = 'alimentacao';
+    const { texto } = await exportarCsv();
+    expect(texto).toBeNull();
+    expect(g.toast()).toMatch(/Nenhuma transação com esses filtros/);
+  });
+
+  test('planilha do ano: janeiro a dezembro do ano da tela, nada de outros anos', async () => {
+    const jan = { ...ALUGUEL, id: 'j1', data: '2026-01-05', descricao: 'Aluguel jan' };
+    const dez25 = { ...ALUGUEL, id: 'z1', data: '2025-12-05', descricao: 'Aluguel dez 2025' };
+    await abrirExtrato({ transacoes: [SALARIO, jan, dez25] });
+    const { texto, nomeArquivo } = await exportarCsv('ano');
+    expect(nomeArquivo).toBe('extrato_2026.csv');
+    expect(texto).toMatch(/Período: Ano de 2026/);
+    expect(linhasTabela(texto).map(colunas).map((c) => c[1])).toEqual(['Aluguel jan', 'Salário']);
+  });
+
+  test('o botão "Planilha do ano" chama a exportação anual', async () => {
+    await abrirExtrato({ transacoes: [SALARIO] });
+    let periodo = 'nao-chamado';
+    app.window.INIT_EXTRATO.exportarExcel = (p) => { periodo = p; return Promise.resolve({ ok: true }); };
+    const btn = app.document.querySelector('[data-action="exportar-excel-ano"]');
+    expect(btn).not.toBeNull();
+    btn.click();
+    expect(await app.esperar(() => periodo === 'ano', 1000)).toBe(true);
   });
 
   test('mês sem lançamentos avisa e não baixa nada', async () => {
@@ -283,5 +330,32 @@ describe('Mês do Extrato no fim do mês', () => {
     });
     expect(meses).toEqual(['10/2026', '9/2026', '8/2026', '7/2026', '6/2026', '5/2026', '4/2026', '3/2026', '2/2026']);
     ext.state.mesOffset = 0;
+  });
+});
+
+describe('Lista do Extrato', () => {
+  const textoLista = () => app.document.getElementById('lista-transacoes').textContent;
+
+  test('a busca filtra a lista, sem diferenciar acento e maiúscula', async () => {
+    const farm = { ...MERCADO, id: 'f1', descricao: 'Farmácia Pague Menos', categoria: 'saude' };
+    await abrirExtrato({ transacoes: [ALUGUEL, farm] });
+    const input = app.document.getElementById('extrato-busca');
+    input.value = 'FARMACIA';
+    app.window.INIT_EXTRATO.filtrarExtrato();
+    expect(textoLista()).toMatch(/Farmácia Pague Menos/);
+    expect(textoLista()).not.toMatch(/Aluguel/);
+    input.value = '';
+    app.window.INIT_EXTRATO.filtrarExtrato();
+    expect(textoLista()).toMatch(/Aluguel/);
+  });
+
+  test('parcela de dia futuro do mês fica em "Próximos", no topo', async () => {
+    const futura = { ...MERCADO, id: 'f2', data: '2026-09-25', descricao: 'TV (2/10)' };
+    await abrirExtrato({ transacoes: [ALUGUEL, futura] });
+    app.window.INIT_EXTRATO.filtrarExtrato();
+    const txt = textoLista();
+    expect(txt).toMatch(/PRÓXIMOS/i);
+    expect(txt.search(/PRÓXIMOS/i)).toBeLessThan(txt.search(/MAIS CEDO NO MÊS/i));
+    expect(txt.search(/TV \(2\/10\)/)).toBeLessThan(txt.search(/MAIS CEDO NO MÊS/i));
   });
 });

@@ -10,6 +10,22 @@ import { BILLING } from './base.js';
 import { FUNIL } from '../utilities/funil.js';
 import { DADOS } from '../core/dados.js';
 
+/**
+ * Dias de calendário (data local) de hoje até o fim, ou -1 se já acabou.
+ * Antes era Math.ceil em blocos de 24 h: com fim às 20h e agora às 8h dizia
+ * "acaba em 1 dia" no último dia, e "acaba hoje" só aparecia depois do fim.
+ */
+function _diasCalendarioAte(fimMs) {
+  if (isNaN(fimMs)) return NaN;
+  var agora = Date.now();
+  if (fimMs <= agora) return -1;
+  var hoje = new Date(agora);
+  hoje.setHours(12, 0, 0, 0);
+  var fim = new Date(fimMs);
+  fim.setHours(12, 0, 0, 0);
+  return Math.round((fim - hoje) / 86400000);
+}
+
 Object.assign(BILLING, {
 
   listPlans: function() {
@@ -265,7 +281,7 @@ Object.assign(BILLING, {
     }
     if (sub.cancelAtPeriodEnd && sub.currentPeriodEnd) {
       var fim = new Date(sub.currentPeriodEnd);
-      var diasRest = Math.ceil((fim.getTime() - Date.now()) / 86400000);
+      var diasRest = _diasCalendarioAte(fim.getTime());
       if (!isNaN(diasRest) && diasRest >= 0) {
         if (diasRest === 0) return name + ' · último dia (cancelado)';
         return name + ' · mais ' + diasRest + ' dia' + (diasRest === 1 ? '' : 's') + ' (cancelado)';
@@ -300,7 +316,7 @@ Object.assign(BILLING, {
     if (sub.status === 'TRIALING' && sub.trialEndsAt) {
       var ends = new Date(sub.trialEndsAt).getTime();
       if (!isNaN(ends)) {
-        var daysLeft = Math.ceil((ends - Date.now()) / 86400000);
+        var daysLeft = _diasCalendarioAte(ends);
         if (daysLeft >= 0 && daysLeft <= 3) {
           if (BILLING.isWelcomeTrial(sub)) {
             return {
@@ -326,7 +342,7 @@ Object.assign(BILLING, {
 
     if (sub.cancelAtPeriodEnd && sub.currentPeriodEnd) {
       var fim = new Date(sub.currentPeriodEnd);
-      var dias = Math.ceil((fim.getTime() - Date.now()) / 86400000);
+      var dias = _diasCalendarioAte(fim.getTime());
       if (isNaN(dias) || dias < 0) {
         return {
           severity: 'info',

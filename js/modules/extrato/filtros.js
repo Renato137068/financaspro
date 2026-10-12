@@ -403,21 +403,7 @@ Object.assign(INIT_EXTRATO, {
     }
 
     // Renderização imediata sem delay artificial
-    var info = INIT_EXTRATO.getExtratoMesAno();
-    var txs = TRANSACOES.obter({
-      mes: info.mes,
-      ano: info.ano,
-      tipo: INIT_EXTRATO.state.filtroTipo === 'todos' ? null : INIT_EXTRATO.state.filtroTipo,
-      categoria: INIT_EXTRATO.state.filtroCat,
-      busca: document.getElementById('extrato-busca')?.value || ''
-    });
-
-    // Aplicar filtros avançados
-    txs = INIT_EXTRATO._aplicarFiltrosAvancados(txs);
-
-    if (INIT_EXTRATO.state.pendenteExclusao) {
-      txs = txs.filter(function(t) { return !INIT_EXTRATO.state.pendenteExclusao[t.id]; });
-    }
+    var txs = INIT_EXTRATO._txsDaTela();
 
     // Aplicar ordenação
     txs = INIT_EXTRATO._aplicarOrdenacao(txs);
@@ -425,6 +411,73 @@ Object.assign(INIT_EXTRATO, {
     INIT_EXTRATO.renderFiltrosCategorias(txs);
     INIT_EXTRATO.renderExtratoResumo(txs);
     INIT_EXTRATO.renderExtratoLista(txs);
+  },
+
+  /**
+   * Lançamentos que a tela mostra: período, tipo, categoria, busca, tag e
+   * filtros avançados. A exportação usa a mesma lista, então a planilha sai
+   * com o que a pessoa está vendo.
+   * @param {{ano?: boolean}} [opts] ano: o ano inteiro do período, não só o mês.
+   * @returns {Array} sem ordenação garantida
+   */
+  _txsDaTela: function(opts) {
+    var st = INIT_EXTRATO.state;
+    var info = INIT_EXTRATO.getExtratoMesAno();
+    var anual = !!(opts && opts.ano);
+    var filtros = {
+      tipo: st.filtroTipo === 'todos' ? null : st.filtroTipo,
+      categoria: st.filtroCat
+    };
+    if (!anual) {
+      filtros.mes = info.mes;
+      filtros.ano = info.ano;
+    }
+    var txs = TRANSACOES.obter(filtros);
+    if (anual) {
+      var prefixoAno = String(info.ano) + '-';
+      txs = txs.filter(function(t) { return String(t.data || '').indexOf(prefixoAno) === 0; });
+    }
+
+    // A caixa "Buscar transações" mandava o texto para TRANSACOES.obter, que
+    // não filtra por texto: digitar não mudava nada na lista.
+    var el = document.getElementById('extrato-busca');
+    st.busca = el ? String(el.value || '').trim() : (st.busca || '');
+    var termo = INIT_EXTRATO._normalizarBusca(st.busca);
+    if (termo) {
+      txs = txs.filter(function(t) {
+        var alvo = (UTILS.desescapeHtml(t.descricao || '')) + ' '
+          + (UTILS.labelCategoria(t.categoria) || '') + ' ' + (t.categoria || '');
+        return INIT_EXTRATO._normalizarBusca(alvo).indexOf(termo) !== -1;
+      });
+    }
+
+    txs = INIT_EXTRATO._aplicarFiltrosAvancados(txs);
+
+    if (st.pendenteExclusao) {
+      txs = txs.filter(function(t) { return !st.pendenteExclusao[t.id]; });
+    }
+    return txs;
+  },
+
+  /** Minúsculas e sem acento: "farmacia" acha "Farmácia". */
+  _normalizarBusca: function(s) {
+    return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  },
+
+  /** Os filtros ativos em texto curto, para o cabeçalho da planilha. */
+  _descreverFiltros: function() {
+    var st = INIT_EXTRATO.state;
+    var av = st.buscaAvancada || {};
+    var partes = [];
+    if (st.filtroTipo && st.filtroTipo !== 'todos') partes.push('tipo ' + st.filtroTipo);
+    if (st.filtroCat) partes.push('categoria ' + (UTILS.labelCategoria(st.filtroCat) || st.filtroCat));
+    if (st.filtroTag) partes.push('tag ' + st.filtroTag);
+    if (st.busca) partes.push('busca "' + st.busca + '"');
+    if (av.valorMin != null) partes.push('valor a partir de ' + UTILS.formatarMoeda(av.valorMin));
+    if (av.valorMax != null) partes.push('valor até ' + UTILS.formatarMoeda(av.valorMax));
+    if (av.dataInicio) partes.push('de ' + av.dataInicio.split('-').reverse().join('/'));
+    if (av.dataFim) partes.push('até ' + av.dataFim.split('-').reverse().join('/'));
+    return partes.join(', ');
   },
 
   /**

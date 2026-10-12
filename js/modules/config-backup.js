@@ -25,6 +25,7 @@ import { DADOS } from '../core/dados.js';
 import { BACKUP_CIFRADO } from './backup-cifrado.js';
 import { APP_STORE } from '../core/store.js';
 import { ACTIONS } from '../services/actions.js';
+import { BILLING } from '../billing/base.js';
 
 const CONFIG_BACKUP = {
   LIMITE_IMPORT_BYTES: 50 * 1024 * 1024,
@@ -117,14 +118,32 @@ const CONFIG_BACKUP = {
     var src = imported && typeof imported === 'object' ? imported : {};
     for (var i = 0; i < allowed.length; i++) {
       var key = allowed[i];
-      if (Object.prototype.hasOwnProperty.call(src, key)) {
-        merged[key] = src[key];
-      }
+      if (!Object.prototype.hasOwnProperty.call(src, key)) continue;
+      // Listas com id (metas, contas a pagar, assinaturas...) somam ao que já
+      // existe, como as transações e as contas: trocar a lista inteira apagava
+      // o que foi criado depois do backup, e a perda subia para a nuvem.
+      merged[key] = this._somarPorId(current[key], src[key]);
     }
     this._IMPORT_CONFIG_BLOCKED.forEach(function(key) {
       merged[key] = current[key];
     });
     return merged;
+  },
+
+  /**
+   * Lista atual + itens do backup que ela não tem (por `id`). Quem já existe
+   * fica como está: é a versão mais recente. Fora de listas com id, vale o
+   * valor do backup, como antes.
+   */
+  _somarPorId: function(atual, doBackup) {
+    var ehListaComId = function(v) {
+      return Array.isArray(v) && v.length > 0 && v.every(function(x) { return x && typeof x === 'object' && x.id != null; });
+    };
+    if (!Array.isArray(atual) || !atual.length || !ehListaComId(doBackup)) return doBackup;
+    if (!ehListaComId(atual)) return doBackup;
+    var ids = {};
+    atual.forEach(function(x) { ids[x.id] = true; });
+    return atual.concat(doBackup.filter(function(x) { return !ids[x.id]; }));
   },
 
   _importTemOverridesSensiveis: function(data) {
@@ -356,11 +375,24 @@ const CONFIG_BACKUP = {
         }
       }
 
-      // Importar orçamentos
+      // Importar orçamentos. Um por um e sem paywall no meio: no plano grátis,
+      // o sexto orçamento de um backup do Pro lançava erro, abortava a
+      // restauração depois de já ter gravado config e contas, e os anexos
+      // nunca entravam. O que passar da cota fica de fora e é dito no aviso.
+      var orcamentosForaDaCota = 0;
       if (data.orcamentos && typeof data.orcamentos === 'object') {
         Object.keys(data.orcamentos).forEach(function(cat) {
-          if (data.orcamentos[cat] && data.orcamentos[cat].limite) {
+          if (!data.orcamentos[cat] || !data.orcamentos[cat].limite) return;
+          var jaExiste = ORCAMENTO.obterLimite(cat) > 0;
+          if (!jaExiste && BILLING.checkQuota
+            && !BILLING.checkQuota('budget', 1).allowed) {
+            orcamentosForaDaCota++;
+            return;
+          }
+          try {
             ORCAMENTO.definirLimite(cat, data.orcamentos[cat].limite);
+          } catch (e) {
+            orcamentosForaDaCota++;
           }
         });
       }
@@ -386,7 +418,10 @@ const CONFIG_BACKUP = {
         if (configImportada) msg.push('configurações');
         if (anexosImportados > 0) msg.push(anexosImportados + ' anexos');
         if (msg.length > 0) {
-          UTILS.mostrarToast('Importado: ' + msg.join(', '), 'success');
+          UTILS.mostrarToast('Importado: ' + msg.join(', ')
+            + (orcamentosForaDaCota ? '. ' + orcamentosForaDaCota
+              + (orcamentosForaDaCota === 1 ? ' orçamento ficou' : ' orçamentos ficaram')
+              + ' de fora pelo limite do plano grátis' : ''), 'success');
         } else {
           UTILS.mostrarToast('Não encontrei nada para importar nesse arquivo', 'warning');
         }
@@ -398,6 +433,10 @@ const CONFIG_BACKUP = {
         if (typeof RENDER !== 'undefined' && RENDER.init) RENDER.init();
         UTILS.mostrarToast('Importação incompleta: ' + transacoesImportadas
           + ' transações entraram, mas o resto do backup não. Tente importar de novo.', 'error');
+      } else if (configImportada) {
+        if (typeof RENDER !== 'undefined' && RENDER.init) RENDER.init();
+        UTILS.mostrarToast('Importação incompleta: as configurações entraram, mas o resto '
+          + 'do backup não. Tente importar de novo.', 'error');
       } else {
         UTILS.mostrarToast('Não foi possível importar esse arquivo. Nada foi alterado.', 'error');
       }

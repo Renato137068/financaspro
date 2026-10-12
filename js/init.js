@@ -71,8 +71,8 @@ function setFiltroTipo(tipo) { _extrato('setFiltroTipo', tipo); }
 function setFiltroCat(cat) { _extrato('setFiltroCat', cat); }
 function filtrarExtrato() { _extrato('filtrarExtrato'); }
 function abrirEdicaoTransacao(id) { _extrato('editarTransacao', id); }
-function exportarExcel() { _extrato('exportarExcel'); }
-function exportarExtrato() { _extrato('exportarExtrato'); }
+function exportarExcel(periodo) { return _extrato('exportarExcel', periodo); }
+function exportarExtrato() { return _extrato('exportarExtrato'); }
 function exportarPDF() { exportarExtrato(); }
 
 /* ── Formulário → INIT_FORM ── */

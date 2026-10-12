@@ -236,6 +236,15 @@ self.addEventListener('install', (event) => {
       if (falhas.length === urlsParaCache.length) {
         throw new Error('[sw] precache falhou por completo — install abortado');
       }
+      // Sem a página e os bundles do boot o app não abre offline. Ícone ou
+      // fonte que falhe é tolerável; um destes, não: o activate apagaria o
+      // cache anterior (que estava completo) e o app deixaria de abrir sem rede.
+      const criticas = falhas.filter((u) => u === '/index.html'
+        || /^\/js\/(app|vendor)\.bundle\.js$/.test(u) || /^\/js\/index-[\w-]+\.js$/.test(u)
+        || /^\/css\/index-[\w-]+\.css$/.test(u));
+      if (criticas.length) {
+        throw new Error('[sw] precache sem item essencial — install abortado: ' + criticas.join(', '));
+      }
     }),
   );
 });
@@ -299,7 +308,17 @@ self.addEventListener('fetch', (event) => {
 
   event.respondWith(
     caches.match(event.request).then((cached) => {
-      const networkFetch = fetch(event.request).then((res) => {
+      // 'no-cache' revalida com o servidor em vez de reaproveitar o cache HTTP
+      // do navegador (1 h em /js/*): sem isso, app.bundle.js (sem hash no nome)
+      // vinha velho junto com index.html e módulos novos — versão misturada.
+      const pedido = isNavigation ? event.request : new Request(event.request, { cache: 'no-cache' });
+      const networkFetch = fetch(pedido).then((res) => {
+        // Depois de um deploy, o host responde index.html (200) para um chunk
+        // com hash antigo. Guardar esse HTML no lugar do JS envenenava o cache.
+        const htmlNoLugar = !isNavigation && res && res.ok
+          && /text\/html/i.test(res.headers.get('content-type') || '')
+          && !/\.html?$/i.test(url.pathname) && url.pathname !== '/';
+        if (htmlNoLugar) return new Response('', { status: 404, statusText: 'Not Found' });
         if (res && res.ok) {
           const clone = res.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));

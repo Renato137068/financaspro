@@ -48,12 +48,30 @@ const LAZY = {
       delete LAZY._loading[chunk];
     }, function(e) {
       delete LAZY._loading[chunk];
+      LAZY._avisarVersaoNova();
       var erro = new Error('Falha ao carregar módulo sob demanda: ' + chunk);
       erro.cause = e;
       throw erro;
     });
     LAZY._loading[chunk] = p;
     return p;
+  },
+
+  /**
+   * Um chunk que não carrega quase sempre é deploy novo: a página aberta
+   * pede um arquivo com hash antigo que o host já não tem. Antes a tela
+   * simplesmente não abria, sem aviso; agora a pessoa pode recarregar.
+   */
+  _avisouVersao: false,
+  _avisarVersaoNova: function() {
+    if (LAZY._avisouVersao || typeof window === 'undefined') return;
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+    var U = window.UTILS;
+    if (!U || typeof U.mostrarToastAcao !== 'function') return;
+    LAZY._avisouVersao = true;
+    U.mostrarToastAcao('Há uma versão nova do app. Recarregue para abrir esta tela.', 'Recarregar', function() {
+      window.location.reload();
+    }, { duracaoMs: 15000 });
   },
 };
 

@@ -226,6 +226,9 @@ const INIT_NAVIGATION = {
       'exportar-excel': function() {
         UTILS.comCarregamento(target, function() { return safeCall('exportarExcel'); }, 'Gerando...');
       },
+      'exportar-excel-ano': function() {
+        UTILS.comCarregamento(target, function() { return safeCall('exportarExcel', ['ano']); }, 'Gerando...');
+      },
       'exportar-pdf': function() {
         if (target.getAttribute('aria-disabled') === 'true') {
           self.carregarChunkConta(function() {

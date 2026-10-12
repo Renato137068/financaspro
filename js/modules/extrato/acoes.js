@@ -130,16 +130,22 @@ Object.assign(INIT_EXTRATO, {
 
   /**
    * Exporta extrato para Excel (CSV melhorado)
+   * @param {'mes'|'ano'} [periodo] 'ano' exporta o ano inteiro do período da
+   *   tela (a planilha do IR), com os mesmos filtros.
    */
-  exportarExcel: function() {
+  exportarExcel: function(periodo) {
     // CSV e livre em todos os planos: o dado e do usuario e poder leva-lo
     // embora e argumento de aquisicao ("saia quando quiser"), nao de paywall.
 
+    var anual = periodo === 'ano';
     var info = INIT_EXTRATO.getExtratoMesAno();
-    var txs = TRANSACOES.obter({ mes: info.mes, ano: info.ano });
-    
+    // A mesma lista da tela: com filtro de categoria ou busca, a planilha sai
+    // com o que a pessoa está vendo, e não com o mês inteiro.
+    var txs = INIT_EXTRATO._txsDaTela({ ano: anual });
+    var filtrosTxt = INIT_EXTRATO._descreverFiltros();
+
     if (txs.length === 0) {
-      UTILS.mostrarToast('Nenhuma transação para exportar', 'warning');
+      UTILS.mostrarToast(filtrosTxt ? 'Nenhuma transação com esses filtros' : 'Nenhuma transação para exportar', 'warning');
       return;
     }
 
@@ -158,7 +164,8 @@ Object.assign(INIT_EXTRATO, {
     
     // Header informativo
     csv += 'Extrato FinançasPro\n';
-    csv += 'Período: ' + mesNome + ' de ' + info.ano + '\n';
+    csv += 'Período: ' + (anual ? 'Ano de ' + info.ano : mesNome + ' de ' + info.ano) + '\n';
+    if (filtrosTxt) csv += '"Filtros: ' + INIT_EXTRATO._neutralizarCsvCelula(filtrosTxt) + '"\n';
     csv += 'Gerado em: ' + new Date().toLocaleDateString('pt-BR') + ' às ' + new Date().toLocaleTimeString('pt-BR') + '\n';
     csv += '\n';
     
@@ -174,7 +181,7 @@ Object.assign(INIT_EXTRATO, {
     csv += '\n';
     
     // Header da tabela
-    csv += 'Data;Descrição;Categoria;Tipo;Valor;Saldo Acumulado;Conta;Cartão\n';
+    csv += 'Data;Descrição;Categoria;Tipo;Valor;Saldo Acumulado;Conta;Cartão;Parcela;Tags\n';
     
     // Dados das transações com saldo acumulado
     // Saldo acumulado só faz sentido em ordem cronológica (TRANSACOES.obter
@@ -203,6 +210,9 @@ Object.assign(INIT_EXTRATO, {
       // Nome da categoria como aparece na tela ("Serviços financeiros"), não
       // o código interno ("servicos_financeiros").
       var categoria = UTILS.labelCategoria(t.categoria) || t.categoria || '';
+      // O formulário grava a parcela no fim da descrição: "TV (2/10)".
+      var parc = /\((\d{1,3})\/(\d{1,3})\)\s*$/.exec(t.descricao || '');
+      var tags = Array.isArray(t.tags) ? t.tags.join(', ') : '';
 
       csv += [
         data,
@@ -212,15 +222,20 @@ Object.assign(INIT_EXTRATO, {
         _csvNum(valorC),
         _csvNum(saldoAcumuladoC),
         cel(t.banco || ''),
-        cel(t.cartao || '')
+        cel(t.cartao || ''),
+        parc ? parc[1] + '/' + parc[2] : '',
+        cel(tags)
       ].join(';') + '\n';
     });
 
     // Total de transações
     csv += '\nTotal de transações;' + txs.length + '\n';
 
-    var nome = 'extrato_' + mesNome.toLowerCase() + '_' + info.ano + '.csv';
-    return UTILS.salvarArquivo(nome, csv, 'text/csv;charset=utf-8;', 'Extrato de ' + mesNome)
+    var nome = anual
+      ? 'extrato_' + info.ano + '.csv'
+      : 'extrato_' + mesNome.toLowerCase() + '_' + info.ano + '.csv';
+    var titulo = anual ? 'Extrato de ' + info.ano : 'Extrato de ' + mesNome;
+    return UTILS.salvarArquivo(nome, csv, 'text/csv;charset=utf-8;', titulo)
       .then(function(r) {
         if (r.ok) UTILS.mostrarToast('Planilha exportada', 'success');
         else if (!r.cancelado) UTILS.mostrarToast('Não foi possível salvar a planilha', 'error');
