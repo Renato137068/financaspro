@@ -24,14 +24,16 @@ const TETO_KB = {
   // e no IndexedDB (auditoria de integridade); ver check-bundle-budget.cjs.
   // 1086→1088 e 453→455 (09/10): botão voltar do Android e aviso sem internet.
   // 1088→1090 (10/10): primeiro uso e cadastro (auditorias de 09/10).
-  precacheTotal: 1090,
+  // 1090→1092 e 456→458 (11/10): cifra local que não apaga dados ao reabrir e
+  // exportação que salva no APK; ver check-bundle-budget.cjs.
+  precacheTotal: 1092,
   // 514→512 (27/09): a soma passou a incluir a entrada ESM (ADR 0005).
   // 512→507→503 (27–28/09): quarta e quinta fatias ESM.
   // 503→478 (29/09): idem.
   // 478→450 (02/10): saem o cliente da API Express e o sync v2 (ADR 0007).
   // 450→454 (08/10): idem (452 KB medidos).
   // 455→456 (10/10): atalho do ícone no Android e marcos do funil.
-  appBundle: 456,
+  appBundle: 458,
   vendorBundle: 262,
   cssBundle: 184,
   indexHtml: 48,

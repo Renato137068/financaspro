@@ -69,7 +69,10 @@ const BUDGETS = {
   // 1088→1090 KB (2026-10-10): auditorias de testes, servidor e retenção —
   // cadastro que mostra o próprio título, aviso de renda no primeiro gasto,
   // guia "Comece aqui" sem o passo do perfil, pull ordenado (1088 KB).
-  precacheTotal: { max: 1090 * KB, label: 'Precache total (1º acesso)' },
+  // 1090→1092 KB (2026-10-11): cifra local que não apaga os dados ao reabrir
+  // e exportação/backup que salvam de verdade no APK (1091 KB). Correção de
+  // perda de dado; a folga de peso continua pendente (item C1).
+  precacheTotal: { max: 1092 * KB, label: 'Precache total (1º acesso)' },
   // 580→590 KB (2026-09-13): correção do KPI "Folga poupança" no Orçamento
   // (cálculo da folga da fatia de poupança) + referência de ritmo no Resumo
   // adicionam alguns KB de código — aumento intencional.
@@ -106,7 +109,8 @@ const BUDGETS = {
   // 453→455 KB (2026-10-09): botão voltar do Android e aviso sem internet (454 KB).
   // 455→456 KB (2026-10-10): atalho "Novo lançamento" do ícone no Android e
   // marcos do funil de conta criada e categoria automática (455,3 KB).
-  appBundle: { max: 456 * KB, label: 'App eager (clássico + ESM)', glob: /^js\/(app\.bundle|index-[\w-]+)\.js$/ },
+  // 456→458 KB (2026-10-11): mesmas correções de cifra e exportação (457 KB).
+  appBundle: { max: 458 * KB, label: 'App eager (clássico + ESM)', glob: /^js\/(app\.bundle|index-[\w-]+)\.js$/ },
   // 260→262 KB (2026-09-27): supabase-js 2.112 → 2.117. O vendor é só
   // supabase-js + lucide; não há o que mover para lazy aqui.
   vendorBundle: { max: 262 * KB, label: 'js/vendor.bundle.js', file: 'js/vendor.bundle.js' },

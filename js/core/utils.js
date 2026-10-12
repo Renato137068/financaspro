@@ -502,6 +502,45 @@ const UTILS = {
       .replace(/&amp;/g, '&');
   },
 
+  // Entrega um arquivo gerado pelo app (CSV, backup, relatório) ao usuário.
+  // No navegador, o <a download> de sempre. No APK, o WebView do Capacitor
+  // ignora esse clique (não há DownloadListener), então o arquivo vai para o
+  // cache do app e abre a folha de compartilhar do Android (salvar no Drive,
+  // em Arquivos, mandar por e-mail). Resolve { ok: true } só quando o arquivo
+  // de fato saiu; quem chama usa isso para não dizer "exportado" à toa.
+  salvarArquivo: function(nome, conteudo, tipo, titulo) {
+    var cap = typeof window !== 'undefined' ? window.Capacitor : null;
+    var nativo = !!(cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform());
+    if (nativo) {
+      var plugins = cap.Plugins || {};
+      var fs = plugins.Filesystem;
+      var share = plugins.Share;
+      if (!fs || !share) {
+        return Promise.resolve({ ok: false, erro: 'sem-plugin' });
+      }
+      return fs.writeFile({ path: nome, data: String(conteudo), directory: 'CACHE', encoding: 'utf8' })
+        .then(function(res) {
+          return share.share({ title: titulo || nome, dialogTitle: titulo || nome, files: [res.uri] });
+        })
+        .then(function() { return { ok: true }; })
+        .catch(function(err) {
+          var msg = String((err && err.message) || err || '');
+          // Fechar a folha de compartilhar não é erro, mas também não salvou.
+          if (/cancel/i.test(msg)) return { ok: false, cancelado: true };
+          console.error('[UTILS] salvarArquivo:', err);
+          return { ok: false, erro: msg };
+        });
+    }
+    var blob = new Blob([conteudo], { type: tipo || 'application/octet-stream' });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement('a');
+    link.href = url;
+    link.download = nome;
+    link.click();
+    setTimeout(function() { try { URL.revokeObjectURL(url); } catch (e) { /* noop */ } }, 1000);
+    return Promise.resolve({ ok: true });
+  },
+
   labelCategoria: function(key) {
     if (typeof CONFIG !== 'undefined' && CONFIG.getCatLabel) {
       return CONFIG.getCatLabel(key);

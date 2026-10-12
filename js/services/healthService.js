@@ -112,14 +112,8 @@ const HEALTH_SERVICE = {
       SESSION_LOG.registrar('exportar_diagnostico', { eventos: diag.sessao.length });
     }
 
-    var nome = 'financaspro-diagnostico-' + new Date().toISOString().slice(0, 10) + '.json';
-    var blob = new Blob([JSON.stringify(diag, null, 2)], { type: 'application/json' });
-    var url = URL.createObjectURL(blob);
-    var link = document.createElement('a');
-    link.href = url;
-    link.download = nome;
-    link.click();
-    URL.revokeObjectURL(url);
+    var nome = 'financaspro-diagnostico-' + UTILS.dataLocalIso() + '.json';
+    UTILS.salvarArquivo(nome, JSON.stringify(diag, null, 2), 'application/json', 'Diagnóstico do FinançasPro');
     return diag;
   },
 
@@ -200,14 +194,8 @@ const HEALTH_SERVICE = {
       return null;
     }
     var html = HEALTH_SERVICE._montarDocumentoReplayHtml(eventos);
-    var nome = 'financaspro-replay-' + new Date().toISOString().slice(0, 10) + '.html';
-    var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-    var url = URL.createObjectURL(blob);
-    var link = document.createElement('a');
-    link.href = url;
-    link.download = nome;
-    link.click();
-    URL.revokeObjectURL(url);
+    var nome = 'financaspro-replay-' + UTILS.dataLocalIso() + '.html';
+    UTILS.salvarArquivo(nome, html, 'text/html;charset=utf-8', 'Sessão do FinançasPro');
     SESSION_LOG.registrar('exportar_replay_html', { eventos: eventos.length });
     return html;
   },

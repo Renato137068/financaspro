@@ -116,9 +116,13 @@
     .catch(function() {});
 
   // Quando SW novo assume controle, recarrega para pegar assets atualizados
+  // Só recarrega se já havia um SW antes: na primeira visita o clients.claim()
+  // do primeiro SW também dispara o evento, e a página recarregava sozinha no
+  // meio do cadastro.
   var refreshing = false;
+  var tinhaController = !!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange', function() {
-    if (refreshing) return;
+    if (refreshing || !tinhaController) return;
     refreshing = true;
     window.location.reload();
   });

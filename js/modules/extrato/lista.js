@@ -151,7 +151,11 @@ Object.assign(INIT_EXTRATO, {
       dataTx.setHours(0, 0, 0, 0);
       var grupo = '';
 
-      if (dataTx.getTime() === hoje.getTime()) {
+      if (dataTx > hoje) {
+        // Parcela ou lançamento agendado: antes caía em "Mais cedo no mês",
+        // no fim da lista, como se já tivesse acontecido.
+        grupo = 'PRÓXIMOS';
+      } else if (dataTx.getTime() === hoje.getTime()) {
         grupo = 'HOJE';
       } else if (dataTx.getTime() === ontem.getTime()) {
         grupo = 'ONTEM';
@@ -177,7 +181,7 @@ Object.assign(INIT_EXTRATO, {
    * Ordena grupos temporais (HOJE, ONTEM, ESTA SEMANA, depois meses).
    */
   _ordenarGrupos: function(grupos) {
-    var ordemGrupos = ['HOJE', 'ONTEM', 'ESTA SEMANA', 'MAIS CEDO NO MÊS'];
+    var ordemGrupos = ['PRÓXIMOS', 'HOJE', 'ONTEM', 'ESTA SEMANA', 'MAIS CEDO NO MÊS'];
     var gruposOrdenados = {};
     ordemGrupos.forEach(function(g) {
       if (grupos[g]) gruposOrdenados[g] = grupos[g];

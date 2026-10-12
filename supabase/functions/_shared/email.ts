@@ -24,7 +24,7 @@ export function renderEmail(
           "",
           `Sua assinatura do plano ${payload.planName || "Pro"} foi ativada com sucesso.`,
           payload.nextBilling
-            ? `Próxima cobrança: ${new Date(String(payload.nextBilling)).toLocaleDateString("pt-BR")}`
+            ? `Próxima cobrança: ${new Date(String(payload.nextBilling)).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`
             : "",
           "",
           "Aproveite o Pro: sync sem limites, IA e exportação na nuvem.",
@@ -38,7 +38,7 @@ export function renderEmail(
           "",
           `Sua assinatura do plano ${payload.planName || ""} foi cancelada.`,
           payload.accessUntil
-            ? `Você terá acesso ao plano até: ${new Date(String(payload.accessUntil)).toLocaleDateString("pt-BR")}`
+            ? `Você terá acesso ao plano até: ${new Date(String(payload.accessUntil)).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`
             : "",
         ].filter(Boolean).join("\n"),
       };

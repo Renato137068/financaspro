@@ -136,3 +136,45 @@ test('restaurar grava os lançamentos numa escrita só; se o disco recusar, nada
   expect(await terceiro.esperar(() => /Nada foi alterado/.test(g.toast()))).toBe(true);
   expect(terceiro.window.DADOS.getTransacoes().map((t) => t.id)).toEqual(['r1']);
 });
+
+// Auditoria de exportação (11/10): a restauração trocava a lista inteira de
+// metas (e contas a pagar, assinaturas...) pela do backup, e o que tinha sido
+// criado depois dele sumia.
+test('restaurar um backup antigo soma as metas, sem apagar as criadas depois', async () => {
+  const antiga = { id: 'm-antiga', nome: 'Viagem', valorAlvo: 5000, valorAtual: 100 };
+  const nova = { id: 'm-nova', nome: 'Reserva', valorAlvo: 10000, valorAtual: 300 };
+  const origem = await abrirPerfil({ config: { metas: [antiga] } });
+  const texto = await exportar(origem);
+
+  const destino = await abrirPerfil({ config: { metas: [{ ...antiga, valorAtual: 900 }, nova] } });
+  const g = gestos(destino);
+  importar(destino, texto);
+  expect(await destino.esperar(() => /Importado/.test(g.toast()))).toBe(true);
+  const metas = destino.window.DADOS.getConfig().metas;
+  expect(metas.map((m) => m.id).sort()).toEqual(['m-antiga', 'm-nova']);
+  // A meta que já existia fica com o valor mais recente, não o do backup.
+  expect(metas.find((m) => m.id === 'm-antiga').valorAtual).toBe(900);
+});
+
+test('backup com mais orçamentos que a cota do grátis não para no meio nem mostra paywall', async () => {
+  const cats = ['alimentacao', 'moradia', 'transporte', 'saude', 'lazer', 'educacao', 'vestuario', 'outro'];
+  const orcamentos = {};
+  cats.forEach((c, i) => { orcamentos[c] = { limite: 100 + i }; });
+  const backup = { versao: '1', transacoes: [TRANSACOES[0]], config: { nome: 'Bia' }, orcamentos };
+
+  const destino = await abrirPerfil();
+  const g = gestos(destino);
+  const B = destino.global('BILLING');
+  let paywall = 0;
+  const real = B.onPaymentRequired;
+  B.onPaymentRequired = function() { paywall++; return real.apply(this, arguments); };
+  importar(destino, JSON.stringify(backup));
+  expect(await destino.esperar(() => /Importado/.test(g.toast()))).toBe(true);
+  expect(destino.window.DADOS.getTransacoes()).toHaveLength(1);
+  expect(destino.window.DADOS.getConfig().nome).toBe('Bia');
+  expect(paywall).toBe(0);
+  // Cota do grátis: 5 categorias. As outras 3 ficam de fora, e o aviso diz.
+  const restaurados = cats.filter((c) => destino.global('ORCAMENTO').obterLimite(c) > 0).length;
+  expect(restaurados).toBe(5);
+  expect(g.toast()).toMatch(/3 orçamentos ficaram de fora pelo limite do plano grátis/);
+});

@@ -59,6 +59,7 @@ const CONTAS_PAGAR = {
       descricao: v.descricao,
       valor: v.valor,
       vencimento: v.vencimento,
+      diaVencimento: CONTAS_PAGAR._diaDe(v.vencimento),
       categoria: dados.categoria || 'outro',
       recorrente: !!dados.recorrente,
       status: 'pendente',
@@ -88,6 +89,7 @@ const CONTAS_PAGAR = {
       descricao: v.descricao,
       valor: v.valor,
       vencimento: v.vencimento,
+      diaVencimento: CONTAS_PAGAR._diaDe(v.vencimento),
       categoria: dados.categoria || lista[idx].categoria || 'outro',
       recorrente: !!dados.recorrente
     });
@@ -107,8 +109,21 @@ const CONTAS_PAGAR = {
    * para sempre (31 → 3 → 3 → 3...). Uma conta de aluguel do dia 31 passava a
    * vencer dia 3 depois do primeiro pagamento.
    */
-  _addMes: function(dataStr) {
-    return UTILS.addMesesClamp(dataStr, 1) || dataStr;
+  _addMes: function(dataStr, diaOriginal) {
+    var prox = UTILS.addMesesClamp(dataStr, 1) || dataStr;
+    // O ajuste de fevereiro não pode ficar: sem o dia original, um aluguel do
+    // dia 31 vencia dia 28 para sempre depois do primeiro fevereiro.
+    var dia = parseInt(diaOriginal, 10);
+    if (!dia || dia < 1 || dia > 31 || !/^\d{4}-\d{2}-\d{2}$/.test(prox)) return prox;
+    var ano = +prox.slice(0, 4), mes = +prox.slice(5, 7);
+    var ultimo = new Date(ano, mes, 0).getDate();
+    var d = Math.min(dia, ultimo);
+    return prox.slice(0, 8) + (d < 10 ? '0' : '') + d;
+  },
+
+  _diaDe: function(dataStr) {
+    var m = /^\d{4}-\d{2}-(\d{2})/.exec(String(dataStr || ''));
+    return m ? parseInt(m[1], 10) : undefined;
   },
 
   marcarPago: function(id, registrarDespesa) {
@@ -138,7 +153,7 @@ const CONTAS_PAGAR = {
     if (conta.recorrente) {
       lista[idx] = Object.assign({}, conta, {
         status: 'pendente',
-        vencimento: CONTAS_PAGAR._addMes(conta.vencimento),
+        vencimento: CONTAS_PAGAR._addMes(conta.vencimento, conta.diaVencimento),
         ultimoPagamento: new Date().toISOString()
       });
     } else {
