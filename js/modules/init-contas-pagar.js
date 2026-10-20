@@ -182,7 +182,8 @@ const INIT_CONTAS_PAGAR = {
     var cats = (CONFIG.CATEGORIAS_DESPESA_SLUGS || []).slice(0, 12);
     var catOpts = cats.map(function(c) {
       var sel = preset.categoria === c ? ' selected' : '';
-      return '<option value="' + c + '"' + sel + '>' + (CONFIG.getCatLabel ? CONFIG.getCatLabel(c) : c) + '</option>';
+      var rotulo = CONFIG.getCatLabel ? CONFIG.getCatLabel(c) : c;
+      return '<option value="' + UTILS.escapeHtml(c) + '"' + sel + '>' + UTILS.escapeHtml(rotulo) + '</option>';
     }).join('');
 
     var valorVal = (preset.valor != null && preset.valor !== '') ? String(preset.valor).replace('.', ',') : '';

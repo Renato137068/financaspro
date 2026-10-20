@@ -8,6 +8,7 @@
  */
 
 import { CONFIG } from './core/config.js';
+import { UTILS } from './core/utils.js';
 import { AI_ENGINE } from './ai-engine.js';
 import { BILLING } from './billing.js';
 import { APP_STORE } from './core/store.js';
@@ -179,7 +180,9 @@ const PREVISAO = {
           ? CONFIG.getCatLabel(corte.categoriaAlvo) : (corte.categoriaAlvo || '');
         return '<div class="previsao-meta previsao-meta-corte">' +
           '<i data-lucide="target" aria-hidden="true"></i> Para atingir 20% de poupança, reduza <strong>' + PREVISAO._formatarMoeda(corte.corteNecessario) + '</strong>' +
-          (catLabel ? ' em <strong>' + catLabel + '</strong>' : '') + '.' +
+          // Escapado: o nome de categoria personalizada é texto livre (ou vem
+          // de um backup) e não pode virar marcação na página.
+          (catLabel ? ' em <strong>' + UTILS.escapeHtml(catLabel) + '</strong>' : '') + '.' +
         '</div>';
       }());
     

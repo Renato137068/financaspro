@@ -121,6 +121,14 @@ module.exports = {
     'js/core/persist-queue.js': { lines: 68, functions: 74, branches: 68 },
     'js/utilities/finance-reconciler.js': { lines: 78, functions: 68, branches: 53 },
     'js/auth-biometric.js': { lines: 57, functions: 55, branches: 56 },
+
+    // 20/out: a auditoria pediu piso para a cobrança e o diagnóstico de
+    // suporte (supabase-billing-comportamento, health-replay) e para o painel
+    // de previsão (previsao-painel). Medido: 95,8/82,4/79,4; 79,4/66,7/76,2;
+    // 82,5/75,0/70,9.
+    'js/core/supabase-billing.js': { lines: 95, functions: 82, branches: 79 },
+    'js/services/healthService.js': { lines: 79, functions: 66, branches: 76 },
+    'js/previsao.js': { lines: 82, functions: 75, branches: 70 },
   },
   coverageReporters: ['text', 'lcov', 'html'],
   verbose: true,
