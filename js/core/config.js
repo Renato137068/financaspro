@@ -42,7 +42,7 @@ var _fpLocal = _fpWantLocal();
 
 const CONFIG = {
   APP_NAME: 'FinançasPro',
-  VERSION: '11.3.19',
+  VERSION: '11.3.26',
   BUILD_MODE: _fpLocal ? 'local' : 'cloud',
 
   STORAGE_TRANSACOES: 'fp-transacoes',
