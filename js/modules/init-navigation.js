@@ -309,8 +309,9 @@ const INIT_NAVIGATION = {
       },
       'exportar-diagnostico': function() {
         if (typeof HEALTH_SERVICE !== 'undefined' && HEALTH_SERVICE.exportarDiagnostico) {
-          HEALTH_SERVICE.exportarDiagnostico();
-          UTILS.mostrarToast('Diagnóstico exportado', 'success');
+          HEALTH_SERVICE.exportarDiagnostico().then(function() {
+            UTILS.mostrarToast('Diagnóstico exportado', 'success');
+          });
         } else {
           UTILS.mostrarToast('Diagnóstico indisponível', 'error');
         }
@@ -324,9 +325,9 @@ const INIT_NAVIGATION = {
       },
       'exportar-replay-sessao': function() {
         if (typeof HEALTH_SERVICE !== 'undefined' && HEALTH_SERVICE.exportarReplaySessao) {
-          if (HEALTH_SERVICE.exportarReplaySessao()) {
-            UTILS.mostrarToast('Replay HTML exportado', 'success');
-          }
+          HEALTH_SERVICE.exportarReplaySessao().then(function(html) {
+            if (html) UTILS.mostrarToast('Replay HTML exportado', 'success');
+          });
         } else {
           UTILS.mostrarToast('Exportação indisponível', 'error');
         }

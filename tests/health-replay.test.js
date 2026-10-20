@@ -4,13 +4,14 @@
  * O HTML do replay sai do app para anexar a um ticket. Três coisas precisam
  * valer: o que a pessoa vê é o histórico da sessão (sem descrições de
  * lançamentos), nada do que o evento traz pode virar marcação na página
- * (escape), e sem eventos o app não gera arquivo vazio.
+ * (escape), e sem eventos o app não gera arquivo vazio. O replay é um módulo
+ * sob demanda (services/replay-sessao.js); o diagnóstico fica no healthService.
  */
 const { carregarScript } = require('./helpers/carregar-script.cjs');
 
 const UTILS = carregarScript('js/core/utils.js');
 
-function carregar(extras) {
+function carregarHealth(extras) {
   return carregarScript('js/services/healthService.js', Object.assign({
     UTILS: UTILS,
     SESSION_LOG: { snapshot: function() { return []; }, registrar: jest.fn() },
@@ -22,35 +23,44 @@ function carregar(extras) {
   }, extras || {}));
 }
 
-describe('HEALTH_SERVICE — replay da sessão', function() {
-  let HS;
+function carregarReplay(extras) {
+  return carregarScript('js/services/replay-sessao.js', Object.assign({
+    UTILS: UTILS,
+    SESSION_LOG: { snapshot: function() { return []; }, registrar: jest.fn() },
+    DADOS: { getTransacoes: function() { return []; } },
+    INIT_MODALS: {},
+  }, extras || {}));
+}
+
+describe('REPLAY_SESSAO — conteúdo do replay', function() {
+  let R;
   beforeEach(function() {
-    HS = carregar();
+    R = carregarReplay();
   });
 
   test('rótulos conhecidos e tipo desconhecido passa como está', function() {
-    expect(HS._rotuloEventoSessao('init_dados')).toBe('App iniciou');
-    expect(HS._rotuloEventoSessao('conflito_resolvido')).toBe('Conflito resolvido');
-    expect(HS._rotuloEventoSessao('evento_novo')).toBe('evento_novo');
+    expect(R._rotuloEventoSessao('init_dados')).toBe('App iniciou');
+    expect(R._rotuloEventoSessao('conflito_resolvido')).toBe('Conflito resolvido');
+    expect(R._rotuloEventoSessao('evento_novo')).toBe('evento_novo');
   });
 
   test('detalhe: lançamentos, conflitos, eventos e backend', function() {
-    expect(HS._detalheEventoSessao({ detalhe: { qtd: 3 } })).toBe('3 lançamento(s)');
-    expect(HS._detalheEventoSessao({ detalhe: { conflitos: 1, total: 4 } })).toBe('1 conflito(s), 4 total');
-    expect(HS._detalheEventoSessao({ detalhe: { eventos: 9 } })).toBe('9 evento(s)');
-    expect(HS._detalheEventoSessao({ detalhe: { backend: 'indexeddb' } })).toBe('backend indexeddb');
-    expect(HS._detalheEventoSessao({})).toBe('');
-    expect(HS._detalheEventoSessao(null)).toBe('');
+    expect(R._detalheEventoSessao({ detalhe: { qtd: 3 } })).toBe('3 lançamento(s)');
+    expect(R._detalheEventoSessao({ detalhe: { conflitos: 1, total: 4 } })).toBe('1 conflito(s), 4 total');
+    expect(R._detalheEventoSessao({ detalhe: { eventos: 9 } })).toBe('9 evento(s)');
+    expect(R._detalheEventoSessao({ detalhe: { backend: 'indexeddb' } })).toBe('backend indexeddb');
+    expect(R._detalheEventoSessao({})).toBe('');
+    expect(R._detalheEventoSessao(null)).toBe('');
   });
 
   test('detalhe sem campo conhecido vira JSON, e JSON que não serializa vira vazio', function() {
-    expect(HS._detalheEventoSessao({ detalhe: { outro: 'x' } })).toBe('{"outro":"x"}');
+    expect(R._detalheEventoSessao({ detalhe: { outro: 'x' } })).toBe('{"outro":"x"}');
     const circular = {}; circular.self = circular;
-    expect(HS._detalheEventoSessao({ detalhe: circular })).toBe('');
+    expect(R._detalheEventoSessao({ detalhe: circular })).toBe('');
   });
 
   test('a lista mostra o mais recente primeiro e escapa o que vem do evento', function() {
-    const html = HS._montarListaReplayHtml([
+    const html = R._montarListaReplayHtml([
       { tipo: 'init_dados', iso: '2026-10-20T10:00:00.000Z', detalhe: { qtd: 1 } },
       { tipo: '<img src=x onerror=alert(1)>', iso: '2026-10-20T11:00:00.000Z' },
     ]);
@@ -60,26 +70,26 @@ describe('HEALTH_SERVICE — replay da sessão', function() {
   });
 
   test('o documento tem título, contagem de eventos e o aviso de que não há descrições', function() {
-    const doc = HS._montarDocumentoReplayHtml([{ tipo: 'init_dados', iso: '2026-10-20T10:00:00.000Z' }]);
+    const doc = R._montarDocumentoReplayHtml([{ tipo: 'init_dados', iso: '2026-10-20T10:00:00.000Z' }]);
     expect(doc.startsWith('<!doctype html>')).toBe(true);
     expect(doc).toContain('Replay da sessão');
     expect(doc).toContain('1 evento(s)');
     expect(doc).toContain('Sem descrições de lançamentos');
   });
+});
 
+describe('REPLAY_SESSAO — exportação', function() {
   test('sem eventos, não gera arquivo e avisa', function() {
     const toast = jest.fn();
-    global.UTILS = { mostrarToast: toast, escapeHtml: UTILS.escapeHtml };
-    const HS2 = carregar({ UTILS: global.UTILS, SESSION_LOG: { snapshot: function() { return []; } } });
-    expect(HS2.exportarReplaySessao()).toBeNull();
+    const R = carregarReplay({ UTILS: { mostrarToast: toast, escapeHtml: UTILS.escapeHtml } });
+    expect(R.exportar()).toBeNull();
     expect(toast).toHaveBeenCalledWith('Nenhum evento nesta sessão ainda', 'info');
-    delete global.UTILS;
   });
 
   test('sem o log de sessão, não gera arquivo', function() {
     const toast = jest.fn();
-    const HS2 = carregar({ UTILS: { mostrarToast: toast, escapeHtml: UTILS.escapeHtml }, SESSION_LOG: undefined });
-    expect(HS2.exportarReplaySessao()).toBeNull();
+    const R = carregarReplay({ UTILS: { mostrarToast: toast, escapeHtml: UTILS.escapeHtml }, SESSION_LOG: undefined });
+    expect(R.exportar()).toBeNull();
     expect(toast).toHaveBeenCalledWith('Replay indisponível', 'error');
   });
 
@@ -90,13 +100,13 @@ describe('HEALTH_SERVICE — replay da sessão', function() {
     global.URL.createObjectURL = jest.fn(function() { return 'blob:x'; });
     global.URL.revokeObjectURL = jest.fn();
     global.document.createElement = function() { return { click: function() { clicks.push(this.download); } }; };
-    const HS2 = carregar({
+    const R = carregarReplay({
       SESSION_LOG: {
         snapshot: function() { return [{ tipo: 'init_dados', iso: '2026-10-20T10:00:00.000Z' }]; },
         registrar: registrar,
       },
     });
-    const html = HS2.exportarReplaySessao();
+    const html = R.exportar();
     expect(html).toContain('Replay da sessão');
     expect(clicks[0]).toMatch(/^financaspro-replay-\d{4}-\d{2}-\d{2}\.html$/);
     expect(registrar).toHaveBeenCalledWith('exportar_replay_html', { eventos: 1 });
@@ -112,7 +122,7 @@ describe('HEALTH_SERVICE — diagnóstico', function() {
     global.URL.createObjectURL = jest.fn(function() { return 'blob:d'; });
     global.URL.revokeObjectURL = jest.fn();
     global.document.createElement = function() { return { click: function() { clicks.push(this.download); } }; };
-    const HS = carregar({
+    const HS = carregarHealth({
       SESSION_LOG: {
         snapshot: function() { return [{ tipo: 'init_dados' }, { tipo: 'merge_multiaba' }]; },
         registrar: registrar,
@@ -137,7 +147,7 @@ describe('HEALTH_SERVICE — diagnóstico', function() {
     global.URL.createObjectURL = function() { return 'blob:d'; };
     global.URL.revokeObjectURL = function() {};
     global.document.createElement = function() { return { click: function() {} }; };
-    const HS = carregar({
+    const HS = carregarHealth({
       DADOS: { getTransacoes: function() { return [{ descricao: 'Aluguel secreto', valor: 1500 }]; } },
     });
     const diag = await HS.exportarDiagnostico();

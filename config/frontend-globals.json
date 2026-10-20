@@ -155,6 +155,7 @@
     "renderLucideIconsNow": "writable",
     "renderOrcamentoDashboard": "writable",
     "renderQuickEntries": "writable",
+    "REPLAY_SESSAO": "writable",
     "RESUMO_ANUAL": "writable",
     "RESUMO_MENSAL": "writable",
     "sairDaConta": "writable",

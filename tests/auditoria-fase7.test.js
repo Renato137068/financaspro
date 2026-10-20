@@ -20,8 +20,10 @@ describe('fase 7 — replay HTML para suporte', function() {
   test('exportar replay gera documento standalone', function() {
     expect(html).toMatch(/data-action="exportar-replay-sessao"/);
     expect(healthSrc).toMatch(/exportarReplaySessao:\s*function/);
-    expect(healthSrc).toMatch(/financaspro-replay-/);
-    expect(healthSrc).toMatch(/_montarDocumentoReplayHtml/);
+    // O documento é montado pelo módulo do replay (carregado sob demanda).
+    const replaySrc = fs.readFileSync(path.join(root, 'js', 'services', 'replay-sessao.js'), 'utf8');
+    expect(replaySrc).toMatch(/financaspro-replay-/);
+    expect(replaySrc).toMatch(/_montarDocumentoReplayHtml/);
     expect(navSrc).toMatch(/'exportar-replay-sessao'/);
   });
 });
