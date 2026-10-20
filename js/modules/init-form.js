@@ -18,7 +18,7 @@ import { FINANCE_CONTRACT } from '../core/finance-contract.js';
 import { AVALIACAO_LOJA } from '../avaliacao-loja.js';
 import { DOMUTILS } from '../core/domUtils.js';
 import { FUNIL } from '../utilities/funil.js';
-import { METRICAS_LANCAMENTO } from '../core/metricas-lancamento.js';
+import { LAZY } from '../core/lazy-load.js';
 import { SCORE } from '../score.js';
 import { APRENDIZADO } from '../aprendizado.js';
 import { TRANSACOES } from '../transacoes.js';
@@ -756,10 +756,12 @@ const INIT_FORM = {
     // Linha de base do tempo de lançamento (só no aparelho, sem dados do
     // lançamento). Edição de um lançamento existente não entra.
     form.addEventListener('focusin', function() {
-      if (!form.dataset.editId) METRICAS_LANCAMENTO.iniciar(Date.now());
+      var agora = Date.now();
+      if (!form.dataset.editId) INIT_FORM._medir(function(m) { m.iniciar(agora); });
     });
-    form.addEventListener('pointerdown', function() { METRICAS_LANCAMENTO.interagir(); });
-    form.addEventListener('keydown', function() { METRICAS_LANCAMENTO.interagir(); });
+    var toque = function() { INIT_FORM._medir(function(m) { m.interagir(); }); };
+    form.addEventListener('pointerdown', toque);
+    form.addEventListener('keydown', toque);
 
     // Form de orçamento
     var formOrc = document.getElementById('form-orcamentos');
@@ -1174,8 +1176,13 @@ const INIT_FORM = {
     });
   },
 
+  // Carrega a linha de base sob demanda e entrega o módulo a quem mede.
+  _medir: function(acao) {
+    LAZY.load('metricas').then(function() { acao(window.METRICAS_LANCAMENTO); }, function() {});
+  },
+
   _finalizarTransacao: function() {
-    METRICAS_LANCAMENTO.concluir(Date.now());
+    INIT_FORM._medir(function(m) { m.concluir(Date.now()); });
     INIT_FORM.invalidarCacheSugestoes();
     RENDER.init();
     if (typeof INSIGHTS !== 'undefined') {

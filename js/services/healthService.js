@@ -7,7 +7,7 @@
 
 import { UTILS } from '../core/utils.js';
 import { SESSION_LOG } from '../core/session-log.js';
-import { METRICAS_LANCAMENTO } from '../core/metricas-lancamento.js';
+import { LAZY } from '../core/lazy-load.js';
 import { PERSIST_QUEUE } from '../core/persist-queue.js';
 import { FINANCE_RECONCILER } from '../utilities/finance-reconciler.js';
 import { CONFIG_USER } from '../config-user.js';
@@ -87,7 +87,7 @@ const HEALTH_SERVICE = {
   /**
    * Exporta JSON técnico para suporte — sem descrições de lançamentos.
    */
-  exportarDiagnostico: function() {
+  exportarDiagnostico: async function() {
     var diag = {
       geradoEm: new Date().toISOString(),
       app: 'FinançasPro',
@@ -108,7 +108,10 @@ const HEALTH_SERVICE = {
       sessao: (typeof SESSION_LOG !== 'undefined' && SESSION_LOG.snapshot)
         ? SESSION_LOG.snapshot() : [],
       // Linha de base do lançamento: contagens e medianas, sem valores nem descrições.
-      lancamentos: METRICAS_LANCAMENTO.resumo()
+      // Linha de base do lançamento, carregada sob demanda (sem ela, null).
+      lancamentos: await LAZY.load('metricas').then(function() {
+        return window.METRICAS_LANCAMENTO.resumo();
+      }, function() { return null; })
     };
 
     if (typeof SESSION_LOG !== 'undefined') {

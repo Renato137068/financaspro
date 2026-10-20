@@ -122,6 +122,7 @@ const urlsParaCache = [
   "/js/esm/chunks/conta.js",
   "/js/esm/chunks/extrato.js",
   "/js/esm/chunks/metas.js",
+  "/js/esm/chunks/metricas.js",
   "/js/esm/chunks/onboarding.js",
   "/js/esm/chunks/orcamento.js",
   "/js/esm/chunks/patrimonio.js",

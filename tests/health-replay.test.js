@@ -105,7 +105,7 @@ describe('HEALTH_SERVICE — replay da sessão', function() {
 });
 
 describe('HEALTH_SERVICE — diagnóstico', function() {
-  test('junta o estado do app e registra a exportação', function() {
+  test('junta o estado do app e registra a exportação', async function() {
     const registrar = jest.fn();
     const clicks = [];
     global.Blob = function(partes) { this.partes = partes; };
@@ -121,7 +121,7 @@ describe('HEALTH_SERVICE — diagnóstico', function() {
       FINANCE_RECONCILER: { verificarPainel: function() { return { ok: true }; } },
       DADOS: { getTransacoes: function() { return [{}, {}, {}]; }, usoArmazenamento: function() { return { mb: 1.2 }; } },
     });
-    const diag = HS.exportarDiagnostico();
+    const diag = await HS.exportarDiagnostico();
     expect(diag.app).toBe('FinançasPro');
     expect(diag.transacoes.total).toBe(3);
     expect(diag.painel).toEqual({ ok: true });
@@ -132,7 +132,7 @@ describe('HEALTH_SERVICE — diagnóstico', function() {
     expect(registrar).toHaveBeenCalledWith('exportar_diagnostico', { eventos: 2 });
   });
 
-  test('o diagnóstico não traz descrições nem valores de lançamentos', function() {
+  test('o diagnóstico não traz descrições nem valores de lançamentos', async function() {
     global.Blob = function(partes) { this.partes = partes; };
     global.URL.createObjectURL = function() { return 'blob:d'; };
     global.URL.revokeObjectURL = function() {};
@@ -140,7 +140,7 @@ describe('HEALTH_SERVICE — diagnóstico', function() {
     const HS = carregar({
       DADOS: { getTransacoes: function() { return [{ descricao: 'Aluguel secreto', valor: 1500 }]; } },
     });
-    const diag = HS.exportarDiagnostico();
+    const diag = await HS.exportarDiagnostico();
     expect(JSON.stringify(diag)).not.toContain('Aluguel secreto');
     expect(JSON.stringify(diag)).not.toContain('1500');
   });

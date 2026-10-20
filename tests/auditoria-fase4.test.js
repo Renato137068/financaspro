@@ -34,7 +34,7 @@ describe('fase 4 — conflito multi-aba durante edição', function() {
 
 describe('fase 4 — diagnóstico exportável', function() {
   test('healthService exporta JSON sem PII de descrições', function() {
-    expect(healthSrc).toMatch(/exportarDiagnostico:\s*function/);
+    expect(healthSrc).toMatch(/exportarDiagnostico:\s*(async\s+)?function/);
     expect(healthSrc).toMatch(/financaspro-diagnostico/);
     expect(healthSrc).not.toMatch(/descricao/);
   });

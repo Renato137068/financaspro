@@ -20,6 +20,7 @@ const CHUNKS_ESM = {
   relatorios: function() { return import('../esm/chunks/relatorios.js'); },
   anexos: function() { return import('../esm/chunks/anexos.js'); },
   metas: function() { return import('../esm/chunks/metas.js'); },
+  metricas: function() { return import('../esm/chunks/metricas.js'); },
   assinaturas: function() { return import('../esm/chunks/assinaturas.js'); },
   patrimonio: function() { return import('../esm/chunks/patrimonio.js'); },
   conta: function() { return import('../esm/chunks/conta.js'); },
