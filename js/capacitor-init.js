@@ -17,9 +17,9 @@
   }
 
   if (plugins.StatusBar) {
-    if (plugins.StatusBar.setOverlaysWebView) {
-      plugins.StatusBar.setOverlaysWebView({ overlay: false }).catch(function() {});
-    }
+    // Sem setOverlaysWebView: o plugin já começa com a WebView abaixo da barra
+    // de status, e no Android 15+ a chamada só existia para gravar a cor da
+    // barra via Window.setStatusBarColor (depreciado; listado no Play Console).
     if (plugins.StatusBar.setBackgroundColor) {
       plugins.StatusBar.setBackgroundColor({ color: '#12694E' }).catch(function() {});
     }
