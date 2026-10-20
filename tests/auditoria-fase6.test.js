@@ -20,7 +20,9 @@ describe('fase 6 — replay visual da sessão', function() {
   test('perfil expõe replay-sessao e healthService renderiza timeline', function() {
     expect(html).toMatch(/data-action="replay-sessao"/);
     expect(healthSrc).toMatch(/mostrarReplaySessao:\s*function/);
-    expect(healthSrc).toMatch(/session-replay-list/);
+    // A timeline é montada pelo módulo do replay (carregado sob demanda).
+    const replaySrc = fs.readFileSync(path.join(__dirname, '..', 'js', 'services', 'replay-sessao.js'), 'utf8');
+    expect(replaySrc).toMatch(/session-replay-list/);
     expect(navSrc).toMatch(/'replay-sessao'/);
   });
 });
