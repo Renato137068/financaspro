@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Auditoria FinançasPro 20/out</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#f5f8f6; --surface:#ffffff; --surface-2:#edf6f2; --line:#d5e2dc;
+  --ink:#10231c; --ink-2:#3c5249; --ink-3:#607a6f;
+  --brand:#12694e; --brand-deep:#0b3d2e; --brand-soft:#d3e9df; --accent:#2fa37b;
+  --ok:#1f7a4f; --ok-bg:#e1f3e9; --warn:#9a5b00; --warn-bg:#fdf0da; --bad:#b3261e; --bad-bg:#fbe4e2; --info:#2d5d8a; --info-bg:#e3edf7;
+  --bar-track:#e3ece8;
+  --f-display:'Plus Jakarta Sans','Inter',-apple-system,'Segoe UI',sans-serif;
+  --f-body:'Inter',-apple-system,'Segoe UI',Roboto,sans-serif;
+  --f-mono:'JetBrains Mono','SFMono-Regular',Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#08140f; --surface:#0f1f18; --surface-2:#132a20; --line:#21392e;
+    --ink:#e6f1ec; --ink-2:#b4c9bf; --ink-3:#86a295;
+    --brand:#5cc49a; --brand-deep:#a9d4c1; --brand-soft:#173a2c; --accent:#74b99c;
+    --ok:#6fd49f; --ok-bg:#133526; --warn:#f0b35a; --warn-bg:#3a2a10; --bad:#ff8a80; --bad-bg:#3d1714; --info:#8dbbe8; --info-bg:#132b40;
+    --bar-track:#1b3228;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#08140f; --surface:#0f1f18; --surface-2:#132a20; --line:#21392e;
+  --ink:#e6f1ec; --ink-2:#b4c9bf; --ink-3:#86a295;
+  --brand:#5cc49a; --brand-deep:#a9d4c1; --brand-soft:#173a2c; --accent:#74b99c;
+  --ok:#6fd49f; --ok-bg:#133526; --warn:#f0b35a; --warn-bg:#3a2a10; --bad:#ff8a80; --bad-bg:#3d1714; --info:#8dbbe8; --info-bg:#132b40;
+  --bar-track:#1b3228;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;margin:0}
+.wrap{max-width:1040px;margin:0 auto;padding-inline:20px;padding-block:32px 64px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;color:var(--ink)}
+h1{font-size:clamp(28px,5vw,40px);font-weight:800;letter-spacing:-.02em;line-height:1.15}
+h2{font-size:22px;font-weight:700;letter-spacing:-.01em}
+h3{font-size:16px;font-weight:700}
+p{margin:0}
+code,.mono{font-family:var(--f-mono);font-size:.86em}
+code{background:var(--surface-2);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--brand)}
+.muted{color:var(--ink-3)}
+section{display:grid;gap:18px;margin-top:48px}
+.sec-head{display:grid;gap:6px}
+.sec-head p{color:var(--ink-2);max-width:68ch}
+a{color:var(--brand)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Header */
+header.top{display:grid;gap:14px}
+.meta{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--ink-3)}
+.meta span strong{color:var(--ink-2);font-weight:600}
+.lede{font-size:17px;color:var(--ink-2);max-width:66ch}
+
+/* Hero score */
+.hero{display:grid;grid-template-columns:minmax(0,260px) minmax(0,1fr);gap:28px;align-items:center;margin-top:28px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px}
+.gauge{position:relative;width:100%;max-width:240px;aspect-ratio:1;margin:0 auto}
+.gauge svg{width:100%;height:100%;display:block}
+.gauge .num{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.gauge .num b{font-family:var(--f-display);font-size:64px;font-weight:800;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
+.gauge .num small{font-size:13px;color:var(--ink-3)}
+.verdicts{display:grid;gap:12px}
+.verdict{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:baseline}
+.verdict p{grid-column:2;color:var(--ink-2);font-size:14px}
+.pill{display:inline-block;font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.warn{background:var(--warn-bg);color:var(--warn)}
+.pill.bad{background:var(--bad-bg);color:var(--bad)}
+.pill.info{background:var(--info-bg);color:var(--info)}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:4px}
+.kpi{border-top:2px solid var(--line);padding-top:8px}
+.kpi b{display:block;font-family:var(--f-display);font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
+.kpi span{font-size:12.5px;color:var(--ink-3)}
+
+/* Ledger */
+.ledger-box{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+table.ledger{width:100%;border-collapse:collapse;min-width:640px;font-variant-numeric:tabular-nums}
+.ledger th{font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);font-weight:600;text-align:left;padding:12px 14px;border-bottom:1px solid var(--line)}
+.ledger td{padding:11px 14px;border-bottom:1px dashed var(--line);vertical-align:middle}
+.ledger tr:last-child td{border-bottom:0}
+.ledger .r{text-align:right}
+.ledger .dim b{display:block;font-weight:600}
+.ledger .dim span{font-size:12.5px;color:var(--ink-3)}
+.ledger .score{font-family:var(--f-mono);font-weight:500;font-size:15px}
+.bar{height:8px;border-radius:4px;background:var(--bar-track);overflow:hidden;min-width:90px}
+.bar i{display:block;height:100%;border-radius:4px}
+.b-ok{background:var(--ok)} .b-warn{background:var(--warn)} .b-bad{background:var(--bad)}
+.ledger tfoot td{border-top:2px solid var(--ink);font-weight:700;padding-top:14px;padding-bottom:14px}
+.ledger tfoot .score{font-size:18px}
+.scale{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:12.5px;color:var(--ink-3)}
+.scale span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px;background:var(--c)}
+
+/* Strengths */
+.strengths{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px 24px;list-style:none;padding:0;margin:0}
+.strengths li{display:grid;grid-template-columns:18px 1fr;gap:10px;font-size:14px;color:var(--ink-2)}
+.strengths li::before{content:"✓";color:var(--ok);font-weight:700}
+.strengths b{color:var(--ink);font-weight:600}
+
+/* Findings */
+.filters{display:flex;flex-wrap:wrap;gap:8px}
+.filters button{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);padding:6px 14px;border-radius:999px;cursor:pointer}
+.filters button[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:var(--surface)}
+.findings{display:grid;gap:12px}
+.finding{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--sev);border-radius:10px;padding:16px 18px;display:grid;gap:8px}
+.finding[data-sev="alta"]{--sev:var(--bad)}
+.finding[data-sev="media"]{--sev:var(--warn)}
+.finding[data-sev="baixa"]{--sev:var(--info)}
+.f-head{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+.f-id{font-family:var(--f-mono);font-size:12.5px;color:var(--ink-3)}
+.finding p{color:var(--ink-2);font-size:14px;max-width:80ch}
+.finding .ev{font-size:13px;color:var(--ink-3)}
+.finding .fix{font-size:14px;color:var(--ink)}
+.finding .fix::before{content:"Correção → ";font-weight:600;color:var(--brand)}
+
+/* Previous P0 */
+.prev{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.prev div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:6px;align-content:start}
+.prev p{font-size:13.5px;color:var(--ink-2)}
+
+/* Roadmap */
+.road{display:grid;gap:0;position:relative}
+.phase{display:grid;grid-template-columns:120px minmax(0,1fr);gap:20px;padding-bottom:28px;position:relative}
+.phase:not(:last-child)::after{content:"";position:absolute;left:59px;top:64px;bottom:0;width:2px;background:var(--line)}
+.p-mark{display:grid;justify-items:center;gap:4px;align-content:start}
+.p-mark .dot{width:56px;height:56px;border-radius:50%;display:grid;place-content:center;background:var(--brand-soft);color:var(--brand-deep);font-family:var(--f-display);font-weight:800;font-size:19px;border:2px solid var(--brand)}
+.p-mark small{font-size:12px;color:var(--ink-3);text-align:center;line-height:1.3}
+.p-body{display:grid;gap:12px}
+.p-title{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:baseline}
+.p-title .proj{font-size:13px;color:var(--ink-3)}
+.p-title .proj b{font-family:var(--f-mono);color:var(--brand);font-weight:500}
+.tasks{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.tasks li{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 14px;align-items:start}
+.tasks li b{font-weight:600}
+.tasks li p{grid-column:1;font-size:13.5px;color:var(--ink-2)}
+.tasks li .tags{grid-column:2;grid-row:1 / span 2;display:flex;flex-direction:column;gap:4px;align-items:flex-end}
+.tag{font-size:11px;font-family:var(--f-mono);color:var(--ink-3);border:1px solid var(--line);border-radius:5px;padding:1px 6px;white-space:nowrap}
+.refs{font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3)}
+
+/* Projection chart */
+.proj-chart{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;overflow-x:auto}
+.proj-chart svg{display:block;width:100%;min-width:520px;height:auto}
+.proj-chart text{font-family:var(--f-body);fill:var(--ink-3);font-size:12px}
+.proj-chart .lbl{fill:var(--ink);font-family:var(--f-mono);font-size:13px;font-weight:500}
+
+/* Evidence */
+.ev-box{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+table.ev{width:100%;border-collapse:collapse;min-width:560px;font-size:14px}
+.ev th,.ev td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line)}
+.ev th{font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+.ev tr:last-child td{border-bottom:0}
+.ev td:first-child{font-family:var(--f-mono);font-size:13px}
+.method{font-size:13.5px;color:var(--ink-2);max-width:80ch;display:grid;gap:8px}
+footer{margin-top:56px;padding-top:16px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink-3)}
+
+@media (max-width:760px){
+  .hero{grid-template-columns:1fr}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .phase{grid-template-columns:64px minmax(0,1fr);gap:14px}
+  .phase:not(:last-child)::after{left:31px;top:52px}
+  .p-mark .dot{width:44px;height:44px;font-size:16px}
+  .tasks li{grid-template-columns:1fr}
+  .tasks li .tags{grid-column:1;grid-row:auto;flex-direction:row;flex-wrap:wrap;align-items:center}
+}
+@media (prefers-reduced-motion:no-preference){
+  .bar i{animation:grow .8s ease-out both}
+  @keyframes grow{from{transform:scaleX(.2);transform-origin:left}to{transform:scaleX(1);transform-origin:left}}
+}
+
+/* Reauditoria: variação e acompanhamento */
+.delta{font-family:var(--f-mono);font-size:12.5px;font-weight:500;white-space:nowrap}
+.delta.up{color:var(--ok)} .delta.eq{color:var(--ink-3)} .delta.down{color:var(--bad)}
+.ledger .before{font-family:var(--f-mono);color:var(--ink-3)}
+.status-box{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+table.status{width:100%;border-collapse:collapse;min-width:620px;font-size:14px}
+.status th,.status td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+.status th{font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+.status tr:last-child td{border-bottom:0}
+.status td:first-child{font-family:var(--f-mono);font-size:13px;color:var(--ink-3);white-space:nowrap}
+.status td b{font-weight:600}
+.status td p{color:var(--ink-2);font-size:13.5px}
+.why{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:8px;font-size:14px;color:var(--ink-2)}
+.why b{color:var(--ink)}
+.why ul{margin:0;padding-left:20px;display:grid;gap:2px}
+.ops{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.ops li{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:4px;font-size:13.5px;color:var(--ink-2)}
+.ops li b{color:var(--ink);font-weight:600;font-size:14px}
+
+/* Relatório novo: tabelas rolam dentro do próprio bloco; nada passa da tela. */
+.wrap,.card,.hero,.foot{min-width:0;max-width:100%;box-sizing:border-box}
+.tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+.tablewrap table{min-width:560px}
+.card{padding-inline:clamp(14px,4vw,28px)}
+</style>
+</head>
+<body>
+
+<main class="wrap">
+<header class="hero">
+  <p class="kicker">Auditoria completa · FinançasPro</p>
+  <h1>Nova auditoria de engenharia e produto</h1>
+  <p class="lede">Medida do zero sobre a <code>main</code> no commit <code>ce1fcd1</code>, depois do merge da página do app, dos artigos, das capturas de tablet e do conteúdo promocional.</p>
+  <dl class="facts">
+    <div><dt>Data</dt><dd>20 out 2026</dd></div>
+    <div><dt>Versão</dt><dd>11.3.19 · versionCode 50</dd></div>
+    <div><dt>Commit</dt><dd>ce1fcd1</dd></div>
+    <div><dt>Anterior</dt><dd>1 out 2026 · nota 87</dd></div>
+  </dl>
+</header>
+
+<section class="card score">
+  <div class="big">81<span>/100</span></div>
+  <div>
+    <h2>Nota geral: 81 de 100</h2>
+    <p><strong>Sólido por dentro, mas a nota caiu.</strong> O código está melhor do que em 1º/out: mais testes, cobrança e banco mais fortes, bundle abaixo da meta. A queda vem de três coisas: dependências com vulnerabilidades moderadas (que antes estavam zeradas), a loja e a operação, que dependem de ações suas, e os tetos do bundle que subiram.</p>
+    <p class="note"><strong>Comparação:</strong> a nota de 87 de 1º/out saiu de uma divisão de frentes que o arquivo anterior não preserva. Esta rodada define as frentes e os pesos abaixo e os compara só pela nota geral; a queda de 87 para 81 é indicativa, não uma régua idêntica.</p>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Notas por frente</h2>
+  <p class="sub">Contribuição = nota × peso. Pesos somam 100.</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Frente</th><th>Peso</th><th>Nota</th><th>O que sustenta a nota</th></tr></thead>
+    <tbody><tr><td>Testes e cobertura</td><td>15%</td><td>88</td><td>2.977 testes Jest verdes, 0 falhas. Cobertura: 84,6% das linhas, 76,2% dos ramos. Ponta a ponta: 77 passando.</td></tr>
+<tr><td>Cobrança e dinheiro</td><td>15%</td><td>92</td><td>113 testes Deno (eram 76). Stripe 22 e Play lidos nos dois formatos; paridade de planos e de limites verificada.</td></tr>
+<tr><td>Banco e RLS</td><td>10%</td><td>90</td><td>pgTAP inteiro passou (todas as tabelas com RLS, funções com search_path, idempotência do seed de planos).</td></tr>
+<tr><td>Experiência e acessibilidade</td><td>10%</td><td>86</td><td>Contraste AA nos tokens, sem sink inseguro (check:xss-sinks), E2E com axe. Faltam testes de tela nas áreas mais novas.</td></tr>
+<tr><td>Desempenho e bundle</td><td>10%</td><td>85</td><td>JS inicial em 449 KB, abaixo da meta de 450. Mas os tetos subiram (ver A3).</td></tr>
+<tr><td>Dependências</td><td>10%</td><td>70</td><td>Zero vulnerabilidades altas. 19 moderadas, todas em ferramentas de teste (Jest). Antes: zero.</td></tr>
+<tr><td>Operação e release</td><td>10%</td><td>72</td><td>Saúde do app, Android vitals e CI em verde na main. Não consegui confirmar daqui a web publicada nem o banco de produção.</td></tr>
+<tr><td>Código e manutenção</td><td>5%</td><td>80</td><td>Lint com zero avisos, globais em dia. Quatro arquivos passam de 1.200 linhas; um TODO real.</td></tr>
+<tr><td>Loja e marca</td><td>10%</td><td>60</td><td>Ficha, capturas, Novidades, promo e site prontos no repositório. Nada disso foi aplicado no Play Console ainda (ação sua).</td></tr>
+<tr><td>Produto e conteúdo</td><td>5%</td><td>75</td><td>Página do app, três artigos e avaliação dentro do app no código. Sem publicação verificada.</td></tr></tbody>
+  </table></div>
+</section>
+
+<section class="card">
+  <h2>O que foi verificado nesta rodada</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Verificação</th><th>Resultado</th></tr></thead>
+    <tbody>
+      <tr><td>Lint, globais, telas, CSS, contraste, XSS, billing, versões, auditorias</td><td>Todos passam</td></tr>
+      <tr><td>Build e orçamento de bundle</td><td>Passa. JS inicial 449/456 KB; precache 1.081/1.090 KB</td></tr>
+      <tr><td>Jest com cobertura</td><td>276 suítes, 2.977 testes, 9 pulados. Linhas 84,6%, ramos 76,2%, funções 79,6%</td></tr>
+      <tr><td>Deno (Edge Functions)</td><td>113 testes passando</td></tr>
+      <tr><td>pgTAP (banco)</td><td>Passa inteiro, contra Postgres 16 com as migrações aplicadas</td></tr>
+      <tr><td>Ponta a ponta (Playwright)</td><td>77 passando, 2 pulados</td></tr>
+      <tr><td>npm audit</td><td>0 altas. 19 moderadas, todas de desenvolvimento (Jest e dependências)</td></tr>
+      <tr><td>Segredos no código</td><td>Só exemplos em documentação, nenhum valor real. Nenhum keystore versionado</td></tr>
+      <tr><td>CI da main (ce1fcd1)</td><td>CI, Saúde do app e Android vitals verdes</td></tr>
+      <tr><td>site/sobre.html em produção</td><td><strong>Não verificado</strong>: app.financaspro.com não respondeu daqui (sem conexão)</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section class="card">
+  <h2>Pontos fortes</h2>
+  <ul>
+    <li><strong>Cobrança testada onde roda.</strong> 113 testes Deno, quase 50% mais que em 1º/out, com a biblioteca real do Stripe e o Google por fetch falso.</li>
+    <li><strong>Código de dinheiro com piso.</strong> lifecycle.js em 99,6% das linhas; sync-engine e telas sob demanda com piso próprio.</li>
+    <li><strong>Banco fechado por padrão.</strong> RLS em todas as tabelas; funções com search_path fixo; seed de planos idempotente, testado num Postgres local.</li>
+    <li><strong>Backend removido.</strong> O Express saiu do repositório, com os planos e os testes de segurança migrados para o que sobrou. O achado M5 de 1º/out está fechado.</li>
+    <li><strong>Correções reais desta etapa.</strong> Alerta de orçamento que não disparava, previsão que contava parcelas futuras como receita zero, exclusão de conta sem sessão, prévia de orçamento com slug em caixa alta.</li>
+  </ul>
+</section>
+
+<section class="card">
+  <h2>Achados</h2>
+  <p class="sub">Ordenados por prioridade. Nenhum achado é explorável de imediato; os de prioridade média mexem com dinheiro ou com a régua de qualidade.</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>#</th><th>Prioridade</th><th>Achado</th><th>Evidência</th><th>Ação proposta</th></tr></thead>
+    <tbody>
+      <tr><td>A1</td><td>Média</td><td>Tetos do bundle subiram quatro vezes desde 1º/out, contra a regra de só descer.</td><td><code>scripts/check-bundle-budget.cjs</code>: precache 1.082 → 1.090 KB; app 450 → 456 KB. Cada aumento tem motivo escrito (segurança, primeiro uso), mas o efeito é o mesmo.</td><td>Não subir mais teto. Com o app em 449 KB, decidir com você a descida do teto ao valor medido.</td></tr>
+      <tr><td>A2</td><td>Média</td><td>19 vulnerabilidades moderadas nas dependências de teste.</td><td><code>npm audit</code>: Jest 29 e cadeia dele (@jest/*, babel-jest, js-yaml, argparse). Não entram no app nem no APK.</td><td>Atualizar o Jest para versão com a cadeia corrigida; rodar a suíte inteira antes do commit.</td></tr>
+      <tr><td>A3</td><td>Média</td><td>Código que mexe com dinheiro ou com o Pro tem cobertura baixa.</td><td>supabase-billing.js 57,5% das linhas; healthService.js 37,9%; previsao.js 41,6%; backup-cifrado.js 58,0%.</td><td>Piso por arquivo, como nas telas sob demanda, começando por supabase-billing e healthService.</td></tr>
+      <tr><td>A4</td><td>Média</td><td>Publicação da web não confirmada.</td><td>app.financaspro.com não respondeu daqui; a página do app e os artigos dependem dela.</td><td>Conferir no navegador: o site e <code>/.well-known/assetlinks.json</code>.</td></tr>
+      <tr><td>A5</td><td>Baixa</td><td>Autenticação com cobertura mediana.</td><td>authController.js: 71,8% das linhas e 69,6% dos ramos.</td><td>Testes dos caminhos de erro de login e 2FA.</td></tr>
+      <tr><td>A6</td><td>Baixa</td><td>Nove testes pulados.</td><td>Seis arquivos com <code>.skip</code>, a maioria por ambiente (DOM e timers) que o CI não ativa.</td><td>Ativar esses ambientes no CI ou remover os testes que já não servem.</td></tr>
+      <tr><td>A7</td><td>Baixa</td><td>Arquivos grandes e uma dívida explícita.</td><td>init-form.js 1.379 linhas; dados.js 1.313; authController.js 1.254; init-billing.js 1.217. TODO real em categories.js:370 (remover após migração).</td><td>Dividir os quatro conforme o padrão já usado; remover o TODO quando a migração estiver completa.</td></tr>
+      <tr><td>A8</td><td>Aberta</td><td>Contador de uso forjável (B3 de 30/set).</td><td>Não reexaminado nesta rodada.</td><td>Reavaliar na próxima auditoria.</td></tr>
+      <tr><td>A9</td><td>Loja</td><td>Ficha, capturas, Novidades e conteúdo promocional prontos, mas não aplicados no Play Console.</td><td><code>docs/play-store/roteiro-play-console.md</code> e <code>conteudo-promocional.md</code>.</td><td>Aplicar o roteiro; enviar o sitemap ao Google Search Console depois da publicação.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section class="card">
+  <h2>Roteiro</h2>
+  <ol class="steps">
+    <li><strong>Esta semana (sem código grande).</strong> Confirmar a publicação da web (A4). Aplicar a ficha no Play Console (A9). Decidir a descida dos tetos do bundle (A1). Atualizar o Jest (A2).<span class="proj">Projeção: ~84</span></li>
+    <li><strong>2 a 4 semanas.</strong> Piso de cobertura para billing, healthService e previsão (A3). Ativar os testes pulados no CI (A6). Cobrir o caminho de erro do login (A5).<span class="proj">Projeção: ~87</span></li>
+    <li><strong>1 a 3 meses.</strong> Dividir os quatro arquivos grandes (A7). Reavaliar o contador de uso (A8).<span class="proj">Projeção: ~90</span></li>
+  </ol>
+</section>
+
+<section class="card">
+  <h2>O que esta auditoria não verificou</h2>
+  <ul>
+    <li>A publicação em produção: a web, o banco de produção, o Stripe em modo de teste e o Play Console. Tudo depende de acessos do dono das contas.</li>
+    <li>O build de release do Android: o plugin de avaliação dentro do app foi conferido só contra as assinaturas da API, sem compilação.</li>
+    <li>Métricas da loja (conversão, nota, Android vitals reais) — são do Play Console.</li>
+  </ul>
+</section>
+
+<footer class="foot">
+  <p>Gerado com dados medidos nesta sessão. Logs da rodada ficaram em <code>/tmp/claude-0/-home-user-financaspro/f75fe80f-e27f-572d-8d35-c375bdfe9236/scratchpad/aud/</code>.</p>
+  <p><a href="index.html">Índice das auditorias</a> · <a href="auditoria-completa-2026-10-01.html">Reauditoria de 1º/out</a></p>
+</footer>
+</main>
+
+</body>
+</html>
