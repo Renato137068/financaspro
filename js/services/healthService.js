@@ -7,6 +7,7 @@
 
 import { UTILS } from '../core/utils.js';
 import { SESSION_LOG } from '../core/session-log.js';
+import { METRICAS_LANCAMENTO } from '../core/metricas-lancamento.js';
 import { PERSIST_QUEUE } from '../core/persist-queue.js';
 import { FINANCE_RECONCILER } from '../utilities/finance-reconciler.js';
 import { CONFIG_USER } from '../config-user.js';
@@ -105,7 +106,9 @@ const HEALTH_SERVICE = {
       lifecycle: (typeof window !== 'undefined' && window.LIFECYCLE && window.LIFECYCLE.getStatus)
         ? window.LIFECYCLE.getStatus() : null,
       sessao: (typeof SESSION_LOG !== 'undefined' && SESSION_LOG.snapshot)
-        ? SESSION_LOG.snapshot() : []
+        ? SESSION_LOG.snapshot() : [],
+      // Linha de base do lançamento: contagens e medianas, sem valores nem descrições.
+      lancamentos: METRICAS_LANCAMENTO.resumo()
     };
 
     if (typeof SESSION_LOG !== 'undefined') {

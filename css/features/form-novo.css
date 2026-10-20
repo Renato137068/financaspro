@@ -860,3 +860,8 @@ button.btn-primario.btn-registrar {
   outline: 2px solid var(--color-primary-500);
   outline-offset: 2px;
 }
+
+/* Modo contínuo fica logo acima do Registrar (era escondido em "Mais opções"). */
+.modo-continuo-acima {
+  margin: 4px 0 12px;
+}

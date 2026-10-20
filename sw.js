@@ -103,6 +103,7 @@ const urlsParaCache = [
   "/js/core/idb-kv.js",
   "/js/core/lazy-load.js",
   "/js/core/lifecycle.js",
+  "/js/core/metricas-lancamento.js",
   "/js/core/password-policy.js",
   "/js/core/persist-queue.js",
   "/js/core/session-log.js",

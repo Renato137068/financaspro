@@ -123,6 +123,7 @@
     "lucide": "writable",
     "lucideIconHtml": "writable",
     "METAS": "writable",
+    "METRICAS_LANCAMENTO": "writable",
     "MICRO": "writable",
     "mudarAba": "writable",
     "mudarSubAbaOrcamento": "writable",

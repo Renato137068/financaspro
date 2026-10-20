@@ -637,14 +637,6 @@
           </div>
         </div>
 
-        <!-- Modo contínuo -->
-        <div class="form-group">
-          <label class="toggle-label">
-            <input type="checkbox" id="chk-continuo">
-            <span class="toggle-slider"></span>
-            <span><i data-lucide="zap"></i> Modo contínuo (registrar vários)</span>
-          </label>
-        </div>
       </div>
 
       <!-- BARRA DE PROGRESSO DO FORMULÁRIO -->
@@ -659,6 +651,16 @@
         <button type="button" id="persist-retry-btn" class="btn-secundario" style="display:none;margin-top:6px">
           Tentar de novo os pendentes
         </button>
+      </div>
+
+      <!-- MODO CONTÍNUO: ao lado do Registrar, e não em "Mais opções", para quem
+           lança várias movimentações seguidas. Mesmo id: a lógica não muda. -->
+      <div class="form-group modo-continuo-acima">
+        <label class="toggle-label">
+          <input type="checkbox" id="chk-continuo">
+          <span class="toggle-slider"></span>
+          <span><i data-lucide="zap"></i> Continuar lançando depois de salvar</span>
+        </label>
       </div>
 
       <!-- BOTÃO REGISTRAR -->

@@ -18,6 +18,7 @@ import { FINANCE_CONTRACT } from '../core/finance-contract.js';
 import { AVALIACAO_LOJA } from '../avaliacao-loja.js';
 import { DOMUTILS } from '../core/domUtils.js';
 import { FUNIL } from '../utilities/funil.js';
+import { METRICAS_LANCAMENTO } from '../core/metricas-lancamento.js';
 import { SCORE } from '../score.js';
 import { APRENDIZADO } from '../aprendizado.js';
 import { TRANSACOES } from '../transacoes.js';
@@ -752,6 +753,14 @@ const INIT_FORM = {
       INIT_FORM.handleFormSubmit(e);
     });
 
+    // Linha de base do tempo de lançamento (só no aparelho, sem dados do
+    // lançamento). Edição de um lançamento existente não entra.
+    form.addEventListener('focusin', function() {
+      if (!form.dataset.editId) METRICAS_LANCAMENTO.iniciar(Date.now());
+    });
+    form.addEventListener('pointerdown', function() { METRICAS_LANCAMENTO.interagir(); });
+    form.addEventListener('keydown', function() { METRICAS_LANCAMENTO.interagir(); });
+
     // Form de orçamento
     var formOrc = document.getElementById('form-orcamentos');
     if (formOrc) {
@@ -1166,6 +1175,7 @@ const INIT_FORM = {
   },
 
   _finalizarTransacao: function() {
+    METRICAS_LANCAMENTO.concluir(Date.now());
     INIT_FORM.invalidarCacheSugestoes();
     RENDER.init();
     if (typeof INSIGHTS !== 'undefined') {
